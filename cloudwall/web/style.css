@@ -174,7 +174,8 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .pin-chip[hidden] { display: none; }
 
 .h-route { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; padding-bottom: .5rem; }
-.route { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.2rem; }
+/* the airports line up along the top, whether or not one has a time under it */
+.route { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 1.2rem; }
 .apt { font-size: min(2.7rem, 8cqi); color: var(--ink); }
 .apt.unknown { font-size: .95rem; color: var(--slate); align-self: center; max-width: 8rem; line-height: 1.35; }
 .apt small { display: block; font: 400 .85rem var(--sans); color: var(--slate); margin-top: .45rem; max-width: 11rem;
@@ -186,6 +187,14 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #h-arc { stroke: var(--magenta); }
 #h-arc-dot { fill: var(--magenta); }
 .arc-note { text-align: center; font-size: .74rem; color: var(--slate); margin-top: .3rem; line-height: 1.5; }
+.arc-time { color: var(--ink-2); }
+.arc-time:empty { display: none; }
+/* when it left and when it gets in, under each airport: the label in drawing lettering, the time in figures */
+.apt-when { display: flex; flex-direction: column; gap: .15rem; margin-top: .7rem; }
+.apt-when:empty { display: none; }
+.apt.r .apt-when { align-items: flex-end; }
+.apt-when b { font: 700 1.15rem var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.apt-when b i { font-style: normal; font-weight: 400; font-size: .75em; color: var(--slate); }
 .route.unsure .apt, .route.unsure .arc { opacity: .35; }
 
 .route.inferred .arc-note { color: var(--ink-2); }

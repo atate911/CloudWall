@@ -99,14 +99,30 @@ function routeHtml(a, state) {
   }
   const iata = state.airport.iata;
   return `<div class="route ${r.plausible ? "" : "unsure"}">
-    <div class="apt ${r.origin.iata === iata ? "local" : ""}"><div class="flaps" id="h-orig"></div><small>${esc(r.origin.city || r.origin.name || "")}</small></div>
+    <div class="apt ${r.origin.iata === iata ? "local" : ""}"><div class="flaps" id="h-orig"></div><small>${esc(r.origin.city || r.origin.name || "")}</small><div class="apt-when" id="h-dep"></div></div>
     <div><svg class="arc" viewBox="0 0 200 40">
       <path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--rule)" stroke-width="1"/>
       <path id="h-arc" d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--magenta)" stroke-width="1.4" stroke-linecap="round" pathLength="1"/>
       <circle id="h-arc-dot" r="2.4" fill="var(--magenta)"/></svg>
-      <div class="arc-note" id="h-note"></div></div>
-    <div class="apt r ${r.dest.iata === iata ? "local" : ""}"><div class="flaps" id="h-dest"></div><small>${esc(r.dest.city || r.dest.name || "")}</small></div>
+      <div class="arc-note"><div id="h-note"></div><div class="arc-time" id="h-dur"></div></div></div>
+    <div class="apt r ${r.dest.iata === iata ? "local" : ""}"><div class="flaps" id="h-dest"></div><small>${esc(r.dest.city || r.dest.name || "")}</small><div class="apt-when" id="h-arr"></div></div>
   </div>`;
+}
+
+// When it left and when it gets in, under each airport, and the flight time between them. A paid
+// route provider gives the takeoff time (and FlightAware the arrival); otherwise the arrival is
+// CloudWall's own estimate from distance and speed, and says so. Shown for a believable route only.
+const hm = (min) => (min >= 60 ? `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}m` : `${min} min`);
+function routeTimes(r) {
+  if (!r) return { dep: "", arr: "", dur: "" };
+  const when = (label, t, about) => (t ? `<span class="label">${label}</span><b>${about ? "<i>about</i> " : ""}${esc(clock(t))}</b>` : "");
+  const arrives = r.landed || r.eta || r.eta_est, est = !r.landed && !r.eta;
+  const min = r.departed && arrives ? Math.round((arrives - r.departed) / 60) : 0;
+  return {
+    dep: when("Departed", r.departed),
+    arr: when(r.landed ? "Landed" : "Arrives", arrives, est),
+    dur: min > 0 ? `Flight time ${est ? "about " : ""}${hm(min)}` : "",
+  };
 }
 
 function routeNote(r) {
@@ -155,6 +171,11 @@ function showHero(el, a, state) {
     $("h-arc-dot").setAttribute("cx", (1 - p) ** 2 * 4 + 2 * (1 - p) * p * 100 + p * p * 196);
     $("h-arc-dot").setAttribute("cy", (1 - p) ** 2 * 34 + 2 * (1 - p) * p * -22 + p * p * 34);
     $("h-note").textContent = routeNote(r);
+    const t = routeTimes(r.plausible ? r : null);
+    for (const [id, html] of [["h-dep", t.dep], ["h-arr", t.arr], ["h-dur", t.dur]]) {
+      const e = $(id);
+      if (e && e._html !== html) e.innerHTML = e._html = html;
+    }
   }
 
   const v = a.vrate || 0;
@@ -218,12 +239,10 @@ function autopilotWords(modes) {
 
 // The short list beside the photo: times, aircraft, and when it passes the house.
 function renderFacts(a, state, elapsed = 0) {
+  // departure and arrival times sit under the airports; a light aircraft landing here with no
+  // route on file has no airports to put its landing time under, so it goes here
   const r = a.route && a.route.plausible ? a.route : null, rows = [];
-  if (r && r.departed) rows.push(["Departed", clock(r.departed)]);
-  if (r && r.landed) rows.push(["Landed", clock(r.landed)]);
-  else if (r && r.eta) rows.push(["Arrives", clock(r.eta)]);
-  else if (r && r.eta_est) rows.push(["Arrives", `about ${clock(r.eta_est)}`]);
-  else if (a.landing_est) rows.push(["Lands", `about ${clock(a.landing_est)}`]);
+  if (!r && a.landing_est) rows.push(["Lands", `about ${clock(a.landing_est)}`]);
   const left = a.cpa_s - elapsed;
   rows.push(["Overhead", left > 5 ? `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away` : a.dist < 1.5 ? "now" : "passed, heading away"]);
   const type = a.type_name || a.type;

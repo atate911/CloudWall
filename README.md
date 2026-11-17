@@ -12,10 +12,12 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
 
 - **Overhead** – a flight card for the aircraft closest to overhead: the flight number as a
   departure board shows it (with "operated by" for regional partners), the airline's logo,
-  the route with distance flown and to go, altitude and climb or descent rate (with the
+  the route with distance flown and to go, the departure and arrival times under the airports
+  and the flight time between them, altitude and climb or descent rate (with the
   altitude the autopilot is heading for, when it reports one), speed, distance and heading,
-  and a photo of the airframe beside its departure and arrival times, when it passes the
-  house, the aircraft type, registration and build year, and what the autopilot is doing.
+  and a photo of the airframe beside when it passes the house, the aircraft type,
+  registration and build year, and what the autopilot is doing. The departure time comes from
+  a paid route provider (see below); without one, the card shows an estimated arrival only.
   Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
   dimension line with its length. With no photo, the plate fills the frame.
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
