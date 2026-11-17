@@ -760,50 +760,305 @@ F.ch7b = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
-// ---------- Van's RV-7 / RV-14 / RV-12 ----------
-// No three-views reachable: the RV-7 is measured from the side-on in-flight photo
-// File:Vans.rv-7.g-kels.arp.jpg (Wikimedia Commons, Wikipedia article Van's Aircraft RV-7),
-// scaled to 6.2 m (data.js). Lower confidence (photo). Sliding bubble canopy, straight belly
-// with the top sloping down to the tail, constant-chord low wing, square fin and rudder,
-// spring-steel main legs with spats and a tailwheel (most RV-7s are taildraggers).
-// RV-14 (data.js 6.4 m): the larger RV-7 shape, drawn as the RV-14A tricycle. RV-12 (6.0 m):
-// the light-sport RV, tricycle, with a taller fin; both derived from the RV-7 outline.
-const RV7 = {
-  kind: "piston", L0: 6.2, over: 0, D: 1, W: 1.1,
-  body: [
-    [0, 0.61, "c"], [0.1, 0.65], [0.2, 0.675], [0.35, 0.7], [0.43, 0.74], [0.8, 0.75], [1.24, 0.755], [1.76, 0.76, "c"],
-    [2.0, 0.87], [2.3, 0.95], [2.55, 0.97], [2.8, 0.93], [3.05, 0.84], [3.24, 0.75], [3.6, 0.64], [4.06, 0.53],
-    [4.5, 0.44], [4.92, 0.36, "cl"], [5.45, 1.25], [5.6, 1.31], [6.0, 1.29], [6.15, 1.2, "c"], [6.17, -0.08],
-    [6.12, -0.15], [6.0, -0.18], [5.57, -0.2], [4.5, -0.18], [3.4, -0.17], [2.6, -0.15], [1.8, -0.08], [1.24, 0.04],
-    [0.7, 0.15], [0.5, 0.3], [0.42, 0.45], [0.35, 0.5], [0.2, 0.54], [0.1, 0.57],
+// ---------- Van's Aircraft RV family ----------
+// References: Van's Aircraft's "Weight and Balance Data Quick Reference" sheets (vansaircraft.com/downloads/,
+// RV4wb, RV6wb, RV6Awb, RV7wb, RV7Awb, RV8wb, RV8Awb, RV9wb, RV9Awb, RV10wb, RV12wb, RV14wb and RV14Awb PDFs):
+// side views of each model, scaled by their datum-to-leading-edge dimension and cross-checked against the
+// wing chord (area / span) and overall length on each model's page at vansaircraft.com. z = 0 is the belly
+// at the wing root leading edge. Every RV is a low, constant-chord wing with about 3.5 degrees of dihedral,
+// Van's rounded fin with the raked rudder trailing edge and the counterbalance horn at its top, and fixed
+// gear with wheel pants: spring-steel legs and a tailwheel on a spring, or (the "A" models) a swept nose
+// leg and the mains further aft. The types map below picks the A model from the registered model name.
+
+// the body's upper edge at station s (straight between its points, from the nose aft)
+function crown(body, s) {
+  for (let i = 1; i < body.length && body[i][0] >= body[i - 1][0]; i++) {
+    const [s0, z0] = body[i - 1], [s1, z1] = body[i];
+    if (s >= s0 && s <= s1) return s1 > s0 ? z0 + ((z1 - z0) * (s - s0)) / (s1 - s0) : Math.max(z0, z1);
+  }
+  return body[0][1];
+}
+// A canopy or window pane: its top follows the body outline from s0 to s1, its lower edge runs through
+// the given [s, z(, flag)] points from aft to front.
+function pane(body, s0, s1, lower) {
+  const n = Math.max(2, Math.ceil((s1 - s0) / 0.1)), top = [];
+  for (let i = 0; i <= n; i++) {
+    const s = s0 + ((s1 - s0) * i) / n;
+    top.push([s, crown(body, s), i === 0 || i === n ? "c" : ""]);
+  }
+  return [...top, ...lower];
+}
+// fixed gear: a leg from top to bottom, a wheel of radius r at the axle, and its pant
+const PANT = { f: 0.29, a: 0.54, t: 0.19, b: 0.11 }, NOSEPANT = { f: 0.27, a: 0.42, t: 0.16, b: 0.1 };
+const wheelLeg = (top, bot, at, r, w = [0.09, 0.07], spat = PANT) => ({ leg: [top, bot], w, at, r, spat });
+// a small tailwheel at the end of its spring
+const tailwheel = (top, at, r = 0.065) => ({ leg: [top, [at[0] - 0.02, at[1] + 0.02]], w: [0.05, 0.035], at, r });
+// rudder hinge line with the counterbalance horn: up the hinge at s from z0 to z1, forward to s2, up to z2
+const hinge = (s, z0, z1, s2, z2) => [[s, z0], [s, z1], [s2, z1], [s2, z2]];
+const rv = (o) => ({ kind: "piston", over: 0, D: 1, frame: 0.03, extras: EXTRAS, overlays: OVERLAYS, ...o });
+const withGear = (f, gear) => ({ ...f, parts: { ...f.parts, gear } });
+
+// RV-3: single seat, sliding bubble canopy, the shortest RV. No weight-and-balance drawing: measured from
+// Van's side silhouette (vansaircraft.com/rv-3/, wp-content/uploads/2019/01/rv-3.png) scaled to the 19 ft
+// (5.79 m, data.js) spinner-to-rudder length; wing from the published 19 ft 11 in span and 90 sq ft area.
+// Lower confidence (silhouette).
+const RV3_BODY = [
+  [0, 0.47, "c"], [0.09, 0.565], [0.2, 0.615], [0.45, 0.689], [0.78, 0.749], [1.2, 0.8], [1.62, 0.84], [1.67, 0.86, "c"],
+  [1.74, 0.951], [1.83, 1.019], [1.98, 1.079], [2.16, 1.124], [2.3, 1.132], [2.45, 1.131], [2.7, 1.094], [2.85, 1.055],
+  [3.05, 0.98], [3.25, 0.915], [3.42, 0.885, "l"], [4.56, 0.84], [4.61, 0.86], [4.65, 0.92, "l"], [4.92, 1.536], [4.96, 1.575],
+  [5.03, 1.59, "l"], [5.4, 1.57], [5.53, 1.53, "cl"], [5.76, 0.644], [5.77, 0.54], [5.74, 0.48], [5.65, 0.437],
+  [5.45, 0.4, "l"], [2.34, -0.005], [2.04, -0.02, "l"], [0.75, -0.022], [0.71, -0.01, "c"], [0.69, 0.11, "c"], [0.6, 0.142],
+  [0.33, 0.277], [0.21, 0.31], [0.06, 0.382],
+];
+F.rv3 = rv({
+  L0: 5.79, W: 0.72, body: RV3_BODY,
+  glass: [
+    pane(RV3_BODY, 1.69, 1.96, [[1.96, 0.83], [1.75, 0.84]]),
+    pane(RV3_BODY, 2.02, 3.2, [[3.0, 0.9, ""], [2.8, 0.9, "c"], [2.76, 0.8, "c"], [2.02, 0.8]]),
   ],
-  glass: [[[1.8, 0.76], [2.1, 0.9, ""], [2.5, 0.96, ""], [2.9, 0.9, ""], [3.22, 0.75], [2.5, 0.72, ""]]],
-  frame: 0.03,
-  wing: { le: 1.62, root: 0.5, span: 7.7, cr: 1.27, ct: 1.27, sweep: 0, dih: 3.5, z: -0.07, t: [0.15, 0.15] },
-  eng: { kind: "none", nose: { s: 0.35, z: 0.61, d: 1.83, blades: 2 } },
-  stab: { le: 1.3, z: 0.17, span: 3.05, root: 0.15, cr: 1.0, ct: 0.75, sweep: 5, dih: 0, thick: 0.09 },
+  wing: { le: 1.45, root: 0.36, span: 6.07, cr: 1.38, ct: 1.38, sweep: 0, dih: 3.5, z: 0.08, t: [0.15, 0.135] },
+  eng: { kind: "none", nose: { s: 0.22, z: 0.47, d: 1.73, blades: 2 } },
+  stab: { le: 1.14, z: 0.62, span: 2.4, root: 0.1, cr: 0.8, ct: 0.5, sweep: 14, dih: 0, thick: 0.1 },
   parts: {
-    lines: [[[5.55, -0.17], [5.55, 1.3]], [[2.8, 0.73], [2.83, 0.93]]],
+    lines: [hinge(5.43, 0.4, 1.47, 5.3, 1.58), [[0.22, 0.31], [0.22, 0.62]]],
+    gear: [wheelLeg([1.24, 0], [1.32, -0.37], [1.41, -0.58], 0.15, [0.08, 0.06], { f: 0.3, a: 0.52, t: 0.2, b: 0.1 }),
+      tailwheel([5.45, 0.37], [5.96, 0.15], 0.06)],
+  },
+});
+
+// RV-4: tandem two-seat with the long sliding bubble, narrow fuselage, taildragger only. RV4wb side view,
+// scaled to the 20 ft 4 in (6.2 m) spinner-to-rudder length (wing chord then 57.3 in against 57.4 in from
+// 110 sq ft / 23 ft); the tailwheel reaches 6.34 m.
+const RV4_BODY = [
+  [0, 0.46, "c"], [0.04, 0.52], [0.2, 0.6], [0.24, 0.625], [0.57, 0.711], [0.93, 0.779], [1.32, 0.823], [1.62, 0.842, "c"],
+  [1.74, 0.984], [1.86, 1.078], [2.04, 1.145], [2.22, 1.18], [2.4, 1.196], [2.64, 1.186], [2.82, 1.154], [3.15, 1.074],
+  [3.39, 0.993], [3.6, 0.912, "l"], [4.86, 0.857], [4.93, 0.88], [4.98, 0.95, "l"], [5.3, 1.62], [5.36, 1.7], [5.44, 1.722, "l"],
+  [5.85, 1.66], [5.97, 1.615, "cl"], [6.18, 0.74], [6.215, 0.56], [6.2, 0.48], [6.12, 0.445, "l"], [5.73, 0.345],
+  [5.0, 0.285], [4.29, 0.228], [3.4, 0.11], [2.43, 0.012], [2.0, 0, "l"], [1.15, 0, "l"], [0.7, 0], [0.66, 0.03, "c"],
+  [0.62, 0.11], [0.45, 0.2], [0.3, 0.28], [0.2, 0.33], [0.1, 0.38],
+];
+F.rv4 = rv({
+  L0: 6.2, W: 0.78, body: RV4_BODY,
+  glass: [
+    pane(RV4_BODY, 1.64, 2.33, [[2.33, 0.8], [1.78, 0.8], [1.68, 0.82]]),
+    pane(RV4_BODY, 2.4, 3.55, [[3.4, 0.93, ""], [3.1, 0.87], [2.4, 0.81]]),
+  ],
+  wing: { le: 1.47, root: 0.39, span: 7.01, cr: 1.46, ct: 1.46, sweep: 0, dih: 3.5, z: 0.085, t: [0.15, 0.135] },
+  eng: { kind: "none", nose: { s: 0.21, z: 0.46, d: 1.78, blades: 2 } },
+  stab: { le: 1.25, z: 0.73, span: 2.6, root: 0.1, cr: 0.95, ct: 0.58, sweep: 16, dih: 0, thick: 0.1 },
+  parts: {
+    lines: [hinge(5.73, 0.35, 1.7, 5.73, 1.7), [[0.21, 0.33], [0.21, 0.61]]],
+    gear: [wheelLeg([1.3, 0], [1.39, -0.32], [1.44, -0.53], 0.15, [0.1, 0.08], { f: 0.27, a: 0.56, t: 0.21, b: 0.06 }),
+      tailwheel([5.73, 0.34], [6.25, 0.14], 0.065)],
+  },
+});
+
+// RV-6 / RV-6A: the first side-by-side RV, sliding canopy, short (23 ft) wing and the smaller fin. RV6wb side
+// view, scaled to the 20 ft 2 in (6.15 m, data.js) spinner-to-tailwheel length: the wing chord then measures
+// 57.5 in (110 sq ft / 23 ft = 57.4 in) and the rudder ends at 5.97 m. RV-6A gear from RV6Awb.
+const RV6_BODY = [
+  [0, 0.39, "c"], [0.12, 0.488], [0.22, 0.525], [0.31, 0.545], [0.36, 0.568], [0.6, 0.615], [1.0, 0.68], [1.4, 0.725],
+  [1.73, 0.765, "c"], [1.83, 0.86], [1.95, 0.94], [2.1, 1.0], [2.28, 1.045], [2.42, 1.06], [2.6, 1.047], [2.8, 1.012],
+  [3.0, 0.967], [3.15, 0.932, "l"], [4.72, 0.765], [4.79, 0.79], [4.84, 0.87, "l"], [5.08, 1.45], [5.13, 1.535],
+  [5.2, 1.575], [5.3, 1.585, "l"], [5.66, 1.552], [5.72, 1.51, "cl"], [5.96, 0.52], [5.95, 0.44], [5.88, 0.39, "l"],
+  [5.5, 0.315, "l"], [2.97, 0.039], [2.4, 0, "l"], [1.3, 0], [1.22, -0.03], [1.12, -0.085, "l"], [0.6, -0.09],
+  [0.54, -0.07, "c"], [0.52, 0.06, "c"], [0.45, 0.11], [0.39, 0.16], [0.33, 0.215], [0.2, 0.258], [0.09, 0.3],
+];
+F.rv6 = rv({
+  L0: 6.15, W: 1.07, body: RV6_BODY,
+  glass: [
+    pane(RV6_BODY, 1.75, 2.62, [[2.62, 0.67], [1.92, 0.67], [1.79, 0.72]]),
+    pane(RV6_BODY, 2.68, 3.12, [[3.0, 0.82, ""], [2.85, 0.69], [2.68, 0.67]]),
+  ],
+  wing: { le: 1.52, root: 0.52, span: 7.01, cr: 1.46, ct: 1.46, sweep: 0, dih: 3.5, z: 0.085, t: [0.15, 0.135] },
+  eng: { kind: "none", nose: { s: 0.31, z: 0.39, d: 1.78, blades: 2 } },
+  stab: { le: 1.32, z: 0.655, span: 2.9, root: 0.12, cr: 0.9, ct: 0.55, sweep: 15, dih: 0, thick: 0.1 },
+  parts: {
+    lines: [hinge(5.5, 0.32, 1.5, 5.4, 1.58), [[0.31, 0.23], [0.31, 0.54]]],
+    gear: [wheelLeg([1.33, -0.04], [1.45, -0.42], [1.51, -0.61], 0.15, [0.09, 0.07], { f: 0.27, a: 0.55, t: 0.2, b: 0.08 }),
+      tailwheel([5.52, 0.3], [6.04, 0.13])],
+  },
+});
+F.rv6a = withGear(F.rv6, [
+  wheelLeg([1.91, 0], [2.06, -0.4], [2.15, -0.6], 0.15),
+  wheelLeg([0.78, -0.08], [0.5, -0.43], [0.63, -0.6], 0.14, [0.06, 0.05], NOSEPANT),
+]);
+
+// RV-7 / RV-7A: the RV-6's successor with the 25 ft wing, a bigger fin and rudder and a longer forward
+// fuselage; slider or tip-up canopy. RV7Awb side view (scaled to the 20 ft 4 in, 6.2 m spinner-to-rudder
+// length; its 70 in datum dimension gives 6.15 m and the root chord 57.7 in), windscreen checked against
+// Van's side silhouette (vansaircraft.com/rv-7/, rv-7.png). Tailwheel gear from RV7wb.
+const RV7_BODY = [
+  [0, 0.42, "c"], [0.09, 0.521], [0.2, 0.567], [0.33, 0.6], [0.57, 0.655], [1.0, 0.715], [1.4, 0.76], [1.69, 0.795, "c"],
+  [1.8, 0.905], [1.95, 1.015], [2.1, 1.09], [2.28, 1.14], [2.45, 1.15], [2.65, 1.14], [2.85, 1.1], [3.0, 1.06],
+  [3.2, 1.0, "l"], [3.72, 0.955], [4.56, 0.85], [4.84, 0.822], [4.93, 0.84], [4.99, 0.9, "l"], [5.25, 1.6], [5.29, 1.72],
+  [5.35, 1.785], [5.45, 1.8, "l"], [5.85, 1.765], [5.94, 1.727, "cl"], [6.18, 0.603], [6.2, 0.53], [6.17, 0.45],
+  [6.1, 0.415, "l"], [5.88, 0.362, "l"], [5.22, 0.268], [4.59, 0.205], [3.66, 0.095], [2.97, 0.035], [2.46, 0, "l"],
+  [1.3, 0], [1.24, -0.04], [1.15, -0.068, "l"], [0.63, -0.062], [0.56, -0.04, "c"], [0.53, 0.12, "c"], [0.45, 0.165],
+  [0.33, 0.235], [0.18, 0.285], [0.09, 0.322],
+];
+const RV7_GLASS = [
+  pane(RV7_BODY, 1.71, 2.16, [[2.16, 0.69], [1.9, 0.69], [1.78, 0.74]]),
+  pane(RV7_BODY, 2.22, 3.18, [[3.0, 0.82, ""], [2.85, 0.7], [2.22, 0.69]]),
+];
+F.rv7 = rv({
+  L0: 6.2, W: 1.1, body: RV7_BODY, glass: RV7_GLASS,
+  wing: { le: 1.55, root: 0.53, span: 7.62, cr: 1.473, ct: 1.473, sweep: 0, dih: 3.5, z: 0.085, t: [0.15, 0.135] },
+  eng: { kind: "none", nose: { s: 0.33, z: 0.42, d: 1.83, blades: 2 } },
+  stab: { le: 1.22, z: 0.715, span: 3.1, root: 0.12, cr: 0.97, ct: 0.6, sweep: 15, dih: 0, thick: 0.1 },
+  parts: {
+    lines: [hinge(5.88, 0.37, 1.7, 5.72, 1.79), [[0.33, 0.24], [0.33, 0.6]]],
+    gear: [wheelLeg([1.3, -0.01], [1.43, -0.4], [1.49, -0.6], 0.16),
+      tailwheel([5.75, 0.345], [6.22, 0.15])],
+  },
+});
+const RV7A_GEAR = [
+  wheelLeg([1.83, 0], [1.95, -0.36], [2.03, -0.57], 0.16),
+  wheelLeg([1.02, -0.07], [0.66, -0.42], [0.73, -0.58], 0.15, [0.06, 0.05], NOSEPANT),
+];
+F.rv7a = withGear(F.rv7, RV7A_GEAR);
+
+// RV-9 / RV-9A: the RV-7 fuselage and tail with the longer (28 ft), narrower-chord (53 in, 124 sq ft) Roncz
+// wing and a larger horizontal tail; not aerobatic. RV9Awb side view (70 in datum dimension, 6.23 m), fin and
+// wing root as drawn there; tailwheel gear from RV9wb.
+F.rv9 = rv({
+  ...F.rv7, L0: 6.22,
+  wing: { le: 1.6, root: 0.53, span: 8.53, cr: 1.346, ct: 1.346, sweep: 0, dih: 3.5, z: 0.08, t: [0.15, 0.135] },
+  stab: { le: 1.25, z: 0.715, span: 3.4, root: 0.12, cr: 0.98, ct: 0.62, sweep: 13, dih: 0, thick: 0.1 },
+  parts: { ...F.rv7.parts, gear: [wheelLeg([1.31, -0.01], [1.48, -0.42], [1.56, -0.61], 0.16), tailwheel([5.75, 0.345], [6.12, 0.2])] },
+});
+F.rv9a = withGear(F.rv9, [
+  wheelLeg([1.95, 0], [2.04, -0.35], [2.12, -0.57], 0.16),
+  wheelLeg([1.02, -0.06], [0.62, -0.44], [0.74, -0.58], 0.15, [0.06, 0.05], NOSEPANT),
+]);
+
+// RV-8 / RV-8A: the bigger tandem two-seater (after the RV-4) with the long sliding bubble, the big fin and
+// the RV-4's lines stretched. RV8Awb side view (Van's 1:1 drawing, deskewed 1 degree; its 70 in datum
+// dimension gives 6.37 m and a 57.3 in chord, against 21 ft / 6.4 m), drawn at 6.4 m. RV-8 tailwheel gear
+// (main legs straight down at the leading edge) from RV8wb.
+const RV8_BODY = [
+  [0, 0.435, "c"], [0.06, 0.501], [0.15, 0.552], [0.3, 0.59], [0.36, 0.605], [0.48, 0.651], [1.0, 0.75], [1.7, 0.835, "c"],
+  [1.77, 0.933], [1.86, 1.022], [2.07, 1.15], [2.28, 1.222], [2.58, 1.271], [2.91, 1.267], [3.27, 1.204], [3.45, 1.15],
+  [3.69, 1.051], [3.85, 0.96], [4.02, 0.878, "l"], [5.13, 0.814], [5.19, 0.85], [5.23, 0.92, "l"], [5.49, 1.714],
+  [5.53, 1.778], [5.6, 1.805, "l"], [6.1, 1.778], [6.14, 1.74, "cl"], [6.39, 0.613], [6.4, 0.54], [6.38, 0.48],
+  [6.32, 0.44, "l"], [5.94, 0.355, "l"], [2.79, 0.017], [2.28, 0, "l"], [1.0, -0.005], [0.84, 0.014], [0.69, 0.057],
+  [0.54, 0.122], [0.36, 0.25], [0.18, 0.303], [0.09, 0.345],
+];
+F.rv8 = rv({
+  L0: 6.4, W: 0.86, body: RV8_BODY,
+  glass: [
+    pane(RV8_BODY, 1.72, 2.12, [[2.12, 0.81], [1.8, 0.81], [1.74, 0.83]]),
+    pane(RV8_BODY, 2.18, 3.95, [[3.75, 0.86, ""], [3.5, 0.82], [2.18, 0.81]]),
+  ],
+  wing: { le: 1.71, root: 0.43, span: 7.32, cr: 1.47, ct: 1.47, sweep: 0, dih: 3.5, z: 0.09, t: [0.15, 0.135] },
+  eng: { kind: "none", nose: { s: 0.36, z: 0.435, d: 1.83, blades: 2 } },
+  stab: { le: 1.21, z: 0.69, span: 3.0, root: 0.1, cr: 0.94, ct: 0.58, sweep: 15, dih: 0, thick: 0.1 },
+  parts: {
+    lines: [hinge(5.94, 0.36, 1.72, 5.79, 1.8), [[0.36, 0.25], [0.36, 0.6]]],
+    gear: [wheelLeg([1.73, 0], [1.73, -0.42], [1.73, -0.59], 0.17, [0.08, 0.07], { f: 0.33, a: 0.53, t: 0.17, b: 0.13 }),
+      tailwheel([5.77, 0.35], [6.3, 0.16])],
+  },
+});
+F.rv8a = withGear(F.rv8, [
+  wheelLeg([2.09, -0.03], [2.25, -0.35], [2.33, -0.54], 0.17, [0.1, 0.08], { f: 0.3, a: 0.54, t: 0.19, b: 0.12 }),
+  wheelLeg([1.07, -0.02], [0.63, -0.49], [0.8, -0.63], 0.15, [0.06, 0.05], { f: 0.27, a: 0.4, t: 0.155, b: 0.1 }),
+]);
+
+// RV-10: the four-seater: a cabin with a roof rather than a bubble, big gull-wing doors (the door window
+// in each) and fixed rear windows, IO-540 with a three-blade propeller, tricycle gear only. RV10wb side
+// view, scaled to the 24 ft 5 in (7.44 m) length (its 99.44 in datum dimension gives 7.32 m).
+const RV10_BODY = [
+  [0, 0.52, "c"], [0.12, 0.62], [0.27, 0.683], [0.54, 0.714], [0.78, 0.765], [1.05, 0.79], [1.38, 0.836], [1.6, 0.875],
+  [1.76, 0.9, "c"], [1.89, 1.0], [2.04, 1.113], [2.18, 1.215], [2.32, 1.275], [2.5, 1.31], [2.7, 1.328], [2.91, 1.33],
+  [3.36, 1.282], [3.8, 1.2], [4.29, 1.097, "l"], [6.0, 0.944], [6.08, 0.99], [6.13, 1.08, "l"], [6.45, 2.1], [6.5, 2.15],
+  [6.58, 2.162, "l"], [7.1, 2.07], [7.16, 2.02, "cl"], [7.41, 0.76], [7.44, 0.6], [7.42, 0.51], [7.35, 0.47, "l"],
+  [6.89, 0.405, "l"], [5.82, 0.288], [4.29, 0.134], [3.72, 0.07], [3.12, 0, "l"], [1.5, 0], [1.2, -0.015], [0.9, -0.03],
+  [0.7, -0.03], [0.6, 0.0, "c"], [0.55, 0.15], [0.48, 0.226], [0.36, 0.32], [0.27, 0.35], [0.12, 0.42],
+];
+F.rv10 = rv({
+  L0: 7.44, W: 1.27, body: RV10_BODY,
+  glass: [
+    pane(RV10_BODY, 1.79, 2.15, [[2.23, 0.8], [1.98, 0.81]]),
+    [[2.32, 0.75], [2.3, 1.16, ""], [2.4, 1.25], [3.11, 1.25], [3.12, 0.75]],
+    [[3.24, 0.79], [3.24, 1.2], [3.58, 1.18, ""], [3.84, 1.0], [3.62, 0.8, ""]],
+  ],
+  wing: { le: 2.08, root: 0.63, span: 9.68, cr: 1.42, ct: 1.42, sweep: 0, dih: 3.5, z: 0.085, t: [0.15, 0.135] },
+  eng: { kind: "none", nose: { s: 0.27, z: 0.52, d: 2.03, blades: 3 } },
+  stab: { le: 1.34, z: 0.9, span: 3.6, root: 0.14, cr: 0.98, ct: 0.62, sweep: 12, dih: 0, thick: 0.1 },
+  parts: {
+    // the gull-wing door: front edge along the windscreen frame, hinged at the roof
+    doors: [[[2.19, 1.27, "c"], [2.31, 0.47, "c"], [3.18, 0.47, "c"], [3.18, 1.3, "c"]]],
+    lines: [hinge(6.89, 0.41, 1.98, 6.59, 2.14), [[0.27, 0.36], [0.27, 0.68]]],
     gear: [
-      { leg: [[1.2, 0.06], [1.32, -0.45]], w: [0.08, 0.06], at: [1.35, -0.58], r: 0.18, spat: { f: 0.27, a: 0.57, t: 0.17, b: 0.1 } },
-      { leg: [[5.85, -0.18], [6.02, -0.33]], w: [0.05, 0.04], at: [6.02, -0.35], r: 0.07 },
+      wheelLeg([2.51, -0.02], [2.63, -0.36], [2.72, -0.585], 0.19, [0.1, 0.08], { f: 0.33, a: 0.6, t: 0.22, b: 0.13 }),
+      wheelLeg([1.2, -0.08], [0.68, -0.44], [0.85, -0.63], 0.17, [0.07, 0.06], { f: 0.3, a: 0.48, t: 0.19, b: 0.12 }),
     ],
   },
-  extras: EXTRAS, overlays: OVERLAYS,
-};
-F.rv7 = RV7;
-// tricycle gear: main legs further aft, nose leg under the cowl
-const TRIKE = (k) => [
-  { leg: [[1.95, -0.1], [2.0, -0.48]], w: [0.08, 0.06], at: [2.02, -0.58], r: 0.18 * k, spat: { f: 0.27, a: 0.57, t: 0.17, b: 0.1 } },
-  { leg: [[0.62, 0.15], [0.6, -0.5]], w: [0.06, 0.05], at: [0.6, -0.56], r: 0.15 * k, spat: { f: 0.25, a: 0.4, t: 0.15, b: 0.08 } },
+});
+
+// RV-12 / RV-12iS: the light-sport RV: Rotax with a three-blade propeller, one big forward-hinged canopy,
+// tall slab-sided fin, an all-moving stabilator with its anti-servo tab under the rudder, tricycle gear only.
+// RV12wb side view (its 70 in datum dimension: 5.98 m to the rudder, 6.22 m to the tab tip; 19 ft 11 in
+// published), gear with the pants of Van's RV-12iS silhouette (vansaircraft.com/rv-12is/).
+const RV12_BODY = [
+  [0, 0.555, "c"], [0.12, 0.64], [0.25, 0.682], [0.69, 0.733], [1.0, 0.765], [1.26, 0.79], [1.48, 0.82, "c"],
+  [1.56, 0.93], [1.65, 1.02], [1.83, 1.11], [2.01, 1.142], [2.2, 1.13], [2.4, 1.085], [2.6, 1.03], [2.94, 0.96, "l"],
+  [4.71, 0.826], [4.75, 0.85], [4.78, 0.9, "l"], [5.24, 1.86], [5.28, 1.925], [5.35, 1.948, "l"], [5.62, 1.94],
+  [5.66, 1.905, "l"], [5.97, 1.891, "c"], [5.995, 1.85, "l"], [6.0, 0.72], [6.02, 0.66, "c"], [5.95, 0.575],
+  [5.82, 0.49], [5.6, 0.44, "l"], [2.31, 0.016], [2.0, 0, "l"], [0.96, 0.02], [0.82, -0.01], [0.72, -0.015],
+  [0.6, 0.032], [0.42, 0.142], [0.3, 0.267], [0.24, 0.42], [0.12, 0.47],
 ];
-F.rv14 = scale({ ...RV7, parts: { ...RV7.parts, gear: TRIKE(1) } }, 6.4 / 6.2, { eng: { kind: "none", nose: { s: 0.36, z: 0.63, d: 1.93, blades: 2 } } });
-F.rv12 = scale({
-  ...RV7,
-  // taller fin and rudder of the RV-12
-  body: RV7.body.map(([q, z, fl]) => (q > 5.2 && z > 1.0 ? [q, z + 0.22, fl] : [q, z, fl])).map((p) => (p[2] === undefined ? p.slice(0, 2) : p)),
-  parts: { ...RV7.parts, lines: [[[5.55, -0.17], [5.55, 1.52]], [[2.8, 0.73], [2.83, 0.93]]], gear: TRIKE(1) },
-}, 6.0 / 6.2, { wing: { le: 1.57, root: 0.5, span: 8.2, cr: 1.2, ct: 1.2, sweep: 0, dih: 3.5, z: -0.07, t: [0.15, 0.15] } });
+F.rv12 = rv({
+  L0: 6.07, W: 1.12, body: RV12_BODY,
+  glass: [
+    pane(RV12_BODY, 1.5, 2.2, [[2.12, 0.62], [1.75, 0.62, ""], [1.56, 0.74]]),
+    pane(RV12_BODY, 2.28, 2.88, [[2.75, 0.8, ""], [2.5, 0.66], [2.22, 0.62]]),
+  ],
+  wing: { le: 1.59, root: 0.56, span: 8.15, cr: 1.45, ct: 1.45, sweep: 0, dih: 3.5, z: 0.085, t: [0.15, 0.135] },
+  eng: { kind: "none", nose: { s: 0.25, z: 0.555, d: 1.73, blades: 3 } },
+  stab: { le: 0.54, z: 0.63, span: 2.8, root: 0.1, cr: 0.64, ct: 0.6, sweep: 2, dih: 0, thick: 0.1 },
+  parts: {
+    lines: [[[5.62, 0.75], [5.62, 1.94]], [[0.25, 0.42], [0.25, 0.68]]],
+    gear: [
+      wheelLeg([2.24, 0.1], [2.2, -0.25], [2.18, -0.37], 0.17, [0.12, 0.05], { f: 0.28, a: 0.45, t: 0.17, b: 0.1 }),
+      wheelLeg([0.77, -0.02], [0.47, -0.25], [0.58, -0.36], 0.15, [0.05, 0.04], { f: 0.25, a: 0.38, t: 0.15, b: 0.09 }),
+    ],
+  },
+});
+
+// RV-14 / RV-14A: the newest two-seat side-by-side RV: a wider, taller cabin under a one-piece tip-up canopy
+// with a fixed rear window, the bigger cowl of the IO-390, the big fin. RV14wb side view (72 in datum
+// dimension; 6.43 m spinner to rudder = 21 ft 1 in published); RV-14A gear from RV14Awb (same scale).
+const RV14_BODY = [
+  [0, 0.45, "c"], [0.06, 0.515], [0.15, 0.564], [0.24, 0.593], [0.35, 0.625], [0.93, 0.721], [1.2, 0.76], [1.62, 0.81, "c"],
+  [1.75, 0.94], [1.86, 1.0], [2.04, 1.093], [2.22, 1.152], [2.43, 1.182], [2.64, 1.177], [2.85, 1.15], [3.0, 1.1],
+  [3.15, 1.06], [3.33, 1.025, "l"], [5.04, 0.834], [5.1, 0.858], [5.15, 0.93, "l"], [5.46, 1.849], [5.52, 1.883],
+  [5.6, 1.89, "l"], [6.09, 1.829], [6.14, 1.79, "cl"], [6.42, 0.633], [6.43, 0.544], [6.41, 0.49], [6.34, 0.455, "l"],
+  [5.8, 0.353, "l"], [3.06, 0.044], [2.16, 0, "l"], [1.3, -0.01], [1.17, -0.02], [0.93, 0.005], [0.66, 0.083],
+  [0.51, 0.152], [0.36, 0.275], [0.15, 0.333], [0.06, 0.382],
+];
+F.rv14 = rv({
+  L0: 6.43, W: 1.17, body: RV14_BODY,
+  glass: [
+    pane(RV14_BODY, 1.64, 2.84, [[2.74, 0.67], [1.92, 0.67, ""], [1.72, 0.74]]),
+    pane(RV14_BODY, 2.92, 3.24, [[3.12, 0.85, ""], [2.97, 0.66], [2.85, 0.66]]),
+  ],
+  wing: { le: 1.62, root: 0.58, span: 8.23, cr: 1.42, ct: 1.42, sweep: 0, dih: 3.5, z: 0.1, t: [0.16, 0.14] },
+  eng: { kind: "none", nose: { s: 0.35, z: 0.45, d: 1.88, blades: 2 } },
+  stab: { le: 1.24, z: 0.715, span: 3.2, root: 0.12, cr: 0.86, ct: 0.56, sweep: 13, dih: 0, thick: 0.1 },
+  parts: {
+    lines: [hinge(5.8, 0.36, 1.74, 5.63, 1.885), [[0.35, 0.28], [0.35, 0.62]]],
+    gear: [wheelLeg([1.26, -0.03], [1.5, -0.49], [1.61, -0.68], 0.18, [0.12, 0.09], { f: 0.29, a: 0.54, t: 0.19, b: 0.13 }),
+      tailwheel([5.79, 0.343], [6.3, 0.29], 0.07)],
+  },
+});
+F.rv14a = withGear(F.rv14, [
+  wheelLeg([2.31, -0.05], [2.34, -0.32], [2.3, -0.56], 0.17, [0.13, 0.1], { f: 0.32, a: 0.54, t: 0.24, b: 0.09 }),
+  wheelLeg([1.12, -0.03], [0.63, -0.45], [0.85, -0.58], 0.17, [0.07, 0.06], { f: 0.34, a: 0.5, t: 0.17, b: 0.12 }),
+]);
+
+// the registered model name tells the tricycle "A" from the taildragger (an unknown name: the taildragger)
+const tri = (n, a, tw) => (name) => (new RegExp(`RV[\\s-]?${n}\\s*-?A\\b`, "i").test(name || "") ? a : tw);
 
 export const families = F;
 export const types = {
@@ -811,5 +1066,7 @@ export const types = {
   P28A: "pa28", P28B: "pa28b", PA46: "pa46", P46T: "p46t",
   SR20: ["sr22", { eng: { kind: "none", nose: { s: 0.4, z: 0.61, d: 1.93, blades: 2 } } }], SR22: "sr22",
   DA40: "da40", DA42: "da42", BE36: "be36", BE58: "be58", M20P: "m20",
-  RV7: "rv7", RV12: "rv12", RV14: "rv14", CH7B: "ch7b", ST75: "st75", PC12: "pc12", TBM9: "tbm9",
+  CH7B: "ch7b", ST75: "st75", PC12: "pc12", TBM9: "tbm9",
+  RV3: "rv3", RV4: "rv4", RV6: tri(6, "rv6a", "rv6"), RV7: tri(7, "rv7a", "rv7"), RV8: tri(8, "rv8a", "rv8"),
+  RV9: tri(9, "rv9a", "rv9"), RV10: "rv10", RV12: "rv12", RV14: tri(14, "rv14a", "rv14"),
 };
