@@ -710,3 +710,24 @@ class WeatherTest(unittest.TestCase):
         self.assertEqual(len(full["history"]), 25)
         self.assertTrue(full["taf"]["periods"])
         json.dumps(full)
+
+
+class FeedExtrasTest(unittest.TestCase):
+    def test_extra_fields(self):
+        raw = {"hex": "ac32f2", "flight": "SWA4083 ", "r": "N8851Q", "t": "B38M", "desc": "BOEING 737 MAX 8", "year": "2023",
+               "ownOp": "SOUTHWEST AIRLINES CO", "alt_baro": 9000, "gs": 300, "lat": 45.6, "lon": -122.5, "baro_rate": -1200,
+               "nav_altitude_mcp": 6016, "nav_modes": ["autopilot", "althold", "lnav"], "dbFlags": 8}
+        a = sources.normalise(raw)
+        self.assertEqual((a["desc"], a["year"], a["target_alt"], a["modes"]), ("Boeing 737 MAX 8", 2023, 6016, ["autopilot", "althold", "lnav"]))
+        self.assertTrue(a["private_owner"])                       # LADD flag
+        self.assertEqual(sources.tidy_type("CESSNA 172S SKYHAWK SP"), "Cessna 172S Skyhawk SP")
+        self.assertEqual(sources.tidy_type("Airbus A321neo"), "Airbus A321neo")
+
+    def test_owner_hidden_for_privacy_aircraft(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        a = plane("a1", "N123AB", 1.0, typ="C172", desc="Cessna 172", owner_op="JOHN SMITH", private_owner=True, year=1978)
+        t.update([a], "test")
+        h = t.snapshot()["hero"]
+        self.assertIsNone(h.get("owner"))
+        self.assertEqual(h["type_name"], "Cessna 172")
+        self.assertGreater(h["age"], 40)

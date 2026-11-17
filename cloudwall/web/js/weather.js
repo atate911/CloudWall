@@ -165,7 +165,8 @@ function cloudView(width, height, n) {
     s += `<text class="tick" x="${padL - 8}" y="${y(ft) + 4}" text-anchor="end">${ft ? num(ft) : "Ground"}</text>`;
   }
   s += `<line class="ground" x1="${padL}" x2="${width - padR}" y1="${y(0)}" y2="${y(0)}"/>`;
-  const blocks = 8, gap = 3, bw = Math.min(16, (plotW * 0.48 - gap * (blocks - 1)) / blocks);
+  // keep room on the right for the layer's name and height, however narrow the figure is
+  const blocks = 8, gap = 3, bw = Math.max(5, Math.min(16, (plotW - 128 - gap * (blocks - 1)) / blocks));
   n.clouds.forEach((c) => {
     const yy = y(c.base), ceil = c.base === n.ceiling;
     for (let i = 0; i < blocks; i++) {
@@ -184,7 +185,7 @@ function histCharts(width, hist) {
   const x = (t) => padL + ((t - t0) / Math.max(1, t1 - t0)) * (width - padL - padR);
   const charts = [];
   const frame = (h, body, title, yticks, legend = "") =>
-    `<div class="hchart"><div class="htitle">${title}${legend}</div><svg width="${width}" height="${h}" viewBox="0 0 ${width} ${h}">${yticks}${body}<line class="xh" y1="0" y2="${h}" x1="-10" x2="-10"/></svg></div>`;
+    `<div class="hchart"><div class="htitle">${title}${legend}</div><svg width="${width}" height="${h}" viewBox="0 0 ${width} ${h}">${yticks}${body}<line class="xh" y1="0" y2="${h}" x1="0" x2="0" visibility="hidden"/></svg></div>`;
   const scale = (lo, hi, h, pad = 6) => (v) => pad + (h - 2 * pad) * (1 - (v - lo) / Math.max(1e-9, hi - lo));
   const ticks = (vals, yf, fmt) => vals.map((v) => `<line class="grid" x1="${padL}" x2="${width - padR}" y1="${yf(v)}" y2="${yf(v)}"/><text class="tick" x="${padL - 8}" y="${yf(v) + 4}" text-anchor="end">${fmt(v)}</text>`).join("");
   const path = (pts) => pts.filter((p) => p[1] != null).map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join("");
@@ -315,7 +316,7 @@ function hookCrosshair(hist) {
     let best = 0;
     hist.forEach((o, i) => { if (Math.abs(hover.x(o.time) - px) < Math.abs(hover.x(hist[best].time) - px)) best = i; });
     const o = hist[best], xx = hover.x(o.time);
-    box.querySelectorAll(".xh").forEach((l) => { l.setAttribute("x1", xx); l.setAttribute("x2", xx); });
+    box.querySelectorAll(".xh").forEach((l) => { l.setAttribute("x1", xx); l.setAttribute("x2", xx); l.removeAttribute("visibility"); });
     $("wx-readout").textContent = `${clock(o.time)}: ${o.category}, ${Math.round(f(o.temp_c))}°F with dew point ${Math.round(f(o.dew_c))}°F, ${lowerFirst(windWords(o.wind))}, ` +
       `${o.ceiling == null ? "no ceiling" : `ceiling ${num(o.ceiling)} ft`}, ${o.visibility >= 10 ? "10+" : o.visibility} mi${o.weather ? `, ${o.weather}` : ""}`;
   };

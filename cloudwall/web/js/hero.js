@@ -146,13 +146,19 @@ function showHero(el, a, state) {
   const v = a.vrate || 0;
   roll($("h-alt"), a.on_ground ? 0 : a.alt);
   $("h-arrow").innerHTML = v > 300 ? '<span class="up">▲</span>' : v < -300 ? '<span class="down">▼</span>' : "";
-  $("h-vrate").textContent = Math.abs(v) > 100 ? (v > 0 ? "+" : "") + num(v) + " fpm" : "level";
+  // where the autopilot is taking it: the selected altitude, when it differs from where it is now
+  const onApproach = (a.modes || []).includes("approach") || a.local === "arriving";
+  const tgt = a.target_alt != null && a.alt != null && a.target_alt >= 1000 && !onApproach && Math.abs(a.target_alt - a.alt) > 300
+    && (v > 300 ? a.target_alt > a.alt : v < -300 ? a.target_alt < a.alt : true) ? a.target_alt : null;
+  const rate = Math.abs(v) > 100 ? `${v > 0 ? "+" : "−"}${num(Math.abs(v))} ft/min` : "level";
+  $("h-vrate").textContent = tgt != null ? `${rate}, heading for ${num(Math.round(tgt / 100) * 100)} ft` : rate;
   roll($("h-gs"), a.gs);
   $("h-mph").textContent = num((a.gs || 0) * 1.15078) + " mph";
   roll($("h-dist"), a.dist, (x) => x.toFixed(1));
   $("h-dist2").textContent = `${(a.dist * 1.15078).toFixed(1)} mi ${a.compass}`;
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
-  $("h-phase").textContent = a.local === "arriving" ? `Landing at ${state.airport.iata}` : a.local === "departing" ? `Climbing out of ${state.airport.iata}` : a.phase[0].toUpperCase() + a.phase.slice(1);
+  $("h-phase").textContent = a.local === "arriving" ? `Landing at ${state.airport.iata}` : a.local === "departing" ? `Leaving ${state.airport.iata}`
+    : a.track == null ? "" : `Toward the ${POINTS[Math.round(a.track / 22.5) % 16]}`;
 
   const sil = $("h-sil");
   if (sil && sil.dataset.shape !== info.shape + info.length) {
@@ -176,6 +182,16 @@ function showHero(el, a, state) {
   cur.state = state;
 }
 
+// "autopilot, approach" -> "On, flying the approach". Modes as the aircraft reports them.
+function autopilotWords(modes) {
+  if (!modes || !modes.length) return null;
+  const m = new Set(modes), on = m.has("autopilot");
+  const doing = m.has("approach") ? "flying the approach" : m.has("tcas") ? "avoiding traffic"
+    : m.has("lnav") || m.has("vnav") ? "following its flight plan" : m.has("althold") ? "holding altitude" : null;
+  if (!on && !doing) return null;
+  return `${on ? "On" : "Off"}${doing ? `, ${doing}` : ""}`;
+}
+
 // The short list beside the photo: times, aircraft, and when it passes the house.
 function renderFacts(a, state, elapsed = 0) {
   const r = a.route && a.route.plausible ? a.route : null, rows = [];
@@ -188,7 +204,9 @@ function renderFacts(a, state, elapsed = 0) {
   rows.push(["Overhead", left > 5 ? `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away` : a.dist < 1.5 ? "now" : "passed, heading away"]);
   const type = a.type_name || a.type;
   if (type && (r || a.local_inferred || a.route_pending)) rows.push(["Aircraft", type]);
-  if (a.reg) rows.push(["Registration", a.reg]);
+  if (a.reg) rows.push(["Registration", a.age != null ? `${a.reg}, built ${a.year}` : a.reg]);
+  const modes = autopilotWords(a.modes);
+  if (modes) rows.push(["Autopilot", modes]);
   const html = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
   const dl = $("h-facts");
   if (dl && dl._html !== html) dl.innerHTML = dl._html = html;
@@ -218,7 +236,7 @@ function weatherWords(w) {
 
 function todayLine(state) {
   const bits = [`<b>${state.today}</b> flyover${state.today === 1 ? "" : "s"} logged today`];
-  if (state.flow) bits.push(`${esc(state.airport.iata)} landing <b>${esc(state.flow.dir)}</b> on ${esc(state.flow.runways)}`);
+  if (state.flow) bits.push(`${esc(state.airport.iata)} landing <b>${esc(state.flow.dir)}</b> on runways ${esc(state.flow.runways.replace(" / ", " and "))}`);
   return bits.join('<span class="sep"></span>');
 }
 

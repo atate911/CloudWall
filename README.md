@@ -10,14 +10,15 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
 
 ## Screens
 
-- **Overhead** – a flight card for the aircraft closest to overhead: split-flap flight
-  number and airport codes, the airline's colours, a photo of the actual airframe, a
-  side-profile silhouette scaled to the aircraft's size, live altitude/speed/distance,
-  a countdown ring to the closest pass, and a line on whether you can actually see it
-  (cloud base, sun glare, night).
+- **Overhead** – a flight card for the aircraft closest to overhead: the flight number as a
+  departure board shows it (with "operated by" for regional partners), the airline's logo,
+  the route with distance flown and to go, altitude and climb or descent rate (with the
+  altitude the autopilot is heading for, when it reports one), speed, distance and heading,
+  and a photo of the airframe beside its departure and arrival times, when it passes the
+  house, the aircraft type, registration and build year, and what the autopilot is doing.
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
-  path across it (centre is straight up), or a radar scope with trails over a simple map
-  of the river and runways. It switches automatically; tap the label to choose.
+  path across it (centre is straight up), or a radar scope with trails over a faint map.
+  Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
 - **Quiet sky** – when nothing is overhead the card rotates through the next inbound
   aircraft, a heatmap of the day's traffic, the day's records and the last flyover.
   Tap to skip ahead.

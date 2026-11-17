@@ -225,7 +225,7 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .nu-foot .raw { font-size: .62rem; }
 
 /* ---------- radar and sky dome ---------- */
-.scope { display: flex; padding: .2rem; }
+.scope { display: flex; padding: 2.4rem .2rem 1.6rem; }
 .seg { position: absolute; top: .4rem; left: .2rem; z-index: 3; display: inline-flex; border: 1px solid var(--rule); border-radius: .55rem; overflow: hidden; }
 .seg button { font-size: .74rem; color: var(--slate); padding: .4rem .7rem; }
 .seg button + button { border-left: 1px solid var(--rule); }
@@ -289,7 +289,8 @@ td.num, th.num { text-align: right; }
 .board tr.hero td { background: color-mix(in srgb, var(--magenta) 7%, transparent); }
 .board tr.hero td.fl { color: var(--magenta); }
 .board td.fl { font-weight: 700; font-size: 1.1rem; }
-.board td.rt { font-weight: 700; } .board td.rt .dim { font: 400 .8rem var(--sans); }
+.board td.rt { font-weight: 700; }
+.board td.ty small { font-family: var(--sans); } .board td.rt .dim { font: 400 .8rem var(--sans); }
 .board td.lg { width: 6.4rem; padding-right: .2rem; }
 .board td.lg .sw { display: block; width: .3rem; height: 1.6rem; border-radius: 99px; opacity: .8; }
 .board td.lg .logo-tile + .sw { display: none; }
@@ -310,8 +311,10 @@ h2 { font-size: .95rem; font-weight: 700; margin: .3rem 0 .55rem; }
 .rec { display: flex; justify-content: space-between; align-items: baseline; gap: .8rem; padding: .45rem 0; border-top: 1px solid var(--rule); font-size: .9rem; }
 .rec b { font-weight: 700; font-variant-numeric: tabular-nums; }
 .types { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.4rem; }
-.types .type { flex: none; font: 400 .82rem var(--mono); border: 1px solid var(--rule); border-radius: 99px; padding: .2rem .6rem; }
-.types .type b { color: var(--blue); margin-left: .35rem; }
+.types .type { flex: none; font-size: .8rem; border: 1px solid var(--rule); border-radius: 99px; padding: .22rem .65rem; color: var(--ink-2); }
+.types .type code { font: 700 .8rem var(--mono); color: var(--ink); margin-right: .35rem; }
+.types .type b { color: var(--blue); margin-left: .4rem; font-variant-numeric: tabular-nums; }
+.usage { margin-top: 1.4rem; font-size: .76rem; color: var(--slate); line-height: 1.5; }
 .hours { display: flex; align-items: flex-end; gap: 3px; height: 3.2rem; }
 .hours i { flex: 1; background: var(--blue); min-height: 2px; border-radius: 2px 2px 0 0; opacity: .75; }
 .hours i.z { background: var(--rule); opacity: 1; }
@@ -324,6 +327,7 @@ h2 { font-size: .95rem; font-weight: 700; margin: .3rem 0 .55rem; }
   .icon-btn span { display: none; }
 }
 @media (max-aspect-ratio: 1/1) {
+  html { font-size: clamp(9px, min(2.15vw, 1.55vh), 26px); }
   #view-now { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .cols { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2, 1fr); }
 }
@@ -416,7 +420,11 @@ figcaption p { margin: 0; } figcaption .cap-main { font-weight: 700; color: var(
 .sw-taf h2 { margin: 0 0 .3rem; font-size: .95rem; }
 .sw-taf .taf-list { font-size: .78rem; }
 
-@media (max-width: 1100px) { .wx-grid { grid-template-columns: 1fr; } .wx-read { grid-template-columns: repeat(3, minmax(0, 1fr)); } .wx-read > div:nth-child(4) { border-left: 0; padding-left: 0; } }
+/* landscape keeps two columns; portrait stacks them */
+@media (max-aspect-ratio: 1/1) { .wx-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .wx-read dd { font-size: 1rem; } .wx-figs { gap: .8rem; } }
+/* short screens: the weather slide shows the forecast strip only */
+@media (max-height: 720px) { .wx-slide .taf-list { display: none; } }
 
 /* windsock seen from above: the one literal-coloured thing on the page, because windsocks are orange */
 .sock-band { stroke: var(--ink-2); stroke-width: .8; stroke-linejoin: round; }

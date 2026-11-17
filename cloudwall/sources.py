@@ -25,14 +25,55 @@ def normalise(a):
         "alt": alt,
         "on_ground": on_ground,
         "gs": a.get("gs"),
-        "track": a.get("track"),
         "vrate": vrate,
         "lat": a.get("lat"),
         "lon": a.get("lon"),
         "squawk": a.get("squawk"),
         "category": a.get("category"),
         "military": bool(a.get("dbFlags", 0) & 1),
+        # privacy programmes (LADD, PIA): the owner asked not to be identified
+        "private_owner": bool(a.get("dbFlags", 0) & 12),
+        "desc": tidy_type(a.get("desc")),
+        "year": _year(a.get("year")),
+        "owner_op": a.get("ownOp"),
+        "target_alt": _num(a.get("nav_altitude_mcp") or a.get("nav_altitude_fms")),
+        "modes": [m for m in a.get("nav_modes") or [] if isinstance(m, str)],
+        "alt_gps": _num(a.get("alt_geom")),
+        "track": a.get("track") if a.get("track") is not None else a.get("true_heading"),
     }
+
+
+def _num(v):
+    return v if isinstance(v, (int, float)) else None
+
+
+def _year(v):
+    try:
+        y = int(v)
+        return y if 1900 < y <= 2100 else None
+    except (TypeError, ValueError):
+        return None
+
+
+# Words to keep in capitals when tidying "BOEING 737 MAX 8" into "Boeing 737 MAX 8".
+KEEP_UPPER = {"MAX", "NG", "ER", "LR", "SR", "XR", "ATR", "CRJ", "EMB", "ERJ", "MD", "DC", "II", "III", "IV",
+              "SP", "XL", "XLS", "CJ", "CJ2", "CJ3", "CJ4", "LX", "GX", "EX", "BBJ", "TBM", "PC", "DHC", "RJ",
+              "ACJ", "NEO", "CEO", "STOL", "VTOL", "AS", "EC", "SA", "AW", "UH", "CH", "KC", "C", "F", "G", "B", "A"}
+
+
+def tidy_type(desc):
+    """'BOEING 737 MAX 8' -> 'Boeing 737 MAX 8'; 'AIRBUS A-321neo' stays readable."""
+    if not desc or not isinstance(desc, str):
+        return None
+    if desc != desc.upper():
+        return desc
+    words = []
+    for w in desc.split():
+        if any(ch.isdigit() for ch in w) or w in KEEP_UPPER or len(w) <= 2:
+            words.append(w)
+        else:
+            words.append(w[0] + w[1:].lower())
+    return " ".join(words)
 
 
 class Feeds:
@@ -175,7 +216,12 @@ class Demo:
             # altitude profile is pinned to the abeam point so passes look realistic
             alt = a["alt0"] + a["vrate"] * (a["along"] / a["gs"] * 60)
             alt = max(300, min(41000, alt))
+            info = DEMO_FLIGHTS[int(a["hex"][1:], 16)]
+            alt_target = (3000 if a["kind"] == "arr" else 15000 if a["kind"] == "dep" else None)
             out.append({
+                "desc": info[4], "year": 2008 + int(a["hex"][1:], 16) % 15, "owner_op": None, "private_owner": False,
+                "target_alt": alt_target, "modes": ["autopilot", "approach"] if a["kind"] == "arr" else ["autopilot", "lnav", "vnav"] if a["kind"] in ("dep", "over") else [],
+                "alt_gps": None,
                 "hex": a["hex"], "callsign": a["callsign"], "reg": a["reg"], "type": a["type"],
                 "alt": int(alt / 25) * 25, "on_ground": False,
                 "gs": a["gs"] + self.rng.uniform(-2, 2), "track": a["track"],

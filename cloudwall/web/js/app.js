@@ -24,7 +24,7 @@ function boardHtml() {
       <td class="lg">${state.logos && a.airline_iata ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc((r && r.airline) || a.airline || "")}"></span>` : ""}<i class="sw" style="background:${c ? c[0] : "var(--rule)"}"></i></td>
       <td class="fl">${esc(ident(a))}<small>${esc((r && r.airline) || a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || a.type_name || "")}</small></td>
       <td class="rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : '<span class="dim">—</span>'}</td>
-      <td class="ty">${esc(a.type || "")}</td>
+      <td class="ty">${esc(a.type || "")}<small>${esc(shortType(a.type_name))}</small></td>
       <td class="num">${altText(a)} <small class="u">ft</small><span class="vs">${v > 300 ? '<span class="up">▲</span>' : v < -300 ? '<span class="down">▼</span>' : ""}</span></td>
       <td class="num">${num(a.gs)} <small class="u">kt</small></td>
       <td class="num">${a.dist.toFixed(1)} <small class="u">nm</small><span class="cmp">${a.compass}</span></td>
@@ -33,6 +33,12 @@ function boardHtml() {
   return `<table class="board"><thead><tr><th></th><th>Flight</th><th>Route</th><th>Type</th><th class="num">Altitude</th><th class="num">Speed</th><th class="num">Distance</th><th class="num">Overhead in</th></tr></thead>
     <tbody>${rows.join("") || '<tr><td colspan="8" class="empty">No airborne traffic within ' + R.radius_nm + " nm.</td></tr>"}</tbody></table>
     <div class="board-foot">Soonest overhead first. Tap a flight to show it on the flight card.</div>`;
+}
+
+// "Boeing 737-800" stays; the database's long variants ("737NG 890/W") are trimmed to the model
+function shortType(name) {
+  if (!name) return "";
+  return name.length > 22 ? name.split(/[\s/]/).slice(0, 2).join(" ") : name;
 }
 
 // ---------- logbook ----------
@@ -65,12 +71,12 @@ async function loadLog() {
       <div class="stat"><div class="label">Airlines</div><div class="v">${L.airlines.length}</div></div>
     </div>
     <h2>Today by hour</h2><div class="hours">${bars}</div><div class="hours-axis">${axis}</div>
-    <h2>Type collection</h2><div class="types">${L.types.map((t) => `<span class="type" title="${esc(t.name)}">${esc(t.type)}<b>${t.n}</b></span>`).join("") || '<span class="dim">Nothing yet — wait for the first flyover.</span>'}</div>
+    <h2>Type collection</h2><div class="types">${L.types.map((t) => `<span class="type"><code>${esc(t.type)}</code>${esc(shortType(t.name) || "")}<b>${t.n}</b></span>`).join("") || '<span class="dim">Nothing yet — wait for the first flyover.</span>'}</div>
     <div class="cols"><div>${recordsHtml("Records today", L.records_today)}</div><div>${recordsHtml("Records all time", L.records_all)}</div></div>
-    ${fa && fa.enabled ? `<div class="dim" style="margin-top:.9rem">${budgetLine(fa)}</div>` : ""}
     <h2 style="margin-top:.9rem">Recent flyovers</h2>
     ${L.recent.map((s) => `<div class="rec"><span><b>${esc(s.flight || s.callsign || s.reg || s.hex)}</b> <span class="dim">${esc(s.type || "")} ${s.origin ? esc(s.origin) + " → " + esc(s.dest) : ""}</span> ${badges(s.badges)}</span>
-      <span class="dim">${new Date(s.ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${num(s.alt_ft)} ft · ${s.min_dist_nm.toFixed(1)} nm</span></div>`).join("")}`;
+      <span class="dim">${new Date(s.ts * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}, ${num(s.alt_ft)} ft, ${s.min_dist_nm.toFixed(1)} nm from home</span></div>`).join("")}
+    ${fa && fa.enabled ? `<h2 style="margin-top:1.4rem">Flight data usage</h2><div class="usage">${budgetLine(fa)}</div>` : ""}`;
 }
 
 // ---------- scope: sky dome while something is overhead, radar otherwise ----------

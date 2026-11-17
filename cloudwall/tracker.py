@@ -88,6 +88,15 @@ class Tracker:
             a["owner"] = info.get("owner")
             a["photo"] = info.get("photo")
             a["reg"] = a.get("reg") or info.get("reg")
+        # the feed's own description ("Boeing 737 MAX 8") reads better than the database's variant codes
+        if a.get("desc"):
+            a["type_name"] = a["desc"]
+        if a.get("owner_op") and not a.get("owner"):
+            a["owner"] = a["owner_op"]
+        if a.get("private_owner"):
+            a["owner"] = None                     # owner asked not to be identified
+        if a.get("year"):
+            a["age"] = max(0, time.localtime().tm_year - a["year"])
         free = self.enricher.route(a.get("callsign"))
         if free and free.get("airline"):
             a["airline"] = free["airline"]      # the airline is reliable even when the route isn't
