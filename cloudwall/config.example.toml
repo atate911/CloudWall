@@ -13,6 +13,15 @@ iata = "PDX"
 city = "Portland"
 lat = 45.5887
 lon = -122.5975
+# Smaller fields nearby: light aircraft low over them are labelled as theirs, and they're
+# marked on the radar. Pearson Field and Troutdale are built in; listing any here replaces them.
+# [[airport.others]]
+# code = "VUO"
+# name = "Pearson Field"
+# city = "Vancouver"
+# lat = 45.6205
+# lon = -122.6564
+# elevation_ft = 25
 
 [tracking]
 radius_nm = 15         # how far out the board and radar look
@@ -70,6 +79,13 @@ opacity = 0.32         # 0 to 1: how strongly the streets show under the radar
 [logos]                # airline logos on the flight card, downloaded once per airline and cached
 enabled = true
 # url = "https://pics.avs.io/240/80/{iata}@2x.png"   # where logos come from ({iata} = airline code)
+
+[extras]               # more free data, fetched only while a screen is open
+military = true        # military jets heard nearby that send altitude but no position (adsb.fi)
+military_radius_nm = 40
+tfr = true             # temporary flight restrictions from the FAA, on the radar and Weather tab
+tfr_radius_nm = 30
+contrails = true       # contrail forecast from upper-air temperature and humidity (Open-Meteo)
 
 [server]
 host = "0.0.0.0"

@@ -1,7 +1,7 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS } from "./util.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords } from "./util.js";
 import { typeInfo } from "./data.js";
-import { plate, renderLineup } from "./plate.js";
+import { plate, renderLineup, drawn } from "./plate.js";
 import { flap, roll } from "./fx.js";
 import { sky } from "./sky.js";
 import { map, tileLayout } from "./scope.js";
@@ -61,11 +61,25 @@ export function boardFlight(f) {
 }
 const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
+// The airport an inferred arrival or departure belongs to: PDX, or Pearson / Troutdale for light aircraft.
+export function localPlace(a, state) {
+  const f = a.local_field;
+  return f ? { iata: f.code, city: f.name, name: f.name } : { iata: state.airport.iata, city: state.airport.city, name: state.airport.iata };
+}
+export function localWords(a, state) {
+  const p = localPlace(a, state);
+  return a.local === "arriving" ? `Landing at ${p.name}` : a.local === "departing" ? `Just left ${p.name}`
+    : a.local === "local" ? `Flying near ${p.name}` : "";
+}
+
 function routeHtml(a, state) {
-  const r = a.route, ap = state.airport;
+  const r = a.route, ap = localPlace(a, state);
   if (a.route_pending && !r) {
     const prov = (state.live_routes && state.live_routes.label) || "the flight data service";
     return `<div class="noroute pending">Looking up route…<small>Asking ${esc(prov)} where this flight is going</small></div>`;
+  }
+  if (a.local === "local") {
+    return `<div class="noroute">${esc(localWords(a, state))}<small>${esc(a.type_name || a.type || "Light aircraft")}, low over the field: training or sightseeing, most likely</small></div>`;
   }
   if (a.local_inferred && (!r || !r.plausible)) {
     // the route database is wrong or silent, but the aircraft is clearly landing or leaving here
@@ -74,7 +88,7 @@ function routeHtml(a, state) {
     return `<div class="route inferred">
       ${arriving ? `<div class="apt unknown"><span>Origin not known</span></div>` : `<div class="apt local"><div class="flaps" id="h-orig"></div><small>${esc(ap.city || ap.iata)}</small></div>`}
       <div><svg class="arc" viewBox="0 0 200 40"><path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--rule)" stroke-width="1" stroke-dasharray="2 3"/></svg>
-        <div class="arc-note">${arriving ? "Landing at" : "Just departed"} ${esc(ap.iata)}<br><span class="why">${why}</span></div></div>
+        <div class="arc-note">${esc(localWords(a, state))}<br><span class="why">${a.local_field ? "Light aircraft, low over the field" : why}</span></div></div>
       ${arriving ? `<div class="apt r local"><div class="flaps" id="h-dest"></div><small>${esc(ap.city || ap.iata)}</small></div>` : `<div class="apt r unknown"><span>Destination not known</span></div>`}
     </div>`;
   }
@@ -122,13 +136,13 @@ function showHero(el, a, state) {
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
   $("h-pin").hidden = !state.pinned;
 
-  const inferred = a.local_inferred && (!r || !r.plausible);
+  const inferred = a.local_inferred && a.local !== "local" && (!r || !r.plausible);
   const key = (a.route_pending && !r ? "pending|" : "") + (inferred ? "inferred:" + a.local + "|" : "") + (r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || ""));
   if (key !== cur.routeKey) {
     cur.routeKey = key;
     $("h-route").innerHTML = routeHtml(a, state);
     if (inferred) {
-      const here = state.airport.iata;
+      const here = localPlace(a, state).iata;
       flap($(a.local === "arriving" ? "h-dest" : "h-orig"), here);
     } else if (r) { flap($("h-orig"), r.origin.iata || "???"); flap($("h-dest"), r.dest.iata || "???"); }
   }
@@ -157,7 +171,7 @@ function showHero(el, a, state) {
   roll($("h-dist"), a.dist, (x) => x.toFixed(1));
   $("h-dist2").textContent = `${(a.dist * 1.15078).toFixed(1)} mi ${a.compass}`;
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
-  $("h-phase").textContent = a.local === "arriving" ? `Landing at ${state.airport.iata}` : a.local === "departing" ? `Leaving ${state.airport.iata}`
+  $("h-phase").textContent = a.local ? localWords(a, state)
     : a.track == null ? "" : `Toward the ${POINTS[Math.round(a.track / 22.5) % 16]}`;
 
   const sil = $("h-sil");
@@ -212,6 +226,9 @@ function renderFacts(a, state, elapsed = 0) {
   rows.push(["Overhead", left > 5 ? `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away` : a.dist < 1.5 ? "now" : "passed, heading away"]);
   const type = a.type_name || a.type;
   if (type && (r || a.local_inferred || a.route_pending)) rows.push(["Aircraft", type]);
+  if (a.contrail) rows.push(["Contrail", a.contrail === "persistent" ? "Likely, long-lasting" : "Likely, short-lived"]);
+  const seats = seatWords(a.seats);
+  if (seats) rows.push(["Seats", seats]);
   if (a.reg) rows.push(["Registration", a.age != null ? `${a.reg}, built ${a.year}` : a.reg]);
   const modes = autopilotWords(a.modes);
   if (modes) rows.push(["Autopilot", modes]);
@@ -243,7 +260,7 @@ function weatherWords(w) {
 }
 
 function todayLine(state) {
-  const bits = [`<b>${state.today}</b> flyover${state.today === 1 ? "" : "s"} logged today`];
+  const bits = [`<b>${state.today}</b> flyover${state.today === 1 ? "" : "s"} logged today${state.seats_today ? `, about <b>${num(state.seats_today)}</b> seats` : ""}`];
   if (state.flow) bits.push(`${esc(state.airport.iata)} landing <b>${esc(state.flow.dir)}</b> on runways ${esc(state.flow.runways.replace(" / ", " and "))}`);
   return bits.join('<span class="sep"></span>');
 }
@@ -280,8 +297,8 @@ function fillNext(state, n) {
   const info = typeInfo(n), pk = `${info.type}|${info.length}|${info.name}`, pl = $("nu-plate");
   if (pl.dataset.key !== pk) {
     pl.dataset.key = pk;
-    pl.innerHTML = info.known ? plate(info) : "";
-    pl.hidden = !info.known;
+    pl.innerHTML = drawn(info) ? plate(info) : "";
+    pl.hidden = !drawn(info);
   }
   $("nu-look").textContent = passText(state, n);
   const left = n.cpa_s - (Date.now() - (state._at || Date.now())) / 1000;
@@ -416,6 +433,8 @@ function showIdle(el, state) {
   refreshExtras();
   const L = extras.log, H = extras.heat;
   const slides = ["quiet"];
+  if ((state.heard || []).length) slides.unshift("military");
+  if ((state.tfrs || []).some((t) => t.active && !t.drones_only)) slides.push("airspace");
   if (extras.wx && extras.wx.now) slides.push("weather");
   if (H && H.cells.length > 8) slides.push("heat");
   const fleet = fleetToday(L);
@@ -435,7 +454,11 @@ function showIdle(el, state) {
   if (!changed) return;                             // other slides are drawn once
   slideShown = slide;
   el._key = null;
-  if (kind === "weather") {
+  if (kind === "military") {
+    el.innerHTML = `<div class="idle">${militaryHtml(state.heard)}</div>${dots}`;
+  } else if (kind === "airspace") {
+    el.innerHTML = `<div class="idle">${airspaceHtml(state)}</div>${dots}`;
+  } else if (kind === "weather") {
     el.innerHTML = `<div class="wx-slot"></div>${dots}`;
     weatherSlide(el.querySelector(".wx-slot"), extras.wx, state);
   } else if (kind === "heat") {
@@ -456,7 +479,7 @@ function showIdle(el, state) {
     const s = L.recent[0];
     const info = typeInfo({ type: s.type, type_name: s.type_name, model: s.model });
     const pic = s.photo ? `<img class="photo" src="${encodeURI(s.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`
-      : info.known ? `<div class="last-plate sil-box">${plate(info)}</div>` : "";
+      : drawn(info) ? `<div class="last-plate sil-box">${plate(info)}</div>` : "";
     el.innerHTML = `<div class="idle last">${pic}<div>${lastSlide(s)}</div></div>${dots}`;
   }
 }
@@ -464,10 +487,40 @@ function showIdle(el, state) {
 // Types seen today that have a drawing, most frequent first (at most 36), for the lineup.
 function fleetToday(L) {
   return ((L && L.types_today) || []).map((t) => ({ info: typeInfo({ type: t.type, type_name: t.name, model: t.model }), n: t.n }))
-    .filter((t) => t.info.known).slice(0, 36);
+    .filter((t) => drawn(t.info)).slice(0, 36);
 }
 
 export function nextSlide() { slide++; slideAt = Date.now(); }
+// Something else drew in the card (the emergency takeover): rebuild from scratch next time.
+export function forgetHero() { cur = { hex: undefined }; }
+
+// "F15" -> "F-15": how people say military type codes
+export const milType = (code) => (/^[A-Z]{1,2}\d{1,3}[A-Z]?$/.test(code || "") ? code.replace(/^([A-Z]+)(\d)/, "$1-$2") : code || "military aircraft");
+
+export function heardGroups(heard) {
+  const by = new Map();
+  for (const a of heard) {
+    const k = a.desc || milType(a.type), g = by.get(k) || { name: k, type: milType(a.type), n: 0, alts: [] };
+    g.n++; if (a.alt != null) g.alts.push(a.alt); by.set(k, g);
+  }
+  return [...by.values()];
+}
+
+function militaryHtml(heard) {
+  const groups = heardGroups(heard);
+  const lines = groups.map((g) => `<div class="mil-row"><b>${g.n > 1 ? `${g.n} × ` : ""}${esc(g.name)}</b><span>${g.alts.length ? `around ${num(Math.min(...g.alts))}${g.alts.length > 1 && Math.max(...g.alts) - Math.min(...g.alts) > 400 ? `–${num(Math.max(...g.alts))}` : ""} ft` : "altitude unknown"}</span></div>`).join("");
+  return `<div class="dim">Heard nearby, position unknown</div><h1>Military jets up</h1>${lines}
+    <p class="dim">Their transponders send altitude but no position, so receivers near Portland can hear them without placing them on the map. Look and listen: they're usually within a few dozen miles.</p>`;
+}
+
+export function airspaceHtml(state) {
+  const t = state.tfrs.find((x) => x.active && !x.drones_only);
+  const when = t.end ? `until ${new Date(t.end * 1000).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" })}` : "until further notice";
+  const alt = t.floor && t.ceiling ? `${t.floor.text === "the surface" ? "From the surface" : `From ${t.floor.text}`} to ${t.ceiling.text}` : "";
+  return `<div class="dim">Flight restriction ${t.dist_nm < 0.5 ? "over the house" : `${t.dist_nm} nm away`}</div><h1>${esc(t.name || "Restricted airspace")}</h1>
+    <div class="next">${esc(t.kind)}</div><div>${esc([alt, when].filter(Boolean).join(", "))}.</div>
+    <p class="dim">Shown as the hatched area on the radar. Source: FAA notice ${esc(t.id)}.</p>`;
+}
 export function renderHero(el, state) {
   if (state.hero) showHero(el, state.hero, state);
   else { cur.a = null; showIdle(el, state); }

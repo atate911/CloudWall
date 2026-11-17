@@ -6,7 +6,8 @@ import threading
 import time
 from collections import deque
 
-from . import geo
+from . import contrails as contrail_mod, geo
+from .seats import seats as seat_estimate
 from .logos import AIRLINE_NAMES, flight_number, iata_for
 
 RARE_TYPES = {
@@ -18,6 +19,16 @@ RARE_TYPES = {
 }
 EMERGENCY = {"7500": "HIJACK 7500", "7600": "RADIO FAIL 7600", "7700": "EMERGENCY 7700"}
 AIRLINE = re.compile(r"^([A-Z]{3})\d")
+
+# Transponder codes that mean trouble, and the matching status some transponders send directly.
+EMERGENCIES = {
+    "7700": ("Emergency", "The crew has declared an emergency."),
+    "7600": ("Radio failure", "The crew has lost radio contact with air traffic control."),
+    "7500": ("Hijack code", "The code for unlawful interference. It is occasionally set by mistake and "
+                            "corrected within seconds."),
+}
+EMERGENCY_STATUS = {"general": "7700", "nordo": "7600", "unlawful": "7500"}
+EMERGENCY_CONFIRM = 2       # consecutive updates before the screen turns red: one stray code isn't enough
 RESIGHT_SECONDS = 30 * 60
 LOOKAHEAD_S = 10 * 60        # look routes up this far ahead of an aircraft reaching the house
 STALE_SECONDS = 60
@@ -51,6 +62,11 @@ class Tracker:
         self.heat = {tuple(map(int, k.split(","))): v for k, v in
                      (store.cache_get("heat", self.heat_day, 2 * 86400)[1] or {}).items()}
         self.heat_saved = time.time()
+        self.emergency_seen = {}  # hex -> (consecutive updates squawking, first seen)
+        self.emergency = []
+        self.heard = []           # military aircraft heard nearby with no position
+        self.tfrs = []
+        self.contrails = None
 
     # -- per-aircraft derivations -------------------------------------------
     def _on_ground(self, a):
@@ -80,7 +96,7 @@ class Tracker:
         v = a.get("vrate") or 0
         a["phase"] = ("ground" if a["on_ground"] else
                       "climbing" if v > 300 else "descending" if v < -300 else "level")
-        a["emergency"] = EMERGENCY.get(a.get("squawk"))
+        a["emergency"] = EMERGENCY.get(a.get("squawk")) or EMERGENCY.get(EMERGENCY_STATUS.get(a.get("emergency_status")))
 
     def _enrich(self, a):
         info = self.enricher.aircraft(a["hex"])
@@ -106,6 +122,8 @@ class Tracker:
         elif (a.get("callsign") or "")[:3] in AIRLINE_NAMES and re.match(r"^[A-Z]{3}\d", a["callsign"]):
             a["airline"] = AIRLINE_NAMES[a["callsign"][:3]]
         a["airline_iata"] = iata_for(a.get("callsign"), (free or {}).get("airline_iata"))
+        m = AIRLINE.match(a.get("callsign") or "")
+        a["seats"] = seat_estimate(m.group(1) if m else None, a.get("type"))
         route = self._with_geometry(a, free)
         state, live = self._live_route(a, route)
         if live:
@@ -126,7 +144,8 @@ class Tracker:
             a["local_inferred"] = bool(a["local"])
         if a["local"] == "arriving" and not (a.get("route") and a["route"].get("plausible")):
             # no believable route, but it's on approach here: estimate the landing from the runway distance
-            ap = self.cfg["airport"]
+            ap = a.get("local_field") and next(f for f in self.cfg["airport"]["others"]
+                                               if f["code"] == a["local_field"]["code"]) or self.cfg["airport"]
             a["landing_est"] = self._eta_estimate(a, geo.haversine_nm(a["lat"], a["lon"], ap["lat"], ap["lon"]), ap)
         r = a.get("route")
         a["flight_no"] = (r["flight"] if r and r.get("plausible") and r.get("source") else None) \
@@ -149,6 +168,9 @@ class Tracker:
                 or a.get("category") == "A7"):
             return None
         d = geo.haversine_nm(a["lat"], a["lon"], ap["lat"], ap["lon"])
+        field = self._small_field(a, d)
+        if field:
+            return field
         if d > 18:
             return None
         to_ap = geo.bearing_deg(a["lat"], a["lon"], ap["lat"], ap["lon"])
@@ -158,6 +180,19 @@ class Tracker:
             return "arriving"
         if v > 300 and off > 120:
             return "departing"
+        return None
+
+    def _small_field(self, a, d_main):
+        """Light aircraft low over Pearson Field or Troutdale are theirs, not the big airport's."""
+        if AIRLINE.match(a.get("callsign") or "") or a.get("category") in ("A3", "A4", "A5"):
+            return None
+        for f in self.cfg["airport"].get("others") or []:
+            d = geo.haversine_nm(a["lat"], a["lon"], f["lat"], f["lon"])
+            if d > 3 or d > d_main or a["alt"] - f.get("elevation_ft", 0) > 2000:
+                continue
+            v = a.get("vrate") or 0
+            a["local_field"] = {"code": f["code"], "name": f["name"], "city": f.get("city")}
+            return "arriving" if v < -300 else "departing" if v > 300 else "local"
         return None
 
     def _with_geometry(self, a, route):
@@ -275,8 +310,9 @@ class Tracker:
                 ts=now, day=time.strftime("%Y-%m-%d", time.localtime(now)), hex=a["hex"],
                 callsign=a.get("callsign"), reg=a.get("reg"), type=a.get("type"),
                 airline_icao=airline_icao, min_dist_nm=round(a["dist"], 2), alt_ft=a["alt"],
-                gs=a.get("gs"), badges=badges)
-            s = self.active[a["hex"]] = {"id": sid, "min": a["dist"], "badges": badges}
+                gs=a.get("gs"), badges=badges, seats=(a.get("seats") or {}).get("n"))
+            s = self.active[a["hex"]] = {"id": sid, "min": a["dist"], "badges": badges,
+                                         "seats": (a.get("seats") or {}).get("n")}
         s["ts"] = now
         upd = {}
         if a["dist"] < s["min"]:
@@ -288,6 +324,10 @@ class Tracker:
         if a.get("photo") and not s.get("photo"):
             s["photo"] = True
             upd.update(photo=a["photo"])
+        n = (a.get("seats") or {}).get("n")
+        if n is not None and n != s.get("seats"):
+            s["seats"] = n
+            upd.update(seats=n)
         if a.get("type_name") and not s.get("named"):
             s["named"] = True
             upd.update(type_name=a["type_name"], reg=a.get("reg"))
@@ -373,8 +413,11 @@ class Tracker:
         # look up the nearest aircraft, plus anything heading for the house soon
         t = self.cfg["tracking"]
         soon = [a for a in airborne[10:] if 0 < a["cpa_s"] <= LOOKAHEAD_S and a["cpa_nm"] <= t["overhead_nm"]]
-        for a in airborne[:10] + soon:
+        emergency = self._emergencies(raw, now)
+        for a in airborne[:10] + soon + [a for a in emergency if a not in airborne[:10] + soon]:
             self._enrich(a)
+        for a in airborne:
+            a["contrail"] = contrail_mod.for_altitude(self.contrails, a["alt"])
         by_hex = {a["hex"]: a for a in raw}
         with self.lock:
             self.hero_hex = self._pick_hero(by_hex)
@@ -385,7 +428,24 @@ class Tracker:
             if self.cfg["airport"]["icao"] == "KPDX":
                 self._update_flow(raw)
             self.aircraft = raw
+            self.emergency = emergency
             self.status = {"source": source, "ok": True, "updated": now, "error": None}
+
+    def _emergencies(self, raw, now):
+        """Aircraft squawking 7700, 7600 or 7500, confirmed over more than one update."""
+        seen, out = {}, []
+        for a in raw:
+            code = a.get("squawk") if a.get("squawk") in EMERGENCIES else EMERGENCY_STATUS.get(a.get("emergency_status"))
+            if not code:
+                continue
+            n, since = self.emergency_seen.get(a["hex"], (0, now))
+            seen[a["hex"]] = (n + 1, since)
+            if n + 1 >= EMERGENCY_CONFIRM:
+                title, meaning = EMERGENCIES[code]
+                a.update(emergency_code=code, emergency_title=title, emergency_meaning=meaning, emergency_since=since)
+                out.append(a)
+        self.emergency_seen = seen
+        return sorted(out, key=lambda a: a["dist"])
 
     def failed(self, source, error):
         """One missed update isn't worth a warning on screen; 30 seconds without data is."""
@@ -417,4 +477,8 @@ class Tracker:
                 "weather": self.weather, "status": self.status, "basemap": self.basemap, "logos": self.logos,
                 "live_routes": p.status() if (p := getattr(self.enricher, "live", None)) else None,
                 "today": self.store.count("day=?", (time.strftime("%Y-%m-%d"),)),
+                "seats_today": self.store.seat_total("day=?", (time.strftime("%Y-%m-%d"),))["seats"],
+                "emergency": self.emergency if self.aircraft else [],
+                "heard": self.heard, "tfrs": self.tfrs,
+                "contrails": {k: v for k, v in self.contrails.items() if k != "levels"} if self.contrails else None,
             }

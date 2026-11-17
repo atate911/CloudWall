@@ -15,7 +15,12 @@ DEFAULTS = {
         "lon": -122.4740,
         "elevation_ft": 100,
     },
-    "airport": {"icao": "KPDX", "iata": "PDX", "city": "Portland", "lat": 45.5887, "lon": -122.5975},
+    "airport": {"icao": "KPDX", "iata": "PDX", "city": "Portland", "lat": 45.5887, "lon": -122.5975,
+                # smaller fields nearby: their traffic is labelled as theirs, not PDX's
+                "others": [{"code": "VUO", "name": "Pearson Field", "city": "Vancouver",
+                            "lat": 45.6205, "lon": -122.6564, "elevation_ft": 25},
+                           {"code": "TTD", "name": "Troutdale", "city": "Troutdale",
+                            "lat": 45.5494, "lon": -122.4013, "elevation_ft": 39}]},
     "tracking": {
         "radius_nm": 15,        # how far out to fetch and show on the board/radar
         "overhead_nm": 3.5,     # inside this, an aircraft counts as "overhead" and is logged
@@ -37,6 +42,10 @@ DEFAULTS = {
     "map": {"style": "dark", "opacity": 0.32, "url": "", "attribution": ""},
     # Airline logos on the flight card, fetched by airline code and cached on disk
     "logos": {"enabled": True, "url": ""},
+    # Extra free data: military jets heard without a position, temporary flight
+    # restrictions (FAA), and the contrail forecast (Open-Meteo upper-air data).
+    "extras": {"military": True, "military_radius_nm": 40, "military_url": "https://opendata.adsb.fi/api/v2/mil",
+               "tfr": True, "tfr_radius_nm": 30, "contrails": True},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }

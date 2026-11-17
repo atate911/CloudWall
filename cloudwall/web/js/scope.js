@@ -7,6 +7,7 @@
 // instead of hopping between updates.
 import { esc, ident, projected, offset, azEl, clamp } from "./util.js";
 import { sky } from "./sky.js";
+import { moonPosition, moonPhase, moonGlyph } from "./astro.js";
 
 const PLANE = "M0,-4 L1,-1 L4.2,1.2 L4.2,2 L1,1 L.8,3 L2,4 L2,4.6 L0,4 L-2,4.6 L-2,4 L-.8,3 L-1,1 L-4.2,2 L-4.2,1.2 L-1,-1 Z";
 const RAD = Math.PI / 180;
@@ -95,7 +96,7 @@ function place(state, a, t, mode) {
 function radarStatic(state) {
   const R = state.tracking.radius_nm, k = 100 / R, home = state.home;
   const based = !!(state.basemap && state.basemap.enabled);
-  let s = `<g clip-path="url(#scope-clip)">${mapLayer(home, k, based)}</g>`;
+  let s = `<g clip-path="url(#scope-clip)">${mapLayer(home, k, based)}${tfrLayer(state, k)}${fieldsLayer(state, k)}</g>`;
   for (const r of [R, (R * 2) / 3, R / 3]) s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + " nm")}`;
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
   const ap = offset(home, state.airport);
@@ -105,7 +106,52 @@ function radarStatic(state) {
     const o = offset(home, a);
     if (Math.hypot(o.x, o.y) < R) s += `<circle class="blip gnd" cx="${o.x * k}" cy="${-o.y * k}" r="1.1"/>`;
   }
-  return s + `<circle class="home" r="2.2"/>`;
+  return s + `<circle class="home" r="2.2"/>` + heardNote(state);
+}
+
+// Temporary flight restrictions: hatched while active, dashed outline when they start later.
+function tfrLayer(state, k) {
+  let s = "";
+  for (const t of state.tfrs || []) {
+    for (const ring of t.shapes || []) {
+      const p = ring.map(([lat, lon]) => { const o = offset(state.home, { lat, lon }); return [o.x * k, -o.y * k]; });
+      s += `<polygon class="tfr${t.active ? "" : " later"}" points="${p.map((q) => q.map((v) => v.toFixed(1)).join(",")).join(" ")}"/>`;
+      // label it where it's clear of place names: middle, else just inside the top or bottom edge
+      const cx = p.reduce((a, q) => a + q[0], 0) / p.length, cy = p.reduce((a, q) => a + q[1], 0) / p.length;
+      const ys = p.map((q) => q[1]), spots = [cy + 2, Math.min(...ys) + 6, Math.max(...ys) - 2];
+      const free = (y) => !placeBoxes.some((b) => cx + 5 > b.x0 && cx - 5 < b.x1 && y > b.y0 && y - 4.5 < b.y1);
+      const y = spots.find(free) ?? spots[0];
+      if (Math.hypot(cx, y) < 96) {
+        s += `<text class="tfr-label" x="${cx.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle">TFR</text>`;
+        placeBoxes.push({ x0: cx - 5, x1: cx + 5, y0: y - 4.5, y1: y + 1 });
+      }
+    }
+  }
+  return s;
+}
+
+// The small airfields nearby (Pearson, Troutdale): a ring and their code.
+function fieldsLayer(state, k) {
+  let s = "";
+  for (const f of state.airport.others || []) {
+    const o = offset(state.home, f);
+    if (Math.hypot(o.x, o.y) * k > 95) continue;
+    s += `<circle class="field" cx="${(o.x * k).toFixed(1)}" cy="${(-o.y * k).toFixed(1)}" r="2.2"/>` +
+      `<text class="field-label" x="${(o.x * k).toFixed(1)}" y="${(-o.y * k + 7.5).toFixed(1)}" text-anchor="middle">${esc(f.code)}</text>`;
+    // aircraft labels steer around the airfield and its code, as they do around place names
+    placeBoxes.push({ x0: o.x * k - 5, x1: o.x * k + 5, y0: -o.y * k - 2.5, y1: -o.y * k + 8.5 });
+  }
+  return s;
+}
+
+// Military jets heard with no position (e.g. F-16s with an older transponder).
+function heardNote(state) {
+  const h = state.heard || [];
+  if (!h.length) return "";
+  const by = {};
+  for (const a of h) by[a.type || "?"] = (by[a.type || "?"] || 0) + 1;
+  const what = Object.entries(by).map(([t, n]) => `${n > 1 ? n + " × " : ""}${/^[A-Z]{1,2}\d/.test(t) ? t.replace(/^([A-Z]+)(\d)/, "$1-$2") : t}`).join(", ");
+  return `<text class="heard-note" x="0" y="96" text-anchor="middle">Heard nearby, no position: ${esc(what)}</text>`;
 }
 
 function domeStatic(state, dt) {
@@ -113,6 +159,8 @@ function domeStatic(state, dt) {
   for (const el of [30, 60]) { const r = ((90 - el) / 90) * 100; s += `<circle class="ring" r="${r}"/>${ringLabel(r, el + "°")}`; }
   s += `<circle class="ring horizon" r="100"/><line class="ring" x1="-4" y1="0" x2="4" y2="0"/><line class="ring" x1="0" y1="-4" x2="0" y2="4"/>${COMPASS}`;
   if (sky.sun.el > 0) { const [x, y] = domeXY(sky.sun); s += `<circle class="sun-glow" cx="${x}" cy="${y}" r="11"/><circle class="sun" cx="${x}" cy="${y}" r="4.5"/>`; }
+  const moon = moonPosition(Date.now(), state.home.lat, state.home.lon);
+  if (moon.el > 0) { const [x, y] = domeXY(moon), ph = moonPhase(Date.now()); s += `<g class="sky-moon" transform="translate(${x.toFixed(1)},${y.toFixed(1)})">${moonGlyph(4, ph.phase, ph.fraction)}</g>`; }
   const h = state.hero;
   if (h && !h.on_ground && h.alt != null) {
     // where it has been and where it is going across the sky
@@ -134,7 +182,7 @@ function domeStatic(state, dt) {
       s += `<circle class="sky-peak" cx="${x}" cy="${y}" r="2.2"/><text class="peak-label" x="${lx}" y="${ly}" text-anchor="${x > 0 ? "end" : "start"}">highest ${Math.round(best.el)}°</text>`;
     }
   }
-  return s;
+  return s + heardNote(state);
 }
 
 // ---- persistent aircraft elements ----
@@ -173,6 +221,9 @@ function ensureLayers(svg) {
   svg.innerHTML = "";
   const defs = el("defs", { id: "s-defs" }, svg);
   el("circle", { r: 100 }, el("clipPath", { id: "scope-clip" }, defs));
+  // diagonal hatching for active flight restrictions
+  const hatch = el("pattern", { id: "tfr-hatch", width: 3, height: 3, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+  el("line", { x1: 0, y1: 0, x2: 0, y2: 3, class: "tfr-hatch-line" }, hatch);
   el("circle", { class: "scope-bg", r: 100 }, svg);
   el("g", { id: "s-base", "clip-path": "url(#scope-clip)" }, svg);
   for (const id of ["s-static", "s-trails", "s-craft"]) el("g", { id }, svg);

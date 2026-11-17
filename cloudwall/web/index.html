@@ -14,6 +14,8 @@
   <div class="chips">
     <span class="chip" id="flow" hidden></span>
     <span class="chip" id="wx" hidden></span>
+    <button class="chip em-chip" id="em-chip" hidden></button>
+    <span class="chip" id="tfr-chip" hidden></span>
     <span class="chip warn" id="link" hidden>Flight data offline</span>
   </div>
   <button class="icon-btn" id="btn-sound" title="Chime when an aircraft comes overhead"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M3.5 9.2h3.6L12 5.2v13.6l-4.9-4H3.5z"/><g id="snd-on"><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18 6.6a7.6 7.6 0 0 1 0 10.8"/></g><g id="snd-off"><path d="M16 9.5l5 5M21 9.5l-5 5"/></g></svg><span id="snd-text">Sound</span></button>
@@ -33,6 +35,7 @@
       <div class="scope-caption" id="scope-caption"></div>
       <div class="attrib" id="scope-attrib"></div>
     </div>
+    <div class="panel scroll" id="mini-board"></div>
   </section>
   <section id="view-board" class="view"><div class="panel scroll" id="board"></div></section>
   <section id="view-wx" class="view"><div class="panel scroll" id="wx-tab"></div></section>

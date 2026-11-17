@@ -1,19 +1,21 @@
 // Type plates and the fleet lineup: the side elevations used as type identifiers, with their
 // real length beneath them like an engineering drawing's dimension line.
 import { drawing, silhouetteScale } from "./silhouette.js";
+import { hasProfile } from "./profiles.js";
 import { esc, num } from "./util.js";
 
 export const feet = (m) => Math.round(m * 3.28084);
 
 // A side elevation over a dimension line giving the overall length. The figure sizes itself
 // inside its nearest size container (a .sil-box): `share` of its width, or as wide as its
-// height allows. A type the table doesn't know is drawn as a faint stand-in, without a length.
+// height allows. A type without a drawing of its own is a faint stand-in for its broad shape,
+// without a length.
 // Options: share (default: the flight card's size-compressed scale), dim (show the length),
 // note (a short line under the length).
 export function plate(info, { share = silhouetteScale(info.length), dim = true, note = "" } = {}) {
   const d = drawing(info.type, info.shape, info.length, info.name);
   if (!d.svg) return "";
-  const known = info.known !== false, showDim = dim && known;
+  const known = info.known !== false && hasProfile(info.type), showDim = dim && known;
   const caption = showDim
     ? `<figcaption><div class="dimline"><span><b>${feet(info.length)} ft</b> ${info.length.toFixed(1)} m</span></div>${note ? `<div class="plate-note">${esc(note)}</div>` : ""}</figcaption>`
     : "";
@@ -57,8 +59,11 @@ export function scaleBar(k, px = 110) {
   return { m, px: m * k };
 }
 
+// Whether a type gets its own drawing (rather than a stand-in) in plates and lineups.
+export const drawn = (info) => info.known !== false && hasProfile(info.type);
+
 // The fleet lineup: every type seen today, side by side at true relative size, on ground lines.
-// types: [{ info, n }] already filtered to known types. box: the element to fill.
+// types: [{ info, n }] already filtered with drawn(). box: the element to fill.
 export function renderLineup(box, types) {
   const items = types.map((t) => ({ ...t, ...drawing(t.info.type, t.info.shape, t.info.length, t.info.name) }))
     .filter((t) => t.svg)

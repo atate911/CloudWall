@@ -66,3 +66,11 @@ export function tidyName(name) {
     KEEP_UPPER.has(w.toUpperCase()) ? w.toUpperCase()
       : (w[0].toUpperCase() + w.slice(1)).replace(/^(O'|Mc)([a-z])/, (m, p, c) => p + c.toUpperCase()));
 }
+
+// Seats on board, from the bundled table: exact for a known airline layout, "about" for a type's typical count.
+export function seatWords(s) {
+  if (!s) return null;
+  if (s.basis === "cargo") return "Cargo, no passengers";
+  const n = s.lo === s.hi ? num(s.n) : s.basis === "airline" ? `${num(s.lo)}–${num(s.hi)}` : `about ${num(s.n)}`;
+  return `${n} seat${s.n === 1 ? "" : "s"}`;
+}

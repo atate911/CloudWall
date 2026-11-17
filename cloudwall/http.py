@@ -16,3 +16,9 @@ def get_json(url, timeout=12, headers=None):
         if e.code == 404:
             return None
         raise
+
+
+def get_text(url, timeout=12):
+    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read().decode("utf-8-sig", "replace")

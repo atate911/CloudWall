@@ -5,7 +5,7 @@ import time
 
 from pathlib import Path
 
-from . import __version__, config, sources, weather
+from . import __version__, config, contrails, sources, tfr, weather
 from .enrich import Enricher
 from .flightaware import FlightAware
 from .flightradar24 import Flightradar24
@@ -101,11 +101,40 @@ def main():
                     fetched = time.time() - 240          # try again in a minute
             time.sleep(5)
 
+    ex = cfg["extras"]
+    tfrs = tfr.TFRs(cfg["home"], ex["tfr_radius_nm"])
+
+    def extras():
+        """Military jets heard without a position (every minute), flight restrictions
+        (every 15 minutes) and the contrail forecast (hourly). Paused with no screen open."""
+        jobs = [  # (enabled, every seconds, name, fetch, store)
+            (ex["military"], 60, "military aircraft",
+             lambda: sources.military_heard(cfg["home"], ex["military_radius_nm"], ex["military_url"]),
+             lambda v: setattr(tracker, "heard", v)),
+            (ex["tfr"], 900, "flight restrictions", tfrs.refresh, lambda v: setattr(tracker, "tfrs", v)),
+            (ex["contrails"], 3600, "contrail forecast",
+             lambda: contrails.fetch(cfg["home"]["lat"], cfg["home"]["lon"]), lambda v: setattr(tracker, "contrails", v)),
+        ]
+        due = [0.0] * len(jobs)
+        while True:
+            for i, (on, every, name, fetch, keep) in enumerate(jobs):
+                if on and not activity.idle() and time.time() >= due[i]:
+                    try:
+                        keep(fetch())
+                        due[i] = time.time() + every
+                    except Exception as e:
+                        log.warning("%s fetch failed: %s", name, e)
+                        due[i] = time.time() + min(every, 120)
+            time.sleep(5)
+
     threading.Thread(target=poll, daemon=True).start()
     if not args.demo:
         threading.Thread(target=wx, daemon=True).start()
+        threading.Thread(target=extras, daemon=True).start()
     else:
         tracker.weather, tracker.weather_full = weather.demo()
+        tracker.tfrs, tracker.contrails = tfr.demo(cfg["home"]), contrails.demo()
+        tracker.heard = sources.demo_heard()
     for p in providers:
         p.activity = activity                 # e.g. Flightradar24's hourly usage check waits for a screen
     server = make_server(cfg, tracker, store, tiles, logos, activity)
