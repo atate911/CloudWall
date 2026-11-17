@@ -1,7 +1,11 @@
 """Configuration: defaults overlaid with an optional TOML file."""
 import copy
+import os
+import shutil
 import tomllib
 from pathlib import Path
+
+EXAMPLE = Path(__file__).resolve().parent / "config.example.toml"
 
 DEFAULTS = {
     "home": {
@@ -20,17 +24,51 @@ DEFAULTS = {
     },
     "source": {"name": "adsb.lol",
                "url": "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"},
-    "server": {"host": "0.0.0.0", "port": 8080},
-    "storage": {"db_path": "cloudwall.db"},
+    "server": {"host": "0.0.0.0", "port": 5050},
+    "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }
+
+
+def _xdg(var, fallback):
+    return Path(os.environ.get(var) or Path.home() / fallback) / "cloudwall"
+
+
+def user_config_path():
+    return _xdg("XDG_CONFIG_HOME", ".config") / "config.toml"
+
+
+def default_db_path():
+    return _xdg("XDG_DATA_HOME", ".local/share") / "cloudwall.db"
+
+
+def find(path=None):
+    """Which config file applies: --config, $CLOUDWALL_CONFIG, ./config.toml, then the user one."""
+    if path:
+        return Path(path)
+    if os.environ.get("CLOUDWALL_CONFIG"):
+        return Path(os.environ["CLOUDWALL_CONFIG"])
+    for p in (Path("config.toml"), user_config_path()):
+        if p.exists():
+            return p
+    return None
 
 
 def load(path=None):
     cfg = copy.deepcopy(DEFAULTS)
-    if path is None and Path("config.toml").exists():
-        path = "config.toml"
+    path = find(path)
     if path:
         with open(path, "rb") as f:
             for section, values in tomllib.load(f).items():
                 cfg.setdefault(section, {}).update(values)
+    cfg["_path"] = str(path) if path else None
     return cfg
+
+
+def init(path=None):
+    """Write a starter config file. Returns (path, created)."""
+    path = Path(path) if path else user_config_path()
+    if path.exists():
+        return path, False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(EXAMPLE, path)
+    return path, True

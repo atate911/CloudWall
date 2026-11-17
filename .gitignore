@@ -3,3 +3,7 @@ __pycache__/
 *.db
 *.db-journal
 config.toml
+.venv/
+build/
+dist/
+*.egg-info/

@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloudwall"
+description = "A flight status board for the sky over your house"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+dynamic = ["version"]
+
+[project.scripts]
+cloudwall = "cloudwall.__main__:main"
+
+[tool.setuptools]
+packages = ["cloudwall"]
+
+[tool.setuptools.package-data]
+cloudwall = ["web/*", "config.example.toml"]
+
+[tool.setuptools.dynamic]
+version = { attr = "cloudwall.__version__" }

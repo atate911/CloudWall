@@ -3,7 +3,9 @@ import logging
 import threading
 import time
 
-from . import config, sources, weather
+from pathlib import Path
+
+from . import __version__, config, sources, weather
 from .enrich import Enricher
 from .server import make_server
 from .store import Store
@@ -16,15 +18,29 @@ def main():
     ap = argparse.ArgumentParser(prog="cloudwall", description="Flight board for the sky over your house")
     ap.add_argument("--config", help="path to config.toml (default: ./config.toml if present)")
     ap.add_argument("--demo", action="store_true", help="simulated traffic, no network needed")
-    ap.add_argument("--port", type=int)
+    ap.add_argument("--host", help="address to listen on (default 0.0.0.0)")
+    ap.add_argument("--port", type=int, help="port to listen on (default 5050)")
     ap.add_argument("--db", help="override the logbook database path")
+    ap.add_argument("--init-config", action="store_true",
+                    help="write a starter config file (to --config, or the user config dir) and exit")
+    ap.add_argument("--version", action="version", version=f"cloudwall {__version__}")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 
+    if args.init_config:
+        path, created = config.init(args.config)
+        print(f"{'Wrote' if created else 'Already exists, left unchanged:'} {path}")
+        return
+
     cfg = config.load(args.config)
+    if args.host:
+        cfg["server"]["host"] = args.host
     if args.port:
         cfg["server"]["port"] = args.port
-    db = args.db or (":memory:" if args.demo else cfg["storage"]["db_path"])
+    db = args.db or (":memory:" if args.demo else cfg["storage"]["db_path"] or config.default_db_path())
+    if db != ":memory:":
+        Path(db).expanduser().parent.mkdir(parents=True, exist_ok=True)
+        db = str(Path(db).expanduser())
     store = Store(db)
     source = sources.Demo() if args.demo else sources.Readsb(cfg["source"]["url"], cfg["source"]["name"])
     tracker = Tracker(cfg, store, Enricher(store, demo=source if args.demo else None))
@@ -51,7 +67,8 @@ def main():
     if not args.demo:
         threading.Thread(target=wx, daemon=True).start()
     server = make_server(cfg, tracker, store)
-    log.info("CloudWall on http://%s:%s (source: %s)", cfg["server"]["host"], cfg["server"]["port"], source.name)
+    log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"], source.name)
+    log.info("config: %s | logbook: %s", cfg["_path"] or "built-in defaults", db)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

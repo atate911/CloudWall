@@ -1,4 +1,5 @@
-# Copy to config.toml and edit. Every key is optional; these are the defaults.
+# CloudWall settings. Every key is optional; these are the defaults.
+# Restart CloudWall after editing.
 
 [home]
 name = "Home"
@@ -24,7 +25,7 @@ url = "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"
 
 [server]
 host = "0.0.0.0"
-port = 8080
+port = 5050
 
 [storage]
-db_path = "cloudwall.db"
+db_path = ""           # empty: ~/.local/share/cloudwall/cloudwall.db

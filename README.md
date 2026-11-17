@@ -21,26 +21,48 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
 Badges mark the interesting ones: `NEW TYPE`, `NEW AIRLINE`, `RARE TYPE`, `HEAVY`,
 `HELICOPTER`, `MILITARY`, repeat visitors (`3rd VISIT`) and emergency squawks.
 
-## Run it
+## Install (Linux dev server)
+
+Needs Python 3.11+ with the `venv` module and `make`.
 
 ```sh
-python3 -m cloudwall --demo        # simulated traffic, works offline
+git clone https://github.com/atate911/CloudWall.git && cd CloudWall
+make install      # creates .venv and installs CloudWall in editable mode
+make demo         # simulated traffic, works offline
 ```
 
-Open <http://localhost:8080>. For real traffic:
+Open `http://<server>:5050`. For real traffic:
 
 ```sh
-cp config.example.toml config.toml   # set [home] lat/lon to your house
-python3 -m cloudwall
+make config       # writes ~/.config/cloudwall/config.toml; set [home] lat/lon
+make run
 ```
 
-Needs Python 3.11+ (Raspberry Pi OS Bookworm or later).
+The install is editable, so changes to the Python or to `cloudwall/web/` take effect
+without reinstalling: restart for Python changes, just reload the browser for the
+web files.
 
-## On the Pi
+To keep it running in the background across logouts and reboots:
 
-1. Clone to `/home/pi/CloudWall` and create `config.toml`.
-2. `sudo cp deploy/cloudwall.service /etc/systemd/system/ && sudo systemctl enable --now cloudwall`
-3. Start `deploy/kiosk.sh` from the desktop autostart to open the board full-screen.
+```sh
+make service      # systemd user service; `make logs` to follow, `make service-remove` to undo
+```
+
+`make help` lists every task. Without make: `pip install -e .` then `cloudwall`.
+
+### Where things live
+
+| What | Where |
+|---|---|
+| Settings | `--config`, `$CLOUDWALL_CONFIG`, `./config.toml`, then `~/.config/cloudwall/config.toml` |
+| Logbook database | `~/.local/share/cloudwall/cloudwall.db` (or `[storage] db_path`, or `--db`) |
+| Port | 5050 (`[server] port`, or `--port`) |
+
+## Production on dedicated hardware
+
+On the Pi, install the same way and run `make service`. Then start `deploy/kiosk.sh`
+from the desktop autostart to open the board full-screen. To drive a display from a
+board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk script.
 
 The layout scales to the screen, from a 4–5" desk panel (800×480) to a wall monitor.
 
