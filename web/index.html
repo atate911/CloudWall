@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>CloudWall</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">CLOUD<b>WALL</b></div>
+  <div class="chips">
+    <span class="chip" id="flow" hidden></span>
+    <span class="chip" id="wx" hidden></span>
+    <span class="chip warn" id="link" hidden>NO DATA LINK</span>
+  </div>
+  <div class="clock" id="clock"></div>
+</header>
+<main>
+  <section id="view-now" class="view active">
+    <div class="panel" id="hero"></div>
+    <div class="panel scope"><svg id="radar" viewBox="-110 -110 220 220" role="img" aria-label="Nearby aircraft"></svg></div>
+  </section>
+  <section id="view-board" class="view"><div class="panel scroll" id="board"></div></section>
+  <section id="view-log" class="view"><div class="panel scroll" id="log"></div></section>
+</main>
+<nav>
+  <button data-view="now" class="active">Overhead</button>
+  <button data-view="board">Board <span id="n-board"></span></button>
+  <button data-view="log">Logbook <span id="n-log"></span></button>
+</nav>
+<script src="app.js"></script>
+</body>
+</html>

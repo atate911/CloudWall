@@ -1,0 +1,15 @@
+# sudo cp deploy/cloudwall.service /etc/systemd/system/ && sudo systemctl enable --now cloudwall
+[Unit]
+Description=CloudWall flight board
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/CloudWall
+ExecStart=/usr/bin/python3 -m cloudwall
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

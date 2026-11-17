@@ -1,0 +1,30 @@
+# Copy to config.toml and edit. Every key is optional; these are the defaults.
+
+[home]
+name = "Home"
+lat = 45.5900          # <-- set to your house (decimal degrees)
+lon = -122.4740
+elevation_ft = 100
+
+[airport]              # the local airport: used for arriving/departing labels and weather
+icao = "KPDX"
+iata = "PDX"
+lat = 45.5887
+lon = -122.5975
+
+[tracking]
+radius_nm = 15         # how far out the board and radar look
+overhead_nm = 3.5      # inside this, an aircraft takes over the screen and is logged
+max_overhead_alt_ft = 45000
+poll_seconds = 5       # be kind to the free API; don't go below ~3
+
+[source]               # any readsb-style JSON feed; swap in your own receiver later
+name = "adsb.lol"
+url = "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"
+
+[server]
+host = "0.0.0.0"
+port = 8080
+
+[storage]
+db_path = "cloudwall.db"
