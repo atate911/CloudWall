@@ -16,6 +16,8 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
   altitude the autopilot is heading for, when it reports one), speed, distance and heading,
   and a photo of the airframe beside its departure and arrival times, when it passes the
   house, the aircraft type, registration and build year, and what the autopilot is doing.
+  Until a photo loads (or when there isn't one) the card shows a side elevation of the type,
+  drawn to scale.
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
   path across it (centre is straight up), or a radar scope with trails over a faint map.
   Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
@@ -154,6 +156,17 @@ nobody is looking.
   approximate; with the real map turned on only its runways and approach lines are
   drawn. For another airport, add a file named after its ICAO code.
 - Aircraft photos come from the free airframe database and load directly in the browser.
+- The side elevations are drawn in the browser from measurements, not stored as pictures. Each
+  family (`cloudwall/web/js/profiles/`) records its fuselage outline, flight-deck glazing, doors
+  and windows, wing planform, nacelles, wingtip devices, fin and tailplane in metres, taken from
+  the manufacturers' airport planning manuals (Boeing ACAPs, Airbus and Embraer planning
+  documents) where they exist and from published dimensions and 3-view drawings otherwise;
+  each family cites its source. Stretches of a family share one nose and tail, so a 737-900 is
+  a longer 737-700, not a scaled one. `silhouette.js` turns a profile into the drawing: the
+  wing is projected into side view from its sweep and dihedral, nacelles hang on pylons, and so
+  on. To add a type, map its ICAO code to a family in the right group file; to add a family,
+  measure it the same way. `tests/test_silhouettes.py` checks that every type in `data.js` has
+  a profile and draws cleanly (it needs Node).
 - Airline logos are fetched by airline code from a public logo service (pics.avs.io) the
   first time each airline appears, cached on disk, and shown on a white tile. Logos are
   the airlines' trademarks, so none are included in this repository; `[logos] enabled =

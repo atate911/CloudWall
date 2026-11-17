@@ -174,12 +174,38 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .facts { display: grid; grid-template-columns: auto 1fr; column-gap: 1.2rem; row-gap: .55rem; align-content: center; font-size: .92rem; margin: 0; }
 .facts dt { color: var(--slate); }
 .facts dd { margin: 0; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
-.sil-box { display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; padding: 0 8%; }
-.sil { display: block; max-height: 70%; fill: var(--ink); color: var(--ink); }
-.sil .wing { fill: var(--ink-2); } .sil .pod { fill: var(--slate); } .sil .glass { fill: var(--sheet); }
-.sil .windows { stroke: var(--sheet); stroke-width: 1.1; stroke-dasharray: 1.6 2; opacity: .7; }
-.sil .prop, .sil .strut { stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; }
-.sil .prop-disc { fill: none; stroke: currentColor; stroke-width: 1; }
+.sil-box { display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; padding: 0 6%; }
+/* side elevations drawn to scale: inked outlines over chart paper, like a type-certificate drawing */
+.sil { display: block; max-height: 74%; overflow: visible;
+  --sil-line: color-mix(in srgb, var(--ink) 90%, transparent);
+  --sil-body: color-mix(in srgb, var(--ink) 3%, var(--sheet));
+  --sil-wing: color-mix(in srgb, var(--ink) 13%, var(--sheet));
+  --sil-nac: color-mix(in srgb, var(--ink) 7%, var(--sheet));
+  --sil-mid: color-mix(in srgb, var(--ink) 34%, var(--sheet));
+  --sil-dark: color-mix(in srgb, var(--ink) 82%, var(--sheet)); }
+.sil :is(path, rect, ellipse) { vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.sil :is(.hull, .fin, .stab, .wing, .wl, .nac, .pyl, .core, .plug, .ftf, .strut, .pant, .skid, .tire, .hub)
+  { stroke: var(--sil-line); stroke-width: 1.1px; }
+.sil :is(.hull, .fin) { fill: var(--sil-body); }
+.sil :is(.stab, .wing, .wl, .ftf) { fill: var(--sil-wing); }
+.sil :is(.nac, .pyl) { fill: var(--sil-nac); }
+.sil .core { fill: var(--sil-mid); } .sil .plug { fill: var(--sil-dark); }
+.sil .shade { stroke: none; }
+.sil .ftf { stroke: color-mix(in srgb, var(--ink) 45%, transparent); stroke-width: .75px; }
+.sil .g-hi { stop-color: var(--sheet); stop-opacity: .0; }
+.sil .g-mid { stop-color: var(--sheet); stop-opacity: 0; }
+.sil .g-lo { stop-color: var(--ink); stop-opacity: .13; }
+.sil :is(.glass, .inlet) { fill: var(--sil-dark); stroke: none; }
+.sil .win { fill: none; stroke: var(--sil-dark); opacity: .78; vector-effect: none; stroke-linecap: round; }
+.sil .door { fill: none; stroke: color-mix(in srgb, var(--ink) 50%, transparent); stroke-width: .8px; }
+.sil .door.cargo { stroke-dasharray: none; stroke: color-mix(in srgb, var(--ink) 32%, transparent); }
+.sil .hl { fill: none; stroke: color-mix(in srgb, var(--ink) 38%, transparent); stroke-width: .7px; }
+.sil .disc { fill: color-mix(in srgb, var(--ink) 8%, transparent); stroke: color-mix(in srgb, var(--ink) 30%, transparent); stroke-width: .6px; }
+.sil .blade, .sil .rotor { fill: var(--sil-dark); stroke: none; }
+.sil .tire { fill: var(--sil-dark); } .sil .hub { fill: var(--sil-mid); }
+.sil .strut, .sil .skid { fill: var(--sil-mid); }
+.sil .pant { fill: var(--sil-body); }
+.sil .fen { fill: var(--sil-mid); stroke: var(--sil-line); stroke-width: 1px; }
 
 /* ---------- quiet-sky slides ---------- */
 .idle-card { padding: 1.6rem 1.8rem; }

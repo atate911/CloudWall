@@ -55,5 +55,5 @@ const BY_CATEGORY = { A1: ["piston", 8], A2: ["bizjet", 16], A3: ["narrow", 38],
 export function typeInfo(a) {
   const known = T[a.type];
   const [shape, length] = known || BY_CATEGORY[a.category] || ["narrow", 36];
-  return { shape, length, known: !!known };
+  return { type: a.type, shape, length, known: !!known };
 }
