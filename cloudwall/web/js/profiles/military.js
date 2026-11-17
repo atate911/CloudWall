@@ -234,7 +234,16 @@ F.c130 = {
   extras: [sponson(9.6, 16.9, 1.55)],
   overlays: [tpNacelle(T56)],
 };
-F.c30j = { ...F.c130, overlays: [tpNacelle({ ...T56, blades: 6 })] };
+// C-130J-30: 2.54 m plug ahead of the wing and 2.03 m behind it (4.57 m in all, data.js length);
+// the wing (and so the nacelles) moves with the forward plug, the sponson with the wing, the
+// paratroop doors and rear windows with both plugs.
+F.c30j = {
+  ...F.c130, fwd: 2.54 / 4.57,
+  doors: [[4.7, 0.9, "D", undefined, 1.75], [17.1 + 4.57, 0.85, "D", undefined, 1.8]],
+  win: [{ z: 0.245, from: 5.9, to: 8.1, pitch: 1.1, w: 0.3, h: 0.3 }, { z: 0.464, from: 15.0 + 4.57, to: 15.9 + 4.57, pitch: 0.9, w: 0.3, h: 0.3 }],
+  extras: [sponson(9.6 + 2.54, 16.9 + 2.54, 1.55)],
+  overlays: [tpNacelle({ ...T56, blades: 6 })],
+};
 
 // ---------- Lockheed C-5M Super Galaxy ----------
 // Reference: Wikimedia Commons "Lockheed C-5 Galaxy 3-view line drawing.jpg" (dimensioned: length
@@ -263,39 +272,40 @@ F.c5m = {
   doors: [[8.7, 1.0, "D", undefined, 1.8], [15.8, 0.8, "U", undefined, 1.33], [43.4, 0.8, "U", undefined, 1.33], [43.4, 0.9, "D", undefined, 1.6]],
   wing: { le: 22.5, root: 3.5, span: 67.89, cr: 12.1, ct: 3.2, sweep: 28.5, dih: -5.5, bend: 1.0, z: 0.88, t: [0.12, 0.1] },
   eng: { kind: "fan", at: [0.24, 0.47], fwd: 4.3, drop: 3.2, len: 7.0, dia: 2.5, fx: 0.45, cx: 0.85, pyFront: 0.2, pyLead: 0.6, pyTe: 0.3, pyAft: 0.6 },
-  fin: { le: 10.4, cr: 9.2, ct: 7.8, h: 8.4, sweep: 36.5, rudder: 0.68 },
-  stab: { le: 5.5, z: "T", drop: -0.9, span: 20.95, root: 0.6, cr: 8.5, ct: 1.5, sweep: 34, dih: 0, bullet: [12.0, 0.9] },
+  fin: { le: 10.4, cr: 9.2, ct: 7.8, h: 8.95, sweep: 36.5, rudder: 0.68 },
+  stab: { le: 5.5, z: "T", drop: -0.35, span: 20.95, root: 0.6, cr: 8.5, ct: 1.5, sweep: 34, dih: 0, bullet: [12.0, 0.9] },
   extras: [sponson(22.3, 43.3, 2.3, 0.3)],
   overlays: [c5Visor],
 };
 
 // ---------- Antonov An-124 Ruslan ----------
-// Published dimensions only (Wikipedia, Antonov): length 68.96 m, span 73.3 m, height 20.78 m.
-// High anhedral wing, conventional low tail on a very tall fin, visor nose under the flight deck,
-// long main-gear sponsons, four D-18T nacelles on pylons, upswept rear with the ramp.
+// Reference: Wikimedia Commons "Antonov An-124 3-view.svg" (side, plan and front views; length
+// 68.96 m, span 73.3 m, height 20.78 m per Wikipedia). High anhedral wing, conventional tail with
+// the stabiliser low on the tail cone and a very tall swept fin, flight deck on top of a long
+// sloping nose with the visor seam ahead of it, long main-gear sponsons, four D-18T nacelles on
+// pylons well ahead of the wing, upswept rear ending in a point.
 F.a124 = {
-  kind: "quad", L0: 66.2, over: 2.76, D: 8.0, W: 7.3, fwd: 0.5, fair: 0, floor: 0.12,
+  kind: "quad", L0: 68.96, over: 0, D: 7.1, W: 7.3, fwd: 0.5, fair: 0, floor: 0.12, upper: 0.78,
   nose: {
-    tip: 0.4,
-    top: [[0.05, 0.53], [0.12, 0.63], [0.2, 0.71], [0.3, 0.78], [0.42, 0.84], [0.55, 0.9], [0.7, 0.95], [0.9, 0.98], [1.1, 0.995], [1.4, 1]],
-    bot: [[0.05, 0.25], [0.12, 0.17], [0.2, 0.11], [0.3, 0.065], [0.45, 0.03], [0.6, 0.01], [0.8, 0]],
+    tip: 0.36,
+    top: [[0.05, 0.419], [0.1, 0.465], [0.15, 0.503], [0.2, 0.54], [0.25, 0.569], [0.3, 0.596], [0.35, 0.634], [0.4, 0.652], [0.5, 0.699],
+      [0.6, 0.736], [0.7, 0.773], [0.8, 0.848], [0.9, 0.941], [1.0, 0.988], [1.1, 0.997], [1.3, 1]],
+    bot: [[0.05, 0.146], [0.1, 0.1], [0.15, 0.071], [0.2, 0.043], [0.3, 0.023], [0.4, 0.004], [0.5, -0.006], [0.6, -0.025], [0.7, -0.045],
+      [0.8, -0.064], [0.9, -0.06], [1.0, -0.01], [1.1, 0]],
   },
   tail: {
-    top: [[3.0, 1], [2.0, 0.99], [1.3, 0.97], [0.7, 0.94], [0, 0.9]],
-    bot: [[3.3, 0], [3.0, 0.05], [2.5, 0.14], [2.0, 0.26], [1.5, 0.39], [1.0, 0.53], [0.5, 0.67], [0.15, 0.77], [0, 0.8]],
+    top: [[3.0, 1], [0.62, 1], [0.5, 0.965], [0.38, 0.946], [0.25, 0.918], [0.12, 0.879], [0, 0.84]],
+    bot: [[2.4, 0], [2.25, 0.015], [2.0, 0.08], [1.75, 0.145], [1.5, 0.219], [1.25, 0.292], [1.0, 0.376], [0.75, 0.468], [0.5, 0.58],
+      [0.25, 0.691], [0.12, 0.756], [0, 0.83]],
   },
-  glass: [
-    [[0.5, 0.875], [0.6, 0.915], [0.62, 0.85], [0.53, 0.835]],
-    [[0.63, 0.92], [0.75, 0.95], [0.76, 0.875], [0.64, 0.855]],
-    [[0.78, 0.955], [0.88, 0.97], [0.88, 0.89], [0.79, 0.88]],
-  ],
-  doors: [[11.5, 1.0], [-24.0, 1.0]],
-  wing: { le: 25.5, root: 3.65, span: 73.3, cr: 15.0, ct: 4.0, sweep: 35, dih: -5, bend: 1.2, z: 0.93, t: [0.13, 0.1] },
-  eng: { kind: "fan", at: [0.26, 0.52], fwd: 4.6, drop: 2.4, len: 7.6, dia: 2.9, fx: 0.76, cx: 0.9, pyFront: 0.3, pyTe: 0.45, pyAft: 0.85 },
-  fin: { le: 16.5, cr: 13.0, ct: 5.6, h: 11.5, sweep: 42, fillet: [3.0, 1.2], rudder: 0.68 },
-  stab: { le: 8.5, z: 0.82, span: 25.0, root: 1.2, cr: 8.6, ct: 3.0, sweep: 35, dih: -2 },
-  extras: [sponson(24.5, 46.0, 2.9, 0.3)],
-  overlays: [({ sk, D }) => sk.smooth("hl", [[4.2, 0.84 * D], [4.6, 0.55 * D], [5.0, 0.25 * D], [5.15, 0.03 * D]], false)],
+  glass: [[[0.85, 0.8], [0.9, 0.89], [0.98, 0.935], [1.1, 0.94], [1.1, 0.82]]],
+  doors: [[11.3, 0.9, "D", undefined, 1.7], [38.7, 0.8, "U", undefined, 1.2], [49.6, 0.8, "U", undefined, 1.2]],
+  wing: { le: 21.6, root: 3.65, span: 73.3, cr: 14.8, ct: 4.3, sweep: 32.6, dih: -5, bend: 1.2, z: 0.88, t: [0.13, 0.1] },
+  eng: { kind: "fan", at: [0.223, 0.483], fwd: 7.0, drop: 3.1, len: 7.4, dia: 2.9, fx: 0.72, cx: 0.9, pyFront: 0.25, pyLead: 0.5, pyTe: 0.35, pyAft: 0.7 },
+  fin: { le: 17.0, cr: 12.5, ct: 4.7, h: 11.0, sweep: 44.6, fillet: [2.0, 0.8], rudder: 0.7 },
+  stab: { le: 11.5, z: 0.83, span: 27.0, root: 1.0, cr: 9.5, ct: 3.4, sweep: 30, dih: -3 },
+  extras: [sponson(18.3, 43.9, 1.6, 0.45)],
+  overlays: [({ sk, D }) => sk.smooth("hl", [[2.2, 0.78 * D], [2.6, 0.5 * D], [3.2, 0.25 * D], [3.9, 0.03 * D]], false)],
 };
 
 // ---------- Ilyushin Il-76MD ----------
@@ -326,8 +336,8 @@ F.il76 = {
   doors: [[8.1, 1.0, "D", undefined, 1.9]],
   wing: { le: 13.3, root: 2.42, span: 50.5, cr: 10.5, ct: 3.0, sweep: 33.6, dih: -3, z: 1.0, t: [0.13, 0.1] },
   eng: { kind: "fan", at: [0.161, 0.354], fwd: 4.6, drop: 2.15, len: 5.8, dia: 2.1, style: "long", fx: 0.9, plug: 0.4, pyFront: 0.35, pyTe: 0.45, pyAft: 0.8 },
-  fin: { le: 10.1, cr: 8.6, ct: 6.1, h: 7.44, sweep: 41.4, rudder: 0.7 },
-  stab: { le: 4.5, z: "T", drop: -0.5, span: 17.4, root: 0.5, cr: 5.0, ct: 2.6, sweep: 34, dih: -2, bullet: [8.0, 0.55] },
+  fin: { le: 10.1, cr: 8.6, ct: 5.9, h: 7.8, sweep: 41.4, rudder: 0.7 },
+  stab: { le: 4.5, z: "T", drop: -0.14, span: 17.4, root: 0.5, cr: 5.0, ct: 2.6, sweep: 34, dih: -2, bullet: [8.0, 0.55] },
   extras: [
     ({ sk }) => sk.smooth("hull", [[8.5, 4.84, "c"], [11, 5.28], [13, 5.54], [16, 5.69], [19, 5.56], [21, 5.33], [23, 4.92], [25, 4.72, "c"]], false),
     ({ sk, L, top, f }) => {

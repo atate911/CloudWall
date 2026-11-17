@@ -298,6 +298,10 @@ F.c208 = {
   },
   extras: EXTRAS, overlays: OVERLAYS,
 };
+// 208B Grand Caravan (most Caravans flying, the FedEx feeders among them): 1.17 m longer, the
+// plug behind the last cabin window, with one more window (Wikipedia, Cessna 208 Caravan).
+F.c208b = stretch(F.c208, 7.5, 1.17);
+F.c208b.glass = [...F.c208b.glass, [[7.57, 1.04], [7.57, 1.4], [8.07, 1.4], [8.07, 1.04]]];
 
 // ---------- Piper PA-28 Cherokee / Warrior / Archer / Dakota ----------
 // Reference: Piper PA-28-181 Cherokee Archer II 3-view (Wikimedia Commons,
@@ -496,7 +500,7 @@ const M20 = {
   },
   extras: EXTRAS, overlays: OVERLAYS,
 };
-F.m20 = stretch(M20, 0.9, 0.2);
+F.m20 = stretch(M20, 0.9, 0.18);
 
 // ---------- Boeing-Stearman Model 75 (PT-17 / N2S Kaydet) ----------
 // Reference: U.S. Navy N2S-3 general arrangement diagram (Wikimedia Commons,
@@ -730,7 +734,7 @@ F.ch7b = {
   kind: "piston", L0: 6.9, over: 0, D: 1, W: 0.85,
   body: [
     [0, 0.67, "c"], [0.1, 0.71], [0.25, 0.75], [0.41, 0.78], [0.47, 0.85], [0.6, 0.865], [1.0, 0.87], [1.36, 0.875, "c"],
-    [1.6, 1.05], [1.8, 1.2], [1.95, 1.28], [2.1, 1.3, "l"], [3.5, 1.3], [3.62, 1.25], [3.95, 1.02], [4.93, 0.89],
+    [1.6, 1.05], [1.8, 1.2], [1.95, 1.3], [2.1, 1.33, "l"], [3.5, 1.33], [3.62, 1.27], [3.95, 1.02], [4.93, 0.89],
     [5.55, 0.84, "c"], [6.36, 1.93], [6.45, 1.955], [6.72, 1.955], [6.8, 1.9, "c"], [6.87, 0.65], [6.85, 0.46],
     [6.72, 0.36], [6.42, 0.38], [5.53, 0.32], [4.34, 0.17], [3.15, 0.05], [1.96, 0], [1.0, 0.05], [0.77, 0.14],
     [0.59, 0.29], [0.5, 0.42], [0.45, 0.53], [0.3, 0.57], [0.15, 0.61],
@@ -741,7 +745,7 @@ F.ch7b = {
     [[3.08, 0.8], [3.08, 1.25], [3.45, 1.25, ""], [3.88, 1.0], [3.6, 0.84, ""]],
   ],
   frame: 0.035,
-  wing: { le: 1.92, root: 0.45, span: 10.2, cr: 1.55, ct: 1.55, sweep: 0, dih: 1, z: 1.43, t: [0.13, 0.13] },
+  wing: { le: 1.92, root: 0.45, span: 10.2, cr: 1.55, ct: 1.55, sweep: 0, dih: 1, z: 1.4, t: [0.13, 0.13] },
   eng: { kind: "none", nose: { s: 0.41, z: 0.67, d: 1.88, blades: 2 } },
   stab: { le: 1.13, z: 0.82, span: 3.05, root: 0.15, cr: 1.15, ct: 0.85, sweep: 5, dih: 0, thick: 0.09 },
   parts: {
@@ -756,12 +760,56 @@ F.ch7b = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
-F._raw_be36 = BE36; // TEMP
-F._raw_m20 = M20; // TEMP
-F._raw_be55 = BE55; // TEMP
+// ---------- Van's RV-7 / RV-14 / RV-12 ----------
+// No three-views reachable: the RV-7 is measured from the side-on in-flight photo
+// File:Vans.rv-7.g-kels.arp.jpg (Wikimedia Commons, Wikipedia article Van's Aircraft RV-7),
+// scaled to 6.2 m (data.js). Lower confidence (photo). Sliding bubble canopy, straight belly
+// with the top sloping down to the tail, constant-chord low wing, square fin and rudder,
+// spring-steel main legs with spats and a tailwheel (most RV-7s are taildraggers).
+// RV-14 (data.js 6.4 m): the larger RV-7 shape, drawn as the RV-14A tricycle. RV-12 (6.0 m):
+// the light-sport RV, tricycle, with a taller fin; both derived from the RV-7 outline.
+const RV7 = {
+  kind: "piston", L0: 6.2, over: 0, D: 1, W: 1.1,
+  body: [
+    [0, 0.61, "c"], [0.1, 0.65], [0.2, 0.675], [0.35, 0.7], [0.43, 0.74], [0.8, 0.75], [1.24, 0.755], [1.76, 0.76, "c"],
+    [2.0, 0.87], [2.3, 0.95], [2.55, 0.97], [2.8, 0.93], [3.05, 0.84], [3.24, 0.75], [3.6, 0.64], [4.06, 0.53],
+    [4.5, 0.44], [4.92, 0.36, "cl"], [5.45, 1.25], [5.6, 1.31], [6.0, 1.29], [6.15, 1.2, "c"], [6.17, -0.08],
+    [6.12, -0.15], [6.0, -0.18], [5.57, -0.2], [4.5, -0.18], [3.4, -0.17], [2.6, -0.15], [1.8, -0.08], [1.24, 0.04],
+    [0.7, 0.15], [0.5, 0.3], [0.42, 0.45], [0.35, 0.5], [0.2, 0.54], [0.1, 0.57],
+  ],
+  glass: [[[1.8, 0.76], [2.1, 0.9, ""], [2.5, 0.96, ""], [2.9, 0.9, ""], [3.22, 0.75], [2.5, 0.72, ""]]],
+  frame: 0.03,
+  wing: { le: 1.62, root: 0.5, span: 7.7, cr: 1.27, ct: 1.27, sweep: 0, dih: 3.5, z: -0.07, t: [0.15, 0.15] },
+  eng: { kind: "none", nose: { s: 0.35, z: 0.61, d: 1.83, blades: 2 } },
+  stab: { le: 1.3, z: 0.17, span: 3.05, root: 0.15, cr: 1.0, ct: 0.75, sweep: 5, dih: 0, thick: 0.09 },
+  parts: {
+    lines: [[[5.55, -0.17], [5.55, 1.3]], [[2.8, 0.73], [2.83, 0.93]]],
+    gear: [
+      { leg: [[1.2, 0.06], [1.32, -0.45]], w: [0.08, 0.06], at: [1.35, -0.58], r: 0.18, spat: { f: 0.27, a: 0.57, t: 0.17, b: 0.1 } },
+      { leg: [[5.85, -0.18], [6.02, -0.33]], w: [0.05, 0.04], at: [6.02, -0.35], r: 0.07 },
+    ],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+F.rv7 = RV7;
+// tricycle gear: main legs further aft, nose leg under the cowl
+const TRIKE = (k) => [
+  { leg: [[1.95, -0.1], [2.0, -0.48]], w: [0.08, 0.06], at: [2.02, -0.58], r: 0.18 * k, spat: { f: 0.27, a: 0.57, t: 0.17, b: 0.1 } },
+  { leg: [[0.62, 0.15], [0.6, -0.5]], w: [0.06, 0.05], at: [0.6, -0.56], r: 0.15 * k, spat: { f: 0.25, a: 0.4, t: 0.15, b: 0.08 } },
+];
+F.rv14 = scale({ ...RV7, parts: { ...RV7.parts, gear: TRIKE(1) } }, 6.4 / 6.2, { eng: { kind: "none", nose: { s: 0.36, z: 0.63, d: 1.93, blades: 2 } } });
+F.rv12 = scale({
+  ...RV7,
+  // taller fin and rudder of the RV-12
+  body: RV7.body.map(([q, z, fl]) => (q > 5.2 && z > 1.0 ? [q, z + 0.22, fl] : [q, z, fl])).map((p) => (p[2] === undefined ? p.slice(0, 2) : p)),
+  parts: { ...RV7.parts, lines: [[[5.55, -0.17], [5.55, 1.52]], [[2.8, 0.73], [2.83, 0.93]]], gear: TRIKE(1) },
+}, 6.0 / 6.2, { wing: { le: 1.57, root: 0.5, span: 8.2, cr: 1.2, ct: 1.2, sweep: 0, dih: 3.5, z: -0.07, t: [0.15, 0.15] } });
+
 export const families = F;
 export const types = {
-  C172: "c172", C152: "c150", C150: "c150", C182: "c182", C206: "c206", C208: "c208",
+  C150: "c150", C152: "c150", C172: "c172", C182: "c182", C206: "c206", C208: "c208b",
   P28A: "pa28", P28B: "pa28b", PA46: "pa46", P46T: "p46t",
-  BE36: "be36", BE58: "be58", M20P: "m20", ST75: "st75", CH7B: "ch7b", DA40: "da40", PC12: "pc12", TBM9: "tbm9", SR22: "sr22", SR20: ["sr22", { eng: { kind: "none", nose: { s: 0.4, z: 0.61, d: 1.93, blades: 2 } } }], DA42: "da42", ZZB36: "_raw_be36", ZZB55: "_raw_be55", ZZM20: "_raw_m20", // TEMP
+  SR20: ["sr22", { eng: { kind: "none", nose: { s: 0.4, z: 0.61, d: 1.93, blades: 2 } } }], SR22: "sr22",
+  DA40: "da40", DA42: "da42", BE36: "be36", BE58: "be58", M20P: "m20",
+  RV7: "rv7", RV12: "rv12", RV14: "rv14", CH7B: "ch7b", ST75: "st75", PC12: "pc12", TBM9: "tbm9",
 };

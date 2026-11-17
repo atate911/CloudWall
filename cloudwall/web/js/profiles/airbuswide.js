@@ -209,7 +209,54 @@ F.a35k = {
   win: [{ ...A350_WIN, from: 8.39, to: 21.1, pitch: 0.635 }, { ...A350_WIN, from: 24.9, to: 38.8, pitch: 0.663 }, { ...A350_WIN, from: 44.9, to: 57.6, pitch: 0.634 }],
 };
 
+// ---------- A380 ----------
+// Reference: Airbus A380 AC rev. Dec 2025, FIGURE-2-2-0-991-001 sheets 1-2 (A380-800 side, front
+// and plan views, pages 34-35) and 2-7-0 FIGURE-2-7-0-991-002 (door locations). Full-length double
+// deck: an oval section 8.57 m tall in the drawing (the sheet labels 8.41 m, but the 14.59 m fin and
+// 24.1 m overall height check out at the drawn 8.57 m), the flight deck between the decks, main and
+// upper window rows, five main-deck and three upper-deck doors. L0 is the APU face (70.4 m); the fin
+// tip trailing edge is the aftmost point (72.73 m). Wing: 17 m root chord, 36.8 deg mean leading
+// edge (the inboard glove sweeps 39 deg), and the big wingtip fence above and below the tip, drawn
+// from the side view. Four Trent 900 (the commoner engine; GP7200 looks alike) in 3.8 m separate-
+// flow nacelles. The plan view stations run ~0.25 m forward of the side view's; side view used.
+const A380_NOSE = {
+  tip: 0.29,
+  top: [[0.1, 0.463], [0.2, 0.537], [0.3, 0.625], [0.4, 0.711], [0.5, 0.777], [0.6, 0.829], [0.7, 0.868], [0.8, 0.898],
+    [0.9, 0.919], [1.0, 0.94], [1.1, 0.956], [1.2, 0.97], [1.3, 0.981], [1.4, 0.989], [1.5, 0.996], [1.7, 1]],
+  bot: [[0.035, 0.202], [0.079, 0.147], [0.166, 0.107], [0.255, 0.087], [0.407, 0.064], [0.581, 0.042], [0.76, 0.027],
+    [0.957, 0.01], [1.17, 0.002], [1.3, 0]],
+};
+const A380_TAIL = {
+  top: [[2.4, 1], [2.0, 0.99], [1.8, 0.977], [1.5, 0.945], [1.0, 0.89], [0.5, 0.838], [0, 0.785]],
+  bot: [[2.9, 0], [2.8, 0.002], [2.6, 0.024], [2.4, 0.06], [2.2, 0.096], [2.0, 0.132], [1.8, 0.169], [1.6, 0.211],
+    [1.4, 0.254], [1.2, 0.297], [1.0, 0.34], [0.8, 0.387], [0.6, 0.441], [0.4, 0.499], [0.2, 0.558], [0, 0.62]],
+};
+const A380_WIN = { z: 0.456, pitch: 0.635, w: 0.25, h: 0.36 };
+const A380_UWIN = { z: 0.779, pitch: 0.64, w: 0.25, h: 0.34, upper: true };
+F.a388 = {
+  kind: "quad", L0: 70.4, over: 2.33, D: 8.57, W: 7.14, fwd: 0.5, fair: 0.064, fairAft: 1.51,
+  nose: A380_NOSE, tail: A380_TAIL, frame: 0.05, floor: 0.321, upper: 0.613,
+  glass: [[[0.3, 0.598], [0.262, 0.565], [0.233, 0.528], [0.27, 0.528]],
+    [[0.365, 0.598], [0.31, 0.598], [0.288, 0.56], [0.3, 0.522], [0.365, 0.522]],
+    [[0.437, 0.598], [0.377, 0.598], [0.377, 0.522], [0.437, 0.522]]],
+  doors: [[6.32, 1.07, "D", undefined, 1.95], [16.5, 1.07, "D", undefined, 1.95], [32.68, 1.07, "D", undefined, 1.95],
+    [44.74, 1.07, "D", undefined, 1.95], [53.63, 1.07, "D", undefined, 1.95],
+    [20.94, 1.07, "U", undefined, 2.0], [40.3, 1.07, "U", undefined, 2.0], [49.19, 1.07, "U", undefined, 2.0]],
+  extras: [openings([[11.73, 2.7, 0.75, 1.7], [48.07, 2.7, 0.8, 1.7], [51.09, 1.0, 1.25, 0.8]])],
+  win: [{ ...A380_WIN, from: 7.96, to: 14.3 }, { ...A380_WIN, from: 18.13, to: 51.74 },
+    { ...A380_UWIN, from: 13.04, to: 19.38 }, { ...A380_UWIN, from: 22.55, to: 38.73 }, { ...A380_UWIN, from: 41.9, to: 47.61 },
+    { ...A380_UWIN, from: 50.79, to: 53.01 }],
+  wing: { le: 20.25, root: 3.57, span: 79.75, cr: 17.0, kink: [0.26, 12.55], ct: 3.8, sweep: 36.8, dih: 5.6, z: 0.21, t: [0.12, 0.1] },
+  // wingtip fence, measured off the side view: [ds from tip leading edge, dz from tip chord]
+  overlays: [sharklet([[1.6, -0.01, "c"], [1.9, 0.26], [3.1, 0.84], [4.08, 1.36, "c"], [4.56, 1.39, "c"], [4.35, 0.94], [3.8, 0.49, "c"],
+    [3.8, -0.61], [3.75, -1.04, "c"], [3.1, -0.7], [2.4, -0.31], [1.8, -0.11]])],
+  ftf: [0.3, 0.42, 0.54, 0.68],
+  eng: { kind: "fan", at: [0.305, 0.602], fwd: 6.22, drop: 1.95, len: 9.2, dia: 3.8, fx: 0.66, cx: 0.896 },
+  fin: { le: 15.34, cr: 10.94, ct: 4.67, h: 13.25, sweep: 44.1, fillet: [1.76, 1.04], rudder: 0.69 },
+  stab: { le: 11.9, z: 0.665, span: 30.37, root: 2.0, cr: 9.0, ct: 3.9, sweep: 37.2, dih: 4.5 },
+};
+
 export const families = F;
 export const types = {
-  A332: "a332", A333: "a333", A338: "a338", A339: "a339", A342: "a342", A343: "a343", A345: "a345", A346: "a346", A359: "a359", A35K: "a35k",
+  A332: "a332", A333: "a333", A338: "a338", A339: "a339", A342: "a342", A343: "a343", A345: "a345", A346: "a346", A359: "a359", A35K: "a35k", A388: "a388",
 };

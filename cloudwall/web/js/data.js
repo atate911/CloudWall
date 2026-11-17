@@ -22,19 +22,19 @@ export function airlineColors(a) {
 
 // ICAO type -> [shape, length in metres]
 const T = {
-  C150: ["piston", 7.3], C152: ["piston", 7.3], C172: ["piston", 8.3], C182: ["piston", 8.8], C206: ["piston", 8.6], C208: ["piston", 11.5],
+  C150: ["piston", 7.3], C152: ["piston", 7.3], C172: ["piston", 8.3], C182: ["piston", 8.8], C206: ["piston", 8.6], C208: ["piston", 12.67],
   P28A: ["piston", 7.3], P28B: ["piston", 7.5], PA46: ["piston", 8.8], P46T: ["piston", 9], SR20: ["piston", 7.9], SR22: ["piston", 7.9],
   DA40: ["piston", 8.1], DA42: ["piston", 8.6], BE36: ["piston", 8.4], BE58: ["piston", 9.1], M20P: ["piston", 7.5], RV7: ["piston", 6.2],
   RV12: ["piston", 6], RV14: ["piston", 6.4], CH7B: ["piston", 6.9], ST75: ["piston", 7.6], PC12: ["piston", 14.4], TBM9: ["piston", 10.7],
   R22: ["heli", 8.7], R44: ["heli", 11.7], R66: ["heli", 11.7], EC35: ["heli", 12.2], EC45: ["heli", 13.64], B407: ["heli", 12.7],
   B06: ["heli", 11.9], AS50: ["heli", 12.9], H60: ["heli", 19.8], H47: ["heli", 30], A139: ["heli", 16.6], S76: ["heli", 16],
   BE20: ["turboprop", 13.3], B350: ["turboprop", 14.2], B190: ["turboprop", 17.6], DH8D: ["turboprop", 32.8], DH8C: ["turboprop", 25.7],
-  AT72: ["turboprop", 27.2], AT76: ["turboprop", 27.2], SW4: ["turboprop", 18.1], C130: ["turboprop", 29.8], C30J: ["turboprop", 29.8],
+  AT72: ["turboprop", 27.2], AT76: ["turboprop", 27.2], SW4: ["turboprop", 18.1], C130: ["turboprop", 29.8], C30J: ["turboprop", 34.37],
   SF50: ["bizjet", 9.4], E50P: ["bizjet", 12.8], E55P: ["bizjet", 15.6], C25A: ["bizjet", 14.5], C25B: ["bizjet", 15.6], C56X: ["bizjet", 16],
   C680: ["bizjet", 19.4], C68A: ["bizjet", 19], C700: ["bizjet", 22.3], CL30: ["bizjet", 20.9], CL35: ["bizjet", 20.9], CL60: ["bizjet", 20.9],
   PC24: ["bizjet", 16.8], LJ45: ["bizjet", 17.6], LJ75: ["bizjet", 17.6], GLF4: ["bizjet", 26.9], GLF5: ["bizjet", 29.4], GLF6: ["bizjet", 30.4],
   GL5T: ["bizjet", 29.5], GLEX: ["bizjet", 30.3], GL7T: ["bizjet", 33.9], F2TH: ["bizjet", 20.2], F900: ["bizjet", 20.2], H25B: ["bizjet", 15.6],
-  G280: ["bizjet", 20.4], E545: ["bizjet", 20.7], E550: ["bizjet", 20.7],
+  G280: ["bizjet", 20.4], E545: ["bizjet", 19.69], E550: ["bizjet", 20.7],
   CRJ2: ["regional", 26.8], CRJ7: ["regional", 32.3], CRJ9: ["regional", 36.24], E135: ["regional", 26.3], E145: ["regional", 29.9],
   MD82: ["regional", 45.1], MD83: ["regional", 45.1], MD88: ["regional", 45.1], B712: ["regional", 37.8],
   E170: ["narrow", 29.9], E75L: ["narrow", 31.7], E75S: ["narrow", 31.7], E190: ["narrow", 36.2], E195: ["narrow", 38.7], E290: ["narrow", 36.33],
@@ -48,7 +48,7 @@ const T = {
   DC10: ["wide", 55.5], K46: ["wide", 50.5], KC10: ["wide", 55.4],
   A342: ["quad", 59.4], A343: ["quad", 63.7], A345: ["quad", 67.9], A346: ["quad", 75.4], A388: ["quad", 72.7], B741: ["quad", 70.7],
   B742: ["quad", 70.7], B744: ["quad", 70.7], B748: ["quad", 76.3], BLCF: ["quad", 71.7], C17: ["quad", 53], C5M: ["quad", 75.3],
-  A124: ["quad", 69.1], IL76: ["quad", 46.6], B52: ["quad", 48.5], E3TF: ["quad", 46.6], E6: ["quad", 46.6],
+  A124: ["quad", 69.1], IL76: ["quad", 46.6], B52: ["quad", 48.5], E3TF: ["quad", 46.6], E6: ["quad", 45.8],
 };
 const BY_CATEGORY = { A1: ["piston", 8], A2: ["bizjet", 16], A3: ["narrow", 38], A4: ["narrow", 47], A5: ["wide", 62], A7: ["heli", 12] };
 

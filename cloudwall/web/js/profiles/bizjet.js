@@ -4,7 +4,7 @@ const F = {};
 // ---------- helpers drawn through the extras hook (see silhouette.js) ----------
 // An intake opening (the Falcon 900's S-duct) drawn as a dark ellipse: s (< 0 from the tail end),
 // centre z and half-height r in metres.
-const intake = (s, z, r) => (k) => k.sk.ellipse("inlet", k.at(s), z, Math.min(0.1, r * 0.25), r);
+const intake = (s, z, r) => (k) => k.sk.ellipse("inlet", k.at(s) + r * 0.3, z, r * 0.4, r * 0.9);
 // A door outline with its own size (the renderer's passenger door is airliner-sized): centre s
 // (< 0 from the tail end), width w, sill z0 and height h in metres.
 const hatch = (s, w, z0, h, r = 0.14) => (k) => {

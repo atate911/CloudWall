@@ -123,7 +123,7 @@ F.b350 = {
   ...F.be20,
   win: [{ z: 0.727, from: 4.2, to: 7.14, pitch: 0.49, w: 0.36, h: 0.36 }, { z: 0.727, from: -3.93, to: -3.93, w: 0.45, h: 0.3 }],
   wing: { ...F.be20.wing, span: 17.1 },
-  tip: { h: 0.6, sweep: 35, top: 0.3, base: 0.9, blend: 0.12 },
+  tip: { h: 0.45, sweep: 35, top: 0.28, base: 0.9, blend: 0.1 },
   eng: { ...F.be20.eng, blades: 4, prop: 2.67 },
 };
 
