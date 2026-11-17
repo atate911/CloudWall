@@ -26,9 +26,8 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
 - **Logbook** – every flyover is logged: type collection, airlines, daily and all-time
   records (highest, lowest, fastest, closest, furthest origin), flyovers by hour.
 
-The backdrop follows the real sky (dawn, day, dusk, stars, overcast from the airport's
-weather report) and the display turns warm and dim after dark; the `Night` button
-forces it on or off. `Sound` turns on a soft chime when an aircraft comes overhead, with
+The display switches to its night chart, dim and dark, when the sun sets at your house;
+the `Night` button forces it on or off. `Sound` turns on a soft chime when an aircraft comes overhead, with
 a different one for rare, military or emergency traffic.
 
 Badges mark the interesting ones: `NEW TYPE`, `NEW AIRLINE`, `RARE TYPE`, `HEAVY`,
@@ -134,7 +133,8 @@ returns fixed sample data, so routes will not match what is overhead.
   first time each airline appears, cached on disk, and shown on a white tile. Logos are
   the airlines' trademarks, so none are included in this repository; `[logos] enabled =
   false` turns them off, and `url` can point at another source.
-- The Inter and JetBrains Mono fonts are bundled (SIL Open Font License, see
-  `cloudwall/web/fonts/`), so the board looks the same on every machine and needs no
-  internet for fonts.
+- The look is an aeronautical chart: cool chart paper, navy ink, chart blue for traffic and
+  magenta only for the aircraft overhead, switching to a night chart after dusk. Type is
+  B612, the typeface Airbus designed for cockpit displays, bundled under the SIL Open Font
+  License (see `cloudwall/web/fonts/`), so the board looks the same on every machine.
 - Tests: `python3 -m unittest discover -s tests`

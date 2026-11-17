@@ -36,7 +36,6 @@ function badgeClass(b) {
 export const badges = (list) => (list || []).map((b) => `<span class="badge ${badgeClass(b)}">${esc(b)}</span>`).join("");
 
 const SKELETON = `
-  <div class="hero-photo" id="h-photo"></div>
   <div class="h-top">
     <div class="flaps flight" id="h-flight"></div>
     <div class="airline"><div class="logo-tile" id="h-logo" hidden><img class="logo" id="h-logo-img" alt=""></div><span id="h-airline"></span><small id="h-sub"></small></div>
@@ -52,14 +51,14 @@ const SKELETON = `
   </div>
   <div class="h-bottom">
     <div class="look"><div class="big" id="h-look"></div><div class="sub" id="h-hint"></div></div>
-    <div class="type"><div class="sil-box" id="h-sil"></div><div class="sub" id="h-type"></div></div>
+    <div class="ac"><div class="media" id="h-media"><div class="sil-box" id="h-sil"></div></div><div class="sub" id="h-type"></div></div>
   </div>`;
 
 function routeHtml(a, state) {
   const r = a.route, ap = state.airport;
   if (a.route_pending && !r) {
     const prov = (state.live_routes && state.live_routes.label) || "the flight data service";
-    return `<div class="noroute pending"><div class="label">Route</div>Looking up route…<small>Asking ${esc(prov)} where this flight is going</small></div>`;
+    return `<div class="noroute pending">Looking up route…<small>Asking ${esc(prov)} where this flight is going</small></div>`;
   }
   if (a.local_inferred && (!r || !r.plausible)) {
     // the route database is wrong or silent, but the aircraft is clearly landing or leaving here
@@ -67,23 +66,23 @@ function routeHtml(a, state) {
     const why = r ? `The route database says ${esc(r.origin.iata)} → ${esc(r.dest.iata)}, which doesn't match where it's flying.` : "No route on file for this flight.";
     return `<div class="route inferred">
       <div class="apt ${arriving ? "unknown" : "local"}"><div class="flaps" id="h-orig"></div><small>${arriving ? "Origin unknown" : esc(ap.iata === "PDX" ? "Portland" : ap.iata)}</small></div>
-      <div><svg class="arc" viewBox="0 0 200 40"><path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3"/></svg>
-        <div class="arc-note">${arriving ? "Arriving" : "Departing"} ${esc(ap.iata)} · worked out from its approach path<br><span class="why">${why}</span></div></div>
+      <div><svg class="arc" viewBox="0 0 200 40"><path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--rule)" stroke-width="1" stroke-dasharray="2 3"/></svg>
+        <div class="arc-note">${arriving ? "Arriving at" : "Departing from"} ${esc(ap.iata)}, worked out from its flight path<br><span class="why">${why}</span></div></div>
       <div class="apt r ${arriving ? "local" : "unknown"}"><div class="flaps" id="h-dest"></div><small>${arriving ? esc(ap.iata === "PDX" ? "Portland" : ap.iata) : "Destination unknown"}</small></div>
     </div>`;
   }
   if (!r) {
     // the headline above already says who flies it, so say something new here
     const what = a.squawk === "1200" ? "Flying visually, no flight plan (squawk 1200)" : a.callsign && a.callsign !== a.reg ? "No published route for this flight" : "No flight plan on file";
-    return `<div class="noroute"><div class="label">No route</div>${esc(a.type_name || a.type || "Unknown aircraft")}<small>${esc(what)}</small></div>`;
+    return `<div class="noroute">${esc(a.type_name || a.type || "Unknown aircraft")}<small>${esc(what)}</small></div>`;
   }
   const iata = state.airport.iata;
   return `<div class="route ${r.plausible ? "" : "unsure"}">
     <div class="apt ${r.origin.iata === iata ? "local" : ""}"><div class="flaps" id="h-orig"></div><small>${esc(r.origin.city || r.origin.name || "")}</small></div>
     <div><svg class="arc" viewBox="0 0 200 40">
-      <path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--line)" stroke-width="1"/>
-      <path id="h-arc" d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--amber)" stroke-width="1.4" stroke-linecap="round" pathLength="1"/>
-      <circle id="h-arc-dot" r="2.4" fill="var(--amber)"/></svg>
+      <path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--rule)" stroke-width="1"/>
+      <path id="h-arc" d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--magenta)" stroke-width="1.4" stroke-linecap="round" pathLength="1"/>
+      <circle id="h-arc-dot" r="2.4" fill="var(--magenta)"/></svg>
       <div class="arc-note" id="h-note"></div></div>
     <div class="apt r ${r.dest.iata === iata ? "local" : ""}"><div class="flaps" id="h-dest"></div><small>${esc(r.dest.city || r.dest.name || "")}</small></div>
   </div>`;
@@ -92,14 +91,14 @@ function routeHtml(a, state) {
 function routeNote(r) {
   if (!r.plausible) return "route unverified — aircraft is off this track";
   const parts = [];
-  if (r.flown_nm != null) parts.push(`${num(r.flown_nm)} nm flown · ${num(r.left_nm)} nm to go`);
+  if (r.flown_nm != null) parts.push(`${num(r.flown_nm)} nm flown, ${num(r.left_nm)} to go`);
   else if (r.left_nm != null) parts.push(`${num(r.left_nm)} nm to go`);
   if (r.eta) {
     const late = Math.round((r.arrival_delay_s || 0) / 60);
     parts.push(`arrives ${new Date(r.eta * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` + (late >= 5 ? ` (${late} min late)` : late <= -5 ? ` (${-late} min early)` : ""));
   }
-  if (r.source_label) parts.push(r.source_label);
-  return parts.join(" · ");
+  if (r.source_label) parts.push(`via ${r.source_label}`);
+  return parts.join(", ");
 }
 
 function showHero(el, a, state) {
@@ -117,7 +116,7 @@ function showHero(el, a, state) {
   flap($("h-flight"), id);
   const ga = info.shape === "piston" || info.shape === "heli" || /^N\d/.test(a.callsign || "");
   $("h-airline").textContent = (pr && pr.airline) || (r && r.airline) || a.airline || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
-  $("h-sub").textContent = [a.callsign !== id ? a.callsign : null, a.reg !== id ? a.reg : null, a.squawk ? "Squawk " + a.squawk : null].filter(Boolean).join(" · ");
+  $("h-sub").innerHTML = [a.callsign !== id ? a.callsign : null, a.reg !== id ? a.reg : null, a.squawk ? "Squawk " + a.squawk : null].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("");
   const bh = badges(a.badges);
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
   $("h-pin").hidden = !state.pinned;
@@ -165,13 +164,16 @@ function showHero(el, a, state) {
   }
   // with no route the type name is already the headline, so keep this line short
   const name = r ? a.type_name || a.type : a.type;
-  $("h-type").textContent = [name, r && a.type_name && a.type ? `(${a.type})` : null, info.known ? `${info.length} m long` : null].filter(Boolean).join(" · ").replace(" · (", " (");
+  $("h-type").textContent = [name, r && a.type_name && a.type ? `(${a.type})` : null].filter(Boolean).join(" ") + (info.known ? `, ${info.length} m long` : "");
 
   if (a.photo && cur.photo !== a.photo) {
+    // a photo of this very airframe replaces the generic silhouette once it has loaded
     cur.photo = a.photo;
     const img = new Image();
     img.referrerPolicy = "no-referrer";
-    img.onload = () => { if (cur.photo === a.photo) { $("h-photo").style.backgroundImage = `url("${encodeURI(a.photo)}")`; $("h-photo").classList.add("on"); } };
+    img.className = "photo";
+    img.alt = "";
+    img.onload = () => { if (cur.photo === a.photo && $("h-media")) { $("h-media").replaceChildren(img); $("h-media").classList.add("has-photo"); } };
     img.src = a.photo;
   }
   cur.a = a;
@@ -210,13 +212,13 @@ function weatherWords(w) {
   if (!w.wind_kt) parts.push("calm wind");
   else parts.push(`wind ${w.wind_dir === "VRB" ? "variable" : "from the " + POINTS[Math.round(w.wind_dir / 22.5) % 16]} at ${w.wind_kt}${w.gust_kt ? `, gusting ${w.gust_kt}` : ""} kt`);
   if (w.temp_c != null) parts.push(`${Math.round((w.temp_c * 9) / 5 + 32)}°F`);
-  return parts.join(" · ");
+  return parts.join(", ");
 }
 
 function todayLine(state) {
   const bits = [`<b>${state.today}</b> flyover${state.today === 1 ? "" : "s"} logged today`];
   if (state.flow) bits.push(`${esc(state.airport.iata)} landing <b>${esc(state.flow.dir)}</b> on ${esc(state.flow.runways)}`);
-  return bits.join('<span class="sep">·</span>');
+  return bits.join('<span class="sep"></span>');
 }
 
 // Where the aircraft will be when it's closest to the house.
@@ -225,7 +227,7 @@ function passText(state, n) {
   const p = azEl(state.home, at, alt);
   const where = p.dist < 0.3 ? "straight overhead" : `${p.dist.toFixed(1)} nm to the ${POINTS[Math.round(p.az / 22.5) % 16]}, about ${Math.round(p.el)}° up`;
   const v = n.vrate || 0, doing = v > 300 ? "climbing" : v < -300 ? "descending" : "level";
-  return `Passes ${where} · ${num(Math.round(alt / 100) * 100)} ft and ${doing}`;
+  return `Passes ${where}, at ${num(Math.round(alt / 100) * 100)} ft and ${doing}`;
 }
 
 const NEXT_SKELETON = `
@@ -242,8 +244,10 @@ let nextCpa0 = 0;
 function fillNext(state, n) {
   flap($("nu-flight"), ident(n));
   const r = n.route && n.route.plausible ? n.route : null;
-  $("nu-sub").textContent = [(r && r.airline) || n.airline, n.type_name || n.type].filter(Boolean).join(" · ") || "Unknown aircraft";
-  const routeHtml = r ? `${esc(r.origin.iata)} <span class="dim">→</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : "";
+  // with a logo showing, the airline's name would only repeat it
+  const logoShown = !$("nu-logo").hidden;
+  $("nu-sub").textContent = [logoShown ? null : (r && r.airline) || n.airline, n.type_name || n.type].filter(Boolean).join(", ") || "Unknown aircraft";
+  const routeHtml = r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : "";
   if ($("nu-route").innerHTML !== routeHtml) $("nu-route").innerHTML = routeHtml;
   $("nu-look").textContent = passText(state, n);
   const left = n.cpa_s - (Date.now() - (state._at || Date.now())) / 1000;
@@ -277,7 +281,7 @@ function quietSlide(el, state, dots, changed) {
     return;
   }
   const airborne = state.aircraft.filter((a) => !a.on_ground).length;
-  const html = `<div class="label">Nothing inbound</div><h1>SKY'S QUIET</h1>
+  const html = `<h1>Quiet skies</h1>
     <div class="next">${airborne ? `${airborne} aircraft within ${state.tracking.radius_nm} nm, none heading this way yet.` : `No aircraft within ${state.tracking.radius_nm} nm right now.`}</div>
     <div class="nu-foot">${quietFoot(state)}</div>`;
   const box = el.querySelector(".idle.quiet");
@@ -286,16 +290,16 @@ function quietSlide(el, state, dots, changed) {
 const REC = [["highest", "Highest", (v) => num(v) + " ft"], ["lowest", "Lowest", (v) => num(v) + " ft"], ["fastest", "Fastest", (v) => num(v) + " kt"],
   ["closest", "Closest pass", (v) => v.toFixed(2) + " nm"], ["furthest_origin", "Furthest origin", (v) => num(v) + " nm"]];
 export function recordsHtml(title, r) {
-  return `<h2>${title}</h2>` + REC.map(([k, label, f]) => {
+  return (title ? `<h2>${title}</h2>` : "") + REC.map(([k, label, f]) => {
     const x = r[k];
     return `<div class="rec"><span>${label}</span><span>${x ? `<b>${f(x.value)}</b> <span class="dim">${esc(x.flight || x.callsign || "")} ${esc(k === "furthest_origin" ? x.origin : x.type || "")}</span>` : '<span class="dim">—</span>'}</span></div>`;
   }).join("");
 }
 function lastSlide(s) {
   const when = new Date(s.ts * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  return `<div class="label">Last flyover · ${when}</div><h1 class="amber">${esc(s.flight || s.callsign || s.reg || s.hex)}</h1>
-    <div class="next">${esc(s.airline || "")} ${esc(s.type_name || s.type || "")}</div>
-    <div>${s.origin ? `${esc(s.origin)} → ${esc(s.dest)} · ` : ""}${num(s.alt_ft)} ft · passed ${s.min_dist_nm.toFixed(1)} nm away</div>
+  return `<div class="dim">Last flyover, ${when}</div><h1>${esc(s.flight || s.callsign || s.reg || s.hex)}</h1>
+    <div class="next">${esc([s.airline, s.type_name || s.type].filter(Boolean).join(", "))}</div>
+    <div>${s.origin ? `${esc(s.origin)} to ${esc(s.dest)}, ` : ""}${num(s.alt_ft)} ft, ${s.min_dist_nm.toFixed(1)} nm from home</div>
     <div class="badges">${badges(s.badges)}</div>`;
 }
 
@@ -319,44 +323,48 @@ function paintHeat(canvas, state, heat, tiles) {
   canvas.width = canvas.height = size;
   const g = canvas.getContext("2d"), n = heat.grid, cell = size / n, R = heat.radius_nm, k = size / (2 * R);
   const XY = (lat, lon) => { const o = offset(state.home, { lat, lon }); return [size / 2 + o.x * k, size / 2 - o.y * k]; };
+  // colours come from the stylesheet, so the heatmap follows the day and night charts
+  const theme = getComputedStyle(document.body), v = (n) => theme.getPropertyValue(n).trim();
+  const night = document.body.classList.contains("night");
+  const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
   g.clearRect(0, 0, size, size);
   g.save();
   g.beginPath(); g.arc(size / 2, size / 2, size / 2, 0, 7); g.clip();
-  g.fillStyle = "rgba(6,10,15,.55)"; g.fillRect(0, 0, size, size);
+  g.fillStyle = v("--disc"); g.fillRect(0, 0, size, size);
   const bm = state.basemap;
   if (bm && bm.enabled && tiles) {
-    // the same faint map as the radar, so the hot spots line up with real places
-    g.globalAlpha = bm.opacity;
-    g.filter = { dark: "contrast(1.35)", light: "invert(1) contrast(1.1) brightness(.8)", "carto-dark": "brightness(2.1)",
-      "carto-light": "invert(1) contrast(1.1) brightness(.85)" }[bm.style] || "saturate(.5) brightness(.6)";
+    // the same faint map as the radar, so the busy corridors line up with real places
+    g.globalAlpha = bm.opacity * 0.8;
+    const darkMap = ["dark", "carto-dark"].includes(bm.style), lightMap = ["light", "carto-light"].includes(bm.style);
+    g.filter = night ? (lightMap ? "invert(1) contrast(1.1) brightness(.8)" : darkMap ? "brightness(1.6)" : "saturate(.4) brightness(.6)")
+      : (darkMap ? "invert(1) hue-rotate(180deg) contrast(.9) brightness(1.05)" : lightMap ? "contrast(1.05)" : "saturate(.4) brightness(1.1)");
     for (const t of tiles) if (t.img.complete && t.img.naturalWidth) g.drawImage(t.img, size / 2 + t.x0 * k, size / 2 - t.y0 * k, (t.x1 - t.x0) * k + 0.5, (t.y0 - t.y1) * k + 0.5);
     g.globalAlpha = 1; g.filter = "none";
   } else if (map) {
-    g.strokeStyle = "rgba(74,144,196,.45)"; g.lineCap = g.lineJoin = "round";
+    g.strokeStyle = v("--water"); g.lineCap = g.lineJoin = "round";
     for (const w of map.water || []) { g.lineWidth = Math.max(2, w.width_nm * k); g.beginPath(); w.line.forEach(([la, lo], i) => { const [x, y] = XY(la, lo); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); }
   }
   // Log scale, so the handful of busy corridors stand out from the many one-off tracks:
-  // rare cells are faint steel blue, busy ones amber, the very busiest nearly white.
+  // rare cells are a faint chart blue, the busiest chart magenta.
   const max = Math.max(2, ...heat.cells.map((c) => c[2])), lmax = Math.log1p(max);
-  const ramp = (t) => t < 0.55
-    ? [90 + (255 - 90) * (t / 0.55), 140 + (182 - 140) * (t / 0.55), 170 - (170 - 39) * (t / 0.55)]
-    : [255, 182 + (238 - 182) * ((t - 0.55) / 0.45), 39 + (200 - 39) * ((t - 0.55) / 0.45)];
-  g.globalCompositeOperation = "lighter";
+  const lo = rgb(v("--blue")), hi = rgb(v("--magenta"));
+  g.globalCompositeOperation = night ? "lighter" : "multiply";
   const cellsSorted = [...heat.cells].sort((a, b) => a[2] - b[2]);
   for (const [x, y, c] of cellsSorted) {
-    const t = Math.log1p(c) / lmax, [r, gg, bb] = ramp(t).map(Math.round);
+    const t = Math.log1p(c) / lmax, mixT = Math.min(1, Math.max(0, (t - 0.35) / 0.55));
+    const [r, gg, bb] = lo.map((ch, i) => Math.round(ch + (hi[i] - ch) * mixT));
     const cx = (x + 0.5) * cell, cy = (y + 0.5) * cell, rad = cell * (0.9 + 0.6 * t);
     const grad = g.createRadialGradient(cx, cy, 0, cx, cy, rad);
-    grad.addColorStop(0, `rgba(${r},${gg},${bb},${(0.11 + 0.46 * t ** 2.2).toFixed(3)})`);
+    grad.addColorStop(0, `rgba(${r},${gg},${bb},${(0.12 + 0.55 * t ** 2).toFixed(3)})`);
     grad.addColorStop(1, `rgba(${r},${gg},${bb},0)`);
     g.fillStyle = grad; g.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
   }
   g.globalCompositeOperation = "source-over";
   g.restore();
-  g.strokeStyle = "rgba(255,255,255,.25)"; g.lineWidth = 1; g.beginPath(); g.arc(size / 2, size / 2, size / 2 - 1, 0, 7); g.stroke();
-  g.fillStyle = "#fff"; g.beginPath(); g.arc(size / 2, size / 2, Math.max(3, size / 110), 0, 7); g.fill();
+  g.strokeStyle = v("--rule"); g.lineWidth = Math.max(1, size / 500); g.beginPath(); g.arc(size / 2, size / 2, size / 2 - 1, 0, 7); g.stroke();
+  g.fillStyle = v("--ink"); g.beginPath(); g.arc(size / 2, size / 2, Math.max(3, size / 110), 0, 7); g.fill();
   const [ax, ay] = XY(state.airport.lat, state.airport.lon);
-  g.font = `${Math.round(size / 32)}px ui-monospace, monospace`; g.fillStyle = "rgba(255,255,255,.8)"; g.textAlign = "center"; g.fillText(state.airport.iata, ax, ay + size / 24);
+  g.font = `${Math.round(size / 30)}px "B612 Mono", monospace`; g.fillStyle = v("--ink-2"); g.textAlign = "center"; g.fillText(state.airport.iata, ax, ay + size / 24);
 }
 
 async function refreshExtras() {
@@ -390,17 +398,17 @@ function showIdle(el, state) {
   slideShown = slide;
   el._key = null;
   if (kind === "heat") {
-    el.innerHTML = `<div class="idle heat"><div><div class="label">Where they flew today</div><h1>TODAY'S TRAFFIC</h1>
+    el.innerHTML = `<div class="idle heat"><div><h1>Today’s traffic</h1>
       <div class="heat-text">Every aircraft tracked within ${H.radius_nm} nm since midnight, laid on top of each other.
       The bright bands are the routes used again and again: the ${esc(state.airport.iata)} arrival and departure paths. Faint lines are one-off flights.</div>
       <div class="heat-legend"><span>one-off</span><i></i><span>busy</span></div>
-      <div class="dim heat-key">White dot: home · ${esc(state.airport.iata)}: the airport</div></div><canvas id="heat"></canvas></div>${dots}`;
+      <div class="dim heat-key">The dot in the middle is home.</div></div><canvas id="heat"></canvas></div>${dots}`;
     drawHeat($("heat"), state, H);
   } else if (kind === "records") {
-    el.innerHTML = `<div class="idle"><div class="label">${L.today} flyovers today · ${L.types.length} aircraft types all time</div>${recordsHtml("Today's records", L.records_today)}</div>${dots}`;
+    el.innerHTML = `<div class="idle"><h1>Today’s records</h1><div class="dim">${L.today} flyovers so far, ${L.types.length} aircraft types seen since CloudWall started</div>${recordsHtml("", L.records_today)}</div>${dots}`;
   } else {
     const s = L.recent[0];
-    el.innerHTML = `${s.photo ? `<div class="hero-photo on strong" style="background-image:url('${encodeURI(s.photo)}')"></div>` : ""}<div class="idle">${lastSlide(s)}</div>${dots}`;
+    el.innerHTML = `<div class="idle last">${s.photo ? `<img class="photo" src="${encodeURI(s.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<div>${lastSlide(s)}</div></div>${dots}`;
   }
 }
 

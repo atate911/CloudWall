@@ -20,18 +20,18 @@ function boardHtml() {
     const r = a.route && a.route.plausible ? a.route : null, v = a.vrate || 0, c = airlineColors(a);
     const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
     return `<tr data-hex="${esc(a.hex)}" class="${a.hex === heroHex ? "hero" : ""}">
-      <td class="lg">${state.logos && a.airline_iata ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc((r && r.airline) || a.airline || "")}"></span>` : ""}<i class="sw" style="background:${c ? c[0] : "var(--line)"}"></i></td>
+      <td class="lg">${state.logos && a.airline_iata ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc((r && r.airline) || a.airline || "")}"></span>` : ""}<i class="sw" style="background:${c ? c[0] : "var(--rule)"}"></i></td>
       <td class="fl">${esc(ident(a))}<small>${esc((r && r.airline) || a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || a.type_name || "")}</small></td>
-      <td class="rt">${r ? `${esc(r.origin.iata)} <span class="dim">→</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : '<span class="dim">—</span>'}</td>
-      <td>${esc(a.type || "")}</td>
-      <td class="num">${altText(a)}<span class="vs">${v > 300 ? '<span class="up">▲</span>' : v < -300 ? '<span class="down">▼</span>' : ""}</span></td>
-      <td class="num">${num(a.gs)}</td>
-      <td class="num">${a.dist.toFixed(1)}<span class="cmp">${a.compass}</span></td>
+      <td class="rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : '<span class="dim">—</span>'}</td>
+      <td class="ty">${esc(a.type || "")}</td>
+      <td class="num">${altText(a)} <small class="u">ft</small><span class="vs">${v > 300 ? '<span class="up">▲</span>' : v < -300 ? '<span class="down">▼</span>' : ""}</span></td>
+      <td class="num">${num(a.gs)} <small class="u">kt</small></td>
+      <td class="num">${a.dist.toFixed(1)} <small class="u">nm</small><span class="cmp">${a.compass}</span></td>
       <td class="num ${soon ? "soon" : ""}">${soon ? mmss(a.cpa_s) : '<span class="dim">—</span>'}</td></tr>`;
   });
-  return `<table class="board"><thead><tr><th></th><th>Flight</th><th>Route</th><th>Type</th><th class="num">Alt ft</th><th class="num">Kt</th><th class="num">Nm</th><th class="num">Overhead</th></tr></thead>
+  return `<table class="board"><thead><tr><th></th><th>Flight</th><th>Route</th><th>Type</th><th class="num">Altitude</th><th class="num">Speed</th><th class="num">Distance</th><th class="num">Overhead in</th></tr></thead>
     <tbody>${rows.join("") || '<tr><td colspan="8" class="empty">No airborne traffic within ' + R.radius_nm + " nm.</td></tr>"}</tbody></table>
-    <div class="board-foot">Tap a flight to pin it to the flight card · sorted by time to overhead, then distance</div>`;
+    <div class="board-foot">Soonest overhead first. Tap a flight to show it on the flight card.</div>`;
 }
 
 // ---------- logbook ----------
@@ -125,9 +125,9 @@ function render() {
   renderToggles();
   const w = state.weather, f = state.flow;
   $("flow").hidden = !f;
-  if (f) $("flow").innerHTML = `${esc(state.airport.iata)} <b>${esc(f.label)}</b> ${esc(f.runways)}`;
+  if (f) $("flow").innerHTML = `${esc(state.airport.iata)} landing ${esc(f.dir)}, runways ${esc(f.runways.replace(" / ", " and "))}`;
   $("wx").hidden = !w;
-  if (w) $("wx").innerHTML = `<b class="cat-${esc(w.category)}">${esc(w.category || "WX")}</b> ${w.wind_kt ?? 0} kt · ${Math.round((w.temp_c * 9) / 5 + 32)}°F`;
+  if (w) $("wx").innerHTML = `${Math.round((w.temp_c * 9) / 5 + 32)}°F, wind ${w.wind_kt ?? 0} kt <b class="cat-${esc(w.category)}">${esc(w.category || "")}</b>`;
   $("link").hidden = state.status.ok || !state.status.source;
   $("n-board").textContent = state.aircraft.filter((a) => !a.on_ground).length || "";
   if (view === "now") { renderHero($("hero"), state); drawScopeNow(); }
