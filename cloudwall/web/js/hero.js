@@ -1,5 +1,5 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, altText, offset, clamp } from "./util.js";
+import { $, esc, num, mmss, ident, altText, offset, clamp, tidyName } from "./util.js";
 import { airlineColors, typeInfo } from "./data.js";
 import { silhouette, silhouetteScale } from "./silhouette.js";
 import { flap, roll } from "./fx.js";
@@ -93,7 +93,7 @@ function showHero(el, a, state) {
   const id = ident(a), info = typeInfo(a);
   flap($("h-flight"), id);
   const ga = info.shape === "piston" || info.shape === "heli" || /^N\d/.test(a.callsign || "");
-  $("h-airline").textContent = (pr && pr.airline) || (r && r.airline) || (a.owner && a.owner !== "Private" ? a.owner : ga ? "General aviation" : "");
+  $("h-airline").textContent = (pr && pr.airline) || (r && r.airline) || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
   $("h-sub").textContent = [a.callsign !== id ? a.callsign : null, a.reg !== id ? a.reg : null, a.squawk ? "Squawk " + a.squawk : null].filter(Boolean).join(" · ");
   const bh = badges(a.badges);
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
@@ -124,7 +124,7 @@ function showHero(el, a, state) {
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
   $("h-phase").textContent = a.local === "arriving" ? `On approach to ${state.airport.iata}` : a.local === "departing" ? `Climbing out of ${state.airport.iata}` : a.phase[0].toUpperCase() + a.phase.slice(1);
 
-  $("h-look").textContent = a.elev > 75 ? "Straight overhead" : `Look ${a.compass}, ${Math.round(a.elev)}° up`;
+  $("h-look").textContent = a.elev > 75 ? "Straight overhead" : a.elev < 2 ? `Look ${a.compass}, low on the horizon` : `Look ${a.compass}, ${Math.round(a.elev)}° up`;
   $("h-hint").textContent = viewingHint(a);
 
   const sil = $("h-sil");
@@ -220,7 +220,8 @@ function paintHeat(canvas, state, heat, tiles) {
   if (bm && bm.enabled && tiles) {
     // the same faint map as the radar, so the hot spots line up with real places
     g.globalAlpha = bm.opacity;
-    g.filter = bm.style === "dark" ? "contrast(1.35)" : bm.style === "light" ? "invert(1) contrast(1.1) brightness(.8)" : "saturate(.5) brightness(.6)";
+    g.filter = { dark: "contrast(1.35)", light: "invert(1) contrast(1.1) brightness(.8)", "carto-dark": "brightness(2.1)",
+      "carto-light": "invert(1) contrast(1.1) brightness(.85)" }[bm.style] || "saturate(.5) brightness(.6)";
     for (const t of tiles) if (t.img.complete && t.img.naturalWidth) g.drawImage(t.img, size / 2 + t.x0 * k, size / 2 - t.y0 * k, (t.x1 - t.x0) * k + 0.5, (t.y0 - t.y1) * k + 0.5);
     g.globalAlpha = 1; g.filter = "none";
   } else if (map) {

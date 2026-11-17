@@ -57,3 +57,12 @@ export function store(key, value) {
   } catch (e) { /* private mode: settings just don't persist */ }
   return value;
 }
+
+// "AERO MAINTENANCE INC" -> "Aero Maintenance Inc"; leaves mixed-case names alone.
+const KEEP_UPPER = new Set(["LLC", "LLP", "LP", "USA", "US", "FAA", "II", "III", "IV", "PDX", "CO.", "DBA"]);
+export function tidyName(name) {
+  if (!name || name !== name.toUpperCase() || !/[A-Z]{3}/.test(name)) return name;
+  return name.toLowerCase().replace(/[a-z0-9.&'-]+/g, (w) =>
+    KEEP_UPPER.has(w.toUpperCase()) ? w.toUpperCase()
+      : (w[0].toUpperCase() + w.slice(1)).replace(/^(O'|Mc)([a-z])/, (m, p, c) => p + c.toUpperCase()));
+}

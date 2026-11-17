@@ -130,6 +130,22 @@ class TrackerTest(unittest.TestCase):
         self.t.update([plane("g1", "ASA1", 0.1, alt=0, on_ground=True)], "test")
         self.assertIsNone(self.t.snapshot()["hero"])
 
+    def test_taxiing_aircraft_is_not_overhead(self):
+        # what the feed reported for a Cessna taxiing near the house: -100 ft at 13 kt
+        taxi = plane("t1", "N733NV", 1.2, alt=-100, typ="C172", gs=13, category="A1")
+        heli = plane("h1", "LIFE3", 1.0, alt=400, typ="EC35", gs=25, category="A7")
+        self.t.update([taxi, heli], "test")
+        s = self.t.snapshot()
+        ac = {a["hex"]: a for a in s["aircraft"]}
+        self.assertTrue(ac["t1"]["on_ground"])
+        self.assertFalse(ac["h1"]["on_ground"])                 # slow, low helicopters still fly
+        self.assertEqual(s["hero"]["hex"], "h1")
+        self.assertEqual(self.store.count("hex='t1'"), 0)       # and the taxiing plane isn't logged
+
+    def test_low_on_the_horizon_is_not_overhead(self):
+        self.t.update([plane("a1", "ASA1", 3.4, alt=300)], "test")   # within range but ~1 degree up
+        self.assertIsNone(self.t.snapshot()["hero"])
+
     def test_hysteresis_and_pin(self):
         self.t.update([plane("a1", "ASA1", 1.0), plane("a2", "ASA2", -1.2)], "test")
         self.assertEqual(self.t.snapshot()["hero"]["hex"], "a1")
@@ -411,6 +427,8 @@ class TilesTest(unittest.TestCase):
         finally:
             T.urllib.request.urlopen = real
         self.assertEqual(seen, ["https://a.example.com/dark/11/326/731.png?api_key=k"])
+        cfg["map"]["url"] = "https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png?key=k"
+        self.assertEqual(T.Tiles(cfg, "/tmp/x").info()["style"], "carto-dark")
 
     def test_styles_and_off(self):
         from cloudwall import tiles as T

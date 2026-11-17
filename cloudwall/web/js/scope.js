@@ -84,7 +84,7 @@ function place(state, a, t, mode) {
   }
   const k = 100 / state.tracking.radius_nm, o = offset(state.home, projected(a, t));
   if (Math.hypot(o.x, o.y) * k > 100) return null;
-  return { x: o.x * k, y: -o.y * k, rot: a.track || 0, scale: 1, sub: a.alt == null ? "" : String(Math.round(a.alt / 100)).padStart(3, "0") };
+  return { x: o.x * k, y: -o.y * k, rot: a.track || 0, scale: 1, sub: a.alt == null ? "" : String(Math.max(0, Math.round(a.alt / 100))).padStart(3, "0") };
 }
 
 // ---- static layer ----

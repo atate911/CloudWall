@@ -47,8 +47,23 @@ class Tracker:
         self.heat_saved = time.time()
 
     # -- per-aircraft derivations -------------------------------------------
+    def _on_ground(self, a):
+        """Many transponders never report "on ground", so a plane taxiing at an airport
+        shows up as airborne at a few hundred feet. Slow and at about ground level means
+        it's on the ground. Helicopters fly slowly on purpose, so they need to be lower."""
+        if a["on_ground"]:
+            return True
+        alt, gs, field = a["alt"], a.get("gs"), self.home.get("elevation_ft", 0)
+        if alt is None or gs is None:
+            return False
+        if a.get("category") == "A7":
+            return gs < 10 and alt < field + 100
+        return gs < 45 and alt < field + 400
+
     def _derive(self, a):
         h = self.home
+        if self._on_ground(a):
+            a["on_ground"] = True
         a["dist"] = geo.haversine_nm(h["lat"], h["lon"], a["lat"], a["lon"])
         a["brg"] = geo.bearing_deg(h["lat"], h["lon"], a["lat"], a["lon"])
         a["compass"] = geo.compass(a["brg"])
@@ -123,8 +138,9 @@ class Tracker:
     # -- selection ------------------------------------------------------------
     def _overhead(self, a):
         t = self.cfg["tracking"]
+        # it also has to be clearly above the horizon from the house
         return (not a["on_ground"] and a["alt"] is not None and a["dist"] <= t["overhead_nm"]
-                and a["alt"] <= t["max_overhead_alt_ft"])
+                and a["alt"] <= t["max_overhead_alt_ft"] and (a["elev"] or 0) >= 2)
 
     def _pick_hero(self, by_hex):
         if self.pinned in by_hex:

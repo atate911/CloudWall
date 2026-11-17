@@ -53,8 +53,15 @@ class Tiles:
         self.dir = Path(cache_dir) / hashlib.sha1(self.url.encode()).hexdigest()[:10]
         self.lock = threading.Lock()
 
+    def look(self):
+        """Which dimming the browser applies: maps differ in how dark they start out."""
+        u = self.url.lower()
+        if "cartocdn" in u:
+            return "carto-light" if ("light" in u or "positron" in u or "voyager" in u) else "carto-dark"
+        return self.style if self.style in STYLES else "custom"
+
     def info(self):
-        return {"enabled": self.enabled, "style": self.style, "attribution": self.attribution, "opacity": self.opacity}
+        return {"enabled": self.enabled, "style": self.look(), "attribution": self.attribution, "opacity": self.opacity}
 
     def allowed(self, z, x, y):
         if not (6 <= z <= 17 and 0 <= x < 2 ** z and 0 <= y < 2 ** z):
