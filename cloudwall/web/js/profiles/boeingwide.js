@@ -86,6 +86,25 @@ F.b748 = {
   overlays: [quadOutboard({ at: 0.613, fwd: 4.4, drop: 2.05, nac: B748_NAC })],
 };
 
+// 747 Dreamlifter (747-400 LCF): from published dimensions only (Wikipedia: length 71.68 m, height 21.54 m,
+// fuselage width 8.38 m; lower confidence). The 747-400 nose and flight deck, then the enlarged cargo
+// fuselage bulging up from just behind the cockpit and running flat to the swing tail, which carries the
+// 747 fin about 2.1 m higher; the lower fuselage, wing, engines and winglets are the -400's.
+F.blcf = {
+  ...F.b744, fwd: 0,
+  nose: {
+    ...F.b744.nose,
+    top: [...F.b744.nose.top.filter(([s]) => s <= 0.892), [1.0, 1.1], [1.15, 1.22], [1.35, 1.33], [1.6, 1.39], [1.9, 1.42], [2.3, 1.435], [2.6, 1.44]],
+  },
+  tail: {
+    ...F.b744.tail,
+    top: [[3.4, 1.44], [2.8, 1.42], [2.3, 1.38], [1.9, 1.33], [1.5, 1.27], [1.1, 1.19], [0.75, 1.11], [0.45, 1.04], [0.2, 0.97], [0.07, 0.92], [0, 0.86]],
+  },
+  doors: [[9.55, 1.07], [13.37, 2.63, "C"], [-23.41, 2.64, "C"], [-19.79, 1.2, "C"]],
+  win: [],
+  fin: { ...F.b744.fin, h: 12.17 },
+};
+
 // ---------- Boeing 767 ----------
 // Reference: 767 ACAP D6-58328 Rev K, fig. 2.3.2 (767-300/-300ER ground clearances side view,
 // to scale) and fig. 2.2.2 (plan view, for the wing and tailplane planforms). The drawing is
@@ -344,5 +363,5 @@ F.kc10 = { ...F.dc10, doors: [[5.24, 1.07], [10.6, 2.6, "C"], [-14.4, 1.8, "C"]]
 
 export const families = F;
 export const types = {
-  B741: "b742", B742: "b742", B744: "b744", B748: "b748", MD11: "md11", DC10: "dc10", KC10: "kc10", B762: ["b763", { doors: B762_DOORS }], B763: "b763w", K46: "k46", B772: "b772", B77L: ["b77w", { doors: B772_DOORS }], B77W: "b77w", B779: "b779", B788: "b787", B789: "b787", B78X: "b78x", B773: ["b77w", { wing: { ...F.b772.wing }, eng: F.b772.eng }], B764: "b764",
+  B741: "b742", B742: "b742", B744: "b744", B748: "b748", BLCF: "blcf", MD11: "md11", DC10: "dc10", KC10: "kc10", B762: ["b763", { doors: B762_DOORS }], B763: "b763w", K46: "k46", B772: "b772", B77L: ["b77w", { doors: B772_DOORS }], B77W: "b77w", B779: "b779", B788: "b787", B789: "b787", B78X: "b78x", B773: ["b77w", { wing: { ...F.b772.wing }, eng: F.b772.eng }], B764: "b764",
 };
