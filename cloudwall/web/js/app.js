@@ -125,7 +125,7 @@ function render() {
 async function poll() {
   try {
     state = await (await fetch("api/state")).json();
-    stateAt = Date.now();
+    stateAt = state._at = Date.now();
     stateAtPerf = performance.now();
     if (mapFor !== state.airport.icao) { mapFor = state.airport.icao; loadMap(mapFor).then(() => { scopeLabel = ""; }); }
     const hero = state.hero && state.hero.hex;

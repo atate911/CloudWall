@@ -54,12 +54,26 @@ class Flightradar24(LiveProvider):
     def route(self, callsign):
         """Live route for a callsign, or None if Flightradar24 isn't tracking it with a route."""
         data = self._call(f"{self.base}/live/flight-positions/full?callsigns={quote(callsign)}")
-        rows = (data or {}).get("data") or []
+        if data is None:
+            return None                         # over the daily cap, paused, or nothing returned
+        rows = data.get("data") or []
         f = next((r for r in rows if (r.get("callsign") or "").strip().upper() == callsign), None)
         if f is None and len(rows) == 1 and self.sandbox:
             f = rows[0]          # the sandbox returns fixed sample data whatever you ask for
-        if not f or not (f.get("orig_icao") or f.get("orig_iata")) or not (f.get("dest_icao") or f.get("dest_iata")):
+        # Say what came back, so a wrong guess about the response format is easy to spot.
+        if not rows:
+            log.info("Flightradar24: no live flight found for %s", callsign)
             return None
+        if f is None:
+            log.warning("Flightradar24: %d result(s) for %s but none with that callsign; fields: %s",
+                        len(rows), callsign, ", ".join(sorted(rows[0])))
+            return None
+        if not (f.get("orig_icao") or f.get("orig_iata")) or not (f.get("dest_icao") or f.get("dest_iata")):
+            log.warning("Flightradar24: %s found but without origin/destination; fields: %s",
+                        callsign, ", ".join(sorted(f)))
+            return None
+        log.info("Flightradar24: %s is %s -> %s", callsign, f.get("orig_iata") or f.get("orig_icao"),
+                 f.get("dest_iata") or f.get("dest_icao"))
         return {
             "flight": f.get("flight") or callsign, "airline": None,
             "source": self.name, "source_label": self.label,

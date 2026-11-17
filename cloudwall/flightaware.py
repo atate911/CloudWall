@@ -67,9 +67,15 @@ class FlightAware(LiveProvider):
     def route(self, callsign):
         """Live route for a callsign, or None if FlightAware has no current flight for it."""
         data = self._call(f"{BASE}/flights/{quote(callsign)}?max_pages=1")
-        f = pick_flight((data or {}).get("flights") or [], time.time())
-        if not f or not f.get("origin") or not f.get("destination"):
+        if data is None:
             return None
+        f = pick_flight(data.get("flights") or [], time.time())
+        if not f or not f.get("origin") or not f.get("destination"):
+            log.info("FlightAware: no current flight with a route for %s (%d legs returned)",
+                     callsign, len(data.get("flights") or []))
+            return None
+        log.info("FlightAware: %s is %s -> %s", callsign, f["origin"].get("code_iata") or f["origin"].get("code"),
+                 f["destination"].get("code_iata") or f["destination"].get("code"))
         return {
             "flight": f.get("ident_iata") or f.get("ident") or callsign,
             "airline": None, "source": self.name, "source_label": self.label,

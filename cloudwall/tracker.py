@@ -93,6 +93,28 @@ class Tracker:
             if route["plausible"]:
                 a["local"] = ("arriving" if route["dest"]["iata"] == iata else
                               "departing" if route["origin"]["iata"] == iata else None)
+        if not a.get("local"):
+            a["local"] = self._infer_local(a)
+            a["local_inferred"] = bool(a["local"])
+
+    def _infer_local(self, a):
+        """No believable route: the aircraft's own behaviour near the airport still
+        tells us whether it is landing there or has just taken off."""
+        ap = self.cfg["airport"]
+        if (a["on_ground"] or a["alt"] is None or a["alt"] > 6000 or a.get("track") is None
+                or a.get("category") == "A7"):
+            return None
+        d = geo.haversine_nm(a["lat"], a["lon"], ap["lat"], ap["lon"])
+        if d > 18:
+            return None
+        to_ap = geo.bearing_deg(a["lat"], a["lon"], ap["lat"], ap["lon"])
+        off = abs((a["track"] - to_ap + 180) % 360 - 180)          # 0 = heading straight at it
+        v = a.get("vrate") or 0
+        if v < -300 and (off < 35 or d < 2.5):
+            return "arriving"
+        if v > 300 and off > 120:
+            return "departing"
+        return None
 
     def _with_geometry(self, a, route):
         """Add distance flown/left and a sanity check of the route against the aircraft's position."""

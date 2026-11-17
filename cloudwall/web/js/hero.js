@@ -1,5 +1,5 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, altText, offset, clamp, tidyName } from "./util.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS } from "./util.js";
 import { airlineColors, typeInfo } from "./data.js";
 import { silhouette, silhouetteScale } from "./silhouette.js";
 import { flap, roll } from "./fx.js";
@@ -46,7 +46,18 @@ const SKELETON = `
   </div>`;
 
 function routeHtml(a, state) {
-  const r = a.route;
+  const r = a.route, ap = state.airport;
+  if (a.local_inferred && (!r || !r.plausible)) {
+    // the route database is wrong or silent, but the aircraft is clearly landing or leaving here
+    const arriving = a.local === "arriving";
+    const why = r ? `The route database says ${esc(r.origin.iata)} → ${esc(r.dest.iata)}, which doesn't match where it's flying.` : "No route on file for this flight.";
+    return `<div class="route inferred">
+      <div class="apt ${arriving ? "unknown" : "local"}"><div class="flaps" id="h-orig"></div><small>${arriving ? "Origin unknown" : esc(ap.iata === "PDX" ? "Portland" : ap.iata)}</small></div>
+      <div><svg class="arc" viewBox="0 0 200 40"><path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 3"/></svg>
+        <div class="arc-note">${arriving ? "Arriving" : "Departing"} ${esc(ap.iata)} · worked out from its approach path<br><span class="why">${why}</span></div></div>
+      <div class="apt r ${arriving ? "local" : "unknown"}"><div class="flaps" id="h-dest"></div><small>${arriving ? esc(ap.iata === "PDX" ? "Portland" : ap.iata) : "Destination unknown"}</small></div>
+    </div>`;
+  }
   if (!r) {
     // the headline above already says who flies it, so say something new here
     const what = a.squawk === "1200" ? "Flying visually, no flight plan (squawk 1200)" : a.callsign && a.callsign !== a.reg ? "No published route for this flight" : "No flight plan on file";
@@ -99,13 +110,17 @@ function showHero(el, a, state) {
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
   $("h-pin").hidden = !state.pinned;
 
-  const key = r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || "");
+  const inferred = a.local_inferred && (!r || !r.plausible);
+  const key = (inferred ? "inferred:" + a.local + "|" : "") + (r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || ""));
   if (key !== cur.routeKey) {
     cur.routeKey = key;
     $("h-route").innerHTML = routeHtml(a, state);
-    if (r) { flap($("h-orig"), r.origin.iata || "???"); flap($("h-dest"), r.dest.iata || "???"); }
+    if (inferred) {
+      const here = state.airport.iata;
+      flap($("h-orig"), a.local === "arriving" ? "???" : here); flap($("h-dest"), a.local === "arriving" ? here : "???");
+    } else if (r) { flap($("h-orig"), r.origin.iata || "???"); flap($("h-dest"), r.dest.iata || "???"); }
   }
-  if (r) {
+  if (r && !inferred) {
     const p = clamp(r.progress, 0.03, 0.97);
     $("h-arc").setAttribute("stroke-dasharray", `${p} 1`);
     $("h-arc-dot").setAttribute("cx", (1 - p) ** 2 * 4 + 2 * (1 - p) * p * 100 + p * p * 196);
@@ -122,7 +137,7 @@ function showHero(el, a, state) {
   roll($("h-dist"), a.dist, (x) => x.toFixed(1));
   $("h-dist2").textContent = `${(a.dist * 1.15078).toFixed(1)} mi ${a.compass}`;
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
-  $("h-phase").textContent = a.local === "arriving" ? `On approach to ${state.airport.iata}` : a.local === "departing" ? `Climbing out of ${state.airport.iata}` : a.phase[0].toUpperCase() + a.phase.slice(1);
+  $("h-phase").textContent = a.local === "arriving" ? `Landing at ${state.airport.iata}` : a.local === "departing" ? `Climbing out of ${state.airport.iata}` : a.phase[0].toUpperCase() + a.phase.slice(1);
 
   $("h-look").textContent = a.elev > 75 ? "Straight overhead" : a.elev < 2 ? `Look ${a.compass}, low on the horizon` : `Look ${a.compass}, ${Math.round(a.elev)}° up`;
   $("h-hint").textContent = viewingHint(a);
@@ -168,13 +183,89 @@ export function tickHero(elapsed) {
 }
 
 // ---------- idle: rotate through a few quiet-sky displays ----------
-function quietSlide(state) {
-  const n = state.next, w = state.weather;
-  const wx = w ? `${w.category || ""} at ${state.airport.iata} · wind ${w.wind_dir === "VRB" ? "variable" : String(w.wind_dir ?? 0).padStart(3, "0") + "°"} at ${w.wind_kt ?? 0} kt · ${Math.round((w.temp_c * 9) / 5 + 32)}°F` : "";
-  return `<div class="label">Nothing overhead</div><h1>SKY'S QUIET</h1>
-    <div class="next">${n ? `Next up: <b>${esc(ident(n))}</b> ${esc(n.type || "")} in <b>${mmss(n.cpa_s)}</b>, passing ${n.cpa_nm.toFixed(1)} nm away at about ${altText(n)} ft` : "No inbound traffic on a track toward the house right now."}</div>
-    <div>${state.today} aircraft logged overhead today${state.flow ? ` · ${esc(state.airport.iata)} is landing ${state.flow.dir} (${esc(state.flow.runways)})` : ""}</div>
-    <div class="dim">${esc(wx)}</div>${w && w.raw ? `<div class="raw">${esc(w.raw)}</div>` : ""}`;
+// ---- quiet sky: the next aircraft heading this way, or a calm summary ----
+const COVER_WORDS = { FEW: "A few clouds", SCT: "Scattered clouds", BKN: "Broken clouds", OVC: "Overcast", OVX: "Sky obscured", VV: "Sky obscured" };
+function weatherWords(w) {
+  if (!w) return "";
+  const parts = [], layers = (w.clouds || []).filter((c) => c.base != null);
+  const deck = layers.find((c) => ["BKN", "OVC", "OVX", "VV"].includes(c.cover)) || layers[0];
+  if (deck) parts.push(`${COVER_WORDS[deck.cover] || deck.cover} at ${num(deck.base)} ft`);
+  else if (["CLR", "SKC", "CAVOK", "NCD"].includes(w.cover)) parts.push("Clear skies");
+  if (w.visibility != null) parts.push(`visibility ${w.visibility} mi`);
+  if (!w.wind_kt) parts.push("calm wind");
+  else parts.push(`wind ${w.wind_dir === "VRB" ? "variable" : "from the " + POINTS[Math.round(w.wind_dir / 22.5) % 16]} at ${w.wind_kt}${w.gust_kt ? `, gusting ${w.gust_kt}` : ""} kt`);
+  if (w.temp_c != null) parts.push(`${Math.round((w.temp_c * 9) / 5 + 32)}°F`);
+  return parts.join(" · ");
+}
+
+function todayLine(state) {
+  const bits = [`<b>${state.today}</b> flyover${state.today === 1 ? "" : "s"} logged today`];
+  if (state.flow) bits.push(`${esc(state.airport.iata)} landing <b>${esc(state.flow.dir)}</b> on ${esc(state.flow.runways)}`);
+  return bits.join('<span class="sep">·</span>');
+}
+
+// Where the aircraft will be when it's closest to the house.
+function passText(state, n) {
+  const t = Math.max(0, n.cpa_s), at = projected(n, t), alt = Math.max(0, (n.alt || 0) + ((n.vrate || 0) * t) / 60);
+  const p = azEl(state.home, at, alt);
+  const where = p.dist < 0.3 ? "straight overhead" : `${p.dist.toFixed(1)} nm to the ${POINTS[Math.round(p.az / 22.5) % 16]}, about ${Math.round(p.el)}° up`;
+  const v = n.vrate || 0, doing = v > 300 ? "climbing" : v < -300 ? "descending" : "level";
+  return `Passes ${where} · ${num(Math.round(alt / 100) * 100)} ft and ${doing}`;
+}
+
+const NEXT_SKELETON = `
+  <div class="label">Next overhead</div>
+  <div class="nu-row">
+    <div class="nu-id"><div class="flaps nu-flight" id="nu-flight"></div><div class="nu-sub" id="nu-sub"></div></div>
+    <div class="countdown big" id="nu-countdown"><svg viewBox="0 0 40 40"><circle class="c-track" cx="20" cy="20" r="17"/><circle class="c-fill" id="nu-ring" cx="20" cy="20" r="17" pathLength="100" transform="rotate(-90 20 20)"/></svg><b id="nu-count"></b></div>
+  </div>
+  <div class="nu-route" id="nu-route"></div>
+  <div class="nu-look" id="nu-look"></div>
+  <div class="nu-foot"><div class="today" id="nu-today"></div><div class="wx" id="nu-wx"></div><div class="raw" id="nu-raw"></div></div>`;
+
+let nextCpa0 = 0;
+function fillNext(state, n) {
+  flap($("nu-flight"), ident(n));
+  const r = n.route && n.route.plausible ? n.route : null;
+  $("nu-sub").textContent = [r && r.airline, n.type_name || n.type].filter(Boolean).join(" · ") || "Unknown aircraft";
+  const routeHtml = r ? `${esc(r.origin.iata)} <span class="dim">→</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : "";
+  if ($("nu-route").innerHTML !== routeHtml) $("nu-route").innerHTML = routeHtml;
+  $("nu-look").textContent = passText(state, n);
+  const left = n.cpa_s - (Date.now() - (state._at || Date.now())) / 1000;
+  nextCpa0 = Math.max(nextCpa0, n.cpa_s, 60);
+  $("nu-ring").setAttribute("stroke-dasharray", `${clamp((left / nextCpa0) * 100, 0, 100)} 100`);
+  $("nu-count").textContent = left > 2 ? mmss(left) : "NOW";
+}
+
+function quietFoot(state) {
+  const w = state.weather;
+  return `<div class="today">${todayLine(state)}</div><div class="wx">${esc(weatherWords(w))}</div>${w && w.raw ? `<div class="raw">${esc(w.raw)}</div>` : ""}`;
+}
+
+function quietSlide(el, state, dots, changed) {
+  const n = state.next;
+  const key = n ? "next:" + n.hex : "quiet";
+  if (changed || el._key !== key) {
+    el._key = key;
+    if (n) {
+      nextCpa0 = 0;
+      el.innerHTML = `<div class="idle next-up">${NEXT_SKELETON}</div>${dots}`;
+      if (!changed) enter(el);
+    } else el.innerHTML = `<div class="idle quiet"></div>${dots}`;
+  }
+  if (n) {
+    fillNext(state, n);
+    $("nu-today").innerHTML = todayLine(state);
+    $("nu-wx").textContent = weatherWords(state.weather);
+    $("nu-raw").textContent = (state.weather && state.weather.raw) || "";
+    return;
+  }
+  const airborne = state.aircraft.filter((a) => !a.on_ground).length;
+  const html = `<div class="label">Nothing inbound</div><h1>SKY'S QUIET</h1>
+    <div class="next">${airborne ? `${airborne} aircraft within ${state.tracking.radius_nm} nm, none heading this way yet.` : `No aircraft within ${state.tracking.radius_nm} nm right now.`}</div>
+    <div class="nu-foot">${quietFoot(state)}</div>`;
+  const box = el.querySelector(".idle.quiet");
+  if (box._html !== html) box.innerHTML = box._html = html;
 }
 const REC = [["highest", "Highest", (v) => num(v) + " ft"], ["lowest", "Lowest", (v) => num(v) + " ft"], ["fastest", "Fastest", (v) => num(v) + " kt"],
   ["closest", "Closest pass", (v) => v.toFixed(2) + " nm"], ["furthest_origin", "Furthest origin", (v) => num(v) + " nm"]];
@@ -228,15 +319,23 @@ function paintHeat(canvas, state, heat, tiles) {
     g.strokeStyle = "rgba(74,144,196,.45)"; g.lineCap = g.lineJoin = "round";
     for (const w of map.water || []) { g.lineWidth = Math.max(2, w.width_nm * k); g.beginPath(); w.line.forEach(([la, lo], i) => { const [x, y] = XY(la, lo); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); }
   }
-  const max = Math.max(1, ...heat.cells.map((c) => c[2]));
+  // Log scale, so the handful of busy corridors stand out from the many one-off tracks:
+  // rare cells are faint steel blue, busy ones amber, the very busiest nearly white.
+  const max = Math.max(2, ...heat.cells.map((c) => c[2])), lmax = Math.log1p(max);
+  const ramp = (t) => t < 0.55
+    ? [90 + (255 - 90) * (t / 0.55), 140 + (182 - 140) * (t / 0.55), 170 - (170 - 39) * (t / 0.55)]
+    : [255, 182 + (238 - 182) * ((t - 0.55) / 0.45), 39 + (200 - 39) * ((t - 0.55) / 0.45)];
   g.globalCompositeOperation = "lighter";
-  for (const [x, y, c] of heat.cells) {
-    const t = Math.sqrt(c / max), cx = (x + 0.5) * cell, cy = (y + 0.5) * cell, rad = cell * 2.2;
+  const cellsSorted = [...heat.cells].sort((a, b) => a[2] - b[2]);
+  for (const [x, y, c] of cellsSorted) {
+    const t = Math.log1p(c) / lmax, [r, gg, bb] = ramp(t).map(Math.round);
+    const cx = (x + 0.5) * cell, cy = (y + 0.5) * cell, rad = cell * (0.9 + 0.6 * t);
     const grad = g.createRadialGradient(cx, cy, 0, cx, cy, rad);
-    grad.addColorStop(0, `rgba(255,${Math.round(120 + 110 * t)},${Math.round(40 + 120 * t * t)},${0.1 + 0.5 * t})`);
-    grad.addColorStop(1, "rgba(255,150,40,0)");
+    grad.addColorStop(0, `rgba(${r},${gg},${bb},${(0.11 + 0.46 * t ** 2.2).toFixed(3)})`);
+    grad.addColorStop(1, `rgba(${r},${gg},${bb},0)`);
     g.fillStyle = grad; g.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
   }
+  g.globalCompositeOperation = "source-over";
   g.restore();
   g.strokeStyle = "rgba(255,255,255,.25)"; g.lineWidth = 1; g.beginPath(); g.arc(size / 2, size / 2, size / 2 - 1, 0, 7); g.stroke();
   g.fillStyle = "#fff"; g.beginPath(); g.arc(size / 2, size / 2, Math.max(3, size / 110), 0, 7); g.fill();
@@ -267,16 +366,19 @@ function showIdle(el, state) {
   const changed = slideShown !== slide;
   if (changed) { el.className = "panel idle-card"; enter(el); }
   if (kind === "quiet") {
-    const html = `<div class="idle">${quietSlide(state)}</div>${dots}`;
-    if (changed || el._html !== html) { el.innerHTML = el._html = html; }
+    quietSlide(el, state, dots, changed);
     slideShown = slide;
     return;
   }
   if (!changed) return;                             // other slides are drawn once
   slideShown = slide;
-  el._html = null;
+  el._key = null;
   if (kind === "heat") {
-    el.innerHTML = `<div class="idle heat"><div><div class="label">Today's traffic</div><h1>WHERE THEY FLEW</h1><div class="dim">Every aircraft tracked today within ${H.radius_nm} nm. Brighter means busier. The white dot is home.</div></div><canvas id="heat"></canvas></div>${dots}`;
+    el.innerHTML = `<div class="idle heat"><div><div class="label">Where they flew today</div><h1>TODAY'S TRAFFIC</h1>
+      <div class="heat-text">Every aircraft tracked within ${H.radius_nm} nm since midnight, laid on top of each other.
+      The bright bands are the routes used again and again: the ${esc(state.airport.iata)} arrival and departure paths. Faint lines are one-off flights.</div>
+      <div class="heat-legend"><span>one-off</span><i></i><span>busy</span></div>
+      <div class="dim heat-key">White dot: home · ${esc(state.airport.iata)}: the airport</div></div><canvas id="heat"></canvas></div>${dots}`;
     drawHeat($("heat"), state, H);
   } else if (kind === "records") {
     el.innerHTML = `<div class="idle"><div class="label">${L.today} flyovers today · ${L.types.length} aircraft types all time</div>${recordsHtml("Today's records", L.records_today)}</div>${dots}`;

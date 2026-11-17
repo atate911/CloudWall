@@ -177,6 +177,26 @@ class TrackerTest(unittest.TestCase):
         self.assertIsNone(rows["a3"]["origin"])
         self.assertEqual(self.store.logbook(time.strftime("%Y-%m-%d"))["records_today"]["furthest_origin"]["origin"], "SFO")
 
+    def test_infers_arrival_when_route_is_wrong(self):
+        ap = config.DEFAULTS["airport"]
+        wrong = {"flight": "AS1363", "airline": "Alaska Airlines",
+                 "origin": {"iata": "LAX", "city": "Los Angeles", "lat": 33.94, "lon": -118.41},
+                 "dest": {"iata": "PVR", "city": "Puerto Vallarta", "lat": 20.68, "lon": -105.25}}
+        self.enricher.routes["ASA1363"] = wrong
+        # 5 nm west of PDX, 1,550 ft, descending, flying east toward the runways
+        arr = plane("a1", "ASA1363", 0, alt=1550, track=110, vrate=-896)
+        arr["lat"], arr["lon"] = ap["lat"] + 0.01, ap["lon"] - 0.12
+        dep = plane("a2", "ASA2", 0, alt=2500, track=110, vrate=2000)
+        dep["lat"], dep["lon"] = ap["lat"] - 0.02, ap["lon"] + 0.12          # east of PDX, climbing away
+        over = plane("a3", "UAL9", 0, alt=3000, track=90, vrate=-800)
+        over["lat"], over["lon"] = ap["lat"] - 0.15, ap["lon"] + 0.05         # descending, not toward PDX
+        self.t.update([arr, dep, over], "test")
+        ac = {a["hex"]: a for a in self.t.snapshot()["aircraft"]}
+        self.assertFalse(ac["a1"]["route"]["plausible"])
+        self.assertEqual((ac["a1"]["local"], ac["a1"]["local_inferred"]), ("arriving", True))
+        self.assertEqual(ac["a2"]["local"], "departing")
+        self.assertIsNone(ac["a3"]["local"])
+
     def test_flow_and_emergency(self):
         ap = config.DEFAULTS["airport"]
         a = plane("a1", "ASA1", 0, alt=1500, squawk="7700")

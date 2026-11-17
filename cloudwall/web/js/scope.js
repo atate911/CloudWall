@@ -13,6 +13,7 @@ const RAD = Math.PI / 180;
 const NS = "http://www.w3.org/2000/svg";
 const CHAR_W = 3.35, LINE_H = 6.5;            // label metrics at the scope's 5.5-unit font
 export let map = null;
+let placeBoxes = [];        // where the place names sit, so aircraft labels can avoid them
 
 export async function loadMap(icao) {
   try {
@@ -55,9 +56,12 @@ function mapLayer(home, k, hasBasemap) {
     s += `<line class="approach" x1="${(a.x - ux * far) * k}" y1="${-(a.y - uy * far) * k}" x2="${(b.x + ux * far) * k}" y2="${-(b.y + uy * far) * k}"/>`;
     s += `<line class="runway" x1="${a.x * k}" y1="${-a.y * k}" x2="${b.x * k}" y2="${-b.y * k}"/>`;
   }
+  placeBoxes = [];
   for (const p of map.places || []) {
     const o = offset(home, { lat: p.at[0], lon: p.at[1] });
     s += `<text class="place" x="${o.x * k}" y="${-o.y * k}" text-anchor="middle">${esc(p.name)}</text>`;
+    const w = p.name.length * 3.1;
+    placeBoxes.push({ x0: o.x * k - w / 2, x1: o.x * k + w / 2, y0: -o.y * k - 4.5, y1: -o.y * k + 1 });
   }
   return s;
 }
@@ -214,7 +218,7 @@ const overlap = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0
 // compass letters and the edge. Re-run on each data update, not every frame, and
 // keep the current corner unless it is clearly worse, so labels don't flicker.
 function placeLabels(heroHex) {
-  const placed = [{ x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
+  const placed = [...(layerMode === "radar" ? placeBoxes : []), { x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
   const all = [...live.values()].filter((c) => c.x != null);
   const blips = all.map((c) => ({ x0: c.x - 4.5, x1: c.x + 4.5, y0: c.y - 4.5, y1: c.y + 4.5, c }));
   all.sort((a, b) => (b.hex === heroHex) - (a.hex === heroHex));
