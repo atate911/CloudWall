@@ -548,6 +548,38 @@ F.st75 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Diamond DA42 Twin Star ----------
+// Reference: Diamond DA-42 three-view silhouette (Wikimedia Commons,
+// File:Diamond_DA-42_three-view_silhouette.png, Wikipedia article Diamond DA42), side view
+// scaled to 8.6 m (data.js; 8.56 m published), details checked against the side-on photo
+// File:Diamond_da42_twin_star_hb-sdm_riat_2010_arp.jpg. Lower confidence than the line
+// drawings (a small filled silhouette). Composite pod with a big bubble canopy, slim tail
+// boom, swept fin with a ventral extension and the T-tail on top, diesel nacelles slung
+// under the wing well ahead of it with three-blade props, retractable gear (retracted).
+F.da42 = {
+  kind: "piston", L0: 8.6, over: 0, D: 1, W: 1.2,
+  body: [
+    [0, 0.32, "c"], [0.1, 0.45], [0.2, 0.5], [0.4, 0.56], [0.6, 0.62], [0.8, 0.67], [1.0, 0.72], [1.2, 0.76],
+    [1.4, 0.8], [1.6, 0.83], [1.8, 0.865], [2.0, 0.895], [2.2, 0.97], [2.4, 1.05], [2.6, 1.1], [2.8, 1.15], [3.0, 1.185],
+    [3.3, 1.22], [3.6, 1.215], [3.9, 1.2], [4.1, 1.17], [4.3, 1.11], [4.5, 1.05], [4.7, 0.97], [4.9, 0.92], [5.1, 0.85],
+    [5.3, 0.77], [5.5, 0.72], [5.7, 0.67], [5.9, 0.625], [6.1, 0.6], [6.4, 0.63], [6.7, 0.67], [7.0, 0.71], [7.2, 0.73],
+    [7.32, 0.86], [7.42, 1.06], [7.5, 1.3], [7.57, 1.49, "c"], [8.48, 1.5, "c"], [8.55, 1.38], [8.55, 0.2], [8.45, 0.0],
+    [8.2, -0.08], [7.8, -0.16], [7.45, -0.17], [7.0, -0.09], [6.6, 0.0], [6.3, 0.06], [6.0, 0.09], [5.5, 0.04],
+    [5.0, -0.01], [4.5, -0.07], [3.9, -0.12], [3.2, -0.12], [2.5, -0.08], [1.8, -0.02], [1.5, -0.01], [1.3, 0.01],
+    [1.0, 0.04], [0.8, 0.07], [0.5, 0.1], [0.3, 0.13], [0.1, 0.18],
+  ],
+  glass: [
+    [[2.05, 0.9], [2.6, 1.1, ""], [3.3, 1.2, ""], [3.75, 1.19], [3.65, 0.74], [2.4, 0.74]],
+    [[3.88, 1.17], [4.3, 1.0], [4.2, 0.75], [3.8, 0.75]],
+  ],
+  frame: 0.04,
+  wing: { le: 2.55, root: 0.6, span: 13.42, cr: 1.55, ct: 0.85, sweep: 1, dih: 5, z: -0.02, t: [0.15, 0.12] },
+  eng: { kind: "prop", at: [0.164], fwd: 1.03, drop: 0.04, len: 2.7, dia: 0.6, prop: 1.9, blades: 3, spinner: 0.12, tailZ: 0.2 },
+  stab: { le: 1.05, z: 1.535, span: 3.6, root: 0.1, cr: 1.0, ct: 0.75, sweep: 8, dih: 0, thick: 0.1 },
+  parts: { lines: [[[8.15, 1.48], [8.1, -0.1]]] },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 F._raw_be36 = BE36; // TEMP
 F._raw_m20 = M20; // TEMP
 F._raw_be55 = BE55; // TEMP
@@ -555,5 +587,5 @@ export const families = F;
 export const types = {
   C172: "c172", C152: "c150", C150: "c150", C182: "c182", C206: "c206", C208: "c208",
   P28A: "pa28", P28B: "pa28b", PA46: "pa46", P46T: "p46t",
-  BE36: "be36", BE58: "be58", M20P: "m20", ST75: "st75", ZZB36: "_raw_be36", ZZB55: "_raw_be55", ZZM20: "_raw_m20", // TEMP
+  BE36: "be36", BE58: "be58", M20P: "m20", ST75: "st75", DA42: "da42", ZZB36: "_raw_be36", ZZB55: "_raw_be55", ZZM20: "_raw_m20", // TEMP
 };

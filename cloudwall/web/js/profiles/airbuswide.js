@@ -155,7 +155,61 @@ F.a345 = {
   win: [{ ...WIN, from: 7.28, to: 17.12 }, { ...WIN, from: 20.05, to: 35.49 }, { ...WIN, from: 42.66, to: 51.2 }],
 };
 
+// ---------- A350 ----------
+// Reference: Airbus A350 AC rev. Jul 2026, FIGURE-2-2-0-991-001 sheets 1-2 (A350-900 side and plan
+// views, raster figures measured at their native 337 ppi), -002 (A350-1000), 2-7-0 FIGURE-2-7-0-991-001
+// (door locations, both sides). D 6.07 measured (6.09 published). The drawn side view has no
+// visible attitude. L0 is the APU face (65.26 m); the fin tip trailing edge reaches 1.35 m further.
+// The droop-snoot nose has its tip at a quarter of the fuselage height and a radome joint 1.3 m back;
+// the black "raccoon mask" round the flight-deck windows is drawn as one dark shape (the renderer paints
+// it over the panes, which are black anyway). Wing: 13.3 m root chord, unswept inner trailing edge,
+// 35 deg leading edge; the tip curls up into a tall curved blended winglet, drawn from the tip section
+// (measured off the side view). Trent XWB: 4.0 m nacelle, separate flow with a small core and plug.
+// In flight the wing flexes up like the 787's: \`bend\` lifts the tip a moderate 1.2 m over the
+// ground-attitude drawing (real cruise deflection is larger; kept moderate so the tip device still reads).
+const A350_NOSE = {
+  tip: 0.262,
+  top: [[0.05, 0.35], [0.1, 0.402], [0.15, 0.446], [0.2, 0.489], [0.25, 0.527], [0.3, 0.568], [0.35, 0.612], [0.4, 0.66],
+    [0.45, 0.712], [0.5, 0.758], [0.55, 0.789], [0.6, 0.817], [0.7, 0.858], [0.8, 0.893], [0.9, 0.919], [1.0, 0.942],
+    [1.1, 0.956], [1.2, 0.969], [1.3, 0.981], [1.4, 0.99], [1.5, 0.996], [1.65, 1]],
+  bot: [[0.05, 0.184], [0.1, 0.151], [0.15, 0.128], [0.2, 0.109], [0.3, 0.08], [0.4, 0.055], [0.5, 0.04], [0.6, 0.027],
+    [0.7, 0.017], [0.8, 0.009], [0.9, 0.003], [1.0, 0]],
+};
+const A350_TAIL = {
+  top: [[3.0, 1], [2.6, 0.997], [2.4, 0.99], [2.2, 0.983], [2.0, 0.969], [1.4, 0.921], [1.0, 0.888], [0.5, 0.815], [0, 0.74]],
+  bot: [[3.6, 0], [3.4, 0.003], [3.2, 0.012], [3.0, 0.026], [2.8, 0.047], [2.6, 0.068], [2.4, 0.102], [2.2, 0.139],
+    [2.0, 0.182], [1.6, 0.276], [1.2, 0.373], [0.8, 0.468], [0.4, 0.565], [0.2, 0.612], [0, 0.657]],
+};
+const A350_MASK = [[0.645, 0.61], [0.62, 0.675], [0.56, 0.692], [0.48, 0.7], [0.44, 0.69], [0.4, 0.645], [0.35, 0.598],
+  [0.3, 0.553], [0.26, 0.518, "c"], [0.34, 0.53], [0.46, 0.535], [0.57, 0.538], [0.635, 0.56]];
+const A350_WIN = { z: 0.608, w: 0.28, h: 0.42 };
+const radome = (s) => ({ sk, D, f }) => sk.smooth("hl", [[s, f.nose.bot.find(([u]) => u * D >= s)[1] * D + 0.05], [s - 0.05, 0.3 * D], [s - 0.25, 0.5 * D]], false);
+F.a359 = {
+  kind: "wide", L0: 65.26, over: 1.35, D: 6.07, W: 5.96, fwd: 0.55, fair: 0.087, fairAft: 1.43,
+  nose: A350_NOSE, tail: A350_TAIL, mask: A350_MASK, floor: 0.427,
+  doors: [[6.82, 1.07, "D", undefined, 1.95], [18.86, 1.07, "D", undefined, 1.95], [37.93, 1.07, "D", undefined, 1.95], [52.55, 1.07, "D", undefined, 1.95]],
+  extras: [openings([[11.68, 2.7, 0.7, 1.7], [47.3, 2.7, 0.75, 1.7]]), radome(1.32),
+    fairing([[-1.9, 0], [-2.3, 0.23], [-2.75, 0.42], [-3.05, 0.75], [-2.7, 1.1], [-1.9, 1.56], [-1.0, 2.0], [0, 2.25], [1.5, 2.43], [3.5, 2.77]])],
+  win: [{ ...A350_WIN, from: 8.39, to: 16.0, pitch: 0.635 }, { ...A350_WIN, from: 20.44, to: 34.37, pitch: 0.663 }, { ...A350_WIN, from: 40.5, to: 50.64, pitch: 0.634 }],
+  wing: { le: 22.5, root: 2.98, span: 60.0, cr: 13.28, kink: [0.278, 8.43], ct: 2.28, sweep: 35.3, dih: 5.5, z: 0.305, t: [0.13, 0.1], bend: 1.2 },
+  overlays: [sharklet([[0.3, 0.12, "c"], [0.9, 0.2], [1.37, 0.57], [1.87, 0.89], [2.37, 1.25], [2.87, 1.61], [3.37, 1.93], [3.87, 2.21],
+    [4.37, 2.36], [4.82, 2.33, "c"], [4.67, 2.2], [4.37, 1.95], [3.87, 1.45], [3.37, 0.91], [2.87, 0.43], [2.37, 0.16], [1.87, 0.04], [1.2, -0.02, "c"]])],
+  ftf: [[0.33, 0.6, 1.15, 0.06], [0.48, 0.6, 1.15, 0.06], [0.63, 0.6, 1.15, 0.055]],
+  eng: { kind: "fan", at: [0.276], fwd: 5.82, drop: 2.37, len: 8.08, dia: 3.98, fx: 0.73, cx: 0.854 },
+  fin: { le: 10.16, cr: 7.0, ct: 3.04, h: 8.48, sweep: 44, fillet: [0.8, 0.5], rudder: 0.67, round: 0.6 },
+  stab: { le: 7.26, z: 0.7, span: 19.24, root: 1.5, cr: 5.59, ct: 1.9, sweep: 36, dih: 5 },
+};
+// A350-1000: 6.99 m longer (3.85 m ahead of the wing), doors from 2-7-0, the trailing-edge extension
+// adds ~0.1 m of tip chord; same fin, tail and nacelle (Trent XWB-97).
+F.a35k = {
+  ...F.a359, L0: 72.25, over: 1.34,
+  wing: { ...F.a359.wing, le: 26.35, ct: 2.38 },
+  doors: [[6.82, 1.07, "D", undefined, 1.95], [23.3, 1.07, "D", undefined, 1.95], [42.38, 1.07, "D", undefined, 1.95], [59.53, 1.07, "D", undefined, 1.95]],
+  extras: [openings([[11.68, 2.7, 0.7, 1.7], [54.28, 2.7, 0.75, 1.7]]), radome(1.32), F.a359.extras[2]],
+  win: [{ ...A350_WIN, from: 8.39, to: 21.1, pitch: 0.635 }, { ...A350_WIN, from: 24.9, to: 38.8, pitch: 0.663 }, { ...A350_WIN, from: 44.9, to: 57.6, pitch: 0.634 }],
+};
+
 export const families = F;
 export const types = {
-  A332: "a332", A333: "a333", A338: "a338", A339: "a339", A342: "a342", A343: "a343", A345: "a345", A346: "a346",
+  A332: "a332", A333: "a333", A338: "a338", A339: "a339", A342: "a342", A343: "a343", A345: "a345", A346: "a346", A359: "a359", A35K: "a35k",
 };
