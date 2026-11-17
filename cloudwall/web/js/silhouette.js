@@ -80,7 +80,11 @@ function hull(f, fair) {
   bot[0][2] = "c";
   bot[bot.length - 1][2] = "l";
   pts.push(...bot);
-  if (fair) {
+  if (fair && fair.points) {
+    // a measured fairing outline: [s, z] points front to back (z negative below the keel)
+    const p = fair.points;
+    p.slice().reverse().forEach(([s, z], i) => pts.push([s, z, i === p.length - 1 ? "l" : ""]));
+  } else if (fair) {
     const [a, b, depth] = fair;
     pts.push([b, 0], [lerp(a, b, 0.5), -depth], [a, 0, "l"]);
   }
@@ -288,7 +292,8 @@ function draw(f) {
   const L = f.L, D = f.D, sk = new Sketch(L), id = `sil${++uid}`;
   const stretch = L - (f.L0 || L);
   const w = f.wing && { root: f.W / 2, ...f.wing, le: f.wing.le + stretch * (f.fwd ?? 0.5), z: f.wing.z * D };
-  const fair = w && f.fair !== 0 ? [w.le - 0.18 * w.cr, w.le + (f.fairAft ?? 1.15) * w.cr, (f.fair ?? 0.05) * D] : null;
+  const fair = w && f.belly ? { points: f.belly.map(([s, z]) => [w.le + s, z]) }
+    : w && f.fair !== 0 ? [w.le - (f.fairFwd ?? 0.18) * w.cr, w.le + (f.fairAft ?? 1.15) * w.cr, (f.fair ?? 0.05) * D] : null;
   const H = hull(f, fair), top = edge(H, true);
   const at = (s) => (s < 0 ? L + s : s);
 

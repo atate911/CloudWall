@@ -580,6 +580,37 @@ F.da42 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Diamond DA40 Diamond Star ----------
+// Published dimensions only (no usable side view reachable): 8.1 m (DA40 NG, data.js),
+// height 1.97 m, span 11.6-11.9 m. The DA40 is the single-engine origin of the DA42 airframe:
+// the same canopy, slender tail boom, ventral fin and T-tail, drawn here from the DA42
+// outline with its 0.5 m longer twin's nose replaced by a short cowl and three-blade prop,
+// and the fixed spatted tricycle gear. Lower confidence.
+{
+  // the DA42 outline from the windscreen base over the tail and back along the belly to 1.8 m
+  const b = F.da42.body, i0 = b.findIndex((p) => p[0] === 2.0), i1 = b.findIndex((p, i) => i > 40 && p[0] === 1.8);
+  const top = b.slice(i0, i1 + 1), bot = [];
+  const mv = (pts) => pts.map(([q, z, fl]) => (fl ? [q - 0.5, z, fl] : [q - 0.5, z]));
+  F.da40 = {
+    ...F.da42, L0: 8.1, W: 1.15, eng: { kind: "none", nose: { s: 0.33, z: 0.6, d: 1.8, blades: 3 } },
+    body: [
+      [0, 0.6, "c"], [0.1, 0.66], [0.22, 0.7], [0.34, 0.72], [0.42, 0.74], [0.6, 0.77], [0.9, 0.81], [1.2, 0.84],
+      [1.3, 0.85], ...mv(top), ...mv(bot), [1.0, -0.02], [0.8, 0.02], [0.62, 0.14], [0.48, 0.3], [0.4, 0.45],
+      [0.34, 0.48], [0.22, 0.5], [0.1, 0.54],
+    ],
+    glass: F.da42.glass.map((g) => g.map(([q, z, fl]) => (fl != null ? [q - 0.5, z, fl] : [q - 0.5, z]))),
+    wing: { le: 2.05, root: 0.6, span: 11.8, cr: 1.45, ct: 0.75, sweep: 1, dih: 5, z: -0.02, t: [0.15, 0.12] },
+    parts: {
+      lines: [[[7.65, 1.48], [7.6, -0.1]]],
+      gear: [
+        { leg: [[2.55, -0.08], [2.75, -0.18]], w: [0.1, 0.07], at: [2.75, -0.2], r: 0.19, spat: { f: 0.36, a: 0.48, t: 0.24, b: 0.1 } },
+        { leg: [[0.92, -0.04], [0.85, -0.22]], w: [0.07, 0.06], at: [0.85, -0.24], r: 0.15, spat: { f: 0.3, a: 0.38, t: 0.2, b: 0.08 } },
+      ],
+    },
+  };
+  delete F.da40.eng.at;
+}
+
 F._raw_be36 = BE36; // TEMP
 F._raw_m20 = M20; // TEMP
 F._raw_be55 = BE55; // TEMP
@@ -587,5 +618,5 @@ export const families = F;
 export const types = {
   C172: "c172", C152: "c150", C150: "c150", C182: "c182", C206: "c206", C208: "c208",
   P28A: "pa28", P28B: "pa28b", PA46: "pa46", P46T: "p46t",
-  BE36: "be36", BE58: "be58", M20P: "m20", ST75: "st75", DA42: "da42", ZZB36: "_raw_be36", ZZB55: "_raw_be55", ZZM20: "_raw_m20", // TEMP
+  BE36: "be36", BE58: "be58", M20P: "m20", ST75: "st75", DA40: "da40", DA42: "da42", ZZB36: "_raw_be36", ZZB55: "_raw_be55", ZZM20: "_raw_m20", // TEMP
 };

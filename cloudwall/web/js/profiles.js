@@ -6,6 +6,9 @@
 //   L0       fuselage length (nose tip to tail-cone end) of the variant it was measured on
 //   over     how far the tail surfaces reach beyond the tail cone (overall length - L0)
 //   D, W     fuselage height and width; fwd: share of a stretch added ahead of the wing
+//   fair     wing-to-body fairing depth below the keel (D; 0 for none), from fairFwd root chords
+//            ahead of the wing root to fairAft behind it; or belly: its measured outline as
+//            [s from the wing root leading edge, z (negative below the keel)] points, front to back
 //   nose     tip height, then top and bottom outline points [s, z], all in units of D
 //   tail     top and bottom outline points [distance forward of the tail-cone end, z] in D
 //   body     instead of nose/tail: a closed outline [s, z, flag] in D (light aircraft, helicopters)

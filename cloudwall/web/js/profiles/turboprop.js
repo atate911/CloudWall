@@ -39,9 +39,10 @@ const stacks = (s, z, l = 0.42, h = 0.2) => ({ sk, sec, f }) => {
 };
 
 // ---------- De Havilland Canada Dash 8-400 (Q400) ----------
-// Published dimensions (De Havilland DHC-8-400 airport planning data via Wikipedia): length
-// 32.81 m, span 28.42 m, height 8.34 m, fuselage 2.69 m, propellers 4.11 m (six blades), main
-// gear track 8.79 m (so the nacelles sit 4.4 m out). Long slender nose, wing on top of the
+// Published dimensions (Wikipedia): length 32.81 m, span 28.42 m, height 8.34 m, fuselage 2.69 m,
+// propellers 4.11 m (six blades), main gear track 8.79 m (so the nacelles sit 4.4 m out). Station
+// and depth of the nacelles, doors, window pitch and dorsal checked against near side-on Commons
+// photos ("Hamburg Airport Wideroe ... LN-WDR (DSC08713).jpg", "Dash 8-Q400 - Porter Airlines"). Long slender nose, wing on top of the
 // fuselage, deep nacelles hanging under the wing that carry the main gear and run well past the
 // trailing edge, tall T-tail on a long dorsal fin.
 F.dh8d = {
@@ -60,30 +61,30 @@ F.dh8d = {
     [[1.23, 0.865], [1.42, 0.87], [1.42, 0.725], [1.23, 0.725]],
     [[1.46, 0.865], [1.62, 0.865], [1.66, 0.79], [1.62, 0.725], [1.46, 0.725]],
   ],
-  doors: [[5.15, 0.86], [-6.6, 0.76]],
-  win: [{ z: 0.56, from: 6.4, to: -7.6, pitch: 0.79, w: 0.28, h: 0.4 }],
+  doors: [[5.4, 0.86, "D", undefined, 1.75], [-8.9, 0.76, "D", undefined, 1.75]],
+  win: [{ z: 0.57, from: 6.6, to: -9.7, pitch: 0.52, w: 0.24, h: 0.36 }],
   wing: { le: 13.6, root: 1.35, span: 28.42, cr: 2.95, ct: 1.3, sweep: 3, dih: 2.5, z: 1.06, t: [0.18, 0.13] },
   fin: { le: 6.4, cr: 4.4, ct: 2.6, h: 4.65, sweep: 31, rudder: 0.66 },
   stab: { le: 1.0, z: "T", drop: 0.15, span: 8.5, root: 0.25, cr: 2.3, ct: 1.3, sweep: 20, dih: 0, bullet: [2.4, 0.3] },
   extras: [dorsal(-11.0, -5.74, 3.6, 0.3)],
   overlays: [nacelle({
-    at: [0.237], fwd: 2.95, drop: 0.22, sp: 0.55, sr: 0.4, prop: 4.11, blades: 6, inlet: [0.78, -0.62, 0.07, 0.14],
-    outline: [[0, 0, "c"], [0.22, 0.27], [0.55, 0.4, "c"], [0.62, 0.55], [1.4, 0.64], [3.0, 0.62], [4.5, 0.52], [6.0, 0.36], [7.6, 0.12], [9.0, -0.12, "c"],
-      [8.0, -0.6], [6.6, -1.12], [5.0, -1.4], [3.6, -1.44], [2.4, -1.28], [1.4, -0.98], [0.85, -0.72], [0.6, -0.55], [0.55, -0.4, "c"], [0.22, -0.27]],
+    at: [0.237], fwd: 3.0, drop: 0.1, sp: 0.5, sr: 0.38, prop: 4.11, blades: 6, inlet: [0.75, -0.6, 0.07, 0.14],
+    outline: [[0, 0, "c"], [0.25, 0.25], [0.5, 0.38, "c"], [0.6, 0.47], [1.5, 0.45], [3.0, 0.4], [4.6, 0.3], [6.2, 0.08], [7.5, -0.28], [8.2, -0.55, "c"],
+      [7.2, -0.92], [5.6, -1.15], [3.6, -1.2], [2.0, -1.15], [1.1, -0.95], [0.7, -0.7], [0.55, -0.45], [0.5, -0.38, "c"], [0.25, -0.25]],
   })],
 };
 // Dash 8-300: shorter (25.68 m), smaller nacelles, four-blade 3.96 m propellers, span 27.43 m.
 F.dh8c = {
   ...F.dh8d, L0: 25.35, over: 0.33,
-  doors: [[4.6, 0.76], [-5.7, 0.76]],
-  win: [{ z: 0.56, from: 5.7, to: -6.5, pitch: 0.79, w: 0.28, h: 0.4 }],
+  doors: [[4.9, 0.76, "D", undefined, 1.65], [-7.0, 0.76, "D", undefined, 1.65]],
+  win: [{ z: 0.57, from: 6.0, to: -7.8, pitch: 0.52, w: 0.24, h: 0.36 }],
   wing: { ...F.dh8d.wing, le: 10.4, span: 27.43, cr: 2.6 },
   fin: { ...F.dh8d.fin, le: 6.0, cr: 4.2, h: 4.3 },
   extras: [dorsal(-9.6, -5.4, 3.5, 0.3)],
   overlays: [nacelle({
-    at: [0.24], fwd: 2.4, drop: 0.2, sp: 0.5, sr: 0.36, prop: 3.96, blades: 4, inlet: [0.7, -0.55, 0.06, 0.12],
-    outline: [[0, 0, "c"], [0.2, 0.24], [0.5, 0.36, "c"], [0.56, 0.5], [1.2, 0.58], [2.5, 0.56], [3.7, 0.47], [5.0, 0.32], [6.3, 0.1], [7.4, -0.1, "c"],
-      [6.6, -0.52], [5.4, -0.98], [4.1, -1.22], [3.0, -1.25], [2.0, -1.12], [1.2, -0.86], [0.75, -0.63], [0.54, -0.48], [0.5, -0.36, "c"], [0.2, -0.24]],
+    at: [0.24], fwd: 2.6, drop: 0.1, sp: 0.45, sr: 0.34, prop: 3.96, blades: 4, inlet: [0.68, -0.54, 0.06, 0.12],
+    outline: [[0, 0, "c"], [0.22, 0.22], [0.45, 0.34, "c"], [0.54, 0.42], [1.3, 0.4], [2.6, 0.36], [4.0, 0.26], [5.3, 0.06], [6.4, -0.24], [7.0, -0.48, "c"],
+      [6.1, -0.82], [4.8, -1.03], [3.1, -1.08], [1.7, -1.03], [0.95, -0.85], [0.6, -0.62], [0.49, -0.4], [0.45, -0.34, "c"], [0.22, -0.22]],
   })],
 };
 

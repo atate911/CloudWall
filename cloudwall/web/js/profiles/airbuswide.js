@@ -165,7 +165,7 @@ F.a345 = {
 // it over the panes, which are black anyway). Wing: 13.3 m root chord, unswept inner trailing edge,
 // 35 deg leading edge; the tip curls up into a tall curved blended winglet, drawn from the tip section
 // (measured off the side view). Trent XWB: 4.0 m nacelle, separate flow with a small core and plug.
-// In flight the wing flexes up like the 787's: \`bend\` lifts the tip a moderate 1.2 m over the
+// In flight the wing flexes up like the 787's: `bend` lifts the tip a moderate 1.2 m over the
 // ground-attitude drawing (real cruise deflection is larger; kept moderate so the tip device still reads).
 const A350_NOSE = {
   tip: 0.262,
@@ -183,12 +183,12 @@ const A350_TAIL = {
 const A350_MASK = [[0.645, 0.61], [0.62, 0.675], [0.56, 0.692], [0.48, 0.7], [0.44, 0.69], [0.4, 0.645], [0.35, 0.598],
   [0.3, 0.553], [0.26, 0.518, "c"], [0.34, 0.53], [0.46, 0.535], [0.57, 0.538], [0.635, 0.56]];
 const A350_WIN = { z: 0.608, w: 0.28, h: 0.42 };
-const radome = (s) => ({ sk, D, f }) => sk.smooth("hl", [[s, f.nose.bot.find(([u]) => u * D >= s)[1] * D + 0.05], [s - 0.05, 0.3 * D], [s - 0.25, 0.5 * D]], false);
+const radome = (s, z0, z1) => ({ sk }) => sk.poly("hl", [[s, z0], [s, z1]], false);
 F.a359 = {
   kind: "wide", L0: 65.26, over: 1.35, D: 6.07, W: 5.96, fwd: 0.55, fair: 0.087, fairAft: 1.43,
   nose: A350_NOSE, tail: A350_TAIL, mask: A350_MASK, floor: 0.427,
   doors: [[6.82, 1.07, "D", undefined, 1.95], [18.86, 1.07, "D", undefined, 1.95], [37.93, 1.07, "D", undefined, 1.95], [52.55, 1.07, "D", undefined, 1.95]],
-  extras: [openings([[11.68, 2.7, 0.7, 1.7], [47.3, 2.7, 0.75, 1.7]]), radome(1.32),
+  extras: [openings([[11.68, 2.7, 0.7, 1.7], [47.3, 2.7, 0.75, 1.7]]), radome(1.32, 0.42, 2.98),
     fairing([[-1.9, 0], [-2.3, 0.23], [-2.75, 0.42], [-3.05, 0.75], [-2.7, 1.1], [-1.9, 1.56], [-1.0, 2.0], [0, 2.25], [1.5, 2.43], [3.5, 2.77]])],
   win: [{ ...A350_WIN, from: 8.39, to: 16.0, pitch: 0.635 }, { ...A350_WIN, from: 20.44, to: 34.37, pitch: 0.663 }, { ...A350_WIN, from: 40.5, to: 50.64, pitch: 0.634 }],
   wing: { le: 22.5, root: 2.98, span: 60.0, cr: 13.28, kink: [0.278, 8.43], ct: 2.28, sweep: 35.3, dih: 5.5, z: 0.305, t: [0.13, 0.1], bend: 1.2 },
@@ -205,7 +205,7 @@ F.a35k = {
   ...F.a359, L0: 72.25, over: 1.34,
   wing: { ...F.a359.wing, le: 26.35, ct: 2.38 },
   doors: [[6.82, 1.07, "D", undefined, 1.95], [23.3, 1.07, "D", undefined, 1.95], [42.38, 1.07, "D", undefined, 1.95], [59.53, 1.07, "D", undefined, 1.95]],
-  extras: [openings([[11.68, 2.7, 0.7, 1.7], [54.28, 2.7, 0.75, 1.7]]), radome(1.32), F.a359.extras[2]],
+  extras: [openings([[11.68, 2.7, 0.7, 1.7], [54.28, 2.7, 0.75, 1.7]]), radome(1.32, 0.42, 2.98), F.a359.extras[2]],
   win: [{ ...A350_WIN, from: 8.39, to: 21.1, pitch: 0.635 }, { ...A350_WIN, from: 24.9, to: 38.8, pitch: 0.663 }, { ...A350_WIN, from: 44.9, to: 57.6, pitch: 0.634 }],
 };
 

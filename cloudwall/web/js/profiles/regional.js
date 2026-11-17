@@ -21,21 +21,6 @@ const dorsal = (pts) => (k) => {
 };
 // A T-tail's fin-top fairing (bullet), drawn behind the tailplane: [d, z, flag] closed outline.
 const cap = (pts) => (k) => k.sk.smooth("fin", pts.map(([d, z, fl]) => [k.L - d, z, fl]));
-// A belly fairing longer than the renderer's own (which starts just ahead of the wing): rebuilds
-// the fuselage outline with a bulge through [s, z] points (s from the wing root leading edge,
-// front to back, z metres below the keel as negatives). Use with fair: 0.
-const belly = (pts) => (k) => {
-  const { f, sk, D, L } = k, le = f.wing.le + (L - f.L0) * (f.fwd ?? 0.5), out = [[0, f.nose.tip * D, f.nose.tipFlag]];
-  f.nose.top.forEach(([s, z, fl], i, a) => out.push([s * D, z * D, i === a.length - 1 ? "l" : fl]));
-  f.tail.top.forEach(([s, z, fl], i, a) => out.push([L - s * D, z * D, i === a.length - 1 ? "cl" : fl]));
-  const bot = f.tail.bot.map(([s, z, fl]) => [L - s * D, z * D, fl]).reverse();
-  bot[0][2] = "c";
-  bot[bot.length - 1][2] = "l";
-  out.push(...bot, ...pts.slice().reverse().map(([s, z], i, a) => [le + s, z, i === a.length - 1 ? "l" : ""]));
-  f.nose.bot.slice().reverse().forEach(([s, z, fl]) => out.push([s * D, z * D, fl]));
-  const d = sk.curve(out);
-  sk.out = sk.out.map((e) => (/^<path class="(hull|shade)"/.test(e) ? e.replace(/ d="[^"]*"/, ` d="${d}"`) : e));
-};
 // A panel line [s, z, flag] (s < 0 from the tail end), e.g. a wing-root fairing.
 const seam = (pts, closed = true) => (k) => k.sk.smooth("hl", pts.map(([s, z, fl]) => [k.at(s), z, fl]), closed);
 // The exhaust of a rear-mounted fan whose core cowl is fatter than the renderer's stock one:
@@ -189,9 +174,9 @@ F.e145 = {
   frame: 0.035,
   floor: 0.197,
   doors: [[1.6, 0.51, "E", "w"]],
+  belly: [[-2.9, 0], [-2.2, -0.1], [-1.2, -0.27], [-0.2, -0.41], [1.3, -0.47], [2.8, -0.46], [3.8, -0.43], [4.8, -0.33],
+    [5.8, -0.185], [6.8, -0.045], [7.4, 0]],
   extras: [
-    belly([[-2.9, 0], [-2.2, -0.1], [-1.2, -0.27], [-0.2, -0.41], [1.3, -0.47], [2.8, -0.46], [3.8, -0.43], [4.8, -0.33],
-      [5.8, -0.185], [6.8, -0.045], [7.4, 0]]),
     hatch(4.85, 0.78, 0.4, 1.72, false), hatch(-5.365, 1.0, 0.22, 1.0),
     dorsal([[6.16, 0], [4.91, 2.505], [3.41, 2.775], [2.91, 2.865], [2.55, 3.0], [2.31, 3.15], [2.08, 3.42]]),
     cap([[1.19, 4.53, "c"], [0.96, 4.85], [0.81, 5.03], [0.21, 5.09], [-0.59, 5.1], [-1.39, 5.02], [-1.96, 4.96, "c"],
