@@ -484,3 +484,67 @@ class TilesTest(unittest.TestCase):
         t = T.Tiles(cfg, "/tmp/x")
         self.assertFalse(t.enabled)
         self.assertIsNone(t.get(11, 326, 731))
+
+
+class LiveFirstTest(unittest.TestCase):
+    """With a live provider, routes come from the flight in the air, looked up early."""
+
+    def setUp(self):
+        import threading
+        self.store = Store(":memory:")
+        self.calls, self.gate = [], threading.Event()
+        test = self
+
+        class Provider:
+            name, label, mode, general_aviation, enabled = "fake", "Fake24", "always", False, True
+            def available(self): return True
+            def status(self): return {"label": self.label}
+            def route(self, callsign):
+                test.calls.append(callsign)
+                test.gate.wait(2)
+                return {"flight": "AS1363", "airline": None, "source": "fake", "source_label": "Fake24",
+                        "origin": {"iata": "SEA", "city": "Seattle", "lat": 47.449, "lon": -122.309},
+                        "dest": {"iata": "PDX", "city": "Portland", "lat": PDX[0], "lon": PDX[1]},
+                        "eta": None, "progress_percent": None}
+
+        self.enricher = Enricher(self.store, live=Provider())
+        for hexid in ("a1", "a2"):
+            self.store.cache_put("aircraft", hexid, None)
+        # the database's stale guess, which happens to look geometrically fine
+        self.store.cache_put("route", "ASA1363", {"flight": "AS1363", "airline": "Alaska Airlines",
+            "origin": {"iata": "SFO", "city": "San Francisco", "lat": 37.62, "lon": -122.38},
+            "dest": {"iata": "PDX", "city": "Portland", "lat": PDX[0], "lon": PDX[1]}})
+        self.t = Tracker(config.load(), self.store, self.enricher)
+
+    def wait_calls(self, n):
+        for _ in range(100):
+            if len(self.calls) >= n:
+                return
+            time.sleep(0.01)
+
+    def test_looks_up_early_and_never_shows_the_stale_guess(self):
+        # 8 minutes out at 2 nm/min, flying straight at the house from the north
+        inbound = plane("a1", "ASA1363", 16.0, track=180, gs=120)
+        self.t.update([inbound], "test")
+        self.wait_calls(1)
+        self.assertEqual(self.calls, ["ASA1363"])               # asked well before it's overhead
+        a = self.t.snapshot()["aircraft"][0]
+        self.assertTrue(a.get("route_pending"))
+        self.assertNotIn("route", a)                            # the SFO guess is not shown meanwhile
+        self.gate.set()
+        for _ in range(100):
+            self.t.update([inbound], "test")
+            a = self.t.snapshot()["aircraft"][0]
+            if a.get("route"):
+                break
+            time.sleep(0.01)
+        self.assertEqual((a["route"]["origin"]["iata"], a["route"]["source"]), ("SEA", "fake"))
+        self.assertEqual(a["route"]["airline"], "Alaska Airlines")
+        self.t.update([inbound], "test")
+        self.assertEqual(len(self.calls), 1)                    # each flight is looked up once
+
+    def test_no_lookup_for_traffic_not_heading_this_way(self):
+        self.gate.set()
+        self.t.update([plane("a2", "ASA1363", 9.0, track=90)], "test")   # passing by to the north
+        time.sleep(0.1)
+        self.assertEqual(self.calls, [])

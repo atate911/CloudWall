@@ -81,7 +81,8 @@ The layout scales to the screen, from a 4–5" desk panel (800×480) to a wall m
 
 ## Better routes with a paid provider (optional)
 
-The free route lookup goes by flight number and is often stale. With a key for the
+The free route lookup goes by flight number and is often wrong: it only knows the route
+a flight number was last seen on, and airlines reuse flight numbers. With a key for the
 official [Flightradar24 API](https://fr24api.flightradar24.com) or
 [FlightAware AeroAPI](https://www.flightaware.com/commercial/aeroapi/), CloudWall asks
 which flight is actually in the air and also shows its arrival time. Add the key to
@@ -91,13 +92,14 @@ your config and restart:
 [flightradar24]        # or [flightaware]
 api_key = "your-token"
 daily_limit = 100      # hard cap on lookups per day
-mode = "fallback"      # or "always"
+mode = "always"        # live routes for every airliner near the house
 ```
 
 Lookups are billed, so CloudWall is frugal with them:
 
-- only aircraft that are overhead, under four minutes from overhead, or pinned are looked up;
-- in `fallback` mode, only when the free route is missing or contradicted by the aircraft's position;
+- only airliners heading for the house (from about 10 minutes out), overhead, or pinned are
+  looked up, early enough that the right route is on screen when they arrive;
+- `mode = "fallback"` saves lookups by asking only when the free route looks wrong;
 - each flight is looked up once and remembered for 45 minutes, airports for a year;
 - it stops at `daily_limit` and uses free routes until midnight. The Logbook shows the day's count;
 - a rejected key or exhausted credits pauses lookups for an hour instead of retrying.

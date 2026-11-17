@@ -21,7 +21,7 @@ class LiveProvider:
         c = cfg.get(self.name, {})
         self.key = os.environ.get(self.env_key) or c.get("api_key") or ""
         self.daily_limit = int(c.get("daily_limit", self.default_limit))
-        self.mode = c.get("mode", "fallback")
+        self.mode = c.get("mode", "always")
         self.general_aviation = bool(c.get("general_aviation", False))
         self.store = store
         self.lock = threading.Lock()

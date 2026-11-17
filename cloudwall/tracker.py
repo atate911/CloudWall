@@ -17,6 +17,7 @@ RARE_TYPES = {
 EMERGENCY = {"7500": "HIJACK 7500", "7600": "RADIO FAIL 7600", "7700": "EMERGENCY 7700"}
 AIRLINE = re.compile(r"^([A-Z]{3})\d")
 RESIGHT_SECONDS = 30 * 60
+LOOKAHEAD_S = 10 * 60        # look routes up this far ahead of an aircraft reaching the house
 STALE_SECONDS = 60
 TRAIL_POINTS = 48           # ~4 minutes of history at the default poll rate
 HEAT_GRID = 96
@@ -83,10 +84,17 @@ class Tracker:
             a["owner"] = info.get("owner")
             a["photo"] = info.get("photo")
             a["reg"] = a.get("reg") or info.get("reg")
-        route = self._with_geometry(a, self.enricher.route(a.get("callsign")))
-        live = self._live_route(a, route)
+        free = self.enricher.route(a.get("callsign"))
+        if free and free.get("airline"):
+            a["airline"] = free["airline"]      # the airline is reliable even when the route isn't
+        route = self._with_geometry(a, free)
+        state, live = self._live_route(a, route)
         if live:
             route = live
+        elif state == "pending" and getattr(self.enricher.live, "mode", "") == "always":
+            # the live route is on its way (a second or two): don't flash the database's guess
+            route = None
+            a["route_pending"] = True
         if route:
             a["route"] = route
             iata = self.cfg["airport"]["iata"]
@@ -151,21 +159,22 @@ class Tracker:
                     progress=flown / max(flown + left, 1), plausible=plausible)
 
     def _live_route(self, a, free_route):
-        """Route from the paid provider, if one is configured. Lookups cost money, so only aircraft that are
-        overhead, about to be, or pinned get one - and in fallback mode only when the
-        free database has nothing believable."""
+        """Route from the paid provider (Flightradar24 / FlightAware), which knows the
+        flight actually in the air. Lookups are billed, so they're made only for
+        aircraft that matter: overhead, pinned, or heading for the house within the
+        next 10 minutes, early enough that the right route is ready when it arrives.
+        Returns (state, route) as Enricher.live_route does."""
         fa = getattr(self.enricher, "live", None)
         if not fa or not fa.enabled:
-            return None
+            return "n/a", None
         t = self.cfg["tracking"]
         near = (self._overhead(a) or a["hex"] == self.pinned
-                or (0 < a["cpa_s"] <= 240 and a["cpa_nm"] <= t["overhead_nm"]))
+                or (0 < a["cpa_s"] <= LOOKAHEAD_S and a["cpa_nm"] <= t["overhead_nm"]))
         needed = fa.mode == "always" or not (free_route and free_route["plausible"])
-        live = self.enricher.live_route(a.get("callsign"), fetch=near and needed and not a["on_ground"])
-        if not live:
-            return None
-        live = dict(live, airline=(free_route or {}).get("airline"))
-        return self._with_geometry(a, live)
+        state, live = self.enricher.live_route(a.get("callsign"), fetch=near and needed and not a["on_ground"])
+        if live:
+            live = self._with_geometry(a, dict(live, airline=(free_route or {}).get("airline")))
+        return state, live
 
     # -- selection ------------------------------------------------------------
     def _overhead(self, a):
@@ -296,7 +305,10 @@ class Tracker:
             self._derive(a)
         raw.sort(key=lambda a: a["dist"])
         airborne = [a for a in raw if not a["on_ground"]]
-        for a in airborne[:10]:
+        # look up the nearest aircraft, plus anything heading for the house soon
+        t = self.cfg["tracking"]
+        soon = [a for a in airborne[10:] if 0 < a["cpa_s"] <= LOOKAHEAD_S and a["cpa_nm"] <= t["overhead_nm"]]
+        for a in airborne[:10] + soon:
             self._enrich(a)
         by_hex = {a["hex"]: a for a in raw}
         with self.lock:

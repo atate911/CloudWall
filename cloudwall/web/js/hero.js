@@ -47,6 +47,10 @@ const SKELETON = `
 
 function routeHtml(a, state) {
   const r = a.route, ap = state.airport;
+  if (a.route_pending && !r) {
+    const prov = (state.live_routes && state.live_routes.label) || "the flight data service";
+    return `<div class="noroute pending"><div class="label">Route</div>Looking up route…<small>Asking ${esc(prov)} where this flight is going</small></div>`;
+  }
   if (a.local_inferred && (!r || !r.plausible)) {
     // the route database is wrong or silent, but the aircraft is clearly landing or leaving here
     const arriving = a.local === "arriving";
@@ -105,14 +109,14 @@ function showHero(el, a, state) {
   const id = ident(a), info = typeInfo(a);
   flap($("h-flight"), id);
   const ga = info.shape === "piston" || info.shape === "heli" || /^N\d/.test(a.callsign || "");
-  $("h-airline").textContent = (pr && pr.airline) || (r && r.airline) || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
+  $("h-airline").textContent = (pr && pr.airline) || (r && r.airline) || a.airline || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
   $("h-sub").textContent = [a.callsign !== id ? a.callsign : null, a.reg !== id ? a.reg : null, a.squawk ? "Squawk " + a.squawk : null].filter(Boolean).join(" · ");
   const bh = badges(a.badges);
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
   $("h-pin").hidden = !state.pinned;
 
   const inferred = a.local_inferred && (!r || !r.plausible);
-  const key = (inferred ? "inferred:" + a.local + "|" : "") + (r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || ""));
+  const key = (a.route_pending && !r ? "pending|" : "") + (inferred ? "inferred:" + a.local + "|" : "") + (r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || ""));
   if (key !== cur.routeKey) {
     cur.routeKey = key;
     $("h-route").innerHTML = routeHtml(a, state);

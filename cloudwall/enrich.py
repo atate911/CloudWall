@@ -68,15 +68,30 @@ class Enricher:
         return self._get("aircraft", hexid, 30 * DAY)
 
     def live_route(self, callsign, fetch):
-        """The paid provider's route for the flight in the air now. Billed, so `fetch` is the
-        tracker saying this aircraft is worth a lookup; otherwise only the cache is read."""
+        """The paid provider's route for the flight in the air now, as (state, route):
+        "done" (route may be None: the provider had nothing), "pending" (being looked up),
+        "skipped" (not looked up: not worth it yet, or over the daily cap) or "n/a".
+        Billed, so `fetch` is the tracker saying this aircraft is worth a lookup."""
         p = self.live
         if self.demo or not p or not p.enabled or not callsign:
-            return None
+            return "n/a", None
         if not p.general_aviation and not AIRLINE_CALLSIGN.match(callsign):
-            return None
-        return self._get("live_route", f"{p.name}:{callsign}", LIVE_ROUTE_TTL,
-                         fetch=fetch and p.available())
+            return "n/a", None
+        k = ("live_route", f"{p.name}:{callsign}")
+        with self.lock:
+            if k in self.mem and time.time() - self.mem[k][1] < LIVE_ROUTE_TTL:
+                return "done", self.mem[k][0]
+            hit, value = self.store.cache_get(k[0], k[1], LIVE_ROUTE_TTL)
+            if hit:
+                self.mem[k] = (value, time.time())
+                return "done", value
+            if k in self.pending:
+                return "pending", None
+            if fetch and p.available():
+                self.pending.add(k)
+                self.q.put(k)
+                return "pending", None
+        return "skipped", None
 
     def _get(self, kind, key, max_age, fetch=True):
         k = (kind, key)
