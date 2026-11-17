@@ -22,7 +22,7 @@ DEFAULTS = {
                            {"code": "TTD", "name": "Troutdale", "city": "Troutdale",
                             "lat": 45.5494, "lon": -122.4013, "elevation_ft": 39}]},
     "tracking": {
-        "radius_nm": 15,        # how far out to fetch and show on the board/radar
+        "radius_nm": 15,        # how far out the board, flight card and logbook look (the radar can look further)
         "overhead_nm": 3.5,     # inside this, an aircraft counts as "overhead" and is logged
         "max_overhead_alt_ft": 45000,
         "poll_seconds": 5,

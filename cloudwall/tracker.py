@@ -487,13 +487,17 @@ class Tracker:
 
     def pin(self, hexid):
         with self.lock:
+            # only aircraft within the tracking radius have a flight card: a target tapped on a
+            # longer-range radar isn't one of them
+            if hexid and not any(a["hex"] == hexid for a in self.aircraft):
+                return
             self.pinned = hexid
             if hexid:
                 self.hero_hex = hexid
 
     def snapshot(self):
         with self.lock:
-            if self.aircraft and time.time() - self.status["updated"] > STALE_SECONDS:
+            if (self.aircraft or self.beyond) and time.time() - self.status["updated"] > STALE_SECONDS:
                 self.aircraft, self.beyond, self.hero_hex = [], [], None   # don't show positions we can't trust
             hero = next((a for a in self.aircraft if a["hex"] == self.hero_hex), None)
             nxt = None

@@ -24,7 +24,7 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
   path across it (centre is straight up), or a radar scope with trails over a faint map.
   Each aircraft on the radar shows its altitude in hundreds of feet, with an arrow when it is
   climbing or descending (`035↑`), and a line to where it will be in a minute. Both views have a
-  compass bezel with bearings and a key in the corner.
+  compass bezel with bearings, and on the desktop a key in the corner.
   Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
   Along the foot of the radar, Chart / ATC picks its look (ATC draws it like an air traffic
   controller's screen: dark, a grey map, green targets with history dots, leader lines to data blocks

@@ -261,7 +261,9 @@ function render() {
 async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
   try {
-    state = await (await fetch(`api/state?range=${radarPrefs().range}`)).json();   // the server fetches out to the radar's range
+    // while the radar is on screen, the server fetches out to its range
+    const range = state && view === "now" && scopeMode() === "radar" ? radarPrefs().range : 0;
+    state = await (await fetch(`api/state?range=${range}`)).json();
     stateAt = state._at = Date.now();
     stateAtPerf = performance.now();
     if (mapFor !== state.airport.icao) { mapFor = state.airport.icao; loadMap(mapFor).then(() => { scopeLabel = ""; }); }
@@ -286,7 +288,11 @@ const pin = (hex) => fetch("api/pin", { method: "POST", body: JSON.stringify({ h
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
 document.querySelector("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });
 $("board").addEventListener("click", (e) => { const r = e.target.closest("tr[data-hex]"); if (r) { pin(r.dataset.hex); setView("now"); } });
-$("radar").addEventListener("click", (e) => { const g = e.target.closest("g[data-hex]"); if (g) pin(g.dataset.hex); });
+// a target past the tracking radius (on a longer-range radar) has no flight card to show
+$("radar").addEventListener("click", (e) => {
+  const g = e.target.closest("g[data-hex]");
+  if (g && state && state.aircraft.some((a) => a.hex === g.dataset.hex)) pin(g.dataset.hex);
+});
 $("hero").addEventListener("click", (e) => {
   if (!state) return;
   if (e.target.closest("#em-hide")) { emergencies().forEach((a) => hidden.add(emKey(a))); render(); return; }
@@ -295,9 +301,10 @@ $("hero").addEventListener("click", (e) => {
   if (state.pinned) pin(null); else if (!state.hero) { nextSlide(); render(); }
 });
 $("scope-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("scope", b.dataset.mode); scopeLabel = ""; } });
-$("style-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("radarStyle", b.dataset.style); scopeLabel = ""; } });
-$("btn-tracks").addEventListener("click", () => { store("tracks", store("tracks") === "off" ? "on" : "off"); scopeLabel = ""; });
-$("range-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("range", b.dataset.range); scopeLabel = ""; poll(); } });
+// a button wins over the same setting given in the address
+$("style-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { qs.delete("radar"); store("radarStyle", b.dataset.style); scopeLabel = ""; } });
+$("btn-tracks").addEventListener("click", () => { const on = radarPrefs().tracks; qs.delete("tracks"); store("tracks", on ? "off" : "on"); scopeLabel = ""; });
+$("range-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { qs.delete("range"); store("range", b.dataset.range); scopeLabel = ""; poll(); } });
 $("btn-sound").addEventListener("click", () => { setSound(!soundOn()); renderToggles(); });
 $("btn-night").addEventListener("click", () => { const m = ["auto", "on", "off"]; store("night", m[(m.indexOf(store("night") || "auto") + 1) % 3]); render(); });
 

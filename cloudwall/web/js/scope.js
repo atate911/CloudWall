@@ -65,7 +65,6 @@ function mapLayer(home, k, hasBasemap) {
     s += `<line class="approach" x1="${(a.x - ux * far) * k}" y1="${-(a.y - uy * far) * k}" x2="${(b.x + ux * far) * k}" y2="${-(b.y + uy * far) * k}"/>`;
     s += `<line class="runway" x1="${a.x * k}" y1="${-a.y * k}" x2="${b.x * k}" y2="${-b.y * k}"/>`;
   }
-  placeBoxes = [];
   if (opt.atc) return s;                        // a controller's map has no town names
   for (const p of map.places || []) {
     const o = offset(home, { lat: p.at[0], lon: p.at[1] });
@@ -148,6 +147,7 @@ function statusLines(state) {
 // ---- static layer ----
 function radarStatic(state) {
   const R = opt.range, k = 100 / R, home = state.home;
+  placeBoxes = [];        // refilled below by the place names, flight restrictions and airfields
   // range rings every 5 nm, or every 10 beyond 20 nm
   const step = R <= 20 ? 5 : 10, rings = [];
   for (let r = step; r < R - 0.01; r += step) rings.push(r);
@@ -159,7 +159,7 @@ function radarStatic(state) {
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
   // the key, in the drawing's lower left corner; the ATC style adds a status area at the top left
   if (opt.atc) {
-    s += note("legend", -111, -92, "start", statusLines(state));
+    s += note("status", -111, -92, "start", statusLines(state));
     s += note("legend", -111, 110.5, "start", ["Data block: callsign", "Alt/100 ft ↑↓ speed kt", "or type, destination"]);
   } else s += note("legend", -111, 110.5, "start", [`${R} nm around home`, "035↑ 3,500 ft, climbing", opt.tracks ? "Line: 1 minute ahead" : ""].filter(Boolean));
   const ap = offset(home, state.airport);
@@ -300,9 +300,10 @@ function craftFor(svg, hex) {
   el("circle", { r: 10, fill: "transparent" }, g);                    // generous touch target
   const vec = el("line", { class: "vec" }, g);                         // where it will be in a minute
   const leader = el("line", { class: "leader" }, g);                   // ATC style: target to data block
-  const icon = el("path", { class: "blip", d: PLANE }, g);
+  const icon = el("path", { class: "blip", d: opt.atc ? TARGET : PLANE }, g);   // a change of style rebuilds every craft
   const hist = el("g", { class: "hist" }, svg.querySelector("#s-trails"));
-  for (let i = 0; i < HISTORY; i++) el("circle", { r: 0.75, "fill-opacity": (0.75 * (1 - i / HISTORY)).toFixed(2) }, hist);
+  // hidden until placed: a dot without a position would sit on home
+  for (let i = 0; i < HISTORY; i++) el("circle", { r: 0.75, "fill-opacity": (0.75 * (1 - i / HISTORY)).toFixed(2), style: "display:none" }, hist);
   const tag = el("text", { class: "tag" }, g), sub = el("text", { class: "tag-sub" }, g);
   // each trail fades from transparent at its oldest point to solid at the aircraft
   const gid = "tg-" + hex.replace(/[^a-z0-9]/gi, ""), grad = el("linearGradient", { id: gid, gradientUnits: "userSpaceOnUse" }, svg.querySelector("#s-defs"));
@@ -433,13 +434,13 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     const c = craftFor(svg, a.hex), isHero = a.hex === heroHex;
     c.hex = a.hex;
     // ease toward the dead-reckoned position; jump if it's far off (new aircraft, big correction)
-    if (c.x == null || Math.hypot(p.x - c.x, p.y - c.y) > 12) { c.x = p.x; c.y = p.y; c.rot = p.rot; }
+    const arrived = c.x == null;                 // new on the scope since the last update
+    if (arrived || Math.hypot(p.x - c.x, p.y - c.y) > 12) { c.x = p.x; c.y = p.y; c.rot = p.rot; }
     else {
       c.x += (p.x - c.x) * ease; c.y += (p.y - c.y) * ease;
       c.rot += (((p.rot - c.rot + 540) % 360) - 180) * ease;
     }
     c.g.setAttribute("transform", `translate(${c.x.toFixed(2)},${c.y.toFixed(2)})`);
-    if (c.sym !== opt.atc) { c.sym = opt.atc; c.icon.setAttribute("d", opt.atc ? TARGET : PLANE); }
     c.icon.setAttribute("transform", opt.atc ? `scale(${isHero ? 1.35 : 1})` : `rotate(${c.rot.toFixed(1)}) scale(${(isHero ? 1.55 : 1) * p.scale})`);
     // the lead line: one minute ahead at its ground speed, from the nose (the ATC style's
     // predicted track line, from the target), on the radar only
@@ -468,7 +469,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     const line2 = c.subs[Math.floor(now / 2000) % c.subs.length];
     if (c.sub.textContent !== line2) c.sub.textContent = line2;
     c.leader.style.display = opt.atc && showLabel ? "" : "none";
-    if (opt.atc && opt.tracks && fresh) historyDots(c, a, 100 / opt.range, state.home);
+    if (opt.atc && opt.tracks && (fresh || arrived)) historyDots(c, a, 100 / opt.range, state.home);
     c.hist.style.display = opt.atc && opt.tracks ? "" : "none";
     if (!opt.atc && opt.tracks && mode === "radar" && a.trail && a.trail.length > 1) {
       if (fresh || !c.trailPts) {

@@ -446,6 +446,18 @@ class RadarRangeTest(unittest.TestCase):
         t.range_wanted[30] -= 120                                     # the screen stopped asking
         self.assertEqual(t.fetch_radius(), 15)
 
+    def test_far_targets_cant_be_pinned_and_go_stale(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        t.want_range(30)
+        t.update([plane("a1", "ASA1", 2.0), plane("f1", "FAR1", 25.0)], "test")
+        t.pin("f1")                                                   # tapped on a 30 nm radar
+        self.assertIsNone(t.pinned)
+        t.pin("a1")
+        self.assertEqual(t.snapshot()["hero"]["hex"], "a1")
+        t.update([plane("f1", "FAR1", 24.0)], "test")                 # only far traffic left
+        t.status["updated"] -= 120                                    # then the feed goes quiet
+        self.assertEqual(t.snapshot()["beyond"], [])
+
     def test_demo_fills_a_longer_range(self):
         demo = sources.Demo()
         home = config.DEFAULTS["home"]

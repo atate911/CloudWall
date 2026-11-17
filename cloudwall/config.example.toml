@@ -24,7 +24,7 @@ lon = -122.5975
 # elevation_ft = 25
 
 [tracking]
-radius_nm = 15         # how far out the board and radar look
+radius_nm = 15         # how far out the board, flight card and logbook look; the radar can be set to 20 or 30
 overhead_nm = 3.5      # inside this, an aircraft takes over the screen and is logged
 max_overhead_alt_ft = 45000
 poll_seconds = 5       # be kind to the free API; don't go below ~3
