@@ -81,6 +81,8 @@ class FeedsTest(unittest.TestCase):
 
 
 class StubEnricher:
+    fa = None
+
     def __init__(self):
         self.routes = {}
 
@@ -171,6 +173,102 @@ class TrackerTest(unittest.TestCase):
     def test_ordinal(self):
         self.assertEqual([ordinal(n) for n in (1, 2, 3, 4, 11, 12, 21)],
                          ["1st", "2nd", "3rd", "4th", "11th", "12th", "21st"])
+
+
+def iso(offset_s):
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() + offset_s))
+
+
+def fa_flight(origin, dest, off=None, on=None, sched_off=0, **kw):
+    apt = lambda c: {"code": "K" + c, "code_icao": "K" + c, "code_iata": c, "name": c + " Intl", "city": c}
+    return dict({"ident": "SWA2327", "ident_iata": "WN2327", "origin": apt(origin), "destination": apt(dest),
+                 "scheduled_off": iso(sched_off), "actual_off": off, "actual_on": on,
+                 "estimated_in": iso(1200), "arrival_delay": 720, "status": "En Route / Delayed",
+                 "progress_percent": 95, "route_distance": 540, "cancelled": False}, **kw)
+
+
+class FlightAwareTest(unittest.TestCase):
+    COORDS = {"KSMF": (38.6954, -121.5908), "KPDX": PDX, "KLAS": (36.08, -115.152), "KOAK": (37.721, -122.221)}
+
+    def setUp(self):
+        self.calls = []
+        self.flights = [
+            fa_flight("LAS", "OAK", off=iso(-30000), on=iso(-25000), sched_off=-30000),   # earlier leg, landed
+            fa_flight("SMF", "PDX", off=iso(-4200), sched_off=-4800),                     # in the air now
+            fa_flight("PDX", "LAS", sched_off=9000),                                      # next leg
+        ]
+
+        def fake(url, timeout=0, headers=None):
+            self.calls.append(url)
+            self.assertEqual(headers, {"x-apikey": "k"})
+            if "/airports/" in url:
+                lat, lon = self.COORDS[url.rsplit("/", 1)[1]]
+                return {"latitude": lat, "longitude": lon}
+            return {"flights": self.flights}
+
+        from cloudwall import flightaware
+        self.mod, self.real = flightaware, flightaware.get_json
+        flightaware.get_json = fake
+        self.store = Store(":memory:")
+        cfg = config.load()
+        cfg["flightaware"] = dict(cfg["flightaware"], api_key="k", daily_limit=5)
+        self.cfg = cfg
+        self.fa = flightaware.FlightAware(cfg, self.store)
+
+    def tearDown(self):
+        self.mod.get_json = self.real
+
+    def test_picks_the_airborne_leg_and_caches_airports(self):
+        r = self.fa.route("SWA2327")
+        self.assertEqual((r["origin"]["iata"], r["dest"]["iata"], r["flight"]), ("SMF", "PDX", "WN2327"))
+        self.assertAlmostEqual(r["dest"]["lat"], PDX[0])
+        self.assertEqual(self.fa.used_today(), 3)            # flight + two airports
+        self.fa.route("SWA2327")
+        self.assertEqual(self.fa.used_today(), 4)            # airports came from the cache
+
+    def test_just_departed_and_nothing_current(self):
+        pick = self.mod.pick_flight
+        self.assertEqual(pick([fa_flight("PDX", "LAS", sched_off=-120)], time.time())["destination"]["code_iata"], "LAS")
+        self.assertIsNone(pick([fa_flight("PDX", "LAS", sched_off=20000)], time.time()))
+        self.assertIsNone(pick([fa_flight("PDX", "LAS", sched_off=0, cancelled=True)], time.time()))
+
+    def test_daily_limit_stops_billing(self):
+        for _ in range(4):
+            self.fa.route("SWA2327")
+        self.assertEqual(self.fa.used_today(), 5)
+        self.assertFalse(self.fa.available())
+        n = len(self.calls)
+        self.assertIsNone(self.fa.route("SWA2327"))
+        self.assertEqual(len(self.calls), n)                  # no request was sent
+
+    def test_tracker_uses_flightaware_only_when_needed(self):
+        enricher = Enricher(self.store, flightaware=self.fa)
+        wrong = {"flight": "WN2327", "airline": "Southwest Airlines",
+                 "origin": {"iata": "LAS", "city": "Las Vegas", "lat": 36.08, "lon": -115.152},
+                 "dest": {"iata": "OAK", "city": "Oakland", "lat": 37.721, "lon": -122.221}}
+        self.store.cache_put("route", "SWA2327", wrong)       # what the free database says
+        self.store.cache_put("aircraft", "a1", None)
+        self.store.cache_put("aircraft", "a2", None)
+        t = Tracker(self.cfg, self.store, enricher)
+        far = plane("a2", "SWA2327", 12.0, track=90)          # same callsign, far away, not inbound
+        t.update([far], "test")
+        time.sleep(0.2)
+        self.assertEqual(self.calls, [])                      # nothing overhead: no billed lookup
+        for _ in range(20):
+            t.update([plane("a1", "SWA2327", 1.0)], "test")
+            hero = t.snapshot()["hero"]
+            if hero["route"]["source"] if hero.get("route") and "source" in hero["route"] else None:
+                break
+            time.sleep(0.05)
+        r = hero["route"]
+        self.assertEqual((r["origin"]["iata"], r["dest"]["iata"], r["source"]), ("SMF", "PDX", "flightaware"))
+        self.assertTrue(r["plausible"])
+        self.assertEqual(r["airline"], "Southwest Airlines")  # name kept from the free lookup
+        self.assertEqual(hero["local"], "arriving")
+        row = self.store.query("SELECT origin, dest FROM sightings")[0]
+        self.assertEqual((row["origin"], row["dest"]), ("SMF", "PDX"))
+        self.assertEqual(t.snapshot()["flightaware"]["used_today"], 3)
+        json.dumps(t.snapshot())
 
 
 class DemoTest(unittest.TestCase):

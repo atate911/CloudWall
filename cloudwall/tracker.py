@@ -58,24 +58,57 @@ class Tracker:
             a["owner"] = info.get("owner")
             a["photo"] = info.get("photo")
             a["reg"] = a.get("reg") or info.get("reg")
-        route = self.enricher.route(a.get("callsign"))
-        if route and route["origin"].get("lat") is not None and route["dest"].get("lat") is not None:
-            o, d = route["origin"], route["dest"]
-            flown = geo.haversine_nm(o["lat"], o["lon"], a["lat"], a["lon"])
-            left = geo.haversine_nm(a["lat"], a["lon"], d["lat"], d["lon"])
-            ap = self.cfg["airport"]
-            iata = ap["iata"]
-            plausible = geo.route_plausible(o["lat"], o["lon"], d["lat"], d["lon"], a["lat"], a["lon"])
-            # Low and close to the local airport, yet the route doesn't touch it: the
-            # callsign database is stale (airlines reuse flight numbers).
-            if (iata not in (o["iata"], d["iata"]) and a["alt"] is not None and a["alt"] < 7000
-                    and geo.haversine_nm(ap["lat"], ap["lon"], a["lat"], a["lon"]) < 20):
-                plausible = False
-            a["route"] = dict(route, flown_nm=flown, left_nm=left,
-                              progress=flown / max(flown + left, 1), plausible=plausible)
-            if a["route"]["plausible"]:
-                a["local"] = ("arriving" if d["iata"] == iata else
-                              "departing" if o["iata"] == iata else None)
+        route = self._with_geometry(a, self.enricher.route(a.get("callsign")))
+        live = self._live_route(a, route)
+        if live:
+            route = live
+        if route:
+            a["route"] = route
+            iata = self.cfg["airport"]["iata"]
+            if route["plausible"]:
+                a["local"] = ("arriving" if route["dest"]["iata"] == iata else
+                              "departing" if route["origin"]["iata"] == iata else None)
+
+    def _with_geometry(self, a, route):
+        """Add distance flown/left and a sanity check of the route against the aircraft's position."""
+        if not route:
+            return None
+        o, d = route["origin"], route["dest"]
+        if o.get("lat") is None or d.get("lat") is None:
+            # no coordinates to check against (FlightAware airport lookup unavailable)
+            if route.get("source") != "flightaware":
+                return None
+            pct = route.get("progress_percent")
+            return dict(route, flown_nm=None, left_nm=None, plausible=True,
+                        progress=pct / 100 if pct is not None else 0.5)
+        ap = self.cfg["airport"]
+        flown = geo.haversine_nm(o["lat"], o["lon"], a["lat"], a["lon"])
+        left = geo.haversine_nm(a["lat"], a["lon"], d["lat"], d["lon"])
+        plausible = geo.route_plausible(o["lat"], o["lon"], d["lat"], d["lon"], a["lat"], a["lon"])
+        # Low and close to the local airport, yet the route doesn't touch it: the
+        # callsign database is stale (airlines reuse flight numbers).
+        if (ap["iata"] not in (o["iata"], d["iata"]) and a["alt"] is not None and a["alt"] < 7000
+                and geo.haversine_nm(ap["lat"], ap["lon"], a["lat"], a["lon"]) < 20):
+            plausible = False
+        return dict(route, flown_nm=flown, left_nm=left,
+                    progress=flown / max(flown + left, 1), plausible=plausible)
+
+    def _live_route(self, a, free_route):
+        """FlightAware route, if configured. Lookups cost money, so only aircraft that are
+        overhead, about to be, or pinned get one - and in fallback mode only when the
+        free database has nothing believable."""
+        fa = getattr(self.enricher, "fa", None)
+        if not fa or not fa.enabled:
+            return None
+        t = self.cfg["tracking"]
+        near = (self._overhead(a) or a["hex"] == self.pinned
+                or (0 < a["cpa_s"] <= 240 and a["cpa_nm"] <= t["overhead_nm"]))
+        needed = fa.mode == "always" or not (free_route and free_route["plausible"])
+        live = self.enricher.live_route(a.get("callsign"), fetch=near and needed and not a["on_ground"])
+        if not live:
+            return None
+        live = dict(live, airline=(free_route or {}).get("airline"))
+        return self._with_geometry(a, live)
 
     # -- selection ------------------------------------------------------------
     def _overhead(self, a):
@@ -130,21 +163,24 @@ class Tracker:
                 callsign=a.get("callsign"), reg=a.get("reg"), type=a.get("type"),
                 airline_icao=airline_icao, min_dist_nm=round(a["dist"], 2), alt_ft=a["alt"],
                 gs=a.get("gs"), badges=badges)
-            s = self.active[a["hex"]] = {"id": sid, "min": a["dist"], "badges": badges,
-                                         "filled": False}
+            s = self.active[a["hex"]] = {"id": sid, "min": a["dist"], "badges": badges}
         s["ts"] = now
         upd = {}
         if a["dist"] < s["min"]:
             s["min"] = a["dist"]
             upd.update(min_dist_nm=round(a["dist"], 2), alt_ft=a["alt"], gs=a.get("gs"))
+        # Lookups arrive a few seconds after first sight (and FlightAware may later
+        # correct the free route), so back-fill the entry whenever they change.
         r = a.get("route")
-        if not s["filled"] and (r or a.get("type_name")):
-            # lookups arrive a few seconds after first sight; back-fill the entry once
-            upd.update(type_name=a.get("type_name"), reg=a.get("reg"))
-            if r and r["plausible"]:
-                upd.update(flight=r["flight"], airline=r["airline"], origin=r["origin"]["iata"],
-                           dest=r["dest"]["iata"], origin_nm=round(r["flown_nm"]))
-            s["filled"] = bool(r) and bool(a.get("type_name"))
+        if a.get("type_name") and not s.get("named"):
+            s["named"] = True
+            upd.update(type_name=a["type_name"], reg=a.get("reg"))
+        if r and r["plausible"]:
+            key = (r["flight"], r["origin"]["iata"], r["dest"]["iata"])
+            if s.get("route") != key:
+                s["route"] = key
+                upd.update(flight=r["flight"], airline=r.get("airline"), origin=key[1], dest=key[2],
+                           origin_nm=round(r["flown_nm"]) if r.get("flown_nm") is not None else None)
         if upd:
             self.store.update_sighting(s["id"], **upd)
         a["badges"] = s["badges"]
@@ -208,5 +244,6 @@ class Tracker:
                 "tracking": self.cfg["tracking"], "hero": hero, "pinned": self.pinned,
                 "next": nxt, "aircraft": self.aircraft, "flow": self.flow,
                 "weather": self.weather, "status": self.status,
+                "flightaware": fa.status() if (fa := getattr(self.enricher, "fa", None)) else None,
                 "today": self.store.count("day=?", (time.strftime("%Y-%m-%d"),)),
             }

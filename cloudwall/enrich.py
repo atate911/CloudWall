@@ -10,6 +10,7 @@ from .http import get_json
 log = logging.getLogger("cloudwall.enrich")
 AIRLINE_CALLSIGN = re.compile(r"^[A-Z]{3}\d[0-9A-Z]{0,4}$")
 DAY = 86400
+LIVE_ROUTE_TTL = 45 * 60   # a callsign flies several legs a day; don't reuse a live route for long
 
 
 def _airport(a):
@@ -46,8 +47,8 @@ def fetch_aircraft(hexid):
 class Enricher:
     """Non-blocking lookups: returns what is cached now, fetches the rest in the background."""
 
-    def __init__(self, store, demo=None):
-        self.store, self.demo = store, demo
+    def __init__(self, store, demo=None, flightaware=None):
+        self.store, self.demo, self.fa = store, demo, flightaware
         self.mem, self.pending = {}, set()
         self.q = queue.Queue()
         self.lock = threading.Lock()
@@ -66,28 +67,44 @@ class Enricher:
             return self.demo.aircraft.get(hexid)
         return self._get("aircraft", hexid, 30 * DAY)
 
-    def _get(self, kind, key, max_age):
+    def live_route(self, callsign, fetch):
+        """FlightAware's route for the flight in the air now. Billed, so `fetch` is the
+        tracker saying this aircraft is worth a lookup; otherwise only the cache is read."""
+        if self.demo or not self.fa or not self.fa.enabled or not callsign:
+            return None
+        if not self.fa.general_aviation and not AIRLINE_CALLSIGN.match(callsign):
+            return None
+        return self._get("fa_route", callsign, LIVE_ROUTE_TTL, fetch=fetch and self.fa.available())
+
+    def _get(self, kind, key, max_age, fetch=True):
         k = (kind, key)
         with self.lock:
-            if k in self.mem:
-                return self.mem[k]
+            if k in self.mem and time.time() - self.mem[k][1] < max_age:
+                return self.mem[k][0]
             hit, value = self.store.cache_get(kind, key, max_age)
             if hit:
-                self.mem[k] = value
+                self.mem[k] = (value, time.time())
                 return value
-            if k not in self.pending:
+            if fetch and k not in self.pending:
                 self.pending.add(k)
                 self.q.put(k)
         return None
+
+    def _fetch(self, kind, key):
+        if kind == "route":
+            return fetch_route(key)
+        if kind == "fa_route":
+            return self.fa.route(key)
+        return fetch_aircraft(key)
 
     def _worker(self):
         while True:
             kind, key = k = self.q.get()
             try:
-                value = fetch_route(key) if kind == "route" else fetch_aircraft(key)
+                value = self._fetch(kind, key)
                 self.store.cache_put(kind, key, value)   # None is cached too (unknown)
                 with self.lock:
-                    self.mem[k] = value
+                    self.mem[k] = (value, time.time())
             except Exception as e:  # network trouble: retry on a later sighting
                 log.warning("lookup %s %s failed: %s", kind, key, e)
                 time.sleep(5)

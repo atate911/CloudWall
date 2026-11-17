@@ -25,6 +25,12 @@ urls = [
   "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}",
 ]
 
+[flightaware]          # optional: accurate live routes from FlightAware AeroAPI (billed per lookup)
+api_key = ""           # paste your AeroAPI key here to turn it on (or set CLOUDWALL_FLIGHTAWARE_KEY)
+daily_limit = 30       # hard cap on billed lookups per day; raise it once you know your costs
+mode = "fallback"      # "fallback": only when the free route is missing or wrong; "always": every overhead airliner
+general_aviation = false   # also look up private aircraft (N-numbers); most have no filed route
+
 [server]
 host = "0.0.0.0"
 port = 5050

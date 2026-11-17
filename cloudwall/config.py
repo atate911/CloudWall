@@ -25,6 +25,8 @@ DEFAULTS = {
     # Position feeds, tried in order; CloudWall fails over to the next when one stops answering.
     "source": {"urls": ["https://opendata.adsb.fi/api/v3/lat/{lat}/lon/{lon}/dist/{radius}",
                         "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"]},
+    "flightaware": {"api_key": "", "daily_limit": 30, "mode": "fallback",
+                    "general_aviation": False},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }

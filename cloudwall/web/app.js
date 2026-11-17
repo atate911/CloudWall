@@ -46,9 +46,21 @@ function routeHtml(a) {
       <path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--line)" stroke-width="1"/>
       <path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--amber)" stroke-width="1.4" stroke-linecap="round" pathLength="1" stroke-dasharray="${p} 1"/>
       </svg>
-      <div class="arc-note">${r.plausible ? `${num(r.flown_nm)} nm flown · ${num(r.left_nm)} nm to go` : "route unverified — aircraft is off this track"}</div></div>
+      <div class="arc-note">${r.plausible ? routeNote(r) : "route unverified — aircraft is off this track"}</div></div>
     <div class="apt r ${r.dest.iata === iata ? "local" : ""}">${esc(r.dest.iata)}<small>${esc(r.dest.city)}</small></div>
   </div>`;
+}
+
+function routeNote(r) {
+  const parts = [];
+  if (r.flown_nm != null) parts.push(`${num(r.flown_nm)} nm flown · ${num(r.left_nm)} nm to go`);
+  if (r.eta) {
+    const late = Math.round((r.arrival_delay_s || 0) / 60);
+    parts.push(`arrives ${new Date(r.eta * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` +
+      (late >= 5 ? ` (${late} min late)` : late <= -5 ? ` (${-late} min early)` : ""));
+  }
+  if (r.source === "flightaware") parts.push("FlightAware");
+  return esc(parts.join(" · "));
 }
 
 function heroHtml(a) {
@@ -145,6 +157,7 @@ function recs(title, r) {
 }
 async function loadLog() {
   const L = await (await fetch("api/logbook")).json();
+  const fa = state && state.flightaware;
   const max = Math.max(1, ...L.hours.map((h) => h.n)), byHour = Object.fromEntries(L.hours.map((h) => [h.hour, h.n]));
   let bars = "";
   for (let h = 0; h < 24; h++) bars += `<i class="${byHour[h] ? "" : "z"}" style="height:${((byHour[h] || 0) / max) * 100}%" title="${h}:00"></i>`;
@@ -159,6 +172,7 @@ async function loadLog() {
     <h2>Today by hour</h2><div class="hours">${bars}</div>
     <h2>Type collection</h2><div class="types">${L.types.map((t) => `<span class="type" title="${esc(t.name)}">${esc(t.type)}<b>${t.n}</b></span>`).join("") || '<span class="dim">Nothing yet — wait for the first flyover.</span>'}</div>
     <div class="cols"><div>${recs("Records today", L.records_today)}</div><div>${recs("Records all time", L.records_all)}</div></div>
+    ${fa && fa.enabled ? `<div class="dim" style="margin-top:.9rem">FlightAware lookups today: ${fa.used_today} of ${fa.daily_limit}${fa.used_today >= fa.daily_limit ? " — limit reached, using free routes until midnight" : ""}</div>` : ""}
     <h2 style="margin-top:.9rem">Recent flyovers</h2>
     ${L.recent.map((s) => `<div class="rec"><span><b>${esc(s.flight || s.callsign || s.reg || s.hex)}</b> <span class="dim">${esc(s.type || "")} ${s.origin ? esc(s.origin) + " → " + esc(s.dest) : ""}</span> ${badges(s.badges)}</span>
       <span class="dim">${new Date(s.ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${num(s.alt_ft)} ft · ${s.min_dist_nm.toFixed(1)} nm</span></div>`).join("")}`;
