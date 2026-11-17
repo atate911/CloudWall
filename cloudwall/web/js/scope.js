@@ -1,9 +1,17 @@
 // The right-hand panel: a top-down radar scope, or a dome view of the sky.
+//
+// Drawn in two layers. The static layer (map, rings, the overhead aircraft's sky
+// path) is rebuilt only when the data or mode changes. The aircraft layer is a set of
+// persistent elements, one per aircraft, moved every animation frame: positions are
+// dead-reckoned from the last report and eased toward each new one, so aircraft glide
+// instead of hopping between updates.
 import { esc, ident, projected, offset, azEl, clamp } from "./util.js";
 import { sky } from "./sky.js";
 
 const PLANE = "M0,-4 L1,-1 L4.2,1.2 L4.2,2 L1,1 L.8,3 L2,4 L2,4.6 L0,4 L-2,4.6 L-2,4 L-.8,3 L-1,1 L-4.2,2 L-4.2,1.2 L-1,-1 Z";
 const RAD = Math.PI / 180;
+const NS = "http://www.w3.org/2000/svg";
+const CHAR_W = 3.35, LINE_H = 6.5;            // label metrics at the scope's 5.5-unit font
 export let map = null;
 
 export async function loadMap(icao) {
@@ -15,7 +23,7 @@ export async function loadMap(icao) {
 
 const pts = (home, line, k) => line.map(([lat, lon]) => { const o = offset(home, { lat, lon }); return `${(o.x * k).toFixed(1)},${(-o.y * k).toFixed(1)}`; }).join(" ");
 
-export function mapLayer(home, k) {
+function mapLayer(home, k) {
   if (!map) return "";
   let s = "";
   for (const w of map.water || []) s += `<polyline class="water" stroke-width="${Math.max(1.2, w.width_nm * k)}" points="${pts(home, w.line, k)}"/>`;
@@ -32,56 +40,60 @@ export function mapLayer(home, k) {
   return s;
 }
 
-function radar(state, dt) {
-  const R = state.tracking.radius_nm, k = 100 / R, home = state.home, hero = state.hero && state.hero.hex;
-  let s = `<defs><clipPath id="scope-clip"><circle r="100"/></clipPath></defs><circle class="scope-bg" r="100"/><g clip-path="url(#scope-clip)">${mapLayer(home, k)}`;
-  // trails: older thirds fade out
-  for (const a of state.aircraft) {
-    if (a.on_ground || !a.trail || a.trail.length < 2) continue;
-    const now = projected(a, dt), line = [...a.trail, [now.lat, now.lon]], n = line.length, third = Math.ceil(n / 3);
-    for (let i = 0; i < 3; i++) {
-      const seg = line.slice(Math.max(0, i * third - 1), (i + 1) * third);
-      if (seg.length > 1) s += `<polyline class="trail ${a.hex === hero ? "hero" : ""}" opacity="${0.18 + i * 0.25}" points="${pts(home, seg, k)}"/>`;
-    }
+// Ring labels sit on the north-east diagonal, clear of the N/E letters and of most traffic.
+function ringLabel(r, text) {
+  const d = r * Math.SQRT1_2;
+  return `<text class="ring-label" x="${d + 1.5}" y="${-d - 1.5}">${text}</text>`;
+}
+const COMPASS = `<text class="compass" x="0" y="-104" text-anchor="middle">N</text><text class="compass" x="106" y="2" text-anchor="middle">E</text>
+  <text class="compass" x="0" y="110" text-anchor="middle">S</text><text class="compass" x="-106" y="2" text-anchor="middle">W</text>`;
+
+// ---- geometry for each mode ----
+const domeXY = (p) => { const r = ((90 - clamp(p.el, 0, 90)) / 90) * 100; return [r * Math.sin(p.az * RAD), -r * Math.cos(p.az * RAD)]; };
+const skyPos = (home, a, t) => azEl(home, projected(a, t), (a.alt || 0) + ((a.vrate || 0) * t) / 60);
+
+function place(state, a, t, mode) {
+  if (mode === "sky") {
+    const p = skyPos(state.home, a, t);
+    if (p.el < 1) return null;
+    const [x, y] = domeXY(p), [x2, y2] = domeXY(skyPos(state.home, a, t + 8));
+    const rot = Math.hypot(x2 - x, y2 - y) > 0.01 ? Math.atan2(x2 - x, -(y2 - y)) / RAD : a.track || 0;
+    return { x, y, rot, scale: 0.9 + clamp(p.el / 60, 0, 1) * 0.9, sub: `${Math.round(p.el)}° up`, el: p.el };
   }
-  s += "</g>";
-  for (const r of [R, (R * 2) / 3, R / 3]) s += `<circle class="ring" r="${r * k}"/><text x="2" y="${-r * k + 7}">${Math.round(r)}</text>`;
-  s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>`;
-  s += `<text x="-3" y="-102">N</text><text x="103" y="2">E</text><text x="-3" y="108">S</text><text x="-109" y="2">W</text>`;
-  const ap = offset(home, state.airport);
-  if (Math.hypot(ap.x, ap.y) < R) s += `<text class="apt-label" x="${ap.x * k}" y="${-ap.y * k + 9}" text-anchor="middle">${esc(state.airport.iata)}</text>${map ? "" : `<rect class="apt-mark" x="${ap.x * k - 2.5}" y="${-ap.y * k - 2.5}" width="5" height="5"/>`}`;
-  s += `<circle class="home" r="2"/>`;
-  for (const a of state.aircraft) {
-    const o = offset(home, a.on_ground ? a : projected(a, dt));
-    if (Math.hypot(o.x, o.y) > R) continue;
-    const x = o.x * k, y = -o.y * k, h = a.hex === hero;
-    if (a.on_ground) { s += `<circle class="blip gnd" cx="${x}" cy="${y}" r="1.2"/>`; continue; }
-    s += `<g data-hex="${esc(a.hex)}"><circle cx="${x}" cy="${y}" r="9" fill="transparent"/>
-      <path class="blip ${h ? "hero" : ""}" d="${PLANE}" transform="translate(${x},${y}) rotate(${a.track || 0}) scale(${h ? 1.5 : 1})"/>
-      <text class="tag ${h ? "hero" : ""}" x="${x + 6}" y="${y - 3}">${esc(ident(a))}</text>
-      <text x="${x + 6}" y="${y + 3.5}">${a.alt == null ? "" : Math.round(a.alt / 100)}</text></g>`;
-  }
-  return s;
+  const k = 100 / state.tracking.radius_nm, o = offset(state.home, projected(a, t));
+  if (Math.hypot(o.x, o.y) * k > 100) return null;
+  return { x: o.x * k, y: -o.y * k, rot: a.track || 0, scale: 1, sub: a.alt == null ? "" : String(Math.round(a.alt / 100)).padStart(3, "0") };
 }
 
-// Sky dome: the centre is straight up, the rim is the horizon, compass as on a map.
-const domeXY = (p) => { const r = ((90 - clamp(p.el, 0, 90)) / 90) * 100; return [r * Math.sin(p.az * RAD), -r * Math.cos(p.az * RAD)]; };
-const skyPos = (home, a, t) => azEl(home, projected(a, t), a.alt + ((a.vrate || 0) * t) / 60);
+// ---- static layer ----
+function radarStatic(state) {
+  const R = state.tracking.radius_nm, k = 100 / R, home = state.home;
+  let s = `<defs><clipPath id="scope-clip"><circle r="100"/></clipPath></defs><circle class="scope-bg" r="100"/>
+    <g clip-path="url(#scope-clip)">${mapLayer(home, k)}</g>`;
+  for (const r of [R, (R * 2) / 3, R / 3]) s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + " nm")}`;
+  s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
+  const ap = offset(home, state.airport);
+  if (Math.hypot(ap.x, ap.y) < R) s += `<text class="apt-label" x="${ap.x * k}" y="${-ap.y * k + 9}" text-anchor="middle">${esc(state.airport.iata)}</text>${map ? "" : `<rect class="apt-mark" x="${ap.x * k - 2.5}" y="${-ap.y * k - 2.5}" width="5" height="5"/>`}`;
+  for (const a of state.aircraft) {
+    if (!a.on_ground) continue;
+    const o = offset(home, a);
+    if (Math.hypot(o.x, o.y) < R) s += `<circle class="blip gnd" cx="${o.x * k}" cy="${-o.y * k}" r="1.1"/>`;
+  }
+  return s + `<circle class="home" r="2.2"/>`;
+}
 
-function dome(state, dt) {
-  const home = state.home, hero = state.hero && state.hero.hex;
+function domeStatic(state, dt) {
   let s = `<circle class="dome-bg" r="100"/>`;
-  for (const el of [30, 60]) s += `<circle class="ring" r="${((90 - el) / 90) * 100}"/><text x="2" y="${-((90 - el) / 90) * 100 + 7}">${el}°</text>`;
-  s += `<circle class="ring horizon" r="100"/><line class="ring" x1="-4" y1="0" x2="4" y2="0"/><line class="ring" x1="0" y1="-4" x2="0" y2="4"/>`;
-  s += `<text x="-3" y="-102">N</text><text x="103" y="2">E</text><text x="-3" y="108">S</text><text x="-109" y="2">W</text>`;
+  for (const el of [30, 60]) { const r = ((90 - el) / 90) * 100; s += `<circle class="ring" r="${r}"/>${ringLabel(r, el + "°")}`; }
+  s += `<circle class="ring horizon" r="100"/><line class="ring" x1="-4" y1="0" x2="4" y2="0"/><line class="ring" x1="0" y1="-4" x2="0" y2="4"/>${COMPASS}`;
   if (sky.sun.el > 0) { const [x, y] = domeXY(sky.sun); s += `<circle class="sun-glow" cx="${x}" cy="${y}" r="11"/><circle class="sun" cx="${x}" cy="${y}" r="4.5"/>`; }
   const h = state.hero;
   if (h && !h.on_ground && h.alt != null) {
     // where it has been and where it is going across the sky
     const past = [], future = [];
     let best = null;
-    for (let t = -180; t <= 360; t += 6) {
-      const p = skyPos(home, h, dt + t);
+    for (let t = -180; t <= 360; t += 5) {
+      const p = skyPos(state.home, h, dt + t);
       if (p.el < 0.5) continue;
       (t <= 0 ? past : future).push(domeXY(p).map((v) => v.toFixed(1)).join(","));
       if (!best || p.el > best.el) best = { ...p, t };
@@ -89,22 +101,149 @@ function dome(state, dt) {
     if (past.length && future.length) future.unshift(past[past.length - 1]);
     if (past.length > 1) s += `<polyline class="sky-path past" points="${past.join(" ")}"/>`;
     if (future.length > 1) s += `<polyline class="sky-path" points="${future.join(" ")}"/>`;
-    if (best && best.t > 6) { const [x, y] = domeXY(best); s += `<circle class="sky-peak" cx="${x}" cy="${y}" r="2.2"/><text class="tag" x="${x + 4}" y="${y + 8}">peaks ${Math.round(best.el)}°</text>`; }
-  }
-  for (const a of state.aircraft) {
-    if (a.on_ground || a.alt == null) continue;
-    const p = skyPos(home, a, dt);
-    if (p.el < 1) continue;
-    const [x, y] = domeXY(p), [x2, y2] = domeXY(skyPos(home, a, dt + 8)), isHero = a.hex === hero;
-    const rot = Math.hypot(x2 - x, y2 - y) > 0.01 ? Math.atan2(x2 - x, -(y2 - y)) / RAD : a.track || 0;
-    const size = (isHero ? 1.6 : 0.9) + clamp(p.el / 60, 0, 1) * 0.9;       // higher in the sky = closer = bigger
-    s += `<g data-hex="${esc(a.hex)}"><circle cx="${x}" cy="${y}" r="9" fill="transparent"/>
-      <path class="blip ${isHero ? "hero" : ""}" d="${PLANE}" transform="translate(${x},${y}) rotate(${rot}) scale(${size})"/>
-      ${isHero || p.el > 6 ? `<text class="tag ${isHero ? "hero" : ""}" x="${x + 8}" y="${y - 4}">${esc(ident(a))}</text><text x="${x + 8}" y="${y + 2.5}">${Math.round(p.el)}° up</text>` : ""}</g>`;
+    if (best && best.t > 6) {
+      const [x, y] = domeXY(best);
+      // label inward, toward the centre, where the path isn't
+      const d = Math.hypot(x, y) || 1, lx = x - (x / d) * 7, ly = y - (y / d) * 7 + 1.5;
+      s += `<circle class="sky-peak" cx="${x}" cy="${y}" r="2.2"/><text class="peak-label" x="${lx}" y="${ly}" text-anchor="${x > 0 ? "end" : "start"}">highest ${Math.round(best.el)}°</text>`;
+    }
   }
   return s;
 }
 
-export function drawScope(svg, state, dt, mode) {
-  svg.innerHTML = mode === "sky" ? dome(state, dt) : radar(state, dt);
+// ---- persistent aircraft elements ----
+const live = new Map();     // hex -> { g, icon, tag, sub, trail, tail, x, y, rot, corner, seen }
+let lastFrame = 0, layerMode = null, staticKey = null;
+
+function el(name, attrs, parent) {
+  const e = document.createElementNS(NS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+function ensureLayers(svg) {
+  if (svg.querySelector("#s-static")) return;
+  svg.innerHTML = "";
+  el("defs", { id: "s-defs" }, svg);
+  for (const id of ["s-static", "s-trails", "s-craft"]) el("g", { id }, svg);
+}
+
+function craftFor(svg, hex) {
+  let c = live.get(hex);
+  if (c) return c;
+  const g = el("g", { "data-hex": hex, class: "craft entering" }, svg.querySelector("#s-craft"));
+  el("circle", { r: 10, fill: "transparent" }, g);                    // generous touch target
+  const icon = el("path", { class: "blip", d: PLANE }, g);
+  const tag = el("text", { class: "tag" }, g), sub = el("text", { class: "tag-sub" }, g);
+  // each trail fades from transparent at its oldest point to solid at the aircraft
+  const gid = "tg-" + hex.replace(/[^a-z0-9]/gi, ""), grad = el("linearGradient", { id: gid, gradientUnits: "userSpaceOnUse" }, svg.querySelector("#s-defs"));
+  el("stop", { offset: 0, "stop-opacity": 0 }, grad);       // colour comes from the stylesheet
+  el("stop", { offset: 1, "stop-opacity": 0.8 }, grad);
+  const trail = el("polyline", { class: "trail", stroke: `url(#${gid})` }, svg.querySelector("#s-trails"));
+  c = { g, icon, tag, sub, trail, grad, x: null, y: null, rot: 0, corner: 0, text: "" };
+  live.set(hex, c);
+  requestAnimationFrame(() => g.classList.remove("entering"));
+  return c;
+}
+
+function dropCraft(hex) {
+  const c = live.get(hex);
+  c.g.remove();
+  c.trail.remove();
+  c.grad.remove();
+  live.delete(hex);
+}
+
+// Label corners: right-above, right-below, left-above, left-below.
+const CORNERS = [[7, -2.5, "start"], [7, 7.5, "start"], [-7, -2.5, "end"], [-7, 7.5, "end"]];
+
+function labelBox(c, corner) {
+  const [dx, dy, anchor] = CORNERS[corner], w = c.text.length * CHAR_W + 1;
+  const x0 = anchor === "start" ? c.x + dx : c.x + dx - w;
+  return { x0, x1: x0 + w, y0: c.y + dy - LINE_H, y1: c.y + dy + LINE_H * 0.9 };
+}
+const overlap = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+
+// Choose a label corner for each aircraft that avoids other labels, aircraft, the
+// compass letters and the edge. Re-run on each data update, not every frame, and
+// keep the current corner unless it is clearly worse, so labels don't flicker.
+function placeLabels(heroHex) {
+  const placed = [{ x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
+  const all = [...live.values()].filter((c) => c.x != null);
+  const blips = all.map((c) => ({ x0: c.x - 4.5, x1: c.x + 4.5, y0: c.y - 4.5, y1: c.y + 4.5, c }));
+  all.sort((a, b) => (b.hex === heroHex) - (a.hex === heroHex));
+  for (const c of all) {
+    const score = (i) => {
+      const b = labelBox(c, i);
+      let s = placed.reduce((n, p) => n + overlap(b, p), 0) + blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
+      s += Math.max(0, b.x1 - 112) * 20 + Math.max(0, -112 - b.x0) * 20;   // off the edge
+      return s - (i === c.corner ? 6 : 0);                                  // stickiness
+    };
+    let best = 0, bestScore = Infinity;
+    for (let i = 0; i < 4; i++) { const s = score(i); if (s < bestScore) { bestScore = s; best = i; } }
+    c.corner = best;
+    placed.push(labelBox(c, best));
+  }
+}
+
+function applyLabel(c) {
+  const [dx, dy, anchor] = CORNERS[c.corner];
+  c.tag.setAttribute("x", dx); c.tag.setAttribute("y", dy - 3.2); c.tag.setAttribute("text-anchor", anchor);
+  c.sub.setAttribute("x", dx); c.sub.setAttribute("y", dy + 3.3); c.sub.setAttribute("text-anchor", anchor);
+}
+
+// ---- entry point: called every animation frame ----
+export function drawScope(svg, state, now, stateAt, mode) {
+  ensureLayers(svg);
+  const dt = (now - stateAt) / 1000, frameDt = lastFrame ? Math.min(1, (now - lastFrame) / 1000) : 1;
+  lastFrame = now;
+  if (mode !== layerMode) {                       // switching views: start every aircraft fresh
+    for (const hex of [...live.keys()]) dropCraft(hex);
+    layerMode = mode;
+    staticKey = null;
+    svg.classList.remove("fade-in"); void svg.getBBox(); svg.classList.add("fade-in");
+  }
+  const key = `${mode}|${stateAt}|${map ? 1 : 0}`;
+  const fresh = key !== staticKey;
+  if (fresh) {
+    staticKey = key;
+    svg.querySelector("#s-static").innerHTML = mode === "sky" ? domeStatic(state, dt) : radarStatic(state);
+  }
+
+  const heroHex = state.hero && state.hero.hex, seen = new Set(), ease = 1 - Math.exp(-frameDt / 0.6);
+  for (const a of state.aircraft) {
+    if (a.on_ground || (mode === "sky" && a.alt == null)) continue;
+    const p = place(state, a, dt, mode);
+    if (!p) continue;
+    seen.add(a.hex);
+    const c = craftFor(svg, a.hex), isHero = a.hex === heroHex;
+    c.hex = a.hex;
+    // ease toward the dead-reckoned position; jump if it's far off (new aircraft, big correction)
+    if (c.x == null || Math.hypot(p.x - c.x, p.y - c.y) > 12) { c.x = p.x; c.y = p.y; c.rot = p.rot; }
+    else {
+      c.x += (p.x - c.x) * ease; c.y += (p.y - c.y) * ease;
+      c.rot += (((p.rot - c.rot + 540) % 360) - 180) * ease;
+    }
+    c.g.setAttribute("transform", `translate(${c.x.toFixed(2)},${c.y.toFixed(2)})`);
+    c.icon.setAttribute("transform", `rotate(${c.rot.toFixed(1)}) scale(${(isHero ? 1.55 : 1) * p.scale})`);
+    c.g.classList.toggle("hero", isHero);
+    c.trail.classList.toggle("hero", isHero);
+    c.grad.classList.toggle("hero", isHero);
+    const showLabel = mode !== "sky" || isHero || p.el > 6;
+    const text = showLabel ? ident(a) : "";
+    if (text !== c.text) { c.text = text; c.tag.textContent = text; }
+    c.sub.textContent = showLabel ? p.sub : "";
+    if (mode === "radar" && a.trail && a.trail.length > 1) {
+      if (fresh || !c.trailPts) {
+        c.trailPts = pts(state.home, a.trail, 100 / state.tracking.radius_nm);
+        const [x1, y1] = c.trailPts.split(" ")[0].split(",");
+        c.grad.setAttribute("x1", x1); c.grad.setAttribute("y1", y1);
+      }
+      c.grad.setAttribute("x2", c.x.toFixed(1)); c.grad.setAttribute("y2", c.y.toFixed(1));
+      c.trail.setAttribute("points", `${c.trailPts} ${c.x.toFixed(1)},${c.y.toFixed(1)}`);
+    } else c.trail.setAttribute("points", "");
+  }
+  for (const hex of [...live.keys()]) if (!seen.has(hex)) dropCraft(hex);
+  if (fresh) { placeLabels(heroHex); for (const c of live.values()) applyLabel(c); }
 }

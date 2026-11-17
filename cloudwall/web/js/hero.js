@@ -6,6 +6,13 @@ import { flap, roll } from "./fx.js";
 import { sky, viewingHint } from "./sky.js";
 import { map } from "./scope.js";
 
+// Play the entrance animation once for freshly inserted content.
+function enter(el) {
+  el.classList.add("enter");
+  clearTimeout(el._enterTimer);
+  el._enterTimer = setTimeout(() => el.classList.remove("enter"), 500);
+}
+
 let cur = { hex: null, routeKey: null, cpa0: 0, photo: null };
 let slide = 0, slideAt = Date.now(), slideShown = -1, extras = { log: null, heat: null, at: 0 };
 const SLIDE_SECONDS = 14;
@@ -25,8 +32,8 @@ const SKELETON = `
     <div class="airline"><span id="h-airline"></span><small id="h-sub"></small></div>
     <div class="countdown" id="h-countdown"><svg viewBox="0 0 40 40"><circle class="c-track" cx="20" cy="20" r="17"/><circle class="c-fill" id="h-ring" cx="20" cy="20" r="17" pathLength="100" transform="rotate(-90 20 20)"/></svg><b id="h-count"></b></div>
   </div>
-  <div class="badges" id="h-badges"></div>
-  <div id="h-route"></div>
+  <div class="tags"><div class="badges" id="h-badges"></div><div class="pin-chip" id="h-pin" hidden>Pinned · tap card to release</div></div>
+  <div class="h-route" id="h-route"></div>
   <div class="metrics">
     <div class="metric"><div class="label">Altitude</div><div class="v"><span id="h-alt"></span> <small>ft</small> <span id="h-arrow"></span></div><div class="s" id="h-vrate"></div></div>
     <div class="metric"><div class="label">Speed</div><div class="v"><span id="h-gs"></span> <small>kt</small></div><div class="s" id="h-mph"></div></div>
@@ -41,8 +48,9 @@ const SKELETON = `
 function routeHtml(a, state) {
   const r = a.route;
   if (!r) {
-    const what = a.owner && a.owner !== "Private" ? a.owner : a.callsign && a.callsign !== a.reg ? "No published route" : "Private / general aviation";
-    return `<div class="noroute">${esc(a.type_name || a.type || "Unknown aircraft")}<small>${esc(what)}</small></div>`;
+    // the headline above already says who flies it, so say something new here
+    const what = a.squawk === "1200" ? "Flying visually, no flight plan (squawk 1200)" : a.callsign && a.callsign !== a.reg ? "No published route for this flight" : "No flight plan on file";
+    return `<div class="noroute"><div class="label">No route</div>${esc(a.type_name || a.type || "Unknown aircraft")}<small>${esc(what)}</small></div>`;
   }
   const iata = state.airport.iata;
   return `<div class="route ${r.plausible ? "" : "unsure"}">
@@ -73,6 +81,7 @@ function showHero(el, a, state) {
   if (fresh) {
     el.innerHTML = SKELETON;
     el.className = "panel hero-card";
+    enter(el);
     cur = { hex: a.hex, routeKey: null, cpa0: 0, photo: null };
     slideShown = -1;
     const colors = airlineColors(a);
@@ -81,10 +90,14 @@ function showHero(el, a, state) {
     el.classList.toggle("liveried", !!colors);
   }
   const r = a.route, pr = r && r.plausible ? r : null;
-  flap($("h-flight"), ident(a));
-  $("h-airline").textContent = (pr && pr.airline) || (r && r.airline) || a.owner || "";
-  $("h-sub").textContent = [a.callsign && a.callsign !== ident(a) ? a.callsign : null, a.reg, a.squawk ? "SQ " + a.squawk : null].filter(Boolean).join(" · ");
-  $("h-badges").innerHTML = badges(a.badges) + (state.pinned ? '<span class="pinned">PINNED · tap to release</span>' : "");
+  const id = ident(a), info = typeInfo(a);
+  flap($("h-flight"), id);
+  const ga = info.shape === "piston" || info.shape === "heli" || /^N\d/.test(a.callsign || "");
+  $("h-airline").textContent = (pr && pr.airline) || (r && r.airline) || (a.owner && a.owner !== "Private" ? a.owner : ga ? "General aviation" : "");
+  $("h-sub").textContent = [a.callsign !== id ? a.callsign : null, a.reg !== id ? a.reg : null, a.squawk ? "Squawk " + a.squawk : null].filter(Boolean).join(" · ");
+  const bh = badges(a.badges);
+  if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
+  $("h-pin").hidden = !state.pinned;
 
   const key = r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || "");
   if (key !== cur.routeKey) {
@@ -114,13 +127,15 @@ function showHero(el, a, state) {
   $("h-look").textContent = a.elev > 75 ? "Straight overhead" : `Look ${a.compass}, ${Math.round(a.elev)}° up`;
   $("h-hint").textContent = viewingHint(a);
 
-  const info = typeInfo(a), sil = $("h-sil");
+  const sil = $("h-sil");
   if (sil.dataset.shape !== info.shape + info.length) {
     sil.dataset.shape = info.shape + info.length;
     sil.innerHTML = silhouette(info.shape);
     sil.firstElementChild.style.width = silhouetteScale(info.length) * 100 + "%";
   }
-  $("h-type").textContent = [a.type_name || a.type, a.type_name && a.type ? `(${a.type})` : null, info.known ? `· ${info.length} m long` : null].filter(Boolean).join(" ");
+  // with no route the type name is already the headline, so keep this line short
+  const name = r ? a.type_name || a.type : a.type;
+  $("h-type").textContent = [name, r && a.type_name && a.type ? `(${a.type})` : null, info.known ? `${info.length} m long` : null].filter(Boolean).join(" · ").replace(" · (", " (");
 
   if (a.photo && cur.photo !== a.photo) {
     cur.photo = a.photo;
@@ -229,10 +244,17 @@ function showIdle(el, state) {
   if (Date.now() - slideAt > SLIDE_SECONDS * 1000) { slide++; slideAt = Date.now(); }
   slide %= slides.length;
   const kind = slides[slide], dots = slides.length > 1 ? `<div class="dots">${slides.map((_, i) => `<i class="${i === slide ? "on" : ""}"></i>`).join("")}</div>` : "";
-  el.className = "panel idle-card";
-  if (kind === "quiet") { el.innerHTML = `<div class="idle">${quietSlide(state)}</div>${dots}`; slideShown = slide; return; }
-  if (slideShown === slide) return;                 // static slides: draw once
+  const changed = slideShown !== slide;
+  if (changed) { el.className = "panel idle-card"; enter(el); }
+  if (kind === "quiet") {
+    const html = `<div class="idle">${quietSlide(state)}</div>${dots}`;
+    if (changed || el._html !== html) { el.innerHTML = el._html = html; }
+    slideShown = slide;
+    return;
+  }
+  if (!changed) return;                             // other slides are drawn once
   slideShown = slide;
+  el._html = null;
   if (kind === "heat") {
     el.innerHTML = `<div class="idle heat"><div><div class="label">Today's traffic</div><h1>WHERE THEY FLEW</h1><div class="dim">Every aircraft tracked today within ${H.radius_nm} nm. Brighter means busier. The white dot is home.</div></div><canvas id="heat"></canvas></div>${dots}`;
     drawHeat($("heat"), state, H);

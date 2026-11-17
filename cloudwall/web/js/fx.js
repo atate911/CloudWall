@@ -11,7 +11,7 @@ export function flap(el, text, animate = true) {
   while (el.children.length > text.length) el.lastChild.remove();
   while (el.children.length < text.length) {
     const t = document.createElement("span");
-    t.className = "tile";
+    t.className = "flap";
     t.textContent = " ";
     el.appendChild(t);
   }
@@ -19,20 +19,20 @@ export function flap(el, text, animate = true) {
     const tile = el.children[i];
     clearTimeout(tile._timer);
     if (!animate || tile.textContent === ch) { tile.textContent = ch; return; }
-    let steps = 4 + Math.floor(Math.random() * 5) + i;      // later tiles settle later
+    let steps = 3 + Math.floor(Math.random() * 3) + Math.min(i, 4);   // later tiles settle a beat later
     const tick = () => {
       tile.textContent = steps > 0 ? GLYPHS[Math.floor(Math.random() * GLYPHS.length)] : ch;
       tile.classList.remove("flip");
       void tile.offsetWidth;                                 // restart the CSS animation
       tile.classList.add("flip");
-      if (steps-- > 0) tile._timer = setTimeout(tick, 55);
+      if (steps-- > 0) tile._timer = setTimeout(tick, 70);
     };
-    tile._timer = setTimeout(tick, i * 45);
+    tile._timer = setTimeout(tick, i * 40);
   });
 }
 
 // Count a number smoothly from what the element shows now to `value`.
-export function roll(el, value, format = (v) => Math.round(v).toLocaleString("en-US"), ms = 1500) {
+export function roll(el, value, format = (v) => Math.round(v).toLocaleString("en-US"), ms = 900) {
   if (value == null) { el.textContent = "–"; el._v = null; return; }
   const from = el._v ?? value, start = performance.now();
   el._target = value;

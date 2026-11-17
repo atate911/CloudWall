@@ -116,4 +116,7 @@ returns fixed sample data, so routes will not match what is overhead.
   approximate. For another airport, add a file named after its ICAO code; without one
   the scope simply has no backdrop.
 - Aircraft photos come from the free airframe database and load directly in the browser.
+- The Inter and JetBrains Mono fonts are bundled (SIL Open Font License, see
+  `cloudwall/web/fonts/`), so the board looks the same on every machine and needs no
+  internet for fonts.
 - Tests: `python3 -m unittest discover -s tests`
