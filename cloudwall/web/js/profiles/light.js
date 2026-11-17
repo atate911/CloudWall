@@ -763,8 +763,9 @@ F.ch7b = {
 // ---------- Van's Aircraft RV family ----------
 // References: Van's Aircraft's "Weight and Balance Data Quick Reference" sheets (vansaircraft.com/downloads/,
 // RV4wb, RV6wb, RV6Awb, RV7wb, RV7Awb, RV8wb, RV8Awb, RV9wb, RV9Awb, RV10wb, RV12wb, RV14wb and RV14Awb PDFs):
-// side views of each model, scaled by their datum-to-leading-edge dimension and cross-checked against the
-// wing chord (area / span) and overall length on each model's page at vansaircraft.com. z = 0 is the belly
+// side views of each model, scaled by the datum-to-leading-edge dimension where that is drawn to scale, else
+// by the published length, and cross-checked against the wing chord (area / span) and the overall length on
+// each model's page at vansaircraft.com (the data.js lengths agree with those pages). z = 0 is the belly
 // at the wing root leading edge. Every RV is a low, constant-chord wing with about 3.5 degrees of dihedral,
 // Van's rounded fin with the raked rudder trailing edge and the counterbalance horn at its top, and fixed
 // gear with wheel pants: spring-steel legs and a tailwheel on a spring, or (the "A" models) a swept nose
@@ -847,9 +848,9 @@ F.rv4 = rv({
   eng: { kind: "none", nose: { s: 0.21, z: 0.46, d: 1.78, blades: 2 } },
   stab: { le: 1.25, z: 0.73, span: 2.6, root: 0.1, cr: 0.95, ct: 0.58, sweep: 16, dih: 0, thick: 0.1 },
   parts: {
-    lines: [hinge(5.73, 0.35, 1.7, 5.73, 1.7), [[0.21, 0.33], [0.21, 0.61]]],
-    gear: [wheelLeg([1.3, 0], [1.39, -0.32], [1.44, -0.53], 0.15, [0.1, 0.08], { f: 0.27, a: 0.56, t: 0.21, b: 0.06 }),
-      tailwheel([5.73, 0.34], [6.25, 0.14], 0.065)],
+    lines: [[[5.65, 0.34], [5.65, 1.71]], [[0.21, 0.33], [0.21, 0.61]]],
+    gear: [wheelLeg([1.3, 0], [1.39, -0.32], [1.44, -0.53], 0.13, [0.1, 0.08], { f: 0.27, a: 0.56, t: 0.21, b: 0.06 }),
+      tailwheel([5.73, 0.34], [6.13, 0.14], 0.065)],
   },
 });
 
@@ -872,11 +873,11 @@ F.rv6 = rv({
   ],
   wing: { le: 1.52, root: 0.52, span: 7.01, cr: 1.46, ct: 1.46, sweep: 0, dih: 3.5, z: 0.085, t: [0.15, 0.135] },
   eng: { kind: "none", nose: { s: 0.31, z: 0.39, d: 1.78, blades: 2 } },
-  stab: { le: 1.32, z: 0.655, span: 2.9, root: 0.12, cr: 0.9, ct: 0.55, sweep: 15, dih: 0, thick: 0.1 },
+  stab: { le: 1.37, z: 0.65, span: 2.9, root: 0.12, cr: 0.95, ct: 0.58, sweep: 14, dih: 0, thick: 0.1 },
   parts: {
-    lines: [hinge(5.5, 0.32, 1.5, 5.4, 1.58), [[0.31, 0.23], [0.31, 0.54]]],
-    gear: [wheelLeg([1.33, -0.04], [1.45, -0.42], [1.51, -0.61], 0.15, [0.09, 0.07], { f: 0.27, a: 0.55, t: 0.2, b: 0.08 }),
-      tailwheel([5.52, 0.3], [6.04, 0.13])],
+    lines: [[[5.43, 0.31], [5.43, 1.53]], [[0.31, 0.23], [0.31, 0.54]]],
+    gear: [wheelLeg([1.33, -0.04], [1.45, -0.42], [1.51, -0.61], 0.13, [0.09, 0.07], { f: 0.27, a: 0.55, t: 0.2, b: 0.08 }),
+      tailwheel([5.52, 0.3], [5.92, 0.1])],
   },
 });
 F.rv6a = withGear(F.rv6, [
@@ -905,9 +906,9 @@ F.rv7 = rv({
   L0: 6.2, W: 1.1, body: RV7_BODY, glass: RV7_GLASS,
   wing: { le: 1.55, root: 0.53, span: 7.62, cr: 1.473, ct: 1.473, sweep: 0, dih: 3.5, z: 0.085, t: [0.15, 0.135] },
   eng: { kind: "none", nose: { s: 0.33, z: 0.42, d: 1.83, blades: 2 } },
-  stab: { le: 1.22, z: 0.715, span: 3.1, root: 0.12, cr: 0.97, ct: 0.6, sweep: 15, dih: 0, thick: 0.1 },
+  stab: { le: 1.23, z: 0.69, span: 3.1, root: 0.12, cr: 0.92, ct: 0.58, sweep: 13, dih: 0, thick: 0.1 },
   parts: {
-    lines: [hinge(5.88, 0.37, 1.7, 5.72, 1.79), [[0.33, 0.24], [0.33, 0.6]]],
+    lines: [hinge(5.66, 0.33, 1.7, 5.49, 1.79), [[0.33, 0.24], [0.33, 0.6]]],
     gear: [wheelLeg([1.3, -0.01], [1.43, -0.4], [1.49, -0.6], 0.16),
       tailwheel([5.75, 0.345], [6.22, 0.15])],
   },
@@ -924,8 +925,11 @@ F.rv7a = withGear(F.rv7, RV7A_GEAR);
 F.rv9 = rv({
   ...F.rv7, L0: 6.22,
   wing: { le: 1.6, root: 0.53, span: 8.53, cr: 1.346, ct: 1.346, sweep: 0, dih: 3.5, z: 0.08, t: [0.15, 0.135] },
-  stab: { le: 1.25, z: 0.715, span: 3.4, root: 0.12, cr: 0.98, ct: 0.62, sweep: 13, dih: 0, thick: 0.1 },
-  parts: { ...F.rv7.parts, gear: [wheelLeg([1.31, -0.01], [1.48, -0.42], [1.56, -0.61], 0.16), tailwheel([5.75, 0.345], [6.12, 0.2])] },
+  stab: { le: 1.26, z: 0.69, span: 3.4, root: 0.12, cr: 0.9, ct: 0.6, sweep: 11, dih: 0, thick: 0.1 },
+  parts: {
+    lines: [hinge(5.58, 0.33, 1.69, 5.4, 1.81), [[0.33, 0.24], [0.33, 0.6]]],
+    gear: [wheelLeg([1.31, -0.01], [1.48, -0.42], [1.56, -0.61], 0.16), tailwheel([5.75, 0.345], [6.12, 0.2])],
+  },
 });
 F.rv9a = withGear(F.rv9, [
   wheelLeg([1.95, 0], [2.04, -0.35], [2.12, -0.57], 0.16),
@@ -933,7 +937,7 @@ F.rv9a = withGear(F.rv9, [
 ]);
 
 // RV-8 / RV-8A: the bigger tandem two-seater (after the RV-4) with the long sliding bubble, the big fin and
-// the RV-4's lines stretched. RV8Awb side view (Van's 1:1 drawing, deskewed 1 degree; its 70 in datum
+// the RV-4's lines stretched. RV8Awb side view (a scan, deskewed 1 degree; its 70 in datum
 // dimension gives 6.37 m and a 57.3 in chord, against 21 ft / 6.4 m), drawn at 6.4 m. RV-8 tailwheel gear
 // (main legs straight down at the leading edge) from RV8wb.
 const RV8_BODY = [
@@ -952,9 +956,9 @@ F.rv8 = rv({
   ],
   wing: { le: 1.71, root: 0.43, span: 7.32, cr: 1.47, ct: 1.47, sweep: 0, dih: 3.5, z: 0.09, t: [0.15, 0.135] },
   eng: { kind: "none", nose: { s: 0.36, z: 0.435, d: 1.83, blades: 2 } },
-  stab: { le: 1.21, z: 0.69, span: 3.0, root: 0.1, cr: 0.94, ct: 0.58, sweep: 15, dih: 0, thick: 0.1 },
+  stab: { le: 1.21, z: 0.69, span: 3.0, root: 0.1, cr: 0.87, ct: 0.56, sweep: 12, dih: 0, thick: 0.1 },
   parts: {
-    lines: [hinge(5.94, 0.36, 1.72, 5.79, 1.8), [[0.36, 0.25], [0.36, 0.6]]],
+    lines: [hinge(5.85, 0.36, 1.72, 5.7, 1.8), [[0.36, 0.25], [0.36, 0.6]]],
     gear: [wheelLeg([1.73, 0], [1.73, -0.42], [1.73, -0.59], 0.17, [0.08, 0.07], { f: 0.33, a: 0.53, t: 0.17, b: 0.13 }),
       tailwheel([5.77, 0.35], [6.3, 0.16])],
   },
@@ -984,7 +988,7 @@ F.rv10 = rv({
   ],
   wing: { le: 2.08, root: 0.63, span: 9.68, cr: 1.42, ct: 1.42, sweep: 0, dih: 3.5, z: 0.085, t: [0.15, 0.135] },
   eng: { kind: "none", nose: { s: 0.27, z: 0.52, d: 2.03, blades: 3 } },
-  stab: { le: 1.34, z: 0.9, span: 3.6, root: 0.14, cr: 0.98, ct: 0.62, sweep: 12, dih: 0, thick: 0.1 },
+  stab: { le: 1.36, z: 0.88, span: 3.6, root: 0.14, cr: 0.99, ct: 0.62, sweep: 12, dih: 0, thick: 0.1 },
   parts: {
     // the gull-wing door: front edge along the windscreen frame, hinged at the roof
     doors: [[[2.19, 1.27, "c"], [2.31, 0.47, "c"], [3.18, 0.47, "c"], [3.18, 1.3, "c"]]],
@@ -1016,7 +1020,7 @@ F.rv12 = rv({
   ],
   wing: { le: 1.59, root: 0.56, span: 8.15, cr: 1.45, ct: 1.45, sweep: 0, dih: 3.5, z: 0.085, t: [0.15, 0.135] },
   eng: { kind: "none", nose: { s: 0.25, z: 0.555, d: 1.73, blades: 3 } },
-  stab: { le: 0.54, z: 0.63, span: 2.8, root: 0.1, cr: 0.64, ct: 0.6, sweep: 2, dih: 0, thick: 0.1 },
+  stab: { le: 0.64, z: 0.62, span: 2.8, root: 0.1, cr: 0.72, ct: 0.66, sweep: 2, dih: 0, thick: 0.1 },
   parts: {
     lines: [[[5.62, 0.75], [5.62, 1.94]], [[0.25, 0.42], [0.25, 0.68]]],
     gear: [
