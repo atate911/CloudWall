@@ -211,6 +211,7 @@ function render() {
   updateSky(state);
   renderToggles();
   const w = state.weather, f = state.flow;
+  $("station").textContent = state.airport.icao || "";
   $("flow").hidden = !f;
   if (f) $("flow").innerHTML = `${esc(state.airport.iata)} landing ${esc(f.dir)}, runways ${esc(f.runways.replace(" / ", " and "))}`;
   $("wx").hidden = !w;
@@ -288,7 +289,11 @@ setInterval(() => {
   else if (state.hero) tickHero(elapsed); else renderHero($("hero"), state);
 }, 1000);
 setInterval(() => { if (view === "log") loadLog().catch(() => {}); }, 30000);
-setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }, 1000);
+// Local time, with coordinated universal time beside it as aviation writes it ("0324Z").
+setInterval(() => {
+  const d = new Date(), z = String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0") + "Z";
+  $("clock").innerHTML = `${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}<small>${z}</small>`;
+}, 1000);
 poll().then(() => loadWeather(false));
 $("em-chip").addEventListener("click", () => { hidden.clear(); emShown = ""; setView("now"); render(); });
 $("tfr-chip").addEventListener("click", () => setView("wx"));

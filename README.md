@@ -213,8 +213,11 @@ nobody is looking.
   first time each airline appears, cached on disk, and shown on a white tile. Logos are
   the airlines' trademarks, so none are included in this repository; `[logos] enabled =
   false` turns them off, and `url` can point at another source.
-- The look is an aeronautical chart: cool chart paper, navy ink, chart blue for traffic and
-  magenta only for the aircraft overhead, switching to a night chart after dusk. Type is
+- The look is an aeronautical chart laid out like a set of engineering drawings: cool chart
+  paper, navy ink, chart blue for traffic and magenta only for the aircraft overhead, switching
+  to a night chart after dusk. Panels are framed as drawing sheets with corner marks, labels are
+  lettered in small capitals, type plates sit on a drafting grid with their ICAO type designator,
+  the radar and sky view carry a compass bezel, and the clock shows UTC beside local time. Type is
   B612, the typeface Airbus designed for cockpit displays, bundled under the SIL Open Font
   License (see `cloudwall/web/fonts/`), so the board looks the same on every machine.
 - Tests: `python3 -m unittest discover -s tests`

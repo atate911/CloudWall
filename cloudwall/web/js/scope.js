@@ -72,7 +72,18 @@ function ringLabel(r, text) {
   const d = r * Math.SQRT1_2;
   return `<text class="ring-label" x="${d + 1.5}" y="${-d - 1.5}">${text}</text>`;
 }
-const COMPASS = `<text class="compass" x="0" y="-104" text-anchor="middle">N</text><text class="compass" x="106" y="2" text-anchor="middle">E</text>
+// A bezel of degree marks just outside the edge, as on a compass card: every 5°, longer every
+// 10° and 30°. The cardinal points are left to their letters.
+const BEZEL = (() => {
+  const minor = [], major = [];
+  for (let a = 5; a < 360; a += 5) {
+    if (a % 90 === 0) continue;
+    const r2 = a % 30 === 0 ? 104.5 : a % 10 === 0 ? 103 : 102, s = Math.sin(a * RAD), c = -Math.cos(a * RAD);
+    (a % 30 === 0 ? major : minor).push(`M${(100.8 * s).toFixed(2)},${(100.8 * c).toFixed(2)}L${(r2 * s).toFixed(2)},${(r2 * c).toFixed(2)}`);
+  }
+  return `<path class="bezel" d="${minor.join("")}"/><path class="bezel major" d="${major.join("")}"/>`;
+})();
+const COMPASS = `${BEZEL}<text class="compass" x="0" y="-104" text-anchor="middle">N</text><text class="compass" x="106" y="2" text-anchor="middle">E</text>
   <text class="compass" x="0" y="110" text-anchor="middle">S</text><text class="compass" x="-106" y="2" text-anchor="middle">W</text>`;
 
 // ---- geometry for each mode ----

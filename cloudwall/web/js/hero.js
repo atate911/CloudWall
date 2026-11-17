@@ -181,6 +181,8 @@ function showHero(el, a, state) {
   if (sil && sil.dataset.shape !== silKey) {
     sil.dataset.shape = silKey;
     sil.innerHTML = plate(info, { note: isNew ? "New to your collection" : "" });
+    // the type designator in the sheet's corner, for types drawn from their own measurements
+    if (drawn(info)) sil.dataset.code = info.type; else delete sil.dataset.code;
   }
   renderFacts(a, state);
 
