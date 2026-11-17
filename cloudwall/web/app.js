@@ -144,7 +144,7 @@ function recs(title, r) {
   }).join("");
 }
 async function loadLog() {
-  const L = await (await fetch("/api/logbook")).json();
+  const L = await (await fetch("api/logbook")).json();
   const max = Math.max(1, ...L.hours.map((h) => h.n)), byHour = Object.fromEntries(L.hours.map((h) => [h.hour, h.n]));
   let bars = "";
   for (let h = 0; h < 24; h++) bars += `<i class="${byHour[h] ? "" : "z"}" style="height:${((byHour[h] || 0) / max) * 100}%" title="${h}:00"></i>`;
@@ -186,7 +186,7 @@ function render() {
 }
 async function poll() {
   try {
-    state = await (await fetch("/api/state")).json();
+    state = await (await fetch("api/state")).json();
     stateAt = Date.now();
     const hero = state.hero && state.hero.hex;
     // A new aircraft overhead takes the screen back, unless someone is using it.
@@ -195,7 +195,7 @@ async function poll() {
     render();
   } catch (e) { $("link").hidden = false; }
 }
-const pin = (hex) => fetch("/api/pin", { method: "POST", body: JSON.stringify({ hex }) }).then(poll);
+const pin = (hex) => fetch("api/pin", { method: "POST", body: JSON.stringify({ hex }) }).then(poll);
 
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
 document.querySelector("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });
