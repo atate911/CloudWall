@@ -35,6 +35,17 @@ function boardHtml() {
 }
 
 // ---------- logbook ----------
+function budgetLine(fa) {
+  const parts = [`${esc(fa.label)} lookups today: ${num(fa.used_today)}${fa.daily_limit != null ? ` of ${num(fa.daily_limit)} allowed` : ""}`];
+  if (fa.period_budget != null) {
+    parts.push(`${num(fa.period_used)} of ${num(fa.period_budget)} this billing period (${Math.round(fa.margin * 100)}% of ${num(fa.monthly_limit)} held back, resets ${esc(fa.resets)})`);
+  }
+  if (fa.problem) parts.push(`paused: ${esc(fa.problem)}`);
+  else if (fa.period_budget != null && fa.period_used >= fa.period_budget) parts.push("budget used up: free routes until the period resets");
+  else if (fa.daily_limit != null && fa.used_today >= fa.daily_limit) parts.push("today's share used: free routes until midnight");
+  return parts.join(" · ");
+}
+
 async function loadLog() {
   const L = await (await fetch("api/logbook")).json();
   const fa = state && state.live_routes;
@@ -53,7 +64,7 @@ async function loadLog() {
     <h2>Today by hour</h2><div class="hours">${bars}</div><div class="hours-axis">${axis}</div>
     <h2>Type collection</h2><div class="types">${L.types.map((t) => `<span class="type" title="${esc(t.name)}">${esc(t.type)}<b>${t.n}</b></span>`).join("") || '<span class="dim">Nothing yet — wait for the first flyover.</span>'}</div>
     <div class="cols"><div>${recordsHtml("Records today", L.records_today)}</div><div>${recordsHtml("Records all time", L.records_all)}</div></div>
-    ${fa && fa.enabled ? `<div class="dim" style="margin-top:.9rem">${esc(fa.label)} lookups today: ${fa.used_today} of ${fa.daily_limit}${fa.problem ? ` — paused: ${esc(fa.problem)}` : fa.used_today >= fa.daily_limit ? " — limit reached, using free routes until midnight" : ""}</div>` : ""}
+    ${fa && fa.enabled ? `<div class="dim" style="margin-top:.9rem">${budgetLine(fa)}</div>` : ""}
     <h2 style="margin-top:.9rem">Recent flyovers</h2>
     ${L.recent.map((s) => `<div class="rec"><span><b>${esc(s.flight || s.callsign || s.reg || s.hex)}</b> <span class="dim">${esc(s.type || "")} ${s.origin ? esc(s.origin) + " → " + esc(s.dest) : ""}</span> ${badges(s.badges)}</span>
       <span class="dim">${new Date(s.ts * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · ${num(s.alt_ft)} ft · ${s.min_dist_nm.toFixed(1)} nm</span></div>`).join("")}`;

@@ -598,3 +598,57 @@ class LogosTest(unittest.TestCase):
             finally:
                 L.urllib.request.urlopen = real
             self.assertEqual(len(calls), 2)                     # one download each, misses remembered
+
+
+class BudgetTest(unittest.TestCase):
+    def provider(self, today, **settings):
+        import datetime as dt
+        from cloudwall import flightradar24
+        cfg = config.load()
+        cfg["flightradar24"] = dict(cfg["flightradar24"], api_key="tok", **settings)
+        p = flightradar24.Flightradar24(cfg, Store(":memory:"))
+        p._today = lambda: today
+        return p, dt
+
+    def test_billing_period(self):
+        import datetime as dt
+        from cloudwall.live import billing_period
+        d = dt.date
+        self.assertEqual(billing_period(d(2026, 11, 17), 1), (d(2026, 11, 1), d(2026, 12, 1)))
+        self.assertEqual(billing_period(d(2026, 11, 17), 20), (d(2026, 10, 20), d(2026, 11, 20)))
+        self.assertEqual(billing_period(d(2026, 12, 25), 20), (d(2026, 12, 20), d(2027, 1, 20)))
+        self.assertEqual(billing_period(d(2027, 1, 5), 20), (d(2026, 12, 20), d(2027, 1, 20)))
+        self.assertEqual(billing_period(d(2027, 2, 28), 28), (d(2027, 2, 28), d(2027, 3, 28)))
+
+    def test_monthly_budget_with_margin(self):
+        import datetime as dt
+        p, _ = self.provider(dt.date(2026, 11, 1), monthly_limit=15000)      # first day of a 30-day period
+        b = p.budget()
+        self.assertEqual(b["period_budget"], 12750)                          # 15% held back
+        self.assertEqual(b["daily_limit"], 425)                              # 12,750 / 30 days
+        # a busy first fortnight: 500 a day for 14 days
+        for i in range(14):
+            p.store.cache_put("flightradar24_usage", (dt.date(2026, 11, 1) + dt.timedelta(days=i)).isoformat(), 500)
+        p._today = lambda: dt.date(2026, 11, 15)
+        b = p.budget()
+        self.assertEqual(b["period_used"], 7000)
+        self.assertEqual(b["daily_limit"], (12750 - 7000) // 16)             # what's left, spread over 16 days
+        self.assertTrue(p.available())
+
+    def test_never_exceeds_budget(self):
+        import datetime as dt
+        p, _ = self.provider(dt.date(2026, 11, 30), monthly_limit=15000, billing_day=1)
+        p.store.cache_put("flightradar24_usage", "2026-11-10", 12700)
+        p.store.cache_put("flightradar24_usage", "2026-11-30", 50)           # last day, budget reached
+        self.assertEqual(p.budget()["period_used"], 12750)
+        self.assertFalse(p.available())
+        p._today = lambda: dt.date(2026, 12, 1)                              # new period
+        self.assertTrue(p.available())
+        self.assertEqual(p.budget()["period_used"], 0)
+
+    def test_daily_cap_still_applies(self):
+        import datetime as dt
+        p, _ = self.provider(dt.date(2026, 11, 1), monthly_limit=15000, daily_limit=200)
+        self.assertEqual(p.budget()["daily_limit"], 200)
+        p2, _ = self.provider(dt.date(2026, 11, 1))                           # no monthly limit set
+        self.assertEqual(p2.budget()["daily_limit"], 100)

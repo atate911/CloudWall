@@ -32,19 +32,22 @@ urls = [
 # it is often wrong; with a key, routes come from the flight actually in the air.
 # Set a key for ONE of them (if both are set, Flightradar24 is used). Lookups are
 # billed, so CloudWall only asks about airliners heading for the house (from about
-# 10 minutes out), each flight once, and stops at daily_limit.
+# 10 minutes out), each flight once, and keeps within the budget below.
 
 [flightradar24]        # official Flightradar24 API (subscription with monthly credits)
 api_key = ""           # your API token (or set CLOUDWALL_FR24_KEY)
-daily_limit = 100      # hard cap on lookups per day. Near a busy airport, 250-350 airliners a
-                       # day can pass overhead; check the credits per lookup on your plan, then raise it
+monthly_limit = 0      # lookups your plan includes per billing period, e.g. 15000
+safety_margin = 0.15   # share of that held back and never used (0.15 = plan for 85%)
+billing_day = 1        # day of the month your plan renews (1-28)
+daily_limit = 0        # optional extra cap per day (0 = none; without monthly_limit, 100 a day)
 mode = "always"        # "always": every airliner near the house (recommended); "fallback": only when the free route looks wrong
 general_aviation = false   # also look up private aircraft; most have no route
 sandbox = false        # true with a sandbox token: free, but returns fixed sample data
 
 [flightaware]          # FlightAware AeroAPI (billed per lookup)
 api_key = ""           # your AeroAPI key (or set CLOUDWALL_FLIGHTAWARE_KEY)
-daily_limit = 30
+monthly_limit = 0      # same budget settings as above; without one, 30 lookups a day
+daily_limit = 0
 mode = "always"
 general_aviation = false
 

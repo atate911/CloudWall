@@ -25,9 +25,11 @@ DEFAULTS = {
     # Position feeds, tried in order; CloudWall fails over to the next when one stops answering.
     "source": {"urls": ["https://opendata.adsb.fi/api/v3/lat/{lat}/lon/{lon}/dist/{radius}",
                         "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"]},
-    "flightradar24": {"api_key": "", "daily_limit": 100, "mode": "always",
+    "flightradar24": {"api_key": "", "monthly_limit": 0, "safety_margin": 0.15, "billing_day": 1,
+                      "daily_limit": 0, "mode": "always",
                       "general_aviation": False, "sandbox": False},
-    "flightaware": {"api_key": "", "daily_limit": 30, "mode": "always",
+    "flightaware": {"api_key": "", "monthly_limit": 0, "safety_margin": 0.15, "billing_day": 1,
+                    "daily_limit": 0, "mode": "always",
                     "general_aviation": False},
     # Map behind the radar: "dark", "light", "satellite", "osm" or "off" (or set url = a tile URL template)
     "map": {"style": "dark", "opacity": 0.5, "url": "", "attribution": ""},

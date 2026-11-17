@@ -91,7 +91,9 @@ your config and restart:
 ```toml
 [flightradar24]        # or [flightaware]
 api_key = "your-token"
-daily_limit = 100      # hard cap on lookups per day
+monthly_limit = 15000  # lookups your plan includes per billing period
+safety_margin = 0.15   # held back and never used: plans for 85% of the allowance
+billing_day = 1        # day of the month your plan renews
 mode = "always"        # live routes for every airliner near the house
 ```
 
@@ -101,7 +103,10 @@ Lookups are billed, so CloudWall is frugal with them:
   looked up, early enough that the right route is on screen when they arrive;
 - `mode = "fallback"` saves lookups by asking only when the free route looks wrong;
 - each flight is looked up once and remembered for 45 minutes, airports for a year;
-- it stops at `daily_limit` and uses free routes until midnight. The Logbook shows the day's count;
+- each day may use the budget that's left divided by the days left in the billing period, so
+  busy days can borrow from quiet ones but the period's total never exceeds the budget; when
+  it's reached, routes come from the free database until the plan renews. `daily_limit` adds
+  an optional fixed cap per day. The Logbook shows the day's and the period's usage;
 - a rejected key or exhausted credits pauses lookups for an hour instead of retrying.
 
 Flightradar24 also offers a free sandbox token for testing: set `sandbox = true`. It

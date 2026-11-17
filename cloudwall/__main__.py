@@ -79,8 +79,14 @@ def main():
         threading.Thread(target=wx, daemon=True).start()
     server = make_server(cfg, tracker, store, tiles, logos)
     log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"], source.name)
-    log.info("live routes: %s", f"{fa.label} ({fa.mode} mode, up to {fa.daily_limit} lookups/day)"
-             if fa and not args.demo else "off (free route database only)")
+    if fa and not args.demo:
+        b = fa.budget()
+        log.info("live routes: %s (%s mode) - %s", fa.label, fa.mode,
+                 f"{b['period_used']} of {b['period_budget']} lookups used this billing period "
+                 f"({fa.margin:.0%} of {fa.monthly_limit} held back), today's allowance {b['daily_limit']}"
+                 if b["period_budget"] is not None else f"up to {b['daily_limit']} lookups a day")
+    else:
+        log.info("live routes: off (free route database only)")
     log.info("radar map: %s", f"{tiles.style} (cached in {tiles.dir})" if tiles.enabled else "off")
     log.info("config: %s | logbook: %s", cfg["_path"] or "built-in defaults", db)
     try:
