@@ -234,7 +234,7 @@ const A380_TAIL = {
 const A380_WIN = { z: 0.456, pitch: 0.635, w: 0.25, h: 0.36 };
 const A380_UWIN = { z: 0.779, pitch: 0.64, w: 0.25, h: 0.34, upper: true };
 F.a388 = {
-  kind: "quad", L0: 70.4, over: 2.33, D: 8.57, W: 7.14, fwd: 0.5, fair: 0.064, fairAft: 1.51,
+  kind: "quad", L0: 70.4, over: 2.33, D: 8.57, W: 7.14, fwd: 0.5, fair: 0.064, fairAft: 1.45,
   nose: A380_NOSE, tail: A380_TAIL, frame: 0.05, floor: 0.321, upper: 0.613,
   glass: [[[0.3, 0.598], [0.262, 0.565], [0.233, 0.528], [0.27, 0.528]],
     [[0.365, 0.598], [0.31, 0.598], [0.288, 0.56], [0.3, 0.522], [0.365, 0.522]],
@@ -256,7 +256,31 @@ F.a388 = {
   stab: { le: 11.9, z: 0.665, span: 30.37, root: 2.0, cr: 9.0, ct: 3.9, sweep: 37.2, dih: 4.5 },
 };
 
+// ---------- A300-600 ----------
+// Reference: Airbus A300-600 Airplane Characteristics, 2.2 Airplane Dimensions page 2 (a scanned,
+// rotated side view; overall 54.08 m to the fin tip, which overhangs the tail cone tip by ~0.1 m).
+// The scan is cluttered and slightly stretched (fuselage 5.70 m drawn for 5.64), so the A330's
+// measured nose, flight-deck glazing and tail cone (the A330/A340 front and rear fuselage derive
+// from the A300-600's) are reused; fin, tailplane, doors, windows and the nacelle are measured off
+// the scan. The wing planform is from published data (44.84 m span, ~30 deg leading edge) anchored
+// to the drawn wingtip and nacelle; it ends in small wingtip fences. Engines: GE CF6-80C2 (the most
+// common A300-600 engine; PW4158 nacelles look alike), short fan cowl and long core cowl, hung well
+// ahead of the wing on long pylons. Cargo doors are not drawn (no station data in this scan).
+F.a306 = {
+  ...A330, L0: 54.08, over: 0, fair: 0.06, fairAft: 1.4,
+  // doors 1 and 2, the Type I exit behind the wing, the aft door
+  doors: [[5.76, 1.07], [12.96, 1.0], [30.05, 0.76], [41.27, 1.07]],
+  extras: [fairing([[-3.0, 0], [-2.6, 0.6], [-1.8, 1.25], [-0.6, 1.9], [1.1, 2.35], [2.8, 2.55]])],
+  win: [{ ...WIN, from: 7.15, to: 11.0 }, { ...WIN, from: 14.0, to: 29.4 }, { ...WIN, from: 35.68, to: 39.93 }],
+  wing: { le: 18.6, root: 2.82, span: 44.84, cr: 9.5, kink: [0.25, 6.6], ct: 2.4, sweep: 30, dih: 6, z: 0.326, t: [0.13, 0.1] },
+  tip: { type: "fence", h: 0.55, lo: 0.35 },
+  ftf: [0.22, 0.4, 0.58],
+  eng: { kind: "fan", at: [0.261], fwd: 5.83, drop: 2.26, len: 7.3, dia: 2.93, fx: 0.58, cx: 0.9 },
+  fin: { le: 11.68, cr: 8.13, ct: 3.1, h: 8.17, sweep: 46, fillet: [2.8, 1.1], rudder: 0.68 },
+  stab: { le: 7.68, z: 0.82, span: 16.26, root: 1.5, cr: 4.9, ct: 2.0, sweep: 37, dih: 7 },
+};
+
 export const families = F;
 export const types = {
-  A332: "a332", A333: "a333", A338: "a338", A339: "a339", A342: "a342", A343: "a343", A345: "a345", A346: "a346", A359: "a359", A35K: "a35k", A388: "a388",
+  A306: "a306", A332: "a332", A333: "a333", A338: "a338", A339: "a339", A342: "a342", A343: "a343", A345: "a345", A346: "a346", A359: "a359", A35K: "a35k", A388: "a388",
 };
