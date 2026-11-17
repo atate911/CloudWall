@@ -830,6 +830,27 @@ class ServerTest(unittest.TestCase):
         finally:
             srv.shutdown()
 
+    def test_a_screen_asks_for_its_radar_range(self):
+        import threading, urllib.request
+        from cloudwall.server import make_server
+        cfg = config.load()
+        cfg["server"]["host"], cfg["server"]["port"] = "127.0.0.1", 0
+        store = Store(":memory:")
+        t = Tracker(cfg, store, StubEnricher())
+        srv = make_server(cfg, t, store)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            base = f"http://127.0.0.1:{srv.server_address[1]}/api/state"
+            for q in ("?range=99", "?range=x", ""):                 # not offered, not a number, none
+                s = json.loads(urllib.request.urlopen(base + q, timeout=5).read())
+                self.assertEqual(t.fetch_radius(), 15)
+            self.assertEqual(s["ranges"], [15, 20, 30])
+            self.assertEqual(s["kiosk"], {"radar": "chart", "tracks": True, "range_nm": 0})
+            urllib.request.urlopen(base + "?range=30", timeout=5).read()
+            self.assertEqual(t.fetch_radius(), 30)
+        finally:
+            srv.shutdown()
+
 
 class SeatsTest(unittest.TestCase):
     def test_airline_layout_then_type_then_cargo(self):

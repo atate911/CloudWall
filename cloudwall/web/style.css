@@ -27,12 +27,17 @@
   --halo: #f4f5f1;      /* behind labels on the radar */
   --sans: "B612", "DejaVu Sans", Arial, sans-serif;
   --mono: "B612 Mono", "DejaVu Sans Mono", Menlo, monospace;
-  /* drawing-sheet furniture: the frame's corner marks and the drafting grid under the type plates */
+  --corner: 2px;        /* controls are cut nearly square; sheets are square */
+}
+/* Drawing-sheet furniture: the frame's corner marks, the frame itself (see-through, so the corner
+   marks show on it) and the drafting grid under the type plates. Mixed from the theme's ink and
+   blue, so declared on body, where night and the emergency takeover set those: declared on :root
+   they would keep the day colours. */
+body {
   --tick: color-mix(in srgb, var(--ink) 55%, transparent);
+  --frame: color-mix(in srgb, var(--ink) 16%, transparent);
   --grid: color-mix(in srgb, var(--blue) 8%, transparent);
   --grid-major: color-mix(in srgb, var(--blue) 15%, transparent);
-  --corner: 2px;        /* controls are cut nearly square; sheets are square */
-  --frame: color-mix(in srgb, var(--ink) 16%, transparent);   /* see-through, so the corner marks show on it */
 }
 .fig { font-family: var(--sans); font-variant-numeric: tabular-nums; }
 body.night {

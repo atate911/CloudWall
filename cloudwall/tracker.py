@@ -427,7 +427,8 @@ class Tracker:
     def fetch_radius(self):
         """How far out to ask the feed for: the longest range a screen asked for lately."""
         now = time.time()
-        recent = [nm for nm, at in self.range_wanted.items() if now - at < RANGE_HOLD_S]
+        # a copy: the server's threads add to range_wanted while this runs on the poller's
+        recent = [nm for nm, at in list(self.range_wanted.items()) if now - at < RANGE_HOLD_S]
         return max([self.cfg["tracking"]["radius_nm"], *recent])
 
     def update(self, raw, source):
