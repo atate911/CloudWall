@@ -1,10 +1,20 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
 import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS } from "./util.js";
-import { airlineColors, typeInfo } from "./data.js";
+import { typeInfo } from "./data.js";
 import { silhouette, silhouetteScale } from "./silhouette.js";
 import { flap, roll } from "./fx.js";
 import { sky, viewingHint } from "./sky.js";
 import { map, tileLayout } from "./scope.js";
+
+// Show an airline's logo on its white tile; if there isn't one, show the name instead.
+export function showLogo(tile, img, state, code, nameEl) {
+  tile.hidden = true;
+  if (nameEl) nameEl.hidden = false;
+  if (!state.logos || !code) return;
+  img.onload = () => { tile.hidden = false; if (nameEl) nameEl.hidden = true; };
+  img.onerror = () => { tile.hidden = true; if (nameEl) nameEl.hidden = false; };
+  img.src = `logos/${encodeURIComponent(code)}`;
+}
 
 // Play the entrance animation once for freshly inserted content.
 function enter(el) {
@@ -26,10 +36,10 @@ function badgeClass(b) {
 export const badges = (list) => (list || []).map((b) => `<span class="badge ${badgeClass(b)}">${esc(b)}</span>`).join("");
 
 const SKELETON = `
-  <div class="hero-photo" id="h-photo"></div><div class="hero-tint"></div>
+  <div class="hero-photo" id="h-photo"></div>
   <div class="h-top">
     <div class="flaps flight" id="h-flight"></div>
-    <div class="airline"><span id="h-airline"></span><small id="h-sub"></small></div>
+    <div class="airline"><div class="logo-tile" id="h-logo" hidden><img class="logo" id="h-logo-img" alt=""></div><span id="h-airline"></span><small id="h-sub"></small></div>
     <div class="countdown" id="h-countdown"><svg viewBox="0 0 40 40"><circle class="c-track" cx="20" cy="20" r="17"/><circle class="c-fill" id="h-ring" cx="20" cy="20" r="17" pathLength="100" transform="rotate(-90 20 20)"/></svg><b id="h-count"></b></div>
   </div>
   <div class="tags"><div class="badges" id="h-badges"></div><div class="pin-chip" id="h-pin" hidden>Pinned · tap card to release</div></div>
@@ -100,10 +110,7 @@ function showHero(el, a, state) {
     enter(el);
     cur = { hex: a.hex, routeKey: null, cpa0: 0, photo: null };
     slideShown = -1;
-    const colors = airlineColors(a);
-    el.style.setProperty("--air1", colors ? colors[0] : "transparent");
-    el.style.setProperty("--air2", colors ? colors[1] : "transparent");
-    el.classList.toggle("liveried", !!colors);
+    showLogo($("h-logo"), $("h-logo-img"), state, a.airline_iata, $("h-airline"));
   }
   const r = a.route, pr = r && r.plausible ? r : null;
   const id = ident(a), info = typeInfo(a);
@@ -224,7 +231,7 @@ function passText(state, n) {
 const NEXT_SKELETON = `
   <div class="label">Next overhead</div>
   <div class="nu-row">
-    <div class="nu-id"><div class="flaps nu-flight" id="nu-flight"></div><div class="nu-sub" id="nu-sub"></div></div>
+    <div class="nu-id"><div class="flaps nu-flight" id="nu-flight"></div><div class="nu-line"><div class="logo-tile small" id="nu-logo" hidden><img class="logo" id="nu-logo-img" alt=""></div><div class="nu-sub" id="nu-sub"></div></div></div>
     <div class="countdown big" id="nu-countdown"><svg viewBox="0 0 40 40"><circle class="c-track" cx="20" cy="20" r="17"/><circle class="c-fill" id="nu-ring" cx="20" cy="20" r="17" pathLength="100" transform="rotate(-90 20 20)"/></svg><b id="nu-count"></b></div>
   </div>
   <div class="nu-route" id="nu-route"></div>
@@ -235,7 +242,7 @@ let nextCpa0 = 0;
 function fillNext(state, n) {
   flap($("nu-flight"), ident(n));
   const r = n.route && n.route.plausible ? n.route : null;
-  $("nu-sub").textContent = [r && r.airline, n.type_name || n.type].filter(Boolean).join(" · ") || "Unknown aircraft";
+  $("nu-sub").textContent = [(r && r.airline) || n.airline, n.type_name || n.type].filter(Boolean).join(" · ") || "Unknown aircraft";
   const routeHtml = r ? `${esc(r.origin.iata)} <span class="dim">→</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : "";
   if ($("nu-route").innerHTML !== routeHtml) $("nu-route").innerHTML = routeHtml;
   $("nu-look").textContent = passText(state, n);
@@ -258,6 +265,7 @@ function quietSlide(el, state, dots, changed) {
     if (n) {
       nextCpa0 = 0;
       el.innerHTML = `<div class="idle next-up">${NEXT_SKELETON}</div>${dots}`;
+      showLogo($("nu-logo"), $("nu-logo-img"), state, n.airline_iata);
       if (!changed) enter(el);
     } else el.innerHTML = `<div class="idle quiet"></div>${dots}`;
   }

@@ -74,7 +74,7 @@ nav button span { opacity: .65; margin-left: .2rem; }
 .enter > * { animation: rise .4s cubic-bezier(.2, .7, .3, 1) backwards; }
 .enter > :nth-child(4) { animation-delay: .04s; } .enter > :nth-child(5) { animation-delay: .08s; }
 .enter > :nth-child(6) { animation-delay: .12s; } .enter > :nth-child(7) { animation-delay: .16s; }
-.enter > .hero-photo, .enter > .hero-tint { animation: fade .8s ease-out backwards; }
+.enter > .hero-photo { animation: fade .8s ease-out backwards; }
 
 /* ---------- split-flap tiles ---------- */
 .flaps { display: inline-flex; gap: .07em; font-family: var(--mono); font-weight: 700; line-height: 1; perspective: 20em; }
@@ -96,14 +96,21 @@ nav button span { opacity: .65; margin-left: .2rem; }
   -webkit-mask-image: linear-gradient(100deg, transparent 15%, rgba(0, 0, 0, .55) 60%, #000 95%), linear-gradient(transparent 0, #000 12%, #000 72%, transparent 92%);
   mask-image: linear-gradient(100deg, transparent 15%, rgba(0, 0, 0, .55) 60%, #000 95%), linear-gradient(transparent 0, #000 12%, #000 72%, transparent 92%);
   -webkit-mask-composite: source-in; mask-composite: intersect; }
-/* airline colours: a wash from the left plus a two-tone stripe down the edge */
-.hero-tint { position: absolute !important; inset: 0; z-index: 1 !important; pointer-events: none; opacity: 0; transition: opacity .8s;
-  background: linear-gradient(90deg, var(--air1) 0 .32rem, var(--air2) .32rem .44rem, transparent .44rem),
-    linear-gradient(110deg, color-mix(in srgb, var(--air1) 45%, transparent), color-mix(in srgb, var(--air1) 12%, transparent) 40%, transparent 70%); }
-.liveried .hero-tint { opacity: 1; }
 .h-top { display: flex; align-items: center; gap: .9rem; }
 .flight { font-size: 2.9rem; color: var(--amber); }
-.airline { font-size: 1.25rem; font-weight: 650; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em; }
+.airline { font-size: 1.25rem; font-weight: 650; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -.01em;
+  display: flex; flex-direction: column; align-items: flex-start; gap: .3rem; }
+.airline > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.airline > [hidden] { display: none; }
+/* airline logos sit on a white tile, as many are dark and would vanish on the card */
+.logo-tile { display: inline-flex; align-items: center; justify-content: center; background: #fff; border-radius: .45rem;
+  height: 2.7rem; padding: .3rem .6rem; box-shadow: 0 .15rem .5rem rgba(0, 0, 0, .35); flex: none; }
+.logo-tile[hidden] { display: none; }
+.logo-tile img { height: 100%; width: auto; max-width: 12rem; object-fit: contain; display: block; }
+.logo-tile.small { height: 2.1rem; padding: .22rem .45rem; }
+.logo-tile.tiny { height: 1.8rem; padding: .16rem .35rem; border-radius: .3rem; box-shadow: none; }
+.logo-tile.tiny img { max-width: 5.6rem; }
+body.night .logo-tile { filter: brightness(.72) sepia(.35); }
 .airline small { display: block; color: var(--dim); font: 500 .76rem var(--mono); letter-spacing: .02em; margin-top: .15rem; }
 .pin-chip { font: 600 .6rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--amber); padding: .2rem .5rem;
   border: 1px solid color-mix(in srgb, var(--amber) 50%, transparent); border-radius: 99px; white-space: nowrap; }
@@ -176,6 +183,7 @@ body.night .sil { color: #d8b890; } body.night .sil .wing { fill: #94775a; } bod
 .nu-row { display: flex; align-items: center; gap: 1.2rem; }
 .nu-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .5rem; }
 .nu-flight { font-size: 3rem; color: var(--amber); }
+.nu-line { display: flex; align-items: center; gap: .7rem; min-width: 0; }
 .nu-sub { font-size: 1.25rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .countdown.big { width: 7rem; height: 7rem; }
 .countdown.big b { font-size: 1.55rem; }
@@ -254,8 +262,9 @@ td.num, th.num { text-align: right; }
 .board tbody tr:nth-child(even) { background: rgba(255, 255, 255, .02); }
 .board tr.hero td { color: var(--amber); background: color-mix(in srgb, var(--amber) 7%, transparent); }
 .board td.fl { font-weight: 700; font-size: 1.08rem; }
-.board td.sw { width: 1.2rem; padding-right: 0; }
-.board td.sw i { display: block; width: .55rem; height: 1.9rem; border-radius: .2rem; }
+.board td.lg { width: 6.6rem; padding-right: .2rem; }
+.board td.lg .sw { display: block; width: .5rem; height: 1.8rem; border-radius: .2rem; }
+.board td.lg .logo-tile + .sw { display: none; }
 .board .vs { display: inline-block; width: 1.1em; text-align: center; }
 .board .cmp { display: inline-block; width: 2.6em; text-align: left; margin-left: .35em; color: var(--dim); font-size: .85em; }
 .board td.soon { color: var(--amber); font-weight: 700; }

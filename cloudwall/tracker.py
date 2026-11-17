@@ -6,6 +6,7 @@ import time
 from collections import deque
 
 from . import geo
+from .logos import iata_for
 
 RARE_TYPES = {
     "A388", "B741", "B742", "B744", "B748", "BLCF", "A3ST", "A337", "A342", "A343", "A345",
@@ -40,6 +41,7 @@ class Tracker:
         self.flow = None
         self.weather = None
         self.basemap = None
+        self.logos = False
         self.status = {"source": None, "ok": False, "updated": 0, "error": None}
         self.trails = {}          # hex -> deque of (lat, lon)
         self.heat_day = time.strftime("%Y-%m-%d")
@@ -87,6 +89,7 @@ class Tracker:
         free = self.enricher.route(a.get("callsign"))
         if free and free.get("airline"):
             a["airline"] = free["airline"]      # the airline is reliable even when the route isn't
+        a["airline_iata"] = iata_for(a.get("callsign"), (free or {}).get("airline_iata"))
         route = self._with_geometry(a, free)
         state, live = self._live_route(a, route)
         if live:
@@ -346,7 +349,7 @@ class Tracker:
                 "now": time.time(), "home": self.home, "airport": self.cfg["airport"],
                 "tracking": self.cfg["tracking"], "hero": hero, "pinned": self.pinned,
                 "next": nxt, "aircraft": self.aircraft, "flow": self.flow,
-                "weather": self.weather, "status": self.status, "basemap": self.basemap,
+                "weather": self.weather, "status": self.status, "basemap": self.basemap, "logos": self.logos,
                 "live_routes": p.status() if (p := getattr(self.enricher, "live", None)) else None,
                 "today": self.store.count("day=?", (time.strftime("%Y-%m-%d"),)),
             }

@@ -31,6 +31,8 @@ DEFAULTS = {
                     "general_aviation": False},
     # Map behind the radar: "dark", "light", "satellite", "osm" or "off" (or set url = a tile URL template)
     "map": {"style": "dark", "opacity": 0.5, "url": "", "attribution": ""},
+    # Airline logos on the flight card, fetched by airline code and cached on disk
+    "logos": {"enabled": True, "url": ""},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }

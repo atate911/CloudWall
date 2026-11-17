@@ -125,6 +125,10 @@ returns fixed sample data, so routes will not match what is overhead.
   approximate; with the real map turned on only its runways and approach lines are
   drawn. For another airport, add a file named after its ICAO code.
 - Aircraft photos come from the free airframe database and load directly in the browser.
+- Airline logos are fetched by airline code from a public logo service (pics.avs.io) the
+  first time each airline appears, cached on disk, and shown on a white tile. Logos are
+  the airlines' trademarks, so none are included in this repository; `[logos] enabled =
+  false` turns them off, and `url` can point at another source.
 - The Inter and JetBrains Mono fonts are bundled (SIL Open Font License, see
   `cloudwall/web/fonts/`), so the board looks the same on every machine and needs no
   internet for fonts.

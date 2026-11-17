@@ -8,7 +8,7 @@ from pathlib import Path
 WEB = Path(__file__).resolve().parent / "web"
 
 
-def make_server(cfg, tracker, store, tiles=None):
+def make_server(cfg, tracker, store, tiles=None, logos=None):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *a):
             pass
@@ -33,6 +33,16 @@ def make_server(cfg, tracker, store, tiles=None):
                 return self._send(200, store.logbook(time.strftime("%Y-%m-%d")))
             if path.startswith("/tiles/"):
                 return self._tile(path)
+            if path.startswith("/logos/"):
+                data = logos.get(path[7:].upper()) if logos else None
+                if not data:
+                    return self._send(404, {"error": "no logo"})
+                self.send_response(200)
+                self.send_header("Content-Type", "image/png")
+                self.send_header("Content-Length", str(len(data)))
+                self.send_header("Cache-Control", "public, max-age=604800")
+                self.end_headers()
+                return self.wfile.write(data)
             f = (WEB / (path.lstrip("/") or "index.html")).resolve()
             if WEB not in f.parents or not f.is_file():
                 return self._send(404, {"error": "not found"})

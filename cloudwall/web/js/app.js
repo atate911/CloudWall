@@ -20,8 +20,8 @@ function boardHtml() {
     const r = a.route && a.route.plausible ? a.route : null, v = a.vrate || 0, c = airlineColors(a);
     const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
     return `<tr data-hex="${esc(a.hex)}" class="${a.hex === heroHex ? "hero" : ""}">
-      <td class="sw"><i style="background:${c ? c[0] : "var(--line)"};box-shadow:inset 0 -.35em 0 ${c ? c[1] : "transparent"}"></i></td>
-      <td class="fl">${esc(ident(a))}<small>${esc((r && r.airline) || (a.reg && a.reg !== ident(a) ? a.reg : "") || a.type_name || "")}</small></td>
+      <td class="lg">${state.logos && a.airline_iata ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc((r && r.airline) || a.airline || "")}"></span>` : ""}<i class="sw" style="background:${c ? c[0] : "var(--line)"}"></i></td>
+      <td class="fl">${esc(ident(a))}<small>${esc((r && r.airline) || a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || a.type_name || "")}</small></td>
       <td class="rt">${r ? `${esc(r.origin.iata)} <span class="dim">→</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : '<span class="dim">—</span>'}</td>
       <td>${esc(a.type || "")}</td>
       <td class="num">${altText(a)}<span class="vs">${v > 300 ? '<span class="up">▲</span>' : v < -300 ? '<span class="down">▼</span>' : ""}</span></td>
@@ -138,6 +138,11 @@ async function poll() {
     render();
   } catch (e) { $("link").hidden = false; }
 }
+// A logo that doesn't exist (404) leaves the colour swatch showing in its place.
+document.addEventListener("error", (e) => {
+  const t = e.target;
+  if (t instanceof HTMLImageElement && t.classList.contains("logo") && !t.id) t.closest(".logo-tile").remove();
+}, true);
 const pin = (hex) => fetch("api/pin", { method: "POST", body: JSON.stringify({ hex }) }).then(poll);
 
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });

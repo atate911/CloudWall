@@ -57,6 +57,10 @@ opacity = 0.5          # 0 to 1; the radar keeps it dim either way
 # url = "https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png?key=YOUR_CARTO_KEY"
 # attribution = "© OpenStreetMap contributors © CARTO"   # the credit the provider asks for
 
+[logos]                # airline logos on the flight card, downloaded once per airline and cached
+enabled = true
+# url = "https://pics.avs.io/240/80/{iata}@2x.png"   # where logos come from ({iata} = airline code)
+
 [server]
 host = "0.0.0.0"
 port = 5050

@@ -27,6 +27,7 @@ def fetch_route(callsign):
         return None
     airline = fr.get("airline") or {}
     return {"flight": fr.get("callsign_iata") or callsign, "airline": airline.get("name"),
+            "airline_iata": airline.get("iata"),
             "origin": _airport(fr["origin"]), "dest": _airport(fr["destination"])}
 
 

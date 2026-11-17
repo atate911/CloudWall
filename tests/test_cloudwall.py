@@ -548,3 +548,43 @@ class LiveFirstTest(unittest.TestCase):
         self.t.update([plane("a2", "ASA1363", 9.0, track=90)], "test")   # passing by to the north
         time.sleep(0.1)
         self.assertEqual(self.calls, [])
+
+
+class LogosTest(unittest.TestCase):
+    def test_airline_codes(self):
+        from cloudwall.logos import iata_for
+        self.assertEqual(iata_for("DAL2008"), "DL")
+        self.assertEqual(iata_for("QXE2162"), "AS")            # Horizon flies as Alaska
+        self.assertEqual(iata_for("XYZ123", "XY"), "XY")       # unknown airline: trust the database code
+        self.assertIsNone(iata_for("N733NV", "ZZ"))            # private aircraft: no logo
+        self.assertIsNone(iata_for("AMF1977"))                 # known airline with no logo code
+
+    def test_cache_and_missing(self):
+        import tempfile, urllib.error
+        from cloudwall import logos as L
+        with tempfile.TemporaryDirectory() as d:
+            lg = L.Logos(config.load(), d)
+            calls = []
+
+            class Resp:
+                def __init__(self, data): self.data = data
+                def __enter__(self): return self
+                def __exit__(self, *a): pass
+                def read(self): return self.data
+
+            def fake(req, timeout=0):
+                calls.append(req.full_url)
+                if "/QX" in req.full_url:
+                    raise urllib.error.HTTPError(req.full_url, 404, "nope", None, None)
+                return Resp(b"\x89PNG fake")
+
+            real, L.urllib.request.urlopen = L.urllib.request.urlopen, fake
+            try:
+                self.assertTrue(lg.get("DL").startswith(b"\x89PNG"))
+                lg.get("DL")
+                self.assertIsNone(lg.get("QX"))
+                self.assertIsNone(lg.get("QX"))
+                self.assertIsNone(lg.get("../etc"))
+            finally:
+                L.urllib.request.urlopen = real
+            self.assertEqual(len(calls), 2)                     # one download each, misses remembered
