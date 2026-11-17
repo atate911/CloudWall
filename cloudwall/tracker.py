@@ -291,6 +291,9 @@ class Tracker:
         if a.get("type_name") and not s.get("named"):
             s["named"] = True
             upd.update(type_name=a["type_name"], reg=a.get("reg"))
+        if a.get("model") and not s.get("modeled"):
+            s["modeled"] = True
+            upd.update(model=a["model"])
         if r and r["plausible"]:
             key = (r["flight"], r["origin"]["iata"], r["dest"]["iata"])
             if s.get("route") != key:

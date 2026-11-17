@@ -1,7 +1,7 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
 import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS } from "./util.js";
 import { typeInfo } from "./data.js";
-import { silhouette, silhouetteScale } from "./silhouette.js";
+import { plate, renderLineup } from "./plate.js";
 import { flap, roll } from "./fx.js";
 import { sky } from "./sky.js";
 import { map, tileLayout } from "./scope.js";
@@ -161,22 +161,29 @@ function showHero(el, a, state) {
     : a.track == null ? "" : `Toward the ${POINTS[Math.round(a.track / 22.5) % 16]}`;
 
   const sil = $("h-sil");
-  const silKey = `${info.type}|${info.shape}|${info.length}|${info.name}`;
+  // the type plate: the side elevation with its length, under the photo once one arrives
+  const isNew = (a.badges || []).includes("NEW TYPE");
+  const silKey = `${info.type}|${info.shape}|${info.length}|${info.name}|${isNew}`;
   if (sil && sil.dataset.shape !== silKey) {
     sil.dataset.shape = silKey;
-    sil.innerHTML = silhouette(info.type, info.shape, info.length, info.name);
-    if (sil.firstElementChild) sil.firstElementChild.style.width = silhouetteScale(info.length) * 100 + "%";
+    sil.innerHTML = plate(info, { note: isNew ? "New to your collection" : "" });
   }
   renderFacts(a, state);
 
   if (a.photo && cur.photo !== a.photo) {
-    // a photo of this very airframe replaces the generic silhouette once it has loaded
+    // a photo of this very airframe takes the top of the frame once it has loaded; the type plate stays below
     cur.photo = a.photo;
     const img = new Image();
     img.referrerPolicy = "no-referrer";
     img.className = "photo";
     img.alt = "";
-    img.onload = () => { if (cur.photo === a.photo && $("h-media")) { $("h-media").replaceChildren(img); $("h-media").classList.add("has-photo"); } };
+    img.onload = () => {
+      const m = $("h-media");
+      if (cur.photo !== a.photo || !m) return;
+      m.querySelectorAll(".photo").forEach((p) => p.remove());
+      m.prepend(img);
+      m.classList.add("has-photo");
+    };
     img.src = a.photo;
   }
   cur.a = a;
@@ -257,6 +264,7 @@ const NEXT_SKELETON = `
     <div class="countdown big" id="nu-countdown"><svg viewBox="0 0 40 40"><circle class="c-track" cx="20" cy="20" r="17"/><circle class="c-fill" id="nu-ring" cx="20" cy="20" r="17" pathLength="100" transform="rotate(-90 20 20)"/></svg><b id="nu-count"></b></div>
   </div>
   <div class="nu-route" id="nu-route"></div>
+  <div class="nu-plate sil-box" id="nu-plate"></div>
   <div class="nu-look" id="nu-look"></div>
   <div class="nu-foot"><div class="today" id="nu-today"></div><div class="wx" id="nu-wx"></div><div class="raw" id="nu-raw"></div></div>`;
 
@@ -269,6 +277,12 @@ function fillNext(state, n) {
   $("nu-sub").textContent = [logoShown ? null : (r && r.airline) || n.airline, n.type_name || n.type].filter(Boolean).join(", ") || "Unknown aircraft";
   const routeHtml = r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : "";
   if ($("nu-route").innerHTML !== routeHtml) $("nu-route").innerHTML = routeHtml;
+  const info = typeInfo(n), pk = `${info.type}|${info.length}|${info.name}`, pl = $("nu-plate");
+  if (pl.dataset.key !== pk) {
+    pl.dataset.key = pk;
+    pl.innerHTML = info.known ? plate(info) : "";
+    pl.hidden = !info.known;
+  }
   $("nu-look").textContent = passText(state, n);
   const left = n.cpa_s - (Date.now() - (state._at || Date.now())) / 1000;
   nextCpa0 = Math.max(nextCpa0, n.cpa_s, 60);
@@ -404,6 +418,8 @@ function showIdle(el, state) {
   const slides = ["quiet"];
   if (extras.wx && extras.wx.now) slides.push("weather");
   if (H && H.cells.length > 8) slides.push("heat");
+  const fleet = fleetToday(L);
+  if (fleet.length >= 2) slides.push("fleet");
   if (L && L.today > 0) slides.push("records");
   if (L && L.recent.length) slides.push("last");
   if (Date.now() - slideAt > SLIDE_SECONDS * 1000) { slide++; slideAt = Date.now(); }
@@ -429,12 +445,26 @@ function showIdle(el, state) {
       <div class="heat-legend"><span>one-off</span><i></i><span>busy</span></div>
       <div class="dim heat-key">The dot in the middle is home.</div></div><canvas id="heat"></canvas></div>${dots}`;
     drawHeat($("heat"), state, H);
+  } else if (kind === "fleet") {
+    el.innerHTML = `<div class="idle fleet"><div class="fleet-head"><h1>Today’s fleet</h1>
+      <div class="dim">${fleet.length} types seen since midnight, side by side at their true relative size</div></div>
+      <div class="fleet-box" id="fleet-box"></div></div>${dots}`;
+    renderLineup($("fleet-box"), fleet);
   } else if (kind === "records") {
     el.innerHTML = `<div class="idle"><h1>Today’s records</h1><div class="dim">${L.today} flyovers so far, ${L.types.length} aircraft types seen since CloudWall started</div>${recordsHtml("", L.records_today)}</div>${dots}`;
   } else {
     const s = L.recent[0];
-    el.innerHTML = `<div class="idle last">${s.photo ? `<img class="photo" src="${encodeURI(s.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<div>${lastSlide(s)}</div></div>${dots}`;
+    const info = typeInfo({ type: s.type, type_name: s.type_name, model: s.model });
+    const pic = s.photo ? `<img class="photo" src="${encodeURI(s.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`
+      : info.known ? `<div class="last-plate sil-box">${plate(info)}</div>` : "";
+    el.innerHTML = `<div class="idle last">${pic}<div>${lastSlide(s)}</div></div>${dots}`;
   }
+}
+
+// Types seen today that have a drawing, most frequent first (at most 36), for the lineup.
+function fleetToday(L) {
+  return ((L && L.types_today) || []).map((t) => ({ info: typeInfo({ type: t.type, type_name: t.name, model: t.model }), n: t.n }))
+    .filter((t) => t.info.known).slice(0, 36);
 }
 
 export function nextSlide() { slide++; slideAt = Date.now(); }

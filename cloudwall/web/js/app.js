@@ -4,7 +4,8 @@ import { updateSky, sky } from "./sky.js";
 import { drawScope, loadMap } from "./scope.js";
 import { renderHero, tickHero, nextSlide, badges, recordsHtml } from "./hero.js";
 import { chime, soundOn, setSound } from "./fx.js";
-import { airlineColors } from "./data.js";
+import { airlineColors, typeInfo } from "./data.js";
+import { plate } from "./plate.js";
 import { renderWeatherTab } from "./weather.js";
 
 let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastHero = null, view = "now", mapFor = null;
@@ -71,12 +72,35 @@ async function loadLog() {
       <div class="stat"><div class="label">Airlines</div><div class="v">${L.airlines.length}</div></div>
     </div>
     <h2>Today by hour</h2><div class="hours">${bars}</div><div class="hours-axis">${axis}</div>
-    <h2>Type collection</h2><div class="types">${L.types.map((t) => `<span class="type"><code>${esc(t.type)}</code>${esc(shortType(t.name) || "")}<b>${t.n}</b></span>`).join("") || '<span class="dim">Nothing yet — wait for the first flyover.</span>'}</div>
+    <h2>Type collection</h2><div id="log-coll"></div>
     <div class="cols"><div>${recordsHtml("Records today", L.records_today)}</div><div>${recordsHtml("Records all time", L.records_all)}</div></div>
     <h2 style="margin-top:.9rem">Recent flyovers</h2>
     ${L.recent.map((s) => `<div class="rec"><span><b>${esc(s.flight || s.callsign || s.reg || s.hex)}</b> <span class="dim">${esc(s.type || "")} ${s.origin ? esc(s.origin) + " → " + esc(s.dest) : ""}</span> ${badges(s.badges)}</span>
       <span class="dim">${new Date(s.ts * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}, ${num(s.alt_ft)} ft, ${s.min_dist_nm.toFixed(1)} nm from home</span></div>`).join("")}
     ${fa && fa.enabled ? `<h2 style="margin-top:1.4rem">Flight data usage</h2><div class="usage">${budgetLine(fa)}</div>` : ""}`;
+  $("log-coll").replaceWith(collection(L.types));
+}
+
+// The type collection: a drawing of every type logged, with how often and since when. Its
+// drawings are kept between the logbook's refreshes and rebuilt only when the list changes.
+let coll = { key: null, el: null };
+function collection(types) {
+  const key = types.map((t) => `${t.type}:${t.n}:${t.model || ""}`).join(",");
+  if (coll.key === key && coll.el) return coll.el;
+  const el = document.createElement("div");
+  el.className = "collection";
+  const day = (ts) => {
+    const d = new Date(ts * 1000);
+    return d.toLocaleDateString([], d.getFullYear() === new Date().getFullYear() ? { month: "short", day: "numeric" } : { month: "short", year: "numeric" });
+  };
+  el.innerHTML = types.map((t) => {
+    const info = typeInfo({ type: t.type, type_name: t.name, model: t.model });
+    return `<figure class="coll${info.known ? "" : " unknown"}"><div class="sil-box">${info.known ? plate(info, { dim: false }) : `<code>${esc(t.type)}</code>`}</div>
+      <figcaption><div><code>${esc(t.type)}</code> <span>${esc(shortType(t.name) || "")}</span></div>
+      <div class="dim"><b>${num(t.n)}</b> ${t.n === 1 ? "sighting" : "sightings"}${t.first ? `, since ${day(t.first)}` : ""}</div></figcaption></figure>`;
+  }).join("") || '<span class="dim">Nothing yet. The first flyover starts the collection.</span>';
+  coll = { key, el };
+  return el;
 }
 
 // ---------- scope: sky dome while something is overhead, radar otherwise ----------

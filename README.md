@@ -16,14 +16,15 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
   altitude the autopilot is heading for, when it reports one), speed, distance and heading,
   and a photo of the airframe beside its departure and arrival times, when it passes the
   house, the aircraft type, registration and build year, and what the autopilot is doing.
-  Until a photo loads (or when there isn't one) the card shows a side elevation of the type,
-  drawn to scale.
+  Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
+  dimension line with its length. With no photo, the plate fills the frame.
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
   path across it (centre is straight up), or a radar scope with trails over a faint map.
   Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
 - **Quiet sky** – when nothing is overhead the card rotates through the next inbound
-  aircraft, a heatmap of the day's traffic, the day's records and the last flyover.
-  Tap to skip ahead.
+  aircraft (with its drawing, so you know what to look for), a heatmap of the day's traffic,
+  today's fleet (every type seen since midnight, side by side at true relative size, from a
+  Cessna to a 777), the day's records and the last flyover. Tap to skip ahead.
 - **Board** – departure-board list of everything airborne in range. Tap a row (or a
   blip on the scope) to pin that aircraft to the flight card; tap the card to release.
 - **Weather** – aviation weather for the airport from aviationweather.gov: flight category,
@@ -33,7 +34,8 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
   best runway; cloud layers drawn by coverage with the ceiling marked; the last 24 hours
   of reports as charts (touch one to read that report); and the TAF forecast as a
   timeline. A compact version joins the quiet-sky rotation.
-- **Logbook** – every flyover is logged: type collection, airlines, daily and all-time
+- **Logbook** – every flyover is logged: a drawn type collection (each type with its count
+  and first sighting; a new one is marked on the flight card), airlines, daily and all-time
   records (highest, lowest, fastest, closest, furthest origin), flyovers by hour.
 
 The display switches to its night chart, dim and dark, when the sun sets at your house;

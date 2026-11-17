@@ -25,6 +25,8 @@ class Store:
             cols = {r["name"] for r in self.db.execute("PRAGMA table_info(sightings)")}
             if "photo" not in cols:      # added after the first release
                 self.db.execute("ALTER TABLE sightings ADD COLUMN photo TEXT")
+            if "model" not in cols:      # the registry's model name, which picks a drawing's variant
+                self.db.execute("ALTER TABLE sightings ADD COLUMN model TEXT")
 
     # -- cache ---------------------------------------------------------------
     def cache_get(self, kind, key, max_age):
@@ -86,8 +88,11 @@ class Store:
             "today": self.count("day=?", (day,)),
             "total": self.count("1"),
             "types": self.query(
-                "SELECT type, MAX(type_name) AS name, COUNT(*) AS n, MIN(ts) AS first "
+                "SELECT type, MAX(type_name) AS name, MAX(model) AS model, COUNT(*) AS n, MIN(ts) AS first "
                 "FROM sightings WHERE type IS NOT NULL GROUP BY type ORDER BY n DESC"),
+            "types_today": self.query(
+                "SELECT type, MAX(type_name) AS name, MAX(model) AS model, COUNT(*) AS n "
+                "FROM sightings WHERE day=? AND type IS NOT NULL GROUP BY type ORDER BY n DESC", (day,)),
             "airlines": self.query(
                 "SELECT airline_icao AS icao, MAX(airline) AS name, COUNT(*) AS n FROM sightings "
                 "WHERE airline_icao IS NOT NULL GROUP BY airline_icao ORDER BY n DESC"),

@@ -452,16 +452,26 @@ function rotor(sk, r, at) {
 }
 
 const cache = new Map();
+let copies = 0;
 // The drawing for an aircraft type (ICAO code), falling back to a generic family for its
 // broad shape; length in metres sets the stretch; name (model names) picks a variant.
-export function silhouette(type, shape, length, name = "") {
+// Returns { svg, w, h }: the markup and its drawn size in metres (margins included), so
+// drawings can be laid side by side at one scale.
+export function drawing(type, shape, length, name = "") {
   const key = `${type}|${shape}|${length}|${name}`;
   if (!cache.has(key)) {
     const f = profileFor(type, shape, length, name);
-    cache.set(key, f ? svg(draw(f)) : "");
+    if (!f) cache.set(key, { svg: "", w: 0, h: 0 });
+    else {
+      const d = draw(f), [x0, y0, x1, y1] = d.box, m = (x1 - x0) * 0.015;
+      cache.set(key, { svg: svg(d), w: x1 - x0 + 2 * m, h: y1 - y0 + 2 * m });
+    }
   }
-  return cache.get(key);
+  // each copy gets its own gradient id: a copy must not lean on one in a hidden view
+  const c = cache.get(key), n = ++copies;
+  return { ...c, svg: c.svg.replace(/(id="|url\(#)(sil\d+)/g, `$1$2-${n}`) };
 }
+export const silhouette = (type, shape, length, name = "") => drawing(type, shape, length, name).svg;
 // Share of the available width a given aircraft should fill, so a 777 dwarfs a Cessna
 // while the Cessna stays recognisable.
 export const silhouetteScale = (lengthM) => 0.3 + 0.7 * Math.sqrt(Math.min(1, Math.max(0, (lengthM - 6) / 70)));

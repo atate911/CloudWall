@@ -741,6 +741,10 @@ class FeedExtrasTest(unittest.TestCase):
         t.update([plane("a2", "N7RV", 1.0, typ="RV7", desc="Van's RV-7", category="A1")], "test")
         h = t.snapshot()["hero"]
         self.assertEqual((h["type_name"], h["model"]), ("Van's RV-7", "Vans RV-7A"))
+        # the logbook keeps it, and lists today's types for the fleet lineup
+        L = t.store.logbook(time.strftime("%Y-%m-%d"))
+        self.assertEqual([(x["type"], x["model"], x["n"]) for x in L["types_today"]], [("RV7", "Vans RV-7A", 1)])
+        self.assertEqual(L["types"][0]["model"], "Vans RV-7A")
 
 
 class ActivityTest(unittest.TestCase):

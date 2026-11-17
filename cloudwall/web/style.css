@@ -174,9 +174,29 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .facts { display: grid; grid-template-columns: auto 1fr; column-gap: 1.2rem; row-gap: .55rem; align-content: center; font-size: .92rem; margin: 0; }
 .facts dt { color: var(--slate); }
 .facts dd { margin: 0; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
-.sil-box { display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; padding: 0 6%; }
+/* type plates: a side elevation over a dimension line with its length. The box is a size container,
+   so a plate is a share of its width, or as wide as its height allows. */
+.sil-box { container-type: size; display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; padding: 6% 7%; min-height: 0; }
+.sil-box[hidden] { display: none; }
+.plate { margin: 0; display: flex; flex-direction: column; gap: .3rem; flex: none;
+  width: min(calc(var(--w) * 100cqw), calc((100cqh - 1.3rem) * var(--ar))); }
+.plate.nodim { width: min(calc(var(--w) * 100cqw), calc(100cqh * var(--ar))); }
+.plate:has(.plate-note) { width: min(calc(var(--w) * 100cqw), calc((100cqh - 2.4rem) * var(--ar))); }
+.plate .sil { width: 100%; height: auto; max-height: none; }
+.plate.standin .sil { opacity: .45; }
+.plate figcaption { display: flex; flex-direction: column; align-items: center; gap: .2rem; }
+.dimline { align-self: stretch; margin: 0 1.46%; height: .7rem; border-left: 1px solid; border-right: 1px solid; color: var(--slate);
+  display: flex; align-items: center; justify-content: center; gap: .4rem; font-size: .66rem; white-space: nowrap; }
+.dimline::before, .dimline::after { content: ""; flex: 1; border-top: 1px solid; min-width: .4rem; }
+.dimline span { flex: none; font-variant-numeric: tabular-nums; } .dimline b { color: var(--ink-2); font-weight: 700; }
+.plate-note { font-size: .7rem; font-weight: 700; color: var(--blue); white-space: nowrap; }
+/* with a photo, the frame becomes a print over its type plate */
+.media.has-photo { flex-direction: column; align-items: stretch; }
+.media.has-photo .photo { flex: 1 1 0; min-height: 0; height: auto; }
+.media.has-photo .sil-box { flex: 0 0 44%; height: auto; background: var(--sheet); border-top: 1px solid var(--rule); padding: .35rem 6% .3rem; }
+.media.has-photo .plate { gap: .2rem; }
 /* side elevations drawn to scale: inked outlines over chart paper, like a type-certificate drawing */
-.sil { display: block; max-height: 74%; overflow: visible;
+.sil { display: block; overflow: visible;
   --sil-line: color-mix(in srgb, var(--ink) 90%, transparent);
   --sil-body: color-mix(in srgb, var(--ink) 3%, var(--sheet));
   --sil-wing: color-mix(in srgb, var(--ink) 13%, var(--sheet));
@@ -224,6 +244,22 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .heat-key { font-size: .8rem; }
 .idle.last { flex-direction: row; align-items: center; justify-content: flex-start; gap: 1.8rem; }
 .idle.last .photo { width: 45%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: .8rem; flex: none; }
+.idle.last .last-plate { width: 45%; height: auto; aspect-ratio: 3 / 2; flex: none; border-radius: .8rem; background: color-mix(in srgb, var(--ink) 5%, transparent); }
+/* today's fleet: every type seen since midnight at one scale, standing on ground lines */
+.idle.fleet { justify-content: flex-start; gap: 1rem; padding-bottom: 1.4rem; }
+.fleet-head { display: flex; flex-direction: column; gap: .35rem; }
+.fleet-head h1 { font-size: 2.1rem; }
+.fleet-box { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.fleet-row { position: relative; display: flex; align-items: flex-end; justify-content: center; gap: 18px; }
+.fleet-row::after { content: ""; position: absolute; left: 0; right: 0; bottom: 30px; border-top: 1px solid var(--rule); }
+.fleet-item { margin: 0; display: flex; flex-direction: column; align-items: center; flex: none; position: relative; z-index: 1; }
+.fleet-draw { flex: none; display: flex; align-items: flex-end; }
+.fleet-draw .sil { width: 100%; height: 100%; }
+.fleet-item figcaption { align-self: center; height: 26px; margin-top: 4px; display: flex; justify-content: center; gap: .3rem; align-items: baseline; white-space: nowrap; font-size: .7rem; color: var(--slate); }
+.fleet-item code { font: 700 .72rem var(--mono); color: var(--ink); }
+.fleet-item b { color: var(--blue); font-weight: 700; font-variant-numeric: tabular-nums; }
+.fleet-scale { align-self: flex-end; display: flex; align-items: center; gap: .5rem; font-size: .68rem; color: var(--slate); margin-top: 2px; }
+.fleet-scale i { display: block; height: .45rem; border: 1px solid var(--slate); border-top: none; }
 .idle.last > div { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
 .dots { position: absolute; bottom: .9rem; left: 0; right: 0; display: flex; justify-content: center; gap: .45rem; }
 .dots i { width: .4rem; height: .4rem; border-radius: 99px; background: var(--rule); transition: width .3s, background-color .3s; }
@@ -244,6 +280,7 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .nu-route .dim { font: 400 .9rem var(--sans); margin: 0 .3rem; }
 .nu-route small { display: block; font: 400 .85rem var(--sans); color: var(--slate); margin-top: .3rem; }
 .nu-look { font-size: 1.15rem; color: var(--ink-2); max-width: 34em; line-height: 1.45; }
+.nu-plate { height: 5rem; flex: none; padding: 0; justify-content: flex-start; }
 .nu-foot { margin-top: .6rem; padding-top: 1rem; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: .45rem; }
 .nu-foot .today { font-size: .95rem; } .nu-foot .today b { font-variant-numeric: tabular-nums; }
 .nu-foot .sep { display: inline-block; width: 1.4rem; }
@@ -336,10 +373,16 @@ td.num, th.num { text-align: right; }
 h2 { font-size: .95rem; font-weight: 700; margin: .3rem 0 .55rem; }
 .rec { display: flex; justify-content: space-between; align-items: baseline; gap: .8rem; padding: .45rem 0; border-top: 1px solid var(--rule); font-size: .9rem; }
 .rec b { font-weight: 700; font-variant-numeric: tabular-nums; }
-.types { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.4rem; }
-.types .type { flex: none; font-size: .8rem; border: 1px solid var(--rule); border-radius: 99px; padding: .22rem .65rem; color: var(--ink-2); }
-.types .type code { font: 700 .8rem var(--mono); color: var(--ink); margin-right: .35rem; }
-.types .type b { color: var(--blue); margin-left: .4rem; font-variant-numeric: tabular-nums; }
+/* the type collection: a drawing of every type logged */
+.collection { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .6rem; margin-bottom: 1.4rem; }
+.coll { margin: 0; border: 1px solid var(--rule); border-radius: .6rem; padding: .55rem .7rem .6rem; display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+.coll .sil-box { height: 3.4rem; padding: 0; }
+.coll.unknown .sil-box code { font: 700 1rem var(--mono); color: var(--slate); }
+.coll figcaption { display: flex; flex-direction: column; gap: .12rem; font-size: .76rem; min-width: 0; }
+.coll figcaption > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.coll figcaption code { font: 700 .78rem var(--mono); color: var(--ink); }
+.coll figcaption span { color: var(--ink-2); }
+.coll figcaption .dim b { color: var(--blue); font-variant-numeric: tabular-nums; }
 .usage { margin-top: 1.4rem; font-size: .76rem; color: var(--slate); line-height: 1.5; }
 .hours { display: flex; align-items: flex-end; gap: 3px; height: 3.2rem; }
 .hours i { flex: 1; background: var(--blue); min-height: 2px; border-radius: 2px 2px 0 0; opacity: .75; }
