@@ -122,6 +122,14 @@ class TrackerTest(unittest.TestCase):
         self.t.update([plane("a1", "ASA777", 1.0)], "test")
         self.assertEqual(self.t.snapshot()["hero"]["badges"], ["2nd VISIT"])
 
+    def test_restart_does_not_double_count(self):
+        self.t.update([plane("a1", "ASA512", 1.0)], "test")
+        restarted = Tracker(config.load(), self.store, self.enricher)     # same logbook, fresh memory
+        restarted.update([plane("a1", "ASA512", 0.6)], "test")
+        self.assertEqual(self.store.count("1"), 1)
+        self.assertEqual(restarted.snapshot()["hero"]["badges"], ["NEW TYPE", "NEW AIRLINE"])
+        self.assertAlmostEqual(self.store.query("SELECT min_dist_nm FROM sightings")[0]["min_dist_nm"], 0.6, 1)
+
     def test_no_hero_when_nothing_overhead(self):
         self.t.update([plane("a2", "UAL99", 9.0, track=180)], "test")   # inbound from the north
         s = self.t.snapshot()

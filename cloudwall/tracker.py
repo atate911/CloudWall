@@ -1,4 +1,5 @@
 """Turns raw positions into the board state: geometry, hero selection, logbook, badges."""
+import json
 import math
 import re
 import threading
@@ -226,6 +227,8 @@ class Tracker:
         m = AIRLINE.match(a.get("callsign") or "")
         airline_icao = m.group(1) if m else None
         s = self.active.get(a["hex"])
+        if not s:
+            s = self._resume(a["hex"], now)
         if not s or now - s["ts"] > RESIGHT_SECONDS:
             badges = self._badges(a, airline_icao)
             sid = self.store.add_sighting(
@@ -285,6 +288,22 @@ class Tracker:
         with self.lock:
             return {"grid": HEAT_GRID, "radius_nm": self.cfg["tracking"]["radius_nm"],
                     "cells": [[x, y, n] for (x, y), n in self.heat.items()]}
+
+    def _resume(self, hexid, now):
+        """After a restart, carry on with a flyover already logged in the last half hour
+        instead of counting the same pass twice."""
+        rows = self.store.query("SELECT id, ts, min_dist_nm, badges, origin, dest, flight, type_name "
+                                "FROM sightings WHERE hex=? AND ts>? ORDER BY ts DESC LIMIT 1",
+                                (hexid, now - RESIGHT_SECONDS))
+        if not rows:
+            return None
+        r = rows[0]
+        s = {"id": r["id"], "ts": r["ts"], "min": r["min_dist_nm"], "badges": json.loads(r["badges"] or "[]"),
+             "named": bool(r["type_name"])}
+        if r["origin"]:
+            s["route"] = (r["flight"], r["origin"], r["dest"])
+        self.active[hexid] = s
+        return s
 
     def _update_flow(self, aircraft):
         """Guess the airport's runway direction from low, descending traffic near it."""

@@ -36,7 +36,8 @@ urls = [
 
 [flightradar24]        # official Flightradar24 API (subscription with monthly credits)
 api_key = ""           # your API token (or set CLOUDWALL_FR24_KEY)
-daily_limit = 100      # hard cap on lookups per day; check your credit use, then adjust
+daily_limit = 100      # hard cap on lookups per day. Near a busy airport, 250-350 airliners a
+                       # day can pass overhead; check the credits per lookup on your plan, then raise it
 mode = "always"        # "always": every airliner near the house (recommended); "fallback": only when the free route looks wrong
 general_aviation = false   # also look up private aircraft; most have no route
 sandbox = false        # true with a sandbox token: free, but returns fixed sample data
