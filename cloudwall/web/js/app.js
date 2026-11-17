@@ -149,19 +149,38 @@ function scopeMode() {
   const pref = store("scope") || "auto";
   return pref === "auto" ? (state && state.hero ? "sky" : "radar") : pref;
 }
+// Radar options: drawn as a chart or as an air traffic control screen, track lines on or off, and
+// the range. The desktop's buttons set them for each screen; the kiosk, which has no buttons, takes
+// them from the [kiosk] settings. The address overrides either (?radar=atc&tracks=off&range=30).
+const qs = new URLSearchParams(location.search);
+function radarPrefs() {
+  const k = (KIOSK && state && state.kiosk) || {}, ranges = (state && state.ranges) || [15, 20, 30];
+  const pick = (name, saved, ok) => [qs.get(name), saved].find(ok);
+  const style = pick("radar", KIOSK ? k.radar : store("radarStyle"), (v) => v === "chart" || v === "atc") || "chart";
+  const tracks = pick("tracks", KIOSK ? (k.tracks === false ? "off" : "on") : store("tracks"), (v) => v === "on" || v === "off") !== "off";
+  const range = +(pick("range", KIOSK ? k.range_nm : store("range"), (v) => v != null && ranges.includes(+v)) || ranges[0]);
+  return { style, tracks, range };
+}
 let scopeLabel = "";
 function drawScopeNow(now = performance.now()) {
   if (!state || view !== "now") return;
-  const mode = scopeMode(), pref = store("scope") || "auto";
-  const bm = state.basemap, credit = mode === "radar" && bm && bm.enabled ? bm.attribution : "";
-  const label = pref + mode + credit;
+  const mode = scopeMode(), pref = store("scope") || "auto", { style, tracks, range } = radarPrefs();
+  const atc = mode === "radar" && style === "atc";
+  const bm = state.basemap, credit = mode === "radar" && !atc && bm && bm.enabled ? bm.attribution : "";
+  const label = [pref, mode, credit, style, tracks, range, state.ranges].join("|");
   if (label !== scopeLabel) {
     scopeLabel = label;
     document.querySelectorAll("#scope-seg button").forEach((b) => b.classList.toggle("on", b.dataset.mode === pref));
+    document.querySelectorAll("#style-seg button").forEach((b) => b.classList.toggle("on", b.dataset.style === style));
+    $("btn-tracks").classList.toggle("on", tracks);
+    $("btn-tracks").setAttribute("aria-pressed", String(tracks));
+    $("range-seg").innerHTML = (state.ranges || []).map((r) => `<button data-range="${r}"${r === range ? ' class="on"' : ""}>${r}</button>`).join("") +
+      `<span class="seg-unit">nm</span>`;
+    $("scope").classList.toggle("atc", atc);
+    $("scope").classList.toggle("sky", mode === "sky");     // the radar's options don't apply to the sky view
     $("scope-attrib").textContent = credit;
-    $("scope-caption").textContent = mode === "sky" ? "Sky view: the middle is straight up, the edge is the horizon" : `Radar: ${state.tracking.radius_nm} nm around home`;
   }
-  drawScope($("radar"), state, now, stateAtPerf, mode);
+  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range });
 }
 
 // Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi.
@@ -211,6 +230,7 @@ function render() {
   updateSky(state);
   renderToggles();
   const w = state.weather, f = state.flow;
+  $("station").textContent = state.airport.icao || "";
   $("flow").hidden = !f;
   if (f) $("flow").innerHTML = `${esc(state.airport.iata)} landing ${esc(f.dir)}, runways ${esc(f.runways.replace(" / ", " and "))}`;
   $("wx").hidden = !w;
@@ -241,7 +261,9 @@ function render() {
 async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
   try {
-    state = await (await fetch("api/state")).json();
+    // while the radar is on screen, the server fetches out to its range
+    const range = state && view === "now" && scopeMode() === "radar" ? radarPrefs().range : 0;
+    state = await (await fetch(`api/state?range=${range}`)).json();
     stateAt = state._at = Date.now();
     stateAtPerf = performance.now();
     if (mapFor !== state.airport.icao) { mapFor = state.airport.icao; loadMap(mapFor).then(() => { scopeLabel = ""; }); }
@@ -266,7 +288,11 @@ const pin = (hex) => fetch("api/pin", { method: "POST", body: JSON.stringify({ h
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
 document.querySelector("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });
 $("board").addEventListener("click", (e) => { const r = e.target.closest("tr[data-hex]"); if (r) { pin(r.dataset.hex); setView("now"); } });
-$("radar").addEventListener("click", (e) => { const g = e.target.closest("g[data-hex]"); if (g) pin(g.dataset.hex); });
+// a target past the tracking radius (on a longer-range radar) has no flight card to show
+$("radar").addEventListener("click", (e) => {
+  const g = e.target.closest("g[data-hex]");
+  if (g && state && state.aircraft.some((a) => a.hex === g.dataset.hex)) pin(g.dataset.hex);
+});
 $("hero").addEventListener("click", (e) => {
   if (!state) return;
   if (e.target.closest("#em-hide")) { emergencies().forEach((a) => hidden.add(emKey(a))); render(); return; }
@@ -275,6 +301,10 @@ $("hero").addEventListener("click", (e) => {
   if (state.pinned) pin(null); else if (!state.hero) { nextSlide(); render(); }
 });
 $("scope-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("scope", b.dataset.mode); scopeLabel = ""; } });
+// a button wins over the same setting given in the address
+$("style-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { qs.delete("radar"); store("radarStyle", b.dataset.style); scopeLabel = ""; } });
+$("btn-tracks").addEventListener("click", () => { const on = radarPrefs().tracks; qs.delete("tracks"); store("tracks", on ? "off" : "on"); scopeLabel = ""; });
+$("range-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { qs.delete("range"); store("range", b.dataset.range); scopeLabel = ""; poll(); } });
 $("btn-sound").addEventListener("click", () => { setSound(!soundOn()); renderToggles(); });
 $("btn-night").addEventListener("click", () => { const m = ["auto", "on", "off"]; store("night", m[(m.indexOf(store("night") || "auto") + 1) % 3]); render(); });
 
@@ -288,7 +318,11 @@ setInterval(() => {
   else if (state.hero) tickHero(elapsed); else renderHero($("hero"), state);
 }, 1000);
 setInterval(() => { if (view === "log") loadLog().catch(() => {}); }, 30000);
-setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }, 1000);
+// Local time, with coordinated universal time beside it as aviation writes it ("0324Z").
+setInterval(() => {
+  const d = new Date(), z = String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0") + "Z";
+  $("clock").innerHTML = `${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}<small>${z}</small>`;
+}, 1000);
 poll().then(() => loadWeather(false));
 $("em-chip").addEventListener("click", () => { hidden.clear(); emShown = ""; setView("now"); render(); });
 $("tfr-chip").addEventListener("click", () => setView("wx"));

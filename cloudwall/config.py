@@ -22,7 +22,7 @@ DEFAULTS = {
                            {"code": "TTD", "name": "Troutdale", "city": "Troutdale",
                             "lat": 45.5494, "lon": -122.4013, "elevation_ft": 39}]},
     "tracking": {
-        "radius_nm": 15,        # how far out to fetch and show on the board/radar
+        "radius_nm": 15,        # how far out the board, flight card and logbook look (the radar can look further)
         "overhead_nm": 3.5,     # inside this, an aircraft counts as "overhead" and is logged
         "max_overhead_alt_ft": 45000,
         "poll_seconds": 5,
@@ -46,6 +46,10 @@ DEFAULTS = {
     # restrictions (FAA), and the contrail forecast (Open-Meteo upper-air data).
     "extras": {"military": True, "military_radius_nm": 40, "military_url": "https://opendata.adsb.fi/api/v2/mil",
                "tfr": True, "tfr_radius_nm": 30, "contrails": True},
+    # The kiosk has no buttons: its radar is set here. radar: "chart" or "atc" (drawn like an air
+    # traffic control screen); tracks: trails and one-minute lines; range_nm: 0 for the tracking
+    # radius, or 20 or 30 to see further.
+    "kiosk": {"radar": "chart", "tracks": True, "range_nm": 0},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }

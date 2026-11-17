@@ -4,6 +4,7 @@ import mimetypes
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 WEB = Path(__file__).resolve().parent / "web"
 
@@ -28,6 +29,11 @@ def make_server(cfg, tracker, store, tiles=None, logos=None, activity=None):
             if activity and path in ("/api/state", "/api/weather"):
                 activity.touch()                      # a screen is open
             if path == "/api/state":
+                q = parse_qs(urlsplit(self.path).query)
+                try:
+                    tracker.want_range(int(q.get("range", ["0"])[0]))   # the radar's range on this screen
+                except ValueError:
+                    pass
                 return self._send(200, tracker.snapshot())
             if path == "/api/weather":
                 return self._send(200, dict(tracker.weather_full or {}, contrails=tracker.contrails,

@@ -77,6 +77,7 @@ function shortWind(w) {
 function updateWhen(a, elapsed) {
   const left = a.cpa_s - elapsed;
   $("k-when").textContent = left > 5 ? mmss(left) : a.dist < 1.5 ? "Now" : "Passed";
+  $("k-when").classList.toggle("word", !(left > 5));   // a word in place of a time is set smaller, to fit
   $("k-when-l").textContent = left > 5 ? "overhead in" : a.dist < 1.5 ? "look up" : "heading away";
 }
 

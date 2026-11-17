@@ -81,7 +81,8 @@ def main():
                 paused = False
             tracker.idle = idle
             try:
-                tracker.update(source.fetch(home["lat"], home["lon"], trk["radius_nm"]), source.name)
+                # out to the tracking radius, or further while a screen shows the radar at a longer range
+                tracker.update(source.fetch(home["lat"], home["lon"], tracker.fetch_radius()), source.name)
             except Exception as e:
                 log.warning("no position feed is answering (last error: %s)", e)
                 tracker.failed(source.name, e)

@@ -426,6 +426,47 @@ class TracksTest(unittest.TestCase):
         self.assertIn("photo", {r["name"] for r in store.db.execute("PRAGMA table_info(sightings)")})
 
 
+class RadarRangeTest(unittest.TestCase):
+    def test_longer_range_is_for_the_radar_alone(self):
+        store = Store(":memory:")
+        t = Tracker(config.load(), store, StubEnricher())
+        self.assertEqual(t.ranges(), [15, 20, 30])
+        self.assertEqual(t.fetch_radius(), 15)                        # nobody asked for more
+        t.want_range(45)                                              # not an offered range: ignored
+        self.assertEqual(t.fetch_radius(), 15)
+        t.want_range(30)
+        self.assertEqual(t.fetch_radius(), 30)
+        for north in (25.0, 24.0):
+            t.update([plane("a1", "ASA1", 2.0), plane("f1", "FAR1", north)], "test")
+        s = t.snapshot()
+        self.assertEqual([a["hex"] for a in s["aircraft"]], ["a1"])  # board, card and logbook: 15 nm only
+        self.assertEqual([a["hex"] for a in s["beyond"]], ["f1"])
+        self.assertEqual(len(s["beyond"][0]["trail"]), 2)             # its trail is kept for the radar
+        self.assertEqual(sum(c[2] for c in t.heatmap()["cells"]), 2)  # but it stays off the heatmap
+        t.range_wanted[30] -= 120                                     # the screen stopped asking
+        self.assertEqual(t.fetch_radius(), 15)
+
+    def test_far_targets_cant_be_pinned_and_go_stale(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        t.want_range(30)
+        t.update([plane("a1", "ASA1", 2.0), plane("f1", "FAR1", 25.0)], "test")
+        t.pin("f1")                                                   # tapped on a 30 nm radar
+        self.assertIsNone(t.pinned)
+        t.pin("a1")
+        self.assertEqual(t.snapshot()["hero"]["hex"], "a1")
+        t.update([plane("f1", "FAR1", 24.0)], "test")                 # only far traffic left
+        t.status["updated"] -= 120                                    # then the feed goes quiet
+        self.assertEqual(t.snapshot()["beyond"], [])
+
+    def test_demo_fills_a_longer_range(self):
+        demo = sources.Demo()
+        home = config.DEFAULTS["home"]
+        demo.fetch(home["lat"], home["lon"], 30)
+        demo.next_spawn = 0
+        demo.fetch(home["lat"], home["lon"], 30)
+        self.assertLessEqual(min(a["along"] for a in demo.active), -28)   # new arrivals start near 30 nm
+
+
 class TilesTest(unittest.TestCase):
     def test_cache_area_limit_and_stale_fallback(self):
         import tempfile
@@ -530,8 +571,9 @@ class LiveFirstTest(unittest.TestCase):
             time.sleep(0.01)
 
     def test_looks_up_early_and_never_shows_the_stale_guess(self):
-        # 8 minutes out at 2 nm/min, flying straight at the house from the north
-        inbound = plane("a1", "ASA1363", 16.0, track=180, gs=120)
+        # 7 minutes out at 2 nm/min, flying straight at the house from the north (just inside the
+        # 15 nm tracking radius: past it, aircraft are only drawn on a longer-range radar)
+        inbound = plane("a1", "ASA1363", 14.0, track=180, gs=120)
         self.t.update([inbound], "test")
         self.wait_calls(1)
         self.assertEqual(self.calls, ["ASA1363"])               # asked well before it's overhead
@@ -797,6 +839,27 @@ class ServerTest(unittest.TestCase):
             home = urllib.request.urlopen(base + "/", timeout=5).read()
             for path in ("/kiosk", "/kiosk/"):
                 self.assertEqual(urllib.request.urlopen(base + path, timeout=5).read(), home)
+        finally:
+            srv.shutdown()
+
+    def test_a_screen_asks_for_its_radar_range(self):
+        import threading, urllib.request
+        from cloudwall.server import make_server
+        cfg = config.load()
+        cfg["server"]["host"], cfg["server"]["port"] = "127.0.0.1", 0
+        store = Store(":memory:")
+        t = Tracker(cfg, store, StubEnricher())
+        srv = make_server(cfg, t, store)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            base = f"http://127.0.0.1:{srv.server_address[1]}/api/state"
+            for q in ("?range=99", "?range=x", ""):                 # not offered, not a number, none
+                s = json.loads(urllib.request.urlopen(base + q, timeout=5).read())
+                self.assertEqual(t.fetch_radius(), 15)
+            self.assertEqual(s["ranges"], [15, 20, 30])
+            self.assertEqual(s["kiosk"], {"radar": "chart", "tracks": True, "range_nm": 0})
+            urllib.request.urlopen(base + "?range=30", timeout=5).read()
+            self.assertEqual(t.fetch_radius(), 30)
         finally:
             srv.shutdown()
 

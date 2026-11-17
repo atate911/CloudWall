@@ -1,6 +1,8 @@
-/* CloudWall: an aeronautical chart for the living room.
+/* CloudWall: an aeronautical chart for the living room, laid out like a set of engineering drawings.
    Cool chart paper, navy ink, chart blue for traffic, and chart magenta reserved for
-   the one aircraft that matters right now. After dusk the same chart turns to night. */
+   the one aircraft that matters right now. After dusk the same chart turns to night.
+   Each panel is a drawing sheet (hairline frame, corner marks), labels are lettered in small
+   spaced capitals, and the type plates are drawn on a drafting grid. */
 
 /* ---------- fonts: B612, designed by Airbus for cockpit displays (SIL OFL, see fonts/) ---------- */
 @font-face { font-family: "B612"; src: url("fonts/b612.woff2") format("woff2"); font-weight: 400; font-display: swap; }
@@ -25,6 +27,17 @@
   --halo: #f4f5f1;      /* behind labels on the radar */
   --sans: "B612", "DejaVu Sans", Arial, sans-serif;
   --mono: "B612 Mono", "DejaVu Sans Mono", Menlo, monospace;
+  --corner: 2px;        /* controls are cut nearly square; sheets are square */
+}
+/* Drawing-sheet furniture: the frame's corner marks, the frame itself (see-through, so the corner
+   marks show on it) and the drafting grid under the type plates. Mixed from the theme's ink and
+   blue, so declared on body, where night and the emergency takeover set those: declared on :root
+   they would keep the day colours. */
+body {
+  --tick: color-mix(in srgb, var(--ink) 55%, transparent);
+  --frame: color-mix(in srgb, var(--ink) 16%, transparent);
+  --grid: color-mix(in srgb, var(--blue) 8%, transparent);
+  --grid-major: color-mix(in srgb, var(--blue) 15%, transparent);
 }
 .fig { font-family: var(--sans); font-variant-numeric: tabular-nums; }
 body.night {
@@ -42,36 +55,46 @@ body.night {
   --green: #79b98f;
   --water: #1f3a55;
   --halo: #142030;
+  --grid: color-mix(in srgb, var(--blue) 7%, transparent);
+  --grid-major: color-mix(in srgb, var(--blue) 13%, transparent);
 }
 
 * { box-sizing: border-box; margin: 0; }
 /* one knob scales everything from a 7" desk screen to a wall monitor */
 html { font-size: clamp(8px, min(1.32vw, 2.25vh), 26px); }
 body { overflow-x: hidden; background: var(--paper); color: var(--ink); font-family: var(--sans); height: 100vh; overflow: hidden;
-  display: grid; grid-template-rows: auto 1fr auto; user-select: none; -webkit-tap-highlight-color: transparent;
+  display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0, 1fr); user-select: none; -webkit-tap-highlight-color: transparent;
   cursor: default; -webkit-font-smoothing: antialiased; transition: background-color 1.5s, color 1.5s; }
 button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; }
 button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-.label { font-size: .7rem; color: var(--slate); }
+/* annotation lettering, as on a drawing: small upright capitals, spaced. The words stay plain English. */
+.label, .facts dt, th, .wx-read dt, .sm-sun dt, .htitle, h2 {
+  font-family: var(--mono); font-weight: 400; font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); }
 .dim { color: var(--slate); }
 .up { color: var(--green); } .down { color: var(--blue); }
 
-/* ---------- header: a quiet status line ---------- */
+/* ---------- header: a status line, like the strip across the top of a display ---------- */
 header { display: flex; align-items: center; gap: 1.4rem; padding: .7rem 1.4rem .5rem; }
-.brand { font-weight: 700; font-size: 1rem; letter-spacing: .01em; }
+.brand { font: 700 .82rem var(--mono); letter-spacing: .16em; text-transform: uppercase; display: flex; align-items: baseline; }
+.brand span:not(:empty) { font-weight: 400; color: var(--slate); margin-left: .6rem; padding-left: .6rem; border-left: 1px solid var(--rule); }
 .chips { display: flex; gap: 1.4rem; flex: 1; min-width: 0; overflow: hidden; }
 .icon-btn, .clock { flex: none; }
 .chip { font-size: .8rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .chip[hidden] { display: none; }
+/* a hairline between readouts, as between the fields of a status strip */
+.chips > .chip:not([hidden]) ~ .chip:not([hidden]):not(.em-chip) { padding-left: 1.4rem; margin-left: -.7rem; border-left: 1px solid var(--rule); }
 .chip b { font-weight: 700; margin-left: .3rem; }
 .chip.warn { color: var(--red); font-weight: 700; }
 .cat-VFR { color: var(--green); } .cat-MVFR { color: var(--blue); } .cat-IFR { color: var(--red); } .cat-LIFR { color: var(--magenta); }
-.icon-btn { display: inline-flex; align-items: center; gap: .35rem; height: 2rem; padding: 0 .5rem; border-radius: .5rem;
-  color: var(--slate); font-size: .72rem; transition: color .2s, background-color .2s; }
+.icon-btn { display: inline-flex; align-items: center; gap: .4rem; height: 2rem; padding: 0 .55rem; border-radius: var(--corner);
+  border: 1px solid transparent; color: var(--slate); font: .62rem var(--mono); letter-spacing: .1em; text-transform: uppercase;
+  transition: color .2s, background-color .2s, border-color .2s; }
 .icon-btn svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .icon-btn svg .fill { fill: currentColor; stroke: none; }
-.icon-btn.on { color: var(--ink); background: color-mix(in srgb, var(--ink) 7%, transparent); }
-.clock { font: 700 1.25rem var(--sans); font-variant-numeric: tabular-nums; }
+.icon-btn.on { color: var(--ink); border-color: var(--rule); background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.clock { font: 700 1.25rem var(--sans); font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: .7rem; }
+/* coordinated universal time beside the local time, the way aviation keeps the clock */
+.clock small { font: 400 .72rem var(--mono); letter-spacing: .06em; color: var(--slate); }
 
 /* ---------- layout ---------- */
 main { min-height: 0; padding: 0 1.4rem; }
@@ -79,19 +102,34 @@ main { min-height: 0; padding: 0 1.4rem; }
 .view.active { display: grid; animation: fade .3s ease-out; }
 #view-now { grid-template-columns: 1.55fr 1fr; }
 .panel { min-height: 0; min-width: 0; position: relative; overflow: hidden; }
-#hero, #board, #log { background: var(--sheet); border-radius: 1.1rem; }
+/* each panel is a drawing sheet: a hairline frame with heavier marks at its corners. The marks are
+   background layers on the frame itself, so they stay put while a sheet's contents scroll. */
+#hero, #board, #log, #wx-tab, #mini-board, .media, .coll, #scope.atc {
+  --mark: .8rem; --mw: 2px;
+  border: 1px solid var(--frame); border-radius: 0;
+  background:
+    linear-gradient(var(--tick) 0 0) left top / var(--mark) var(--mw), linear-gradient(var(--tick) 0 0) left top / var(--mw) var(--mark),
+    linear-gradient(var(--tick) 0 0) right top / var(--mark) var(--mw), linear-gradient(var(--tick) 0 0) right top / var(--mw) var(--mark),
+    linear-gradient(var(--tick) 0 0) left bottom / var(--mark) var(--mw), linear-gradient(var(--tick) 0 0) left bottom / var(--mw) var(--mark),
+    linear-gradient(var(--tick) 0 0) right bottom / var(--mark) var(--mw), linear-gradient(var(--tick) 0 0) right bottom / var(--mw) var(--mark),
+    var(--sheet);
+  background-repeat: no-repeat; background-origin: border-box; background-clip: border-box; }
 .scroll { overflow-y: auto; padding: 1.1rem 1.4rem; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
 @keyframes fade { from { opacity: 0; } }
 .enter > * { animation: fade .5s ease-out backwards; }
+/* section heads run into a rule across the sheet */
+h2 { display: flex; align-items: center; gap: .8rem; font-weight: 700; color: var(--ink-2); margin: .3rem 0 .55rem; }
+h2::after { content: ""; flex: 1; border-top: 1px solid var(--rule); }
 
-/* tabs: words with a short magenta mark under the current one */
-nav { display: flex; justify-content: center; gap: 3rem; padding: .55rem 1.4rem .8rem; }
-nav button { position: relative; font-size: .9rem; color: var(--slate); padding: .55rem .4rem .7rem; transition: color .2s; }
-nav button::after { content: ""; position: absolute; left: 50%; bottom: .25rem; width: 0; height: .18rem; border-radius: 99px;
+/* tabs: sheet names along the foot of the set, with a magenta bar over the current one */
+nav { display: flex; justify-content: center; gap: 2.6rem; padding: .55rem 1.4rem .8rem; }
+nav button { position: relative; font: .72rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--slate);
+  padding: .65rem .4rem .7rem; transition: color .2s; }
+nav button::after { content: ""; position: absolute; left: 50%; top: 0; width: 0; height: 2px;
   background: var(--magenta); transform: translateX(-50%); transition: width .25s; }
 nav button.active { color: var(--ink); font-weight: 700; }
-nav button.active::after { width: 1.6rem; }
-nav button span { color: var(--slate); font-weight: 400; margin-left: .3rem; font-family: var(--mono); font-size: .8em; }
+nav button.active::after { width: 100%; }
+nav button span { color: var(--slate); font-weight: 400; margin-left: .4rem; letter-spacing: .04em; }
 
 /* ---------- split-flap letters: the flip without the retro tiles ---------- */
 .flaps { display: inline-flex; font-family: var(--mono); font-weight: 700; line-height: 1; perspective: 20em; }
@@ -127,14 +165,17 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .tags:not(:has(.badge)):has(.pin-chip[hidden]) { display: none; }
 .badges { display: flex; flex-wrap: wrap; gap: .45rem; }
 .badges:empty { display: none; }
-.badge { font-size: .68rem; padding: .18rem .55rem; border-radius: 99px; border: 1px solid currentColor; color: var(--ink-2); }
+/* badges are stamps on the sheet: square, ruled, lettered in capitals */
+.badge { font: 700 .6rem var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: .22rem .5rem .2rem;
+  border-radius: 1px; border: 1px solid currentColor; color: var(--ink-2); }
 .badge.new { color: var(--blue); } .badge.rare { color: var(--magenta); }
 .badge.hot { color: var(--sheet); background: var(--red); border-color: var(--red); font-weight: 700; }
 .pin-chip { font-size: .68rem; color: var(--magenta); }
 .pin-chip[hidden] { display: none; }
 
 .h-route { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; padding-bottom: .5rem; }
-.route { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.2rem; }
+/* the airports line up along the top, whether or not one has a time under it */
+.route { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 1.2rem; }
 .apt { font-size: min(2.7rem, 8cqi); color: var(--ink); }
 .apt.unknown { font-size: .95rem; color: var(--slate); align-self: center; max-width: 8rem; line-height: 1.35; }
 .apt small { display: block; font: 400 .85rem var(--sans); color: var(--slate); margin-top: .45rem; max-width: 11rem;
@@ -146,6 +187,14 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #h-arc { stroke: var(--magenta); }
 #h-arc-dot { fill: var(--magenta); }
 .arc-note { text-align: center; font-size: .74rem; color: var(--slate); margin-top: .3rem; line-height: 1.5; }
+.arc-time { color: var(--ink-2); }
+.arc-time:empty { display: none; }
+/* when it left and when it gets in, under each airport: the label in drawing lettering, the time in figures */
+.apt-when { display: flex; flex-direction: column; gap: .15rem; margin-top: .7rem; }
+.apt-when:empty { display: none; }
+.apt.r .apt-when { align-items: flex-end; }
+.apt-when b { font: 700 1.15rem var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.apt-when b i { font-style: normal; font-weight: 400; font-size: .75em; color: var(--slate); }
 .route.unsure .apt, .route.unsure .arc { opacity: .35; }
 
 .route.inferred .arc-note { color: var(--ink-2); }
@@ -162,21 +211,27 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .metric:first-child { padding-left: 0; }
 .metric .label { margin-bottom: .2rem; }
 .metric .v { font: 700 min(2rem, 5.6cqi)/1.1 var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -.02em; }
-.metric .v small { font: 400 .8rem var(--sans); color: var(--slate); letter-spacing: 0; }
+.metric .v small { font: 400 .72rem var(--mono); color: var(--slate); letter-spacing: .04em; }
 .metric .s { font-size: .72rem; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .15rem; }
 
 .h-bottom { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 1.6rem; align-items: center; flex: 1; min-height: 0; }
 .sub { color: var(--slate); font-size: .86rem; }
-/* the airframe's own photo, framed like a print; the silhouette stands in when there's none */
-.media { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 3 / 2; max-height: 100%;
-  border-radius: .7rem; background: color-mix(in srgb, var(--ink) 5%, transparent); overflow: hidden; }
+/* the airframe's own photo over its type plate, drawn on a drafting sheet ruled in chart blue */
+.media { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 3 / 2; max-height: 100%; overflow: hidden; }
 .media .photo { width: 100%; height: 100%; object-fit: cover; display: block; }
-.facts { display: grid; grid-template-columns: auto 1fr; column-gap: 1.2rem; row-gap: .55rem; align-content: center; font-size: .92rem; margin: 0; }
-.facts dt { color: var(--slate); }
+.media .sil-box, .coll .sil-box {
+  background: linear-gradient(var(--grid-major) 1px, transparent 0) center / 2.5rem 2.5rem,
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 0) center / 2.5rem 2.5rem,
+    linear-gradient(var(--grid) 1px, transparent 0) center / .5rem .5rem,
+    linear-gradient(90deg, var(--grid) 1px, transparent 0) center / .5rem .5rem; }
+/* the type designator in the corner of the sheet, where a drawing number goes */
+.sil-box[data-code]::before { content: attr(data-code); position: absolute; top: .5rem; right: .65rem;
+  font: 700 .6rem var(--mono); letter-spacing: .12em; color: var(--slate); }
+.facts { display: grid; grid-template-columns: auto 1fr; column-gap: 1.2rem; row-gap: .55rem; align-content: center; align-items: baseline; font-size: .92rem; margin: 0; }
 .facts dd { margin: 0; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
 /* type plates: a side elevation over a dimension line with its length. The box is a size container,
    so a plate is a share of its width, or as wide as its height allows. */
-.sil-box { container-type: size; display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; padding: 6% 7%; min-height: 0; }
+.sil-box { container-type: size; position: relative; display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; padding: 6% 7%; min-height: 0; }
 .sil-box[hidden] { display: none; }
 .plate { margin: 0; display: flex; flex-direction: column; gap: .3rem; flex: none;
   width: min(calc(var(--w) * 100cqw), calc((100cqh - 1.3rem) * var(--ar))); }
@@ -193,7 +248,7 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 /* with a photo, the frame becomes a print over its type plate */
 .media.has-photo { flex-direction: column; align-items: stretch; }
 .media.has-photo .photo { flex: 1 1 0; min-height: 0; height: auto; }
-.media.has-photo .sil-box { flex: 0 0 44%; height: auto; background: var(--sheet); border-top: 1px solid var(--rule); padding: .35rem 6% .3rem; }
+.media.has-photo .sil-box { flex: 0 0 44%; height: auto; border-top: 1px solid var(--rule); padding: .35rem 6% .3rem; }
 .media.has-photo .plate { gap: .2rem; }
 /* side elevations drawn to scale: inked outlines over chart paper, like a type-certificate drawing */
 .sil { display: block; overflow: visible;
@@ -243,8 +298,8 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
   background: linear-gradient(90deg, color-mix(in srgb, var(--blue) 30%, transparent), var(--blue) 45%, var(--magenta)); }
 .heat-key { font-size: .8rem; }
 .idle.last { flex-direction: row; align-items: center; justify-content: flex-start; gap: 1.8rem; }
-.idle.last .photo { width: 45%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: .8rem; flex: none; }
-.idle.last .last-plate { width: 45%; height: auto; aspect-ratio: 3 / 2; flex: none; border-radius: .8rem; background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.idle.last .photo { width: 45%; aspect-ratio: 3 / 2; object-fit: cover; flex: none; }
+.idle.last .last-plate { width: 45%; height: auto; aspect-ratio: 3 / 2; flex: none; border: 1px solid var(--frame); }
 /* today's fleet: every type seen since midnight at one scale, standing on ground lines */
 .idle.fleet { justify-content: flex-start; gap: 1rem; padding-bottom: 1.4rem; }
 .fleet-head { display: flex; flex-direction: column; gap: .35rem; }
@@ -288,13 +343,25 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .nu-foot .raw { font-size: .62rem; }
 
 /* ---------- radar and sky dome ---------- */
-.scope { display: flex; padding: 2.4rem .2rem 1.6rem; }
-.seg { position: absolute; top: .4rem; left: .2rem; z-index: 3; display: inline-flex; border: 1px solid var(--rule); border-radius: .55rem; overflow: hidden; }
-.seg button { font-size: .74rem; color: var(--slate); padding: .4rem .7rem; }
+.scope { display: flex; padding: 2.4rem .2rem 2.6rem; }
+.seg { position: absolute; top: .4rem; left: .2rem; z-index: 3; display: inline-flex; border: 1px solid var(--rule); border-radius: var(--corner); overflow: hidden; }
+.seg button { font: .62rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); padding: .5rem .75rem; }
 .seg button + button { border-left: 1px solid var(--rule); }
 .seg button.on { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--ink) 7%, transparent); }
-.scope-caption { position: absolute; bottom: .3rem; left: 0; right: 0; text-align: center; font-size: .7rem; color: var(--slate); }
+#radar .bezel { fill: none; stroke: var(--slate); stroke-width: .3; stroke-linecap: butt; opacity: .8; }
+#radar .bezel.major { stroke: var(--ink-2); stroke-width: .45; }
+#radar .bearing { font: 3.6px var(--mono); fill: var(--slate); }
+#radar .spoke { fill: none; stroke: var(--rule); stroke-width: .3; stroke-dasharray: .6 1.8; }
+/* the key and the heard-nearby note sit in the drawing's lower corners, outside the disc */
+#radar :is(.legend, .status) { font: 4.2px var(--mono); letter-spacing: .06em; text-transform: uppercase; fill: var(--slate); }
 .attrib { position: absolute; right: .3rem; top: .55rem; font-size: .5rem; color: var(--slate); max-width: 45%; text-align: right; }
+/* the radar's options along the foot of the panel: style and track lines at the left, range at the right */
+.scope-tools { position: absolute; bottom: .4rem; left: .2rem; right: .2rem; z-index: 3; display: flex; gap: .5rem; }
+.scope-tools .seg { position: static; }
+.scope-tools #range-seg { margin-left: auto; }
+.seg .seg-unit { font: .62rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); padding: .5rem .6rem;
+  border-left: 1px solid var(--rule); display: flex; align-items: center; }
+#scope.sky .scope-tools { visibility: hidden; }
 .attrib:empty { display: none; }
 #radar { width: 100%; height: 100%; overflow: visible; }
 #radar.fade-in { animation: fade .45s ease-out; }
@@ -311,7 +378,7 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #radar .place { font-size: 4px; fill: var(--slate); letter-spacing: .04em; }
 #radar .apt-label { fill: var(--ink); font-size: 4.6px; font-weight: 700; }
 #radar .apt-mark { fill: none; stroke: var(--slate); stroke-width: .8; }
-#radar .home { fill: var(--ink); stroke: var(--disc); stroke-width: .8; }
+#radar .home-mark { fill: none; stroke: var(--ink); stroke-width: .7; }
 #radar .trail { fill: none; stroke-width: .8; stroke-linecap: round; stroke-linejoin: round; }
 #radar .trail.hero { stroke-width: 1.1; }
 #s-defs stop { stop-color: var(--blue); } #s-defs .hero stop { stop-color: var(--magenta); }
@@ -320,7 +387,10 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #radar .hero .blip { fill: var(--magenta); }
 #radar .blip.gnd { fill: var(--slate); opacity: .4; stroke: none; }
 #radar .tag { fill: var(--ink); font-size: 5px; font-weight: 700; paint-order: stroke; stroke: var(--disc); stroke-width: 1.6px; stroke-linejoin: round; }
-#radar .tag-sub { font-variant-numeric: tabular-nums; font-size: 4.2px; fill: var(--slate); paint-order: stroke; stroke: var(--disc); stroke-width: 1.4px; }
+#radar .tag-sub { font-family: var(--mono); font-size: 4.2px; fill: var(--slate); paint-order: stroke; stroke: var(--disc); stroke-width: 1.4px; }
+/* lead lines: where each aircraft will be in a minute at its ground speed */
+#radar .vec { stroke: var(--blue); stroke-width: .45; stroke-linecap: round; opacity: .7; }
+#radar .hero .vec { stroke: var(--magenta); stroke-width: .6; opacity: .9; }
 #radar .hero .tag { fill: var(--magenta); }
 #radar .sun { fill: #e3b23c; } #radar .sun-glow { fill: #e3b23c; opacity: .18; }
 body.night #radar .sun { fill: #c99a3a; }
@@ -330,18 +400,18 @@ body.night #radar .sun { fill: #c99a3a; }
 #radar .peak-label { font-size: 4.2px; fill: var(--magenta); }
 /* the real map: a faint print of the streets and rivers under the traffic, in the chart's own tones */
 #radar .basemap { transition: opacity .6s; mix-blend-mode: multiply; }
-#radar .basemap image { filter: blur(.5px); }
-#radar .basemap.dark, #radar .basemap.carto-dark { filter: invert(1) hue-rotate(180deg) grayscale(.5) contrast(.6) brightness(1.32); }
-#radar .basemap.light, #radar .basemap.carto-light { filter: grayscale(.4) contrast(.95); }
-#radar .basemap.satellite, #radar .basemap.osm, #radar .basemap.custom { filter: grayscale(.6) contrast(.9) brightness(1.15); }
+/* each filter ends in a slight blur over the whole map, so the tiles' edges don't show as seams */
+#radar .basemap.dark, #radar .basemap.carto-dark { filter: invert(1) hue-rotate(180deg) grayscale(.5) contrast(.6) brightness(1.32) blur(.5px); }
+#radar .basemap.light, #radar .basemap.carto-light { filter: grayscale(.4) contrast(.95) blur(.5px); }
+#radar .basemap.satellite, #radar .basemap.osm, #radar .basemap.custom { filter: grayscale(.6) contrast(.9) brightness(1.15) blur(.5px); }
 body.night #radar .basemap { mix-blend-mode: screen; }
-body.night #radar .basemap.dark, body.night #radar .basemap.carto-dark { filter: grayscale(.3) brightness(1.5); }
-body.night #radar .basemap.light, body.night #radar .basemap.carto-light { filter: invert(1) hue-rotate(180deg) grayscale(.3) brightness(.75); }
-body.night #radar .basemap.satellite, body.night #radar .basemap.osm, body.night #radar .basemap.custom { filter: grayscale(.7) brightness(.55); }
+body.night #radar .basemap.dark, body.night #radar .basemap.carto-dark { filter: grayscale(.3) brightness(1.5) blur(.5px); }
+body.night #radar .basemap.light, body.night #radar .basemap.carto-light { filter: invert(1) hue-rotate(180deg) grayscale(.3) brightness(.75) blur(.5px); }
+body.night #radar .basemap.satellite, body.night #radar .basemap.osm, body.night #radar .basemap.custom { filter: grayscale(.7) brightness(.55) blur(.5px); }
 
 /* ---------- board ---------- */
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-th { text-align: left; font-size: .7rem; font-weight: 400; color: var(--slate); padding: .2rem .7rem .6rem;
+th { text-align: left; padding: .2rem .7rem .6rem;
   position: sticky; top: -1.1rem; background: var(--sheet); z-index: 1; border-bottom: 1px solid var(--rule); }
 td { padding: .7rem .7rem; border-top: 1px solid var(--rule); white-space: nowrap; font: 400 1rem var(--sans); font-variant-numeric: tabular-nums; vertical-align: middle; }
 .board td.fl, .board td.rt, .board td.ty { font-family: var(--mono); }
@@ -370,13 +440,13 @@ td.num, th.num { text-align: right; }
 .stat:first-child { padding-left: 0; border-left: 0; }
 .stat .v { font: 700 2.5rem/1.15 var(--sans); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-h2 { font-size: .95rem; font-weight: 700; margin: .3rem 0 .55rem; }
 .rec { display: flex; justify-content: space-between; align-items: baseline; gap: .8rem; padding: .45rem 0; border-top: 1px solid var(--rule); font-size: .9rem; }
 .rec b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.rec .badge { margin-left: .35rem; vertical-align: .1em; }
 /* the type collection: a drawing of every type logged */
 .collection { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .6rem; margin-bottom: 1.4rem; }
-.coll { margin: 0; border: 1px solid var(--rule); border-radius: .6rem; padding: .55rem .7rem .6rem; display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
-.coll .sil-box { height: 3.4rem; padding: 0; }
+.coll { --mark: .5rem; margin: 0; padding: .55rem .7rem .6rem; display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+.coll .sil-box { height: 3.4rem; padding: .3rem 0; }
 .coll.unknown .sil-box code { font: 700 1rem var(--mono); color: var(--slate); }
 .coll figcaption { display: flex; flex-direction: column; gap: .12rem; font-size: .76rem; min-width: 0; }
 .coll figcaption > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -384,10 +454,13 @@ h2 { font-size: .95rem; font-weight: 700; margin: .3rem 0 .55rem; }
 .coll figcaption span { color: var(--ink-2); }
 .coll figcaption .dim b { color: var(--blue); font-variant-numeric: tabular-nums; }
 .usage { margin-top: 1.4rem; font-size: .76rem; color: var(--slate); line-height: 1.5; }
-.hours { display: flex; align-items: flex-end; gap: 3px; height: 3.2rem; }
-.hours i { flex: 1; background: var(--blue); min-height: 2px; border-radius: 2px 2px 0 0; opacity: .75; }
+/* flyovers by hour: bars on a baseline ticked every hour, longer every six */
+.hours { display: flex; align-items: flex-end; gap: 3px; height: 3.2rem; border-bottom: 1px solid var(--ink-2); padding-bottom: 1px; }
+.hours i { flex: 1; background: var(--blue); min-height: 2px; opacity: .75; }
 .hours i.z { background: var(--rule); opacity: 1; }
-.hours-axis { display: flex; justify-content: space-between; font-size: .62rem; color: var(--slate); margin: .3rem 0 1.4rem; }
+.hours-axis { display: flex; justify-content: space-between; font: .6rem var(--mono); letter-spacing: .06em; color: var(--slate); margin: 0 0 1.4rem; padding-top: .5rem;
+  background: repeating-linear-gradient(90deg, var(--slate) 0 1px, transparent 0 calc(100% / 24)) top left / 100% .25rem no-repeat,
+    repeating-linear-gradient(90deg, var(--ink-2) 0 1px, transparent 0 25%) top left / calc(100% + 1px) .45rem no-repeat; }
 
 /* narrower windows: give the card more room, and drop the less important header items */
 @media (max-width: 1100px) {
@@ -419,7 +492,7 @@ body.night { --cat-VFR: #3f9a63; --cat-MVFR: #5589dc; --cat-IFR: #d95a49; --cat-
 .sw.ln-wind { background: var(--ink-2); height: .2rem; vertical-align: .2rem; }
 .sw.dot-gust { background: var(--ink); width: .55rem; height: .55rem; border-radius: 99px; }
 
-#wx-tab { padding: 1.3rem 1.5rem; background: var(--sheet); border-radius: 1.1rem; }
+#wx-tab { padding: 1.3rem 1.5rem; }
 .wx-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 2rem; min-height: 100%; }
 .wx-head { display: flex; gap: 1.1rem; align-items: center; }
 .cat-badge { display: flex; align-items: center; gap: .6rem; flex: none; }
@@ -431,7 +504,6 @@ body.night { --cat-VFR: #3f9a63; --cat-MVFR: #5589dc; --cat-IFR: #d95a49; --cat-
 .wx-read > div { padding: .65rem 0 .7rem .9rem; min-width: 0; }
 .wx-read > div:first-child { padding-left: 0; }
 .wx-read > div + div { border-left: 1px solid var(--rule); }
-.wx-read dt { font-size: .68rem; color: var(--slate); }
 .wx-read dd { margin: 0; font: 700 1.2rem/1.2 var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wx-read dd.s { font: 400 .66rem/1.3 var(--sans); color: var(--slate); white-space: normal; }
 .wx-figs { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 1.4rem; margin: 0; }
@@ -457,12 +529,12 @@ figcaption p { margin: 0; } figcaption .cap-main { font-weight: 700; color: var(
 .layer-note { font: 400 11px var(--sans); fill: var(--magenta); }
 .clouds { overflow: visible; }
 
-.wx-trend h2 { margin: 0 0 .5rem; font-size: .95rem; }
+.wx-trend h2 { margin: 0 0 .5rem; }
 .wx-trend h2 + .hist { margin-bottom: .2rem; }
 .hist { touch-action: none; }
 .hchart { margin-bottom: .45rem; }
-.htitle { display: flex; justify-content: space-between; align-items: baseline; gap: .8rem; font-size: .72rem; color: var(--slate); margin-bottom: .1rem; padding-left: 52px; }
-.htitle .lg { color: var(--ink-2); white-space: nowrap; }
+.htitle { display: flex; justify-content: space-between; align-items: baseline; gap: .8rem; margin-bottom: .1rem; padding-left: 52px; }
+.htitle .lg { font: .72rem var(--sans); letter-spacing: 0; text-transform: none; color: var(--ink-2); white-space: nowrap; }
 .hchart svg, .haxis { display: block; overflow: visible; }
 .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .ln.temp { stroke: var(--temp); } .ln.dew { stroke: var(--dew); }
@@ -486,7 +558,7 @@ figcaption p { margin: 0; } figcaption .cap-main { font-weight: 700; color: var(
 .wx-slide .wx-figs { flex: 1; min-height: 0; align-items: start; }
 .wx-slide .fig-wind { height: 100%; }
 .wx-slide .wx-figs { flex: none; }
-.sw-taf h2 { margin: 0 0 .3rem; font-size: .95rem; }
+.sw-taf h2 { margin: 0 0 .3rem; }
 .sw-taf .taf-list { font-size: .78rem; }
 
 /* landscape keeps two columns; portrait stacks them */
@@ -515,11 +587,11 @@ html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
 #mini-board { display: none; }
 @media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
   html.desk #view-now { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, .72fr); }
-  html.desk #mini-board { display: block; background: var(--sheet); border-radius: 1.1rem; padding: 1rem 1.1rem; }
+  html.desk #mini-board { display: block; padding: 1rem 1.1rem; }
 }
 #mini-board h2 { margin: 0 0 .5rem; }
 .mb-row { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "id when" "rt alt"; width: 100%; text-align: left;
-  padding: .5rem .3rem; border-top: 1px solid var(--rule); border-radius: .3rem; row-gap: .1rem; }
+  padding: .5rem .3rem; border-top: 1px solid var(--rule); row-gap: .1rem; }
 .mb-row:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
 .mb-row.hero { background: color-mix(in srgb, var(--magenta) 8%, transparent); }
 .mb-id { grid-area: id; font: 700 .95rem var(--mono); } .mb-row.hero .mb-id { color: var(--magenta); }
@@ -532,19 +604,22 @@ html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
 /* Read from across the room on a 7.5" or 13.3" screen. Everything is sized from the screen's
    height, so the 1024×600 and 1920×1080 panels look the same. */
 html.kiosk body { grid-template-rows: auto 1fr; }
-.kiosk nav, .kiosk .chips, .kiosk .icon-btn, .kiosk .seg, .kiosk #mini-board, .kiosk .scope-caption { display: none !important; }
+/* the kiosk leaves out the radar's key and the ATC status area: small print, and it has its own clock */
+.kiosk nav, .kiosk .chips, .kiosk .icon-btn, .kiosk .seg, .kiosk #mini-board, .kiosk #radar :is(.legend, .status) { display: none !important; }
 .kiosk header { padding: 1.6vh 3vh 1vh; }
-.kiosk .brand { font-size: 3.2vh; flex: 1; }
+.kiosk .brand { font-size: 2.6vh; flex: 1; }
+.kiosk .clock small { display: none; }
 .kiosk .clock { font-size: 5.6vh; }
 .kiosk main { padding: 0 3vh 3vh; }
 .kiosk #view-now { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 3vh; }
-.kiosk #hero { padding: 3.6vh 4vh; border-radius: 2.4vh; }
+.kiosk #hero { --mark: 2.4vh; --mw: 2px; padding: 3.6vh 4vh; }
 .kiosk .scope { padding: 0; }
 .kiosk .attrib { top: auto; bottom: 0; font-size: 1.4vh; }
 .kiosk #radar .tag { font-size: 8px; stroke-width: 2.2px; }
 .kiosk #radar .tag-sub { font-size: 6.5px; stroke-width: 2px; }
 .kiosk #radar .compass { font-size: 8px; }
 .kiosk #radar .ring-label, .kiosk #radar .place { font-size: 5.5px; }
+.kiosk #radar .bearing { font-size: 4.6px; }
 
 .k-card { height: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: 2vh; min-width: 0; }
 .k-enter { animation: fade .6s ease-out; }
@@ -571,10 +646,12 @@ body.night .k-who .logo-tile { height: 8.5vh; padding: .8vh 1.4vh; border-radius
 .k-read > div + div { padding-left: 2.5vh; border-left: 2px solid var(--rule); }
 .k-read b { font: 700 10vh/1.05 var(--sans); font-variant-numeric: tabular-nums; letter-spacing: -.02em; white-space: nowrap; }
 .k-read b i { font-style: normal; font-size: .38em; margin-left: .2em; vertical-align: .9em; }
-.k-read span { font-size: 3.2vh; color: var(--slate); }
+.k-read b.word { font-size: 6.6vh; line-height: 10.5vh; letter-spacing: -.01em; }
+/* labels in the same drawing lettering as the desktop, sized to read across the room */
+.k-read span, .k-count span, .k-kicker { font: 2.5vh var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--slate); }
+.k-read span { margin-top: .4vh; }
 
 .k-slide { justify-content: center; gap: 2.6vh; }
-.k-kicker { font-size: 3.6vh; color: var(--slate); }
 .k-big { font: 700 16vh/1 var(--mono); letter-spacing: -.02em; }
 .k-big.quiet { font-family: var(--sans); font-size: 12vh; }
 .k-mid { font: 700 8vh/1.1 var(--sans); }
@@ -583,7 +660,6 @@ body.night .k-who .logo-tile { height: 8.5vh; padding: .8vh 1.4vh; border-radius
 .k-row { display: flex; align-items: center; justify-content: space-between; gap: 4vh; }
 .k-count { display: flex; flex-direction: column; align-items: flex-end; }
 .k-count b { font: 700 12vh/1 var(--sans); font-variant-numeric: tabular-nums; color: var(--magenta); }
-.k-count span { font-size: 3.4vh; color: var(--slate); }
 .k-wx { flex-direction: row; align-items: center; justify-content: space-between; }
 .k-wx-text { display: flex; flex-direction: column; gap: 2.4vh; min-width: 0; }
 .k-cat { display: flex; align-items: center; gap: 2vh; }
@@ -609,9 +685,9 @@ body.emergency, body.night.emergency {
   --rule: #c2443b; --blue: #ffd7cf; --magenta: #ffd84d; --water: #9a2a22; --halo: #741410;
 }
 body.emergency { animation: em-pulse 2.4s ease-in-out infinite; }
-@keyframes em-pulse { 50% { background: #a81d16; } }
+@keyframes em-pulse { 50% { background-color: #a81d16; } }
 @media (prefers-reduced-motion: reduce) { body.emergency { animation: none; } }
-.em-chip { background: var(--red); color: #fff; border: 0; border-radius: .4rem; padding: .2rem .6rem; font: 700 .8rem var(--sans); cursor: pointer; }
+.em-chip { background: var(--red); color: #fff; border: 0; border-radius: 1px; padding: .2rem .6rem; font: 700 .8rem var(--sans); cursor: pointer; }
 body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
 .em-card { display: flex; flex-direction: column; justify-content: center; gap: 1.1rem; padding: 2rem 2.2rem; background: var(--sheet); }
 .em-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 1.1rem; color: var(--ink-2); }
@@ -629,8 +705,8 @@ body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
 .em-read b { font: 700 2.6rem/1.1 var(--sans); font-variant-numeric: tabular-nums; }
 .em-read span { font-size: .95rem; color: var(--slate); }
 .em-more { font-size: 1rem; color: var(--ink-2); }
-.em-hide { align-self: flex-start; background: transparent; color: var(--ink); border: 1px solid var(--ink-2); border-radius: .5rem; padding: .45rem .9rem; font: .9rem var(--sans); cursor: pointer; }
-.kiosk .em-card { padding: 3.5vh 4vh; gap: 2.2vh; border-radius: 2.4vh; }
+.em-hide { align-self: flex-start; background: transparent; color: var(--ink); border: 1px solid var(--ink-2); border-radius: var(--corner); padding: .45rem .9rem; font: .9rem var(--sans); cursor: pointer; }
+.kiosk .em-card { padding: 3.5vh 4vh; gap: 2.2vh; }
 .kiosk .em-top { font-size: 3.4vh; } .kiosk .em-code b { font-size: 8vh; }
 .kiosk .em-title { font-size: 13vh; }
 .kiosk .em-meaning { font-size: 3.6vh; }
@@ -641,11 +717,13 @@ body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
 /* ===================== radar extras ===================== */
 .tfr { fill: url(#tfr-hatch); stroke: var(--red); stroke-width: .7; vector-effect: non-scaling-stroke; }
 .tfr.later { fill: none; stroke-dasharray: 3 2; opacity: .8; }
-.tfr-label { font: 700 4.6px var(--sans); fill: var(--red); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
+#radar .tfr-label { font: 700 4.6px var(--sans); fill: var(--red); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
 .field { fill: none; stroke: var(--slate); stroke-width: .8; }
 .field-label { font: 4.6px var(--mono); fill: var(--slate); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
-.heard-note { font: 700 5px var(--sans); fill: var(--red); paint-order: stroke; stroke: var(--halo); stroke-width: 1.6px; }
+#radar .heard-note { font: 700 5px var(--sans); fill: var(--red); }
 .kiosk #radar .heard-note { font-size: 6.5px; }
+/* red on the red takeover would vanish: use its light ink instead */
+body.emergency #scope:not(.atc) #radar :is(.heard-note, .tfr-label) { fill: var(--ink-2); }
 .sky-moon .moon-dark { fill: #6d7a88; } .sky-moon .moon-lit { fill: #f3f0e2; }
 .sky-moon { filter: drop-shadow(0 0 1.5px rgba(243, 240, 226, .6)); }
 
@@ -656,7 +734,6 @@ body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
 .wx-more .sum { font-size: 1rem; margin-bottom: .6rem; }
 .wx-more .dim { font-size: .8rem; color: var(--slate); line-height: 1.45; }
 .sm-sun { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; margin-bottom: .3rem; }
-.sm-sun dt { font-size: .75rem; color: var(--slate); }
 .sm-sun dd { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sm-moon { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
 .sm-moon > div { display: flex; flex-direction: column; gap: .15rem; font-size: .9rem; }
@@ -666,7 +743,7 @@ body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
 .moon .moon-lit { fill: #efe9d2; stroke: color-mix(in srgb, var(--ink) 25%, transparent); stroke-width: .5; }
 body.night .moon .moon-lit { fill: #f3eedb; }
 table.ct { width: 100%; border-collapse: collapse; font-size: .85rem; font-variant-numeric: tabular-nums; margin-bottom: .6rem; }
-table.ct th { text-align: left; font-weight: 400; color: var(--slate); font-size: .72rem; padding: 0 .4rem .3rem 0; }
+table.ct th { padding: 0 .4rem .3rem 0; }
 table.ct th small { font-size: inherit; }
 table.ct td { padding: .28rem .4rem .28rem 0; border-top: 1px solid var(--rule); white-space: nowrap; }
 .ct-bar { display: inline-block; width: 1.6rem; height: .5rem; border-radius: .25rem; margin-right: .45rem; vertical-align: .05rem; background: transparent; border: 1px solid var(--rule); }
@@ -678,8 +755,8 @@ table.ct td { padding: .28rem .4rem .28rem 0; border-top: 1px solid var(--rule);
 .tfr-item p { margin-top: .2rem; }
 .tfr-top { display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
 .tfr-top b { font-size: .98rem; }
-.tag { font-size: .68rem; border: 1px solid var(--rule); color: var(--slate); border-radius: .3rem; padding: 0 .35rem; }
-.tag.on { border-color: var(--red); color: var(--red); font-weight: 700; }
+.tfr-top .tag { font: .6rem var(--mono); letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--rule); color: var(--slate); border-radius: 1px; padding: .05rem .35rem; }
+.tfr-top .tag.on { border-color: var(--red); color: var(--red); font-weight: 700; }
 .tfr-item details { margin-top: .3rem; font-size: .78rem; }
 .tfr-item summary { cursor: pointer; color: var(--blue); }
 .notam { font: .72rem/1.45 var(--mono); color: var(--ink-2); max-height: 12rem; overflow: auto; margin-top: .3rem; overflow-wrap: anywhere; }
@@ -690,7 +767,42 @@ table.ct td { padding: .28rem .4rem .28rem 0; border-top: 1px solid var(--rule);
 .mil-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 1.15rem; padding: .5rem 0; border-top: 1px solid var(--rule); }
 .mil-row span { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .k-dim { color: var(--slate); }
-table.board tbody.heard th { text-align: left; font-size: .78rem; color: var(--slate); font-weight: 400; padding-top: 1rem; }
+table.board tbody.heard th { padding-top: 1.2rem; position: static; }
 #tfr-chip { cursor: pointer; color: var(--red); }
 .tfr-hatch-line { stroke: var(--red); stroke-width: .6; opacity: .45; }
 body.emergency #tfr-chip { color: var(--ink-2); }
+
+/* ===================== radar: ATC style ===================== */
+/* Drawn like an air traffic controller's screen, whatever the time of day: a dark display, a grey
+   video map, traffic in green with history dots, leader lines and data blocks, and the aircraft
+   overhead in white. The panel becomes the screen, framed like the other sheets. */
+#scope.atc {
+  --sheet: #070b0d; --disc: #090e11; --halo: #090e11;
+  --ink: #d6dfe3; --ink-2: #9fb1b8; --slate: #6b8089; --rule: #1e2b32;
+  --blue: #5ad48e; --magenta: #f2f6f4; --red: #ff6b5e; --water: #34505d;
+  --tick: rgba(214, 223, 227, .45); --frame: #1c272d;
+  padding: 2.4rem .6rem 2.6rem;
+}
+#scope.atc #radar text { font-family: var(--mono); }
+#scope.atc #radar .vmap { fill: none; stroke: var(--water); stroke-width: .4; stroke-linejoin: round; }
+#scope.atc #radar .runway { stroke: var(--ink-2); stroke-width: .8; stroke-linecap: butt; }
+#scope.atc #radar .ring.oh { opacity: .35; }
+#scope.atc #radar .ring-label { font-size: 3.6px; }
+#scope.atc #radar .apt-label { font-weight: 400; fill: var(--ink-2); }
+#scope.atc #radar :is(.legend, .status) { fill: var(--ink-2); }
+#scope.atc #radar :is(.tag, .tag-sub) { font-size: 4.8px; font-weight: 700; fill: var(--blue); stroke-width: 1.2px; }
+#scope.atc #radar .hero :is(.tag, .tag-sub) { fill: var(--magenta); }
+#scope.atc #radar .leader { stroke: var(--blue); stroke-width: .35; }
+#scope.atc #radar .hero .leader { stroke: var(--magenta); }
+#scope.atc #radar .blip { stroke: none; }
+#scope.atc #radar .vec { stroke-width: .35; opacity: .8; }
+#scope.atc #radar .hist circle { fill: var(--blue); }
+#scope.atc #radar .hist.hero circle { fill: var(--magenta); }
+.kiosk #scope.atc { padding: 1vh; }
+/* the monospaced note is wider: set it smaller so it stays clear of the bezel */
+#scope.atc #radar .heard-note { font-size: 4.2px; }
+.kiosk #scope.atc #radar .heard-note { font-size: 5.4px; }
+.kiosk #scope.atc #radar :is(.tag, .tag-sub) { font-size: 7px; }
+.kiosk #scope.atc #radar .ring-label { font-size: 5px; }
+/* an emergency's data block turns red on the dark screen */
+body.emergency #scope.atc #radar .hero :is(.tag, .tag-sub) { fill: var(--red); }

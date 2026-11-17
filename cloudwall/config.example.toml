@@ -24,7 +24,7 @@ lon = -122.5975
 # elevation_ft = 25
 
 [tracking]
-radius_nm = 15         # how far out the board and radar look
+radius_nm = 15         # how far out the board, flight card and logbook look; the radar can be set to 20 or 30
 overhead_nm = 3.5      # inside this, an aircraft takes over the screen and is logged
 max_overhead_alt_ft = 45000
 poll_seconds = 5       # be kind to the free API; don't go below ~3
@@ -65,6 +65,11 @@ monthly_limit = 0      # same budget settings as above; without one, 30 lookups 
 daily_limit = 0
 mode = "always"
 general_aviation = false
+
+[kiosk]                # the wall panel (/kiosk) has no buttons, so its radar is set here
+radar = "chart"        # "chart", or "atc" to draw the radar like an air traffic control screen
+tracks = true          # trails behind aircraft and lines to where they will be in a minute
+range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see further
 
 [map]                  # faint map under the radar, cached on disk by CloudWall
 style = "dark"         # "dark" or "light" grey street map, "satellite", "osm" (OpenStreetMap), or "off"
