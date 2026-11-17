@@ -197,7 +197,8 @@ function fan(sk, s0, zc, n) {
       [S(1), zc - 0.03 * R], [S(cx), zc - 0.33 * R], [S(cx), zc - 0.44 * R], [S(fx - 0.08), zc - 0.6 * R * lo]]);
     sk.poly("plug", [[S(cx), zc + 0.33 * R], [S(1), zc + 0.03 * R], [S(1), zc - 0.03 * R], [S(cx), zc - 0.33 * R]]);
   } else {
-    sk.poly("plug", [[S(fx), zc + 0.45 * R], [S(1), zc + 0.05 * R], [S(1), zc - 0.05 * R], [S(fx), zc - 0.45 * R]]);
+    const pr = n.plug ?? 0.45;   // radius of the exhaust cone at the nozzle, share of R
+    sk.poly("plug", [[S(fx), zc + pr * R], [S(1), zc + 0.05 * R], [S(1), zc - 0.05 * R], [S(fx), zc - pr * R]]);
   }
   const exit = [];
   if (n.chev) {
@@ -301,7 +302,11 @@ function draw(f) {
     const a = s0 - fl, pts = [[a - 0.6, root(a - 0.6) - 0.4, "l"], [a - 0.6, root(a - 0.6) - 0.02, "l"]];
     if (fl) pts.push([a, root(a) - 0.02, straightFillet ? "cl" : ""], [s0 + fh * sw, zr + fh, straightFillet ? "cl" : "l"]);
     else pts.push([s0, zr - 0.02, "l"]);
-    pts.push([tipLE, zt, "c"]);
+    if (t.round) {
+      // a rounded leading corner: leave the leading edge early and curve onto the tip
+      const r = t.round;
+      pts.push([tipLE - r * sw, zt - r, ""], [tipLE + r * 0.9, zt, ""]);
+    } else pts.push([tipLE, zt, "c"]);
     if (t.cap) pts.push([tipLE + t.ct * 0.5, zt + t.cap]);
     pts.push([tipTE, zt, "cl"], [s0 + t.cr, root(s0 + t.cr) - 0.4, "l"]);
     sk.smooth("fin", pts);
@@ -323,10 +328,10 @@ function draw(f) {
   for (const extra of f.extras || []) extra(kit);
 
   // doors, cabin windows and the flight deck glazing
-  const doors = (f.doors || []).map(([s, wd, kind = "D", anchor]) => ({ s: anchor === "w" ? w.le + s : at(s), w: wd, kind }));
+  const doors = (f.doors || []).map(([s, wd, kind = "D", anchor, h]) => ({ s: anchor === "w" ? w.le + s : at(s), w: wd, kind, h }));
   const floor = (f.floor ?? 0.36) * D;
   for (const d of doors) {
-    const h = d.kind === "E" ? 0.95 : d.kind === "C" ? floor - 0.35 : d.h || (d.kind === "U" ? 1.6 : 1.85);
+    const h = d.h || (d.kind === "E" ? 0.95 : d.kind === "C" ? floor - 0.35 : d.kind === "U" ? 1.6 : 1.85);
     const z0 = d.kind === "E" ? floor + 0.42 : d.kind === "C" ? 0.25 : d.kind === "U" ? (f.upper ?? 1.1) * D : floor + 0.05;
     const [x, y] = sk.xy(d.s + d.w / 2, z0 + h);
     sk.out.push(`<rect class="door${d.kind === "C" ? " cargo" : ""}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${d.w}" height="${h.toFixed(2)}" rx="${Math.min(0.2, d.w / 3)}"/>`);
@@ -364,10 +369,11 @@ function draw(f) {
   let sec = null;
   if (w) {
     sec = kit.sec = surface(sk, "wing", w);
-    for (const e of f.ftf || []) {
-      const q = sec(e), s = q.le, c = q.c, zl = lower(q, 0.6);
-      const dp = f.ftfDepth ?? 0.045;
-      sk.smooth("ftf", [[s + c * 0.62, lower(q, 0.62) + 0.02, "c"], [s + c * 0.88, lower(q, 0.88) - dp * c], [s + c * 1.12, lower(q, 1) - 0.01 * c, "c"], [s + c * 0.99, lower(q, 0.99) + 0.02, "c"]]);
+    for (const spec of f.ftf || []) {
+      // a span fraction, or [span fraction, start, end, depth] in shares of the local chord
+      const [e, x0, x1, dp] = Array.isArray(spec) ? spec : [spec, 0.62, 1.12, f.ftfDepth ?? 0.045];
+      const q = sec(e), s = q.le, c = q.c;
+      sk.smooth("ftf", [[s + c * x0, lower(q, x0) + 0.02, "c"], [s + c * lerp(x0, 1, 0.68), lower(q, lerp(x0, 1, 0.68)) - dp * c], [s + c * x1, lower(q, 1) - 0.01 * c, "c"], [s + c * 0.99, lower(q, 0.99) + 0.02, "c"]]);
     }
     if (f.tip) winglet(sk, sec(1), f.tip);
     if (f.struts) for (const [e, s0, z0] of f.struts) {

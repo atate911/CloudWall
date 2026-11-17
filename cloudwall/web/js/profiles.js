@@ -10,16 +10,17 @@
 //   tail     top and bottom outline points [distance forward of the tail-cone end, z] in D
 //   body     instead of nose/tail: a closed outline [s, z, flag] in D (light aircraft, helicopters)
 //   glass    flight-deck panes, each a list of [s, z] in D
-//   doors    [s, width, kind, anchor]: s < 0 counts from the tail-cone end; anchor "w" from the
-//            wing root leading edge. kind D passenger (default), E overwing exit, C cargo, U upper deck
+//   doors    [s, width, kind, anchor, height]: s < 0 counts from the tail-cone end; anchor "w" from
+//            the wing root leading edge. kind D passenger (default), E overwing exit, C cargo, U upper deck
 //   win      window rows {z (D), from, to (s), pitch, w, h, upper}
 //   wing     {le (root leading edge s), root (half-width at root), span, cr, kink [e, chord], ct,
 //            sweep (LE, deg), dih (deg), z (chord height at root, D), t [root, tip thickness], rake, bend}
 //   tip      wingtip device {type fence | (blade) h, sweep, top, base, blend, lo, loSweep, loTip}
-//   ftf      flap-track fairings at fractions of the exposed span
+//   ftf      flap-track fairings: span fractions, or [e, start, end, depth] in shares of local chord
 //   eng      {kind fan|prop, at [span fractions], fwd (inlet ahead of local LE), drop (centre below
-//            local chord), len, dia, style sep|long|flat, fx, cx, chev, pylon, aft {s, z}, nose {...}}
-//   fin      {le (root LE forward of tail end), cr, ct, h (above crown), sweep, fillet [len, h, straight], cap}
+//            local chord), len, dia, style sep|long|flat, fx, cx, chev, plug, pylon, aft {s, z}, nose {...}}
+//   fin      {le (root LE forward of tail end), cr, ct, h (above crown), sweep, fillet [len, h, straight],
+//            cap, round (radius of a rounded leading tip corner), base (root height above crown), rudder}
 //   stab     {le, z (D) | "T" | fz (fraction up the fin), span, root, cr, ct, sweep, dih, bullet}
 //   tailEng  centre engine through the fin root {s (inlet forward of tail end), z (above crown), len, dia}
 //   gear, struts, rotor: fixed undercarriage, wing struts and rotors for light aircraft and helicopters
