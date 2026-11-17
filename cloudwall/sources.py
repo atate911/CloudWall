@@ -206,7 +206,7 @@ class Demo:
                 self.routes[f[0]] = {"flight": f[1], "airline": f[2],
                                      "origin": _airport(f[6]), "dest": _airport(f[7])}
 
-    def _spawn(self, lat, lon, along=None):
+    def _spawn(self, lat, lon, along=None, radius_nm=15):
         idx = self.rng.randrange(len(DEMO_FLIGHTS))
         hexid = f"a{idx:05x}"
         if any(a["hex"] == hexid for a in self.active):
@@ -222,7 +222,7 @@ class Demo:
         if typ in ("A339", "A332", "B788", "MD11", "B77W"):
             cat = "A5"
         offset = self.rng.uniform(-2.5, 2.5)          # lateral miss distance, nm
-        along = -14.0 if along is None else along      # start this far before abeam
+        along = -max(14.0, radius_nm - 1) if along is None else along   # start near the edge of the range
         self.active.append({
             "hex": hexid, "callsign": cs or reg, "reg": reg, "type": typ, "category": cat,
             "track": track, "gs": gs, "alt0": alt, "vrate": vrate, "squawk": "1200" if kind == "ga" else "".join(self.rng.choice("01234567") for _ in range(4)),
@@ -238,7 +238,7 @@ class Demo:
         dt = now - self.last
         self.last = now
         if now >= self.next_spawn:
-            self._spawn(lat, lon)
+            self._spawn(lat, lon, radius_nm=radius_nm)
             self.next_spawn = now + self.rng.uniform(25, 60)
         out = []
         for a in self.active:

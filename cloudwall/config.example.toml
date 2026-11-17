@@ -66,6 +66,11 @@ daily_limit = 0
 mode = "always"
 general_aviation = false
 
+[kiosk]                # the wall panel (/kiosk) has no buttons, so its radar is set here
+radar = "chart"        # "chart", or "atc" to draw the radar like an air traffic control screen
+tracks = true          # trails behind aircraft and lines to where they will be in a minute
+range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see further
+
 [map]                  # faint map under the radar, cached on disk by CloudWall
 style = "dark"         # "dark" or "light" grey street map, "satellite", "osm" (OpenStreetMap), or "off"
 opacity = 0.32         # 0 to 1: how strongly the streets show under the radar

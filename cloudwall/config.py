@@ -46,6 +46,10 @@ DEFAULTS = {
     # restrictions (FAA), and the contrail forecast (Open-Meteo upper-air data).
     "extras": {"military": True, "military_radius_nm": 40, "military_url": "https://opendata.adsb.fi/api/v2/mil",
                "tfr": True, "tfr_radius_nm": 30, "contrails": True},
+    # The kiosk has no buttons: its radar is set here. radar: "chart" or "atc" (drawn like an air
+    # traffic control screen); tracks: trails and one-minute lines; range_nm: 0 for the tracking
+    # radius, or 20 or 30 to see further.
+    "kiosk": {"radar": "chart", "tracks": True, "range_nm": 0},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }

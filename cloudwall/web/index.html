@@ -31,6 +31,14 @@
         <button data-mode="radar">Radar</button>
         <button data-mode="sky">Sky</button>
       </div>
+      <div class="scope-tools">
+        <div class="seg" id="style-seg" role="group" aria-label="Radar style">
+          <button data-style="chart" title="Radar drawn as a chart">Chart</button>
+          <button data-style="atc" title="Radar drawn like an air traffic control screen">ATC</button>
+        </div>
+        <div class="seg"><button id="btn-tracks" aria-pressed="true" title="Trails behind aircraft and lines to where they will be in a minute">Tracks</button></div>
+        <div class="seg" id="range-seg" role="group" aria-label="Radar range" title="How far out the radar shows"></div>
+      </div>
       <svg id="radar" viewBox="-112 -112 224 224" role="img" aria-label="Nearby aircraft"></svg>
       <div class="attrib" id="scope-attrib"></div>
     </div>

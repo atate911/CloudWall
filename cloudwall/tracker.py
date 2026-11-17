@@ -33,6 +33,8 @@ RESIGHT_SECONDS = 30 * 60
 LOOKAHEAD_S = 10 * 60        # look routes up this far ahead of an aircraft reaching the house
 STALE_SECONDS = 60
 TRAIL_POINTS = 48           # ~4 minutes of history at the default poll rate
+RADAR_RANGES = (20, 30)     # longer ranges a screen can set its radar to, in nm, beyond the tracking radius
+RANGE_HOLD_S = 90           # keep fetching a longer range this long after a screen last asked for it
 HEAT_GRID = 96
 
 
@@ -47,6 +49,8 @@ class Tracker:
         self.home = cfg["home"]
         self.lock = threading.Lock()
         self.aircraft = []
+        self.beyond = []          # aircraft past the tracking radius, for a radar set to a longer range
+        self.range_wanted = {}    # range (nm) -> when a screen last asked for it
         self.hero_hex = None
         self.pinned = None
         self.active = {}          # hex -> {"id", "min", "ts", "badges"}
@@ -344,18 +348,21 @@ class Tracker:
             self.store.update_sighting(s["id"], **upd)
         a["badges"] = s["badges"]
 
-    def _remember_tracks(self, airborne, now):
-        """Short trails for the radar and a coarse all-day grid for the traffic heatmap."""
+    def _remember_tracks(self, airborne, now, beyond=()):
+        """Short trails for the radar and a coarse all-day grid for the traffic heatmap. Aircraft
+        beyond the tracking radius (shown only on a radar set to a longer range) get trails but
+        stay off the heatmap."""
         seen = set()
         r = self.cfg["tracking"]["radius_nm"]
         day = time.strftime("%Y-%m-%d", time.localtime(now))
         if day != self.heat_day:
             self.heat, self.heat_day = {}, day
-        for a in airborne:
+        for a in list(beyond) + airborne:
             seen.add(a["hex"])
             trail = self.trails.setdefault(a["hex"], deque(maxlen=TRAIL_POINTS))
             trail.append((round(a["lat"], 4), round(a["lon"], 4)))
             a["trail"] = list(trail)
+        for a in airborne:
             x = a["dist"] * math.sin(math.radians(a["brg"]))
             y = a["dist"] * math.cos(math.radians(a["brg"]))
             gx, gy = int((x + r) / (2 * r) * HEAT_GRID), int((r - y) / (2 * r) * HEAT_GRID)
@@ -404,11 +411,33 @@ class Tracker:
                 self.flow = {"dir": "east", "label": "East flow", "runways": "10L / 10R"}
 
     # -- main entry points ------------------------------------------------------
+    # -- radar range -------------------------------------------------------------
+    # A screen can set its radar to a longer range than the tracking radius. The feed is then
+    # asked for the longer range, but only aircraft within the tracking radius count for the
+    # board, the flight card, the logbook and route lookups: the rest are for the radar alone.
+    def ranges(self):
+        r = self.cfg["tracking"]["radius_nm"]
+        return sorted({r, *(x for x in RADAR_RANGES if x > r)})
+
+    def want_range(self, nm):
+        """A screen showing the radar at this range asked for data."""
+        if nm in self.ranges():
+            self.range_wanted[nm] = time.time()
+
+    def fetch_radius(self):
+        """How far out to ask the feed for: the longest range a screen asked for lately."""
+        now = time.time()
+        recent = [nm for nm, at in self.range_wanted.items() if now - at < RANGE_HOLD_S]
+        return max([self.cfg["tracking"]["radius_nm"], *recent])
+
     def update(self, raw, source):
         now = time.time()
         for a in raw:
             self._derive(a)
         raw.sort(key=lambda a: a["dist"])
+        r = self.cfg["tracking"]["radius_nm"]
+        beyond = [a for a in raw if a["dist"] > r and not a["on_ground"]]
+        raw = [a for a in raw if a["dist"] <= r]
         airborne = [a for a in raw if not a["on_ground"]]
         # look up the nearest aircraft, plus anything heading for the house soon
         t = self.cfg["tracking"]
@@ -424,10 +453,11 @@ class Tracker:
             for a in airborne:
                 if self._overhead(a):
                     self._log(a, now)
-            self._remember_tracks(airborne, now)
+            self._remember_tracks(airborne, now, beyond)
             if self.cfg["airport"]["icao"] == "KPDX":
                 self._update_flow(raw)
             self.aircraft = raw
+            self.beyond = beyond
             self.emergency = emergency
             self.status = {"source": source, "ok": True, "updated": now, "error": None}
 
@@ -463,7 +493,7 @@ class Tracker:
     def snapshot(self):
         with self.lock:
             if self.aircraft and time.time() - self.status["updated"] > STALE_SECONDS:
-                self.aircraft, self.hero_hex = [], None   # don't show positions we can't trust
+                self.aircraft, self.beyond, self.hero_hex = [], [], None   # don't show positions we can't trust
             hero = next((a for a in self.aircraft if a["hex"] == self.hero_hex), None)
             nxt = None
             if not hero:
@@ -474,6 +504,7 @@ class Tracker:
                 "now": time.time(), "home": self.home, "airport": self.cfg["airport"],
                 "tracking": self.cfg["tracking"], "hero": hero, "pinned": self.pinned,
                 "next": nxt, "aircraft": self.aircraft, "flow": self.flow,
+                "beyond": self.beyond, "ranges": self.ranges(), "kiosk": self.cfg["kiosk"],
                 "weather": self.weather, "status": self.status, "basemap": self.basemap, "logos": self.logos,
                 "live_routes": p.status() if (p := getattr(self.enricher, "live", None)) else None,
                 "today": self.store.count("day=?", (time.strftime("%Y-%m-%d"),)),

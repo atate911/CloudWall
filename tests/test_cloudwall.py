@@ -426,6 +426,35 @@ class TracksTest(unittest.TestCase):
         self.assertIn("photo", {r["name"] for r in store.db.execute("PRAGMA table_info(sightings)")})
 
 
+class RadarRangeTest(unittest.TestCase):
+    def test_longer_range_is_for_the_radar_alone(self):
+        store = Store(":memory:")
+        t = Tracker(config.load(), store, StubEnricher())
+        self.assertEqual(t.ranges(), [15, 20, 30])
+        self.assertEqual(t.fetch_radius(), 15)                        # nobody asked for more
+        t.want_range(45)                                              # not an offered range: ignored
+        self.assertEqual(t.fetch_radius(), 15)
+        t.want_range(30)
+        self.assertEqual(t.fetch_radius(), 30)
+        for north in (25.0, 24.0):
+            t.update([plane("a1", "ASA1", 2.0), plane("f1", "FAR1", north)], "test")
+        s = t.snapshot()
+        self.assertEqual([a["hex"] for a in s["aircraft"]], ["a1"])  # board, card and logbook: 15 nm only
+        self.assertEqual([a["hex"] for a in s["beyond"]], ["f1"])
+        self.assertEqual(len(s["beyond"][0]["trail"]), 2)             # its trail is kept for the radar
+        self.assertEqual(sum(c[2] for c in t.heatmap()["cells"]), 2)  # but it stays off the heatmap
+        t.range_wanted[30] -= 120                                     # the screen stopped asking
+        self.assertEqual(t.fetch_radius(), 15)
+
+    def test_demo_fills_a_longer_range(self):
+        demo = sources.Demo()
+        home = config.DEFAULTS["home"]
+        demo.fetch(home["lat"], home["lon"], 30)
+        demo.next_spawn = 0
+        demo.fetch(home["lat"], home["lon"], 30)
+        self.assertLessEqual(min(a["along"] for a in demo.active), -28)   # new arrivals start near 30 nm
+
+
 class TilesTest(unittest.TestCase):
     def test_cache_area_limit_and_stale_fallback(self):
         import tempfile
@@ -530,8 +559,9 @@ class LiveFirstTest(unittest.TestCase):
             time.sleep(0.01)
 
     def test_looks_up_early_and_never_shows_the_stale_guess(self):
-        # 8 minutes out at 2 nm/min, flying straight at the house from the north
-        inbound = plane("a1", "ASA1363", 16.0, track=180, gs=120)
+        # 7 minutes out at 2 nm/min, flying straight at the house from the north (just inside the
+        # 15 nm tracking radius: past it, aircraft are only drawn on a longer-range radar)
+        inbound = plane("a1", "ASA1363", 14.0, track=180, gs=120)
         self.t.update([inbound], "test")
         self.wait_calls(1)
         self.assertEqual(self.calls, ["ASA1363"])               # asked well before it's overhead

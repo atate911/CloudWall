@@ -149,18 +149,38 @@ function scopeMode() {
   const pref = store("scope") || "auto";
   return pref === "auto" ? (state && state.hero ? "sky" : "radar") : pref;
 }
+// Radar options: drawn as a chart or as an air traffic control screen, track lines on or off, and
+// the range. The desktop's buttons set them for each screen; the kiosk, which has no buttons, takes
+// them from the [kiosk] settings. The address overrides either (?radar=atc&tracks=off&range=30).
+const qs = new URLSearchParams(location.search);
+function radarPrefs() {
+  const k = (KIOSK && state && state.kiosk) || {}, ranges = (state && state.ranges) || [15, 20, 30];
+  const pick = (name, saved, ok) => [qs.get(name), saved].find(ok);
+  const style = pick("radar", KIOSK ? k.radar : store("radarStyle"), (v) => v === "chart" || v === "atc") || "chart";
+  const tracks = pick("tracks", KIOSK ? (k.tracks === false ? "off" : "on") : store("tracks"), (v) => v === "on" || v === "off") !== "off";
+  const range = +(pick("range", KIOSK ? k.range_nm : store("range"), (v) => v != null && ranges.includes(+v)) || ranges[0]);
+  return { style, tracks, range };
+}
 let scopeLabel = "";
 function drawScopeNow(now = performance.now()) {
   if (!state || view !== "now") return;
-  const mode = scopeMode(), pref = store("scope") || "auto";
-  const bm = state.basemap, credit = mode === "radar" && bm && bm.enabled ? bm.attribution : "";
-  const label = pref + mode + credit;
+  const mode = scopeMode(), pref = store("scope") || "auto", { style, tracks, range } = radarPrefs();
+  const atc = mode === "radar" && style === "atc";
+  const bm = state.basemap, credit = mode === "radar" && !atc && bm && bm.enabled ? bm.attribution : "";
+  const label = [pref, mode, credit, style, tracks, range, state.ranges].join("|");
   if (label !== scopeLabel) {
     scopeLabel = label;
     document.querySelectorAll("#scope-seg button").forEach((b) => b.classList.toggle("on", b.dataset.mode === pref));
+    document.querySelectorAll("#style-seg button").forEach((b) => b.classList.toggle("on", b.dataset.style === style));
+    $("btn-tracks").classList.toggle("on", tracks);
+    $("btn-tracks").setAttribute("aria-pressed", String(tracks));
+    $("range-seg").innerHTML = (state.ranges || []).map((r) => `<button data-range="${r}"${r === range ? ' class="on"' : ""}>${r}</button>`).join("") +
+      `<span class="seg-unit">nm</span>`;
+    $("scope").classList.toggle("atc", atc);
+    $("scope").classList.toggle("sky", mode === "sky");     // the radar's options don't apply to the sky view
     $("scope-attrib").textContent = credit;
   }
-  drawScope($("radar"), state, now, stateAtPerf, mode);
+  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range });
 }
 
 // Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi.
@@ -241,7 +261,7 @@ function render() {
 async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
   try {
-    state = await (await fetch("api/state")).json();
+    state = await (await fetch(`api/state?range=${radarPrefs().range}`)).json();   // the server fetches out to the radar's range
     stateAt = state._at = Date.now();
     stateAtPerf = performance.now();
     if (mapFor !== state.airport.icao) { mapFor = state.airport.icao; loadMap(mapFor).then(() => { scopeLabel = ""; }); }
@@ -275,6 +295,9 @@ $("hero").addEventListener("click", (e) => {
   if (state.pinned) pin(null); else if (!state.hero) { nextSlide(); render(); }
 });
 $("scope-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("scope", b.dataset.mode); scopeLabel = ""; } });
+$("style-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("radarStyle", b.dataset.style); scopeLabel = ""; } });
+$("btn-tracks").addEventListener("click", () => { store("tracks", store("tracks") === "off" ? "on" : "off"); scopeLabel = ""; });
+$("range-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("range", b.dataset.range); scopeLabel = ""; poll(); } });
 $("btn-sound").addEventListener("click", () => { setSound(!soundOn()); renderToggles(); });
 $("btn-night").addEventListener("click", () => { const m = ["auto", "on", "off"]; store("night", m[(m.indexOf(store("night") || "auto") + 1) % 3]); render(); });
 

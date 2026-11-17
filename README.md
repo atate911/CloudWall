@@ -24,6 +24,13 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
   climbing or descending (`035↑`), and a line to where it will be in a minute. Both views have a
   compass bezel with bearings and a key in the corner.
   Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
+  Along the foot of the radar, Chart / ATC picks its look (ATC draws it like an air traffic
+  controller's screen: dark, a grey map, green targets with history dots, leader lines to data blocks
+  and a status area with UTC time, altimeter, wind and runways), Tracks turns the trails and
+  one-minute lines on or off, and 15 / 20 / 30 sets the range in nm. Past the tracking radius
+  (`[tracking] radius_nm`, 15 nm), aircraft are drawn on the radar only: the board, the flight card,
+  the logbook and route lookups stay within it, and the longer range is fetched only while a
+  screen shows it.
 - **Quiet sky** – when nothing is overhead the card rotates through the next inbound
   aircraft (with its drawing, so you know what to look for), a heatmap of the day's traffic,
   today's fleet (every type seen since midnight, side by side at true relative size, from a
@@ -132,6 +139,17 @@ board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk 
 
 `?mode=kiosk` on any address does the same as `/kiosk`. The kiosk sizes everything from
 the screen's height, so the 1024×600 and 1920×1080 panels look the same.
+
+The kiosk has no buttons, so its radar is set in the config file:
+
+```toml
+[kiosk]
+radar = "atc"      # "chart" (the default) or "atc"
+tracks = true      # trails and one-minute lines
+range_nm = 30      # 0 for the tracking radius, or 20 or 30
+```
+
+The address can override these on any screen: `/kiosk?radar=atc&tracks=off&range=20`.
 
 ## Better routes with a paid provider (optional)
 
