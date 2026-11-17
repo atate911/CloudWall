@@ -42,6 +42,7 @@ class Tracker:
         self.flow = None
         self.weather = None
         self.weather_full = None
+        self.idle = False         # no screen open: no paid lookups
         self.basemap = None
         self.logos = False
         self.status = {"source": None, "ok": False, "updated": 0, "error": None}
@@ -212,7 +213,7 @@ class Tracker:
         near = (self._overhead(a) or a["hex"] == self.pinned
                 or (0 < a["cpa_s"] <= LOOKAHEAD_S and a["cpa_nm"] <= t["overhead_nm"]))
         needed = fa.mode == "always" or not (free_route and free_route["plausible"])
-        state, live = self.enricher.live_route(a.get("callsign"), fetch=near and needed and not a["on_ground"])
+        state, live = self.enricher.live_route(a.get("callsign"), fetch=near and needed and not a["on_ground"] and not self.idle)
         if live:
             live = self._with_geometry(a, dict(live, airline=(free_route or {}).get("airline")))
         return state, live

@@ -21,6 +21,8 @@ DEFAULTS = {
         "overhead_nm": 3.5,     # inside this, an aircraft counts as "overhead" and is logged
         "max_overhead_alt_ft": 45000,
         "poll_seconds": 5,
+        "when_idle": "pause",          # no screen open: "pause" all requests, or "log" slowly
+        "idle_after_seconds": 90,
     },
     # Position feeds, tried in order; CloudWall fails over to the next when one stops answering.
     "source": {"urls": ["https://opendata.adsb.fi/api/v3/lat/{lat}/lon/{lon}/dist/{radius}",

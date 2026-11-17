@@ -120,7 +120,7 @@ async function loadWeather(draw) {
 }
 let resizeTimer = null;
 addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (view === "wx") loadWeather(true); }, 250); });
-setInterval(() => loadWeather(view === "wx"), 60000);
+setInterval(() => { if (!document.hidden) loadWeather(view === "wx"); }, 60000);
 
 // ---------- chrome ----------
 function setView(v) {
@@ -156,6 +156,7 @@ function render() {
   if (view === "board") $("board").innerHTML = boardHtml();
 }
 async function poll() {
+  if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
   try {
     state = await (await fetch("api/state")).json();
     stateAt = state._at = Date.now();
@@ -188,6 +189,7 @@ $("btn-sound").addEventListener("click", () => { setSound(!soundOn()); renderTog
 $("btn-night").addEventListener("click", () => { const m = ["auto", "on", "off"]; store("night", m[(m.indexOf(store("night") || "auto") + 1) % 3]); render(); });
 
 setInterval(poll, 2000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
 setInterval(() => { if (state && state.hero) tickHero((Date.now() - stateAt) / 1000); else if (state && view === "now") renderHero($("hero"), state); }, 1000);
 setInterval(() => { if (view === "log") loadLog().catch(() => {}); }, 30000);
 setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }, 1000);

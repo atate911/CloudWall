@@ -731,3 +731,39 @@ class FeedExtrasTest(unittest.TestCase):
         self.assertIsNone(h.get("owner"))
         self.assertEqual(h["type_name"], "Cessna 172")
         self.assertGreater(h["age"], 40)
+
+
+class ActivityTest(unittest.TestCase):
+    def test_idle_and_wake(self):
+        import threading
+        from cloudwall.activity import Activity
+        a = Activity(idle_after=1)
+        self.assertTrue(a.idle())                         # nobody has looked yet
+        woke = []
+        t = threading.Thread(target=lambda: (a.sleep(5), woke.append(time.time())))
+        start = time.time(); t.start()
+        time.sleep(0.1); a.touch(); t.join(2)
+        self.assertTrue(woke and woke[0] - start < 1)     # a screen appearing wakes the poller at once
+        self.assertFalse(a.idle())
+
+    def test_no_paid_lookups_while_idle(self):
+        calls = []
+
+        class Provider:
+            name, label, mode, general_aviation, enabled = "fake", "Fake", "always", False, True
+            def available(self): return True
+            def status(self): return {}
+            def route(self, cs): calls.append(cs); return None
+
+        store = Store(":memory:")
+        store.cache_put("aircraft", "a1", None)
+        store.cache_put("route", "ASA512", None)          # no free-database lookup in the way
+        t = Tracker(config.load(), store, Enricher(store, live=Provider()))
+        t.idle = True
+        t.update([plane("a1", "ASA512", 1.0)], "test")
+        time.sleep(0.1)
+        self.assertEqual(calls, [])
+        t.idle = False
+        t.update([plane("a1", "ASA512", 1.0)], "test")
+        time.sleep(0.2)
+        self.assertEqual(calls, ["ASA512"])

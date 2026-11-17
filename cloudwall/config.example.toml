@@ -19,6 +19,11 @@ radius_nm = 15         # how far out the board and radar look
 overhead_nm = 3.5      # inside this, an aircraft takes over the screen and is logged
 max_overhead_alt_ft = 45000
 poll_seconds = 5       # be kind to the free API; don't go below ~3
+when_idle = "pause"    # when no screen has been open for idle_after_seconds:
+                       #   "pause" makes no requests at all (the logbook misses flyovers meanwhile)
+                       #   "log" checks the free position feed every 15 s so the logbook stays complete
+                       # Either way, no paid route lookups and no weather while nobody is looking.
+idle_after_seconds = 90
 
 [source]               # position feeds (readsb-style JSON), tried in order with automatic failover
 urls = [

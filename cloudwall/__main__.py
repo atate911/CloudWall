@@ -10,6 +10,7 @@ from .enrich import Enricher
 from .flightaware import FlightAware
 from .flightradar24 import Flightradar24
 from .server import make_server
+from .activity import Activity
 from .logos import Logos
 from .tiles import Tiles
 from .store import Store
@@ -57,31 +58,57 @@ def main():
     tracker.logos = logos.enabled
     home, trk = cfg["home"], cfg["tracking"]
 
+    # Only use the data services while a screen is open: "pause" stops all requests when
+    # nobody is looking; "log" keeps checking the free position feed slowly so the logbook
+    # stays complete, but still makes no paid route lookups and fetches no weather.
+    when_idle = str(trk.get("when_idle", "pause")).lower()
+    activity = Activity(int(trk.get("idle_after_seconds", 90)))
+    if args.demo:
+        activity.idle = lambda: False      # demo traffic costs nothing
+
     def poll():
+        paused = False
         while True:
+            idle = activity.idle()
+            if idle and when_idle == "pause":
+                if not paused:
+                    log.info("no screen open: pausing data requests until one asks again")
+                    paused = True
+                activity.sleep(60)
+                continue
+            if paused:
+                log.info("screen open: resuming data requests")
+                paused = False
+            tracker.idle = idle
             try:
                 tracker.update(source.fetch(home["lat"], home["lon"], trk["radius_nm"]), source.name)
             except Exception as e:
                 log.warning("no position feed is answering (last error: %s)", e)
                 tracker.failed(source.name, e)
-            time.sleep(1 if args.demo else trk["poll_seconds"])
+            activity.sleep(1 if args.demo else max(trk["poll_seconds"], 15) if idle else trk["poll_seconds"])
 
     def wx():
+        fetched = 0.0
         while True:
-            try:
-                short, full = weather.fetch_all(cfg["airport"]["icao"])
-                if short:
-                    tracker.weather, tracker.weather_full = short, full
-            except Exception as e:
-                log.warning("weather fetch failed: %s", e)
-            time.sleep(300)
+            if not activity.idle() and time.time() - fetched > 300:
+                try:
+                    short, full = weather.fetch_all(cfg["airport"]["icao"])
+                    if short:
+                        tracker.weather, tracker.weather_full = short, full
+                    fetched = time.time()
+                except Exception as e:
+                    log.warning("weather fetch failed: %s", e)
+                    fetched = time.time() - 240          # try again in a minute
+            time.sleep(5)
 
     threading.Thread(target=poll, daemon=True).start()
     if not args.demo:
         threading.Thread(target=wx, daemon=True).start()
     else:
         tracker.weather, tracker.weather_full = weather.demo()
-    server = make_server(cfg, tracker, store, tiles, logos)
+    for p in providers:
+        p.activity = activity                 # e.g. Flightradar24's hourly usage check waits for a screen
+    server = make_server(cfg, tracker, store, tiles, logos, activity)
     log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"], source.name)
     if fa and not args.demo:
         b = fa.budget()

@@ -8,7 +8,7 @@ from pathlib import Path
 WEB = Path(__file__).resolve().parent / "web"
 
 
-def make_server(cfg, tracker, store, tiles=None, logos=None):
+def make_server(cfg, tracker, store, tiles=None, logos=None, activity=None):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *a):
             pass
@@ -25,6 +25,8 @@ def make_server(cfg, tracker, store, tiles=None, logos=None):
 
         def do_GET(self):
             path = self.path.split("?")[0]
+            if activity and path in ("/api/state", "/api/weather"):
+                activity.touch()                      # a screen is open
             if path == "/api/state":
                 return self._send(200, tracker.snapshot())
             if path == "/api/weather":

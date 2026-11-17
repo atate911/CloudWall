@@ -62,12 +62,16 @@ class Flightradar24(LiveProvider):
 
     # -- what Flightradar24 says we've spent ------------------------------------
     def _usage_loop(self):
+        checked = 0.0
         while True:
-            try:
-                self.reported = self.fetch_usage()
-            except Exception as e:
-                log.info("Flightradar24 usage check failed: %s", e)
-            time.sleep(USAGE_EVERY)
+            activity = getattr(self, "activity", None)
+            if (activity is None or not activity.idle()) and time.time() - checked > USAGE_EVERY:
+                try:
+                    self.reported = self.fetch_usage()
+                except Exception as e:
+                    log.info("Flightradar24 usage check failed: %s", e)
+                checked = time.time()
+            time.sleep(30)
 
     def fetch_usage(self):
         out = {}

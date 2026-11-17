@@ -127,6 +127,15 @@ Lookups are billed, so CloudWall is frugal with them:
 Flightradar24 also offers a free sandbox token for testing: set `sandbox = true`. It
 returns fixed sample data, so routes will not match what is overhead.
 
+## Only while someone is looking
+
+CloudWall makes requests to the flight-data and weather services only while a screen
+has the board open (a hidden browser tab doesn't count). After 90 seconds with no screen,
+`[tracking] when_idle = "pause"` (the default) stops all requests until a screen asks
+again; `"log"` keeps checking the free position feed every 15 seconds so the logbook
+stays complete. Either way, no paid route lookups and no weather requests are made while
+nobody is looking.
+
 ## Notes
 
 - Routes are looked up by callsign and are sometimes stale. CloudWall checks each route
