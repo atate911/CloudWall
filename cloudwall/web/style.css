@@ -196,7 +196,7 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .heat-legend i { flex: 0 0 7rem; height: .35rem; border-radius: 99px;
   background: linear-gradient(90deg, color-mix(in srgb, var(--blue) 30%, transparent), var(--blue) 45%, var(--magenta)); }
 .heat-key { font-size: .8rem; }
-.idle.last { flex-direction: row; align-items: center; gap: 1.8rem; }
+.idle.last { flex-direction: row; align-items: center; justify-content: flex-start; gap: 1.8rem; }
 .idle.last .photo { width: 45%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: .8rem; flex: none; }
 .idle.last > div { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
 .dots { position: absolute; bottom: .9rem; left: 0; right: 0; display: flex; justify-content: center; gap: .45rem; }
