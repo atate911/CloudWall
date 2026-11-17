@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 from urllib.parse import quote
 
+from . import airports
 from .live import YEAR, LiveProvider
 
 log = logging.getLogger("cloudwall.flightaware")
@@ -39,12 +40,17 @@ def pick_flight(flights, now):
 
 class FlightAware(LiveProvider):
     name, label, env_key = "flightaware", "FlightAware", "CLOUDWALL_FLIGHTAWARE_KEY"
+    unit = "queries"
 
     def headers(self):
         return {"x-apikey": self.key}
 
     def _airport(self, a):
-        """Flight results carry airport codes but no coordinates; fetch those once and keep them."""
+        """Flight results carry airport codes but no coordinates. The bundled airport table
+        has nearly all of them; only the rest are looked up (billed) and kept."""
+        local = airports.lookup(a.get("code_icao")) or airports.lookup(a.get("code_iata"))
+        if local:
+            return airports.describe(icao=local["icao"])
         code = a.get("code_icao") or a.get("code")
         out = {"iata": a.get("code_iata") or a.get("code_lid") or a.get("code"),
                "city": a.get("city"), "name": a.get("name"), "lat": None, "lon": None}
@@ -80,6 +86,7 @@ class FlightAware(LiveProvider):
             "flight": f.get("ident_iata") or f.get("ident") or callsign,
             "airline": None, "source": self.name, "source_label": self.label,
             "origin": self._airport(f["origin"]), "dest": self._airport(f["destination"]),
+            "departed": _ts(f.get("actual_off")),
             "eta": _ts(f.get("estimated_in") or f.get("estimated_on") or f.get("scheduled_in")),
             "arrival_delay_s": f.get("arrival_delay"), "status": f.get("status"),
             "progress_percent": f.get("progress_percent"), "route_nm": f.get("route_distance"),

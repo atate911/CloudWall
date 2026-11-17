@@ -3,7 +3,7 @@ import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POI
 import { typeInfo } from "./data.js";
 import { silhouette, silhouetteScale } from "./silhouette.js";
 import { flap, roll } from "./fx.js";
-import { sky, viewingHint } from "./sky.js";
+import { sky } from "./sky.js";
 import { map, tileLayout } from "./scope.js";
 
 // Show an airline's logo on its white tile; if there isn't one, show the name instead.
@@ -39,9 +39,8 @@ const SKELETON = `
   <div class="h-top">
     <div class="flaps flight" id="h-flight"></div>
     <div class="airline"><div class="logo-tile" id="h-logo" hidden><img class="logo" id="h-logo-img" alt=""></div><span id="h-airline"></span><small id="h-sub"></small></div>
-    <div class="countdown" id="h-countdown"><svg viewBox="0 0 40 40"><circle class="c-track" cx="20" cy="20" r="17"/><circle class="c-fill" id="h-ring" cx="20" cy="20" r="17" pathLength="100" transform="rotate(-90 20 20)"/></svg><b id="h-count"></b></div>
   </div>
-  <div class="tags"><div class="badges" id="h-badges"></div><div class="pin-chip" id="h-pin" hidden>Pinned · tap card to release</div></div>
+  <div class="tags"><div class="badges" id="h-badges"></div><div class="pin-chip" id="h-pin" hidden>Pinned: tap the card to release</div></div>
   <div class="h-route" id="h-route"></div>
   <div class="metrics">
     <div class="metric"><div class="label">Altitude</div><div class="v"><span id="h-alt"></span> <small>ft</small> <span id="h-arrow"></span></div><div class="s" id="h-vrate"></div></div>
@@ -50,9 +49,16 @@ const SKELETON = `
     <div class="metric"><div class="label">Heading</div><div class="v" id="h-hdg"></div><div class="s" id="h-phase"></div></div>
   </div>
   <div class="h-bottom">
-    <div class="look"><div class="big" id="h-look"></div><div class="sub" id="h-hint"></div></div>
-    <div class="ac"><div class="media" id="h-media"><div class="sil-box" id="h-sil"></div></div><div class="sub" id="h-type"></div></div>
+    <div class="media" id="h-media"><div class="sil-box" id="h-sil"></div></div>
+    <dl class="facts" id="h-facts"></dl>
   </div>`;
+
+// "AS508" -> "AS 508", the way departure boards set flight numbers
+export function boardFlight(f) {
+  const m = /^([A-Z0-9]{2})(\d{1,4}[A-Z]?)$/.exec(f || "");
+  return m && /[A-Z]/.test(m[1]) ? `${m[1]} ${m[2]}` : f;
+}
+const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 function routeHtml(a, state) {
   const r = a.route, ap = state.airport;
@@ -63,12 +69,12 @@ function routeHtml(a, state) {
   if (a.local_inferred && (!r || !r.plausible)) {
     // the route database is wrong or silent, but the aircraft is clearly landing or leaving here
     const arriving = a.local === "arriving";
-    const why = r ? `The route database says ${esc(r.origin.iata)} → ${esc(r.dest.iata)}, which doesn't match where it's flying.` : "No route on file for this flight.";
+    const why = r ? `Its listed route (${esc(r.origin.iata)} to ${esc(r.dest.iata)}) is out of date` : "No route on file for this flight";
     return `<div class="route inferred">
-      <div class="apt ${arriving ? "unknown" : "local"}"><div class="flaps" id="h-orig"></div><small>${arriving ? "Origin unknown" : esc(ap.iata === "PDX" ? "Portland" : ap.iata)}</small></div>
+      ${arriving ? `<div class="apt unknown"><span>Origin not known</span></div>` : `<div class="apt local"><div class="flaps" id="h-orig"></div><small>${esc(ap.city || ap.iata)}</small></div>`}
       <div><svg class="arc" viewBox="0 0 200 40"><path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--rule)" stroke-width="1" stroke-dasharray="2 3"/></svg>
-        <div class="arc-note">${arriving ? "Arriving at" : "Departing from"} ${esc(ap.iata)}, worked out from its flight path<br><span class="why">${why}</span></div></div>
-      <div class="apt r ${arriving ? "local" : "unknown"}"><div class="flaps" id="h-dest"></div><small>${arriving ? esc(ap.iata === "PDX" ? "Portland" : ap.iata) : "Destination unknown"}</small></div>
+        <div class="arc-note">${arriving ? "Landing at" : "Just departed"} ${esc(ap.iata)}<br><span class="why">${why}</span></div></div>
+      ${arriving ? `<div class="apt r local"><div class="flaps" id="h-dest"></div><small>${esc(ap.city || ap.iata)}</small></div>` : `<div class="apt r unknown"><span>Destination not known</span></div>`}
     </div>`;
   }
   if (!r) {
@@ -89,16 +95,10 @@ function routeHtml(a, state) {
 }
 
 function routeNote(r) {
-  if (!r.plausible) return "route unverified — aircraft is off this track";
-  const parts = [];
-  if (r.flown_nm != null) parts.push(`${num(r.flown_nm)} nm flown, ${num(r.left_nm)} to go`);
-  else if (r.left_nm != null) parts.push(`${num(r.left_nm)} nm to go`);
-  if (r.eta) {
-    const late = Math.round((r.arrival_delay_s || 0) / 60);
-    parts.push(`arrives ${new Date(r.eta * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` + (late >= 5 ? ` (${late} min late)` : late <= -5 ? ` (${-late} min early)` : ""));
-  }
-  if (r.source_label) parts.push(`via ${r.source_label}`);
-  return parts.join(", ");
+  if (!r.plausible) return "Listed route doesn't match where it's flying";
+  if (r.flown_nm != null) return `${num(r.flown_nm)} nm flown, ${num(r.left_nm)} nm to go`;
+  if (r.left_nm != null) return `${num(r.left_nm)} nm to go`;
+  return "";
 }
 
 function showHero(el, a, state) {
@@ -113,10 +113,10 @@ function showHero(el, a, state) {
   }
   const r = a.route, pr = r && r.plausible ? r : null;
   const id = ident(a), info = typeInfo(a);
-  flap($("h-flight"), id);
+  flap($("h-flight"), boardFlight(id));
   const ga = info.shape === "piston" || info.shape === "heli" || /^N\d/.test(a.callsign || "");
   $("h-airline").textContent = (pr && pr.airline) || (r && r.airline) || a.airline || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
-  $("h-sub").innerHTML = [a.callsign !== id ? a.callsign : null, a.reg !== id ? a.reg : null, a.squawk ? "Squawk " + a.squawk : null].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("");
+  $("h-sub").innerHTML = [a.operated_by ? `Operated by ${a.operated_by}` : null, a.callsign !== id ? a.callsign : null].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("");
   const bh = badges(a.badges);
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
   $("h-pin").hidden = !state.pinned;
@@ -128,7 +128,7 @@ function showHero(el, a, state) {
     $("h-route").innerHTML = routeHtml(a, state);
     if (inferred) {
       const here = state.airport.iata;
-      flap($("h-orig"), a.local === "arriving" ? "???" : here); flap($("h-dest"), a.local === "arriving" ? here : "???");
+      flap($(a.local === "arriving" ? "h-dest" : "h-orig"), here);
     } else if (r) { flap($("h-orig"), r.origin.iata || "???"); flap($("h-dest"), r.dest.iata || "???"); }
   }
   if (r && !inferred) {
@@ -153,18 +153,13 @@ function showHero(el, a, state) {
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
   $("h-phase").textContent = a.local === "arriving" ? `Landing at ${state.airport.iata}` : a.local === "departing" ? `Climbing out of ${state.airport.iata}` : a.phase[0].toUpperCase() + a.phase.slice(1);
 
-  $("h-look").textContent = a.elev > 75 ? "Straight overhead" : a.elev < 2 ? `Look ${a.compass}, low on the horizon` : `Look ${a.compass}, ${Math.round(a.elev)}° up`;
-  $("h-hint").textContent = viewingHint(a);
-
   const sil = $("h-sil");
-  if (sil.dataset.shape !== info.shape + info.length) {
+  if (sil && sil.dataset.shape !== info.shape + info.length) {
     sil.dataset.shape = info.shape + info.length;
     sil.innerHTML = silhouette(info.shape);
     sil.firstElementChild.style.width = silhouetteScale(info.length) * 100 + "%";
   }
-  // with no route the type name is already the headline, so keep this line short
-  const name = r ? a.type_name || a.type : a.type;
-  $("h-type").textContent = [name, r && a.type_name && a.type ? `(${a.type})` : null].filter(Boolean).join(" ") + (info.known ? `, ${info.length} m long` : "");
+  renderFacts(a, state);
 
   if (a.photo && cur.photo !== a.photo) {
     // a photo of this very airframe replaces the generic silhouette once it has loaded
@@ -177,27 +172,32 @@ function showHero(el, a, state) {
     img.src = a.photo;
   }
   cur.a = a;
-  tickHero(0);
+  cur.state = state;
 }
 
-// Called every second: drains the countdown ring between data updates.
-export function tickHero(elapsed) {
-  const a = cur.a, ring = $("h-ring");
-  if (!a || !ring) return;
+// The short list beside the photo: times, aircraft, and when it passes the house.
+function renderFacts(a, state, elapsed = 0) {
+  const r = a.route && a.route.plausible ? a.route : null, rows = [];
+  if (r && r.departed) rows.push(["Departed", clock(r.departed)]);
+  if (r && r.landed) rows.push(["Landed", clock(r.landed)]);
+  else if (r && r.eta) rows.push(["Arrives", clock(r.eta)]);
+  else if (r && r.eta_est) rows.push(["Arrives", `about ${clock(r.eta_est)}`]);
+  else if (a.landing_est) rows.push(["Lands", `about ${clock(a.landing_est)}`]);
   const left = a.cpa_s - elapsed;
-  cur.cpa0 = Math.max(cur.cpa0, a.cpa_s, 30);
-  const box = $("h-countdown");
-  if (left > 3) {
-    ring.setAttribute("stroke-dasharray", `${clamp((left / cur.cpa0) * 100, 0, 100)} 100`);
-    $("h-count").textContent = mmss(left);
-    box.title = "time to closest pass";
-    box.classList.remove("gone");
-  } else {
-    ring.setAttribute("stroke-dasharray", "0 100");
-    $("h-count").textContent = "PAST";
-    box.classList.add("gone");
-  }
+  rows.push(["Overhead", left > 5 ? `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away` : a.dist < 1.5 ? "now" : "passed, heading away"]);
+  const type = a.type_name || a.type;
+  if (type && (r || a.local_inferred || a.route_pending)) rows.push(["Aircraft", type]);
+  if (a.reg) rows.push(["Registration", a.reg]);
+  const html = rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+  const dl = $("h-facts");
+  if (dl && dl._html !== html) dl.innerHTML = dl._html = html;
 }
+
+// Called every second between data updates, to keep the overhead countdown moving.
+export function tickHero(elapsed) {
+  if (cur.a && cur.state) renderFacts(cur.a, cur.state, elapsed);
+}
+
 
 // ---------- idle: rotate through a few quiet-sky displays ----------
 // ---- quiet sky: the next aircraft heading this way, or a calm summary ----

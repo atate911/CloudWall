@@ -82,9 +82,9 @@ def main():
     if fa and not args.demo:
         b = fa.budget()
         log.info("live routes: %s (%s mode) - %s", fa.label, fa.mode,
-                 f"{b['period_used']} of {b['period_budget']} lookups used this billing period "
+                 f"{b['period_used']} of {b['period_budget']} {fa.unit} used this billing period "
                  f"({fa.margin:.0%} of {fa.monthly_limit} held back), today's allowance {b['daily_limit']}"
-                 if b["period_budget"] is not None else f"up to {b['daily_limit']} lookups a day")
+                 if b["period_budget"] is not None else f"up to {b['daily_limit']} {fa.unit} a day")
     else:
         log.info("live routes: off (free route database only)")
     log.info("radar map: %s", f"{tiles.style} (cached in {tiles.dir})" if tiles.enabled else "off")

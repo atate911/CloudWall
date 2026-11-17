@@ -267,10 +267,10 @@ class FlightAwareTest(unittest.TestCase):
     def test_picks_the_airborne_leg_and_caches_airports(self):
         r = self.fa.route("SWA2327")
         self.assertEqual((r["origin"]["iata"], r["dest"]["iata"], r["flight"]), ("SMF", "PDX", "WN2327"))
-        self.assertAlmostEqual(r["dest"]["lat"], PDX[0])
-        self.assertEqual(self.fa.used_today(), 3)            # flight + two airports
+        self.assertAlmostEqual(r["dest"]["lat"], PDX[0], 3)
+        self.assertEqual(self.fa.used_today(), 1)            # airports came from the bundled table
         self.fa.route("SWA2327")
-        self.assertEqual(self.fa.used_today(), 4)            # airports came from the cache
+        self.assertEqual(self.fa.used_today(), 2)
 
     def test_just_departed_and_nothing_current(self):
         pick = self.mod.pick_flight
@@ -279,7 +279,7 @@ class FlightAwareTest(unittest.TestCase):
         self.assertIsNone(pick([fa_flight("PDX", "LAS", sched_off=0, cancelled=True)], time.time()))
 
     def test_daily_limit_stops_billing(self):
-        for _ in range(4):
+        for _ in range(5):
             self.fa.route("SWA2327")
         self.assertEqual(self.fa.used_today(), 5)
         self.assertFalse(self.fa.available())
@@ -313,7 +313,7 @@ class FlightAwareTest(unittest.TestCase):
         self.assertEqual(hero["local"], "arriving")
         row = self.store.query("SELECT origin, dest FROM sightings")[0]
         self.assertEqual((row["origin"], row["dest"]), ("SMF", "PDX"))
-        self.assertEqual(t.snapshot()["live_routes"]["used_today"], 3)
+        self.assertEqual(t.snapshot()["live_routes"]["used_today"], 1)
         json.dumps(t.snapshot())
 
 
@@ -321,9 +321,12 @@ class Flightradar24Test(unittest.TestCase):
     def setUp(self):
         from cloudwall import flightradar24, live
         self.calls, self.fail = [], None
-        self.row = {"fr24_id": "3a01b036", "flight": "WN2327", "callsign": "SWA2327", "lat": 45.6, "lon": -122.4,
-                    "orig_iata": "SMF", "orig_icao": "KSMF", "dest_iata": "PDX", "dest_icao": "KPDX",
-                    "eta": "2026-11-17T03:05:00Z", "type": "B737", "reg": "N7715E"}
+        # a flight-summary/light row for a flight in the air (field names from the API spec)
+        self.row = {"fr24_id": "3a01b036", "flight": "WN2327", "callsign": "SWA2327", "operating_as": "SWA",
+                    "painted_as": "SWA", "type": "B737", "reg": "N7715E", "orig_icao": "KSMF",
+                    "datetime_takeoff": "2026-11-17T02:41:09", "dest_icao": "KPDX", "datetime_landed": None,
+                    "hex": "a9c4b1", "flight_ended": False}
+        self.rows = [self.row]
 
         def fake(url, timeout=0, headers=None):
             self.calls.append(url)
@@ -331,59 +334,44 @@ class Flightradar24Test(unittest.TestCase):
             if self.fail:
                 import urllib.error
                 raise urllib.error.HTTPError(url, self.fail, "nope", None, None)
-            if "/static/airports/" in url:
-                code = url.split("/")[-2]
-                lat, lon = FlightAwareTest.COORDS[code]
-                return {"name": code + " Intl", "city": code, "icao": code, "lat": lat, "lon": lon}
-            return {"data": [self.row]}
+            return {"data": self.rows}
 
         self.live, self.real = live, live.get_json
         live.get_json = fake
         self.store = Store(":memory:")
         cfg = config.load()
-        cfg["flightradar24"] = dict(cfg["flightradar24"], api_key="tok")
+        cfg["flightradar24"] = dict(cfg["flightradar24"], api_key="tok", sandbox=True)   # sandbox: no usage thread
         self.fr = flightradar24.Flightradar24(cfg, self.store)
+        self.fr.sandbox = False                                                           # but parse like production
 
     def tearDown(self):
         self.live.get_json = self.real
 
-    def test_route_and_airport_cache(self):
+    def test_route_from_flight_summary(self):
         r = self.fr.route("SWA2327")
         self.assertEqual((r["origin"]["iata"], r["dest"]["iata"], r["flight"]), ("SMF", "PDX", "WN2327"))
-        self.assertAlmostEqual(r["dest"]["lon"], PDX[1])
-        self.assertEqual(r["source_label"], "Flightradar24")
-        self.assertGreater(r["eta"], 1.7e9)
-        self.assertIn("/live/flight-positions/full?callsigns=SWA2327", self.calls[0])
-        self.fr.route("SWA2327")
-        self.assertEqual(self.fr.used_today(), 4)             # flight + 2 airports, then flight only
+        self.assertEqual((r["origin"]["city"], r["dest"]["city"]), ("Sacramento", "Portland"))
+        self.assertAlmostEqual(r["dest"]["lon"], PDX[1], 1)                  # from the bundled airport table
+        self.assertEqual(r["departed"], 1794883269.0)                        # 02:41:09 UTC
+        self.assertIn("/flight-summary/light?", self.calls[0])
+        self.assertIn("callsigns=SWA2327", self.calls[0])
+        self.assertIn("limit=1", self.calls[0])
+        self.assertEqual(len(self.calls), 1)                                 # no paid airport lookups
+        self.assertEqual(self.fr.used_today(), 1)                            # a live flight costs 1 credit
 
-    def test_airport_field_variants_and_missing_coordinates(self):
-        from cloudwall import flightradar24 as F
-        self.assertEqual(F._airport_info({"name": "Reagan", "position": {"latitude": 38.85, "longitude": -77.04,
-                                                                         "region": {"city": "Washington"}}}),
-                         {"city": "Washington", "name": "Reagan", "lat": 38.85, "lon": -77.04})
-        self.assertEqual(F._airport_info({"data": {"name": "X", "latitude": "1.5", "longitude": "2"}})["lat"], 1.5)
-        self.assertIsNone(F._airport_info({"name": "no position"}))
-        # if the airport lookup gives nothing, the route still works, with PDX filled in locally
-        orig = F.Flightradar24._airport
-        F.Flightradar24._airport = lambda self, icao, iata: {"iata": iata, "city": None, "name": None, "lat": None, "lon": None}
-        try:
-            self.row.update(orig_iata="DCA", orig_icao="KDCA")
-            r = self.fr.route("SWA2327")
-        finally:
-            F.Flightradar24._airport = orig
-        t = Tracker(config.load(), self.store, StubEnricher())
-        a = plane("a1", "SWA2327", 1.0)
-        t._derive(a)
-        g = t._with_geometry(a, r)
-        self.assertEqual((g["dest"]["city"], g["progress"], g["flown_nm"]), ("Portland", None, None))
-        self.assertGreater(g["left_nm"], 0)
-        self.assertTrue(g["plausible"])
+    def test_costs_follow_the_price_list(self):
+        self.rows = []
+        self.assertIsNone(self.fr.route("ASA1"))                             # empty result: 1 credit
+        self.assertEqual(self.fr.used_today(), 1)
+        self.rows = [dict(self.row, flight_ended=True)]
+        self.assertIsNone(self.fr.route("SWA2327"))                          # finished flight: 2 credits, no route
+        self.assertEqual(self.fr.used_today(), 3)
 
-    def test_no_match_and_no_destination(self):
-        self.assertIsNone(self.fr.route("ASA1"))               # a different flight came back
-        self.row["dest_icao"] = self.row["dest_iata"] = None
-        self.assertIsNone(self.fr.route("SWA2327"))
+    def test_diversion_and_unknown_airport(self):
+        self.rows = [dict(self.row, dest_icao_actual="KSEA", orig_icao="ZZZZ")]
+        r = self.fr.route("SWA2327")
+        self.assertEqual(r["dest"]["iata"], "SEA")                           # diverted: show where it's really going
+        self.assertEqual((r["origin"]["iata"], r["origin"]["lat"]), ("ZZZZ", None))
 
     def test_rejected_key_pauses_without_spending(self):
         self.fail = 401
@@ -393,7 +381,16 @@ class Flightradar24Test(unittest.TestCase):
         self.assertEqual(self.fr.status()["problem"], "API key rejected")
         n = len(self.calls)
         self.fr.route("SWA2327")
-        self.assertEqual(len(self.calls), n)                   # backing off: nothing sent
+        self.assertEqual(len(self.calls), n)                                 # backing off: nothing sent
+
+    def test_never_starts_a_request_it_cannot_afford(self):
+        import datetime as dt
+        self.fr.monthly_limit, self.fr.margin = 1000, 0.15                   # budget 850
+        self.fr._today = lambda: dt.date(2026, 11, 30)                       # last day of the period
+        self.store.cache_put("flightradar24_usage", "2026-11-05", 849)
+        self.assertFalse(self.fr.available())                                # 849 + up to 2 would pass 850
+        self.assertIsNone(self.fr.route("SWA2327"))
+        self.assertEqual(self.calls, [])
 
 
 class DemoTest(unittest.TestCase):
@@ -651,4 +648,31 @@ class BudgetTest(unittest.TestCase):
         p, _ = self.provider(dt.date(2026, 11, 1), monthly_limit=15000, daily_limit=200)
         self.assertEqual(p.budget()["daily_limit"], 200)
         p2, _ = self.provider(dt.date(2026, 11, 1))                           # no monthly limit set
-        self.assertEqual(p2.budget()["daily_limit"], 100)
+        self.assertEqual(p2.budget()["daily_limit"], 300)
+
+
+class PresentationDataTest(unittest.TestCase):
+    def setUp(self):
+        self.store = Store(":memory:")
+        self.enricher = StubEnricher()
+        self.t = Tracker(config.load(), self.store, self.enricher)
+
+    def test_flight_number_and_partner_airline(self):
+        from cloudwall.logos import flight_number
+        self.assertEqual([flight_number(c) for c in ("ASA508", "SKW3108", "DAL0012", "N733NV")], ["AS508", "OO3108", "DL12", None])
+        apt = lambda code, ll: {"iata": code, "city": code, "lat": ll[0], "lon": ll[1]}
+        self.enricher.routes["SKW3108"] = {"flight": "AS3108", "airline": None, "source": "fr24", "painted_as": "ASA",
+                                           "operating_as": "SKW", "origin": apt("PSP", (33.83, -116.51)), "dest": apt("PDX", PDX)}
+        self.t.update([plane("a1", "SKW3108", 1.0, typ="E75L")], "test")
+        a = self.t.snapshot()["hero"]
+        self.assertEqual((a["flight_no"], a["airline"], a["operated_by"], a["airline_iata"]),
+                         ("AS3108", "Alaska Airlines", "SkyWest Airlines", "AS"))
+        self.assertGreater(a["route"]["eta_est"], time.time())
+
+    def test_brief_feed_outage_is_not_a_warning(self):
+        self.t.update([plane("a1", "ASA1", 1.0)], "test")
+        self.t.failed("test", "timeout")
+        self.assertTrue(self.t.snapshot()["status"]["ok"])
+        self.t.status["updated"] -= 40
+        self.t.failed("test", "timeout")
+        self.assertFalse(self.t.snapshot()["status"]["ok"])

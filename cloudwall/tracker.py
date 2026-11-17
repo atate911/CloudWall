@@ -7,7 +7,7 @@ import time
 from collections import deque
 
 from . import geo
-from .logos import iata_for
+from .logos import AIRLINE_NAMES, flight_number, iata_for
 
 RARE_TYPES = {
     "A388", "B741", "B742", "B744", "B748", "BLCF", "A3ST", "A337", "A342", "A343", "A345",
@@ -90,6 +90,8 @@ class Tracker:
         free = self.enricher.route(a.get("callsign"))
         if free and free.get("airline"):
             a["airline"] = free["airline"]      # the airline is reliable even when the route isn't
+        elif (a.get("callsign") or "")[:3] in AIRLINE_NAMES and re.match(r"^[A-Z]{3}\d", a["callsign"]):
+            a["airline"] = AIRLINE_NAMES[a["callsign"][:3]]
         a["airline_iata"] = iata_for(a.get("callsign"), (free or {}).get("airline_iata"))
         route = self._with_geometry(a, free)
         state, live = self._live_route(a, route)
@@ -101,6 +103,7 @@ class Tracker:
             a["route_pending"] = True
         if route:
             a["route"] = route
+            self._airline_from_route(a, route)
             iata = self.cfg["airport"]["iata"]
             if route["plausible"]:
                 a["local"] = ("arriving" if route["dest"]["iata"] == iata else
@@ -108,6 +111,22 @@ class Tracker:
         if not a.get("local"):
             a["local"] = self._infer_local(a)
             a["local_inferred"] = bool(a["local"])
+        if a["local"] == "arriving" and not (a.get("route") and a["route"].get("plausible")):
+            # no believable route, but it's on approach here: estimate the landing from the runway distance
+            ap = self.cfg["airport"]
+            a["landing_est"] = self._eta_estimate(a, geo.haversine_nm(a["lat"], a["lon"], ap["lat"], ap["lon"]), ap)
+        r = a.get("route")
+        a["flight_no"] = (r["flight"] if r and r.get("plausible") and r.get("source") else None) \
+            or flight_number(a.get("callsign")) or (r["flight"] if r and r.get("plausible") else None)
+
+    def _airline_from_route(self, a, route):
+        """A regional partner flying for a bigger airline (SkyWest as Alaska): show the airline
+        you'd book with, and say who operates it."""
+        painted, operating = route.get("painted_as"), route.get("operating_as")
+        if painted and operating and painted != operating:
+            a["airline_iata"] = iata_for(painted + "1") or a.get("airline_iata")
+            a["airline"] = AIRLINE_NAMES.get(painted) or a.get("airline")
+            a["operated_by"] = AIRLINE_NAMES.get(operating) or operating
 
     def _infer_local(self, a):
         """No believable route: the aircraft's own behaviour near the airport still
@@ -150,7 +169,7 @@ class Tracker:
             pct = route.get("progress_percent")
             left = (geo.haversine_nm(a["lat"], a["lon"], d["lat"], d["lon"]) if d.get("lat") is not None else None)
             return dict(route, flown_nm=None, left_nm=left, plausible=True,
-                        progress=pct / 100 if pct is not None else None)
+                        progress=pct / 100 if pct is not None else None, eta_est=self._eta_estimate(a, left, d))
         flown = geo.haversine_nm(o["lat"], o["lon"], a["lat"], a["lon"])
         left = geo.haversine_nm(a["lat"], a["lon"], d["lat"], d["lon"])
         plausible = geo.route_plausible(o["lat"], o["lon"], d["lat"], d["lon"], a["lat"], a["lon"])
@@ -159,8 +178,16 @@ class Tracker:
         if (ap["iata"] not in (o["iata"], d["iata"]) and a["alt"] is not None and a["alt"] < 7000
                 and geo.haversine_nm(ap["lat"], ap["lon"], a["lat"], a["lon"]) < 20):
             plausible = False
-        return dict(route, flown_nm=flown, left_nm=left,
-                    progress=flown / max(flown + left, 1), plausible=plausible)
+        return dict(route, flown_nm=flown, left_nm=left, progress=flown / max(flown + left, 1),
+                    plausible=plausible, eta_est=self._eta_estimate(a, left, d))
+
+    def _eta_estimate(self, a, left_nm, dest):
+        """Rough landing time from distance and ground speed, when the provider gives none.
+        Aircraft slow down for the approach, so add a few minutes near the end."""
+        gs = a.get("gs") or 0
+        if a["on_ground"] or gs < 80 or left_nm is None:
+            return None
+        return time.time() + left_nm / gs * 3600 * 1.08 + (180 if left_nm < 60 else 600)
 
     def _live_route(self, a, free_route):
         """Route from the paid provider (Flightradar24 / FlightAware), which knows the
@@ -345,8 +372,11 @@ class Tracker:
             self.status = {"source": source, "ok": True, "updated": now, "error": None}
 
     def failed(self, source, error):
+        """One missed update isn't worth a warning on screen; 30 seconds without data is."""
         with self.lock:
-            self.status.update(source=source, ok=False, error=str(error))
+            self.status.update(source=source, error=str(error))
+            if time.time() - self.status["updated"] > 30:
+                self.status["ok"] = False
 
     def pin(self, hexid):
         with self.lock:

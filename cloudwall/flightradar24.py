@@ -1,110 +1,121 @@
-"""Optional live routes from the official Flightradar24 API. Needs a subscription token;
-each lookup spends credits."""
-import logging
-from datetime import datetime
-from urllib.parse import quote
+"""Live routes from the official Flightradar24 API.
 
-from .live import YEAR, LiveProvider
+Routes come from the flight-summary endpoint, which reports the flight actually in the
+air (origin, destination, takeoff time, operating and marketing airline) for 1 credit,
+an eighth of what the live-positions endpoint costs. Airport details come from the
+bundled airport table instead of the 50-credit airport endpoint.
+
+Published prices (credits): flight-summary/light 1 per live flight returned, 2 per
+finished flight up to 30 days old, and 1 for an empty result."""
+import datetime as dt
+import logging
+import threading
+import time
+from urllib.parse import quote, urlencode
+
+from . import airports
+from .http import get_json
+from .live import LiveProvider
 
 log = logging.getLogger("cloudwall.flightradar24")
 BASE = "https://fr24api.flightradar24.com/api"
+USAGE_EVERY = 3600
 
 
 def _ts(value):
     if isinstance(value, (int, float)):
         return float(value)
     try:
-        return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp() if value else None
+        v = value.replace("Z", "+00:00") if value else None
+        d = dt.datetime.fromisoformat(v) if v else None
+        if d and d.tzinfo is None:
+            d = d.replace(tzinfo=dt.timezone.utc)       # the API's times are UTC
+        return d.timestamp() if d else None
     except (ValueError, AttributeError):
         return None
 
 
-def _first(d, *paths):
-    """The first value found among several possible field paths, e.g. "lat" or "position.latitude"."""
-    for path in paths:
-        v = d
-        for part in path.split("."):
-            v = v.get(part) if isinstance(v, dict) else None
-        if v not in (None, ""):
-            return v
-    return None
-
-
-def _airport_info(d):
-    if isinstance(d, dict) and isinstance(d.get("data"), dict):
-        d = d["data"]                       # some endpoints wrap the record
-    lat = _first(d, "lat", "latitude", "position.latitude", "position.lat", "location.lat", "location.latitude")
-    lon = _first(d, "lon", "lng", "longitude", "position.longitude", "position.lon", "location.lon", "location.longitude")
-    if lat is None or lon is None:
-        return None
-    return {"city": _first(d, "city", "municipality", "location.city", "position.region.city", "position.city"),
-            "name": _first(d, "name", "airport_name"), "lat": float(lat), "lon": float(lon)}
+def summary_cost(data):
+    """Credits a flight-summary/light response cost, per Flightradar24's price list."""
+    rows = (data or {}).get("data") or []
+    if not rows:
+        return 1
+    return sum(1 if not r.get("flight_ended") else 2 for r in rows)
 
 
 class Flightradar24(LiveProvider):
     name, label, env_key = "flightradar24", "Flightradar24", "CLOUDWALL_FR24_KEY"
-    default_limit = 100
+    unit = "credits"
+    default_daily = 300
+    max_cost = 2          # one row, which costs 2 if it turns out to be a finished flight
 
     def __init__(self, cfg, store):
         super().__init__(cfg, store)
         self.sandbox = bool(cfg.get(self.name, {}).get("sandbox", False))
         self.base = f"{BASE}/sandbox" if self.sandbox else BASE
+        self._usage_at = 0
+        if self.enabled and not self.sandbox:
+            threading.Thread(target=self._usage_loop, daemon=True).start()
 
     def headers(self):
         return {"Authorization": f"Bearer {self.key}", "Accept-Version": "v1"}
 
-    def _airport(self, icao, iata):
-        """Live results carry airport codes only; fetch name and coordinates once and keep them."""
-        out = {"iata": iata or icao, "city": None, "name": None, "lat": None, "lon": None}
-        code = icao or iata
-        if not code:
-            return out
-        hit, info = self.store.cache_get("fr24_airport", code, YEAR)
-        if not hit:
+    # -- what Flightradar24 says we've spent ------------------------------------
+    def _usage_loop(self):
+        while True:
             try:
-                d = self._call(f"{self.base}/static/airports/{quote(code)}/full")
+                self.reported = self.fetch_usage()
             except Exception as e:
-                log.warning("airport %s lookup failed: %s", code, e)
-                d = None
-            info = _airport_info(d) if d else None
-            if info:
-                log.info("Flightradar24: airport %s is %s (%s)", code, info["name"], info["city"])
-                self.store.cache_put("fr24_airport", code, info)
-            elif d is not None:
-                log.warning("Flightradar24: airport %s returned no coordinates; fields: %s", code,
-                            ", ".join(sorted(d)) if isinstance(d, dict) else type(d).__name__)
-        if info:
-            out.update(info)
+                log.info("Flightradar24 usage check failed: %s", e)
+            time.sleep(USAGE_EVERY)
+
+    def fetch_usage(self):
+        out = {}
+        for period in ("24h", "30d"):
+            data = get_json(f"{self.base}/usage?period={period}", headers=self.headers()) or {}
+            out[period] = sum(int(r.get("credits") or 0) for r in data.get("data") or [])
+        out["checked"] = time.time()
+        log.info("Flightradar24 reports %s credits used in the last 24 h, %s in 30 days", out["24h"], out["30d"])
         return out
 
+    # -- routes -----------------------------------------------------------------
     def route(self, callsign):
-        """Live route for a callsign, or None if Flightradar24 isn't tracking it with a route."""
-        data = self._call(f"{self.base}/live/flight-positions/full?callsigns={quote(callsign)}")
+        """Route of the flight in the air now with this callsign, or None."""
+        now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+        q = {"callsigns": callsign, "flight_datetime_from": (now - dt.timedelta(hours=14)).strftime("%Y-%m-%dT%H:%M:%S"),
+             "flight_datetime_to": now.strftime("%Y-%m-%dT%H:%M:%S"), "sort": "desc", "limit": 1}
+        data = self._call(f"{self.base}/flight-summary/light?{urlencode(q)}", actual_cost=summary_cost)
         if data is None:
-            return None                         # over the daily cap, paused, or nothing returned
+            return None                         # over budget, paused, or nothing returned
         rows = data.get("data") or []
         f = next((r for r in rows if (r.get("callsign") or "").strip().upper() == callsign), None)
-        if f is None and len(rows) == 1 and self.sandbox:
+        if f is None and rows and self.sandbox:
             f = rows[0]          # the sandbox returns fixed sample data whatever you ask for
-        # Say what came back, so a wrong guess about the response format is easy to spot.
+        # Say what came back, so a surprise in the response is easy to spot.
         if not rows:
-            log.info("Flightradar24: no live flight found for %s", callsign)
+            log.info("Flightradar24: no flight found for %s", callsign)
             return None
         if f is None:
             log.warning("Flightradar24: %d result(s) for %s but none with that callsign; fields: %s",
                         len(rows), callsign, ", ".join(sorted(rows[0])))
             return None
-        if not (f.get("orig_icao") or f.get("orig_iata")) or not (f.get("dest_icao") or f.get("dest_iata")):
+        if f.get("flight_ended"):
+            log.info("Flightradar24: latest %s flight has already landed; the current one isn't tracked yet", callsign)
+            return None
+        orig = f.get("orig_icao") or f.get("origin_icao") or f.get("orig_iata")
+        dest = (f.get("dest_icao_actual") or f.get("destination_icao_actual") or f.get("dest_icao")
+                or f.get("destination_icao") or f.get("dest_iata"))
+        if not orig or not dest:
             log.warning("Flightradar24: %s found but without origin/destination; fields: %s",
                         callsign, ", ".join(sorted(f)))
             return None
-        log.info("Flightradar24: %s is %s -> %s", callsign, f.get("orig_iata") or f.get("orig_icao"),
-                 f.get("dest_iata") or f.get("dest_icao"))
+        o, d = airports.describe(icao=orig), airports.describe(icao=dest)
+        log.info("Flightradar24: %s is %s -> %s", callsign, o["iata"], d["iata"])
         return {
             "flight": f.get("flight") or callsign, "airline": None,
             "source": self.name, "source_label": self.label,
-            "origin": self._airport(f.get("orig_icao"), f.get("orig_iata")),
-            "dest": self._airport(f.get("dest_icao"), f.get("dest_iata")),
-            "eta": _ts(f.get("eta")), "arrival_delay_s": None, "status": None,
-            "progress_percent": None, "route_nm": None,
+            "origin": o, "dest": d,
+            "departed": _ts(f.get("datetime_takeoff")), "landed": _ts(f.get("datetime_landed")),
+            "eta": None, "arrival_delay_s": None, "status": None, "progress_percent": None, "route_nm": None,
+            "operating_as": f.get("operating_as") or f.get("operated_as"), "painted_as": f.get("painted_as"),
         }

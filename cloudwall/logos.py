@@ -35,6 +35,22 @@ ICAO_TO_IATA = {
     "AUA": "OS", "EIN": "EI", "LOT": "LO", "ETH": "ET", "ETD": "EY", "GJS": "G7", "CPZ": "OH",
     "EDV": "9E", "PDT": "PT", "JIA": "OH", "SCE": "YR", "MXY": "MX", "VXP": "XP", "BRZ": "",
 }
+# Names for the airlines above, for "operated by" lines and when the route database is silent.
+AIRLINE_NAMES = {
+    "ASA": "Alaska Airlines", "QXE": "Horizon Air", "SKW": "SkyWest Airlines", "SWA": "Southwest Airlines",
+    "DAL": "Delta Air Lines", "UAL": "United Airlines", "AAL": "American Airlines", "ENY": "Envoy Air",
+    "RPA": "Republic Airways", "ASH": "Mesa Airlines", "JBU": "JetBlue", "NKS": "Spirit Airlines",
+    "FFT": "Frontier Airlines", "HAL": "Hawaiian Airlines", "AAY": "Allegiant Air", "SCX": "Sun Country Airlines",
+    "FDX": "FedEx", "UPS": "UPS Airlines", "ABX": "ABX Air", "ATN": "Air Transport International",
+    "GTI": "Atlas Air", "CKS": "Kalitta Air", "PAC": "Polar Air Cargo", "AMF": "Ameriflight",
+    "BAW": "British Airways", "DLH": "Lufthansa", "ICE": "Icelandair", "ACA": "Air Canada", "JZA": "Jazz",
+    "ROU": "Air Canada Rouge", "WJA": "WestJet", "WEN": "WestJet Encore", "VOI": "Volaris", "AMX": "Aeroméxico",
+    "KLM": "KLM", "AFR": "Air France", "ANA": "All Nippon Airways", "JAL": "Japan Airlines", "KAL": "Korean Air",
+    "UAE": "Emirates", "QTR": "Qatar Airways", "CPA": "Cathay Pacific", "EVA": "EVA Air", "SIA": "Singapore Airlines",
+    "VIR": "Virgin Atlantic", "CFG": "Condor", "QFA": "Qantas", "ANZ": "Air New Zealand", "EDV": "Endeavor Air",
+    "GJS": "GoJet", "CPZ": "Compass Airlines", "MXY": "Breeze Airways",
+}
+
 # Brands that fly under another airline's name and have no logo of their own.
 SAME_AS = {"QX": "AS"}
 
@@ -87,3 +103,12 @@ class Logos:
             except Exception as e:
                 log.warning("logo %s unavailable: %s", code, e)
         return path.read_bytes() if path.exists() else None
+
+
+def flight_number(callsign):
+    """'ASA508' -> 'AS508': the airline-code form shown on departure boards, or None."""
+    m = re.match(r"^([A-Z]{3})0*(\d{1,4}[A-Z]?)$", callsign or "")
+    if not m:
+        return None
+    code = ICAO_TO_IATA.get(m.group(1))
+    return f"{code}{m.group(2)}" if code else None

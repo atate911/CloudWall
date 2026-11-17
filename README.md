@@ -90,11 +90,19 @@ your config and restart:
 ```toml
 [flightradar24]        # or [flightaware]
 api_key = "your-token"
-monthly_limit = 15000  # lookups your plan includes per billing period
+monthly_credits = 30000  # credits your plan includes per billing period (Explorer: 30000)
 safety_margin = 0.15   # held back and never used: plans for 85% of the allowance
 billing_day = 1        # day of the month your plan renews
 mode = "always"        # live routes for every airliner near the house
 ```
+
+Flightradar24 routes come from its flight-summary endpoint, which costs 1 credit per
+flight (the live-positions endpoint costs 8), and include the actual takeoff time;
+airport details come from a bundled airport table (airportsdata, MIT licence) rather than
+the 50-credit airport endpoint. CloudWall works out each request's cost from Flightradar24's
+price list, and checks its total against Flightradar24's own usage report every hour.
+Flightradar24 doesn't offer scheduled departure or arrival times, so arrival times shown
+are estimates unless the flight has landed.
 
 Lookups are billed, so CloudWall is frugal with them:
 

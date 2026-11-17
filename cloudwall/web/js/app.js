@@ -36,14 +36,16 @@ function boardHtml() {
 
 // ---------- logbook ----------
 function budgetLine(fa) {
-  const parts = [`${esc(fa.label)} lookups today: ${num(fa.used_today)}${fa.daily_limit != null ? ` of ${num(fa.daily_limit)} allowed` : ""}`];
+  const u = fa.unit || "lookups";
+  const parts = [`${esc(fa.label)} ${u} used today: ${num(fa.used_today)}${fa.daily_limit != null ? ` of ${num(fa.daily_limit)} allowed` : ""}`];
   if (fa.period_budget != null) {
     parts.push(`${num(fa.period_used)} of ${num(fa.period_budget)} this billing period (${Math.round(fa.margin * 100)}% of ${num(fa.monthly_limit)} held back, resets ${esc(fa.resets)})`);
   }
+  if (fa.reported) parts.push(`${esc(fa.label)} itself reports ${num(fa.reported["24h"])} ${u} in the last 24 hours and ${num(fa.reported["30d"])} in 30 days`);
   if (fa.problem) parts.push(`paused: ${esc(fa.problem)}`);
   else if (fa.period_budget != null && fa.period_used >= fa.period_budget) parts.push("budget used up: free routes until the period resets");
   else if (fa.daily_limit != null && fa.used_today >= fa.daily_limit) parts.push("today's share used: free routes until midnight");
-  return parts.join(" · ");
+  return parts.join(". ") + ".";
 }
 
 async function loadLog() {
@@ -71,7 +73,6 @@ async function loadLog() {
 }
 
 // ---------- scope: sky dome while something is overhead, radar otherwise ----------
-const SCOPE_MODES = ["auto", "sky", "radar"];
 function scopeMode() {
   const pref = store("scope") || "auto";
   return pref === "auto" ? (state && state.hero ? "sky" : "radar") : pref;
@@ -80,13 +81,13 @@ let scopeLabel = "";
 function drawScopeNow(now = performance.now()) {
   if (!state || view !== "now") return;
   const mode = scopeMode(), pref = store("scope") || "auto";
-  const label = pref === "auto" ? `Auto · ${mode === "sky" ? "Sky view" : "Radar"}` : mode === "sky" ? "Sky view" : "Radar";
   const bm = state.basemap, credit = mode === "radar" && bm && bm.enabled ? bm.attribution : "";
-  if (label + credit !== scopeLabel) {
-    scopeLabel = label + credit;
+  const label = pref + mode + credit;
+  if (label !== scopeLabel) {
+    scopeLabel = label;
+    document.querySelectorAll("#scope-seg button").forEach((b) => b.classList.toggle("on", b.dataset.mode === pref));
     $("scope-attrib").textContent = credit;
-    $("scope-mode").textContent = label;
-    $("scope-caption").textContent = mode === "sky" ? "Centre is straight up · edge is the horizon" : `${state.tracking.radius_nm} nm around home`;
+    $("scope-caption").textContent = mode === "sky" ? "Sky view: the middle is straight up, the edge is the horizon" : `Radar: ${state.tracking.radius_nm} nm around home`;
   }
   drawScope($("radar"), state, now, stateAtPerf, mode);
 }
@@ -161,7 +162,7 @@ document.querySelector("nav").addEventListener("click", (e) => { const b = e.tar
 $("board").addEventListener("click", (e) => { const r = e.target.closest("tr[data-hex]"); if (r) { pin(r.dataset.hex); setView("now"); } });
 $("radar").addEventListener("click", (e) => { const g = e.target.closest("g[data-hex]"); if (g) pin(g.dataset.hex); });
 $("hero").addEventListener("click", () => { if (!state) return; if (state.pinned) pin(null); else if (!state.hero) { nextSlide(); render(); } });
-$("scope-mode").addEventListener("click", () => { store("scope", SCOPE_MODES[(SCOPE_MODES.indexOf(store("scope") || "auto") + 1) % 3]); });
+$("scope-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("scope", b.dataset.mode); scopeLabel = ""; } });
 $("btn-sound").addEventListener("click", () => { setSound(!soundOn()); renderToggles(); });
 $("btn-night").addEventListener("click", () => { const m = ["auto", "on", "off"]; store("night", m[(m.indexOf(store("night") || "auto") + 1) % 3]); render(); });
 

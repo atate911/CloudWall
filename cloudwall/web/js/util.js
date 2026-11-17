@@ -7,7 +7,7 @@ export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const RAD = Math.PI / 180;
 export const POINTS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
 
-export const ident = (a) => (a.route && a.route.plausible && a.route.flight) || a.callsign || a.reg || a.hex.toUpperCase();
+export const ident = (a) => a.flight_no || a.callsign || a.reg || a.hex.toUpperCase();
 export const altText = (a) => (a.on_ground ? "GND" : a.alt == null ? "–" : num(a.alt));
 
 // Where the aircraft will be `dt` seconds from its last report, holding track and speed.

@@ -17,6 +17,7 @@ export function flap(el, text, animate = true) {
   }
   [...text].forEach((ch, i) => {
     const tile = el.children[i];
+    tile.classList.toggle("sp", ch === " ");
     clearTimeout(tile._timer);
     if (!animate || tile.textContent === ch) { tile.textContent = ch; return; }
     let steps = 3 + Math.floor(Math.random() * 3) + Math.min(i, 4);   // later tiles settle a beat later

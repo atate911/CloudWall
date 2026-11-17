@@ -1,4 +1,7 @@
-"""Shared plumbing for paid live-route providers: API key, budget, back-off."""
+"""Shared plumbing for paid live-route providers: API key, credit budget, back-off.
+
+Budgets are in the provider's billing units: Flightradar24 credits (each request's cost
+is worked out from its published price list), or FlightAware queries."""
 import calendar
 import datetime as dt
 import logging
@@ -30,17 +33,19 @@ class LiveProvider:
     name = ""            # config section and cache prefix
     label = ""           # shown in the UI
     env_key = ""
-    default_limit = 30
+    unit = "queries"     # what the budget counts
+    default_daily = 30   # daily cap when no monthly budget is set
+    max_cost = 1         # the most a single route lookup can cost
 
     def __init__(self, cfg, store):
         c = cfg.get(self.name, {})
         self.key = os.environ.get(self.env_key) or c.get("api_key") or ""
         # A monthly allowance (with a safety margin held back) is spread over the days left
         # in the billing period; daily_limit is an optional extra ceiling per day.
-        self.monthly_limit = int(c.get("monthly_limit", 0) or 0)
+        self.monthly_limit = int(c.get("monthly_credits") or c.get("monthly_limit") or 0)
         self.margin = min(0.9, max(0.0, float(c.get("safety_margin", 0.15))))
         self.billing_day = min(28, max(1, int(c.get("billing_day", 1) or 1)))
-        self.daily_cap = int(c.get("daily_limit", 0) or 0) or (0 if self.monthly_limit else self.default_limit)
+        self.daily_cap = int(c.get("daily_limit", 0) or 0) or (0 if self.monthly_limit else self.default_daily)
         self.mode = c.get("mode", "always")
         self.general_aviation = bool(c.get("general_aviation", False))
         self.store = store
@@ -48,6 +53,7 @@ class LiveProvider:
         self.enabled = bool(self.key)
         self.blocked_until = 0
         self.problem = None
+        self.reported = None          # the provider's own usage figures, where it offers them
 
     def headers(self):
         raise NotImplementedError
@@ -85,38 +91,47 @@ class LiveProvider:
         out["daily_limit"] = allowance
         return out
 
-    def available(self):
+    def available(self, cost=None):
+        """Is there room for a request costing up to `cost` (default: a route lookup)?"""
+        cost = self.max_cost if cost is None else cost
         if not self.enabled or time.time() < self.blocked_until:
             return False
         b = self.budget()
-        if b["period_budget"] is not None and b["period_used"] >= b["period_budget"]:
+        if b["period_budget"] is not None and b["period_used"] + cost > b["period_budget"]:
             return False
-        return b["daily_limit"] is None or b["used_today"] < b["daily_limit"]
+        return b["daily_limit"] is None or b["used_today"] + cost <= b["daily_limit"]
 
     def status(self):
         blocked = time.time() < self.blocked_until
         b = self.budget() if self.enabled else {"used_today": 0, "daily_limit": self.daily_cap}
         return {"name": self.name, "label": self.label, "enabled": self.enabled, "mode": self.mode,
-                "margin": self.margin, **b, "problem": self.problem if blocked else None}
+                "unit": self.unit, "margin": self.margin, **b, "reported": self.reported,
+                "problem": self.problem if blocked else None}
 
     def _count(self, n):
         self.store.cache_put(f"{self.name}_usage", self._day(), max(0, self.used_today() + n))
 
-    def _call(self, url):
-        """One billed request. Returns None without calling when over the cap or backing off."""
+    def _call(self, url, cost=None, actual_cost=None):
+        """One billed request. `cost` is set aside before calling (the most it can cost);
+        `actual_cost(data)` works out what the response really cost, and the difference is
+        given back. Returns None without calling when over budget or backing off."""
+        cost = self.max_cost if cost is None else cost
         with self.lock:
-            if not self.available():
+            if not self.available(cost):
                 return None
-            self._count(1)   # count first: a request that reaches the provider is billed
+            self._count(cost)     # count first: a request that reaches the provider is billed
         try:
             data = get_json(url, headers=self.headers())
             self.problem = None
+            if actual_cost:
+                with self.lock:
+                    self._count(actual_cost(data) - cost)
             return data
         except urllib.error.HTTPError as e:
             if e.code in (401, 402, 403, 429):
                 # rejected before any work was done: not billed, and no point hammering
                 with self.lock:
-                    self._count(-1)
+                    self._count(-cost)
                 wait = 60 if e.code == 429 else 3600
                 self.problem = {401: "API key rejected", 402: "out of credits", 403: "not allowed on this plan",
                                 429: "rate limited"}[e.code]

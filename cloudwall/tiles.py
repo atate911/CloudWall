@@ -45,7 +45,7 @@ class Tiles:
         url, attribution = STYLES.get(self.style, ("", ""))
         self.url = m.get("url") or url
         self.attribution = m.get("attribution") or attribution
-        self.opacity = float(m.get("opacity", 0.5))
+        self.opacity = float(m.get("opacity", 0.32))
         self.enabled = self.style != "off" and bool(self.url)
         self.home = cfg["home"]
         # only serve the area around home, so the proxy can't be used to scrape a whole map

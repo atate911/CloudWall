@@ -46,8 +46,8 @@ body.night {
 
 * { box-sizing: border-box; margin: 0; }
 /* one knob scales everything from a 7" desk screen to a wall monitor */
-html { font-size: clamp(9px, 0.95vw + 1.1vh, 26px); }
-body { background: var(--paper); color: var(--ink); font-family: var(--sans); height: 100vh; overflow: hidden;
+html { font-size: clamp(8px, min(1.32vw, 2.25vh), 26px); }
+body { overflow-x: hidden; background: var(--paper); color: var(--ink); font-family: var(--sans); height: 100vh; overflow: hidden;
   display: grid; grid-template-rows: auto 1fr auto; user-select: none; -webkit-tap-highlight-color: transparent;
   cursor: default; -webkit-font-smoothing: antialiased; transition: background-color 1.5s, color 1.5s; }
 button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; }
@@ -60,7 +60,9 @@ button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 header { display: flex; align-items: center; gap: 1.4rem; padding: .7rem 1.4rem .5rem; }
 .brand { font-weight: 700; font-size: 1rem; letter-spacing: .01em; }
 .chips { display: flex; gap: 1.4rem; flex: 1; min-width: 0; overflow: hidden; }
-.chip { font-size: .8rem; color: var(--ink-2); white-space: nowrap; }
+.icon-btn, .clock { flex: none; }
+.chip { font-size: .8rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.chip[hidden] { display: none; }
 .chip b { font-weight: 700; margin-left: .3rem; }
 .chip.warn { color: var(--red); font-weight: 700; }
 .cat-VFR { color: var(--green); } .cat-MVFR { color: var(--blue); } .cat-IFR { color: var(--red); } .cat-LIFR { color: var(--magenta); }
@@ -94,13 +96,14 @@ nav button span { color: var(--slate); font-weight: 400; margin-left: .3rem; fon
 /* ---------- split-flap letters: the flip without the retro tiles ---------- */
 .flaps { display: inline-flex; font-family: var(--mono); font-weight: 700; line-height: 1; perspective: 20em; }
 .flap { display: inline-block; min-width: .6em; text-align: center; }
+.flap.sp { min-width: 0; width: .3em; overflow: hidden; }
 .flap.flip { animation: flip .07s ease-in; }
 @keyframes flip { 50% { transform: rotateX(-75deg); opacity: .4; } }
 
 /* ---------- flight card ---------- */
-.hero-card { display: flex; flex-direction: column; padding: 1.4rem 1.6rem 1.3rem; gap: .9rem; }
+.hero-card { display: flex; flex-direction: column; padding: 1.4rem 1.6rem 1.3rem; gap: .9rem; container-type: inline-size; }
 .h-top { display: flex; align-items: flex-start; gap: 1.4rem; }
-.flight { font-size: 3.6rem; letter-spacing: -.02em; color: var(--ink); }
+.flight { font-size: min(3.6rem, 10.5cqi); letter-spacing: -.02em; color: var(--ink); white-space: pre; flex: none; }
 .airline { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; padding-top: .35rem;
   font-size: 1.2rem; font-weight: 700; white-space: nowrap; }
 .airline > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
@@ -132,7 +135,8 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 
 .h-route { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; padding-bottom: .5rem; }
 .route { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.2rem; }
-.apt { font-size: 2.7rem; color: var(--ink); }
+.apt { font-size: min(2.7rem, 8cqi); color: var(--ink); }
+.apt.unknown { font-size: .95rem; color: var(--slate); align-self: center; max-width: 8rem; line-height: 1.35; }
 .apt small { display: block; font: 400 .85rem var(--sans); color: var(--slate); margin-top: .45rem; max-width: 11rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .apt.r { text-align: right; } .apt.r small { margin-left: auto; }
@@ -143,7 +147,7 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #h-arc-dot { fill: var(--magenta); }
 .arc-note { text-align: center; font-size: .74rem; color: var(--slate); margin-top: .3rem; line-height: 1.5; }
 .route.unsure .apt, .route.unsure .arc { opacity: .35; }
-.route.inferred .apt.unknown { color: var(--slate); opacity: .6; }
+
 .route.inferred .arc-note { color: var(--ink-2); }
 .route.inferred .arc-note .why { color: var(--slate); font-size: .68rem; }
 .noroute { font-size: 2rem; font-weight: 700; display: flex; flex-direction: column; gap: .4rem; letter-spacing: -.01em; }
@@ -157,20 +161,21 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .metric + .metric { border-left: 1px solid var(--rule); }
 .metric:first-child { padding-left: 0; }
 .metric .label { margin-bottom: .2rem; }
-.metric .v { font: 700 2rem/1.1 var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -.02em; }
+.metric .v { font: 700 min(2rem, 5.6cqi)/1.1 var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -.02em; }
 .metric .v small { font: 400 .8rem var(--sans); color: var(--slate); letter-spacing: 0; }
 .metric .s { font-size: .72rem; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .15rem; }
 
-.h-bottom { display: flex; gap: 1.6rem; align-items: flex-end; }
-.look { flex: 1; display: flex; flex-direction: column; gap: .3rem; min-width: 0; }
-.look .big { font-size: 1.6rem; font-weight: 700; letter-spacing: -.01em; }
+.h-bottom { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 1.6rem; align-items: center; flex: 1; min-height: 0; }
 .sub { color: var(--slate); font-size: .86rem; }
-.ac { flex: 1.1; min-width: 0; display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; text-align: right; }
-.ac .sub { font-size: .8rem; max-width: 100%; line-height: 1.4; }
-.media { display: flex; justify-content: flex-end; align-items: flex-end; height: 6.4rem; width: 100%; }
-.media .photo { height: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: .6rem; }
-.sil-box { display: flex; justify-content: flex-end; align-items: flex-end; height: 100%; width: 100%; }
-.sil { display: block; max-height: 82%; fill: var(--ink); color: var(--ink); }
+/* the airframe's own photo, framed like a print; the silhouette stands in when there's none */
+.media { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 3 / 2; max-height: 100%;
+  border-radius: .7rem; background: color-mix(in srgb, var(--ink) 5%, transparent); overflow: hidden; }
+.media .photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.facts { display: grid; grid-template-columns: auto 1fr; column-gap: 1.2rem; row-gap: .55rem; align-content: center; font-size: .92rem; margin: 0; }
+.facts dt { color: var(--slate); }
+.facts dd { margin: 0; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.sil-box { display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; padding: 0 8%; }
+.sil { display: block; max-height: 70%; fill: var(--ink); color: var(--ink); }
 .sil .wing { fill: var(--ink-2); } .sil .pod { fill: var(--slate); } .sil .glass { fill: var(--sheet); }
 .sil .windows { stroke: var(--sheet); stroke-width: 1.1; stroke-dasharray: 1.6 2; opacity: .7; }
 .sil .prop, .sil .strut { stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; }
@@ -221,8 +226,10 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 
 /* ---------- radar and sky dome ---------- */
 .scope { display: flex; padding: .2rem; }
-#scope-mode { position: absolute; top: .4rem; left: .2rem; z-index: 3; font-size: .78rem; color: var(--ink-2); padding: .4rem .6rem;
-  border-radius: .5rem; border: 1px solid var(--rule); background: transparent; }
+.seg { position: absolute; top: .4rem; left: .2rem; z-index: 3; display: inline-flex; border: 1px solid var(--rule); border-radius: .55rem; overflow: hidden; }
+.seg button { font-size: .74rem; color: var(--slate); padding: .4rem .7rem; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button.on { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--ink) 7%, transparent); }
 .scope-caption { position: absolute; bottom: .3rem; left: 0; right: 0; text-align: center; font-size: .7rem; color: var(--slate); }
 .attrib { position: absolute; right: .3rem; top: .55rem; font-size: .5rem; color: var(--slate); max-width: 45%; text-align: right; }
 .attrib:empty { display: none; }
@@ -260,6 +267,7 @@ body.night #radar .sun { fill: #c99a3a; }
 #radar .peak-label { font-size: 4.2px; fill: var(--magenta); }
 /* the real map: a faint print of the streets and rivers under the traffic, in the chart's own tones */
 #radar .basemap { transition: opacity .6s; mix-blend-mode: multiply; }
+#radar .basemap image { filter: blur(.5px); }
 #radar .basemap.dark, #radar .basemap.carto-dark { filter: invert(1) hue-rotate(180deg) grayscale(.5) contrast(.6) brightness(1.32); }
 #radar .basemap.light, #radar .basemap.carto-light { filter: grayscale(.4) contrast(.95); }
 #radar .basemap.satellite, #radar .basemap.osm, #radar .basemap.custom { filter: grayscale(.6) contrast(.9) brightness(1.15); }
@@ -309,6 +317,12 @@ h2 { font-size: .95rem; font-weight: 700; margin: .3rem 0 .55rem; }
 .hours i.z { background: var(--rule); opacity: 1; }
 .hours-axis { display: flex; justify-content: space-between; font-size: .62rem; color: var(--slate); margin: .3rem 0 1.4rem; }
 
+/* narrower windows: give the card more room, and drop the less important header items */
+@media (max-width: 1100px) {
+  #view-now { grid-template-columns: 1.3fr 1fr; gap: 1rem; }
+  header { gap: 1rem; } .chips { gap: 1rem; }
+  .icon-btn span { display: none; }
+}
 @media (max-aspect-ratio: 1/1) {
   #view-now { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .cols { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2, 1fr); }
