@@ -453,11 +453,11 @@ function rotor(sk, r, at) {
 
 const cache = new Map();
 // The drawing for an aircraft type (ICAO code), falling back to a generic family for its
-// broad shape; length in metres sets the stretch.
-export function silhouette(type, shape, length) {
-  const key = `${type}|${shape}|${length}`;
+// broad shape; length in metres sets the stretch; name (model names) picks a variant.
+export function silhouette(type, shape, length, name = "") {
+  const key = `${type}|${shape}|${length}|${name}`;
   if (!cache.has(key)) {
-    const f = profileFor(type, shape, length);
+    const f = profileFor(type, shape, length, name);
     cache.set(key, f ? svg(draw(f)) : "");
   }
   return cache.get(key);

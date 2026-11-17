@@ -29,8 +29,10 @@
 //   gear, struts, rotor: fixed undercarriage, wing struts and rotors for light aircraft and helicopters
 //   extras, overlays: functions (kit) => void for one-off parts, drawn just after the fuselage or
 //            last of all; kit is described in silhouette.js
+// A group's `types` maps an ICAO code to a family key, to [key, {overrides}], or to a function of
+// the aircraft's model names returning either, for variants that share a code (RV-7 and RV-7A).
 // Each group loads on its own, so a mistake in one file costs only that group's drawings.
-const GROUP_FILES = ["boeing", "boeingwide", "airbus", "airbuswide", "regional", "bizjet", "turboprop", "light", "rotorcraft", "military"];
+const GROUP_FILES = ["boeing", "boeingwide", "airbus", "airbuswide", "regional", "bizjet", "turboprop", "light", "rotorcraft", "military", "fighters"];
 const GROUPS = (await Promise.all(GROUP_FILES.map((g) => import(`./profiles/${g}.js`).catch((e) => {
   console.error(`aircraft profiles: ${g}.js did not load`, e);
   return null;
@@ -38,10 +40,12 @@ const GROUPS = (await Promise.all(GROUP_FILES.map((g) => import(`./profiles/${g}
 const F = Object.assign({}, ...GROUPS.map((g) => g.families));
 const TYPES = Object.assign({}, ...GROUPS.map((g) => g.types));
 // the family drawn for a broad shape when the type has no profile of its own
-const DEFAULTS = { narrow: "b737ngw", wide: "b787", quad: "b744", regional: "crj9", bizjet: "cl60", turboprop: "dh8d", piston: "c172", heli: "ec35" };
+const DEFAULTS = { narrow: "b737ngw", wide: "b787", quad: "b744", regional: "crj9", bizjet: "cl60", turboprop: "dh8d", piston: "c172", heli: "ec35", fighter: "f15c" };
 
-export function profileFor(type, shape, length) {
-  const t = TYPES[type];
+// name: the aircraft's model names, for types whose entry is a function choosing among variants
+export function profileFor(type, shape, length, name = "") {
+  let t = TYPES[type];
+  if (typeof t === "function") t = t(name);
   const [fam, variant] = Array.isArray(t) ? t : [t || DEFAULTS[shape] || DEFAULTS.narrow];
   const base = F[fam] || F[DEFAULTS[shape]] || F[DEFAULTS.narrow];
   if (!base) return null;

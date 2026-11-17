@@ -20,11 +20,14 @@ for (const [type, [shape, length]] of Object.entries(types)) {
   out[type] = { mapped: mapped.has(type), error, svg };
 }
 // unknown types fall back to a family for their broad shape
-for (const shape of ["narrow", "wide", "quad", "regional", "bizjet", "turboprop", "piston", "heli"]) {
+for (const shape of ["narrow", "wide", "quad", "regional", "bizjet", "turboprop", "piston", "heli", "fighter"]) {
   let svg = "", error = null;
   try { svg = silhouette("ZZZZ", shape, 30); } catch (e) { error = String(e); }
   out["fallback:" + shape] = { mapped: true, error, svg };
 }
+// variants sharing a type code are told apart by model name: tailwheel RV-7 vs nosewheel RV-7A
+const fam = (t, name) => { const f = _profile(t, "piston", 6.2, name); return f && JSON.stringify(f.gear || f.parts?.gear || null); };
+out["variants"] = { rv7: fam("RV7", "Vans RV-7"), rv7a: fam("RV7", "VANS AIRCRAFT RV-7A"), plain: fam("RV7", "") };
 console.log(JSON.stringify(out));
 """
 
@@ -54,8 +57,15 @@ class SilhouetteTest(unittest.TestCase):
         missing = sorted(t for t in self.types if not self.drawn[t]["mapped"])
         self.assertEqual(missing, [], "types drawn with a generic fallback")
 
+    def test_model_name_picks_the_variant(self):
+        v = self.drawn["variants"]
+        self.assertNotEqual(v["rv7"], v["rv7a"], "RV-7 and RV-7A should differ (tailwheel vs nosewheel)")
+        self.assertEqual(v["plain"], v["rv7"])
+
     def test_every_drawing_renders(self):
         for name, d in self.drawn.items():
+            if name == "variants":
+                continue
             with self.subTest(name):
                 self.assertIsNone(d["error"])
                 self.assertTrue(d["svg"].startswith('<svg class="sil" viewBox="'), d["svg"][:80])

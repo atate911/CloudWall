@@ -732,6 +732,16 @@ class FeedExtrasTest(unittest.TestCase):
         self.assertEqual(h["type_name"], "Cessna 172")
         self.assertGreater(h["age"], 40)
 
+    def test_registry_model_kept_beside_feed_description(self):
+        # the feed names the type code; the registry's model tells an RV-7A from an RV-7
+        class Registry(StubEnricher):
+            def aircraft(self, hexid):
+                return {"type_name": "Vans RV-7A", "owner": None, "photo": None, "reg": "N7RV"}
+        t = Tracker(config.load(), Store(":memory:"), Registry())
+        t.update([plane("a2", "N7RV", 1.0, typ="RV7", desc="Van's RV-7", category="A1")], "test")
+        h = t.snapshot()["hero"]
+        self.assertEqual((h["type_name"], h["model"]), ("Van's RV-7", "Vans RV-7A"))
+
 
 class ActivityTest(unittest.TestCase):
     def test_idle_and_wake(self):

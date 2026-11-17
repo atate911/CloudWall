@@ -86,6 +86,8 @@ class Tracker:
         info = self.enricher.aircraft(a["hex"])
         if info:
             a["type_name"] = info.get("type_name")
+            # the registry's model ("Vans RV-7A") tells variants apart that share a type code
+            a["model"] = info.get("type_name")
             a["owner"] = info.get("owner")
             a["photo"] = info.get("photo")
             a["reg"] = a.get("reg") or info.get("reg")

@@ -161,10 +161,10 @@ function showHero(el, a, state) {
     : a.track == null ? "" : `Toward the ${POINTS[Math.round(a.track / 22.5) % 16]}`;
 
   const sil = $("h-sil");
-  const silKey = `${info.type}|${info.shape}|${info.length}`;
+  const silKey = `${info.type}|${info.shape}|${info.length}|${info.name}`;
   if (sil && sil.dataset.shape !== silKey) {
     sil.dataset.shape = silKey;
-    sil.innerHTML = silhouette(info.type, info.shape, info.length);
+    sil.innerHTML = silhouette(info.type, info.shape, info.length, info.name);
     if (sil.firstElementChild) sil.firstElementChild.style.width = silhouetteScale(info.length) * 100 + "%";
   }
   renderFacts(a, state);
