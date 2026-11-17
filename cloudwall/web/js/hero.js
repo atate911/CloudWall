@@ -79,6 +79,7 @@ function routeNote(r) {
   if (!r.plausible) return "route unverified — aircraft is off this track";
   const parts = [];
   if (r.flown_nm != null) parts.push(`${num(r.flown_nm)} nm flown · ${num(r.left_nm)} nm to go`);
+  else if (r.left_nm != null) parts.push(`${num(r.left_nm)} nm to go`);
   if (r.eta) {
     const late = Math.round((r.arrival_delay_s || 0) / 60);
     parts.push(`arrives ${new Date(r.eta * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` + (late >= 5 ? ` (${late} min late)` : late <= -5 ? ` (${-late} min early)` : ""));
@@ -121,7 +122,10 @@ function showHero(el, a, state) {
     } else if (r) { flap($("h-orig"), r.origin.iata || "???"); flap($("h-dest"), r.dest.iata || "???"); }
   }
   if (r && !inferred) {
-    const p = clamp(r.progress, 0.03, 0.97);
+    // no progress figure (far airport's position unknown): show the arc without a position
+    const known = r.progress != null;
+    $("h-arc").style.display = $("h-arc-dot").style.display = known ? "" : "none";
+    const p = clamp(r.progress ?? 0.5, 0.03, 0.97);
     $("h-arc").setAttribute("stroke-dasharray", `${p} 1`);
     $("h-arc-dot").setAttribute("cx", (1 - p) ** 2 * 4 + 2 * (1 - p) * p * 100 + p * p * 196);
     $("h-arc-dot").setAttribute("cy", (1 - p) ** 2 * 34 + 2 * (1 - p) * p * -22 + p * p * 34);

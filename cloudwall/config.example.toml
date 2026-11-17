@@ -10,6 +10,7 @@ elevation_ft = 100
 [airport]              # the local airport: used for arriving/departing labels and weather
 icao = "KPDX"
 iata = "PDX"
+city = "Portland"
 lat = 45.5887
 lon = -122.5975
 

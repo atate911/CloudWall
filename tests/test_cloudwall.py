@@ -347,6 +347,29 @@ class Flightradar24Test(unittest.TestCase):
         self.fr.route("SWA2327")
         self.assertEqual(self.fr.used_today(), 4)             # flight + 2 airports, then flight only
 
+    def test_airport_field_variants_and_missing_coordinates(self):
+        from cloudwall import flightradar24 as F
+        self.assertEqual(F._airport_info({"name": "Reagan", "position": {"latitude": 38.85, "longitude": -77.04,
+                                                                         "region": {"city": "Washington"}}}),
+                         {"city": "Washington", "name": "Reagan", "lat": 38.85, "lon": -77.04})
+        self.assertEqual(F._airport_info({"data": {"name": "X", "latitude": "1.5", "longitude": "2"}})["lat"], 1.5)
+        self.assertIsNone(F._airport_info({"name": "no position"}))
+        # if the airport lookup gives nothing, the route still works, with PDX filled in locally
+        orig = F.Flightradar24._airport
+        F.Flightradar24._airport = lambda self, icao, iata: {"iata": iata, "city": None, "name": None, "lat": None, "lon": None}
+        try:
+            self.row.update(orig_iata="DCA", orig_icao="KDCA")
+            r = self.fr.route("SWA2327")
+        finally:
+            F.Flightradar24._airport = orig
+        t = Tracker(config.load(), self.store, StubEnricher())
+        a = plane("a1", "SWA2327", 1.0)
+        t._derive(a)
+        g = t._with_geometry(a, r)
+        self.assertEqual((g["dest"]["city"], g["progress"], g["flown_nm"]), ("Portland", None, None))
+        self.assertGreater(g["left_nm"], 0)
+        self.assertTrue(g["plausible"])
+
     def test_no_match_and_no_destination(self):
         self.assertIsNone(self.fr.route("ASA1"))               # a different flight came back
         self.row["dest_icao"] = self.row["dest_iata"] = None

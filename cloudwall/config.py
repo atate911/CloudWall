@@ -15,7 +15,7 @@ DEFAULTS = {
         "lon": -122.4740,
         "elevation_ft": 100,
     },
-    "airport": {"icao": "KPDX", "iata": "PDX", "lat": 45.5887, "lon": -122.5975},
+    "airport": {"icao": "KPDX", "iata": "PDX", "city": "Portland", "lat": 45.5887, "lon": -122.5975},
     "tracking": {
         "radius_nm": 15,        # how far out to fetch and show on the board/radar
         "overhead_nm": 3.5,     # inside this, an aircraft counts as "overhead" and is logged

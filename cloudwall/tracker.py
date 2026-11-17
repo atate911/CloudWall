@@ -120,15 +120,25 @@ class Tracker:
         """Add distance flown/left and a sanity check of the route against the aircraft's position."""
         if not route:
             return None
+        ap = self.cfg["airport"]
+        # the local airport's position and city are always known, whatever the provider sent
+        route = dict(route, origin=dict(route["origin"]), dest=dict(route["dest"]))
+        for end in (route["origin"], route["dest"]):
+            if end.get("iata") in (ap["iata"], ap["icao"]):
+                end["iata"] = ap["iata"]
+                if end.get("lat") is None:
+                    end["lat"], end["lon"] = ap["lat"], ap["lon"]
+                end["city"] = end.get("city") or ap.get("city")
         o, d = route["origin"], route["dest"]
         if o.get("lat") is None or d.get("lat") is None:
-            # no coordinates to check against (the provider's airport lookup was unavailable)
+            # no coordinates for the far end (the provider's airport lookup was unavailable):
+            # trust a paid route as-is, and don't pretend to know how far along it is
             if not route.get("source"):
                 return None
             pct = route.get("progress_percent")
-            return dict(route, flown_nm=None, left_nm=None, plausible=True,
-                        progress=pct / 100 if pct is not None else 0.5)
-        ap = self.cfg["airport"]
+            left = (geo.haversine_nm(a["lat"], a["lon"], d["lat"], d["lon"]) if d.get("lat") is not None else None)
+            return dict(route, flown_nm=None, left_nm=left, plausible=True,
+                        progress=pct / 100 if pct is not None else None)
         flown = geo.haversine_nm(o["lat"], o["lon"], a["lat"], a["lon"])
         left = geo.haversine_nm(a["lat"], a["lon"], d["lat"], d["lon"])
         plausible = geo.route_plausible(o["lat"], o["lon"], d["lat"], d["lon"], a["lat"], a["lon"])

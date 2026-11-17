@@ -19,6 +19,28 @@ def _ts(value):
         return None
 
 
+def _first(d, *paths):
+    """The first value found among several possible field paths, e.g. "lat" or "position.latitude"."""
+    for path in paths:
+        v = d
+        for part in path.split("."):
+            v = v.get(part) if isinstance(v, dict) else None
+        if v not in (None, ""):
+            return v
+    return None
+
+
+def _airport_info(d):
+    if isinstance(d, dict) and isinstance(d.get("data"), dict):
+        d = d["data"]                       # some endpoints wrap the record
+    lat = _first(d, "lat", "latitude", "position.latitude", "position.lat", "location.lat", "location.latitude")
+    lon = _first(d, "lon", "lng", "longitude", "position.longitude", "position.lon", "location.lon", "location.longitude")
+    if lat is None or lon is None:
+        return None
+    return {"city": _first(d, "city", "municipality", "location.city", "position.region.city", "position.city"),
+            "name": _first(d, "name", "airport_name"), "lat": float(lat), "lon": float(lon)}
+
+
 class Flightradar24(LiveProvider):
     name, label, env_key = "flightradar24", "Flightradar24", "CLOUDWALL_FR24_KEY"
     default_limit = 100
@@ -44,9 +66,13 @@ class Flightradar24(LiveProvider):
             except Exception as e:
                 log.warning("airport %s lookup failed: %s", code, e)
                 d = None
-            if d and d.get("lat") is not None:
-                info = {"city": d.get("city"), "name": d.get("name"), "lat": d["lat"], "lon": d["lon"]}
+            info = _airport_info(d) if d else None
+            if info:
+                log.info("Flightradar24: airport %s is %s (%s)", code, info["name"], info["city"])
                 self.store.cache_put("fr24_airport", code, info)
+            elif d is not None:
+                log.warning("Flightradar24: airport %s returned no coordinates; fields: %s", code,
+                            ", ".join(sorted(d)) if isinstance(d, dict) else type(d).__name__)
         if info:
             out.update(info)
         return out
