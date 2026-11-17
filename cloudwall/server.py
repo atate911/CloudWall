@@ -27,6 +27,8 @@ def make_server(cfg, tracker, store):
             path = self.path.split("?")[0]
             if path == "/api/state":
                 return self._send(200, tracker.snapshot())
+            if path == "/api/heat":
+                return self._send(200, tracker.heatmap())
             if path == "/api/logbook":
                 return self._send(200, store.logbook(time.strftime("%Y-%m-%d")))
             f = (WEB / (path.lstrip("/") or "index.html")).resolve()

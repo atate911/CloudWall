@@ -22,6 +22,9 @@ class Store:
             CREATE INDEX IF NOT EXISTS sightings_day ON sightings(day);
             CREATE INDEX IF NOT EXISTS sightings_hex ON sightings(hex);
             """)
+            cols = {r["name"] for r in self.db.execute("PRAGMA table_info(sightings)")}
+            if "photo" not in cols:      # added after the first release
+                self.db.execute("ALTER TABLE sightings ADD COLUMN photo TEXT")
 
     # -- cache ---------------------------------------------------------------
     def cache_get(self, kind, key, max_age):

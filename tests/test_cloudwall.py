@@ -341,3 +341,20 @@ class DemoTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TracksTest(unittest.TestCase):
+    def test_trails_heatmap_and_photo(self):
+        store = Store(":memory:")
+        t = Tracker(config.load(), store, StubEnricher())
+        for north in (3.0, 2.0, 1.0):
+            t.update([plane("a1", "ASA1", north), plane("g1", "ASA2", 0.5, alt=0, on_ground=True)], "test")
+        a = next(x for x in t.snapshot()["aircraft"] if x["hex"] == "a1")
+        self.assertEqual(len(a["trail"]), 3)
+        self.assertGreater(a["trail"][0][0], a["trail"][-1][0])       # moving south toward home
+        heat = t.heatmap()
+        self.assertEqual(sum(c[2] for c in heat["cells"]), 3)         # the parked aircraft isn't counted
+        self.assertTrue(all(c[0] == heat["grid"] // 2 for c in heat["cells"]))   # due north: centre column
+        t.update([], "test")
+        self.assertEqual(t.trails, {})                                # gone from range: trail dropped
+        self.assertIn("photo", {r["name"] for r in store.db.execute("PRAGMA table_info(sightings)")})

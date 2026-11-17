@@ -138,7 +138,7 @@ class Demo:
             return
         cs, _, _, typ, _, reg, _, _, kind = DEMO_FLIGHTS[idx]
         profile = {
-            "arr": (280, 165, 2600, -700, "A3"), "dep": (100, 230, 5200, 2200, "A3"),
+            "arr": (299, 165, 2600, -700, "A3"), "dep": (119, 230, 5200, 2200, "A3"),
             "over": (self.rng.choice([165, 345]), 455, 36000, 0, "A5"),
             "ga": (self.rng.uniform(0, 360), 105, 2800, 0, "A1"),
             "heli": (self.rng.uniform(0, 360), 120, 1400, 0, "A7"),

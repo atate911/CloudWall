@@ -10,13 +10,26 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
 
 ## Screens
 
-- **Overhead** – the flight card for the aircraft closest to overhead, next to a live
-  radar scope. When nothing is overhead it shows the next inbound aircraft with a
-  countdown, the day's count, runway flow at PDX and the current METAR.
+- **Overhead** – a flight card for the aircraft closest to overhead: split-flap flight
+  number and airport codes, the airline's colours, a photo of the actual airframe, a
+  side-profile silhouette scaled to the aircraft's size, live altitude/speed/distance,
+  a countdown ring to the closest pass, and a line on whether you can actually see it
+  (cloud base, sun glare, night).
+- **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
+  path across it (centre is straight up), or a radar scope with trails over a simple map
+  of the river and runways. It switches automatically; tap the label to choose.
+- **Quiet sky** – when nothing is overhead the card rotates through the next inbound
+  aircraft, a heatmap of the day's traffic, the day's records and the last flyover.
+  Tap to skip ahead.
 - **Board** – departure-board list of everything airborne in range. Tap a row (or a
-  blip on the radar) to pin that aircraft to the flight card; tap the card to release.
+  blip on the scope) to pin that aircraft to the flight card; tap the card to release.
 - **Logbook** – every flyover is logged: type collection, airlines, daily and all-time
   records (highest, lowest, fastest, closest, furthest origin), flyovers by hour.
+
+The backdrop follows the real sky (dawn, day, dusk, stars, overcast from the airport's
+weather report) and the display turns warm and dim after dark; the `Night` button
+forces it on or off. `Sound` turns on a soft chime when an aircraft comes overhead, with
+a different one for rare, military or emergency traffic.
 
 Badges mark the interesting ones: `NEW TYPE`, `NEW AIRLINE`, `RARE TYPE`, `HEAVY`,
 `HELICOPTER`, `MILITARY`, repeat visitors (`3rd VISIT`) and emergency squawks.
@@ -99,4 +112,8 @@ returns fixed sample data, so routes will not match what is overhead.
   they disagree.
 - `[source] urls` lists position feeds, tried in order with automatic failover. Any
   readsb-style JSON feed works, so a local ADS-B receiver can replace the public APIs later.
+- The river and runway map is hand-drawn for PDX (`cloudwall/web/maps/kpdx.json`) and
+  approximate. For another airport, add a file named after its ICAO code; without one
+  the scope simply has no backdrop.
+- Aircraft photos come from the free airframe database and load directly in the browser.
 - Tests: `python3 -m unittest discover -s tests`

@@ -1,7 +1,9 @@
 """Turns raw positions into the board state: geometry, hero selection, logbook, badges."""
+import math
 import re
 import threading
 import time
+from collections import deque
 
 from . import geo
 
@@ -16,6 +18,8 @@ EMERGENCY = {"7500": "HIJACK 7500", "7600": "RADIO FAIL 7600", "7700": "EMERGENC
 AIRLINE = re.compile(r"^([A-Z]{3})\d")
 RESIGHT_SECONDS = 30 * 60
 STALE_SECONDS = 60
+TRAIL_POINTS = 48           # ~4 minutes of history at the default poll rate
+HEAT_GRID = 96
 
 
 def ordinal(n):
@@ -35,6 +39,11 @@ class Tracker:
         self.flow = None
         self.weather = None
         self.status = {"source": None, "ok": False, "updated": 0, "error": None}
+        self.trails = {}          # hex -> deque of (lat, lon)
+        self.heat_day = time.strftime("%Y-%m-%d")
+        self.heat = {tuple(map(int, k.split(","))): v for k, v in
+                     (store.cache_get("heat", self.heat_day, 2 * 86400)[1] or {}).items()}
+        self.heat_saved = time.time()
 
     # -- per-aircraft derivations -------------------------------------------
     def _derive(self, a):
@@ -172,6 +181,9 @@ class Tracker:
         # Lookups arrive a few seconds after first sight (and the paid provider may later
         # correct the free route), so back-fill the entry whenever they change.
         r = a.get("route")
+        if a.get("photo") and not s.get("photo"):
+            s["photo"] = True
+            upd.update(photo=a["photo"])
         if a.get("type_name") and not s.get("named"):
             s["named"] = True
             upd.update(type_name=a["type_name"], reg=a.get("reg"))
@@ -185,6 +197,34 @@ class Tracker:
             self.store.update_sighting(s["id"], **upd)
         a["badges"] = s["badges"]
 
+    def _remember_tracks(self, airborne, now):
+        """Short trails for the radar and a coarse all-day grid for the traffic heatmap."""
+        seen = set()
+        r = self.cfg["tracking"]["radius_nm"]
+        day = time.strftime("%Y-%m-%d", time.localtime(now))
+        if day != self.heat_day:
+            self.heat, self.heat_day = {}, day
+        for a in airborne:
+            seen.add(a["hex"])
+            trail = self.trails.setdefault(a["hex"], deque(maxlen=TRAIL_POINTS))
+            trail.append((round(a["lat"], 4), round(a["lon"], 4)))
+            a["trail"] = list(trail)
+            x = a["dist"] * math.sin(math.radians(a["brg"]))
+            y = a["dist"] * math.cos(math.radians(a["brg"]))
+            gx, gy = int((x + r) / (2 * r) * HEAT_GRID), int((r - y) / (2 * r) * HEAT_GRID)
+            if 0 <= gx < HEAT_GRID and 0 <= gy < HEAT_GRID:
+                self.heat[(gx, gy)] = self.heat.get((gx, gy), 0) + 1
+        for hexid in [h for h in self.trails if h not in seen]:
+            del self.trails[hexid]
+        if now - self.heat_saved > 60:
+            self.heat_saved = now
+            self.store.cache_put("heat", self.heat_day, {f"{x},{y}": n for (x, y), n in self.heat.items()})
+
+    def heatmap(self):
+        with self.lock:
+            return {"grid": HEAT_GRID, "radius_nm": self.cfg["tracking"]["radius_nm"],
+                    "cells": [[x, y, n] for (x, y), n in self.heat.items()]}
+
     def _update_flow(self, aircraft):
         """Guess the airport's runway direction from low, descending traffic near it."""
         ap = self.cfg["airport"]
@@ -194,9 +234,10 @@ class Tracker:
                 continue
             if geo.haversine_nm(ap["lat"], ap["lon"], a["lat"], a["lon"]) > 12:
                 continue
-            if abs((a["track"] - 280 + 180) % 360 - 180) < 25:
+            # PDX's parallel runways lie along 119/299 degrees true
+            if abs((a["track"] - 299 + 180) % 360 - 180) < 25:
                 self.flow = {"dir": "west", "label": "West flow", "runways": "28L / 28R"}
-            elif abs((a["track"] - 100 + 180) % 360 - 180) < 25:
+            elif abs((a["track"] - 119 + 180) % 360 - 180) < 25:
                 self.flow = {"dir": "east", "label": "East flow", "runways": "10L / 10R"}
 
     # -- main entry points ------------------------------------------------------
@@ -214,6 +255,7 @@ class Tracker:
             for a in airborne:
                 if self._overhead(a):
                     self._log(a, now)
+            self._remember_tracks(airborne, now)
             if self.cfg["airport"]["icao"] == "KPDX":
                 self._update_flow(raw)
             self.aircraft = raw

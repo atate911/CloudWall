@@ -14,12 +14,18 @@
     <span class="chip" id="wx" hidden></span>
     <span class="chip warn" id="link" hidden>NO DATA LINK</span>
   </div>
+  <button class="chip btn" id="btn-sound">Sound off</button>
+  <button class="chip btn" id="btn-night">Night auto</button>
   <div class="clock" id="clock"></div>
 </header>
 <main>
   <section id="view-now" class="view active">
     <div class="panel" id="hero"></div>
-    <div class="panel scope"><svg id="radar" viewBox="-110 -110 220 220" role="img" aria-label="Nearby aircraft"></svg></div>
+    <div class="panel scope" id="scope">
+      <button class="chip btn" id="scope-mode">Radar</button>
+      <svg id="radar" viewBox="-112 -112 224 224" role="img" aria-label="Nearby aircraft"></svg>
+      <div class="scope-caption" id="scope-caption"></div>
+    </div>
   </section>
   <section id="view-board" class="view"><div class="panel scroll" id="board"></div></section>
   <section id="view-log" class="view"><div class="panel scroll" id="log"></div></section>
@@ -29,6 +35,6 @@
   <button data-view="board">Board <span id="n-board"></span></button>
   <button data-view="log">Logbook <span id="n-log"></span></button>
 </nav>
-<script src="app.js"></script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>
