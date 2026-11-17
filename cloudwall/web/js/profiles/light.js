@@ -611,6 +611,81 @@ F.da42 = {
   delete F.da40.eng.at;
 }
 
+// ---------- Cirrus SR20 / SR22 ----------
+// No three-view reachable: measured from the near-side-on photo File:Cirrus_SR22_G3_Turbo_
+// Private_N918SE,_LUX_Luxembourg_(Findel),_Luxembourg_PP1373043529.jpg (Wikimedia Commons,
+// Wikipedia article Cirrus SR22), scaled to 7.9 m (data.js; 7.92 m published). Lower
+// confidence (photo perspective). Composite fuselage with a long cowl and big windscreen,
+// gull-wing doors with large windows and the big fixed rear cabin window, the tall curved fin,
+// low wing, fixed gear with long spats and the canted nose leg. SR20 has the same airframe.
+F.sr22 = {
+  kind: "piston", L0: 7.9, over: 0, D: 1, W: 1.27,
+  body: [
+    [0, 0.61, "c"], [0.1, 0.66], [0.2, 0.7], [0.3, 0.735], [0.4, 0.755], [0.48, 0.77], [0.7, 0.82], [1.0, 0.86],
+    [1.3, 0.89], [1.68, 0.925, "c"], [1.9, 1.03], [2.1, 1.14], [2.3, 1.24], [2.45, 1.3], [2.7, 1.35], [3.0, 1.375],
+    [3.3, 1.37], [3.5, 1.34], [3.9, 1.28], [4.23, 1.21], [4.6, 1.12], [4.87, 1.05], [5.2, 0.98], [5.52, 0.92],
+    [5.85, 0.87], [6.17, 0.83], [6.5, 0.81], [6.7, 0.86], [6.85, 1.05], [7.04, 1.47], [7.2, 1.7], [7.39, 1.86],
+    [7.55, 1.95], [7.65, 1.98], [7.8, 1.98], [7.9, 1.95, "c"], [7.8, 1.4], [7.72, 0.95], [7.62, 0.62], [7.5, 0.42],
+    [7.35, 0.33], [7.13, 0.28], [6.6, 0.22], [6.17, 0.18], [5.5, 0.11], [4.87, 0.05], [4.2, 0.02], [3.58, 0],
+    [2.94, -0.02], [2.3, -0.01], [1.65, 0], [1.3, 0.03], [1.0, 0.06], [0.8, 0.12], [0.68, 0.18], [0.55, 0.28],
+    [0.48, 0.36], [0.42, 0.47], [0.3, 0.5], [0.2, 0.53], [0.1, 0.56],
+  ],
+  glass: [
+    [[1.72, 0.93], [2.1, 1.15, ""], [2.43, 1.29], [2.46, 0.86], [2.05, 0.84]],
+    [[2.56, 0.78], [2.6, 1.26], [3.3, 1.29], [3.32, 0.77]],
+    [[3.42, 0.77], [3.42, 1.21], [3.85, 1.21, ""], [4.18, 1.02], [4.0, 0.79, ""]],
+  ],
+  frame: 0.035,
+  wing: { le: 2.45, root: 0.6, span: 11.68, cr: 1.5, ct: 0.9, sweep: 2, dih: 4.5, z: 0.08, t: [0.15, 0.12] },
+  eng: { kind: "none", nose: { s: 0.4, z: 0.61, d: 1.98, blades: 3 } },
+  stab: { le: 1.48, z: 0.54, span: 3.6, root: 0.2, cr: 1.05, ct: 0.65, sweep: 6, dih: 0, thick: 0.1 },
+  parts: {
+    doors: [[[2.5, 0.3, "c"], [2.5, 1.32, "c"], [3.38, 1.36, "c"], [3.38, 0.3, "c"]]],
+    lines: [[[7.15, 0.5], [7.42, 1.86]]],
+    gear: [
+      { leg: [[3.3, 0.02], [3.29, -0.25]], w: [0.12, 0.08], at: [3.29, -0.37], r: 0.19, spat: { f: 0.42, a: 0.5, t: 0.17, b: 0.15 } },
+      { leg: [[1.19, 0.05], [0.97, -0.33]], w: [0.07, 0.06], at: [0.94, -0.37], r: 0.15, spat: { f: 0.4, a: 0.45, t: 0.15, b: 0.12 } },
+    ],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
+// ---------- Pilatus PC-12 ----------
+// No three-view reachable: measured from the side-on photo File:Pilatus_PC-12-45,_Jetfly_
+// Aviation_JP532772.jpg (Wikimedia Commons, Wikipedia article Pilatus PC-12; left side,
+// mirrored), scaled to 14.4 m (data.js). Lower confidence (photo). Single PT6A with the
+// exhaust stack low on the cowl and a four-blade prop, low wing with winglets, T-tail on a
+// swept fin with a long dorsal, ventral strakes under the tail cone, round cabin windows,
+// the airstair door behind the cockpit and the big cargo door aft (both on the left side;
+// shown as the type's signature), trailing-link gear retracted.
+F.pc12 = {
+  kind: "turboprop", L0: 14.4, over: 0, D: 1, W: 1.6,
+  body: [
+    [0, 0.81, "c"], [0.15, 0.9], [0.3, 0.97], [0.39, 1.0], [0.5, 1.04], [1.0, 1.15], [1.5, 1.22], [2.0, 1.27],
+    [2.48, 1.31, "c"], [2.8, 1.52], [3.1, 1.7], [3.44, 1.84], [4.0, 1.87, "l"], [6.5, 1.87], [8.0, 1.8], [9.5, 1.95],
+    [11.0, 2.1], [11.75, 2.2], [12.1, 2.52], [12.42, 2.96], [12.6, 3.02], [13.9, 3.02, "c"], [13.06, 0.86, "c"],
+    [12.6, 0.78], [12.3, 0.8], [11.2, 0.56], [10.0, 0.42], [8.8, 0.24], [7.5, 0.08], [6.0, -0.04], [4.5, -0.06],
+    [3.0, 0.02], [2.4, 0.08], [1.89, 0.14], [1.05, 0.3], [0.6, 0.5], [0.39, 0.62], [0.2, 0.7], [0.1, 0.75],
+  ],
+  glass: [[[2.55, 1.33], [3.0, 1.62, ""], [3.42, 1.8], [3.48, 1.25], [2.85, 1.22]]],
+  frame: 0.05,
+  win: [{ z: 1.25, from: 4.75, to: 6.15, pitch: 0.7, w: 0.3, h: 0.38 }, { z: 1.25, from: 7.4, to: 7.4, w: 0.3, h: 0.38 }],
+  wing: { le: 4.2, root: 0.7, span: 16.28, cr: 2.25, ct: 1.0, sweep: 2, dih: 5, z: 0.12, t: [0.16, 0.12] },
+  tip: { h: 0.35, sweep: 45, top: 0.25, base: 0.8 },
+  eng: { kind: "none", nose: { s: 0.33, z: 0.81, d: 2.67, blades: 4 } },
+  stab: { le: 2.36, z: 3.15, span: 5.2, root: 0.15, cr: 1.55, ct: 0.95, sweep: 30, dih: 0, thick: 0.1 },
+  parts: {
+    doors: [rect(3.67, 4.45, 0.15, 1.72, 0.08), rect(6.54, 8.03, 0.36, 1.73, 0.1)],
+    lines: [[[12.4, 1.0], [13.15, 2.98]]],
+    draw: [(k) => {
+      k.sk.ellipse("inlet", 0.93, 0.84, 0.15, 0.1);
+      // ventral strake under the tail cone
+      k.sk.smooth("fin", [[8.86, 0.3, "c"], [11.2, 0.41, "c"], [11.5, 0.86, "c"], [10.6, 0.5], [9.4, 0.36]]);
+    }],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 F._raw_be36 = BE36; // TEMP
 F._raw_m20 = M20; // TEMP
 F._raw_be55 = BE55; // TEMP
@@ -618,5 +693,5 @@ export const families = F;
 export const types = {
   C172: "c172", C152: "c150", C150: "c150", C182: "c182", C206: "c206", C208: "c208",
   P28A: "pa28", P28B: "pa28b", PA46: "pa46", P46T: "p46t",
-  BE36: "be36", BE58: "be58", M20P: "m20", ST75: "st75", DA40: "da40", DA42: "da42", ZZB36: "_raw_be36", ZZB55: "_raw_be55", ZZM20: "_raw_m20", // TEMP
+  BE36: "be36", BE58: "be58", M20P: "m20", ST75: "st75", DA40: "da40", PC12: "pc12", SR22: "sr22", SR20: ["sr22", { eng: { kind: "none", nose: { s: 0.4, z: 0.61, d: 1.93, blades: 2 } } }], DA42: "da42", ZZB36: "_raw_be36", ZZB55: "_raw_be55", ZZM20: "_raw_m20", // TEMP
 };

@@ -407,7 +407,228 @@ F.h47 = {
   ],
 };
 
+// ---------- Airbus Helicopters H145 (EC45) ----------
+// Drawn as the H145 D-2/D-3 (fenestron, the variant now delivered to most US EMS operators),
+// not the EC145 C-2 with its conventional tail rotor. No dimensioned drawing was reachable:
+// the outline is the measured EC135 one (same design family: nose, cockpit, rear clamshell
+// pod, boom, endplate stabiliser, fenestron fin) scaled to the H145's published size,
+// fuselage 11.64 m (x1.14) and the deeper cabin (heights x1.1), checked by eye against the
+// Commons photo "H145 Christoph 27 als D-HXFI.jpg". Rotor 10.8 m (Wikipedia H145 spec table),
+// rotors-turning length 13.64 m. Lower confidence than the measured types.
+const SX45 = 1.141, SZ45 = 1.1;
+F.ec45 = {
+  kind: "heli", L0: 11.55, over: 1.45, D: 1, W: 1.73,
+  body: sc(EC135_BODY, SX45, SZ45),
+  glass: EC135_GLASS.map((g) => sc(g, SX45, SZ45)),
+  frame: 0.035,
+  rotor: { s: 3.65, z: 2.95, mast: 0.18, d: 10.8 },
+  extras: [paint(EC135_SEAMS.map(([c, pts, cl]) => [c, sc(pts, SX45, SZ45), cl]))],
+  overlays: [
+    skids({ z: -0.55, t: 0.1, aft: 4.45, fwd: 1.35, toe: [1.05, -0.3], legs: [[1.75, 0.06, 1.72, 0.13], [4.05, 0.02, 4.02, 0.13]] }),
+    fenestron(9.11 * SX45, 1.63 * SZ45, 0.66, 0.22, 10),
+    paint([["stab", sc(EC135_ENDPLATE, SX45, SZ45)]]),
+  ],
+};
+
+// ---------- Robinson R66 Turbine (R66) ----------
+// Reference: Commons photo "G-CIZG Robinson R-66 Helicopter Heli Air Ltd (26076362276).jpg", a
+// near-perfect side silhouette in flight (levelled by 3.5 degrees, scaled so mast to tail-rotor
+// hub is 5.92 m: the 11.7 m rotors-turning length with the 10.06 m rotor and 1.52 m tail rotor of
+// the Wikipedia R66 spec table; nose to tail-rotor disc then comes to 9.2 m against the
+// published 8.99 m fuselage). Features: teardrop canopy, tall tapered mast pylon with the
+// teetering hub high above it, the deep turbine and baggage bay behind the cabin, thin tapering
+// boom, small swept upper and lower stabilisers with the horizontal stabiliser and the tail-rotor
+// guard, two-blade tail rotor on the port side (behind the fins in this view), high skids.
+const R66_FINS = [
+  ["fin", [[8.12, 1.37, "l"], [8.63, 2.32], [8.66, 2.34, "l"], [8.84, 2.34, "c"], [8.7, 1.26, "c"], [8.68, 0.52, "c"],
+    [8.44, 0.52, "c"], [8.12, 1.2, "c"]]],
+  ["stab", aerofoil(8.28, 9.1, 0.56, 0.06)],
+  ["strut", [[7.05, 1.16, "c"], [7.35, 0.75], [7.65, 0.6], [8.3, 0.58, "c"], [8.3, 0.54, "c"], [7.62, 0.56], [7.3, 0.72], [7.0, 1.16, "c"]]],
+];
+F.r66 = {
+  kind: "heli", L0: 9.25, over: 2.45, D: 1, W: 1.47,
+  body: [[0, 0.6], [0.05, 0.78], [0.11, 0.96], [0.34, 1.29], [0.81, 1.48], [1.47, 1.53], [2.07, 1.51], [2.13, 1.52, "cl"],
+    [2.2, 2.78, "c"], [2.85, 2.78, "cl"], [2.93, 1.66], [3.06, 1.56], [3.39, 1.45], [3.5, 1.44], [8.12, 1.37], [8.16, 1.2],
+    [6.0, 1.12], [4.46, 1.03], [4.44, 0.9], [4.38, 0.43], [4.2, 0.17], [3.9, 0.07], [2.67, 0.0], [1.02, 0.01], [0.36, 0.1],
+    [0.1, 0.3], [0.02, 0.45]],
+  glass: [
+    [[0.03, 0.62], [0.1, 0.95, ""], [0.4, 1.28, ""], [0.95, 1.46], [1.0, 1.2], [0.95, 0.6]],
+    round([[1.1, 1.46], [1.72, 1.47], [1.72, 0.72], [1.1, 0.64]], 0.08),
+    round([[1.83, 1.45], [2.25, 1.44], [2.25, 0.84], [1.83, 0.8]], 0.07),
+  ],
+  frame: 0.03,
+  rotor: { s: 2.53, z: 3.05, mast: 0, d: 10.06 },
+  extras: [
+    mast(2.53, 2.76, 3.02, 0.12),
+    tail(8.49, 1.29, 1.52, 2, 75),
+    paint([...R66_FINS,
+      ["hl", [[1.05, 1.47], [1.05, 0.05]], false],
+      ["hl", [[1.78, 1.5], [1.78, 0.02]], false],
+      ["hl", [[2.3, 1.5], [2.3, 0.02]], false],
+      ["hl", [[2.93, 1.6], [2.93, 0.02]], false],
+      ["inlet", [[3.95, 1.3], [4.18, 1.3], [4.2, 1.08], [3.95, 1.1]]],
+    ]),
+  ],
+  overlays: [
+    skids({ z: -0.52, t: 0.07, aft: 3.65, fwd: 0.95, toe: [0.48, -0.27], legs: [[1.95, 0.0, 1.95, 0.08], [3.42, 0.04, 3.42, 0.08]] }),
+  ],
+};
+
+// ---------- Robinson R44 Raven (R44) ----------
+// Published dimensions only (lower confidence): the Commons R44 photos reachable were all
+// oblique, so the R66 outline above is reused for the shared boom, tail and canopy geometry
+// (mast to tail-rotor hub 5.9 m on both: 11.66 m rotors turning, 10.06 m rotor, 1.47 m tail
+// rotor, Wikipedia R44 spec table), with the R44's own differences: mast pylon 0.2 m lower
+// (3.28 m height against 3.48 m), and no turbine bay: the cabin ends at the seat backs and the
+// piston engine sits open below the cowling, so the underside steps up behind the cabin.
+F.r44 = {
+  ...F.r66, L0: 9.2, over: 2.5, W: 1.28,
+  body: [[0, 0.6], [0.05, 0.78], [0.11, 0.96], [0.34, 1.29], [0.81, 1.48], [1.47, 1.53], [2.07, 1.51], [2.13, 1.52, "cl"],
+    [2.2, 2.56, "c"], [2.85, 2.56, "cl"], [2.93, 1.66], [3.06, 1.58], [3.39, 1.47], [3.6, 1.44], [8.12, 1.37], [8.16, 1.2],
+    [6.0, 1.12], [4.4, 1.04], [4.0, 0.92], [3.55, 0.62], [3.3, 0.42], [3.15, 0.15], [2.95, 0.03], [2.67, 0.0], [1.02, 0.01],
+    [0.36, 0.1], [0.1, 0.3], [0.02, 0.45]],
+  rotor: { s: 2.53, z: 2.83, mast: 0, d: 10.06 },
+  overlays: [
+    skids({ z: -0.52, t: 0.07, aft: 3.65, fwd: 0.95, toe: [0.48, -0.27], legs: [[1.95, 0.0, 1.95, 0.08], [3.3, 0.4, 3.42, 0.08]] }),
+  ],
+  extras: [
+    mast(2.53, 2.54, 2.8, 0.12),
+    tail(8.49, 1.29, 1.47, 2, 75),
+    paint([...R66_FINS,
+      ["hl", [[1.05, 1.47], [1.05, 0.05]], false],
+      ["hl", [[1.78, 1.5], [1.78, 0.02]], false],
+      ["hl", [[2.3, 1.5], [2.3, 0.02]], false],
+      // the engine and exhaust under the cowling
+      ["core", [[3.2, 0.42, "c"], [3.5, 0.95], [3.95, 1.0, "c"], [3.95, 0.86], [3.55, 0.6], [3.3, 0.4, "c"]]],
+    ]),
+  ],
+};
+
+// ---------- Robinson R22 Beta (R22) ----------
+// Reference: the R22 Beta II pilot's-handbook three-view on Commons ("R22 B2 Heli Dimesions for
+// user willurd.jpg": overall 28 ft 9 in, nose to tail-rotor disc 21 ft 7 in, height 8 ft 11 in,
+// skid bottom to cabin roof 5 ft 9 in, rotor 25 ft 2 in, tail rotor 3 ft 6 in; only 250 px, so
+// the outline follows the R66 trace scaled down to those dimensions; lower confidence).
+// Features: two-seat teardrop bubble, tall narrow mast pylon, open engine bay, long thin boom,
+// small upper and lower fins, two-blade rotors, tail rotor on the port side, high skids.
+F.r22 = {
+  kind: "heli", L0: 6.58, over: 2.18, D: 1, W: 1.12,
+  body: [[0, 0.45], [0.05, 0.62], [0.12, 0.77], [0.3, 0.98], [0.6, 1.15], [1.0, 1.22], [1.3, 1.21], [1.38, 1.22, "cl"],
+    [1.43, 2.06, "c"], [1.88, 2.06, "cl"], [1.95, 1.36], [2.1, 1.22], [2.4, 1.13], [5.62, 1.0], [5.65, 0.9], [4.0, 0.86],
+    [3.0, 0.82], [2.65, 0.7], [2.3, 0.42], [2.1, 0.12], [1.9, 0.02], [1.6, 0.0], [0.7, 0.0], [0.25, 0.08], [0.08, 0.24], [0.02, 0.34]],
+  glass: [
+    [[0.03, 0.47], [0.1, 0.75, ""], [0.35, 1.02, ""], [0.75, 1.17], [0.82, 0.95], [0.78, 0.45]],
+    round([[0.92, 1.17], [1.32, 1.17], [1.32, 0.55], [0.92, 0.48]], 0.07),
+  ],
+  frame: 0.025,
+  rotor: { s: 1.66, z: 2.24, mast: 0, d: 7.67 },
+  extras: [
+    mast(1.66, 2.04, 2.22, 0.09),
+    tail(6.05, 0.98, 1.07, 2, 75),
+    paint([
+      ["fin", [[5.6, 1.0, "l"], [5.92, 1.6], [5.95, 1.62, "l"], [6.08, 1.62, "c"], [5.98, 0.92, "c"], [5.97, 0.42, "c"], [5.8, 0.42, "c"], [5.6, 0.9, "c"]]],
+      ["stab", aerofoil(5.72, 6.3, 0.45, 0.05)],
+      ["hl", [[0.86, 1.2], [0.86, 0.04]], false],
+      ["hl", [[1.4, 1.22], [1.4, 0.02]], false],
+      ["core", [[2.15, 0.2, "c"], [2.45, 0.66], [2.75, 0.75, "c"], [2.75, 0.6], [2.4, 0.38], [2.2, 0.18, "c"]]],
+    ]),
+  ],
+  overlays: [
+    skids({ z: -0.45, t: 0.06, aft: 2.55, fwd: 0.6, toe: [0.28, -0.22], legs: [[1.05, 0.0, 1.05, 0.07], [2.22, 0.3, 2.25, 0.07]] }),
+  ],
+};
+
+// ---------- Sikorsky S-76 (S76) ----------
+// Reference: Commons photo "N76FL 1988 Sikorsky S-76B C-N 760347 (7579663250).jpg", a side view in
+// flight (starboard side), scaled to the 13.22 m fuselage (nose to fin); mast to tail-rotor hub
+// then comes to 7.9 m, matching the 16.0 m rotors-turning length with the 13.41 m rotor and
+// 2.44 m tail rotor (Wikipedia S-76 spec table) within 2 %. Shapes cross-checked with Commons
+// "Sikorsky S-76D drawing.svg". Features: long sleek pointed nose, big cockpit and cabin windows,
+// smooth engine/transmission cowling, deep boom sweeping up to the swept fin, small stabiliser,
+// four-blade rotors, tail rotor on the port side; the gear retracts (main-gear doors under the
+// cabin, nothing hanging in flight).
+F.s76 = {
+  kind: "heli", L0: 14.0, over: 2.0, D: 1, W: 2.13,
+  body: [[0, 0.71], [0.15, 0.83], [0.5, 0.93], [1.0, 1.02], [1.3, 1.13], [1.6, 1.36], [1.9, 1.6], [2.2, 1.8], [2.6, 1.93],
+    [3.0, 1.98], [3.4, 2.05], [3.7, 2.2], [4.0, 2.34], [4.3, 2.45], [4.6, 2.5], [5.5, 2.5], [6.2, 2.46], [7.0, 2.38],
+    [7.6, 2.32, "c"], [7.75, 2.18], [7.88, 1.64], [8.1, 1.46], [9.0, 1.36], [10.0, 1.25], [11.0, 1.12], [11.33, 1.08, "l"],
+    [12.57, 2.46], [13.0, 2.62], [13.42, 2.5, "c"], [12.25, 1.06, "c"], [12.18, 0.9], [11.5, 0.8], [10.6, 0.71], [9.08, 0.4],
+    [8.4, 0.25], [7.7, 0.13], [6.76, 0.04], [6.0, 0.0], [2.0, 0.0], [1.33, 0.13], [0.9, 0.22], [0.56, 0.36], [0.25, 0.5], [0.08, 0.62]],
+  glass: [
+    [[2.19, 1.76], [1.75, 1.52], [1.33, 1.3], [2.1, 1.26]],
+    round([[3.02, 1.86], [2.4, 1.86], [2.2, 1.28], [3.0, 1.26]], 0.1),
+    round([[3.62, 1.8], [3.27, 1.8], [3.27, 1.3], [3.62, 1.3]], 0.08),
+    round([[4.51, 1.76], [3.78, 1.76], [3.78, 1.22], [4.51, 1.22]], 0.1),
+    round([[5.05, 1.65], [4.82, 1.65], [4.82, 1.18], [5.05, 1.18]], 0.06),
+  ],
+  frame: 0.03,
+  rotor: { s: 4.82, z: 2.77, mast: 0.27, d: 13.41 },
+  extras: [
+    tail(12.77, 2.06, 2.44, 4, 30),
+    paint([
+      ["fin", [[11.36, 1.1, "l"], [12.57, 2.46], [13.0, 2.62], [13.42, 2.5, "c"], [12.25, 1.06, "c"]]],
+      ["fin", [[12.6, 2.4], [12.75, 2.55], [13.05, 2.55], [13.0, 2.38]]],
+      ["door", round([[3.12, 1.95], [2.15, 1.95], [1.95, 0.25], [3.12, 0.2]], 0.06)],
+      ["door", round([[4.65, 1.9], [3.2, 1.9], [3.2, 0.2], [4.65, 0.2]], 0.06)],
+      ["hl", [[3.7, 2.2], [7.6, 2.12]], false],
+      ["inlet", [[7.62, 2.15, "c"], [7.78, 2.15, "c"], [7.8, 1.7, "c"], [7.64, 1.75, "c"]]],
+      ["inlet", [[4.6, 2.3], [5.0, 2.32], [5.0, 2.12], [4.6, 2.12]]],
+      ["fin", [[3.4, 0.05], [3.55, -0.13], [4.35, -0.15], [4.48, 0.05]]],
+    ]),
+  ],
+  overlays: [paint([["stab", aero(11.5, 1.12, 12.32, 1.02, 0.1)]])],
+};
+
+// ---------- Leonardo AW139 (A139) ----------
+// Reference: Commons "AW-139.jpg" (3-view line drawing; side view traced, scaled so mast to
+// tail-rotor hub is 8.4 m: 16.66 m rotors turning, 13.80 m rotor, 2.7 m tail rotor from the
+// Wikipedia AW139 spec table; nose to fin then comes to 13.65 m against the published 13.77 m).
+// Features: long pointed nose with chin windows, tall windscreen, cockpit door and three square
+// cabin windows in the big sliding door, aft cabin window, high engine cowling with the side
+// intakes and exhausts, boom with the long strake rising into the swept fin with the tail-rotor
+// gearbox fairing on top, stabiliser low on the boom end, five-blade rotor, four-blade tail
+// rotor on the port side, sponsons for the retractable main gear (retracted in flight).
+F.a139 = {
+  kind: "heli", L0: 14.25, over: 2.35, D: 1, W: 2.26,
+  body: [[0, 0.38], [0.24, 0.59], [0.52, 0.73], [0.91, 0.87, "l"], [1.22, 1.12], [1.5, 1.36], [1.78, 1.61], [1.99, 1.71],
+    [2.48, 1.91], [3.18, 2.13], [3.62, 2.3], [3.76, 2.6], [3.85, 2.74], [4.1, 2.76], [6.0, 2.76], [6.82, 2.59], [7.17, 2.45],
+    [7.52, 2.33], [8.01, 2.13], [8.22, 2.06], [11.4, 1.98], [11.71, 2.13, "l"], [12.59, 3.11], [12.83, 3.32], [13.4, 3.28],
+    [13.64, 3.1, "c"], [13.46, 3.0], [13.04, 2.41, "l"], [12.69, 1.71], [12.66, 1.5, "c"], [12.2, 1.4], [11.01, 1.05], [9.62, 0.87],
+    [8.22, 0.73], [7.52, 0.52], [6.82, 0.24], [6.22, 0.0], [0.87, 0.0], [0.52, 0.07], [0.24, 0.21], [0.07, 0.31]],
+  glass: [
+    [[1.98, 1.66], [1.0, 0.97], [1.22, 0.74], [1.6, 0.73], [1.8, 1.0, ""]],
+    [[1.48, 0.48], [1.0, 0.45], [0.97, 0.15], [1.2, 0.06], [1.45, 0.15]],
+    round([[2.5, 1.42], [2.12, 1.42], [1.96, 0.78], [2.5, 0.76]], 0.07),
+    round([[5.03, 1.43], [4.41, 1.43], [4.41, 0.74], [5.03, 0.74]], 0.1),
+    round([[4.2, 1.43], [3.57, 1.43], [3.57, 0.74], [4.2, 0.74]], 0.1),
+    round([[3.26, 1.43], [2.73, 1.43], [2.73, 0.74], [3.26, 0.74]], 0.1),
+    round([[7.6, 1.38], [6.66, 1.38], [6.66, 0.74], [7.6, 0.74]], 0.08),
+  ],
+  frame: 0.03,
+  rotor: { s: 4.55, z: 3.14, mast: 0.38, d: 13.8 },
+  extras: [
+    tail(12.9, 3.3, 2.7, 4, 30),
+    paint([
+      ["fin", [[11.74, 2.15, "l"], [12.59, 3.11], [12.83, 3.32], [13.4, 3.28], [13.64, 3.1, "c"], [13.46, 3.0], [13.04, 2.41, "l"],
+        [12.69, 1.71], [12.66, 1.5, "c"], [12.2, 1.6]]],
+      ["fin", [[12.8, 3.3], [12.86, 3.55], [12.95, 3.55], [13.05, 3.3]]],
+      ["door", [[2.55, 1.55, "c"], [1.75, 1.55, "c"], [1.62, 0.21, "c"], [2.55, 0.21, "c"]]],
+      ["door", round([[5.1, 1.53], [3.46, 1.53], [3.46, 0.18], [5.1, 0.18]], 0.06)],
+      ["hl", [[2.5, 1.79], [8.22, 1.79]], false],
+      ["hl", [[8.22, 2.06], [8.22, 0.73]], false],
+      ["hl", [[6.2, 1.79], [6.2, 0.2]], false],
+      ["hl", [[8.3, 1.72], [11.9, 1.72]], false],
+      ["door", [[6.3, 2.48, "c"], [5.95, 2.48, "c"], [5.95, 1.9, "c"], [6.3, 1.9, "c"]]],
+      ...[2.05, 2.2, 2.35].map((z) => ["hl", [[5.97, z], [6.28, z]], false]),
+      ["inlet", [[7.3, 2.05], [7.6, 2.28], [7.95, 2.1], [7.65, 1.85]]],
+      ["fin", [[4.95, 0.02], [4.97, 0.22], [5.15, 0.3], [6.2, 0.3], [6.36, 0.15], [6.3, 0.0]]],
+    ]),
+  ],
+  overlays: [paint([["stab", aero(11.45, 1.52, 12.25, 1.45, 0.2)]])],
+};
+
 export const families = F;
 export const types = {
   EC35: "ec35", B06: "b06", B407: "b407", AS50: "as50", H60: "h60", H47: "h47",
+  EC45: "ec45", R22: "r22", R44: "r44", R66: "r66", S76: "s76", A139: "a139",
 };

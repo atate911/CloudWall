@@ -192,45 +192,49 @@ const tpNacelle = (o) => ({ sk, sec, prop }) => {
 };
 
 // ---------- Lockheed C-130H / C-130J Hercules ----------
-// Published dimensions (Wikipedia, Lockheed Martin): C-130H length 29.79 m, span 40.41 m,
-// height 11.66 m; C-130J-30 length 34.69 m. High wing on top of the fuselage, four T56 (H) or
-// AE2100 (J) nacelles hanging under the wing with the props well ahead, main-gear sponsons,
-// upswept rear fuselage with the cargo ramp, tall fin with a large dorsal fillet, low stab.
-// H: four-blade 4.11 m props; J: six-blade scimitar Dowty R391 (4.11 m).
+// Reference: Wikimedia Commons "Lockheed C-130J Hercules 3-view drawing.svg" (side, plan and front
+// views of the short C-130J; length 29.79 m, span 40.41 m per Wikipedia). The C-130H airframe is
+// the same; it differs in engines (T56, four-blade props) where the J has AE2100s with six-blade
+// scimitar Dowty R391 props (both 4.11 m). High wing on a root fairing, long nacelles hanging
+// under the wing from the props well ahead to aft fairings behind the trailing edge, main-gear
+// sponsons, upswept rear fuselage with the ramp ending in a thin beaver tail, tall fin on a long
+// straight dorsal, low-set stabiliser at the end of the tail. C30J (C-130J-30) is 4.57 m longer.
 const T56 = {
-  at: [0.18, 0.43], fwd: 3.25, drop: 0.55, sp: 0.6, sr: 0.42, prop: 4.11, blades: 4, inlet: [0.85, -0.55, 0.07, 0.16],
-  outline: [[0, 0, "c"], [0.25, 0.3], [0.6, 0.42, "c"], [0.66, 0.6], [1.6, 0.7], [3.2, 0.72], [4.8, 0.62], [6.2, 0.4], [7.2, 0.15, "c"],
-    [6.4, -0.3], [5.0, -0.62], [3.4, -0.78], [2.0, -0.78], [1.1, -0.68], [0.66, -0.55], [0.6, -0.42, "c"], [0.25, -0.3]],
+  at: [0.168, 0.44], fwd: 3.0, drop: 0.53, sp: 0.5, sr: 0.3, prop: 4.11, blades: 4, inlet: [0.8, -0.62, 0.06, 0.12],
+  outline: [[0, 0, "c"], [0.25, 0.2], [0.5, 0.3, "c"], [0.6, 0.38], [1.5, 0.38], [3.0, 0.38], [5.0, 0.33], [7.0, 0.22], [8.4, 0.06], [9.25, -0.1, "c"],
+    [8.4, -0.22], [7.0, -0.3], [5.2, -0.42], [3.65, -0.75], [2.15, -0.82], [0.95, -0.76], [0.62, -0.5], [0.5, -0.3, "c"], [0.25, -0.2]],
 };
 F.c130 = {
-  kind: "turboprop", L0: 29.3, over: 0.49, D: 4.55, W: 4.34, fwd: 0.55, fair: 0, floor: 0.12,
+  kind: "turboprop", L0: 28.95, over: 0.84, D: 3.75, W: 4.34, fwd: 0.55, fair: 0, floor: 0.11, frame: 0.035,
   nose: {
-    tip: 0.36,
-    top: [[0.05, 0.47], [0.12, 0.54], [0.22, 0.6], [0.32, 0.64], [0.4, 0.7], [0.5, 0.8], [0.6, 0.87], [0.72, 0.93], [0.85, 0.97], [1.0, 0.99], [1.2, 1]],
-    bot: [[0.05, 0.24], [0.12, 0.17], [0.22, 0.11], [0.35, 0.06], [0.5, 0.03], [0.7, 0.01], [0.9, 0]],
+    tip: 0.325,
+    top: [[0.048, 0.439], [0.096, 0.469], [0.144, 0.494], [0.192, 0.506], [0.24, 0.524], [0.288, 0.543], [0.336, 0.573], [0.384, 0.628], [0.432, 0.684],
+      [0.48, 0.744], [0.528, 0.793], [0.576, 0.829], [0.672, 0.891], [0.768, 0.927], [0.864, 0.951], [0.96, 0.97], [1.056, 0.982], [1.152, 0.994], [1.34, 1]],
+    bot: [[0.048, 0.195], [0.096, 0.171], [0.144, 0.146], [0.192, 0.128], [0.288, 0.091], [0.384, 0.055], [0.48, 0.024], [0.576, 0], [0.672, -0.016],
+      [0.864, -0.006], [1.1, 0.004], [1.4, 0]],
   },
   tail: {
-    top: [[2.4, 1], [1.8, 0.99], [1.2, 0.965], [0.6, 0.93], [0, 0.89]],
-    bot: [[2.55, 0], [2.3, 0.07], [2.0, 0.17], [1.6, 0.3], [1.2, 0.43], [0.8, 0.56], [0.4, 0.68], [0.1, 0.76], [0, 0.78]],
+    top: [[3.0, 1], [0.1, 1], [0, 0.99]],
+    bot: [[3.2, 0], [2.74, 0.06], [2.5, 0.153], [2.26, 0.231], [2.02, 0.353], [1.78, 0.464], [1.54, 0.567], [1.3, 0.671], [1.06, 0.775], [0.82, 0.793],
+      [0.58, 0.829], [0.34, 0.884], [0.1, 0.94], [0, 0.96]],
   },
   glass: [
-    [[0.42, 0.715], [0.5, 0.79], [0.6, 0.845], [0.62, 0.72], [0.52, 0.69]],
-    [[0.63, 0.85], [0.75, 0.9], [0.77, 0.73], [0.64, 0.72]],
-    [[0.79, 0.905], [0.92, 0.93], [0.93, 0.74], [0.8, 0.735]],
-    [[0.47, 0.64], [0.6, 0.66], [0.6, 0.58], [0.5, 0.57]],
+    [[0.82, 0.785], [0.62, 0.795], [0.57, 0.765], [0.59, 0.742], [0.82, 0.742]],
+    [[0.8, 0.728], [0.66, 0.728], [0.66, 0.6], [0.8, 0.6]],
+    [[0.645, 0.728], [0.57, 0.728], [0.47, 0.635], [0.5, 0.6], [0.645, 0.6]],
+    [[0.47, 0.598], [0.36, 0.53], [0.33, 0.46], [0.46, 0.53]],
+    [[0.64, 0.48], [0.565, 0.48], [0.565, 0.35], [0.64, 0.35]],
+    [[0.55, 0.48], [0.49, 0.48], [0.49, 0.36], [0.55, 0.35]],
   ],
-  doors: [[4.9, 0.9], [-9.25, 0.91]],
-  win: [{ z: 0.46, from: 7.9, to: 16.5, pitch: 2.15, w: 0.3, h: 0.3 }],
-  wing: { le: 10.85, root: 2.17, span: 40.41, cr: 4.88, ct: 2.67, sweep: 4, dih: 2.5, z: 1.03, t: [0.17, 0.12] },
-  fin: { le: 8.7, cr: 6.3, ct: 2.4, h: 6.6, sweep: 26, fillet: [5.2, 1.2], rudder: 0.67 },
-  stab: { le: 5.6, z: 0.76, span: 16.05, root: 0.8, cr: 4.0, ct: 1.8, sweep: 8, dih: 0 },
-  extras: [sponson(11.6, 19.6, 1.85)],
+  doors: [[4.7, 0.9, "D", undefined, 1.75], [17.1, 0.85, "D", undefined, 1.8]],
+  win: [{ z: 0.245, from: 5.9, to: 8.1, pitch: 1.1, w: 0.3, h: 0.3 }, { z: 0.464, from: 15.0, to: 15.9, pitch: 0.9, w: 0.3, h: 0.3 }],
+  wing: { le: 11.2, root: 2.17, span: 40.41, cr: 4.9, kink: [0.2, 4.8], ct: 2.25, sweep: 1.7, dih: 2.5, z: 0.92, t: [0.17, 0.12] },
+  fin: { le: 6.47, cr: 6.42, ct: 1.9, h: 6.75, sweep: 27.9, fillet: [4.78, 1.05, "l"], rudder: 0.76, round: 0.5 },
+  stab: { le: 4.65, z: 0.95, span: 16.05, root: 0.6, cr: 4.3, ct: 2.7, sweep: 11, dih: 0 },
+  extras: [sponson(9.6, 16.9, 1.55)],
   overlays: [tpNacelle(T56)],
 };
-F.c30j = {
-  ...F.c130,
-  overlays: [tpNacelle({ ...T56, blades: 6, outline: T56.outline.map(([u, dz, fl]) => [u * 1.04, dz, fl]) })],
-};
+F.c30j = { ...F.c130, overlays: [tpNacelle({ ...T56, blades: 6 })] };
 
 // ---------- Lockheed C-5M Super Galaxy ----------
 // Published dimensions only (Wikipedia, USAF fact sheet): length 75.31 m, span 67.89 m, height

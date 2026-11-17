@@ -438,7 +438,7 @@ function rotor(sk, r, at) {
   sk.smooth("rotor", [[s + R, z - R * 0.025, "c"], [s, z + 0.06], [s - R, z - R * 0.025, "c"], [s, z - 0.02]]);
   if (r.tail) {
     const t = r.tail;
-    if (t.fen) sk.ellipse("fen", at(t.s), t.z, t.d / 2 * 0.35, t.d / 2);
+    if (t.fen) sk.ellipse("fen", at(t.s), t.z, t.d / 2, t.d / 2);   // the duct faces the viewer: a circle
     else {
       sk.ellipse("disc", at(t.s), t.z, t.d / 2, t.d / 2);
       sk.poly("blade", [[at(t.s) - 0.05, t.z + t.d / 2], [at(t.s) + 0.05, t.z + t.d / 2], [at(t.s) + 0.05, t.z - t.d / 2], [at(t.s) - 0.05, t.z - t.d / 2]]);

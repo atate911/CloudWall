@@ -54,6 +54,38 @@ F.b744 = {
   stab: { le: 9.85, z: 0.78, span: 22.17, root: 2.0, cr: 8.3, ct: 2.5, sweep: 42.7, dih: 7.5 },
 };
 
+// 747-100/-200: the same fuselage, wing and tail but the short original upper deck (the -300/-400 hump is
+// 7.11 m longer; 747_123sp.pdf fig. 2.3.1 shows both), three upper-deck windows and no upper-deck door, no
+// winglets (span 59.64 m), JT9D-7 nacelles.
+// the upper-deck hump of the 747-400 outline, its flat top shortened (d > 0) or lengthened (d < 0) by d (D)
+const hump = (top, d) => [...top.filter(([s]) => s <= 1.65), ...top.filter(([s]) => s >= 2.0).map(([s, z, fl]) => [s - d, z, fl]).filter(([s]) => s > 1.7)];
+const B742_NAC = { ...B744_NAC, len: 7.0, dia: 2.5, fx: 0.48, cx: 0.85 };
+F.b742 = {
+  ...F.b744,
+  nose: { ...F.b744.nose, top: hump(F.b744.nose.top, 0.975) },
+  doors: F.b744.doors.filter((d) => d[2] !== "U"),
+  win: [F.b744.win[0], { ...F.b744.win[1], from: 9.76, to: 10.8 }],
+  wing: { ...F.b744.wing, span: 59.64, ct: 4.1 },
+  tip: null,
+  eng: { ...B742_NAC, at: [0.32], fwd: 4.76, drop: 1.98 },
+  overlays: [quadOutboard({ at: 0.67, fwd: 4.25, drop: 1.82, nac: B742_NAC })],
+};
+// 747-8 (Intercontinental): 747-8 ACAP D6-58326-2 Rev E fig. 2.3.2 (low-resolution line art) for the stations:
+// 5.6 m longer (4.1 m ahead of the wing, between doors 1 and 2, and 1.5 m behind it), the upper deck 4.1 m
+// longer, a new wing with raked tips (span 68.4 m) and chevroned GEnx-2B nacelles.
+const B748_NAC = { kind: "fan", len: 7.4, dia: 3.05, fx: 0.6, cx: 0.86, chev: true, pyFront: 0.3, pyLead: 0.5, pyTe: 0.4, pyAft: 0.85 };
+F.b748 = {
+  ...F.b744, over: 2.15, fwd: 0.728,
+  nose: { ...F.b744.nose, top: hump(F.b744.nose.top, -0.562) },
+  doors: [[9.55, 1.07], [13.37, 2.63, "C"], [15.27, 1.06, "U"], [22.96, 1.07], [9.62, 1.07, "D", "w"], [-27.75, 1.07],
+    [-23.41, 2.64, "C"], [-19.79, 1.2, "C"], [-13.38, 1.07]],
+  win: [F.b744.win[0], { ...F.b744.win[1], from: 9.76, to: 25.9 }],
+  wing: { ...F.b744.wing, span: 68.4, ct: 2.6, rake: [0.885, 58, 0.35] },
+  tip: null,
+  eng: { ...B748_NAC, at: [0.291], fwd: 4.4, drop: 2.2 },
+  overlays: [quadOutboard({ at: 0.613, fwd: 4.4, drop: 2.05, nac: B748_NAC })],
+};
+
 // ---------- Boeing 767 ----------
 // Reference: 767 ACAP D6-58328 Rev K, fig. 2.3.2 (767-300/-300ER ground clearances side view,
 // to scale) and fig. 2.2.2 (plan view, for the wing and tailplane planforms). The drawing is
@@ -238,7 +270,79 @@ F.b787 = {
 // 787-10: 5.48 m longer than the -9, 3.05 m of it ahead of the wing; aft cargo door moves with the wing
 F.b78x = { ...F.b787, fwd: 0.556, doors: [[6.3, 1.07], [11.0, 2.75, "C"], [-3.39, 1.07, "D", "w"], [13.68, 1.07, "D", "w"], [21.56, 2.75, "C", "w"], [-12.22, 1.07]] };
 
+// ---------- McDonnell Douglas MD-11, DC-10, KC-10 ----------
+// Reference: MD-11 ACAP (MD11.pdf, scanned) fig. 2.2 general dimensions, side view rotated and cleaned of
+// dimension lines; plan view for the wing (root LE 24.2 m, engine inlet 23.1 m) and tailplane (span 18.0 m).
+// The centre engine runs through the fin root: the fin stands on the engine nacelle (fin.base). MD-11:
+// winglets with a small lower blade, the small tailplane, longer fuselage and tail cone than the DC-10.
+// The centre engine's nozzle and exhaust cone reach behind the tail cone; the renderer fairs a tail
+// engine down to the fuselage over its whole length, so the nacelle stops at the tail-cone end and the
+// rest is drawn here.
+function tailNozzle(noz, tip) {
+  return ({ sk, f, L, D }) => {
+    const e = f.tailEng, R = e.dia / 2, zc = D + e.z;
+    sk.smooth("nac", [[L - 0.3, zc + 0.66 * R, "c"], [L + noz, zc + 0.56 * R, "c"], [L + noz, zc - 0.56 * R, "c"], [L - 0.3, zc - 0.66 * R, "c"]]);
+    sk.poly("plug", [[L + noz, zc + 0.4 * R], [L + tip, zc + 0.04 * R], [L + tip, zc - 0.04 * R], [L + noz, zc - 0.4 * R]]);
+  };
+}
+F.md11 = {
+  kind: "wide", L0: 58.4, over: 3.2, D: 6.06, W: 6.02, fwd: 0.54, fair: 0.02, fairAft: 1.3,
+  nose: {
+    tip: 0.465,
+    top: [[0.017, 0.526], [0.058, 0.574], [0.099, 0.606], [0.14, 0.629], [0.182, 0.653], [0.223, 0.688], [0.264, 0.724], [0.305, 0.761],
+      [0.347, 0.785], [0.429, 0.833], [0.545, 0.875], [0.66, 0.904], [0.776, 0.929], [0.891, 0.947], [1.007, 0.961], [1.122, 0.976],
+      [1.238, 0.987], [1.353, 0.995], [1.469, 1]],
+    bot: [[0.017, 0.401], [0.116, 0.322], [0.215, 0.287], [0.314, 0.257], [0.413, 0.226], [0.512, 0.203], [0.611, 0.178], [0.71, 0.16],
+      [0.809, 0.137], [0.908, 0.119], [1.007, 0.107], [1.106, 0.096], [1.205, 0.083], [1.304, 0.071], [1.403, 0.062], [1.502, 0.054],
+      [1.65, 0.045], [1.815, 0.035], [1.98, 0.024], [2.145, 0.016], [2.31, 0.009], [2.475, 0.004], [2.7, 0]],
+  },
+  tail: {
+    top: [[2.7, 1], [2.376, 0.99], [2.046, 0.97], [1.716, 0.955], [1.386, 0.937], [1.056, 0.916], [0.726, 0.898], [0.561, 0.889],
+      [0.396, 0.886], [0.231, 0.884], [0.066, 0.88], [0, 0.875]],
+    bot: [[2.75, 0], [2.64, 0.005], [2.44, 0.01], [2.244, 0.023], [2.046, 0.041], [1.848, 0.071], [1.65, 0.118], [1.452, 0.166],
+      [1.254, 0.219], [1.056, 0.28], [0.858, 0.34], [0.66, 0.394], [0.462, 0.453], [0.264, 0.508], [0.066, 0.567], [0, 0.58]],
+  },
+  glass: [
+    [[0.32, 0.765], [0.168, 0.646], [0.327, 0.638]],
+    [[0.471, 0.752], [0.369, 0.752], [0.331, 0.643], [0.438, 0.591]],
+    [[0.598, 0.752], [0.474, 0.752], [0.444, 0.588], [0.604, 0.581]],
+  ],
+  floor: 0.437,
+  doors: [[5.24, 1.07], [10.6, 2.6, "C"], [14.66, 1.07], [4.29, 1.07, "D", "w"], [-15.6, 1.8, "C"], [-11.44, 1.07]],
+  win: [{ z: 0.596, from: 6.5, to: -13.28, pitch: 0.508, w: 0.25, h: 0.38 }],
+  wing: { le: 24.2, span: 50.4, cr: 9.9, kink: [0.272, 6.5], ct: 2.3, sweep: 39, dih: 4.5, z: 0.2, t: [0.13, 0.1] },
+  tip: { h: 2.0, sweep: 45, top: 0.7, base: 0.9, lo: 0.7, loSweep: 30, loTip: 0.3 },
+  ftf: [0.28, 0.45, 0.62, 0.78],
+  eng: { kind: "fan", at: [0.242], fwd: 5.71, drop: 1.4, len: 7.5, dia: 3.0, fx: 0.49, cx: 0.83, pyFront: 0.3, pyLead: 0.5, pyTe: 0.55, pyAft: 0.95 },
+  tailEng: { s: 11.4, z: 1.59, len: 11.4, dia: 3.27, style: "long", fx: 1, plug: 0.4 },
+  overlays: [tailNozzle(1.5, 3.2)],
+  fin: { le: 8.0, base: 3.23, cr: 6.6, ct: 3.3, h: 9.63, sweep: 44, round: 0.4 },
+  stab: { le: 7.95, z: 0.63, span: 18.0, root: 1.0, cr: 5.5, ct: 1.7, sweep: 40.8, dih: 8 },
+};
+// DC-10-30 (DC10.pdf fig. 2.2 dimensions; drawn over a dense grid, so mostly from the MD-11 outline and the
+// published dimensions: lower confidence). Fuselage 51.97 m to the tail cone, 5.7 m shorter than the MD-11,
+// plain wingtips (span 50.39 m), the bigger tailplane (span 21.69 m), CF6-50 engines.
+F.dc10 = {
+  ...F.md11, L0: 51.97, over: 3.53,
+  doors: [[5.24, 1.07], [10.6, 2.6, "C"], [12.2, 1.07], [4.29, 1.07, "D", "w"], [-14.4, 1.8, "C"], [-11.0, 1.07]],
+  win: [{ z: 0.596, from: 6.5, to: -12.8, pitch: 0.508, w: 0.25, h: 0.38 }],
+  wing: { ...F.md11.wing, span: 50.39, ct: 2.5 },
+  tip: null,
+  stab: { le: 8.6, z: 0.63, span: 21.69, root: 1.0, cr: 6.6, ct: 2.0, sweep: 40, dih: 8 },
+  tailEng: { s: 11.6, z: 1.59, len: 11.6, dia: 3.2, style: "long", fx: 1, plug: 0.4 },
+  overlays: [tailNozzle(1.3, 3.0)],
+};
+// KC-10A Extender: a DC-10-30 freighter airframe with the main-deck cargo door on the left (not seen
+// from this side), no cabin windows, the boom operator's fairing under the tail and the stowed boom.
+function kc10Boom({ sk, L, D }) {
+  const E = L;
+  sk.smooth("pyl", [[E - 9.6, 0.36 * D], [E - 7.6, 0.25 * D], [E - 4.0, 0.39 * D], [E - 3.2, 0.5 * D, "c"], [E - 7.0, 0.5 * D]]);
+  sk.poly("strut", [[E - 7.4, 1.5], [E + 1.6, 2.7], [E + 1.6, 2.98], [E - 7.4, 1.9]]);
+  sk.poly("stab", [[E - 1.6, 2.1], [E - 0.2, 1.2], [E + 0.3, 1.2], [E + 0.15, 2.3]]);
+}
+F.kc10 = { ...F.dc10, doors: [[5.24, 1.07], [10.6, 2.6, "C"], [-14.4, 1.8, "C"]], win: [], overlays: [tailNozzle(1.3, 3.0), kc10Boom] };
+
 export const families = F;
 export const types = {
-  B744: "b744", MD11: "md11", B762: ["b763", { doors: B762_DOORS }], B763: "b763w", K46: "k46", B772: "b772", B77L: ["b77w", { doors: B772_DOORS }], B77W: "b77w", B779: "b779", B788: "b787", B789: "b787", B78X: "b78x", B773: ["b77w", { wing: { ...F.b772.wing }, eng: F.b772.eng }], B764: "b764",
+  B741: "b742", B742: "b742", B744: "b744", B748: "b748", MD11: "md11", DC10: "dc10", KC10: "kc10", B762: ["b763", { doors: B762_DOORS }], B763: "b763w", K46: "k46", B772: "b772", B77L: ["b77w", { doors: B772_DOORS }], B77W: "b77w", B779: "b779", B788: "b787", B789: "b787", B78X: "b78x", B773: ["b77w", { wing: { ...F.b772.wing }, eng: F.b772.eng }], B764: "b764",
 };

@@ -26,7 +26,7 @@ const T = {
   P28A: ["piston", 7.3], P28B: ["piston", 7.5], PA46: ["piston", 8.8], P46T: ["piston", 9], SR20: ["piston", 7.9], SR22: ["piston", 7.9],
   DA40: ["piston", 8.1], DA42: ["piston", 8.6], BE36: ["piston", 8.4], BE58: ["piston", 9.1], M20P: ["piston", 7.5], RV7: ["piston", 6.2],
   RV12: ["piston", 6], RV14: ["piston", 6.4], CH7B: ["piston", 6.9], ST75: ["piston", 7.6], PC12: ["piston", 14.4], TBM9: ["piston", 10.7],
-  R22: ["heli", 8.7], R44: ["heli", 11.7], R66: ["heli", 11.7], EC35: ["heli", 12.2], EC45: ["heli", 13], B407: ["heli", 12.7],
+  R22: ["heli", 8.7], R44: ["heli", 11.7], R66: ["heli", 11.7], EC35: ["heli", 12.2], EC45: ["heli", 13.64], B407: ["heli", 12.7],
   B06: ["heli", 11.9], AS50: ["heli", 12.9], H60: ["heli", 19.8], H47: ["heli", 30], A139: ["heli", 16.6], S76: ["heli", 16],
   BE20: ["turboprop", 13.3], B350: ["turboprop", 14.2], B190: ["turboprop", 17.6], DH8D: ["turboprop", 32.8], DH8C: ["turboprop", 25.7],
   AT72: ["turboprop", 27.2], AT76: ["turboprop", 27.2], SW4: ["turboprop", 18.1], C130: ["turboprop", 29.8], C30J: ["turboprop", 29.8],

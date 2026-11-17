@@ -371,6 +371,95 @@ F.c700 = {
   stab: { le: 0.5, z: "T", drop: 0.1, span: 8.5, root: 0.25, cr: 2.0, ct: 0.8, sweep: 38, dih: 2, bullet: [2.2, 0.18] },
 };
 
+// ---------- Embraer Phenom 100 (E50P) and 300 (E55P) ----------
+// Phenom 300: the side view on the dimensions page of Embraer's Phenom 300E brochure
+// (embraer.com, phenom-300e-electronic.pdf p. 22; 15.6 m overall, 5.1 m high), scaled to 15.64 m:
+// fuselage 14.21 m, height 1.74 m, low drooped nose, deep belly fairing, five windows behind the
+// door, PW535E nacelles high on the tail cone, the 26-deg wing with upswept winglets, a 37-deg fin
+// with a long dorsal fillet, T-tail, small ventral fin. Phenom 100: the side view on the
+// dimensions page of the Phenom 100EX brochure (phenom-100ex-brochure-final.pdf p. 21; 12.82 m):
+// the same section 2.5 m shorter, three windows, an almost straight wing without winglets, a
+// more swept fin, smaller PW617F nacelles.
+F.e55p = {
+  kind: "bizjet", L0: 14.21, over: 1.43, D: 1.74, W: 1.6, fwd: 0.5, fair: 0.2, fairAft: 1.5,
+  nose: {
+    tip: 0.08,
+    top: [[0.1, 0.2], [0.52, 0.4], [0.86, 0.535], [1.16, 0.7], [1.52, 0.9], [1.86, 0.98], [2.1, 1]],
+    bot: [[0.08, 0.02], [0.25, 0.005], [0.5, 0]],
+  },
+  tail: {
+    top: [[3.0, 1], [1.5, 0.95], [0.5, 0.88], [0, 0.83]],
+    bot: [[2.6, 0], [1.64, 0.13], [0.97, 0.3], [0.3, 0.5], [0, 0.6]],
+  },
+  glass: [
+    [[1.12, 0.6], [1.4, 0.84], [1.5, 0.85], [1.5, 0.6]],
+    [[1.54, 0.86], [1.85, 0.86], [1.87, 0.78, ""], [1.85, 0.62], [1.54, 0.62]],
+  ],
+  frame: 0.035,
+  extras: [hatch(4.38, 0.67, 0.29, 1.3, 0.15)],
+  overlays: [ventral([[0.75, 1.0], [0.6, 0.62], [0.2, 0.62], [0.17, 1.05]])],
+  win: [{ z: 0.7, from: 5.12, to: 7.2, pitch: 0.69, w: 0.3, h: 0.36 }, { z: 0.7, from: 8.25, to: 8.25, w: 0.3, h: 0.36 }],
+  wing: { le: 6.1, root: 0.85, span: 15.91, cr: 2.7, ct: 1.0, sweep: 26, dih: 4, z: 0.04, t: [0.13, 0.1] },
+  tip: { h: 1.0, sweep: 45, top: 0.3, base: 0.85, blend: 0.2 },
+  eng: { kind: "fan", aft: { s: 5.14, z: 0.82 }, len: 2.75, dia: 0.88, style: "long", fx: 0.88 },
+  fin: { le: 2.84, cr: 2.72, ct: 1.6, h: 2.1, sweep: 37.5, fillet: [1.2, 0.25] },
+  stab: { le: 1.1, z: "T", drop: 0.06, span: 6.0, root: 0.2, cr: 1.5, ct: 0.75, sweep: 30, dih: 0, bullet: [1.9, 0.18] },
+};
+F.e50p = {
+  ...F.e55p, L0: 11.68, over: 1.14, D: 1.73,
+  nose: {
+    tip: 0.17,
+    top: [[0.1, 0.27], [0.4, 0.41], [0.72, 0.54], [1.1, 0.7], [1.42, 0.87], [1.86, 0.99], [2.1, 1]],
+    bot: [[0.1, 0.08], [0.3, 0.03], [0.6, 0]],
+  },
+  tail: {
+    top: [[2.5, 1], [1.4, 0.95], [0.5, 0.87], [0, 0.8]],
+    bot: [[2.4, 0], [1.6, 0.13], [0.97, 0.3], [0.3, 0.5], [0, 0.6]],
+  },
+  glass: [
+    [[1.1, 0.67], [1.32, 0.82], [1.42, 0.83], [1.42, 0.67]],
+    [[1.46, 0.86], [1.86, 0.86], [1.88, 0.78, ""], [1.86, 0.67], [1.46, 0.67]],
+  ],
+  extras: [hatch(3.83, 0.66, 0.29, 1.3, 0.15)],
+  overlays: [],
+  win: [{ z: 0.72, from: 4.5, to: 5.7, pitch: 0.58, w: 0.33, h: 0.35 }],
+  wing: { le: 5.1, root: 0.85, span: 12.3, cr: 2.2, ct: 1.0, sweep: 6, dih: 4, z: 0.04, t: [0.14, 0.11] },
+  tip: null,
+  eng: { kind: "fan", aft: { s: 4.47, z: 0.73 }, len: 2.2, dia: 0.68, style: "long", fx: 0.88 },
+  fin: { le: 2.15, cr: 2.1, ct: 1.3, h: 1.62, sweep: 44, fillet: [1.0, 0.2] },
+  stab: { le: 0.61, z: "T", drop: 0.06, span: 5.2, root: 0.2, cr: 1.2, ct: 0.65, sweep: 25, dih: 0, bullet: [1.5, 0.15] },
+};
+
+// ---------- Pilatus PC-24 (PC24) ----------
+// No drawing reachable: proportions from the side-on photo of D-CFBL (Commons "D-CFBL Platoon PC24
+// EGCC.jpg"), scaled to the 16.85 m overall length (Wikipedia, Pilatus PC-24): fuselage 15.2 m,
+// height 1.98 m, blunt nose, seven windows, FJ44-4A nacelles at mid-height on the rear fuselage,
+// near-straight wing, 42-deg fin with a T-tail. Drawn from the left: the airstair door behind the
+// flight deck and the big 1.25 x 1.35 m cargo door at the rear of the cabin, ahead of the engine.
+F.pc24 = {
+  kind: "bizjet", L0: 15.2, over: 1.65, D: 1.98, W: 1.98, fwd: 0.5, fair: 0.08,
+  nose: {
+    tip: 0.2,
+    top: [[0.1, 0.33], [0.33, 0.46], [0.71, 0.61], [1.02, 0.7, "c"], [1.17, 0.8], [1.4, 0.89], [1.7, 0.98], [2.0, 1]],
+    bot: [[0.1, 0.08], [0.25, 0.03], [0.45, 0.005], [0.6, 0]],
+  },
+  tail: {
+    top: [[2.6, 1], [1.5, 0.95], [0.6, 0.86], [0, 0.76]],
+    bot: [[3.0, 0], [2.0, 0.12], [1.2, 0.24], [0.5, 0.3], [0, 0.34]],
+  },
+  glass: [
+    [[1.06, 0.69], [1.22, 0.86], [1.28, 0.88], [1.28, 0.69]],
+    [[1.31, 0.9], [1.77, 0.93], [1.77, 0.7], [1.31, 0.7]],
+  ],
+  frame: 0.035,
+  extras: [hatch(4.0, 0.62, 0.32, 1.35, 0.15), hatch(9.85, 1.25, 0.3, 1.35, 0.15)],
+  win: [{ z: 0.69, from: 5.0, to: 8.9, pitch: 0.71, w: 0.27, h: 0.36 }],
+  wing: { le: 6.3, root: 1.0, span: 17.0, cr: 2.6, ct: 1.1, sweep: 10, dih: 4, z: 0.06, t: [0.14, 0.11] },
+  eng: { kind: "fan", aft: { s: 4.6, z: 0.74 }, len: 2.7, dia: 0.95, style: "long", fx: 0.88 },
+  fin: { le: 2.53, cr: 2.8, ct: 1.49, h: 2.14, sweep: 42, fillet: [1.0, 0.18] },
+  stab: { le: 0.8, z: "T", drop: 0.1, span: 6.4, root: 0.2, cr: 1.5, ct: 0.75, sweep: 30, dih: 0, bullet: [2.1, 0.17] },
+};
+
 // ---------- Bombardier Global Express / 5000 / 6000 / 6500 (GLEX, GL5T) and Global 7500 (GL7T) ----------
 // Global 7500: Commons "Bombardier Global 7500-8000 three views.png" side view (33.88 m overall),
 // prepped with refprep: fuselage 29.84 m, height 2.75 m, 14 large windows at 0.915 m pitch, two
@@ -497,6 +586,7 @@ export const types = {
   E545: "e550", E550: "e550",
   C25A: ["c25b", { win: [{ z: 0.78, from: 3.93, to: 6.5, pitch: 0.507, w: 0.23, h: 0.28 }], wing: { le: 6.4, root: 0.8, span: 15.19, cr: 2.45, ct: 1.0, sweep: 3, dih: 4, z: 0.1, t: [0.14, 0.11] } }],
   C25B: "c25b",
+  E50P: "e50p", E55P: "e55p", PC24: "pc24",
   C56X: "c56x", C680: "c680", C68A: "c68a", C700: "c700",
   LJ45: "lj45", LJ75: ["lj45", { tip: { h: 1.1, sweep: 35, top: 0.35, base: 0.85, blend: 0.2 } }],
 };
