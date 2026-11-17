@@ -5,6 +5,7 @@ import { drawScope, loadMap } from "./scope.js";
 import { renderHero, tickHero, nextSlide, badges, recordsHtml } from "./hero.js";
 import { chime, soundOn, setSound } from "./fx.js";
 import { airlineColors } from "./data.js";
+import { renderWeatherTab } from "./weather.js";
 
 let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastHero = null, view = "now", mapFor = null;
 
@@ -102,12 +103,26 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 
+// ---------- weather ----------
+let wxData = null, wxAt = 0;
+async function loadWeather(draw) {
+  try {
+    if (Date.now() - wxAt > 60000 || !wxData) { wxData = await (await fetch("api/weather")).json(); wxAt = Date.now(); }
+    $("n-wx").textContent = (wxData && wxData.now && wxData.now.category) || "";
+    if (draw && view === "wx" && state) renderWeatherTab($("wx-tab"), wxData, state);
+  } catch (e) { /* keep what's shown */ }
+}
+let resizeTimer = null;
+addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (view === "wx") loadWeather(true); }, 250); });
+setInterval(() => loadWeather(view === "wx"), 60000);
+
 // ---------- chrome ----------
 function setView(v) {
   view = v;
   document.querySelectorAll(".view").forEach((e) => e.classList.toggle("active", e.id === "view-" + v));
   document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
   if (v === "log") loadLog().catch(() => {});
+  if (v === "wx") loadWeather(true);
   render();
 }
 function renderToggles() {
@@ -170,4 +185,4 @@ setInterval(poll, 2000);
 setInterval(() => { if (state && state.hero) tickHero((Date.now() - stateAt) / 1000); else if (state && view === "now") renderHero($("hero"), state); }, 1000);
 setInterval(() => { if (view === "log") loadLog().catch(() => {}); }, 30000);
 setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }, 1000);
-poll();
+poll().then(() => loadWeather(false));

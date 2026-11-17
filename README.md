@@ -23,6 +23,13 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
   Tap to skip ahead.
 - **Board** – departure-board list of everything airborne in range. Tap a row (or a
   blip on the scope) to pin that aircraft to the flight card; tap the card to release.
+- **Weather** – aviation weather for the airport from aviationweather.gov: flight category,
+  a plain-English summary, temperature and dew point, humidity, altimeter, density
+  altitude and sunset; a windsock seen from above at the middle of a compass of the
+  runways (fully out at 15 kt, swinging in gusts) with headwind and crosswind for the
+  best runway; cloud layers drawn by coverage with the ceiling marked; the last 24 hours
+  of reports as charts (touch one to read that report); and the TAF forecast as a
+  timeline. A compact version joins the quiet-sky rotation.
 - **Logbook** – every flyover is logged: type collection, airlines, daily and all-time
   records (highest, lowest, fastest, closest, furthest origin), flyovers by hour.
 

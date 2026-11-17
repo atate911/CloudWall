@@ -676,3 +676,37 @@ class PresentationDataTest(unittest.TestCase):
         self.t.status["updated"] -= 40
         self.t.failed("test", "timeout")
         self.assertFalse(self.t.snapshot()["status"]["ok"])
+
+
+class WeatherTest(unittest.TestCase):
+    def test_decoding(self):
+        from cloudwall import weather as W
+        self.assertEqual([W.parse_vis(v) for v in ("10+", "1 1/2", "1/4", 6, None)], [10, 1.5, 0.25, 6, None])
+        self.assertEqual(W.ceiling([{"cover": "FEW", "base": 900}, {"cover": "BKN", "base": 2100}, {"cover": "OVC", "base": 6000}]), 2100)
+        self.assertEqual([W.category(400, 10), W.category(900, 10), W.category(3000, 10), W.category(None, 4), W.category(None, 10)],
+                         ["LIFR", "IFR", "MVFR", "MVFR", "VFR"])
+        self.assertEqual(W.wx_words("-RA BR"), "light rain, mist")
+        self.assertEqual(W.wx_words("+TSRA"), "heavy thunderstorm with rain")
+        self.assertEqual(W.wx_words("SHRA"), "rain showers")
+        self.assertEqual(W.humidity(9.0, 7.0), 87)
+        self.assertAlmostEqual(W.density_altitude(23, 9.0, 1018.7), -836, delta=20)   # cool, high pressure: well below field
+
+    def test_real_shapes(self):
+        from cloudwall import weather as W
+        m = {"icaoId": "KPDX", "obsTime": 1794890160, "temp": 8.9, "dewp": 6.7, "wdir": 0, "wspd": 0, "visib": "10+",
+             "altim": 1018.7, "metarType": "SPECI", "rawOb": "SPECI KPDX ...", "elev": 7, "cover": "BKN", "fltCat": "VFR",
+             "clouds": [{"cover": "FEW", "base": 2000}, {"cover": "SCT", "base": 2500}, {"cover": "BKN", "base": 6000}]}
+        d = W.decode_metar(m, 23)
+        self.assertEqual((d["ceiling"], d["category"], d["altimeter_inhg"], d["visibility"], d["special"]), (6000, "VFR", 30.08, 10, True))
+        self.assertEqual([c["oktas"] for c in d["clouds"]], [2, 4, 6])
+        t = W.decode_taf({"rawTAF": "TAF", "fcsts": [{"timeFrom": 1, "timeTo": 2, "wdir": "VRB", "wspd": 4, "visib": "6+",
+                                                      "clouds": [{"cover": "OVC", "base": 4000}]}]})
+        p = t["periods"][0]
+        self.assertEqual((p["category"], p["wind"]["variable"], p["visibility"]), ("VFR", True, 6))
+
+    def test_demo(self):
+        from cloudwall import weather as W
+        short, full = W.demo()
+        self.assertEqual(len(full["history"]), 25)
+        self.assertTrue(full["taf"]["periods"])
+        json.dumps(full)

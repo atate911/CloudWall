@@ -41,6 +41,7 @@ class Tracker:
         self.active = {}          # hex -> {"id", "min", "ts", "badges"}
         self.flow = None
         self.weather = None
+        self.weather_full = None
         self.basemap = None
         self.logos = False
         self.status = {"source": None, "ok": False, "updated": 0, "error": None}

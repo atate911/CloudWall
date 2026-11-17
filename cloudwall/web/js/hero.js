@@ -5,6 +5,7 @@ import { silhouette, silhouetteScale } from "./silhouette.js";
 import { flap, roll } from "./fx.js";
 import { sky } from "./sky.js";
 import { map, tileLayout } from "./scope.js";
+import { weatherSlide } from "./weather.js";
 
 // Show an airline's logo on its white tile; if there isn't one, show the name instead.
 export function showLogo(tile, img, state, code, nameEl) {
@@ -371,8 +372,9 @@ async function refreshExtras() {
   if (Date.now() - extras.at < 60000) return;
   extras.at = Date.now();
   try {
-    const [log, heat] = await Promise.all([fetch("api/logbook").then((r) => r.json()), fetch("api/heat").then((r) => r.json())]);
-    extras.log = log; extras.heat = heat;
+    const [log, heat, wx] = await Promise.all([fetch("api/logbook").then((r) => r.json()), fetch("api/heat").then((r) => r.json()),
+      fetch("api/weather").then((r) => r.json()).catch(() => null)]);
+    extras.log = log; extras.heat = heat; extras.wx = wx;
   } catch (e) { /* keep showing what we had */ }
 }
 
@@ -381,6 +383,7 @@ function showIdle(el, state) {
   refreshExtras();
   const L = extras.log, H = extras.heat;
   const slides = ["quiet"];
+  if (extras.wx && extras.wx.now) slides.push("weather");
   if (H && H.cells.length > 8) slides.push("heat");
   if (L && L.today > 0) slides.push("records");
   if (L && L.recent.length) slides.push("last");
@@ -397,7 +400,10 @@ function showIdle(el, state) {
   if (!changed) return;                             // other slides are drawn once
   slideShown = slide;
   el._key = null;
-  if (kind === "heat") {
+  if (kind === "weather") {
+    el.innerHTML = `<div class="wx-slot"></div>${dots}`;
+    weatherSlide(el.querySelector(".wx-slot"), extras.wx, state);
+  } else if (kind === "heat") {
     el.innerHTML = `<div class="idle heat"><div><h1>Today’s traffic</h1>
       <div class="heat-text">Every aircraft tracked within ${H.radius_nm} nm since midnight, laid on top of each other.
       The bright bands are the routes used again and again: the ${esc(state.airport.iata)} arrival and departure paths. Faint lines are one-off flights.</div>

@@ -27,6 +27,8 @@ def make_server(cfg, tracker, store, tiles=None, logos=None):
             path = self.path.split("?")[0]
             if path == "/api/state":
                 return self._send(200, tracker.snapshot())
+            if path == "/api/weather":
+                return self._send(200, tracker.weather_full or {})
             if path == "/api/heat":
                 return self._send(200, tracker.heatmap())
             if path == "/api/logbook":

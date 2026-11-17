@@ -69,14 +69,18 @@ def main():
     def wx():
         while True:
             try:
-                tracker.weather = weather.fetch_metar(cfg["airport"]["icao"])
+                short, full = weather.fetch_all(cfg["airport"]["icao"])
+                if short:
+                    tracker.weather, tracker.weather_full = short, full
             except Exception as e:
                 log.warning("weather fetch failed: %s", e)
-            time.sleep(600)
+            time.sleep(300)
 
     threading.Thread(target=poll, daemon=True).start()
     if not args.demo:
         threading.Thread(target=wx, daemon=True).start()
+    else:
+        tracker.weather, tracker.weather_full = weather.demo()
     server = make_server(cfg, tracker, store, tiles, logos)
     log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"], source.name)
     if fa and not args.demo:
