@@ -49,7 +49,8 @@ opacity = 0.5          # 0 to 1; the radar keeps it dim either way
 # Any other raster tile service, e.g. CARTO with your API key. Paste the provider's
 # raster URL template; {z} {x} {y} (and {s} {r}) are filled in. The key stays on
 # your server: the browser only ever loads tiles from CloudWall.
-# url = "https://example.com/{z}/{x}/{y}.png?api_key=YOUR_KEY"
+# CARTO Dark Matter without labels (CARTO wants the key as a "key" URL parameter):
+# url = "https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png?key=YOUR_CARTO_KEY"
 # attribution = "© OpenStreetMap contributors © CARTO"   # the credit the provider asks for
 
 [server]

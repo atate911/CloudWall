@@ -114,7 +114,9 @@ returns fixed sample data, so routes will not match what is overhead.
   readsb-style JSON feed works, so a local ADS-B receiver can replace the public APIs later.
 - The radar sits over a faint real map (Esri's dark grey basemap by default; `[map] style`
   can be `light`, `satellite`, `osm` or `off`, or `url` can point at any raster tile service,
-  such as CARTO with your own API key). CloudWall downloads each tile once, caches it for a
+  such as CARTO with your own API key:
+  `url = "https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png?key=YOUR_CARTO_KEY"`).
+  CloudWall downloads each tile once, caches it for a
   month next to the logbook, and serves it to the display itself, so the map provider sees
   only your server and an API key never reaches the browser.
 - The river and runway map is hand-drawn for PDX (`cloudwall/web/maps/kpdx.json`) and
