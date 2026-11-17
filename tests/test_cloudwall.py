@@ -117,8 +117,10 @@ class TrackerTest(unittest.TestCase):
         self.t.update([plane("a1", "ASA512", 0.4)], "test")
         self.assertEqual(self.store.count("1"), 1)
         self.assertAlmostEqual(self.store.query("SELECT min_dist_nm FROM sightings")[0]["min_dist_nm"], 0.4, 1)
-        # the same airframe returning later is a repeat visitor, not a new type
+        # the same airframe returning an hour later is a repeat visitor, not a new type
         self.t.active.clear()
+        with self.store.db:
+            self.store.db.execute("UPDATE sightings SET ts = ts - 3600")
         self.t.update([plane("a1", "ASA777", 1.0)], "test")
         self.assertEqual(self.t.snapshot()["hero"]["badges"], ["2nd VISIT"])
 
