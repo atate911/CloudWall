@@ -254,6 +254,123 @@ F.e550 = {
   stab: { le: 0.64, z: "T", drop: 0.15, span: 7.4, root: 0.25, cr: 2.4, ct: 0.9, sweep: 45, dih: 0 },
 };
 
+// ---------- Cessna Citation CJ2/CJ3 (C25A, C25B) ----------
+// No drawing reachable: proportions from the side-on photos of CJ3 OM-LBG and CJ2 G-EDCM (Commons
+// "Cessna 525B Citation CJ3 AN1699978.jpg", "Cessna 525A Citation CJ2 AN1738217.jpg"), scaled to
+// the 15.59 m overall length (Wikipedia, Cessna CitationJet/M2): fuselage 13.34 m, height 1.58 m,
+// unswept wing, FJ44 nacelles, a 52-deg fin with the tailplane on top, its strong dihedral giving
+// the 525 family's raised tips. The CJ2 is the same airframe 1.06 m shorter, one window fewer.
+F.c25b = {
+  kind: "bizjet", L0: 13.34, over: 2.25, D: 1.58, W: 1.6, fwd: 0.6, fair: 0.06,
+  nose: {
+    tip: 0.25,
+    top: [[0.1, 0.32], [0.28, 0.4], [0.6, 0.52], [1.0, 0.65], [1.36, 0.77, "c"], [1.72, 0.92], [2.12, 0.99], [2.4, 1]],
+    bot: [[0.08, 0.17], [0.2, 0.14], [0.6, 0.06], [1.0, 0.015], [1.3, 0]],
+  },
+  tail: {
+    top: [[2.0, 1], [1.0, 0.95], [0.4, 0.88], [0, 0.8]],
+    bot: [[2.2, 0], [1.55, 0.11], [1.05, 0.27], [0.55, 0.42], [0.2, 0.56], [0, 0.66]],
+  },
+  glass: [
+    [[1.36, 0.69], [1.6, 0.84], [1.72, 0.9], [1.72, 0.69]],
+    [[1.76, 0.92], [2.04, 0.94], [2.04, 0.69], [1.76, 0.69]],
+  ],
+  frame: 0.03,
+  extras: [hatch(3.95, 0.53, 0.25, 1.24, 0.2)],
+  win: [{ z: 0.78, from: 3.93, to: -6.37, pitch: 0.507, w: 0.23, h: 0.28 }],
+  wing: { le: 6.6, root: 0.8, span: 16.26, cr: 2.5, ct: 1.0, sweep: 3, dih: 4, z: 0.1, t: [0.14, 0.11] },
+  eng: { kind: "fan", aft: { s: 4.43, z: 0.85 }, len: 2.3, dia: 0.72, style: "long", fx: 0.88 },
+  fin: { le: 2.26, cr: 1.6, ct: 1.28, h: 1.74, sweep: 52, fillet: [0.8, 0.12] },
+  stab: { le: 0.07, z: "T", drop: 0.05, span: 6.0, root: 0.2, cr: 1.2, ct: 0.6, sweep: 31, dih: 8 },
+};
+
+// ---------- Cessna Citation Excel/XLS (C56X) and Sovereign (C680) ----------
+// No drawing reachable: proportions from the side-on photos of XLS EC-K.. (Commons "Cessna 560XL
+// Citation XLS.jpg", levelled by 4 deg) and Sovereign N94PC (Commons "N94PC Cessna 680 Citation
+// Sovereign landing at Palm Springs, March 2023.jpg"), scaled to the overall lengths (Wikipedia:
+// Excel 16.0 m, Sovereign 19.35 m). Both carry the Citation X section (1.84 m), a near-straight
+// wing and the cruciform tail: the tailplane, with dihedral, on the fin just above the tail cone.
+// The Sovereign is stretched (seven windows), with a bigger 16-deg wing, PW306C nacelles and a
+// taller fin.
+F.c56x = {
+  kind: "bizjet", L0: 15.3, over: 0.7, D: 1.84, W: 1.84, fwd: 0.5, fair: 0.06,
+  nose: {
+    tip: 0.23,
+    top: [[0.06, 0.31], [0.16, 0.39], [0.45, 0.54], [0.81, 0.68], [1.09, 0.82], [1.38, 0.93], [1.65, 0.98], [1.9, 1]],
+    bot: [[0.09, 0.11], [0.25, 0.07], [0.45, 0.04], [0.8, 0]],
+  },
+  tail: {
+    top: [[2.4, 1], [1.4, 0.93], [0.7, 0.8], [0.25, 0.68], [0, 0.6]],
+    bot: [[2.9, 0], [2.2, 0.08], [1.6, 0.17], [1.0, 0.27], [0.5, 0.35], [0.15, 0.4], [0, 0.42]],
+  },
+  glass: [
+    [[1.06, 0.66], [1.3, 0.84], [1.55, 0.87], [1.55, 0.66]],
+    [[1.6, 0.875], [1.88, 0.88], [1.88, 0.66], [1.6, 0.66]],
+  ],
+  frame: 0.035,
+  extras: [hatch(4.8, 0.7, 0.3, 1.5, 0.2)],
+  win: [{ z: 0.69, from: 5.59, to: 8.9, pitch: 0.81, w: 0.26, h: 0.34 }],
+  wing: { le: 6.6, root: 0.95, span: 17.17, cr: 2.7, ct: 1.15, sweep: 8, dih: 4, z: 0.08, t: [0.14, 0.11] },
+  eng: { kind: "fan", aft: { s: 5.66, z: 0.77 }, len: 2.7, dia: 0.88, style: "long", fx: 0.88 },
+  fin: { le: 1.77, cr: 1.7, ct: 1.2, h: 1.91, sweep: 36, fillet: [0.9, 0.12] },
+  stab: { le: 1.64, fz: 0.1, span: 6.6, root: 0.25, cr: 1.4, ct: 0.75, sweep: 28, dih: 6 },
+};
+F.c680 = {
+  ...F.c56x, L0: 18.36, over: 0.99,
+  extras: [hatch(4.62, 0.75, 0.3, 1.5, 0.2)],
+  win: [{ z: 0.7, from: 5.3, to: 10.05, pitch: 0.79, w: 0.26, h: 0.34 }],
+  wing: { le: 7.9, root: 0.95, span: 22.04, cr: 3.2, ct: 1.15, sweep: 18, dih: 4, z: 0.08, t: [0.14, 0.11] },
+  eng: { kind: "fan", aft: { s: 6.64, z: 0.72 }, len: 3.4, dia: 1.0, style: "long", fx: 0.88 },
+  fin: { le: 3.32, cr: 3.0, ct: 1.37, h: 2.41, sweep: 45, fillet: [1.0, 0.12] },
+  stab: { le: 2.36, fz: 0.1, span: 7.6, root: 0.25, cr: 1.6, ct: 0.8, sweep: 30, dih: 6 },
+};
+
+// ---------- Cessna Citation Latitude (C68A) and Longitude (C700) ----------
+// No drawing reachable: proportions from the side-on photos of Latitude N563QS (Commons "Cessna
+// Citation Latitude N563QS departing Scottsdale Airport, October 2023.jpg") and Longitude N807QS
+// (Commons "Cessna Citation Longitude N807QS.jpg"), scaled to the overall lengths (Wikipedia: 18.97 m
+// and 22.30 m). Both have the wide 2.23 m section with its flat-sided cabin and the same nose. The
+// Latitude keeps the Sovereign's 16-deg wing and carries its tailplane low on the fin (cruciform,
+// as the photos show, not a T-tail); the Longitude has a longer cabin, the new 27-29-deg wing with
+// winglets, HTF7700L nacelles set high, and a true T-tail far aft.
+F.c68a = {
+  kind: "bizjet", L0: 18.08, over: 0.89, D: 2.23, W: 2.23, fwd: 0.5, fair: 0.06,
+  nose: {
+    tip: 0.22,
+    top: [[0.08, 0.29], [0.23, 0.36], [0.6, 0.55], [0.89, 0.72], [1.18, 0.87], [1.47, 0.97], [1.85, 1]],
+    bot: [[0.09, 0.12], [0.38, 0.05], [0.74, 0.01], [0.9, 0]],
+  },
+  tail: {
+    top: [[2.4, 1], [1.4, 0.95], [0.7, 0.86], [0.25, 0.76], [0, 0.7]],
+    bot: [[3.2, 0], [2.4, 0.09], [1.7, 0.2], [1.1, 0.33], [0.6, 0.45], [0.2, 0.56], [0, 0.62]],
+  },
+  glass: [
+    [[0.89, 0.6], [1.0, 0.72], [1.15, 0.8], [1.15, 0.6]],
+    [[1.19, 0.81], [1.43, 0.82], [1.43, 0.61], [1.19, 0.61]],
+  ],
+  frame: 0.04,
+  extras: [hatch(4.59, 0.81, 0.24, 1.7, 0.25)],
+  win: [{ z: 0.62, from: 5.61, to: 8.2, pitch: 0.635, w: 0.29, h: 0.39 }],
+  wing: { le: 7.8, root: 1.1, span: 22.05, cr: 3.3, ct: 1.15, sweep: 18, dih: 4, z: 0.07, t: [0.14, 0.11] },
+  eng: { kind: "fan", aft: { s: 7.23, z: 0.58 }, len: 3.7, dia: 1.07, style: "long", fx: 0.88 },
+  fin: { le: 3.53, cr: 3.4, ct: 1.5, h: 2.92, sweep: 44, fillet: [0.8, 0.2] },
+  stab: { le: 2.44, fz: 0.18, span: 7.4, root: 0.25, cr: 1.7, ct: 0.8, sweep: 30, dih: 3 },
+};
+F.c700 = {
+  ...F.c68a, L0: 18.9, over: 3.4,
+  tail: {
+    top: [[2.4, 1], [1.4, 0.96], [0.7, 0.88], [0.25, 0.78], [0, 0.72]],
+    bot: [[3.3, 0], [2.4, 0.09], [1.7, 0.2], [1.1, 0.33], [0.6, 0.45], [0.2, 0.56], [0, 0.62]],
+  },
+  extras: [hatch(4.86, 0.78, 0.24, 1.7, 0.25)],
+  win: [{ z: 0.62, from: 6.1, to: 10.6, pitch: 0.635, w: 0.29, h: 0.39 }],
+  wing: { le: 9.1, root: 1.1, span: 21.01, cr: 4.2, ct: 1.15, sweep: 29, dih: 4, z: 0.07, t: [0.13, 0.1] },
+  tip: { h: 1.0, sweep: 40, top: 0.3, base: 0.85, blend: 0.2 },
+  eng: { kind: "fan", aft: { s: 4.9, z: 0.86 }, len: 3.6, dia: 1.2, style: "long", fx: 0.88 },
+  fin: { le: 3.1, cr: 3.0, ct: 2.7, h: 2.6, sweep: 48, fillet: [1.0, 0.2] },
+  stab: { le: 0.5, z: "T", drop: 0.1, span: 8.5, root: 0.25, cr: 2.0, ct: 0.8, sweep: 38, dih: 2, bullet: [2.2, 0.18] },
+};
+
 // ---------- Bombardier Global Express / 5000 / 6000 / 6500 (GLEX, GL5T) and Global 7500 (GL7T) ----------
 // Global 7500: Commons "Bombardier Global 7500-8000 three views.png" side view (33.88 m overall),
 // prepped with refprep: fuselage 29.84 m, height 2.75 m, 14 large windows at 0.915 m pitch, two
@@ -378,5 +495,8 @@ export const types = {
   GLEX: "glex", GL5T: "glex", GL7T: "gl7t",
   H25B: "h25b", G280: "g280",
   E545: "e550", E550: "e550",
+  C25A: ["c25b", { win: [{ z: 0.78, from: 3.93, to: 6.5, pitch: 0.507, w: 0.23, h: 0.28 }], wing: { le: 6.4, root: 0.8, span: 15.19, cr: 2.45, ct: 1.0, sweep: 3, dih: 4, z: 0.1, t: [0.14, 0.11] } }],
+  C25B: "c25b",
+  C56X: "c56x", C680: "c680", C68A: "c68a", C700: "c700",
   LJ45: "lj45", LJ75: ["lj45", { tip: { h: 1.1, sweep: 35, top: 0.35, base: 0.85, blend: 0.2 } }],
 };

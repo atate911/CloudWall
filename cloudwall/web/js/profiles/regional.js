@@ -201,13 +201,104 @@ F.e145 = {
   win: [{ z: 0.636, from: 6.05, to: -8.21, pitch: 0.803, w: 0.3, h: 0.34 }],
   wing: { le: 13.2, span: 20.04, cr: 4.28, kink: [0.288, 2.91], ct: 1.04, sweep: 26.3, dih: 3, z: 0.066, t: [0.13, 0.1] },
   ftf: [0.3, 0.5, 0.68],
-  eng: { kind: "fan", aft: { s: 7.47, z: 0.741 }, len: 4.34, dia: 1.53, style: "long", fx: 0.99 },
+  eng: { kind: "fan", aft: { s: 7.47, z: 0.741 }, len: 4.6, dia: 1.53, style: "long", fx: 0.944, plug: 0.42 },
   fin: { le: 3.07, cr: 2.86, ct: 2.15, h: 2.27, sweep: 38.7 },
   stab: { le: 0.73, z: "T", drop: -0.23, span: 7.55, root: 0.3, cr: 1.84, ct: 0.95, sweep: 22.5, dih: 0 },
+};
+
+// ---------- Embraer E-Jets ----------
+// Shared double-bubble fuselage (3.35 m high, 3.01 m wide), nose, flight deck, doors and tail
+// cone, traced from the E-Jets E2 Airport Planning Manual APM-5824, Figure 2.1 (EMBRAER 190-E2
+// General Aircraft Dimensions) and Figure 2.19 (cross-section). The E190 APM-1901 Figure 2.1 is
+// drawn about 9 % squashed vertically (its fuselage measures 3.06 m), so its heights were
+// rescaled by 3.35/3.06 before use.
+const EJ_NOSE = {
+  tip: 0.239,
+  top: [[0.012, 0.28], [0.045, 0.312], [0.075, 0.342], [0.119, 0.378], [0.179, 0.424], [0.239, 0.476], [0.299, 0.518],
+    [0.388, 0.572], [0.478, 0.616], [0.597, 0.7], [0.716, 0.788], [0.836, 0.86], [0.955, 0.909], [1.075, 0.945],
+    [1.194, 0.966], [1.343, 0.982], [1.493, 0.993], [1.642, 1]],
+  bot: [[0.012, 0.2], [0.045, 0.172], [0.075, 0.154], [0.119, 0.133], [0.179, 0.113], [0.239, 0.096], [0.299, 0.082],
+    [0.388, 0.066], [0.478, 0.051], [0.597, 0.034], [0.716, 0.031], [0.836, 0.024], [0.955, 0.016], [1.075, 0.013],
+    [1.194, 0.01], [1.343, 0.004], [1.493, 0]],
+};
+// high, nearly straight upper line and a strongly upswept underside to the APU exhaust
+const EJ_TAIL = {
+  top: [[2.776, 1], [2.627, 0.993], [2.478, 0.988], [2.328, 0.979], [2.179, 0.973], [1.881, 0.96], [1.582, 0.946],
+    [1.284, 0.928], [0.985, 0.915], [0.388, 0.888], [0.239, 0.876], [0.149, 0.872], [0.09, 0.85], [0.03, 0.836], [0, 0.83]],
+  bot: [[3.463, 0], [3.373, 0.006], [3.224, 0.021], [3.075, 0.033], [2.925, 0.054], [2.776, 0.075], [2.627, 0.096],
+    [2.478, 0.13], [2.179, 0.185], [1.881, 0.246], [1.582, 0.309], [1.284, 0.378], [0.985, 0.439], [0.687, 0.507],
+    [0.388, 0.579], [0.239, 0.621], [0.149, 0.648], [0.09, 0.672], [0.03, 0.699], [0, 0.705]],
+};
+// the large flight-deck side windows: windscreen side pane and the sliding window
+const EJ_GLASS = [
+  [[0.731, 0.619], [0.8, 0.787], [0.961, 0.784], [0.961, 0.613]],
+  [[0.731, 0.619], [0.8, 0.787], [0.714, 0.786], [0.484, 0.62]],
+];
+const EJ_FIN = { le: 6.5, cr: 4.56, ct: 1.49, h: 5.1, sweep: 40.4, fillet: [0.63, 0.56], rudder: 0.66, round: 0.25 };
+const EJ_WIN = (to) => [{ z: 0.673, from: 6.25, to: 6.25, w: 0.33, h: 0.38 }, { z: 0.673, from: 7.42, to, pitch: 0.80, w: 0.33, h: 0.38 }];
+
+// E190 (ERJ 190-100): APM-1901 Figure 2.1 (side, plan and front views; heights rescaled as above):
+// overall 36.24 m, span over winglets 28.72 m, tailplane span 12.08 m. Wing with tall swept
+// winglets reaching the crown, CF34-10E under the wing, one overwing exit per side, L1/L2 doors.
+F.e190 = {
+  kind: "narrow", L0: 36.24, over: 0, D: 3.35, W: 3.01, fwd: 0.56, fair: 0.149, fairAft: 1.566,
+  nose: EJ_NOSE, tail: EJ_TAIL, glass: EJ_GLASS, frame: 0.04,
+  floor: 0.345,
+  doors: [[5.19, 0.9], [-8.24, 0.78], [1.9, 0.5, "E", "w"]],
+  win: EJ_WIN(-9.49),
+  extras: [wingSeam([[-2.75, 0.05], [-2.4, 0.5], [-1.25, 0.95], [0.25, 1.1], [3.25, 1.12], [6.25, 1.05], [7.6, 0.92], [8.6, 0.6],
+    [8.85, 0.3], [8.3, 0.05]])],
+  wing: { le: 13.75, root: 1.505, span: 27.0, cr: 5.46, kink: [0.308, 3.59], ct: 1.55, sweep: 26.6, dih: 4.5, z: 0.209, t: [0.13, 0.1] },
+  tip: { h: 1.61, sweep: 44, top: 0.3, base: 0.465, blend: 0.3 },
+  ftf: [0.2, 0.42, 0.62],
+  eng: { kind: "fan", at: [0.263], fwd: 3.3, drop: 1.09, len: 4.27, dia: 1.87, fx: 0.62, cx: 0.73 },
+  fin: EJ_FIN,
+  stab: { le: 4.7, z: 0.737, span: 12.08, root: 0.9, cr: 3.03, ct: 0.85, sweep: 34.6, dih: 6 },
+};
+// E170/E175 (ERJ 170-100/-200): no planning manual found online (the E175 APM link is dead).
+// The E190's fuselage shortened by the plugs ahead of and behind the wing (data.js length), with
+// the smaller wing (Wikipedia "Embraer E-Jet family": span 26.0 m over the original winglets,
+// area 72.7 m2: chords scaled from the E190's), smaller CF34-8E, a lower fin and a 10 m tailplane.
+F.e175 = {
+  ...F.e190,
+  wing: { ...F.e190.wing, le: 14.1, span: 24.4, cr: 4.75, kink: [0.308, 3.12], ct: 1.35 },
+  tip: { h: 1.45, sweep: 44, top: 0.28, base: 0.465, blend: 0.25 },
+  eng: { kind: "fan", at: [0.27], fwd: 2.9, drop: 1.0, len: 3.65, dia: 1.6, fx: 0.62, cx: 0.74 },
+  fin: { ...EJ_FIN, h: 4.55, cr: 4.2, ct: 1.4 },
+  stab: { ...F.e190.stab, span: 10.0, cr: 2.8, ct: 0.95 },
+};
+// E175 "long wing" (E75L, the US scope-clause E175s): span 28.65 m with the larger, more canted
+// winglets of 2014-on aircraft (Wikipedia); E75S keeps the original 26.0 m wing.
+F.e175l = {
+  ...F.e175,
+  wing: { ...F.e175.wing, span: 25.6, ct: 1.25 },
+  tip: { h: 1.75, sweep: 50, top: 0.3, base: 0.55, blend: 0.35 },
+};
+// E190-E2: APM-5824 Figure 2.1 (side, plan and front views): overall 36.33 m, span 33.72 m,
+// tailplane span 10.0 m. New high-aspect-ratio wing with raked tips and no winglets, large
+// PW1900G geared turbofans, same fuselage and fin as the E190, smaller tailplane.
+F.e290 = {
+  ...F.e190, L0: 36.3, over: 0.03, fair: 0.185, fairAft: 1.64,
+  doors: [[5.25, 0.9], [-8.25, 0.78], [1.77, 0.55, "E", "w"]],
+  win: [{ z: 0.673, from: 6.25, to: 6.25, w: 0.33, h: 0.38 }, { z: 0.673, from: 7.44, to: -9.89, pitch: 0.797, w: 0.33, h: 0.38 }],
+  extras: [wingSeam([[-2.9, 0.05], [-2.7, 0.55], [-1.5, 0.95], [1.0, 1.07], [5.0, 1.06], [8.0, 0.95], [9.2, 0.72], [9.5, 0.45],
+    [8.8, 0.08]])],
+  wing: { le: 12.39, root: 1.505, span: 33.72, cr: 5.85, kink: [0.247, 3.76], ct: 1.14, sweep: 28.9, dih: 4.6, z: 0.209,
+    t: [0.13, 0.1], rake: [0.898, 52, 0.29] },
+  tip: null,
+  eng: { kind: "fan", at: [0.244], fwd: 3.88, drop: 1.09, len: 4.72, dia: 2.4, fx: 0.729, cx: 0.883 },
+  fin: { ...EJ_FIN, le: 6.47 },
+  stab: { le: 4.65, z: 0.737, span: 10.0, root: 0.9, cr: 3.02, ct: 1.15, sweep: 34.6, dih: 6 },
 };
 
 export const families = F;
 export const types = {
   CRJ2: "crj2", CRJ7: "crj7", CRJ9: "crj9",
-  E135: "e145", E145: "e145",
+  // ERJ-135: the ERJ-145 with 2.01 m taken out ahead of the wing and 1.53 m behind it (checked by
+  // overlay on APM-145/1238 Figure 2.2.1); its window rows re-phased to the drawing
+  E135: ["e145", { win: [{ z: 0.636, from: 6.04, to: 12.1, pitch: 0.746, w: 0.3, h: 0.34 }, { z: 0.636, from: 13.7, to: -8.21, pitch: 0.8, w: 0.3, h: 0.34 }] }],
+  E145: "e145",
+  E170: "e175", E75S: "e175", E75L: "e175l",
+  E190: "e190", E195: ["e190", { doors: [[5.19, 0.9], [-8.24, 0.78], [1.9, 0.5, "E", "w"], [2.85, 0.5, "E", "w"]] }],
+  E290: "e290",
 };

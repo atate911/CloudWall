@@ -29,7 +29,7 @@ const blendedWinglet = (t) => ({ sk, sec, upper }) => {
   sk.smooth("wl", edge, false, ' style="fill:none"');
 };
 
-// A door drawn to its own height (the renderer's doors have fixed heights per kind):
+// A door drawn at its own sill height (the renderer fixes the sill per kind of door):
 // [s (< 0 from the tail-cone end), width, sill height above the keel, height], all metres.
 const plugDoor = (s, w, z0, h) => ({ sk, at }) => {
   const [x, y] = sk.xy(at(s) + w / 2, z0 + h);
@@ -230,6 +230,50 @@ F.b712 = {
   stab: { le: 1.62, z: "T", drop: 0.95, span: 11.24, root: 0.3, cr: 4.0, ct: 1.24, sweep: 33.3, dih: -2, bullet: [3.4, 0.55] },
 };
 
+// ---------- McDonnell Douglas MD-80 series (MD-81/82/83/88) ----------
+// Reference: MD-80 ACAP (scanned), fig. 2.2 "General airplane dimensions, MD-81, -82, -83 and -88":
+// overall 45.02 m, tail cone 41.58 m, fuselage height 3.61 m, span 32.85 m, stabilizer 12.25 m.
+// The DC-9 nose and cross-section shared with the 717 (its nose and glazing fit the scan), a long
+// fuselage, long JT8D-200 nacelles with the reverser at the back, the very swept fin whose leading
+// and trailing edges run nearly parallel, the T-tail with its long bullet fairing, and a blunt tail
+// cone. Starboard doors: forward service door (0.68 x 1.22 m), two overwing exits, three cargo doors.
+// The MD-88's EFIS cockpit does not show outside, so the MD-88 uses the same drawing.
+F.md80 = {
+  ...F.b712, L0: 41.58, over: 3.44, D: 3.6, fwd: 0.5, fair: 0.02,
+  tail: {
+    top: [[1.6, 1], [1.0, 0.975], [0.5, 0.93], [0, 0.897]],
+    bot: [[4.05, 0], [3.36, 0.025], [2.77, 0.047], [2.55, 0.069], [2.24, 0.114], [1.83, 0.208], [1.49, 0.294], [1.22, 0.375],
+      [0.99, 0.444], [0.72, 0.506], [0.44, 0.556], [0.16, 0.614], [0, 0.631]],
+  },
+  doors: [[3.35, 0.68, "D", undefined, 1.22], [9.99, 1.35, "C"], [16.7, 1.3, "C"], [1.94, 0.51, "E", "w"], [2.84, 0.51, "E", "w"], [-11.78, 1.3, "C"]],
+  win: [{ z: 0.611, from: 5.66, to: -9.8, pitch: 0.475, w: 0.24, h: 0.3 }],
+  wing: { le: 20.06, root: 1.67, span: 32.85, cr: 6.0, kink: [0.21, 4.36], ct: 1.15, sweep: 28.5, dih: 3, z: 0.126, t: [0.13, 0.1] },
+  ftf: [0.25, 0.45, 0.65, 0.82],
+  extras: [rootFairing([[0.0, 0.25], [-0.55, 0.75], [-0.3, 1.25], [0.4, 1.5], [2.0, 1.6], [5.0, 1.6]])],
+  eng: { kind: "fan", aft: { s: 10.98, z: 0.57 }, len: 6.9, dia: 1.78, style: "long", fx: 0.86, plug: 0.3 },
+  fin: { le: 5.7, cr: 3.1, ct: 4.2, h: 3.9, sweep: 44, fillet: [2.5, 0.8] },
+  stab: { le: 1.83, z: "T", drop: 0.35, span: 12.25, root: 0.2, cr: 3.6, ct: 0.8, sweep: 39.3, dih: -1.5, bullet: [4.0, 0.35] },
+};
+
+// ---------- Boeing P-8 Poseidon ----------
+// Lower confidence: no Boeing figure. The 737-800 airframe above (the P-8 is a 737-800ERX), with
+// what Wikipedia ("Boeing P-8 Poseidon") gives as different: raked wingtips instead of winglets
+// (span 37.64 m against 34.32 m; the tip from 92% of the span sweeps back at about 55 degrees), and
+// almost no cabin windows (a few forward and the two observers' windows, one each side); the
+// weapons bay replaces the aft cargo door, and a low SATCOM fairing sits on the crown behind the wing.
+const satcom = (s0, len, h) => ({ sk, top }) => {
+  const z = (s) => top(s) - 0.02;
+  sk.smooth("hull", [[s0, z(s0), "c"], [s0 + len * 0.25, z(s0 + len * 0.25) + h * 0.9], [s0 + len * 0.6, z(s0 + len * 0.6) + h],
+    [s0 + len, z(s0 + len), "c"]]);
+};
+F.p8 = {
+  ...F.b737ng,
+  wing: { ...F.b737ng.wing, span: 37.64, kink: [0.234, 5.1], ct: 0.68, rake: [0.9, 55] },
+  doors: [[4.67, 0.86], [8.53, 1.24, "C"], [1.81, 0.51, "E", "w"], [2.78, 0.51, "E", "w"], [-6.14, 0.79]],
+  win: [{ z: 0.62, from: 6.13, to: 7.15, pitch: 0.508, w: 0.25, h: 0.34 }, { z: 0.6, from: 11.6, to: 11.6, w: 0.42, h: 0.46 }],
+  extras: [satcom(22.0, 2.6, 0.32)],
+};
+
 export const families = F;
 export const types = {
   // fwd: share of each stretch ahead of the wing, from the ACAP engine-inlet stations
@@ -237,7 +281,7 @@ export const types = {
   // -600's forward cargo door is 1.4 m further forward
   B734: "b737cl",
   B735: ["b737cl", { doors: clDoors([2.36], 7.58) }],
-  B736: ["b737ng", { fwd: 0.547, doors: ngDoors([2.92], -6.14, 7.13) }],
+  B736: ["b737ng", { fwd: 0.547, fairAft: 1.0, doors: ngDoors([2.92], -6.14, 7.13) }],
   B737: ["b737ngw", { fwd: 0.511, doors: ngDoors([2.92]) }],
   B738: "b737ngw",
   B739: ["b737ngw", { fwd: 0.586, win: midExitWin(-13.94, 6.13, -8.14), extras: [plugDoor(-13.94, 0.69, 1.52, 1.24)] }],
@@ -245,6 +289,8 @@ export const types = {
   B38M: "b737max",
   B39M: ["b737max", { fwd: 0.579, win: midExitWin(-14.95, 6.13, -9.07), extras: [plugDoor(-14.95, 0.69, 1.52, 1.24)] }],
   B712: "b712",
+  P8: "p8",
+  MD82: "md80", MD83: "md80", MD88: "md80",
   B752: "b757w",
   // 757-300: also a smaller door 3 behind the wing (36.0 m; drawn panel 0.8 x 1.5 m)
   B753: ["b757", { doors: b757Doors([2.46, 3.29]), extras: [...F.b757.extras, plugDoor(-18.05, 0.8, 1.6, 1.45)],

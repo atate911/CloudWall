@@ -10,7 +10,7 @@
 //   tail     top and bottom outline points [distance forward of the tail-cone end, z] in D
 //   body     instead of nose/tail: a closed outline [s, z, flag] in D (light aircraft, helicopters)
 //   glass    flight-deck panes, each a list of [s, z] in D
-//   doors    [s, width, kind, anchor, height]: s < 0 counts from the tail-cone end; anchor "w" from
+//   doors    [s, width, kind, anchor, height, sill]: s < 0 counts from the tail-cone end; anchor "w" from
 //            the wing root leading edge. kind D passenger (default), E overwing exit, C cargo, U upper deck
 //   win      window rows {z (D), from, to (s), pitch, w, h, upper}
 //   wing     {le (root leading edge s), root (half-width at root), span, cr, kink [e, chord], ct,

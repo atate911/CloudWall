@@ -281,6 +281,7 @@ function inset(pts, d) {
 //   sec(e)      the wing section at span fraction e {le, c, z, y} (null before the wing is drawn)
 //   fan(sk, s0, zc, spec), prop(sk, s, z, d, blades), propNacelle(sk, s0, zc, spec, q), pylon(sk, q, s0, zc, spec)
 //   surface(sk, cls, wingSpec) draws a lifting surface and returns its sec(); upper/lower(q, x) section heights
+//   shaded(pts, cls) draws a smooth closed shape in the fuselage colour with its shading; gradient: the shading's id
 // Classes: hull fin stab wing wl nac pyl core plug inlet glass win door hl ftf disc blade rotor strut skid tire hub pant fen
 
 function draw(f) {
@@ -324,15 +325,17 @@ function draw(f) {
   const hd = sk.smooth("hull", H);
   sk.path("shade", hd, ` fill="url(#${id})"`);
   // one-off parts a profile draws itself; see kit below
-  const kit = { sk, f, D, L, top, at, sec: null, fan, prop, propNacelle, surface, pylon, upper, lower, tan, lerp };
+  // shaded(pts): a fuselage-coloured shape with the fuselage's shading (fairings, bulges)
+  const shaded = (pts, cls = "hull") => { const d = sk.smooth(cls, pts); sk.path("shade", d, ` fill="url(#${id})"`); return d; };
+  const kit = { sk, f, D, L, top, at, sec: null, fan, prop, propNacelle, surface, pylon, upper, lower, tan, lerp, shaded, gradient: id };
   for (const extra of f.extras || []) extra(kit);
 
   // doors, cabin windows and the flight deck glazing
-  const doors = (f.doors || []).map(([s, wd, kind = "D", anchor, h]) => ({ s: anchor === "w" ? w.le + s : at(s), w: wd, kind, h }));
+  const doors = (f.doors || []).map(([s, wd, kind = "D", anchor, h, sill]) => ({ s: anchor === "w" ? w.le + s : at(s), w: wd, kind, h, sill }));
   const floor = (f.floor ?? 0.36) * D;
   for (const d of doors) {
     const h = d.h || (d.kind === "E" ? 0.95 : d.kind === "C" ? floor - 0.35 : d.kind === "U" ? 1.6 : 1.85);
-    const z0 = d.kind === "E" ? floor + 0.42 : d.kind === "C" ? 0.25 : d.kind === "U" ? (f.upper ?? 1.1) * D : floor + 0.05;
+    const z0 = d.sill ?? (d.kind === "E" ? floor + 0.42 : d.kind === "C" ? 0.25 : d.kind === "U" ? (f.upper ?? 1.1) * D : floor + 0.05);
     const [x, y] = sk.xy(d.s + d.w / 2, z0 + h);
     sk.out.push(`<rect class="door${d.kind === "C" ? " cargo" : ""}" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${d.w}" height="${h.toFixed(2)}" rx="${Math.min(0.2, d.w / 3)}"/>`);
   }

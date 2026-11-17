@@ -462,11 +462,98 @@ F.be58 = stretch(BE55, 2.8, 0.26, {
 // the plug is between windscreen and wing: the wing (and its nacelles) moves back with the tail
 F.be58.wing = { ...F.be58.wing, le: BE55.wing.le + 0.26 };
 
+// ---------- Mooney M20 ----------
+// Reference: Mooney M20G Statesman 3-view (Wikimedia Commons,
+// File:Mooney_M20G_Statesman_3-view_line_drawing.png, Wikipedia article Mooney M20), side
+// view 24 ft (7.32 m) measured; the M20J (data.js M20P 7.5) has 0.2 m more cowl and spinner.
+// The Mooney signature: the fin's leading edge stands straight up while the rudder's
+// trailing edge and hinge lean aft at the bottom, so the tail looks swept forward. Low wing,
+// short cabin with three side windows, door on the right, retractable gear (drawn retracted).
+const M20 = {
+  kind: "piston", L0: 7.32, over: 0, D: 1, W: 1.1,
+  body: [
+    [0, 0.78, "c"], [0.1, 0.84], [0.2, 0.88], [0.3, 0.91], [0.45, 0.94], [0.5, 0.955], [0.8, 0.97], [1.6, 0.965, "c"],
+    [1.7, 1.06], [1.8, 1.15], [1.9, 1.21], [2.0, 1.255], [2.1, 1.285], [2.3, 1.29], [2.6, 1.28], [3.0, 1.24, "l"],
+    [5.0, 0.915, "l"], [6.04, 0.92, "c"], [6.13, 1.95], [6.2, 1.975], [6.66, 1.975], [6.71, 1.96, "cl"], [7.3, 0.46],
+    [7.31, 0.36], [7.25, 0.26], [7.1, 0.19], [6.5, 0.12], [6.0, 0.08], [5.5, 0.04], [5.0, 0.02], [4.5, -0.02],
+    [4.0, -0.04], [3.5, -0.07], [3.0, -0.08], [2.6, -0.08], [2.2, -0.05], [1.8, -0.01], [1.5, 0.03], [1.2, 0.07],
+    [0.9, 0.12], [0.7, 0.16], [0.6, 0.18], [0.53, 0.25], [0.48, 0.42], [0.45, 0.62], [0.3, 0.66], [0.2, 0.69],
+    [0.1, 0.725],
+  ],
+  glass: [
+    [[1.62, 0.97], [1.9, 1.2], [1.98, 1.18], [1.8, 0.84]],
+    [[1.92, 0.82], [2.02, 1.14], [2.49, 1.15], [2.49, 0.81]],
+    [[2.57, 0.82], [2.57, 1.14], [2.95, 1.13], [2.95, 0.82]],
+    [[3.03, 0.83], [3.03, 1.12], [3.4, 1.08], [3.4, 0.84]],
+  ],
+  frame: 0.035,
+  wing: { le: 1.86, root: 0.55, span: 10.67, cr: 2.14, ct: 1.05, sweep: 1.5, dih: 5.5, z: 0.04, t: [0.15, 0.12] },
+  eng: { kind: "none", nose: { s: 0.43, z: 0.78, d: 1.88, blades: 2 } },
+  stab: { le: 1.37, z: 0.65, span: 3.58, root: 0.2, cr: 1.0, ct: 0.7, sweep: 4, dih: 0, thick: 0.1 },
+  parts: {
+    doors: [[[1.84, 0.5, "c"], [1.84, 0.82, "c"], [1.97, 1.2, "c"], [2.53, 1.22, "c"], [2.53, 0.5, "c"]]],
+    lines: [[[6.4, 1.93], [7.08, 0.2]]],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+F.m20 = stretch(M20, 0.9, 0.2);
+
+// ---------- Boeing-Stearman Model 75 (PT-17 / N2S Kaydet) ----------
+// Reference: U.S. Navy N2S-3 general arrangement diagram (Wikimedia Commons,
+// File:Boeing_N2S-3_3-view_line_drawing.png, Wikipedia article Boeing-Stearman Model 75),
+// side view 25 ft (data.js 7.6) drawn level. Biplane: the lower wing is the renderer's wing,
+// the upper wing (staggered 0.69 m forward, 3 degrees incidence), cabane and N interplane
+// struts are drawn last; uncowled radial engine with exposed cylinder heads; tandem open
+// cockpits; rounded fin and rudder with braced tailplane; tailwheel undercarriage.
+F.st75 = {
+  kind: "piston", L0: 7.6, over: 0, D: 1, W: 0.85,
+  body: [
+    [0.03, 0.47, "c"], [0.08, 0.53], [0.15, 0.56], [0.27, 0.57, "c"], [0.3, 0.93, "c"], [0.45, 0.97], [0.6, 0.95],
+    [0.72, 0.88], [1.15, 0.97], [2.6, 0.98, "l"], [3.0, 0.97], [3.6, 0.94], [4.0, 0.9], [4.4, 0.875], [4.8, 0.85],
+    [5.2, 0.825], [5.6, 0.8], [6.04, 0.785, "c"], [6.59, 1.6], [6.88, 1.73], [7.16, 1.58], [7.39, 1.26], [7.52, 0.89],
+    [7.56, 0.57], [7.53, 0.39], [7.39, 0.25], [7.16, 0.16], [7.0, 0.12], [6.5, 0.07], [6.0, 0.02], [5.6, -0.02],
+    [5.2, -0.06], [4.8, -0.1], [4.4, -0.13], [4.0, -0.15], [3.6, -0.19], [3.2, -0.2], [2.4, -0.19], [2.0, -0.17],
+    [1.6, -0.16], [1.15, -0.16], [0.72, -0.05], [0.55, -0.06], [0.3, -0.04, "c"], [0.27, 0.38, "c"], [0.15, 0.39],
+    [0.08, 0.41],
+  ],
+  // the two windscreens
+  glass: [[[2.7, 0.97], [2.83, 1.13], [2.95, 1.1], [2.97, 0.97]], [[3.5, 0.94], [3.62, 1.1], [3.74, 1.07], [3.76, 0.93]]],
+  frame: 0.02,
+  wing: { le: 1.84, root: 0.42, span: 9.5, cr: 1.52, ct: 1.52, sweep: 0, dih: 1.5, z: 0.06, t: [0.12, 0.12], inc: 4 },
+  eng: { kind: "none", nose: { s: 0.1, z: 0.47, d: 2.45, blades: 2 } },
+  stab: { le: 1.8, z: 0.62, span: 3.81, root: 0.2, cr: 1.24, ct: 1.0, sweep: 3, dih: 0, thick: 0.08 },
+  parts: {
+    lines: [[[6.72, 0.5], [6.72, 1.19], [6.39, 1.19], [6.39, 1.42]], [[2.98, 0.86], [3.48, 0.84]], [[3.78, 0.83], [4.3, 0.81]]],
+    struts: [
+      // tailplane bracing
+      [[6.42, 0.21], [6.57, 0.6], 0.04, 0.04], [[6.42, 0.21], [6.2, 0.6], 0.04, 0.04],
+      [[6.41, 0.66], [6.45, 1.16], 0.04, 0.04], [[6.2, 0.66], [6.25, 1.1], 0.04, 0.04],
+    ],
+    gear: [
+      { leg: [[1.85, -0.18], [1.48, -0.9]], w: [0.06, 0.05] },
+      { leg: [[1.3, -0.15], [1.45, -0.95]], w: [0.11, 0.08], at: [1.45, -0.95], r: 0.31 },
+      { leg: [[6.92, 0.12], [6.87, -0.02]], w: [0.06, 0.05], at: [6.86, -0.02], r: 0.1 },
+    ],
+    draw: [(k) => {
+      const { sk } = k;
+      // exposed cylinder heads of the radial, around the crankcase
+      for (const z of [0.82, 0.6, 0.12, -0.05]) sk.smooth("core", [[0.31, z], [0.31, z + 0.13], [0.5, z + 0.13, "c"], [0.5, z, "c"]]);
+      sk.smooth("plug", [[0.06, 0.47], [0.12, 0.55], [0.28, 0.55, "c"], [0.28, 0.39, "c"], [0.12, 0.39]]);
+      // cabane and N interplane struts, then the upper wing
+      for (const [a, b, w] of [[[1.3, 0.96], [1.3, 1.48], 0.05], [[1.75, 0.97], [1.6, 1.48], 0.05],
+        [[2.0, 0.17], [1.37, 1.44], 0.07], [[2.8, 0.11], [2.17, 1.39], 0.07], [[2.14, 1.37], [2.0, 0.17], 0.05]]) leg(sk, a, b, w);
+      k.surface(sk, "wing", { le: 1.15, root: 0, span: 9.8, cr: 1.52, ct: 1.52, sweep: 0, dih: 0, z: 1.54, t: [0.12, 0.12], inc: 3 });
+    }],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 F._raw_be36 = BE36; // TEMP
+F._raw_m20 = M20; // TEMP
 F._raw_be55 = BE55; // TEMP
 export const families = F;
 export const types = {
   C172: "c172", C152: "c150", C150: "c150", C182: "c182", C206: "c206", C208: "c208",
   P28A: "pa28", P28B: "pa28b", PA46: "pa46", P46T: "p46t",
-  BE36: "be36", BE58: "be58", ZZB36: "_raw_be36", ZZB55: "_raw_be55", // TEMP
+  BE36: "be36", BE58: "be58", M20P: "m20", ST75: "st75", ZZB36: "_raw_be36", ZZB55: "_raw_be55", ZZM20: "_raw_m20", // TEMP
 };

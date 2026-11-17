@@ -56,8 +56,9 @@ F.c17 = {
 // side elevation of the 707-120B (p. 13; overall 44.22 m, fuselage 42.32 m, fuselage height 4.33 m
 // from fig. 2.2). The KC-135 shares that nose, wing, tall fin and tail cone on a fuselage 2.7 m
 // shorter (KC-135R 41.53 m long, 39.88 m span, 12.70 m high per Wikipedia); its length comes from
-// data.js. The E-3 and E-6 are 707-320B airframes (46.61 m, span 44.42 m): longer fuselage, bigger
-// wing. Engines from published data: F108 (CFM56-2) on KC-135R and E-6, TF33 (JT3D) on the E-3.
+// data.js. Engine stations (8.28 / 14.05 m out), wing root, cargo door and fuselage height
+// (4.22 m) from the USAF "Boeing KC-135A Stratotanker 3-view line drawing" (Wikimedia Commons).
+// The E-3 and E-6 are 707-320B airframes (46.61 m, span 44.42 m): longer fuselage, bigger wing. Engines from published data: F108 (CFM56-2) on KC-135R and E-6, TF33 (JT3D) on the E-3.
 const C135_NOSE = {
   tip: 0.44,
   top: [[0.05, 0.54], [0.1, 0.571], [0.2, 0.616], [0.3, 0.669], [0.4, 0.735], [0.5, 0.788], [0.6, 0.832], [0.7, 0.872],
@@ -81,7 +82,7 @@ const hfProbe = ({ sk, f, D, L, top, tan }) => {
   sk.poly("fin", [[tipLE + 0.4, zt - 0.02], [tipLE - 2.5, zt - 0.1], [tipLE - 2.5, zt - 0.16], [tipLE + 0.5, zt - 0.3]]);
 };
 F.k35r = {
-  kind: "quad", L0: 42.3, over: 1.92, D: 4.28, W: 3.66, fwd: 0.5, fair: 0.04, fairAft: 1.0,
+  kind: "quad", L0: 42.3, over: 1.92, D: 4.22, W: 3.66, fwd: 0.37, fair: 0.04, fairAft: 1.0,
   nose: C135_NOSE,
   tail: {
     top: [[2.0, 1], [1.5, 0.985], [1.0, 0.955], [0.5, 0.915], [0, 0.865]],
@@ -92,11 +93,11 @@ F.k35r = {
     [[0.448, 0.762], [0.565, 0.778], [0.555, 0.632], [0.448, 0.652]],
     [[0.59, 0.74], [0.7, 0.75], [0.72, 0.665], [0.665, 0.6], [0.6, 0.625]],
   ],
-  floor: 0.42,
-  doors: [[8.7, 2.97]],
+  floor: 0.4,
+  doors: [[8.9, 2.75, "D", undefined, 2.05]],
   wing: { le: 12.9, root: 1.83, span: 39.88, cr: 8.4, kink: [0.3, 5.6], ct: 2.4, sweep: 39, dih: 6, z: 0.2, t: [0.13, 0.09] },
   ftf: [0.28, 0.5, 0.7],
-  eng: { kind: "fan", at: [0.26, 0.505], fwd: 3.3, drop: 1.2, len: 5.2, dia: 2.05, fx: 0.72, cx: 0.88, pyFront: 0.35, pyTe: 0.5, pyAft: 0.85 },
+  eng: { kind: "fan", at: [0.356, 0.675], fwd: 4.2, drop: 1.2, len: 5.2, dia: 2.05, fx: 0.72, cx: 0.88, pyFront: 0.35, pyTe: 0.5, pyAft: 0.85 },
   fin: { le: 6.7, cr: 5.85, ct: 2.6, h: 6.9, sweep: 35, fillet: [1.2, 1.0], rudder: 0.61 },
   stab: { le: 4.5, z: 0.78, span: 12.1, root: 0.6, cr: 4.4, ct: 1.8, sweep: 38, dih: 7 },
   overlays: [boom, hfProbe],
@@ -119,7 +120,7 @@ F.e3 = {
   ...F.k35r, ...C135_320,
   doors: [[5.2, 0.86], [-7.0, 0.86]],
   win: [{ z: 0.62, from: 7.5, to: 7.5, w: 0.26, h: 0.3 }],
-  eng: { kind: "fan", at: [0.255, 0.49], fwd: 3.0, drop: 1.25, len: 5.6, dia: 1.55, fx: 0.42, cx: 0.9, pyFront: 0.3, pyTe: 0.55, pyAft: 0.8 },
+  eng: { kind: "fan", at: [0.315, 0.63], fwd: 4.0, drop: 1.25, len: 5.6, dia: 1.55, fx: 0.42, cx: 0.9, pyFront: 0.3, pyTe: 0.55, pyAft: 0.8 },
   overlays: [rotodome, hfProbe],
 };
 // E-6B Mercury: 707-320B airframe with CFM56 nacelles and wingtip ESM/HF pods (45.16 m over the pods)
@@ -132,7 +133,7 @@ F.e6 = {
   ...F.k35r, ...C135_320,
   doors: [[5.2, 0.86], [-7.0, 0.86]],
   win: [{ z: 0.62, from: 7.3, to: 12.4, pitch: 0.51 * 5, w: 0.26, h: 0.34 }],
-  eng: { ...F.k35r.eng, at: [0.255, 0.49], fwd: 3.5 },
+  eng: { ...F.k35r.eng, at: [0.315, 0.63], fwd: 4.4 },
   overlays: [tipPods, hfProbe],
 };
 
@@ -295,35 +296,54 @@ F.a124 = {
   overlays: [({ sk, D }) => sk.smooth("hl", [[4.2, 0.84 * D], [4.6, 0.55 * D], [5.0, 0.25 * D], [5.15, 0.03 * D]], false)],
 };
 
-// ---------- Ilyushin Il-76 ----------
-// Published dimensions only (Wikipedia): length 46.59 m, span 50.5 m, height 14.76 m. High
-// anhedral wing, T-tail, glazed navigator's station in the lower nose with the chin radome
-// beneath, main-gear sponsons, four D-30KP long nacelles on pylons, upswept rear with the ramp.
+// ---------- Ilyushin Il-76MD ----------
+// Reference: Wikimedia Commons "Ilyushin Il-76.svg" (side, plan and front views; length 46.59 m,
+// span 50.5 m, height 14.76 m per Wikipedia). High anhedral wing on a dorsal fairing, T-tail
+// with a large bullet, glazed navigator's station in the lower nose with the radome bulge under
+// the chin, long main-gear sponsons, four long D-30KP nacelles on pylons, upswept rear with the
+// tail turret position at the end.
 F.il76 = {
-  kind: "quad", L0: 44.9, over: 1.69, D: 4.9, W: 4.8, fwd: 0.5, fair: 0, floor: 0.15,
+  kind: "quad", L0: 43.0, over: 3.59, D: 4.86, W: 4.8, fwd: 0.5, fair: 0, floor: 0.21,
   nose: {
-    tip: 0.42,
-    top: [[0.05, 0.53], [0.12, 0.6], [0.22, 0.66], [0.32, 0.7], [0.42, 0.75], [0.52, 0.83], [0.62, 0.9], [0.75, 0.95], [0.9, 0.98], [1.1, 0.995], [1.3, 1]],
-    bot: [[0.05, 0.3], [0.12, 0.2], [0.2, 0.08], [0.28, -0.02], [0.4, -0.07], [0.55, -0.06], [0.7, -0.02], [0.85, 0]],
+    tip: 0.44,
+    top: [[0.05, 0.515], [0.1, 0.55], [0.15, 0.59], [0.2, 0.62], [0.3, 0.675], [0.4, 0.733], [0.5, 0.808], [0.6, 0.888], [0.7, 0.94],
+      [0.8, 0.972], [0.9, 0.99], [1.1, 1]],
+    bot: [[0.05, 0.36], [0.1, 0.315], [0.2, 0.23], [0.3, 0.16], [0.4, 0.088], [0.5, 0.03], [0.6, -0.005], [0.7, -0.032], [0.85, -0.045],
+      [1.0, -0.02], [1.2, 0.022], [1.4, 0.012], [1.65, 0]],
   },
   tail: {
-    top: [[3.0, 1], [2.2, 0.99], [1.4, 0.96], [0.7, 0.92], [0, 0.88]],
-    bot: [[3.4, 0], [3.0, 0.07], [2.5, 0.17], [2.0, 0.29], [1.5, 0.41], [1.0, 0.54], [0.5, 0.66], [0.15, 0.74], [0, 0.76]],
+    top: [[3.1, 0.967], [2.0, 1.0], [1.0, 1.1], [0.3, 1.23], [0, 1.3]],
+    bot: [[3.09, 0.008], [2.67, 0.062], [2.26, 0.107], [1.85, 0.23], [1.44, 0.346], [1.03, 0.475], [0.62, 0.609], [0.21, 0.745], [0, 0.84]],
   },
   glass: [
-    // flight deck windscreen and side windows
-    [[0.47, 0.775], [0.56, 0.86], [0.63, 0.88], [0.64, 0.79], [0.53, 0.765]],
-    [[0.66, 0.9], [0.76, 0.945], [0.77, 0.82], [0.67, 0.8]],
+    [[0.47, 0.79], [0.56, 0.87], [0.66, 0.89], [0.66, 0.77], [0.52, 0.765]],
+    [[0.68, 0.895], [0.84, 0.905], [0.84, 0.77], [0.68, 0.77]],
     // navigator's glazed nose
-    [[0.03, 0.47], [0.1, 0.58], [0.2, 0.64], [0.3, 0.665], [0.3, 0.42], [0.18, 0.34], [0.07, 0.33]],
+    [[0.13, 0.43], [0.52, 0.42], [0.52, 0.2], [0.35, 0.16], [0.2, 0.25]],
   ],
-  doors: [[7.5, 0.9], [-14.6, 0.9]],
-  win: [{ z: 0.62, from: 10.0, to: 16.0, pitch: 1.5, w: 0.3, h: 0.3 }],
-  wing: { le: 17.2, root: 2.4, span: 50.5, cr: 9.2, ct: 3.2, sweep: 27, dih: -3, bend: 0.8, z: 0.95, t: [0.13, 0.1] },
-  eng: { kind: "fan", at: [0.27, 0.56], fwd: 3.9, drop: 1.75, len: 6.4, dia: 1.95, fx: 0.72, cx: 0.9, pyFront: 0.3, pyTe: 0.45, pyAft: 0.85 },
-  fin: { le: 9.8, cr: 8.0, ct: 4.2, h: 8.2, sweep: 40, fillet: [1.5, 0.6], rudder: 0.68 },
-  stab: { le: 2.2, z: "T", drop: 0.3, span: 17.4, root: 0.5, cr: 5.6, ct: 2.2, sweep: 33, dih: -2, bullet: [5.6, 0.8] },
-  extras: [sponson(16.8, 28.5, 1.8, 0.2)],
+  doors: [[8.1, 1.0, "D", undefined, 1.9]],
+  wing: { le: 13.3, root: 2.42, span: 50.5, cr: 10.5, ct: 3.0, sweep: 33.6, dih: -3, z: 1.0, t: [0.13, 0.1] },
+  eng: { kind: "fan", at: [0.161, 0.354], fwd: 4.6, drop: 2.15, len: 5.8, dia: 2.1, style: "long", fx: 0.9, plug: 0.4, pyFront: 0.35, pyTe: 0.45, pyAft: 0.8 },
+  fin: { le: 10.1, cr: 8.6, ct: 6.1, h: 7.44, sweep: 41.4, rudder: 0.7 },
+  stab: { le: 4.5, z: "T", drop: -0.5, span: 17.4, root: 0.5, cr: 5.0, ct: 2.6, sweep: 34, dih: -2, bullet: [8.0, 0.55] },
+  extras: [
+    ({ sk }) => sk.smooth("hull", [[8.5, 4.84, "c"], [11, 5.28], [13, 5.54], [16, 5.69], [19, 5.56], [21, 5.33], [23, 4.92], [25, 4.72, "c"]], false),
+    ({ sk, L, top, f }) => {
+      // dorsal fin running forward from the fin
+      const a = L - 15.0, b = L - 8.0, za = top(a), z1 = 7.0, te = L - f.fin.le + f.fin.cr - 0.3;
+      const c = [[a, za - 0.01, "c"], [a + 2.2, za + 0.15], [a + 4.6, za + 0.75], [a + 6.2, za + 1.6], [b, z1, "c"]];
+      sk.smooth("fin", [...c, [b + 0.8, z1 - 0.3, "c"], [te, top(te) + 0.1, "c"], [te, top(te) - 0.4, "c"], [a, za - 0.4, "c"]], true, ' style="stroke:none"');
+      sk.smooth("fin", c, false, ' style="fill:none"');
+    },
+    ({ sk }) => sk.smooth("hull", [[13.2, 0.73, "c"], [14.2, 1.2], [17, 1.36], [23, 1.34], [27.5, 1.15], [29.6, 1.0, "c"], [26, -0.45], [22, -0.78], [17, -0.7], [14.2, -0.1]]),
+  ],
+  overlays: [
+    // tail turret glazing and the radome joint
+    ({ sk, L, D }) => {
+      sk.smooth("glass", [[L - 0.9, 1.2 * D, "c"], [L - 0.1, 1.24 * D], [L + 0.15, 1.05 * D], [L - 0.2, 0.9 * D, "c"], [L - 0.9, 0.95 * D, "c"]]);
+      sk.poly("strut", [[L + 0.1, 1.0 * D], [L + 1.0, 1.0 * D], [L + 1.0, 0.985 * D], [L + 0.1, 0.985 * D]]);
+    },
+  ],
 };
 
 export const families = F;
