@@ -1,0 +1,165 @@
+# Seats per aircraft. airline = ICAO callsign prefix of the operator, or * for any airline (a typical range).
+# typical is what the board shows and what the logbook totals; lo-hi is shown when an airline flies
+# several layouts. Airline rows come from airline fleet pages and seat-map sites (checked Nov 2026);
+# where sources disagreed the row keeps the range. Generic rows are typical North American layouts.
+# GA and business types count every seat, the pilot's included.
+airline,type,typical,lo,hi
+# --- Alaska, Horizon, Hawaiian
+ASA,B737,124,124,124
+ASA,B738,159,159,161
+ASA,B739,178,178,178
+ASA,B38M,159,159,161
+ASA,B39M,178,178,178
+QXE,E75L,76,76,76
+HAL,A21N,189,189,189
+HAL,A332,278,278,278
+# --- Delta (the 164-seat A321neo flies Atlanta-Las Vegas only)
+DAL,B739,180,180,180
+DAL,BCS3,130,130,130
+DAL,A21N,194,164,194
+DAL,B752,199,168,199
+DAL,A320,157,157,157
+DAL,A339,281,281,281
+# --- United
+UAL,B737,126,126,126
+UAL,B738,166,166,166
+UAL,B739,179,179,179
+UAL,B38M,166,166,166
+UAL,B39M,179,179,179
+UAL,A21N,200,200,200
+# --- American (cabins being retrofitted, so ranges)
+AAL,A319,128,120,132
+AAL,A320,150,138,150
+AAL,A321,190,165,190
+AAL,A21N,196,176,196
+AAL,B738,172,160,172
+AAL,B38M,172,156,172
+# --- Southwest
+SWA,B737,143,137,143
+SWA,B738,175,175,175
+SWA,B38M,175,175,175
+# --- low-cost and others
+NKS,A20N,182,182,182
+NKS,A21N,228,228,228
+FFT,A20N,186,186,186
+FFT,A21N,240,240,240
+AAY,A320,186,177,186
+ACA,BCS3,137,137,137
+# --- regional partners (US scope rules cap these at 76)
+SKW,E75L,76,70,76
+SKW,CRJ9,76,70,76
+SKW,CRJ7,70,65,70
+# ============ typical by type, any airline ============
+*,A19N,140,120,156
+*,A319,128,120,144
+*,A320,150,138,186
+*,A20N,165,150,186
+*,A321,190,165,220
+*,A21N,196,180,240
+*,BCS1,110,108,120
+*,BCS3,137,130,149
+*,B712,125,117,128
+*,B737,143,124,149
+*,B738,166,159,189
+*,B739,179,178,189
+*,B37M,150,138,153
+*,B38M,172,156,189
+*,B39M,179,178,193
+*,B752,185,168,200
+*,B753,234,234,243
+*,B763,216,211,260
+*,B764,238,238,245
+*,B772,300,270,364
+*,B77W,350,300,400
+*,B788,240,230,250
+*,B789,290,270,300
+*,B78X,318,300,330
+*,A332,270,230,290
+*,A333,290,280,300
+*,A339,285,280,300
+*,A359,310,280,330
+*,A35K,350,330,380
+*,A388,500,480,560
+*,B744,380,360,420
+*,B748,364,364,364
+*,E170,70,69,78
+*,E75L,76,70,76
+*,E75S,76,76,78
+*,E190,100,96,114
+*,E195,118,108,124
+*,E290,110,100,114
+*,E295,132,120,146
+*,CRJ2,50,50,50
+*,CRJ7,70,65,78
+*,CRJ9,76,76,90
+*,CRJX,100,100,104
+*,DH8D,76,74,82
+*,DH8C,50,50,56
+*,AT72,70,68,78
+*,AT76,72,70,78
+*,AT45,48,48,50
+*,E145,50,50,50
+*,E135,37,37,37
+*,SF34,34,30,34
+*,B190,19,19,19
+# --- general aviation (pilot included)
+*,C150,2,2,2
+*,C152,2,2,2
+*,C172,4,4,4
+*,C182,4,4,4
+*,C206,6,6,6
+*,C210,6,6,6
+*,P28A,4,4,4
+*,P28R,4,4,4
+*,PA32,6,6,6
+*,PA46,6,6,6
+*,SR20,4,4,5
+*,SR22,4,4,5
+*,SR2T,4,4,5
+*,DA20,2,2,2
+*,DA40,4,4,4
+*,DA42,4,4,4
+*,BE35,6,4,6
+*,BE36,6,6,6
+*,BE58,6,6,6
+*,M20P,4,4,4
+*,M20T,4,4,4
+*,C208,10,9,14
+*,PC12,8,6,11
+*,TBM7,6,6,6
+*,TBM8,6,6,6
+*,TBM9,6,6,6
+*,R22,2,2,2
+*,R44,4,4,4
+*,R66,5,5,5
+*,B06,5,5,5
+*,B407,7,6,7
+*,AS50,6,5,6
+*,EC30,7,6,7
+*,EC35,7,6,8
+*,A109,7,6,8
+# --- business jets (pilots included)
+*,C525,6,5,7
+*,C25A,8,7,9
+*,C25B,9,8,10
+*,C25C,10,9,11
+*,C56X,11,10,14
+*,C68A,11,10,14
+*,C700,12,11,14
+*,E50P,6,5,7
+*,E55P,9,8,11
+*,PC24,10,8,12
+*,SF50,6,5,7
+*,HDJT,7,6,7
+*,LJ45,10,9,11
+*,LJ75,10,9,11
+*,CL30,11,10,12
+*,CL35,11,10,12
+*,CL60,13,12,14
+*,F2TH,11,10,12
+*,FA7X,16,14,18
+*,GLF4,15,14,16
+*,GLF5,16,15,18
+*,GLF6,19,16,21
+*,GLEX,16,15,19
+*,GL7T,20,19,21

@@ -87,11 +87,15 @@ async function loadLog() {
   $("n-log").textContent = L.today || "";
   $("log").innerHTML = `
     <div class="stats">
-      <div class="stat"><div class="label">Today</div><div class="v">${num(L.today)}</div></div>
-      <div class="stat"><div class="label">All time</div><div class="v">${num(L.total)}</div></div>
+      <div class="stat"><div class="label">Flyovers today</div><div class="v">${num(L.today)}</div></div>
+      <div class="stat"><div class="label">Seats today</div><div class="v">≈ ${num(L.seats_today.seats)}</div></div>
+      <div class="stat"><div class="label">Flyovers, all time</div><div class="v">${num(L.total)}</div></div>
+      <div class="stat"><div class="label">Seats, all time</div><div class="v">≈ ${num(L.seats_total.seats)}</div></div>
       <div class="stat"><div class="label">Types collected</div><div class="v">${L.types.length}</div></div>
       <div class="stat"><div class="label">Airlines</div><div class="v">${L.airlines.length}</div></div>
     </div>
+    <p class="stats-note">Seats are estimated from each flight's airline and aircraft type; cargo flights count as none.${
+      L.seats_total.flights - L.seats_total.known ? ` ${num(L.seats_total.flights - L.seats_total.known)} flyover${L.seats_total.flights - L.seats_total.known === 1 ? "" : "s"} of unknown type left out.` : ""}</p>
     <h2>Today by hour</h2><div class="hours">${bars}</div><div class="hours-axis">${axis}</div>
     <h2>Type collection</h2><div class="types">${L.types.map((t) => `<span class="type"><code>${esc(t.type)}</code>${esc(shortType(t.name) || "")}<b>${t.n}</b></span>`).join("") || '<span class="dim">Nothing yet — wait for the first flyover.</span>'}</div>
     <div class="cols"><div>${recordsHtml("Records today", L.records_today)}</div><div>${recordsHtml("Records all time", L.records_all)}</div></div>

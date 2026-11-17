@@ -7,6 +7,7 @@ import time
 from collections import deque
 
 from . import geo
+from .seats import seats as seat_estimate
 from .logos import AIRLINE_NAMES, flight_number, iata_for
 
 RARE_TYPES = {
@@ -104,6 +105,8 @@ class Tracker:
         elif (a.get("callsign") or "")[:3] in AIRLINE_NAMES and re.match(r"^[A-Z]{3}\d", a["callsign"]):
             a["airline"] = AIRLINE_NAMES[a["callsign"][:3]]
         a["airline_iata"] = iata_for(a.get("callsign"), (free or {}).get("airline_iata"))
+        m = AIRLINE.match(a.get("callsign") or "")
+        a["seats"] = seat_estimate(m.group(1) if m else None, a.get("type"))
         route = self._with_geometry(a, free)
         state, live = self._live_route(a, route)
         if live:
@@ -273,8 +276,9 @@ class Tracker:
                 ts=now, day=time.strftime("%Y-%m-%d", time.localtime(now)), hex=a["hex"],
                 callsign=a.get("callsign"), reg=a.get("reg"), type=a.get("type"),
                 airline_icao=airline_icao, min_dist_nm=round(a["dist"], 2), alt_ft=a["alt"],
-                gs=a.get("gs"), badges=badges)
-            s = self.active[a["hex"]] = {"id": sid, "min": a["dist"], "badges": badges}
+                gs=a.get("gs"), badges=badges, seats=(a.get("seats") or {}).get("n"))
+            s = self.active[a["hex"]] = {"id": sid, "min": a["dist"], "badges": badges,
+                                         "seats": (a.get("seats") or {}).get("n")}
         s["ts"] = now
         upd = {}
         if a["dist"] < s["min"]:
@@ -286,6 +290,10 @@ class Tracker:
         if a.get("photo") and not s.get("photo"):
             s["photo"] = True
             upd.update(photo=a["photo"])
+        n = (a.get("seats") or {}).get("n")
+        if n is not None and n != s.get("seats"):
+            s["seats"] = n
+            upd.update(seats=n)
         if a.get("type_name") and not s.get("named"):
             s["named"] = True
             upd.update(type_name=a["type_name"], reg=a.get("reg"))
@@ -412,4 +420,5 @@ class Tracker:
                 "weather": self.weather, "status": self.status, "basemap": self.basemap, "logos": self.logos,
                 "live_routes": p.status() if (p := getattr(self.enricher, "live", None)) else None,
                 "today": self.store.count("day=?", (time.strftime("%Y-%m-%d"),)),
+                "seats_today": self.store.seat_total("day=?", (time.strftime("%Y-%m-%d"),))["seats"],
             }

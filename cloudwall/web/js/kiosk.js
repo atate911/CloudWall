@@ -109,8 +109,9 @@ function todaySlideHtml(L, state) {
   const hour = busiest ? new Date(2000, 0, 1, busiest.hour).toLocaleTimeString([], { hour: "numeric" }) : null;
   return `<div class="k-card k-slide">
     <div class="k-kicker">Today over the house</div>
-    <div class="k-row"><div class="k-big">${num(L.today)}</div><div class="k-mid">flyovers</div></div>
-    <div class="k-small">${[busiest ? `Busiest hour ${hour}, ${busiest.n} aircraft` : null, `${L.types.length} aircraft types seen so far`].filter(Boolean).join("<br>")}</div>
+    <div class="k-row start"><div class="k-big">${num(L.today)}</div><div class="k-mid">flyover${L.today === 1 ? "" : "s"}</div></div>
+    <div class="k-small">${[L.seats_today && L.seats_today.seats ? `About ${num(L.seats_today.seats)} seats flew over` : null,
+      busiest ? `Busiest hour ${hour}, ${busiest.n} aircraft` : null, `${L.types.length} aircraft types seen so far`].filter(Boolean).join("<br>")}</div>
   </div>`;
 }
 

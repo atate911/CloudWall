@@ -78,6 +78,15 @@ make service      # systemd user service; `make logs` to follow, `make service-r
 | Logbook database | `~/.local/share/cloudwall/cloudwall.db` (or `[storage] db_path`, or `--db`) |
 | Port | 5050 (`[server] port`, or `--port`) |
 
+## Seats on board
+
+Each flight card shows its seats, estimated from the operator and aircraft type with a bundled
+table (`cloudwall/data/seats.csv`, no lookups or credits). Where an airline flies one layout
+the card shows that number ("178 seats"). Where it flies several, it shows the range ("160–172 seats").
+For other airlines it shows a typical count for the type ("about 166 seats"). Cargo flights count as
+none. The Logbook totals the seats that flew over today and all time. Edit the CSV to add an
+airline's layout; rows for a specific airline win over the typical ones.
+
 ## Production on dedicated hardware
 
 On the Pi, install the same way and run `make service`. Then start `deploy/kiosk.sh`

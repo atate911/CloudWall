@@ -25,6 +25,8 @@ class Store:
             cols = {r["name"] for r in self.db.execute("PRAGMA table_info(sightings)")}
             if "photo" not in cols:      # added after the first release
                 self.db.execute("ALTER TABLE sightings ADD COLUMN photo TEXT")
+            if "seats" not in cols:      # estimated seats on board, added later
+                self.db.execute("ALTER TABLE sightings ADD COLUMN seats INTEGER")
 
     # -- cache ---------------------------------------------------------------
     def cache_get(self, kind, key, max_age):
@@ -45,6 +47,13 @@ class Store:
         with self.lock:
             return self.db.execute(
                 f"SELECT COUNT(*) FROM sightings WHERE {where}", args).fetchone()[0]
+
+    def seat_total(self, where, args=()):
+        """Estimated seats over the house: the sum, and how many flyovers it covers."""
+        with self.lock:
+            r = self.db.execute(f"SELECT SUM(seats), COUNT(seats), COUNT(*) FROM sightings WHERE {where}",
+                                args).fetchone()
+        return {"seats": r[0] or 0, "known": r[1], "flights": r[2]}
 
     def add_sighting(self, **f):
         f["badges"] = json.dumps(f.get("badges", []))
@@ -84,6 +93,8 @@ class Store:
         today = f"day='{day}'"
         return {
             "today": self.count("day=?", (day,)),
+            "seats_today": self.seat_total("day=?", (day,)),
+            "seats_total": self.seat_total("1"),
             "total": self.count("1"),
             "types": self.query(
                 "SELECT type, MAX(type_name) AS name, COUNT(*) AS n, MIN(ts) AS first "

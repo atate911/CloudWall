@@ -1,5 +1,5 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS } from "./util.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords } from "./util.js";
 import { typeInfo } from "./data.js";
 import { silhouette, silhouetteScale } from "./silhouette.js";
 import { flap, roll } from "./fx.js";
@@ -204,6 +204,8 @@ function renderFacts(a, state, elapsed = 0) {
   rows.push(["Overhead", left > 5 ? `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away` : a.dist < 1.5 ? "now" : "passed, heading away"]);
   const type = a.type_name || a.type;
   if (type && (r || a.local_inferred || a.route_pending)) rows.push(["Aircraft", type]);
+  const seats = seatWords(a.seats);
+  if (seats) rows.push(["Seats", seats]);
   if (a.reg) rows.push(["Registration", a.age != null ? `${a.reg}, built ${a.year}` : a.reg]);
   const modes = autopilotWords(a.modes);
   if (modes) rows.push(["Autopilot", modes]);
@@ -235,7 +237,7 @@ function weatherWords(w) {
 }
 
 function todayLine(state) {
-  const bits = [`<b>${state.today}</b> flyover${state.today === 1 ? "" : "s"} logged today`];
+  const bits = [`<b>${state.today}</b> flyover${state.today === 1 ? "" : "s"} logged today${state.seats_today ? `, about <b>${num(state.seats_today)}</b> seats` : ""}`];
   if (state.flow) bits.push(`${esc(state.airport.iata)} landing <b>${esc(state.flow.dir)}</b> on runways ${esc(state.flow.runways.replace(" / ", " and "))}`);
   return bits.join('<span class="sep"></span>');
 }

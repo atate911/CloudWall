@@ -785,3 +785,25 @@ class ServerTest(unittest.TestCase):
                 self.assertEqual(urllib.request.urlopen(base + path, timeout=5).read(), home)
         finally:
             srv.shutdown()
+
+
+class SeatsTest(unittest.TestCase):
+    def test_airline_layout_then_type_then_cargo(self):
+        from cloudwall.seats import seats
+        self.assertEqual(seats("ASA", "B39M"), {"n": 178, "lo": 178, "hi": 178, "basis": "airline"})
+        self.assertEqual(seats("SKW", "E75L")["n"], 76)                     # regional partner's own layout
+        self.assertEqual(seats("XYZ", "B738")["basis"], "type")            # unknown airline: typical for the type
+        self.assertEqual(seats(None, "C172")["n"], 4)
+        self.assertEqual(seats("FDX", "B763"), {"n": 0, "lo": 0, "hi": 0, "basis": "cargo"})
+        self.assertIsNone(seats("ASA", None))
+        self.assertIsNone(seats("RCH", "C17"))
+
+    def test_logbook_totals_seats(self):
+        store = Store(":memory:")
+        t = Tracker(config.load(), store, StubEnricher())
+        t.update([plane("a1", "ASA512", 0.5, typ="B39M"), plane("a2", "FDX12", 0.6, typ="B763"),
+                  plane("a3", "N12345", 0.7, typ="ZZZZ")], "test")
+        day = time.strftime("%Y-%m-%d")
+        tot = store.logbook(day)["seats_today"]
+        self.assertEqual(tot, {"seats": 178, "known": 2, "flights": 3})
+        self.assertEqual(t.snapshot()["seats_today"], 178)
