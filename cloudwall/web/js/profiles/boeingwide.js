@@ -70,7 +70,8 @@ F.b742 = {
   eng: { ...B742_NAC, at: [0.32], fwd: 4.76, drop: 1.98 },
   overlays: [quadOutboard({ at: 0.67, fwd: 4.25, drop: 1.82, nac: B742_NAC })],
 };
-// 747-8 (Intercontinental): 747-8 ACAP D6-58326-2 Rev E fig. 2.3.2 (low-resolution line art) for the stations:
+// 747-8 (Intercontinental): 747-8 ACAP D6-58326-2 Rev E fig. 2.3.2 (low-resolution line art, 6.7% short in
+// height, rescaled; it overlays the -400 outline well) for the stations:
 // 5.6 m longer (4.1 m ahead of the wing, between doors 1 and 2, and 1.5 m behind it), the upper deck 4.1 m
 // longer, a new wing with raked tips (span 68.4 m) and chevroned GEnx-2B nacelles.
 const B748_NAC = { kind: "fan", len: 7.4, dia: 3.05, fx: 0.6, cx: 0.86, chev: true, pyFront: 0.3, pyLead: 0.5, pyTe: 0.4, pyAft: 0.85 };
@@ -137,7 +138,7 @@ F.b763 = {
   wing: { le: 19.0, span: 47.57, cr: 10.3, kink: [0.305, 6.86], ct: 2.29, sweep: 34.5, dih: 5, z: 0.324, t: [0.15, 0.1] },
   ftf: [0.3, 0.48, 0.66, 0.82],
   eng: { kind: "fan", at: [0.254], fwd: 3.88, drop: 1.76, len: 6.6, dia: 2.54, fx: 0.495, cx: 0.935, pyFront: 0.25, pyLead: 0.5, pyTe: 0.7, pyAft: 1.3 },
-  fin: { le: 9.52, cr: 7.07, ct: 2.56, h: 8.43, sweep: 44.35, fillet: [1.78, 1.95] },
+  fin: { le: 9.52, cr: 7.07, ct: 2.56, h: 8.43, sweep: 44.35, fillet: [1.78, 1.95], round: 0.6 },
   stab: { le: 7.5, z: 0.623, span: 18.62, root: 1.0, cr: 6.07, ct: 1.75, sweep: 37.8, dih: 7 },
 };
 
@@ -157,9 +158,10 @@ F.b764 = {
 // winglet, 3.4 m tall and canted out (about 3 m of it shows from the side); B763 is drawn with it.
 F.b763w = { ...F.b763, tip: { h: 2.9, sweep: 48, top: 0.6, base: 0.95, blend: 1.0 } };
 
-// KC-46A Pegasus (767-2C): 767-200 fuselage with the 767-300F main-deck cargo door, no cabin windows,
-// no winglets; refuelling boom stowed under the tail cone and wing refuelling pods (WARPs). Overall
-// length 50.5 m (Wikipedia) includes the stowed boom, 3.3 m behind the tail cone.
+// KC-46A Pegasus (767-2C): 767-200 fuselage (fig. 2.3.1 outline), no cabin windows, no winglets (span
+// 48.1 m, Wikipedia); refuelling boom stowed under the tail cone and wing refuelling pods (WARPs). Its
+// 767-300F main-deck cargo door is on the left side, so it does not show in this starboard view.
+// Overall length 50.5 m (Wikipedia) includes the stowed boom, 3.3 m behind the tail cone.
 function kc46Boom({ sk, L, D, top }) {
   const E = L;
   // boom pivot fairing under the aft fuselage, and the stowed boom with its ruddevators
@@ -180,11 +182,6 @@ F.k46 = {
   doors: [[5.62, 1.0], [3.89, 0.62, "E", "w"], [-11.02, 0.98]],
   win: [],
   wing: { ...F.b763.wing, span: 48.1 },
-  extras: [({ sk, L, D }) => {
-    // main-deck cargo door: 3.4 m wide, taller than a passenger door
-    const [x, y] = sk.xy(11.8 + 1.7, 4.45);
-    sk.out.push(`<rect class="door" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="3.4" height="2.2" rx="0.2"/>`);
-  }],
   overlays: [kc46Boom, warp],
 };
 
@@ -220,7 +217,7 @@ F.b77w = {
   wing: { le: 27.04, span: 64.8, cr: 13.07, kink: [0.2, 9.08], ct: 1.52, sweep: 34.3, dih: 5, z: 0.387, t: [0.14, 0.1], rake: [0.952, 60, 0.3] },
   ftf: [0.25, 0.42, 0.58, 0.73, 0.86],
   eng: { kind: "fan", at: [0.222], fwd: 5.89, drop: 2.6, len: 7.8, dia: 3.66, fx: 0.667, cx: 0.846, pyFront: 0.35, pyLead: 0.6, pyTe: 0.6, pyAft: 1.05 },
-  fin: { le: 11.81, cr: 7.99, ct: 2.55, h: 9.77, sweep: 44.4, fillet: [1.78, 0.95] },
+  fin: { le: 11.81, cr: 7.99, ct: 2.55, h: 9.77, sweep: 44.4, fillet: [1.78, 0.95], round: 1.0 },
   stab: { le: 9.14, z: 0.64, span: 21.53, root: 1.3, cr: 6.5, ct: 2.1, sweep: 39, dih: 7.2 },
 };
 
@@ -244,7 +241,7 @@ F.b779 = {
   wing: { le: 27.1, span: 71.76, cr: 14.0, kink: [0.287, 8.57], ct: 1.8, sweep: 32.7, dih: 5, z: 0.4, t: [0.13, 0.1], rake: [0.912, 52, 0.33] },
   ftf: [0.27, 0.42, 0.57, 0.71, 0.84],
   eng: { kind: "fan", at: [0.23], fwd: 5.88, drop: 2.44, len: 9.65, dia: 4.4, fx: 0.69, cx: 0.865, pyFront: 0.35, pyLead: 0.6, pyTe: 0.55, pyAft: 1.0 },
-  fin: { le: 12.3, cr: 8.55, ct: 2.78, h: 10.4, sweep: 44.7, fillet: [1.5, 1.3] },
+  fin: { le: 12.3, cr: 8.55, ct: 2.78, h: 10.4, sweep: 44.7, fillet: [1.5, 1.3], round: 1.0 },
   stab: { le: 9.6, z: 0.645, span: 24.56, root: 1.3, cr: 7.0, ct: 2.35, sweep: 38.9, dih: 6.9 },
 };
 
@@ -283,7 +280,7 @@ F.b787 = {
   wing: { le: 21.75, span: 60.12, cr: 11.87, kink: [0.317, 6.6], ct: 1.54, sweep: 34.7, dih: 6.5, z: 0.37, t: [0.13, 0.09], rake: [0.869, 52, 0.35], bend: 1.5 },
   ftf: [0.3, 0.46, 0.62, 0.77],
   eng: { kind: "fan", at: [0.258], fwd: 5.81, drop: 2.17, len: 7.8, dia: 3.8, fx: 0.71, cx: 0.92, chev: true, pyFront: 0.4, pyLead: 0.5, pyTe: 0.55, pyAft: 1.0 },
-  fin: { le: 11.03, cr: 7.21, ct: 2.37, h: 8.51, sweep: 44.7, fillet: [1.25, 1.25] },
+  fin: { le: 11.03, cr: 7.21, ct: 2.37, h: 8.51, sweep: 44.7, fillet: [1.25, 1.25], round: 1.3 },
   stab: { le: 8.1, z: 0.62, span: 19.81, root: 1.3, cr: 5.68, ct: 1.6, sweep: 40.3, dih: 7 },
 };
 // 787-10: 5.48 m longer than the -9, 3.05 m of it ahead of the wing; aft cargo door moves with the wing

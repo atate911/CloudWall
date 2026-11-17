@@ -237,37 +237,35 @@ F.c130 = {
 F.c30j = { ...F.c130, overlays: [tpNacelle({ ...T56, blades: 6 })] };
 
 // ---------- Lockheed C-5M Super Galaxy ----------
-// Published dimensions only (Wikipedia, USAF fact sheet): length 75.31 m, span 67.89 m, height
-// 19.84 m, wing sweep 25 deg. High anhedral wing, T-tail with a bullet, upward-hinging nose visor
-// (its seam drawn ahead of the flight deck), long main-gear sponsons, F138 (CF6-80C2) nacelles,
-// upper-deck troop compartment windows aft of the wing, upswept rear with the aft cargo doors.
+// Reference: Wikimedia Commons "Lockheed C-5 Galaxy 3-view line drawing.jpg" (dimensioned: length
+// 75.31 m, span 67.89 m, height 19.84 m). High anhedral wing, T-tail with a long bullet on a fin
+// rising from a root fairing, upward-hinging nose visor (seam drawn from below the flight-deck
+// windows down to the keel), long main-gear sponsons, F138 (CF6-80C2) nacelles on tall pylons,
+// upper-deck doors fore and aft, upswept rear with the aft cargo doors.
 const c5Visor = ({ sk, D }) => {
-  sk.smooth("hl", [[4.6, 0.86 * D], [5.1, 0.6 * D], [5.6, 0.3 * D], [5.8, 0.03 * D]], false);
-  sk.poly("hl", [[5.3, 0.45 * D], [4.4, 0.45 * D]], false);
+  sk.smooth("hl", [[4.3, 0.8 * D], [5.4, 0.55 * D], [6.7, 0.3 * D], [7.9, 0.04 * D]], false);
 };
 F.c5m = {
-  kind: "quad", L0: 70.6, over: 4.71, D: 7.6, W: 7.0, fwd: 0.5, fair: 0, floor: 0.12,
+  kind: "quad", L0: 70.0, over: 5.31, D: 7.6, W: 7.0, fwd: 0.5, fair: 0, floor: 0.15, upper: 0.746,
   nose: {
     tip: 0.38,
-    top: [[0.05, 0.5], [0.12, 0.6], [0.2, 0.68], [0.3, 0.75], [0.42, 0.82], [0.55, 0.88], [0.7, 0.93], [0.9, 0.97], [1.1, 0.99], [1.4, 1]],
-    bot: [[0.05, 0.24], [0.12, 0.16], [0.2, 0.1], [0.3, 0.06], [0.45, 0.025], [0.6, 0.008], [0.8, 0]],
+    top: [[0.05, 0.477], [0.1, 0.504], [0.15, 0.548], [0.2, 0.583], [0.25, 0.618], [0.3, 0.645], [0.35, 0.68], [0.4, 0.707], [0.45, 0.733],
+      [0.5, 0.768], [0.55, 0.804], [0.6, 0.83], [0.7, 0.918], [0.8, 0.963], [0.9, 0.989], [1.0, 0.998], [1.15, 1]],
+    bot: [[0.05, 0.284], [0.1, 0.249], [0.15, 0.223], [0.2, 0.197], [0.3, 0.154], [0.4, 0.119], [0.5, 0.084], [0.6, 0.067], [0.7, 0.041],
+      [0.8, 0.024], [0.9, 0.007], [1.0, 0]],
   },
   tail: {
-    top: [[3.0, 1], [2.2, 0.995], [1.5, 0.975], [0.8, 0.94], [0, 0.88]],
-    bot: [[3.2, 0], [2.9, 0.05], [2.5, 0.13], [2.0, 0.25], [1.5, 0.38], [1.0, 0.52], [0.5, 0.66], [0.15, 0.75], [0, 0.78]],
+    top: [[3.55, 1], [3.17, 1.036], [2.92, 1.055], [2.42, 1.074], [1.92, 1.076], [1.42, 1.061], [0.92, 1.01], [0.55, 0.95], [0.25, 0.87], [0, 0.8]],
+    bot: [[3.25, 0], [2.92, 0.029], [2.67, 0.074], [2.42, 0.127], [2.17, 0.181], [1.92, 0.234], [1.67, 0.297], [1.42, 0.359], [1.17, 0.422],
+      [0.92, 0.484], [0.67, 0.555], [0.42, 0.626], [0.17, 0.715], [0.04, 0.768], [0, 0.775]],
   },
-  glass: [
-    [[0.5, 0.86], [0.6, 0.905], [0.62, 0.84], [0.53, 0.82]],
-    [[0.63, 0.91], [0.74, 0.94], [0.75, 0.87], [0.64, 0.845]],
-    [[0.77, 0.945], [0.86, 0.96], [0.86, 0.885], [0.78, 0.875]],
-  ],
-  doors: [[13.0, 1.0], [-25.5, 1.0]],
-  win: [{ z: 0.82, from: 40.0, to: 52.0, pitch: 1.6, w: 0.3, h: 0.36 }],
-  wing: { le: 27.0, root: 3.5, span: 67.89, cr: 13.3, ct: 3.7, sweep: 27.5, dih: -5.5, bend: 1.0, z: 0.93, t: [0.12, 0.1] },
-  eng: { kind: "fan", at: [0.29, 0.58], fwd: 4.2, drop: 2.3, len: 6.6, dia: 2.75, fx: 0.62, cx: 0.85, pyFront: 0.3, pyTe: 0.45, pyAft: 0.85 },
-  fin: { le: 13.0, cr: 11.0, ct: 6.0, h: 10.4, sweep: 38, fillet: [2.0, 0.8], rudder: 0.7 },
-  stab: { le: 3.2, z: "T", drop: 0.3, span: 20.95, root: 0.6, cr: 6.8, ct: 2.6, sweep: 32, dih: 0, bullet: [8.0, 1.2] },
-  extras: [sponson(27.5, 44.5, 2.7, 0.25)],
+  glass: [[[0.64, 0.83], [0.72, 0.895], [0.83, 0.915], [0.83, 0.82], [0.66, 0.81]]],
+  doors: [[8.7, 1.0, "D", undefined, 1.8], [15.8, 0.8, "U", undefined, 1.33], [43.4, 0.8, "U", undefined, 1.33], [43.4, 0.9, "D", undefined, 1.6]],
+  wing: { le: 22.5, root: 3.5, span: 67.89, cr: 12.1, ct: 3.2, sweep: 28.5, dih: -5.5, bend: 1.0, z: 0.88, t: [0.12, 0.1] },
+  eng: { kind: "fan", at: [0.24, 0.47], fwd: 4.3, drop: 3.2, len: 7.0, dia: 2.5, fx: 0.45, cx: 0.85, pyFront: 0.2, pyLead: 0.6, pyTe: 0.3, pyAft: 0.6 },
+  fin: { le: 10.4, cr: 9.2, ct: 7.8, h: 8.4, sweep: 36.5, rudder: 0.68 },
+  stab: { le: 5.5, z: "T", drop: -0.9, span: 20.95, root: 0.6, cr: 8.5, ct: 1.5, sweep: 34, dih: 0, bullet: [12.0, 0.9] },
+  extras: [sponson(22.3, 43.3, 2.3, 0.3)],
   overlays: [c5Visor],
 };
 

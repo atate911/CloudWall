@@ -22,7 +22,12 @@ const nozzle = (z, r, len = 0.35) => (k) => {
   k.sk.ellipse("inlet", s + 0.02, z, 0.05, r * 0.85);
 };
 
-// ---------- Dassault Falcon 2000 ----------
+// ---------- Dassault Falcon 2000 (F2TH) and Falcon 900 (F900) ----------
+// No drawing reachable: Falcon 2000 proportions from the side-on photo of the Bulgarian Air Force
+// Falcon 2000 (Commons "Dassault Falcon 2000, Bulgaria - Air Force AN1929721.jpg"), scaled to the
+// 20.23 m overall length (Wikipedia, Dassault Falcon 2000): fuselage 18.3 m, height 2.33 m, the
+// Falcon nose with its kinked windscreen line and four flight-deck panes, eight windows, PW308
+// nacelles, 21.38 m wing, swept fin with the tailplane low on it (cruciform), no T-tail.
 F.f2th = {
   kind: "bizjet", L0: 18.3, over: 1.93, D: 2.33, W: 2.5, fwd: 0.5, fair: 0.04,
   nose: {
@@ -72,7 +77,14 @@ F.f900 = {
   stab: { le: 3.0, fz: 0.3, span: 7.7, root: 0.3, cr: 1.9, ct: 0.9, sweep: 30, dih: 0 },
 };
 
-// ---------- Bombardier Challenger 604/605/650 (CL60) ----------
+// ---------- Bombardier Challenger 604/605/650 (CL60; also the default business jet) ----------
+// The CL-600 airframe that the CRJ grew from: nose and flight deck measured on the CRJ900 APM
+// (Bombardier CSP C-020, 00-02-02 fig. 5, levelled; ref/CRJ900.pdf p. 31), which keeps the
+// Challenger's nose, on the 2.69 m section; length, cabin and tail from the side-on photo of
+// Challenger 605 A7-CEB (Commons "Bombardier CL-600-2B16 Challenger 605, Qatar Executive
+// JP6749742.jpg", 3.5 % yaw corrected), scaled to 20.85 m (Wikipedia, Bombardier Challenger 600
+// series): seven windows at 0.74 m pitch, CF34-3B nacelles, 43-deg T-tail with a fin-top fairing,
+// winglets.
 F.cl60 = {
   kind: "bizjet", L0: 18.69, over: 2.16, D: 2.69, W: 2.69, fwd: 0.5, fair: 0.05,
   nose: {
@@ -93,7 +105,7 @@ F.cl60 = {
   win: [{ z: 0.643, from: 6.03, to: 10.5, pitch: 0.742, w: 0.26, h: 0.39 }],
   wing: { le: 8.8, root: 1.25, span: 19.61, cr: 5.0, ct: 1.25, sweep: 28, dih: 3, z: 0.08, t: [0.13, 0.1] },
   tip: { h: 1.1, sweep: 40, top: 0.3, base: 0.9 },
-  eng: { kind: "fan", aft: { s: 7.44, z: 0.75 }, len: 3.8, dia: 1.34, fx: 0.62, cx: 0.9 },
+  eng: { kind: "fan", aft: { s: 7.44, z: 0.75 }, len: 3.8, dia: 1.34, style: "long", fx: 0.86, plug: 0.5 },
   fin: { le: 3.99, cr: 3.85, ct: 2.16, h: 2.5, sweep: 43.5, fillet: [1.0, 0.25] },
   stab: { le: 1.39, z: "T", span: 7.0, root: 0.25, cr: 1.9, ct: 0.9, sweep: 38, dih: 0, bullet: [2.6, 0.22] },
 };
@@ -151,7 +163,7 @@ F.lj45 = {
   ],
   frame: 0.035,
   extras: [hatch(3.62, 0.8, 0.3, 1.42)],
-  overlays: [ventral([[2.6, 0.55], [1.05, 0.12], [0.55, 0.12], [0.3, 0.95], [1.4, 0.9]])],
+  overlays: [ventral([[2.3, 0.78], [1.1, 0.36], [0.6, 0.36], [0.45, 1.12], [1.4, 0.98]])],
   win: [{ z: 0.76, from: 4.13, to: 7.98, pitch: 0.549, w: 0.3, h: 0.38 }],
   wing: { le: 6.1, root: 0.9, span: 14.58, cr: 3.0, ct: 1.1, sweep: 13, dih: 2.5, z: 0.06, t: [0.13, 0.1] },
   tip: { h: 0.95, sweep: 32, top: 0.35, base: 0.85 },
@@ -397,7 +409,7 @@ F.e55p = {
   ],
   frame: 0.035,
   extras: [hatch(4.38, 0.67, 0.29, 1.3, 0.15)],
-  overlays: [ventral([[0.75, 1.0], [0.6, 0.62], [0.2, 0.62], [0.17, 1.05]])],
+  overlays: [ventral([[0.7, 1.0], [0.5, 0.74], [0.22, 0.74], [0.17, 1.05]])],
   win: [{ z: 0.7, from: 5.12, to: 7.2, pitch: 0.69, w: 0.3, h: 0.36 }, { z: 0.7, from: 8.25, to: 8.25, w: 0.3, h: 0.36 }],
   wing: { le: 6.1, root: 0.85, span: 15.91, cr: 2.7, ct: 1.0, sweep: 26, dih: 4, z: 0.04, t: [0.13, 0.1] },
   tip: { h: 1.0, sweep: 45, top: 0.3, base: 0.85, blend: 0.2 },
@@ -460,6 +472,28 @@ F.pc24 = {
   stab: { le: 0.8, z: "T", drop: 0.1, span: 6.4, root: 0.2, cr: 1.5, ct: 0.75, sweep: 30, dih: 0, bullet: [2.1, 0.17] },
 };
 
+// ---------- Cirrus Vision SF50 (SF50) ----------
+// No drawing reachable: outline traced from the side-on photo of N299CV (Commons "Cirrus Vision
+// SF50 N299CV FDK MD1.jpg"), scaled to the 9.42 m overall length (Wikipedia, Cirrus Vision SF50).
+// Teardrop fuselage with no constant section (drawn as a closed body outline in metres), wraparound
+// windscreen, three large oval windows growing towards the front, the single FJ33 on a pylon on top
+// of the rear fuselage, the V-tail (drawn as a tailplane with 45-deg dihedral, no fin) and the
+// small ventral fin; 11.8 m straight wing.
+F.sf50 = {
+  kind: "bizjet", L0: 9.32, over: 0.1, D: 1, W: 1.7, fair: 0,
+  body: [[0, 0.56, "c"], [0.12, 0.82], [0.43, 0.97], [0.84, 1.07], [1.35, 1.27], [1.86, 1.6], [2.37, 1.76], [2.88, 1.82],
+    [3.9, 1.79], [4.72, 1.66], [5.94, 1.43], [6.97, 1.23], [7.68, 1.08], [8.5, 0.96], [9.32, 0.87, "c"], [9.32, 0.56, "c"],
+    [8.7, 0.48], [7.99, 0.4], [6.97, 0.23], [5.94, 0.05], [4.92, 0], [3.9, 0.02], [2.88, 0.1], [1.86, 0.2], [0.84, 0.31],
+    [0.22, 0.42], [0.04, 0.5]],
+  glass: [[[1.45, 1.05, "c"], [1.81, 1.48], [2.47, 1.57], [2.52, 1.1, "c"]]],
+  frame: 0.04,
+  win: [{ z: 1.26, from: 2.95, to: 4.26, pitch: 0.655, w: 0.45, h: 0.38 }],
+  overlays: [ventral([[1.0, 0.47], [0.3, 0.3], [0.02, 0.33], [0.02, 0.7]])],
+  wing: { le: 3.2, root: 0.85, span: 11.8, cr: 1.9, ct: 0.85, sweep: 3, dih: 5, z: 0.25, t: [0.15, 0.12] },
+  tailEng: { s: 4.45, z: 0.74, len: 2.3, dia: 0.5, style: "long", fx: 0.85 },
+  stab: { le: 1.64, z: 0.92, span: 3.96, root: 0.3, cr: 1.3, ct: 0.6, sweep: 35, dih: 45, thick: 0.1 },
+};
+
 // ---------- Bombardier Global Express / 5000 / 6000 / 6500 (GLEX, GL5T) and Global 7500 (GL7T) ----------
 // Global 7500: Commons "Bombardier Global 7500-8000 three views.png" side view (33.88 m overall),
 // prepped with refprep: fuselage 29.84 m, height 2.75 m, 14 large windows at 0.915 m pitch, two
@@ -487,7 +521,7 @@ F.glex = {
   nose: GLOBAL_NOSE, tail: GLOBAL_TAIL, glass: GLOBAL_GLASS, frame: 0.04,
   floor: 0.135,
   doors: [[4.75, 0.92]],
-  win: [{ z: 0.64, from: 6.12, to: -10.85, pitch: 0.771, w: 0.25, h: 0.36 }],
+  win: [{ z: 0.64, from: 6.12, to: -10.85, pitch: 0.771, w: 0.29, h: 0.4 }],
   wing: { le: 10.2, root: 1.35, span: 28.65, cr: 6.4, kink: [0.28, 3.9], ct: 1.15, sweep: 36, dih: 3.5, z: 0.06, t: [0.13, 0.1] },
   tip: { h: 1.3, sweep: 52, top: 0.4, base: 0.85, blend: 0.4 },
   ftf: [0.3, 0.55],
@@ -586,7 +620,7 @@ export const types = {
   E545: "e550", E550: "e550",
   C25A: ["c25b", { win: [{ z: 0.78, from: 3.93, to: 6.5, pitch: 0.507, w: 0.23, h: 0.28 }], wing: { le: 6.4, root: 0.8, span: 15.19, cr: 2.45, ct: 1.0, sweep: 3, dih: 4, z: 0.1, t: [0.14, 0.11] } }],
   C25B: "c25b",
-  E50P: "e50p", E55P: "e55p", PC24: "pc24",
+  SF50: "sf50", E50P: "e50p", E55P: "e55p", PC24: "pc24",
   C56X: "c56x", C680: "c680", C68A: "c68a", C700: "c700",
   LJ45: "lj45", LJ75: ["lj45", { tip: { h: 1.1, sweep: 35, top: 0.35, base: 0.85, blend: 0.2 } }],
 };

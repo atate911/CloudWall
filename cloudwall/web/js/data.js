@@ -42,7 +42,7 @@ const T = {
   A20N: ["narrow", 37.6], A321: ["narrow", 44.5], A21N: ["narrow", 44.5], B734: ["narrow", 36.4], B735: ["narrow", 31], B736: ["narrow", 31.2],
   B737: ["narrow", 33.6], B738: ["narrow", 39.5], B739: ["narrow", 42.1], B37M: ["narrow", 35.6], B38M: ["narrow", 39.5], B39M: ["narrow", 42.2],
   B3XM: ["narrow", 43.8], B752: ["narrow", 47.3], B753: ["narrow", 54.4], P8: ["narrow", 39.5], K35R: ["quad", 41.5],
-  B762: ["wide", 48.5], B763: ["wide", 54.9], B764: ["wide", 61.4], B772: ["wide", 63.7], B77L: ["wide", 63.7], B77W: ["wide", 73.9],
+  B762: ["wide", 48.5], B763: ["wide", 54.9], B764: ["wide", 61.4], B772: ["wide", 63.7], B77L: ["wide", 63.7], B773: ["wide", 73.9], B77W: ["wide", 73.9],
   B779: ["wide", 76.7], B788: ["wide", 56.7], B789: ["wide", 62.8], B78X: ["wide", 68.3], A306: ["wide", 54.1], A332: ["wide", 58.8],
   A333: ["wide", 63.7], A338: ["wide", 58.8], A339: ["wide", 63.7], A359: ["wide", 66.8], A35K: ["wide", 73.8], MD11: ["wide", 61.6],
   DC10: ["wide", 55.5], K46: ["wide", 50.5], KC10: ["wide", 55.4],

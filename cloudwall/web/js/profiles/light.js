@@ -686,6 +686,76 @@ F.pc12 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Daher TBM 900 series ----------
+// No three-view reachable: proportions from the three-quarter photo File:N893MA_2015_SOCATA-
+// TBM_900_s-n_1065_(23427100365).jpg (Wikimedia Commons, Wikipedia article Daher TBM) fitted
+// to the published 10.74 m length (data.js 10.7), 12.83 m span and 4.35 m height. Lowest
+// confidence of this group (perspective). Long PT6A cowl with the side exhaust stack and
+// five-blade prop, pressurised cabin with four square windows, low wing with winglets,
+// conventional swept fin with dorsal and ventral fins, low tailplane, retractable gear.
+F.tbm9 = {
+  kind: "turboprop", L0: 10.7, over: 0, D: 1, W: 1.4,
+  body: [
+    [0, 0.55, "c"], [0.2, 0.7], [0.4, 0.8], [0.6, 0.86], [0.7, 0.9], [1.0, 0.99], [1.5, 1.07], [2.0, 1.13], [2.5, 1.19],
+    [3.05, 1.26, "c"], [3.3, 1.42], [3.6, 1.6], [3.95, 1.73], [4.3, 1.8], [5.0, 1.84], [6.0, 1.85], [7.0, 1.8],
+    [7.8, 1.72], [8.25, 1.79], [8.7, 2.0], [9.0, 2.27, "l"], [9.85, 3.3], [10.0, 3.4], [10.55, 3.42],
+    [10.66, 3.37, "cl"], [10.3, 1.5], [10.3, 1.36], [10.15, 1.26], [9.5, 1.1], [8.7, 0.85], [8.0, 0.6], [7.0, 0.28],
+    [6.0, 0.08], [5.0, 0], [4.0, -0.02], [3.0, 0], [2.0, 0.05], [1.2, 0.11], [0.8, 0.18], [0.62, 0.28], [0.45, 0.34],
+    [0.2, 0.42],
+  ],
+  glass: [[[3.1, 1.28], [3.6, 1.58, ""], [4.0, 1.72], [4.1, 1.3]], [[4.22, 1.3], [4.25, 1.66], [4.75, 1.7], [4.8, 1.3]]],
+  frame: 0.05,
+  win: [{ z: 1.47, from: 5.25, to: 7.05, pitch: 0.6, w: 0.34, h: 0.42 }],
+  wing: { le: 4.4, root: 0.65, span: 12.83, cr: 1.95, ct: 1.0, sweep: 3, dih: 6.5, z: 0.12, t: [0.16, 0.12] },
+  tip: { h: 0.35, sweep: 45, top: 0.25, base: 0.8 },
+  eng: { kind: "none", nose: { s: 0.45, z: 0.55, d: 2.31, blades: 5 } },
+  stab: { le: 1.45, z: 1.35, span: 4.85, root: 0.15, cr: 1.4, ct: 0.8, sweep: 15, dih: 4, thick: 0.1 },
+  parts: {
+    lines: [[[9.7, 1.4], [10.15, 3.38]]],
+    draw: [(k) => {
+      k.sk.smooth("inlet", [[1.15, 0.72], [1.55, 0.8], [1.6, 0.68, "c"], [1.2, 0.63]]);
+      k.sk.smooth("fin", [[8.9, 0.85, "c"], [9.9, 0.86, "c"], [10.1, 1.2, "c"], [9.5, 1.05]]);
+    }],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
+// ---------- American Champion / Bellanca Citabria ----------
+// No three-view reachable: measured from the side-on, tail-up photo File:Bellanca_7GCBC_
+// (N68576).jpg (Wikimedia Commons, Wikipedia article American Champion Citabria), scaled to
+// 6.9 m (data.js; 7GCBC 6.91 m). Lower confidence (photo). High strut-braced wing with V struts,
+// tandem cabin with the long side glazing, round cowl, spring-steel main gear with spats,
+// steerable tailwheel (taildragger), tall square-topped fin.
+F.ch7b = {
+  kind: "piston", L0: 6.9, over: 0, D: 1, W: 0.85,
+  body: [
+    [0, 0.67, "c"], [0.1, 0.71], [0.25, 0.75], [0.41, 0.78], [0.47, 0.85], [0.6, 0.865], [1.0, 0.87], [1.36, 0.875, "c"],
+    [1.6, 1.05], [1.8, 1.2], [1.95, 1.28], [2.1, 1.3, "l"], [3.5, 1.3], [3.62, 1.25], [3.95, 1.02], [4.93, 0.89],
+    [5.55, 0.84, "c"], [6.36, 1.93], [6.45, 1.955], [6.72, 1.955], [6.8, 1.9, "c"], [6.87, 0.65], [6.85, 0.46],
+    [6.72, 0.36], [6.42, 0.38], [5.53, 0.32], [4.34, 0.17], [3.15, 0.05], [1.96, 0], [1.0, 0.05], [0.77, 0.14],
+    [0.59, 0.29], [0.5, 0.42], [0.45, 0.53], [0.3, 0.57], [0.15, 0.61],
+  ],
+  glass: [
+    [[1.42, 0.9], [1.75, 1.17, ""], [2.04, 1.29], [2.1, 0.85]],
+    [[2.2, 0.78], [2.2, 1.26], [3.0, 1.26], [3.0, 0.78]],
+    [[3.08, 0.8], [3.08, 1.25], [3.45, 1.25, ""], [3.88, 1.0], [3.6, 0.84, ""]],
+  ],
+  frame: 0.035,
+  wing: { le: 1.92, root: 0.45, span: 10.2, cr: 1.55, ct: 1.55, sweep: 0, dih: 1, z: 1.43, t: [0.13, 0.13] },
+  eng: { kind: "none", nose: { s: 0.41, z: 0.67, d: 1.88, blades: 2 } },
+  stab: { le: 1.13, z: 0.82, span: 3.05, root: 0.15, cr: 1.15, ct: 0.85, sweep: 5, dih: 0, thick: 0.09 },
+  parts: {
+    doors: [[[2.15, 0.25, "c"], [2.15, 1.28, "c"], [3.03, 1.28, "c"], [3.03, 0.25, "c"]]],
+    lines: [[[6.45, 0.38], [6.47, 1.93]]],
+    struts: [[[2.12, 0.1], [2.35, 1.37], 0.07, 0.06], [[2.15, 0.1], [3.1, 1.37], 0.06, 0.05]],
+    gear: [
+      { leg: [[1.87, 0.02], [1.82, -0.42]], w: [0.08, 0.06], at: [1.81, -0.54], r: 0.21, spat: { f: 0.45, a: 0.5, t: 0.22, b: 0.1 } },
+      { leg: [[6.54, 0.39], [6.78, 0.16]], w: [0.05, 0.04], at: [6.78, 0.14], r: 0.1 },
+    ],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 F._raw_be36 = BE36; // TEMP
 F._raw_m20 = M20; // TEMP
 F._raw_be55 = BE55; // TEMP
@@ -693,5 +763,5 @@ export const families = F;
 export const types = {
   C172: "c172", C152: "c150", C150: "c150", C182: "c182", C206: "c206", C208: "c208",
   P28A: "pa28", P28B: "pa28b", PA46: "pa46", P46T: "p46t",
-  BE36: "be36", BE58: "be58", M20P: "m20", ST75: "st75", DA40: "da40", PC12: "pc12", SR22: "sr22", SR20: ["sr22", { eng: { kind: "none", nose: { s: 0.4, z: 0.61, d: 1.93, blades: 2 } } }], DA42: "da42", ZZB36: "_raw_be36", ZZB55: "_raw_be55", ZZM20: "_raw_m20", // TEMP
+  BE36: "be36", BE58: "be58", M20P: "m20", ST75: "st75", CH7B: "ch7b", DA40: "da40", PC12: "pc12", TBM9: "tbm9", SR22: "sr22", SR20: ["sr22", { eng: { kind: "none", nose: { s: 0.4, z: 0.61, d: 1.93, blades: 2 } } }], DA42: "da42", ZZB36: "_raw_be36", ZZB55: "_raw_be55", ZZM20: "_raw_m20", // TEMP
 };
