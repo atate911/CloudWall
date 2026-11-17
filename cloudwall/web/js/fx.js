@@ -72,7 +72,8 @@ export function chime(kind) {
     ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === "suspended") ctx.resume();
     const t = ctx.currentTime + 0.02;
-    if (kind === "rare") [659.3, 830.6, 987.8, 1318.5].forEach((f, i) => note(f, t + i * 0.13, 1.1, 0.16));
+    if (kind === "alert") [0, 0.5, 1].forEach((d) => { note(880, t + d, 0.35, 0.2); note(659.3, t + d + 0.2, 0.35, 0.2); });
+    else if (kind === "rare") [659.3, 830.6, 987.8, 1318.5].forEach((f, i) => note(f, t + i * 0.13, 1.1, 0.16));
     else { note(783.99, t, 0.9, 0.14); note(1046.5, t + 0.16, 1.2, 0.12); }   // cabin-style two-tone
   } catch (e) { /* audio not available: stay silent */ }
 }

@@ -2,11 +2,12 @@
 import { $, esc, num, mmss, ident, altText, store } from "./util.js";
 import { updateSky, sky } from "./sky.js";
 import { drawScope, loadMap } from "./scope.js";
-import { renderHero, tickHero, nextSlide, badges, recordsHtml } from "./hero.js";
+import { renderHero, tickHero, nextSlide, badges, recordsHtml, forgetHero } from "./hero.js";
+import { renderEmergency } from "./emergency.js";
 import { chime, soundOn, setSound } from "./fx.js";
 import { airlineColors } from "./data.js";
 import { renderWeatherTab } from "./weather.js";
-import { renderKiosk, tickKiosk, kioskNext } from "./kiosk.js";
+import { renderKiosk, tickKiosk, kioskNext, forgetKiosk } from "./kiosk.js";
 
 // Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
 const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
@@ -15,6 +16,14 @@ document.body.classList.add(KIOSK ? "kiosk" : "desk");
 if (KIOSK) store("scope", "auto");   // the kiosk has no switch; sky view when something is overhead
 
 let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastHero = null, view = "now", mapFor = null;
+
+// ---------- emergencies ----------
+const hidden = new Set();                 // "hex:code" the desktop user chose to hide
+let emShown = "";
+const emKey = (a) => `${a.hex}:${a.emergency_code}`;
+function emergencies() {
+  return ((state && state.emergency) || []).filter((a) => !hidden.has(emKey(a)));
+}
 
 // ---------- board ----------
 function boardHtml() {
@@ -38,7 +47,12 @@ function boardHtml() {
       <td class="num ${soon ? "soon" : ""}">${soon ? mmss(a.cpa_s) : '<span class="dim">—</span>'}</td></tr>`;
   });
   return `<table class="board"><thead><tr><th></th><th>Flight</th><th>Route</th><th>Type</th><th class="num">Altitude</th><th class="num">Speed</th><th class="num">Distance</th><th class="num">Overhead in</th></tr></thead>
-    <tbody>${rows.join("") || '<tr><td colspan="8" class="empty">No airborne traffic within ' + R.radius_nm + " nm.</td></tr>"}</tbody></table>
+    <tbody>${rows.join("") || '<tr><td colspan="8" class="empty">No airborne traffic within ' + R.radius_nm + " nm.</td></tr>"}</tbody>
+    ${(state.heard || []).length ? `<tbody class="heard"><tr><th colspan="8">Heard nearby, position unknown</th></tr>${state.heard.map((a) => `<tr>
+      <td class="lg"></td><td class="fl">${esc(a.callsign || a.reg || a.hex.toUpperCase())}<small>${esc(a.owner_op || "Military")}</small></td>
+      <td class="rt"><span class="dim">No position sent</span></td><td class="ty">${esc(a.type || "")}<small>${esc(shortType(a.desc))}</small></td>
+      <td class="num">${a.alt == null ? "–" : num(a.alt)} <small class="u">ft</small></td><td class="num">${a.gs == null ? "–" : num(a.gs)} <small class="u">kt</small></td>
+      <td class="num"><span class="dim">within ~${Math.max(a.rough_nm, 10)}</span> <small class="u">nm</small></td><td class="num"><span class="dim">—</span></td></tr>`).join("")}</tbody>` : ""}</table>
     <div class="board-foot">Soonest overhead first. Tap a flight to show it on the flight card.</div>`;
 }
 
@@ -107,6 +121,7 @@ async function loadLog() {
 
 // ---------- scope: sky dome while something is overhead, radar otherwise ----------
 function scopeMode() {
+  if (emergencies().length) return "radar";      // where it is matters more than how high it looks
   const pref = store("scope") || "auto";
   return pref === "auto" ? (state && state.hero ? "sky" : "radar") : pref;
 }
@@ -177,8 +192,26 @@ function render() {
   $("wx").hidden = !w;
   if (w) $("wx").innerHTML = `${Math.round((w.temp_c * 9) / 5 + 32)}°F, wind ${w.wind_kt ?? 0} kt <b class="cat-${esc(w.category)}">${esc(w.category || "")}</b>`;
   $("link").hidden = state.status.ok || !state.status.source;
+  const tfr = (state.tfrs || []).find((t) => t.active && !t.drones_only);
+  $("tfr-chip").hidden = !tfr;
+  if (tfr) $("tfr-chip").textContent = `Flight restriction ${tfr.dist_nm < 0.5 ? "overhead" : `${Math.round(tfr.dist_nm)} nm`}`;
   $("n-board").textContent = state.aircraft.filter((a) => !a.on_ground).length || "";
-  if (view === "now") { (KIOSK ? renderKiosk : renderHero)($("hero"), state); drawScopeNow(); if (!KIOSK) renderMiniBoard(); }
+  const em = emergencies(), all = state.emergency || [];
+  document.body.classList.toggle("emergency", em.length > 0);
+  $("em-chip").hidden = !all.length;
+  if (all.length) $("em-chip").textContent = `${all[0].emergency_code} ${all[0].emergency_title}${all.length > 1 ? ` +${all.length - 1}` : ""}`;
+  const key = em.map(emKey).join(",");
+  if (key !== emShown) {
+    if (em.length && em.some((a) => !emShown.includes(emKey(a)))) { chime("alert"); if (view !== "now") setView("now"); }
+    if (!em.length) { forgetHero(); forgetKiosk(); }
+    emShown = key;
+  }
+  if (em.length) state.hero = em[0];            // the radar highlights it
+  if (view === "now") {
+    if (em.length) renderEmergency($("hero"), state, em, !KIOSK);
+    else (KIOSK ? renderKiosk : renderHero)($("hero"), state);
+    drawScopeNow(); if (!KIOSK) renderMiniBoard();
+  }
   if (view === "board") $("board").innerHTML = boardHtml();
 }
 async function poll() {
@@ -210,8 +243,10 @@ document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
 document.querySelector("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });
 $("board").addEventListener("click", (e) => { const r = e.target.closest("tr[data-hex]"); if (r) { pin(r.dataset.hex); setView("now"); } });
 $("radar").addEventListener("click", (e) => { const g = e.target.closest("g[data-hex]"); if (g) pin(g.dataset.hex); });
-$("hero").addEventListener("click", () => {
+$("hero").addEventListener("click", (e) => {
   if (!state) return;
+  if (e.target.closest("#em-hide")) { emergencies().forEach((a) => hidden.add(emKey(a))); render(); return; }
+  if (emergencies().length) return;
   if (KIOSK) { if (!state.hero) { kioskNext(); render(); } return; }
   if (state.pinned) pin(null); else if (!state.hero) { nextSlide(); render(); }
 });
@@ -223,6 +258,7 @@ setInterval(poll, 2000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
 setInterval(() => {
   if (!state || view !== "now") return;
+  if (emergencies().length) { renderEmergency($("hero"), state, emergencies(), !KIOSK); return; }
   const elapsed = (Date.now() - stateAt) / 1000;
   if (KIOSK) tickKiosk(elapsed, state.hero ? null : state);
   else if (state.hero) tickHero(elapsed); else renderHero($("hero"), state);
@@ -230,3 +266,5 @@ setInterval(() => {
 setInterval(() => { if (view === "log") loadLog().catch(() => {}); }, 30000);
 setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }, 1000);
 poll().then(() => loadWeather(false));
+$("em-chip").addEventListener("click", () => { hidden.clear(); emShown = ""; setView("now"); render(); });
+$("tfr-chip").addEventListener("click", () => setView("wx"));

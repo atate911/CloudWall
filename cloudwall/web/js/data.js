@@ -46,6 +46,8 @@ const T = {
   B779: ["wide", 76.7], B788: ["wide", 56.7], B789: ["wide", 62.8], B78X: ["wide", 68.3], A306: ["wide", 54.1], A332: ["wide", 58.8],
   A333: ["wide", 63.7], A338: ["wide", 58.8], A339: ["wide", 63.7], A359: ["wide", 66.8], A35K: ["wide", 73.8], MD11: ["wide", 61.6],
   DC10: ["wide", 55.5], K46: ["wide", 50.5], KC10: ["wide", 55.4],
+  F15: ["bizjet", 19.4], F16: ["bizjet", 15], F18: ["bizjet", 17.1], F18S: ["bizjet", 18.3], F22: ["bizjet", 18.9], F35: ["bizjet", 15.7],
+  A10: ["bizjet", 16.3], T38: ["bizjet", 14.1], T6: ["piston", 10.2],
   A342: ["quad", 59.4], A343: ["quad", 63.7], A345: ["quad", 67.9], A346: ["quad", 75.4], A388: ["quad", 72.7], B741: ["quad", 70.7],
   B742: ["quad", 70.7], B744: ["quad", 70.7], B748: ["quad", 76.3], BLCF: ["quad", 71.7], C17: ["quad", 53], C5M: ["quad", 75.3],
   A124: ["quad", 69.1], IL76: ["quad", 46.6], B52: ["quad", 48.5], E3TF: ["quad", 46.6], E6: ["quad", 46.6],

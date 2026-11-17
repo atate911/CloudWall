@@ -3,10 +3,10 @@
 // and when it passes. When the sky is quiet, a slow rotation of large slides.
 // Sizes are in vh so the same design reads the same on 1024×600 and 1920×1080 panels.
 import { $, esc, num, mmss, ident, clamp } from "./util.js";
-import { boardFlight, showLogo } from "./hero.js";
+import { boardFlight, showLogo, localWords, heardGroups } from "./hero.js";
 import { typeInfo } from "./data.js";
 import { flap } from "./fx.js";
-import { windRose, runwaysFromMap, skyWords } from "./weather.js";
+import { windRose, runwaysFromMap, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
 
 const SLIDE_SECONDS = 12;
 const CAT_NAME = { VFR: "Visual flight rules", MVFR: "Marginal VFR", IFR: "Instrument flight rules", LIFR: "Low IFR" };
@@ -33,7 +33,7 @@ function routeBlock(a, state) {
       <div class="k-apt r ${r.dest.iata === here.iata ? "local" : ""}"><b>${esc(r.dest.iata)}</b><span>${esc(r.dest.city || "")}</span></div>
     </div>`;
   }
-  if (a.local) return `<div class="k-note big">${a.local === "arriving" ? "Landing at" : "Just left"} ${esc(here.iata)}</div>`;
+  if (a.local) return `<div class="k-note big">${esc(localWords(a, state))}</div>`;
   return `<div class="k-note big">${esc(a.type_name || a.type || "Unknown aircraft")}</div>`;
 }
 
@@ -99,6 +99,7 @@ function weatherSlideHtml(W, state) {
       <div class="k-cat"><i class="sw big cat-${n.category}"></i><b>${n.category}</b></div>
       <div class="k-mid">${f(n.temp_c)}°F</div>
       <div class="k-small">${esc(skyWords(n))}<br>${esc(shortWind(n.wind))}</div>
+      <div class="k-small k-dim">${sunMoonLine(state.home, true)}</div>
     </div>
     <div class="k-rose" id="k-rose"></div>
   </div>`;
@@ -115,6 +116,25 @@ function todaySlideHtml(L, state) {
   </div>`;
 }
 
+function militaryHtml(state) {
+  const g = heardGroups(state.heard);
+  const n = g.reduce((t, x) => t + x.n, 0), alts = state.heard.map((a) => a.alt).filter((x) => x != null);
+  return `<div class="k-card k-slide">
+    <div class="k-kicker">Heard nearby, position unknown</div>
+    <div class="k-big quiet">${n > 1 ? `${n} × ` : ""}${esc(g.length === 1 ? g[0].type : "military jets")}</div>
+    <div class="k-small">${esc(g.map((x) => x.name).join(", "))}${alts.length ? `<br>around ${num(Math.min(...alts))} ft` : ""}<br><span class="k-dim">Their transponders send no position, so they can't be placed on the map</span></div>
+  </div>`;
+}
+
+function airspaceHtml(state) {
+  const t = state.tfrs.find((x) => x.active && !x.drones_only);
+  return `<div class="k-card k-slide">
+    <div class="k-kicker">Flight restriction ${t.dist_nm < 0.5 ? "over the house" : `${t.dist_nm} nm away`}</div>
+    <div class="k-mid">${esc(t.name || "Restricted airspace")}</div>
+    <div class="k-small">${esc(t.kind)}<br>${esc(tfrAlt(t))}<br>${esc(tfrWhen(t))}</div>
+  </div>`;
+}
+
 function quietHtml(state) {
   const n = state.aircraft.filter((a) => !a.on_ground).length;
   return `<div class="k-card k-slide">
@@ -127,6 +147,8 @@ function showIdle(el, state) {
   if (cur.hex !== null) { cur = { hex: null }; slide = 0; slideAt = Date.now(); shownKey = null; }
   refresh();
   const slides = [state.next ? "next" : "quiet"];
+  if ((state.heard || []).length) slides.unshift("military");
+  if ((state.tfrs || []).some((t) => t.active && !t.drones_only)) slides.push("airspace");
   if (wx && wx.now) slides.push("weather");
   if (log && log.today > 0) slides.push("today");
   if (Date.now() - slideAt > SLIDE_SECONDS * 1000) { slide++; slideAt = Date.now(); }
@@ -140,6 +162,8 @@ function showIdle(el, state) {
   if (kind === "next") el.innerHTML = nextSlideHtml(state.next, state);
   else if (kind === "quiet") el.innerHTML = quietHtml(state);
   else if (kind === "today") el.innerHTML = todaySlideHtml(log, state);
+  else if (kind === "military") el.innerHTML = militaryHtml(state);
+  else if (kind === "airspace") el.innerHTML = airspaceHtml(state);
   else {
     el.innerHTML = weatherSlideHtml(wx, state);
     const box = $("k-rose"), size = Math.floor(Math.min(box.clientWidth, box.clientHeight));
@@ -157,3 +181,6 @@ export function tickKiosk(elapsed, state) {
   else if (state) showIdle($("hero"), state);
 }
 export function kioskNext() { slide++; slideAt = Date.now(); shownKey = null; }
+
+// Something else drew in the card (the emergency takeover): rebuild from scratch next time.
+export function forgetKiosk() { cur = { hex: undefined }; shownKey = null; }

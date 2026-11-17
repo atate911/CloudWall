@@ -532,3 +532,96 @@ body.night .k-who .logo-tile { height: 8.5vh; padding: .8vh 1.4vh; border-radius
 }
 @media (max-aspect-ratio: 1/1) { .stat:nth-child(odd) { padding-left: 0; border-left: 0; } }
 .k-row.start { justify-content: flex-start; align-items: baseline; }
+
+/* ===================== emergency takeover ===================== */
+/* 7700 / 7600 / 7500: the whole page turns red, in day and night alike */
+body.emergency, body.night.emergency {
+  --paper: #8a1712; --sheet: #a01d17; --disc: #741410; --ink: #fff6f2; --ink-2: #ffe1da; --slate: #ffc2b8;
+  --rule: #c2443b; --blue: #ffd7cf; --magenta: #ffd84d; --water: #9a2a22; --halo: #741410;
+}
+body.emergency { animation: em-pulse 2.4s ease-in-out infinite; }
+@keyframes em-pulse { 50% { background: #a81d16; } }
+@media (prefers-reduced-motion: reduce) { body.emergency { animation: none; } }
+.em-chip { background: var(--red); color: #fff; border: 0; border-radius: .4rem; padding: .2rem .6rem; font: 700 .8rem var(--sans); cursor: pointer; }
+body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
+.em-card { display: flex; flex-direction: column; justify-content: center; gap: 1.1rem; padding: 2rem 2.2rem; background: var(--sheet); }
+.em-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 1.1rem; color: var(--ink-2); }
+.em-code { text-transform: uppercase; letter-spacing: .08em; }
+.em-code b { font: 700 2.6rem var(--mono); letter-spacing: 0; margin-left: .4rem; color: #ffd84d; }
+.em-since { font-variant-numeric: tabular-nums; }
+.em-title { font-size: 4.2rem; line-height: 1; letter-spacing: -.02em; }
+.em-meaning { font-size: 1.3rem; color: var(--ink-2); max-width: 40em; }
+.em-id { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1.2rem; border-top: 1px solid var(--rule); padding-top: 1rem; }
+.em-id b { font: 700 2.4rem var(--mono); }
+.em-id span, .em-where { font-size: 1.25rem; color: var(--ink-2); }
+.em-read { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--rule); padding-top: 1rem; }
+.em-read > div { display: flex; flex-direction: column; min-width: 0; }
+.em-read > div + div { padding-left: 1.2rem; border-left: 1px solid var(--rule); }
+.em-read b { font: 700 2.6rem/1.1 var(--sans); font-variant-numeric: tabular-nums; }
+.em-read span { font-size: .95rem; color: var(--slate); }
+.em-more { font-size: 1rem; color: var(--ink-2); }
+.em-hide { align-self: flex-start; background: transparent; color: var(--ink); border: 1px solid var(--ink-2); border-radius: .5rem; padding: .45rem .9rem; font: .9rem var(--sans); cursor: pointer; }
+.kiosk .em-card { padding: 3.5vh 4vh; gap: 2.2vh; border-radius: 2.4vh; }
+.kiosk .em-top { font-size: 3.4vh; } .kiosk .em-code b { font-size: 8vh; }
+.kiosk .em-title { font-size: 13vh; }
+.kiosk .em-meaning { font-size: 3.6vh; }
+.kiosk .em-id { padding-top: 2vh; } .kiosk .em-id b { font-size: 8vh; } .kiosk .em-id span, .kiosk .em-where { font-size: 3.6vh; }
+.kiosk .em-read { padding-top: 2vh; } .kiosk .em-read b { font-size: 8vh; } .kiosk .em-read span { font-size: 3vh; }
+.kiosk .em-more { font-size: 3vh; }
+
+/* ===================== radar extras ===================== */
+.tfr { fill: url(#tfr-hatch); stroke: var(--red); stroke-width: .7; vector-effect: non-scaling-stroke; }
+.tfr.later { fill: none; stroke-dasharray: 3 2; opacity: .8; }
+.tfr-label { font: 700 4.6px var(--sans); fill: var(--red); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
+.field { fill: none; stroke: var(--slate); stroke-width: .8; }
+.field-label { font: 4.6px var(--mono); fill: var(--slate); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
+.heard-note { font: 700 5px var(--sans); fill: var(--red); paint-order: stroke; stroke: var(--halo); stroke-width: 1.6px; }
+.kiosk #radar .heard-note { font-size: 6.5px; }
+.sky-moon .moon-dark { fill: #6d7a88; } .sky-moon .moon-lit { fill: #f3f0e2; }
+.sky-moon { filter: drop-shadow(0 0 1.5px rgba(243, 240, 226, .6)); }
+
+/* ===================== weather tab: sun and moon, contrails, airspace ===================== */
+.wx-more { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 2rem;
+  border-top: 1px solid var(--rule); padding-top: 1.2rem; }
+.wx-more h2 { margin: 0 0 .6rem; }
+.wx-more .sum { font-size: 1rem; margin-bottom: .6rem; }
+.wx-more .dim { font-size: .8rem; color: var(--slate); line-height: 1.45; }
+.sm-sun { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; margin-bottom: .3rem; }
+.sm-sun dt { font-size: .75rem; color: var(--slate); }
+.sm-sun dd { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sm-moon { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
+.sm-moon > div { display: flex; flex-direction: column; gap: .15rem; font-size: .9rem; }
+.sm-moon b { font-size: 1.15rem; }
+.moon { flex: none; }
+.moon .moon-dark { fill: color-mix(in srgb, var(--ink) 18%, var(--sheet)); }
+.moon .moon-lit { fill: #efe9d2; stroke: color-mix(in srgb, var(--ink) 25%, transparent); stroke-width: .5; }
+body.night .moon .moon-lit { fill: #f3eedb; }
+table.ct { width: 100%; border-collapse: collapse; font-size: .85rem; font-variant-numeric: tabular-nums; margin-bottom: .6rem; }
+table.ct th { text-align: left; font-weight: 400; color: var(--slate); font-size: .72rem; padding: 0 .4rem .3rem 0; }
+table.ct th small { font-size: inherit; }
+table.ct td { padding: .28rem .4rem .28rem 0; border-top: 1px solid var(--rule); white-space: nowrap; }
+.ct-bar { display: inline-block; width: 1.6rem; height: .5rem; border-radius: .25rem; margin-right: .45rem; vertical-align: .05rem; background: transparent; border: 1px solid var(--rule); }
+.ct-short .ct-bar { background: repeating-linear-gradient(90deg, var(--blue) 0 3px, transparent 3px 6px); border-color: var(--blue); }
+.ct-persistent .ct-bar { background: var(--blue); border-color: var(--blue); }
+.ct-persistent td { font-weight: 700; }
+.ct-none td:last-child { color: var(--slate); }
+.tfr-item { border-top: 1px solid var(--rule); padding: .6rem 0; font-size: .88rem; }
+.tfr-item p { margin-top: .2rem; }
+.tfr-top { display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.tfr-top b { font-size: .98rem; }
+.tag { font-size: .68rem; border: 1px solid var(--rule); color: var(--slate); border-radius: .3rem; padding: 0 .35rem; }
+.tag.on { border-color: var(--red); color: var(--red); font-weight: 700; }
+.tfr-item details { margin-top: .3rem; font-size: .78rem; }
+.tfr-item summary { cursor: pointer; color: var(--blue); }
+.notam { font: .72rem/1.45 var(--mono); color: var(--ink-2); max-height: 12rem; overflow: auto; margin-top: .3rem; overflow-wrap: anywhere; }
+@media (max-aspect-ratio: 1/1) { .wx-more { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) and (min-aspect-ratio: 1/1) { .wx-more { grid-template-columns: 1fr 1fr; } .wx-more .panel-airspace { grid-column: 1 / -1; } }
+
+/* ===================== idle slides and board ===================== */
+.mil-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 1.15rem; padding: .5rem 0; border-top: 1px solid var(--rule); }
+.mil-row span { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.k-dim { color: var(--slate); }
+table.board tbody.heard th { text-align: left; font-size: .78rem; color: var(--slate); font-weight: 400; padding-top: 1rem; }
+#tfr-chip { cursor: pointer; color: var(--red); }
+.tfr-hatch-line { stroke: var(--red); stroke-width: .6; opacity: .45; }
+body.emergency #tfr-chip { color: var(--ink-2); }

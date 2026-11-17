@@ -1,8 +1,9 @@
 // Aviation weather: the Weather tab, and a compact version for the quiet-sky rotation.
 // Charts are drawn as SVG at the container's real pixel size, so text stays a fixed,
 // readable size from across a room.
-import { $, esc, num, offset, sunPosition, POINTS } from "./util.js";
+import { $, esc, num, offset, POINTS } from "./util.js";
 import { map } from "./scope.js";
+import { skyToday, moonSvg } from "./astro.js";
 
 const CAT_NAME = { VFR: "Visual flight rules", MVFR: "Marginal visual flight rules", IFR: "Instrument flight rules", LIFR: "Low instrument flight rules" };
 const CAT_ORDER = ["VFR", "MVFR", "IFR", "LIFR"];
@@ -35,27 +36,6 @@ export function summary(n) {
 }
 
 // ---------- sunrise / sunset ----------
-function sunTimes(lat, lon) {
-  const d0 = new Date(); d0.setHours(0, 0, 0, 0);
-  let rise = null, set = null, prev = null;
-  for (let m = 0; m <= 1440; m += 4) {
-    const t = d0.getTime() + m * 60000, el = sunPosition(t, lat, lon).el;
-    if (prev != null) {
-      if (prev < -0.833 && el >= -0.833) rise = t;
-      if (prev >= -0.833 && el < -0.833) set = t;
-    }
-    prev = el;
-  }
-  return { rise, set };
-}
-
-function sunReadout(sun) {
-  const now = Date.now();
-  if (sun.rise && now < sun.rise) return `<div><dt>Sunrise</dt><dd>${clock(sun.rise / 1000)}</dd><dd class="s">${sun.set ? `sunset ${clock(sun.set / 1000)}` : ""}</dd></div>`;
-  if (sun.set && now < sun.set) return `<div><dt>Sunset</dt><dd>${clock(sun.set / 1000)}</dd><dd class="s">${sun.rise ? `sunrise was ${clock(sun.rise / 1000)}` : ""}</dd></div>`;
-  return `<div><dt>Sunset</dt><dd>${sun.set ? clock(sun.set / 1000) : "–"}</dd><dd class="s">${sun.rise ? `sunrise ${clock(sun.rise / 1000)}` : ""}</dd></div>`;
-}
-
 // ---------- wind and runways ----------
 export function runwaysFromMap(home) {
   if (!map || !map.runways) return [];
@@ -267,7 +247,7 @@ export function renderWeatherTab(el, W, state) {
     el.innerHTML = `<div class="wx-empty"><h1>Weather</h1><p>Waiting for the latest report from ${esc(state ? state.airport.icao : "the airport")}.</p></div>`;
     return;
   }
-  const n = W.now, home = state.home, sun = sunTimes(home.lat, home.lon), runways = runwaysFromMap(home);
+  const n = W.now, home = state.home, runways = runwaysFromMap(home);
   const age = Math.round((Date.now() / 1000 - n.time) / 60);
   el.innerHTML = `<div class="wx-grid">
     <section class="wx-now">
@@ -281,7 +261,6 @@ export function renderWeatherTab(el, W, state) {
         <div><dt>Humidity</dt><dd>${n.humidity ?? "–"}%</dd><dd class="s">${n.temp_c - n.dew_c <= 2 ? "fog or low cloud likely" : `${Math.round((n.temp_c - n.dew_c) * 1.8)}°F spread`}</dd></div>
         <div><dt>Altimeter</dt><dd>${n.altimeter_inhg ?? "–"}</dd><dd class="s">inHg, ${num(n.altimeter_hpa)} hPa</dd></div>
         <div><dt>Density altitude</dt><dd>${num(n.density_alt)}</dd><dd class="s">feet; field is ${num(W.elevation_ft)} ft</dd></div>
-        ${sunReadout(sun)}
       </dl>
       <div class="wx-figs">
         <figure class="fig-wind" id="fig-wind"></figure>
@@ -296,6 +275,11 @@ export function renderWeatherTab(el, W, state) {
       <div id="wx-taf"></div>
       <div class="raw"><p><b>METAR</b> ${esc(n.raw || "")}</p>${W.taf && W.taf.raw ? `<p><b>TAF</b> ${esc(W.taf.raw)}</p>` : ""}</div>
     </section>
+    <section class="wx-more">
+      <div class="panel-sky">${sunMoonPanel(skyToday(home.lat, home.lon))}</div>
+      <div class="panel-contrails">${contrailPanel(W.contrails)}</div>
+      <div class="panel-airspace">${airspacePanel(W.tfrs, state)}</div>
+    </section>
   </div>`;
   const rose = Math.min($("fig-wind").clientWidth, 260);
   $("fig-wind").innerHTML = windRose(rose, n.wind, runways) + `<figcaption>${windCaption(n.wind, runways, state.flow)}</figcaption>`;
@@ -305,6 +289,76 @@ export function renderWeatherTab(el, W, state) {
   $("wx-taf").innerHTML = tafStrip($("wx-taf").clientWidth, W.taf);
   hover = hc;
   hookCrosshair(W.history);
+}
+
+// ---------- sun and moon, contrails, airspace ----------
+// "Sunset 4:38 PM, first quarter moon": the next sun event and tonight's moon, in a line.
+export function sunMoonLine(home, short = false) {
+  const now = Date.now(), k = skyToday(home.lat, home.lon, now);
+  let sun;
+  if (k.sunrise && now < k.sunrise) sun = `Sunrise ${clock(k.sunrise / 1000)}`;
+  else if (k.sunset && now < k.sunset) sun = `Sunset ${clock(k.sunset / 1000)}`;
+  else { const t = skyToday(home.lat, home.lon, now + 86400000).sunrise; sun = t ? `Sunrise ${clock(t / 1000)}` : null; }
+  const moon = `${k.phaseName.toLowerCase()}${k.phaseName.endsWith("moon") ? "" : " moon"}`;
+  if (short) return [sun, moon[0].toUpperCase() + moon.slice(1)].filter(Boolean).join("<br>");
+  return [sun, `${moon}, ${Math.round(k.lit * 100)}% lit`].filter(Boolean).join(", ");
+}
+const dayClock = (ms) => {
+  const d = new Date(ms), today = new Date().toDateString() === d.toDateString();
+  return d.toLocaleString([], today ? { hour: "numeric", minute: "2-digit" } : { weekday: "short", hour: "numeric", minute: "2-digit" });
+};
+const dateOnly = (ms) => new Date(ms).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+const hm = (ms) => `${Math.floor(ms / 3600000)} h ${Math.round((ms % 3600000) / 60000)} min`;
+
+export function sunMoonPanel(k) {
+  const t = (ms) => (ms ? dayClock(ms) : "–");
+  return `<h2>Sun and moon</h2>
+    <div class="sm">
+      <dl class="sm-sun">
+        <div><dt>First light</dt><dd>${t(k.dawn)}</dd></div>
+        <div><dt>Sunrise</dt><dd>${t(k.sunrise)}</dd></div>
+        <div><dt>Sunset</dt><dd>${t(k.sunset)}</dd></div>
+        <div><dt>Last light</dt><dd>${t(k.dusk)}</dd></div>
+      </dl>
+      <p class="dim">${k.daylight ? `${hm(k.daylight)} of daylight` : ""}</p>
+      <div class="sm-moon">${moonSvg(84, k.phase, k.lit)}
+        <div><b>${esc(k.phaseName)}</b><span>${Math.round(k.lit * 100)}% lit${k.moonUp ? ", up now" : ""}</span>
+          <span>${[k.moonrise ? `Rises ${t(k.moonrise)}` : null, k.moonset ? `sets ${t(k.moonset)}` : null].filter(Boolean).join(", ")}</span>
+          <span class="dim">${k.nextFull && (!k.nextNew || k.nextFull < k.nextNew) ? `Full moon ${dateOnly(k.nextFull)}` : k.nextNew ? `New moon ${dateOnly(k.nextNew)}` : ""}</span></div>
+      </div>
+    </div>`;
+}
+
+const TRAIL = { persistent: "Long-lasting", short: "Short-lived", none: "None" };
+export function contrailPanel(c) {
+  if (!c || !c.levels) return `<h2>Contrails</h2><p class="dim">Waiting for the upper-air forecast.</p>`;
+  const rows = [...c.levels].reverse().map((l) => `<tr class="ct-${l.state}"><td>${num(l.ft)} ft</td><td>${Math.round(l.temp_c)}°C</td>
+    <td>${l.rhi}%</td><td><i class="ct-bar"></i>${TRAIL[l.state]}</td></tr>`).join("");
+  return `<h2>Contrails</h2>
+    <p class="sum">${esc(c.summary)}.</p>
+    <table class="ct"><thead><tr><th>Altitude</th><th>Air</th><th>Humidity<small> (over ice)</small></th><th>Trail</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="dim">A trail forms where the air is cold enough for the exhaust's water to condense; it lingers and spreads only where the air is saturated over ice. Forecast for ${clock(c.at)} from the ${esc(c.source)} model.</p>`;
+}
+
+export function tfrWhen(t) {
+  if (!t.start && !t.end) return "Until further notice";
+  if (t.active) return t.end ? `Active until ${dayClock(t.end * 1000)}` : "Active, until further notice";
+  return `${dayClock(t.start * 1000)}${t.end ? ` to ${dayClock(t.end * 1000)}` : ""}`;
+}
+export function tfrAlt(t) {
+  if (!t.floor || !t.ceiling) return "";
+  return `${t.floor.text === "the surface" ? "Surface" : t.floor.text} to ${t.ceiling.text}`;
+}
+export function airspacePanel(tfrs, state) {
+  const radius = 30;
+  if (!tfrs) return `<h2>Flight restrictions</h2><p class="dim">Checking the FAA's list.</p>`;
+  if (!tfrs.length) return `<h2>Flight restrictions</h2><p class="sum">None within ${radius} nm.</p><p class="dim">Temporary flight restrictions (TFRs) close airspace for things like presidential visits, wildfires and stadium events. Source: FAA.</p>`;
+  return `<h2>Flight restrictions</h2>` + tfrs.map((t) => `<article class="tfr-item${t.active ? " active" : ""}">
+      <div class="tfr-top"><b>${esc(t.name || "Flight restriction")}</b>${t.drones_only ? `<span class="tag">Drones only</span>` : ""}${t.active ? `<span class="tag on">Active</span>` : ""}</div>
+      <p>${esc(t.kind)}. ${esc(tfrAlt(t))}${t.dist_nm != null ? `, ${t.dist_nm < 0.5 ? "over the house" : `${t.dist_nm} nm away`}` : ""}.</p>
+      <p class="dim">${esc(tfrWhen(t))}. NOTAM ${esc(t.id)}</p>
+      ${t.text ? `<details><summary>Full notice</summary><p class="notam">${esc(t.text)}</p></details>` : ""}
+    </article>`).join("");
 }
 
 // Crosshair: one vertical line across all the history charts, with the report it lands on.
@@ -331,7 +385,8 @@ export function weatherSlide(el, W, state) {
       <div class="wx-head">
         <div class="cat-badge"><i class="sw big cat-${n.category}"></i><b>${n.category}</b></div>
         <div><h1>Weather at ${esc(state.airport.iata)}</h1><p class="sum">${esc(summary(n))}</p>
-          <p class="dim">${Math.round(f(n.temp_c))}°F, dew point ${Math.round(f(n.dew_c))}°F, altimeter ${n.altimeter_inhg}. Report from ${clock(n.time)}.</p></div>
+          <p class="dim">${Math.round(f(n.temp_c))}°F, dew point ${Math.round(f(n.dew_c))}°F, altimeter ${n.altimeter_inhg}. Report from ${clock(n.time)}.</p>
+          <p class="dim">${esc(sunMoonLine(state.home))}.${W.contrails ? ` ${esc(W.contrails.summary)}.` : ""}</p></div>
       </div>
       <div class="wx-figs"><figure class="fig-wind" id="sw-wind"></figure><figure class="fig-clouds" id="sw-clouds"></figure></div>
       ${W.taf ? `<div class="sw-taf"><h2>Forecast</h2><div id="sw-taf"></div></div>` : ""}

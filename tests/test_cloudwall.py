@@ -807,3 +807,97 @@ class SeatsTest(unittest.TestCase):
         tot = store.logbook(day)["seats_today"]
         self.assertEqual(tot, {"seats": 178, "known": 2, "flights": 3})
         self.assertEqual(t.snapshot()["seats_today"], 178)
+
+
+class EmergencyTest(unittest.TestCase):
+    def test_needs_two_updates_and_clears(self):
+        store = Store(":memory:")
+        t = Tracker(config.load(), store, StubEnricher())
+        sq = lambda code: [plane("e1", "ASA1", 6, squawk=code), plane("e2", "ASA2", 7)]
+        t.update(sq("7700"), "test")
+        self.assertEqual(t.snapshot()["emergency"], [])             # one report could be a glitch
+        t.update(sq("7700"), "test")
+        em = t.snapshot()["emergency"]
+        self.assertEqual([(a["hex"], a["emergency_code"], a["emergency_title"]) for a in em], [("e1", "7700", "Emergency")])
+        t.update(sq("1234"), "test")
+        self.assertEqual(t.snapshot()["emergency"], [])
+
+    def test_transponder_status_counts(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        for _ in range(2):
+            t.update([plane("e1", "N123", 6, emergency_status="nordo")], "test")
+        self.assertEqual(t.snapshot()["emergency"][0]["emergency_code"], "7600")
+
+
+class SmallFieldTest(unittest.TestCase):
+    def test_light_aircraft_at_pearson(self):
+        cfg = config.load()
+        t = Tracker(cfg, Store(":memory:"), StubEnricher())
+        vuo = cfg["airport"]["others"][0]
+        a = plane("g1", "N733NV", 0, alt=900, typ="C172", category="A1", vrate=-500, track=260)
+        a.update(lat=vuo["lat"], lon=vuo["lon"] + 0.02)
+        self.assertEqual(t._infer_local(a), "arriving")
+        self.assertEqual(a["local_field"]["code"], "VUO")
+        # an airliner low over the same spot is still PDX traffic, not Pearson's
+        b = dict(a, callsign="ASA512", category="A3")
+        b.pop("local_field")
+        t._infer_local(b)
+        self.assertNotIn("local_field", b)
+
+
+class TFRTest(unittest.TestCase):
+    XML = """<XNOTAM-Update><Group><Add><Not><NotUid><txtLocalName>261121 Parade Portland, OR DHS - UAS Only</txtLocalName></NotUid>
+      <dateEffective>2026-11-21T21:00:00</dateEffective><dateExpire>2026-11-22T04:59:00</dateExpire>
+      <TfrNot><codeType>99.7</codeType><TFRAreaGroup><aseTFRArea><codeDistVerUpper>HEI</codeDistVerUpper><valDistVerUpper>400</valDistVerUpper>
+      <uomDistVerUpper>FT</uomDistVerUpper><codeDistVerLower>HEI</codeDistVerLower><valDistVerLower>0</valDistVerLower><uomDistVerLower>FT</uomDistVerLower>
+      </aseTFRArea></TFRAreaGroup></TfrNot><txtDescrUSNS>FULL TEXT</txtDescrUSNS></Not></Add></Group></XNOTAM-Update>"""
+
+    def test_parse_detail(self):
+        from cloudwall.tfr import parse_detail
+        d = parse_detail(self.XML)
+        self.assertEqual(d["name"], "Parade Portland, OR DHS - UAS Only")
+        self.assertTrue(d["drones_only"])
+        self.assertEqual(d["kind"], "Security")
+        self.assertEqual((d["floor"]["text"], d["ceiling"]["text"]), ("the surface", "400 ft above ground"))
+        self.assertEqual(d["end"] - d["start"], 7 * 3600 + 59 * 60)
+
+    def test_nearby_only_and_cached(self):
+        from cloudwall.tfr import TFRs
+        home = {"lat": 45.59, "lon": -122.47}
+        square = lambda lat, lon, r: {"type": "Polygon", "coordinates": [[[lon - r, lat - r], [lon + r, lat - r], [lon + r, lat + r], [lon - r, lat + r], [lon - r, lat - r]]]}
+        shapes = {"features": [
+            {"properties": {"NOTAM_KEY": "6/1111-1-FDC-F", "LAST_MODIFICATION_DATETIME": "1"}, "geometry": square(45.59, -122.47, 0.05)},
+            {"properties": {"NOTAM_KEY": "6/2222-1-FDC-F", "LAST_MODIFICATION_DATETIME": "1"}, "geometry": square(38.9, -77.0, 0.1)}]}
+        texts = []
+        t = TFRs(home, 30, fetch_json=lambda url, timeout: shapes, fetch_text=lambda url, timeout: texts.append(url) or self.XML)
+        out = t.refresh(now=1e9)
+        self.assertEqual([x["id"] for x in out], ["6/1111"])
+        self.assertEqual(out[0]["dist_nm"], 0.0)                     # home is inside it
+        t.refresh(now=1e9)
+        self.assertEqual(len(texts), 1)                                # details fetched once
+
+
+class ContrailTest(unittest.TestCase):
+    def test_schmidt_appleman(self):
+        from cloudwall.contrails import level, for_altitude
+        self.assertEqual(level(250, -30, 100, 10400)["state"], "none")          # too warm at any humidity
+        self.assertEqual(level(250, -55, 20, 10400)["state"], "short")          # cold but dry: forms, fades
+        self.assertEqual(level(250, -55, 110, 10400)["state"], "persistent")    # ice-saturated: lingers
+        c = {"levels": [level(250, -55, 110, 10400)]}
+        self.assertEqual(for_altitude(c, 34000), "persistent")
+        self.assertIsNone(for_altitude(c, 12000))
+
+
+class MilitaryTest(unittest.TestCase):
+    def test_positionless_nearby_only(self):
+        feed = {"ac": [
+            {"hex": "ae0001", "t": "F15", "alt_baro": 15000, "rr_lat": 45.6, "rr_lon": -122.6, "seen": 2, "dbFlags": 1},
+            {"hex": "ae0002", "t": "F15", "alt_baro": 15000, "rr_lat": 47.6, "rr_lon": -122.3, "seen": 2, "dbFlags": 1},   # Seattle
+            {"hex": "ae0003", "t": "C17", "alt_baro": 30000, "lat": 45.6, "lon": -122.6, "seen": 1, "dbFlags": 1}]}      # has a position
+        real = sources.get_json
+        sources.get_json = lambda url, timeout: feed
+        try:
+            out = sources.military_heard({"lat": 45.59, "lon": -122.47}, 40)
+        finally:
+            sources.get_json = real
+        self.assertEqual([(a["hex"], a["alt"], a["military"]) for a in out], [("ae0001", 15000, True)])

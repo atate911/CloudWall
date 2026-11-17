@@ -29,6 +29,8 @@ def normalise(a):
         "lat": a.get("lat"),
         "lon": a.get("lon"),
         "squawk": a.get("squawk"),
+        # the transponder's own emergency status: general, lifeguard, minfuel, nordo, unlawful, downed
+        "emergency_status": a.get("emergency") if a.get("emergency") not in (None, "none") else None,
         "category": a.get("category"),
         "military": bool(a.get("dbFlags", 0) & 1),
         # privacy programmes (LADD, PIA): the owner asked not to be identified
@@ -113,6 +115,38 @@ class Feeds:
                     out.append(n)
             return out
         raise last
+
+
+def military_heard(home, radius_nm, url="https://opendata.adsb.fi/api/v2/mil"):
+    """Military aircraft that receivers near home can hear but nobody can place.
+
+    Many military jets carry a Mode S transponder that sends altitude but no position. The
+    network still reports them, with the rough location of the receiver that heard them
+    (rr_lat/rr_lon), so we can say "an F-16 is up nearby" even with no dot for the map.
+    Aircraft with a position arrive through the normal feed instead."""
+    from .geo import haversine_nm
+    data = get_json(url, timeout=10)
+    out = []
+    for a in (data or {}).get("ac") or []:
+        if a.get("lat") is not None or a.get("rr_lat") is None:
+            continue
+        if (a.get("seen") or 0) > 90:
+            continue
+        d = haversine_nm(home["lat"], home["lon"], a["rr_lat"], a["rr_lon"])
+        if d > radius_nm:
+            continue
+        n = normalise(a)
+        n.update(rough_nm=round(d), lat=None, lon=None)
+        out.append(n)
+    return out
+
+
+def demo_heard():
+    """A pair of fighters heard but not placed (demo mode)."""
+    base = {"callsign": None, "reg": None, "type": "F15", "desc": "Boeing F-15EX Eagle II",
+            "on_ground": False, "gs": None, "vrate": None, "lat": None, "lon": None, "squawk": None,
+            "category": None, "military": True, "rough_nm": 3, "owner_op": "United States Air Force"}
+    return [dict(base, hex="ae0412", alt=14000), dict(base, hex="ae0413", alt=14200)]
 
 
 # --- Demo mode: plausible PDX traffic with no network needed -----------------

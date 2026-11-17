@@ -87,6 +87,29 @@ For other airlines it shows a typical count for the type ("about 166 seats"). Ca
 none. The Logbook totals the seats that flew over today and all time. Edit the CSV to add an
 airline's layout; rows for a specific airline win over the typical ones.
 
+## Emergencies, military jets, airspace and the sky
+
+- **Emergencies.** An aircraft within range squawking 7700 (emergency), 7600 (radio failure) or
+  7500 (hijack code) takes over the screen and turns it red, with an alert sound when sound is on.
+  It must hold the code for two updates, so a code set by mistake for a second doesn't trigger it. On the
+  desktop, "Hide for this flight" puts it back to normal and the red header chip brings it back; the
+  kiosk stays red until the code is cleared.
+- **Military jets.** Military aircraft that the network can place show on the radar like any
+  other. Many fighters send altitude but no position. When receivers near Portland hear one,
+  CloudWall shows "Heard nearby, no position" on the radar and Board, plus an idle slide.
+- **Flight restrictions (TFRs).** The FAA's temporary flight restrictions within 30 nm are drawn on the
+  radar, listed on the Weather tab with times, altitudes and the full notice, and shown on an idle
+  slide while one is active. Drone-only restrictions are listed but don't interrupt the board.
+- **Pearson Field and Troutdale.** Light aircraft low over either field are labelled "Landing at
+  Pearson Field" and so on, instead of being taken for PDX traffic. Both fields are marked on the radar.
+- **Sun, moon and contrails.** The Weather tab shows first light, sunrise, sunset, last light, the
+  moon's phase, rise and set, and a contrail forecast by altitude from the GFS weather model's
+  upper-air temperature and humidity. The moon appears on the sky view when it's up, and a flight card
+  says when the aircraft is likely leaving a contrail.
+
+These use free services (adsb.fi, tfr.faa.gov, api.open-meteo.com) and pause when no screen is open.
+Turn any of them off in `[extras]`.
+
 ## Production on dedicated hardware
 
 On the Pi, install the same way and run `make service`. Then start `deploy/kiosk.sh`
