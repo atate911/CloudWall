@@ -48,6 +48,38 @@ class SourceTest(unittest.TestCase):
         self.assertEqual(by["ASA714"]["alt"], 0)
 
 
+class FeedsTest(unittest.TestCase):
+    def test_failover_is_sticky(self):
+        calls = []
+
+        def fake(url, timeout=0):
+            calls.append(url)
+            if "bad" in url:
+                raise OSError("handshake timed out")
+            return {"ac": [{"hex": "abc123", "lat": 45.0, "lon": -122.0, "flight": "ASA1 "}]}
+
+        real, sources.get_json = sources.get_json, fake
+        try:
+            f = sources.Feeds(["https://bad.example/{lat}/{lon}/{radius}", "https://good.example/{lat}/{lon}/{radius}"])
+            self.assertEqual(f.fetch(45, -122, 15)[0]["callsign"], "ASA1")
+            self.assertEqual(f.name, "good.example")
+            f.fetch(45, -122, 15)                       # stays on the working feed
+            self.assertEqual([("bad" in c) for c in calls], [True, False, False])
+            f2 = sources.Feeds(["https://bad.example/{lat}", "https://bad.example/b/{lat}"])
+            self.assertRaises(OSError, f2.fetch, 45, -122, 15)
+        finally:
+            sources.get_json = real
+
+    def test_legacy_single_url_config(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".toml") as t:
+            t.write('[source]\nurl = "http://localhost:8080/data/aircraft.json"\n')
+            t.flush()
+            urls = config.load(t.name)["source"]["urls"]
+        self.assertEqual(urls[0], "http://localhost:8080/data/aircraft.json")
+        self.assertEqual(len(urls), 3)
+
+
 class StubEnricher:
     def __init__(self):
         self.routes = {}

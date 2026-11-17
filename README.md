@@ -4,8 +4,8 @@ A flight status board for the sky over your house. A Raspberry Pi with a colour
 touchscreen shows whatever is flying overhead: flight number, airline, origin and
 destination, aircraft type, altitude, speed, heading, and where in the sky to look.
 
-No radio hardware needed: positions come from the free [adsb.lol](https://adsb.lol)
-community feed, routes and airframe details from [adsbdb.com](https://www.adsbdb.com),
+No radio hardware needed: positions come from the free [adsb.fi](https://adsb.fi)
+community feed (falling back to [adsb.lol](https://adsb.lol)), routes and airframe details from [adsbdb.com](https://www.adsbdb.com),
 weather from aviationweather.gov. Pure Python standard library, no packages to install.
 
 ## Screens
@@ -71,6 +71,6 @@ The layout scales to the screen, from a 4–5" desk panel (800×480) to a wall m
 - Routes are looked up by callsign and are sometimes stale. CloudWall checks each route
   against where the aircraft actually is and greys it out as "route unverified" when
   they disagree.
-- `[source] url` accepts any readsb-style JSON feed, so a local ADS-B receiver can
-  replace the public API later.
+- `[source] urls` lists position feeds, tried in order with automatic failover. Any
+  readsb-style JSON feed works, so a local ADS-B receiver can replace the public APIs later.
 - Tests: `python3 -m unittest discover -s tests`

@@ -1,9 +1,13 @@
 """Live position sources. Each returns a list of normalised aircraft dicts."""
+import logging
 import math
 import random
 import time
+from urllib.parse import urlparse
 
 from .http import get_json
+
+log = logging.getLogger("cloudwall.sources")
 
 
 def normalise(a):
@@ -31,22 +35,43 @@ def normalise(a):
     }
 
 
-class Readsb:
-    """Any readsb-style JSON feed: adsb.lol by default, or another community
-    API / your own receiver later, by changing [source] url in config.toml."""
+class Feeds:
+    """One or more readsb-style JSON feeds, tried in order.
 
-    def __init__(self, url, name):
-        self.url, self.name = url, name
+    The free community APIs come and go, so when the feed in use fails we move
+    to the next one and stay there for as long as it keeps answering.
+    """
+
+    def __init__(self, urls):
+        self.urls = list(urls)
+        self.current = 0
+        self.name = self._host(self.urls[0])
+
+    @staticmethod
+    def _host(url):
+        return urlparse(url).hostname or url
 
     def fetch(self, lat, lon, radius_nm):
-        data = get_json(self.url.format(lat=f"{lat:.4f}", lon=f"{lon:.4f}", radius=int(radius_nm)),
-                        timeout=8)
-        out = []
-        for a in (data or {}).get("ac") or (data or {}).get("aircraft") or []:
-            n = normalise(a)
-            if n["hex"] and n["lat"] is not None and n["lon"] is not None:
-                out.append(n)
-        return out
+        last = None
+        for step in range(len(self.urls)):
+            i = (self.current + step) % len(self.urls)
+            url = self.urls[i].format(lat=f"{lat:.4f}", lon=f"{lon:.4f}", radius=int(radius_nm))
+            try:
+                data = get_json(url, timeout=8)
+            except Exception as e:
+                log.warning("feed %s failed: %s", self._host(url), e)
+                last = e
+                continue
+            if i != self.current:
+                log.info("switched position feed to %s", self._host(url))
+            self.current, self.name = i, self._host(url)
+            out = []
+            for a in (data or {}).get("ac") or (data or {}).get("aircraft") or []:
+                n = normalise(a)
+                if n["hex"] and n["lat"] is not None and n["lon"] is not None:
+                    out.append(n)
+            return out
+        raise last
 
 
 # --- Demo mode: plausible PDX traffic with no network needed -----------------

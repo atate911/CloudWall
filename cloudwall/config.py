@@ -22,8 +22,9 @@ DEFAULTS = {
         "max_overhead_alt_ft": 45000,
         "poll_seconds": 5,
     },
-    "source": {"name": "adsb.lol",
-               "url": "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"},
+    # Position feeds, tried in order; CloudWall fails over to the next when one stops answering.
+    "source": {"urls": ["https://opendata.adsb.fi/api/v3/lat/{lat}/lon/{lon}/dist/{radius}",
+                        "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"]},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }
@@ -60,6 +61,9 @@ def load(path=None):
         with open(path, "rb") as f:
             for section, values in tomllib.load(f).items():
                 cfg.setdefault(section, {}).update(values)
+    src = cfg["source"]
+    if src.get("url"):                      # older single-feed setting: try it first
+        src["urls"] = [src["url"]] + [u for u in src["urls"] if u != src["url"]]
     cfg["_path"] = str(path) if path else None
     return cfg
 

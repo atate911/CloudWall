@@ -42,7 +42,7 @@ def main():
         Path(db).expanduser().parent.mkdir(parents=True, exist_ok=True)
         db = str(Path(db).expanduser())
     store = Store(db)
-    source = sources.Demo() if args.demo else sources.Readsb(cfg["source"]["url"], cfg["source"]["name"])
+    source = sources.Demo() if args.demo else sources.Feeds(cfg["source"]["urls"])
     tracker = Tracker(cfg, store, Enricher(store, demo=source if args.demo else None))
     home, trk = cfg["home"], cfg["tracking"]
 
@@ -51,7 +51,7 @@ def main():
             try:
                 tracker.update(source.fetch(home["lat"], home["lon"], trk["radius_nm"]), source.name)
             except Exception as e:
-                log.warning("position fetch failed: %s", e)
+                log.warning("no position feed is answering (last error: %s)", e)
                 tracker.failed(source.name, e)
             time.sleep(1 if args.demo else trk["poll_seconds"])
 
