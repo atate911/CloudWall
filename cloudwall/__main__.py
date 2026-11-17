@@ -10,6 +10,7 @@ from .enrich import Enricher
 from .flightaware import FlightAware
 from .flightradar24 import Flightradar24
 from .server import make_server
+from .tiles import Tiles
 from .store import Store
 from .tracker import Tracker
 
@@ -45,9 +46,12 @@ def main():
         db = str(Path(db).expanduser())
     store = Store(db)
     source = sources.Demo() if args.demo else sources.Feeds(cfg["source"]["urls"])
+    tiles_dir = (Path(db).parent if db != ":memory:" else config.default_db_path().parent) / "tiles"
+    tiles = Tiles(cfg, tiles_dir)
     providers = [Flightradar24(cfg, store), FlightAware(cfg, store)]
     fa = next((p for p in providers if p.enabled), None)    # first one with a key wins
     tracker = Tracker(cfg, store, Enricher(store, demo=source if args.demo else None, live=fa))
+    tracker.basemap = tiles.info()
     home, trk = cfg["home"], cfg["tracking"]
 
     def poll():
@@ -70,10 +74,11 @@ def main():
     threading.Thread(target=poll, daemon=True).start()
     if not args.demo:
         threading.Thread(target=wx, daemon=True).start()
-    server = make_server(cfg, tracker, store)
+    server = make_server(cfg, tracker, store, tiles)
     log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"], source.name)
     log.info("live routes: %s", f"{fa.label} ({fa.mode} mode, up to {fa.daily_limit} lookups/day)"
              if fa and not args.demo else "off (free route database only)")
+    log.info("radar map: %s", f"{tiles.style} (cached in {tiles.dir})" if tiles.enabled else "off")
     log.info("config: %s | logbook: %s", cfg["_path"] or "built-in defaults", db)
     try:
         server.serve_forever()

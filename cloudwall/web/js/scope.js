@@ -21,12 +21,34 @@ export async function loadMap(icao) {
   } catch (e) { /* no map for this airport: the scope simply has no backdrop */ }
 }
 
+// ---- background map tiles (Web Mercator), served and cached by CloudWall at /tiles ----
+const lon2x = (lon, z) => ((lon + 180) / 360) * 2 ** z;
+const lat2y = (lat, z) => ((1 - Math.log(Math.tan(lat * RAD) + 1 / Math.cos(lat * RAD)) / Math.PI) / 2) * 2 ** z;
+const x2lon = (x, z) => (x / 2 ** z) * 360 - 180;
+const y2lat = (y, z) => Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / 2 ** z))) / RAD;
+
+// Tiles covering `radiusNm` around home, at a zoom that gives about one tile pixel per
+// screen pixel. Rectangles are in nm east (x) and north (y) of home.
+export function tileLayout(home, radiusNm, screenPxPerNm) {
+  const z = clamp(Math.round(Math.log2((40075016.686 * Math.cos(home.lat * RAD) * screenPxPerNm) / (256 * 1852))), 8, 15);
+  const dLat = radiusNm / 60, dLon = radiusNm / (60 * Math.cos(home.lat * RAD));
+  const x0 = Math.floor(lon2x(home.lon - dLon, z)), x1 = Math.floor(lon2x(home.lon + dLon, z));
+  const y0 = Math.floor(lat2y(home.lat + dLat, z)), y1 = Math.floor(lat2y(home.lat - dLat, z));
+  const tiles = [];
+  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+    const nw = offset(home, { lat: y2lat(y, z), lon: x2lon(x, z) }), se = offset(home, { lat: y2lat(y + 1, z), lon: x2lon(x + 1, z) });
+    tiles.push({ url: `tiles/${z}/${x}/${y}`, x0: nw.x, y0: nw.y, x1: se.x, y1: se.y });
+  }
+  return { z, tiles };
+}
+
 const pts = (home, line, k) => line.map(([lat, lon]) => { const o = offset(home, { lat, lon }); return `${(o.x * k).toFixed(1)},${(-o.y * k).toFixed(1)}`; }).join(" ");
 
-function mapLayer(home, k) {
+function mapLayer(home, k, hasBasemap) {
   if (!map) return "";
   let s = "";
-  for (const w of map.water || []) s += `<polyline class="water" stroke-width="${Math.max(1.2, w.width_nm * k)}" points="${pts(home, w.line, k)}"/>`;
+  // the hand-drawn rivers are only a stand-in for when there's no real map underneath
+  if (!hasBasemap) for (const w of map.water || []) s += `<polyline class="water" stroke-width="${Math.max(1.2, w.width_nm * k)}" points="${pts(home, w.line, k)}"/>`;
   for (const r of map.runways || []) {
     const [a, b] = r.ends.map(([lat, lon]) => offset(home, { lat, lon }));
     const len = Math.hypot(b.x - a.x, b.y - a.y), ux = (b.x - a.x) / len, uy = (b.y - a.y) / len, far = 12;   // nm of extended centreline
@@ -68,8 +90,8 @@ function place(state, a, t, mode) {
 // ---- static layer ----
 function radarStatic(state) {
   const R = state.tracking.radius_nm, k = 100 / R, home = state.home;
-  let s = `<defs><clipPath id="scope-clip"><circle r="100"/></clipPath></defs><circle class="scope-bg" r="100"/>
-    <g clip-path="url(#scope-clip)">${mapLayer(home, k)}</g>`;
+  const based = !!(state.basemap && state.basemap.enabled);
+  let s = `<g clip-path="url(#scope-clip)">${mapLayer(home, k, based)}</g>`;
   for (const r of [R, (R * 2) / 3, R / 3]) s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + " nm")}`;
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
   const ap = offset(home, state.airport);
@@ -113,7 +135,27 @@ function domeStatic(state, dt) {
 
 // ---- persistent aircraft elements ----
 const live = new Map();     // hex -> { g, icon, tag, sub, trail, tail, x, y, rot, corner, seen }
-let lastFrame = 0, layerMode = null, staticKey = null;
+let lastFrame = 0, layerMode = null, staticKey = null, baseKey = null;
+
+// The map layer is rebuilt only when the zoom or view changes, so it never flickers.
+function drawBase(svg, state, mode) {
+  const g = svg.querySelector("#s-base"), bm = state.basemap;
+  const R = state.tracking.radius_nm, k = 100 / R;
+  const box = svg.getBoundingClientRect(), unitsPx = Math.min(box.width, box.height) / 224;
+  const screenPxPerNm = unitsPx * k * (window.devicePixelRatio || 1);
+  if (mode !== "radar" || !bm || !bm.enabled || !unitsPx) {
+    if (baseKey !== "none") { g.innerHTML = ""; baseKey = "none"; }
+    return;
+  }
+  const layout = tileLayout(state.home, R * 1.05, screenPxPerNm);
+  const key = `${layout.z}|${R}|${state.home.lat},${state.home.lon}|${bm.style}`;
+  if (key === baseKey) return;
+  baseKey = key;
+  g.style.opacity = bm.opacity;
+  g.setAttribute("class", `basemap ${bm.style}`);
+  g.innerHTML = layout.tiles.map((t) => `<image href="${t.url}" x="${(t.x0 * k).toFixed(2)}" y="${(-t.y0 * k).toFixed(2)}"
+    width="${((t.x1 - t.x0) * k + 0.15).toFixed(2)}" height="${((t.y0 - t.y1) * k + 0.15).toFixed(2)}" preserveAspectRatio="none"/>`).join("");
+}
 
 function el(name, attrs, parent) {
   const e = document.createElementNS(NS, name);
@@ -125,7 +167,10 @@ function el(name, attrs, parent) {
 function ensureLayers(svg) {
   if (svg.querySelector("#s-static")) return;
   svg.innerHTML = "";
-  el("defs", { id: "s-defs" }, svg);
+  const defs = el("defs", { id: "s-defs" }, svg);
+  el("circle", { r: 100 }, el("clipPath", { id: "scope-clip" }, defs));
+  el("circle", { class: "scope-bg", r: 100 }, svg);
+  el("g", { id: "s-base", "clip-path": "url(#scope-clip)" }, svg);
   for (const id of ["s-static", "s-trails", "s-craft"]) el("g", { id }, svg);
 }
 
@@ -204,6 +249,7 @@ export function drawScope(svg, state, now, stateAt, mode) {
     staticKey = null;
     svg.classList.remove("fade-in"); void svg.getBBox(); svg.classList.add("fade-in");
   }
+  drawBase(svg, state, mode);
   const key = `${mode}|${stateAt}|${map ? 1 : 0}`;
   const fresh = key !== staticKey;
   if (fresh) {

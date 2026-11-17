@@ -4,7 +4,7 @@ import { airlineColors, typeInfo } from "./data.js";
 import { silhouette, silhouetteScale } from "./silhouette.js";
 import { flap, roll } from "./fx.js";
 import { sky, viewingHint } from "./sky.js";
-import { map } from "./scope.js";
+import { map, tileLayout } from "./scope.js";
 
 // Play the entrance animation once for freshly inserted content.
 function enter(el) {
@@ -192,7 +192,19 @@ function lastSlide(s) {
     <div class="badges">${badges(s.badges)}</div>`;
 }
 
+// Load the map tiles for the heatmap, then draw (and draw again once they arrive).
 function drawHeat(canvas, state, heat) {
+  const bm = state.basemap;
+  if (!bm || !bm.enabled) return paintHeat(canvas, state, heat, null);
+  const R = heat.radius_nm, px = Math.min(canvas.parentElement.clientHeight * 0.94, canvas.parentElement.clientWidth * 0.56) * (window.devicePixelRatio || 1);
+  const tiles = tileLayout(state.home, R, px / (2 * R)).tiles.map((t) => ({ ...t, img: new Image() }));
+  let pending = tiles.length;
+  const done = () => { if (--pending === 0 && canvas.isConnected) paintHeat(canvas, state, heat, tiles); };
+  for (const t of tiles) { t.img.onload = t.img.onerror = done; t.img.src = t.url; }
+  paintHeat(canvas, state, heat, tiles);
+}
+
+function paintHeat(canvas, state, heat, tiles) {
   // a square that fits beside the caption, sized here because CSS can't keep a canvas square in a flex row
   const box = canvas.parentElement, css = Math.floor(Math.min(box.clientHeight * 0.94, box.clientWidth * 0.56));
   canvas.style.width = canvas.style.height = css + "px";
@@ -204,7 +216,14 @@ function drawHeat(canvas, state, heat) {
   g.save();
   g.beginPath(); g.arc(size / 2, size / 2, size / 2, 0, 7); g.clip();
   g.fillStyle = "rgba(6,10,15,.55)"; g.fillRect(0, 0, size, size);
-  if (map) {
+  const bm = state.basemap;
+  if (bm && bm.enabled && tiles) {
+    // the same faint map as the radar, so the hot spots line up with real places
+    g.globalAlpha = bm.opacity;
+    g.filter = bm.style === "dark" ? "contrast(1.35)" : bm.style === "light" ? "invert(1) contrast(1.1) brightness(.8)" : "saturate(.5) brightness(.6)";
+    for (const t of tiles) if (t.img.complete && t.img.naturalWidth) g.drawImage(t.img, size / 2 + t.x0 * k, size / 2 - t.y0 * k, (t.x1 - t.x0) * k + 0.5, (t.y0 - t.y1) * k + 0.5);
+    g.globalAlpha = 1; g.filter = "none";
+  } else if (map) {
     g.strokeStyle = "rgba(74,144,196,.45)"; g.lineCap = g.lineJoin = "round";
     for (const w of map.water || []) { g.lineWidth = Math.max(2, w.width_nm * k); g.beginPath(); w.line.forEach(([la, lo], i) => { const [x, y] = XY(la, lo); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); }
   }

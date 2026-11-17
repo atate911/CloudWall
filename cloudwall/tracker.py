@@ -38,6 +38,7 @@ class Tracker:
         self.active = {}          # hex -> {"id", "min", "ts", "badges"}
         self.flow = None
         self.weather = None
+        self.basemap = None
         self.status = {"source": None, "ok": False, "updated": 0, "error": None}
         self.trails = {}          # hex -> deque of (lat, lon)
         self.heat_day = time.strftime("%Y-%m-%d")
@@ -285,7 +286,7 @@ class Tracker:
                 "now": time.time(), "home": self.home, "airport": self.cfg["airport"],
                 "tracking": self.cfg["tracking"], "hero": hero, "pinned": self.pinned,
                 "next": nxt, "aircraft": self.aircraft, "flow": self.flow,
-                "weather": self.weather, "status": self.status,
+                "weather": self.weather, "status": self.status, "basemap": self.basemap,
                 "live_routes": p.status() if (p := getattr(self.enricher, "live", None)) else None,
                 "today": self.store.count("day=?", (time.strftime("%Y-%m-%d"),)),
             }

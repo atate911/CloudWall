@@ -358,3 +358,68 @@ class TracksTest(unittest.TestCase):
         t.update([], "test")
         self.assertEqual(t.trails, {})                                # gone from range: trail dropped
         self.assertIn("photo", {r["name"] for r in store.db.execute("PRAGMA table_info(sightings)")})
+
+
+class TilesTest(unittest.TestCase):
+    def test_cache_area_limit_and_stale_fallback(self):
+        import tempfile
+        from cloudwall import tiles as T
+        with tempfile.TemporaryDirectory() as d:
+            t = T.Tiles(config.load(), d)
+            calls = []
+
+            def fake(z, x, y):
+                calls.append((z, x, y))
+                if t.fail:
+                    raise OSError("offline")
+                return b"PNGDATA", "image/png"
+
+            t._download, t.fail = fake, False
+            home = (11, 326, 731)                                     # the tile over Portland
+            self.assertEqual(t.get(*home), (b"PNGDATA", "image/png"))
+            self.assertEqual(t.get(*home)[0], b"PNGDATA")
+            self.assertEqual(len(calls), 1)                           # second request came from disk
+            self.assertIsNone(t.get(11, 100, 100))                    # far away: refused, not fetched
+            self.assertIsNone(t.get(3, 1, 2))                         # too zoomed out
+            self.assertEqual(len(calls), 1)
+            # a month-old tile with the provider down: serve the old copy
+            p = next(Path(d).rglob("*.tile"))
+            old = time.time() - 40 * 86400
+            import os
+            os.utime(p, (old, old))
+            t.fail = True
+            self.assertEqual(t.get(*home)[0], b"PNGDATA")
+            self.assertIsNone(t.get(11, 327, 731))                    # never fetched and offline
+
+    def test_template_placeholders(self):
+        from cloudwall import tiles as T
+        cfg = config.load()
+        cfg["map"] = dict(cfg["map"], url="https://{s}.example.com/dark/{z}/{x}/{y}{r}.png?api_key=k")
+        t = T.Tiles(cfg, "/tmp/x")
+        seen = []
+
+        class Resp:
+            headers = {"Content-Type": "image/png"}
+            def __enter__(self): return self
+            def __exit__(self, *a): pass
+            def read(self): return b"x"
+
+        real = T.urllib.request.urlopen
+        T.urllib.request.urlopen = lambda req, timeout=0: seen.append(req.full_url) or Resp()
+        try:
+            t._download(11, 326, 731)
+        finally:
+            T.urllib.request.urlopen = real
+        self.assertEqual(seen, ["https://a.example.com/dark/11/326/731.png?api_key=k"])
+
+    def test_styles_and_off(self):
+        from cloudwall import tiles as T
+        cfg = config.load()
+        self.assertIn("Esri", T.Tiles(cfg, "/tmp/x").attribution)
+        self.assertIn("World_Dark_Gray_Base", T.Tiles(cfg, "/tmp/x").url)
+        cfg["map"] = dict(cfg["map"], style="satellite")
+        self.assertIn("Esri", T.Tiles(cfg, "/tmp/x").attribution)
+        cfg["map"] = dict(cfg["map"], style="off")
+        t = T.Tiles(cfg, "/tmp/x")
+        self.assertFalse(t.enabled)
+        self.assertIsNone(t.get(11, 326, 731))

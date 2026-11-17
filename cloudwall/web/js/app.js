@@ -70,8 +70,10 @@ function drawScopeNow(now = performance.now()) {
   if (!state || view !== "now") return;
   const mode = scopeMode(), pref = store("scope") || "auto";
   const label = pref === "auto" ? `Auto · ${mode === "sky" ? "Sky view" : "Radar"}` : mode === "sky" ? "Sky view" : "Radar";
-  if (label !== scopeLabel) {
-    scopeLabel = label;
+  const bm = state.basemap, credit = mode === "radar" && bm && bm.enabled ? bm.attribution : "";
+  if (label + credit !== scopeLabel) {
+    scopeLabel = label + credit;
+    $("scope-attrib").textContent = credit;
     $("scope-mode").textContent = label;
     $("scope-caption").textContent = mode === "sky" ? "Centre is straight up · edge is the horizon" : `${state.tracking.radius_nm} nm around home`;
   }

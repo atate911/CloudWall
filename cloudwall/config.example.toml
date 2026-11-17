@@ -43,6 +43,15 @@ daily_limit = 30
 mode = "fallback"
 general_aviation = false
 
+[map]                  # faint map under the radar, cached on disk by CloudWall
+style = "dark"         # "dark" or "light" grey street map, "satellite", "osm" (OpenStreetMap), or "off"
+opacity = 0.5          # 0 to 1; the radar keeps it dim either way
+# Any other raster tile service, e.g. CARTO with your API key. Paste the provider's
+# raster URL template; {z} {x} {y} (and {s} {r}) are filled in. The key stays on
+# your server: the browser only ever loads tiles from CloudWall.
+# url = "https://example.com/{z}/{x}/{y}.png?api_key=YOUR_KEY"
+# attribution = "© OpenStreetMap contributors © CARTO"   # the credit the provider asks for
+
 [server]
 host = "0.0.0.0"
 port = 5050

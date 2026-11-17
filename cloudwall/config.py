@@ -29,6 +29,8 @@ DEFAULTS = {
                       "general_aviation": False, "sandbox": False},
     "flightaware": {"api_key": "", "daily_limit": 30, "mode": "fallback",
                     "general_aviation": False},
+    # Map behind the radar: "dark", "light", "satellite", "osm" or "off" (or set url = a tile URL template)
+    "map": {"style": "dark", "opacity": 0.5, "url": "", "attribution": ""},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }

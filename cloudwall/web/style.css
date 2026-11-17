@@ -168,6 +168,16 @@ body.night .sil { color: #d8b890; } body.night .sil .wing { fill: #94775a; } bod
 #radar.fade-in { animation: fade .45s ease-out; }
 #radar text { font-family: var(--mono); fill: var(--dim); }
 #radar .scope-bg { fill: rgba(0, 0, 0, .22); }
+/* the real map: a faint shadow for orientation, never competing with the traffic */
+#radar .basemap { transition: opacity .6s; }
+#radar .basemap image { image-rendering: auto; }
+#radar .basemap.dark { filter: contrast(1.35) brightness(1.05); }
+#radar .basemap.light { filter: invert(1) contrast(1.1) brightness(.8); }
+#radar .basemap.satellite, #radar .basemap.osm { filter: saturate(.55) brightness(.7) contrast(1.1); }
+body.night #radar .basemap { filter: contrast(1.3) sepia(1) hue-rotate(-12deg) saturate(.7); }
+body.night #radar .basemap.satellite, body.night #radar .basemap.osm { filter: grayscale(1) sepia(1) hue-rotate(-12deg) saturate(.6) brightness(.55); }
+.attrib { position: absolute; right: .6rem; top: .65rem; font: 400 .5rem var(--sans); color: var(--dim); opacity: .75; max-width: 45%; text-align: right; }
+.attrib:empty { display: none; }
 #radar .dome-bg { fill: color-mix(in srgb, var(--sky-top) 50%, #000); }
 #radar .ring { fill: none; stroke: rgba(255, 255, 255, .13); stroke-width: .55; }
 #radar .ring.horizon { stroke: rgba(255, 255, 255, .4); stroke-width: .9; }

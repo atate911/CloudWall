@@ -112,9 +112,14 @@ returns fixed sample data, so routes will not match what is overhead.
   they disagree.
 - `[source] urls` lists position feeds, tried in order with automatic failover. Any
   readsb-style JSON feed works, so a local ADS-B receiver can replace the public APIs later.
+- The radar sits over a faint real map (Esri's dark grey basemap by default; `[map] style`
+  can be `light`, `satellite`, `osm` or `off`, or `url` can point at any raster tile service,
+  such as CARTO with your own API key). CloudWall downloads each tile once, caches it for a
+  month next to the logbook, and serves it to the display itself, so the map provider sees
+  only your server and an API key never reaches the browser.
 - The river and runway map is hand-drawn for PDX (`cloudwall/web/maps/kpdx.json`) and
-  approximate. For another airport, add a file named after its ICAO code; without one
-  the scope simply has no backdrop.
+  approximate; with the real map turned on only its runways and approach lines are
+  drawn. For another airport, add a file named after its ICAO code.
 - Aircraft photos come from the free airframe database and load directly in the browser.
 - The Inter and JetBrains Mono fonts are bundled (SIL Open Font License, see
   `cloudwall/web/fonts/`), so the board looks the same on every machine and needs no
