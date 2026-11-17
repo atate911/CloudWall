@@ -47,8 +47,8 @@ def fetch_aircraft(hexid):
 class Enricher:
     """Non-blocking lookups: returns what is cached now, fetches the rest in the background."""
 
-    def __init__(self, store, demo=None, flightaware=None):
-        self.store, self.demo, self.fa = store, demo, flightaware
+    def __init__(self, store, demo=None, live=None):
+        self.store, self.demo, self.live = store, demo, live
         self.mem, self.pending = {}, set()
         self.q = queue.Queue()
         self.lock = threading.Lock()
@@ -68,13 +68,15 @@ class Enricher:
         return self._get("aircraft", hexid, 30 * DAY)
 
     def live_route(self, callsign, fetch):
-        """FlightAware's route for the flight in the air now. Billed, so `fetch` is the
+        """The paid provider's route for the flight in the air now. Billed, so `fetch` is the
         tracker saying this aircraft is worth a lookup; otherwise only the cache is read."""
-        if self.demo or not self.fa or not self.fa.enabled or not callsign:
+        p = self.live
+        if self.demo or not p or not p.enabled or not callsign:
             return None
-        if not self.fa.general_aviation and not AIRLINE_CALLSIGN.match(callsign):
+        if not p.general_aviation and not AIRLINE_CALLSIGN.match(callsign):
             return None
-        return self._get("fa_route", callsign, LIVE_ROUTE_TTL, fetch=fetch and self.fa.available())
+        return self._get("live_route", f"{p.name}:{callsign}", LIVE_ROUTE_TTL,
+                         fetch=fetch and p.available())
 
     def _get(self, kind, key, max_age, fetch=True):
         k = (kind, key)
@@ -93,8 +95,8 @@ class Enricher:
     def _fetch(self, kind, key):
         if kind == "route":
             return fetch_route(key)
-        if kind == "fa_route":
-            return self.fa.route(key)
+        if kind == "live_route":
+            return self.live.route(key.split(":", 1)[1])
         return fetch_aircraft(key)
 
     def _worker(self):

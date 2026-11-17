@@ -1,16 +1,13 @@
 """Optional live routes from FlightAware AeroAPI (v4). Needs an API key; each lookup is billed."""
 import logging
-import os
-import threading
 import time
 from datetime import datetime
 from urllib.parse import quote
 
-from .http import get_json
+from .live import YEAR, LiveProvider
 
 log = logging.getLogger("cloudwall.flightaware")
 BASE = "https://aeroapi.flightaware.com/aeroapi"
-YEAR = 365 * 86400
 
 
 def _ts(value):
@@ -40,40 +37,12 @@ def pick_flight(flights, now):
     return best if best and gap(best) <= 3 * 3600 else None
 
 
-class FlightAware:
-    def __init__(self, cfg, store):
-        fa = cfg.get("flightaware", {})
-        self.key = os.environ.get("CLOUDWALL_FLIGHTAWARE_KEY") or fa.get("api_key") or ""
-        self.daily_limit = int(fa.get("daily_limit", 30))
-        self.mode = fa.get("mode", "fallback")
-        self.general_aviation = bool(fa.get("general_aviation", False))
-        self.store = store
-        self.lock = threading.Lock()
-        self.enabled = bool(self.key)
+class FlightAware(LiveProvider):
+    name, label, env_key = "flightaware", "FlightAware", "CLOUDWALL_FLIGHTAWARE_KEY"
 
-    # -- budget ---------------------------------------------------------------
-    def _day(self):
-        return time.strftime("%Y-%m-%d")
+    def headers(self):
+        return {"x-apikey": self.key}
 
-    def used_today(self):
-        return self.store.cache_get("fa_usage", self._day(), 2 * 86400)[1] or 0
-
-    def available(self):
-        return self.enabled and self.used_today() < self.daily_limit
-
-    def status(self):
-        return {"enabled": self.enabled, "used_today": self.used_today() if self.enabled else 0,
-                "daily_limit": self.daily_limit, "mode": self.mode}
-
-    def _call(self, path):
-        with self.lock:
-            if not self.available():
-                return None
-            # count before the call: a request that reaches FlightAware is billed even if we then fail
-            self.store.cache_put("fa_usage", self._day(), self.used_today() + 1)
-        return get_json(f"{BASE}{path}", headers={"x-apikey": self.key})
-
-    # -- lookups --------------------------------------------------------------
     def _airport(self, a):
         """Flight results carry airport codes but no coordinates; fetch those once and keep them."""
         code = a.get("code_icao") or a.get("code")
@@ -84,7 +53,7 @@ class FlightAware:
         hit, pos = self.store.cache_get("fa_airport", code, YEAR)
         if not hit:
             try:
-                info = self._call(f"/airports/{quote(code)}")
+                info = self._call(f"{BASE}/airports/{quote(code)}")
             except Exception as e:
                 log.warning("airport %s lookup failed: %s", code, e)
                 info = None
@@ -97,13 +66,13 @@ class FlightAware:
 
     def route(self, callsign):
         """Live route for a callsign, or None if FlightAware has no current flight for it."""
-        data = self._call(f"/flights/{quote(callsign)}?max_pages=1")
+        data = self._call(f"{BASE}/flights/{quote(callsign)}?max_pages=1")
         f = pick_flight((data or {}).get("flights") or [], time.time())
         if not f or not f.get("origin") or not f.get("destination"):
             return None
         return {
             "flight": f.get("ident_iata") or f.get("ident") or callsign,
-            "airline": None, "source": "flightaware",
+            "airline": None, "source": self.name, "source_label": self.label,
             "origin": self._airport(f["origin"]), "dest": self._airport(f["destination"]),
             "eta": _ts(f.get("estimated_in") or f.get("estimated_on") or f.get("scheduled_in")),
             "arrival_delay_s": f.get("arrival_delay"), "status": f.get("status"),

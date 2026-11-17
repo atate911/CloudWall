@@ -8,6 +8,7 @@ from pathlib import Path
 from . import __version__, config, sources, weather
 from .enrich import Enricher
 from .flightaware import FlightAware
+from .flightradar24 import Flightradar24
 from .server import make_server
 from .store import Store
 from .tracker import Tracker
@@ -44,8 +45,9 @@ def main():
         db = str(Path(db).expanduser())
     store = Store(db)
     source = sources.Demo() if args.demo else sources.Feeds(cfg["source"]["urls"])
-    fa = FlightAware(cfg, store)
-    tracker = Tracker(cfg, store, Enricher(store, demo=source if args.demo else None, flightaware=fa))
+    providers = [Flightradar24(cfg, store), FlightAware(cfg, store)]
+    fa = next((p for p in providers if p.enabled), None)    # first one with a key wins
+    tracker = Tracker(cfg, store, Enricher(store, demo=source if args.demo else None, live=fa))
     home, trk = cfg["home"], cfg["tracking"]
 
     def poll():
@@ -70,8 +72,8 @@ def main():
         threading.Thread(target=wx, daemon=True).start()
     server = make_server(cfg, tracker, store)
     log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"], source.name)
-    log.info("FlightAware routes: %s", f"on ({fa.mode} mode, up to {fa.daily_limit} lookups/day)"
-             if fa.enabled and not args.demo else "off")
+    log.info("live routes: %s", f"{fa.label} ({fa.mode} mode, up to {fa.daily_limit} lookups/day)"
+             if fa and not args.demo else "off (free route database only)")
     log.info("config: %s | logbook: %s", cfg["_path"] or "built-in defaults", db)
     try:
         server.serve_forever()

@@ -81,7 +81,7 @@ class FeedsTest(unittest.TestCase):
 
 
 class StubEnricher:
-    fa = None
+    live = None
 
     def __init__(self):
         self.routes = {}
@@ -206,9 +206,9 @@ class FlightAwareTest(unittest.TestCase):
                 return {"latitude": lat, "longitude": lon}
             return {"flights": self.flights}
 
-        from cloudwall import flightaware
-        self.mod, self.real = flightaware, flightaware.get_json
-        flightaware.get_json = fake
+        from cloudwall import flightaware, live
+        self.mod, self.live, self.real = flightaware, live, live.get_json
+        live.get_json = fake
         self.store = Store(":memory:")
         cfg = config.load()
         cfg["flightaware"] = dict(cfg["flightaware"], api_key="k", daily_limit=5)
@@ -216,7 +216,7 @@ class FlightAwareTest(unittest.TestCase):
         self.fa = flightaware.FlightAware(cfg, self.store)
 
     def tearDown(self):
-        self.mod.get_json = self.real
+        self.live.get_json = self.real
 
     def test_picks_the_airborne_leg_and_caches_airports(self):
         r = self.fa.route("SWA2327")
@@ -242,7 +242,7 @@ class FlightAwareTest(unittest.TestCase):
         self.assertEqual(len(self.calls), n)                  # no request was sent
 
     def test_tracker_uses_flightaware_only_when_needed(self):
-        enricher = Enricher(self.store, flightaware=self.fa)
+        enricher = Enricher(self.store, live=self.fa)
         wrong = {"flight": "WN2327", "airline": "Southwest Airlines",
                  "origin": {"iata": "LAS", "city": "Las Vegas", "lat": 36.08, "lon": -115.152},
                  "dest": {"iata": "OAK", "city": "Oakland", "lat": 37.721, "lon": -122.221}}
@@ -267,8 +267,64 @@ class FlightAwareTest(unittest.TestCase):
         self.assertEqual(hero["local"], "arriving")
         row = self.store.query("SELECT origin, dest FROM sightings")[0]
         self.assertEqual((row["origin"], row["dest"]), ("SMF", "PDX"))
-        self.assertEqual(t.snapshot()["flightaware"]["used_today"], 3)
+        self.assertEqual(t.snapshot()["live_routes"]["used_today"], 3)
         json.dumps(t.snapshot())
+
+
+class Flightradar24Test(unittest.TestCase):
+    def setUp(self):
+        from cloudwall import flightradar24, live
+        self.calls, self.fail = [], None
+        self.row = {"fr24_id": "3a01b036", "flight": "WN2327", "callsign": "SWA2327", "lat": 45.6, "lon": -122.4,
+                    "orig_iata": "SMF", "orig_icao": "KSMF", "dest_iata": "PDX", "dest_icao": "KPDX",
+                    "eta": "2026-11-17T03:05:00Z", "type": "B737", "reg": "N7715E"}
+
+        def fake(url, timeout=0, headers=None):
+            self.calls.append(url)
+            self.assertEqual(headers, {"Authorization": "Bearer tok", "Accept-Version": "v1"})
+            if self.fail:
+                import urllib.error
+                raise urllib.error.HTTPError(url, self.fail, "nope", None, None)
+            if "/static/airports/" in url:
+                code = url.split("/")[-2]
+                lat, lon = FlightAwareTest.COORDS[code]
+                return {"name": code + " Intl", "city": code, "icao": code, "lat": lat, "lon": lon}
+            return {"data": [self.row]}
+
+        self.live, self.real = live, live.get_json
+        live.get_json = fake
+        self.store = Store(":memory:")
+        cfg = config.load()
+        cfg["flightradar24"] = dict(cfg["flightradar24"], api_key="tok")
+        self.fr = flightradar24.Flightradar24(cfg, self.store)
+
+    def tearDown(self):
+        self.live.get_json = self.real
+
+    def test_route_and_airport_cache(self):
+        r = self.fr.route("SWA2327")
+        self.assertEqual((r["origin"]["iata"], r["dest"]["iata"], r["flight"]), ("SMF", "PDX", "WN2327"))
+        self.assertAlmostEqual(r["dest"]["lon"], PDX[1])
+        self.assertEqual(r["source_label"], "Flightradar24")
+        self.assertGreater(r["eta"], 1.7e9)
+        self.assertIn("/live/flight-positions/full?callsigns=SWA2327", self.calls[0])
+        self.fr.route("SWA2327")
+        self.assertEqual(self.fr.used_today(), 4)             # flight + 2 airports, then flight only
+
+    def test_no_match_and_no_destination(self):
+        self.assertIsNone(self.fr.route("ASA1"))               # a different flight came back
+        self.row["dest_icao"] = self.row["dest_iata"] = None
+        self.assertIsNone(self.fr.route("SWA2327"))
+
+    def test_rejected_key_pauses_without_spending(self):
+        self.fail = 401
+        self.assertIsNone(self.fr.route("SWA2327"))
+        self.assertEqual(self.fr.used_today(), 0)
+        self.assertFalse(self.fr.available())
+        self.assertEqual(self.fr.status()["problem"], "API key rejected")
+        n = len(self.calls)
+        self.fr.route("SWA2327")
+        self.assertEqual(len(self.calls), n)                   # backing off: nothing sent
 
 
 class DemoTest(unittest.TestCase):

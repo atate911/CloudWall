@@ -25,11 +25,23 @@ urls = [
   "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}",
 ]
 
-[flightaware]          # optional: accurate live routes from FlightAware AeroAPI (billed per lookup)
-api_key = ""           # paste your AeroAPI key here to turn it on (or set CLOUDWALL_FLIGHTAWARE_KEY)
-daily_limit = 30       # hard cap on billed lookups per day; raise it once you know your costs
+# --- Optional paid route providers -------------------------------------------------
+# Accurate live origin/destination and arrival time. Set a key for ONE of them
+# (if both are set, Flightradar24 is used). Lookups are billed, so CloudWall only
+# asks about aircraft that are overhead or about to be, and stops at daily_limit.
+
+[flightradar24]        # official Flightradar24 API (subscription with monthly credits)
+api_key = ""           # your API token (or set CLOUDWALL_FR24_KEY)
+daily_limit = 100      # hard cap on lookups per day; check your credit use, then adjust
 mode = "fallback"      # "fallback": only when the free route is missing or wrong; "always": every overhead airliner
-general_aviation = false   # also look up private aircraft (N-numbers); most have no filed route
+general_aviation = false   # also look up private aircraft; most have no route
+sandbox = false        # true with a sandbox token: free, but returns fixed sample data
+
+[flightaware]          # FlightAware AeroAPI (billed per lookup)
+api_key = ""           # your AeroAPI key (or set CLOUDWALL_FLIGHTAWARE_KEY)
+daily_limit = 30
+mode = "fallback"
+general_aviation = false
 
 [server]
 host = "0.0.0.0"

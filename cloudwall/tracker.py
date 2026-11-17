@@ -75,8 +75,8 @@ class Tracker:
             return None
         o, d = route["origin"], route["dest"]
         if o.get("lat") is None or d.get("lat") is None:
-            # no coordinates to check against (FlightAware airport lookup unavailable)
-            if route.get("source") != "flightaware":
+            # no coordinates to check against (the provider's airport lookup was unavailable)
+            if not route.get("source"):
                 return None
             pct = route.get("progress_percent")
             return dict(route, flown_nm=None, left_nm=None, plausible=True,
@@ -94,10 +94,10 @@ class Tracker:
                     progress=flown / max(flown + left, 1), plausible=plausible)
 
     def _live_route(self, a, free_route):
-        """FlightAware route, if configured. Lookups cost money, so only aircraft that are
+        """Route from the paid provider, if one is configured. Lookups cost money, so only aircraft that are
         overhead, about to be, or pinned get one - and in fallback mode only when the
         free database has nothing believable."""
-        fa = getattr(self.enricher, "fa", None)
+        fa = getattr(self.enricher, "live", None)
         if not fa or not fa.enabled:
             return None
         t = self.cfg["tracking"]
@@ -169,7 +169,7 @@ class Tracker:
         if a["dist"] < s["min"]:
             s["min"] = a["dist"]
             upd.update(min_dist_nm=round(a["dist"], 2), alt_ft=a["alt"], gs=a.get("gs"))
-        # Lookups arrive a few seconds after first sight (and FlightAware may later
+        # Lookups arrive a few seconds after first sight (and the paid provider may later
         # correct the free route), so back-fill the entry whenever they change.
         r = a.get("route")
         if a.get("type_name") and not s.get("named"):
@@ -244,6 +244,6 @@ class Tracker:
                 "tracking": self.cfg["tracking"], "hero": hero, "pinned": self.pinned,
                 "next": nxt, "aircraft": self.aircraft, "flow": self.flow,
                 "weather": self.weather, "status": self.status,
-                "flightaware": fa.status() if (fa := getattr(self.enricher, "fa", None)) else None,
+                "live_routes": p.status() if (p := getattr(self.enricher, "live", None)) else None,
                 "today": self.store.count("day=?", (time.strftime("%Y-%m-%d"),)),
             }

@@ -66,26 +66,31 @@ board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk 
 
 The layout scales to the screen, from a 4–5" desk panel (800×480) to a wall monitor.
 
-## Better routes with FlightAware (optional)
+## Better routes with a paid provider (optional)
 
-The free route lookup goes by flight number and is often stale. With a
-[FlightAware AeroAPI](https://www.flightaware.com/commercial/aeroapi/) key, CloudWall
-asks FlightAware which flight is actually in the air, and also shows its arrival time
-and delay. Add the key to your config and restart:
+The free route lookup goes by flight number and is often stale. With a key for the
+official [Flightradar24 API](https://fr24api.flightradar24.com) or
+[FlightAware AeroAPI](https://www.flightaware.com/commercial/aeroapi/), CloudWall asks
+which flight is actually in the air and also shows its arrival time. Add the key to
+your config and restart:
 
 ```toml
-[flightaware]
-api_key = "your-key"
-daily_limit = 30       # hard cap on billed lookups per day
+[flightradar24]        # or [flightaware]
+api_key = "your-token"
+daily_limit = 100      # hard cap on lookups per day
 mode = "fallback"      # or "always"
 ```
 
-FlightAware bills per lookup, so CloudWall is frugal with them:
+Lookups are billed, so CloudWall is frugal with them:
 
 - only aircraft that are overhead, under four minutes from overhead, or pinned are looked up;
 - in `fallback` mode, only when the free route is missing or contradicted by the aircraft's position;
-- each flight is looked up once and remembered for 45 minutes, airports are remembered for a year;
-- it stops at `daily_limit` and uses free routes until midnight. The Logbook shows the day's count.
+- each flight is looked up once and remembered for 45 minutes, airports for a year;
+- it stops at `daily_limit` and uses free routes until midnight. The Logbook shows the day's count;
+- a rejected key or exhausted credits pauses lookups for an hour instead of retrying.
+
+Flightradar24 also offers a free sandbox token for testing: set `sandbox = true`. It
+returns fixed sample data, so routes will not match what is overhead.
 
 ## Notes
 
