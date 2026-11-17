@@ -20,6 +20,9 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
   dimension line with its length. With no photo, the plate fills the frame.
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
   path across it (centre is straight up), or a radar scope with trails over a faint map.
+  Each aircraft on the radar shows its altitude in hundreds of feet, with an arrow when it is
+  climbing or descending (`035↑`), and a line to where it will be in a minute. Both views have a
+  compass bezel with bearings and a key in the corner.
   Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
 - **Quiet sky** – when nothing is overhead the card rotates through the next inbound
   aircraft (with its drawing, so you know what to look for), a heatmap of the day's traffic,

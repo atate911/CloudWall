@@ -159,7 +159,6 @@ function drawScopeNow(now = performance.now()) {
     scopeLabel = label;
     document.querySelectorAll("#scope-seg button").forEach((b) => b.classList.toggle("on", b.dataset.mode === pref));
     $("scope-attrib").textContent = credit;
-    $("scope-caption").textContent = mode === "sky" ? "Sky view: the middle is straight up, the edge is the horizon" : `Radar: ${state.tracking.radius_nm} nm around home`;
   }
   drawScope($("radar"), state, now, stateAtPerf, mode);
 }

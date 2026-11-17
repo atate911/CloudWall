@@ -12,7 +12,7 @@ import { moonPosition, moonPhase, moonGlyph } from "./astro.js";
 const PLANE = "M0,-4 L1,-1 L4.2,1.2 L4.2,2 L1,1 L.8,3 L2,4 L2,4.6 L0,4 L-2,4.6 L-2,4 L-.8,3 L-1,1 L-4.2,2 L-4.2,1.2 L-1,-1 Z";
 const RAD = Math.PI / 180;
 const NS = "http://www.w3.org/2000/svg";
-const CHAR_W = 3.35, LINE_H = 6.5;            // label metrics at the scope's 5.5-unit font
+const CHAR_W = 3.35;                          // estimated label width per character, until a label can be measured
 export let map = null;
 let placeBoxes = [];        // where the place names sit, so aircraft labels can avoid them
 
@@ -73,16 +73,36 @@ function ringLabel(r, text) {
   return `<text class="ring-label" x="${d + 1.5}" y="${-d - 1.5}">${text}</text>`;
 }
 // A bezel of degree marks just outside the edge, as on a compass card: every 5°, longer every
-// 10° and 30°. The cardinal points are left to their letters.
+// 10° and 30°, with the bearing beside each 30° mark. The cardinal points are left to their letters.
+const BEARING_BOXES = [];   // where the bearing numbers sit, so aircraft labels can avoid them
 const BEZEL = (() => {
   const minor = [], major = [];
+  let nums = "";
   for (let a = 5; a < 360; a += 5) {
     if (a % 90 === 0) continue;
     const r2 = a % 30 === 0 ? 104.5 : a % 10 === 0 ? 103 : 102, s = Math.sin(a * RAD), c = -Math.cos(a * RAD);
     (a % 30 === 0 ? major : minor).push(`M${(100.8 * s).toFixed(2)},${(100.8 * c).toFixed(2)}L${(r2 * s).toFixed(2)},${(r2 * c).toFixed(2)}`);
+    if (a % 30 !== 0) continue;
+    nums += `<text class="bearing" x="${(108.6 * s).toFixed(2)}" y="${(108.6 * c + 1.3).toFixed(2)}" text-anchor="middle">${String(a).padStart(3, "0")}</text>`;
+    BEARING_BOXES.push({ x0: 108.6 * s - 5, x1: 108.6 * s + 5, y0: 108.6 * c - 2.5, y1: 108.6 * c + 2.5 });
   }
-  return `<path class="bezel" d="${minor.join("")}"/><path class="bezel major" d="${major.join("")}"/>`;
+  return `<path class="bezel" d="${minor.join("")}"/><path class="bezel major" d="${major.join("")}"/>${nums}`;
 })();
+// Faint bearing lines every 30° between the innermost ring and the edge: with the rings, a polar grid.
+const SPOKES = (r0) => {
+  let d = "";
+  for (let a = 0; a < 360; a += 30) {
+    const s = Math.sin(a * RAD), c = -Math.cos(a * RAD);
+    d += `M${(r0 * s).toFixed(2)},${(r0 * c).toFixed(2)}L${(100 * s).toFixed(2)},${(100 * c).toFixed(2)}`;
+  }
+  return `<path class="spoke" d="${d}"/>`;
+};
+// Home: a reticle, open in the middle so an aircraft right overhead stays visible.
+const HOME = `<g class="home-mark"><circle r="1.9"/><path d="M0,-2.9V-5M0,2.9V5M-2.9,0H-5M2.9,0H5"/></g>`;
+// A note in a lower corner of the drawing, clear of the disc: lines of text, the last line's
+// baseline at y. Line spacing is in ems, so a larger font (the kiosk's) still ends at y.
+const note = (cls, x, y, anchor, lines) => `<text class="${cls}" x="${x}" y="${y}" text-anchor="${anchor}">` +
+  lines.map((l, i) => `<tspan x="${x}" dy="${i ? 1.25 : -1.25 * (lines.length - 1)}em">${esc(l)}</tspan>`).join("") + `</text>`;
 const COMPASS = `${BEZEL}<text class="compass" x="0" y="-104" text-anchor="middle">N</text><text class="compass" x="106" y="2" text-anchor="middle">E</text>
   <text class="compass" x="0" y="110" text-anchor="middle">S</text><text class="compass" x="-106" y="2" text-anchor="middle">W</text>`;
 
@@ -100,7 +120,9 @@ function place(state, a, t, mode) {
   }
   const k = 100 / state.tracking.radius_nm, o = offset(state.home, projected(a, t));
   if (Math.hypot(o.x, o.y) * k > 100) return null;
-  return { x: o.x * k, y: -o.y * k, rot: a.track || 0, scale: 1, sub: a.alt == null ? "" : String(Math.max(0, Math.round(a.alt / 100))).padStart(3, "0") };
+  // the altitude in hundreds of feet, as a controller's scope shows it, with an arrow when climbing or descending
+  const v = a.vrate || 0, trend = v > 300 ? "↑" : v < -300 ? "↓" : "";
+  return { x: o.x * k, y: -o.y * k, rot: a.track || 0, scale: 1, sub: a.alt == null ? "" : String(Math.max(0, Math.round(a.alt / 100))).padStart(3, "0") + trend };
 }
 
 // ---- static layer ----
@@ -108,8 +130,11 @@ function radarStatic(state) {
   const R = state.tracking.radius_nm, k = 100 / R, home = state.home;
   const based = !!(state.basemap && state.basemap.enabled);
   let s = `<g clip-path="url(#scope-clip)">${mapLayer(home, k, based)}${tfrLayer(state, k)}${fieldsLayer(state, k)}</g>`;
+  s += SPOKES(100 / 3);
   for (const r of [R, (R * 2) / 3, R / 3]) s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + " nm")}`;
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
+  // the key, in the drawing's lower left corner
+  s += note("legend", -111, 110.5, "start", [`${R} nm around home`, "035↑ 3,500 ft, climbing", "Line: 1 minute ahead"]);
   const ap = offset(home, state.airport);
   if (Math.hypot(ap.x, ap.y) < R) s += `<text class="apt-label" x="${ap.x * k}" y="${-ap.y * k + 9}" text-anchor="middle">${esc(state.airport.iata)}</text>${map ? "" : `<rect class="apt-mark" x="${ap.x * k - 2.5}" y="${-ap.y * k - 2.5}" width="5" height="5"/>`}`;
   for (const a of state.aircraft) {
@@ -117,7 +142,7 @@ function radarStatic(state) {
     const o = offset(home, a);
     if (Math.hypot(o.x, o.y) < R) s += `<circle class="blip gnd" cx="${o.x * k}" cy="${-o.y * k}" r="1.1"/>`;
   }
-  return s + `<circle class="home" r="2.2"/>` + heardNote(state);
+  return s + HOME + heardNote(state);
 }
 
 // Temporary flight restrictions: hatched while active, dashed outline when they start later.
@@ -162,12 +187,13 @@ function heardNote(state) {
   const by = {};
   for (const a of h) by[a.type || "?"] = (by[a.type || "?"] || 0) + 1;
   const what = Object.entries(by).map(([t, n]) => `${n > 1 ? n + " × " : ""}${/^[A-Z]{1,2}\d/.test(t) ? t.replace(/^([A-Z]+)(\d)/, "$1-$2") : t}`).join(", ");
-  return `<text class="heard-note" x="0" y="96" text-anchor="middle">Heard nearby, no position: ${esc(what)}</text>`;
+  return note("heard-note", 111, 110.5, "end", ["Heard nearby,", "no position:", what]);
 }
 
 function domeStatic(state, dt) {
-  let s = `<circle class="dome-bg" r="100"/>`;
+  let s = `<circle class="dome-bg" r="100"/>${SPOKES(100 / 3)}`;
   for (const el of [30, 60]) { const r = ((90 - el) / 90) * 100; s += `<circle class="ring" r="${r}"/>${ringLabel(r, el + "°")}`; }
+  s += note("legend", -111, 110.5, "start", ["Sky view from home", "Centre: straight up", "Edge: the horizon"]);
   s += `<circle class="ring horizon" r="100"/><line class="ring" x1="-4" y1="0" x2="4" y2="0"/><line class="ring" x1="0" y1="-4" x2="0" y2="4"/>${COMPASS}`;
   if (sky.sun.el > 0) { const [x, y] = domeXY(sky.sun); s += `<circle class="sun-glow" cx="${x}" cy="${y}" r="11"/><circle class="sun" cx="${x}" cy="${y}" r="4.5"/>`; }
   const moon = moonPosition(Date.now(), state.home.lat, state.home.lon);
@@ -245,6 +271,7 @@ function craftFor(svg, hex) {
   if (c) return c;
   const g = el("g", { "data-hex": hex, class: "craft entering" }, svg.querySelector("#s-craft"));
   el("circle", { r: 10, fill: "transparent" }, g);                    // generous touch target
+  const vec = el("line", { class: "vec" }, g);                         // where it will be in a minute
   const icon = el("path", { class: "blip", d: PLANE }, g);
   const tag = el("text", { class: "tag" }, g), sub = el("text", { class: "tag-sub" }, g);
   // each trail fades from transparent at its oldest point to solid at the aircraft
@@ -252,7 +279,7 @@ function craftFor(svg, hex) {
   el("stop", { offset: 0, "stop-opacity": 0 }, grad);       // colour comes from the stylesheet
   el("stop", { offset: 1, "stop-opacity": 0.8 }, grad);
   const trail = el("polyline", { class: "trail", stroke: `url(#${gid})` }, svg.querySelector("#s-trails"));
-  c = { g, icon, tag, sub, trail, grad, x: null, y: null, rot: 0, corner: 0, text: "" };
+  c = { g, icon, vec, tag, sub, trail, grad, x: null, y: null, rot: 0, corner: 0, text: "", vx: 0, vy: 0 };
   live.set(hex, c);
   requestAnimationFrame(() => g.classList.remove("entering"));
   return c;
@@ -269,10 +296,19 @@ function dropCraft(hex) {
 // Label corners: right-above, right-below, left-above, left-below.
 const CORNERS = [[7, -2.5, "start"], [7, 7.5, "start"], [-7, -2.5, "end"], [-7, 7.5, "end"]];
 
+// The box a label covers at a corner, from its measured size: the kiosk sets labels larger.
+function measure(c) {
+  const fs = (e, d) => parseFloat(getComputedStyle(e).fontSize) || d;
+  let w = 0;
+  try { w = Math.max(c.tag.getComputedTextLength(), c.sub.getComputedTextLength()); } catch (e) { /* not laid out yet */ }
+  c.w = (w || c.text.length * CHAR_W) + 1;
+  c.top = 3.2 + fs(c.tag, 5) * 0.75;        // cap height above the callsign's baseline
+  c.bot = 3.3 + fs(c.sub, 4.2) * 0.25;      // descent below the second line's baseline
+}
 function labelBox(c, corner) {
-  const [dx, dy, anchor] = CORNERS[corner], w = c.text.length * CHAR_W + 1;
+  const [dx, dy, anchor] = CORNERS[corner], w = c.w;
   const x0 = anchor === "start" ? c.x + dx : c.x + dx - w;
-  return { x0, x1: x0 + w, y0: c.y + dy - LINE_H, y1: c.y + dy + LINE_H * 0.9 };
+  return { x0, x1: x0 + w, y0: c.y + dy - c.top, y1: c.y + dy + c.bot };
 }
 const overlap = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
 
@@ -280,9 +316,14 @@ const overlap = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0
 // compass letters and the edge. Re-run on each data update, not every frame, and
 // keep the current corner unless it is clearly worse, so labels don't flicker.
 function placeLabels(heroHex) {
-  const placed = [...(layerMode === "radar" ? placeBoxes : []), { x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
+  const placed = [...(layerMode === "radar" ? placeBoxes : []), ...BEARING_BOXES, { x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
   const all = [...live.values()].filter((c) => c.x != null);
   const blips = all.map((c) => ({ x0: c.x - 4.5, x1: c.x + 4.5, y0: c.y - 4.5, y1: c.y + 4.5, c }));
+  for (const c of all) for (const f of [0.4, 0.7, 1]) {
+    const x = c.x + c.vx * f, y = c.y + c.vy * f;
+    if (Math.hypot(c.vx, c.vy) * f > 5) blips.push({ x0: x - 2, x1: x + 2, y0: y - 2, y1: y + 2, c: null });   // its own line too
+  }
+  all.forEach(measure);
   all.sort((a, b) => (b.hex === heroHex) - (a.hex === heroHex));
   for (const c of all) {
     const score = (i) => {
@@ -339,6 +380,15 @@ export function drawScope(svg, state, now, stateAt, mode) {
     }
     c.g.setAttribute("transform", `translate(${c.x.toFixed(2)},${c.y.toFixed(2)})`);
     c.icon.setAttribute("transform", `rotate(${c.rot.toFixed(1)}) scale(${(isHero ? 1.55 : 1) * p.scale})`);
+    // the lead line: one minute ahead at its ground speed, from the nose, on the radar only
+    const lead = mode === "radar" && a.gs && a.track != null ? (a.gs / 60) * (100 / state.tracking.radius_nm) : 0;
+    const sin = Math.sin(c.rot * RAD), cos = -Math.cos(c.rot * RAD), nose = 4.2 * (isHero ? 1.55 : 1);
+    c.vx = sin * lead; c.vy = cos * lead;
+    if (lead > nose) {
+      c.vec.setAttribute("x1", (sin * nose).toFixed(2)); c.vec.setAttribute("y1", (cos * nose).toFixed(2));
+      c.vec.setAttribute("x2", c.vx.toFixed(2)); c.vec.setAttribute("y2", c.vy.toFixed(2));
+      c.vec.style.display = "";
+    } else c.vec.style.display = "none";
     c.g.classList.toggle("hero", isHero);
     c.trail.classList.toggle("hero", isHero);
     c.grad.classList.toggle("hero", isHero);

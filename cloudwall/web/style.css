@@ -329,14 +329,17 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .nu-foot .raw { font-size: .62rem; }
 
 /* ---------- radar and sky dome ---------- */
-.scope { display: flex; padding: 2.4rem .2rem 1.6rem; }
+.scope { display: flex; padding: 2.4rem .2rem .4rem; }
 .seg { position: absolute; top: .4rem; left: .2rem; z-index: 3; display: inline-flex; border: 1px solid var(--rule); border-radius: var(--corner); overflow: hidden; }
 .seg button { font: .62rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); padding: .5rem .75rem; }
 .seg button + button { border-left: 1px solid var(--rule); }
 .seg button.on { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--ink) 7%, transparent); }
-.scope-caption { position: absolute; bottom: .3rem; left: 0; right: 0; text-align: center; font-size: .7rem; color: var(--slate); }
 #radar .bezel { fill: none; stroke: var(--slate); stroke-width: .3; stroke-linecap: butt; opacity: .8; }
 #radar .bezel.major { stroke: var(--ink-2); stroke-width: .45; }
+#radar .bearing { font: 3.6px var(--mono); fill: var(--slate); }
+#radar .spoke { fill: none; stroke: var(--rule); stroke-width: .3; stroke-dasharray: .6 1.8; }
+/* the key and the heard-nearby note sit in the drawing's lower corners, outside the disc */
+#radar .legend { font: 4.2px var(--mono); letter-spacing: .06em; text-transform: uppercase; fill: var(--slate); }
 .attrib { position: absolute; right: .3rem; top: .55rem; font-size: .5rem; color: var(--slate); max-width: 45%; text-align: right; }
 .attrib:empty { display: none; }
 #radar { width: 100%; height: 100%; overflow: visible; }
@@ -354,7 +357,7 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #radar .place { font-size: 4px; fill: var(--slate); letter-spacing: .04em; }
 #radar .apt-label { fill: var(--ink); font-size: 4.6px; font-weight: 700; }
 #radar .apt-mark { fill: none; stroke: var(--slate); stroke-width: .8; }
-#radar .home { fill: var(--ink); stroke: var(--disc); stroke-width: .8; }
+#radar .home-mark { fill: none; stroke: var(--ink); stroke-width: .7; }
 #radar .trail { fill: none; stroke-width: .8; stroke-linecap: round; stroke-linejoin: round; }
 #radar .trail.hero { stroke-width: 1.1; }
 #s-defs stop { stop-color: var(--blue); } #s-defs .hero stop { stop-color: var(--magenta); }
@@ -363,7 +366,10 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #radar .hero .blip { fill: var(--magenta); }
 #radar .blip.gnd { fill: var(--slate); opacity: .4; stroke: none; }
 #radar .tag { fill: var(--ink); font-size: 5px; font-weight: 700; paint-order: stroke; stroke: var(--disc); stroke-width: 1.6px; stroke-linejoin: round; }
-#radar .tag-sub { font-variant-numeric: tabular-nums; font-size: 4.2px; fill: var(--slate); paint-order: stroke; stroke: var(--disc); stroke-width: 1.4px; }
+#radar .tag-sub { font-family: var(--mono); font-size: 4.2px; fill: var(--slate); paint-order: stroke; stroke: var(--disc); stroke-width: 1.4px; }
+/* lead lines: where each aircraft will be in a minute at its ground speed */
+#radar .vec { stroke: var(--blue); stroke-width: .45; stroke-linecap: round; opacity: .7; }
+#radar .hero .vec { stroke: var(--magenta); stroke-width: .6; opacity: .9; }
 #radar .hero .tag { fill: var(--magenta); }
 #radar .sun { fill: #e3b23c; } #radar .sun-glow { fill: #e3b23c; opacity: .18; }
 body.night #radar .sun { fill: #c99a3a; }
@@ -373,14 +379,14 @@ body.night #radar .sun { fill: #c99a3a; }
 #radar .peak-label { font-size: 4.2px; fill: var(--magenta); }
 /* the real map: a faint print of the streets and rivers under the traffic, in the chart's own tones */
 #radar .basemap { transition: opacity .6s; mix-blend-mode: multiply; }
-#radar .basemap image { filter: blur(.5px); }
-#radar .basemap.dark, #radar .basemap.carto-dark { filter: invert(1) hue-rotate(180deg) grayscale(.5) contrast(.6) brightness(1.32); }
-#radar .basemap.light, #radar .basemap.carto-light { filter: grayscale(.4) contrast(.95); }
-#radar .basemap.satellite, #radar .basemap.osm, #radar .basemap.custom { filter: grayscale(.6) contrast(.9) brightness(1.15); }
+/* each filter ends in a slight blur over the whole map, so the tiles' edges don't show as seams */
+#radar .basemap.dark, #radar .basemap.carto-dark { filter: invert(1) hue-rotate(180deg) grayscale(.5) contrast(.6) brightness(1.32) blur(.5px); }
+#radar .basemap.light, #radar .basemap.carto-light { filter: grayscale(.4) contrast(.95) blur(.5px); }
+#radar .basemap.satellite, #radar .basemap.osm, #radar .basemap.custom { filter: grayscale(.6) contrast(.9) brightness(1.15) blur(.5px); }
 body.night #radar .basemap { mix-blend-mode: screen; }
-body.night #radar .basemap.dark, body.night #radar .basemap.carto-dark { filter: grayscale(.3) brightness(1.5); }
-body.night #radar .basemap.light, body.night #radar .basemap.carto-light { filter: invert(1) hue-rotate(180deg) grayscale(.3) brightness(.75); }
-body.night #radar .basemap.satellite, body.night #radar .basemap.osm, body.night #radar .basemap.custom { filter: grayscale(.7) brightness(.55); }
+body.night #radar .basemap.dark, body.night #radar .basemap.carto-dark { filter: grayscale(.3) brightness(1.5) blur(.5px); }
+body.night #radar .basemap.light, body.night #radar .basemap.carto-light { filter: invert(1) hue-rotate(180deg) grayscale(.3) brightness(.75) blur(.5px); }
+body.night #radar .basemap.satellite, body.night #radar .basemap.osm, body.night #radar .basemap.custom { filter: grayscale(.7) brightness(.55) blur(.5px); }
 
 /* ---------- board ---------- */
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -577,7 +583,7 @@ html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
 /* Read from across the room on a 7.5" or 13.3" screen. Everything is sized from the screen's
    height, so the 1024×600 and 1920×1080 panels look the same. */
 html.kiosk body { grid-template-rows: auto 1fr; }
-.kiosk nav, .kiosk .chips, .kiosk .icon-btn, .kiosk .seg, .kiosk #mini-board, .kiosk .scope-caption { display: none !important; }
+.kiosk nav, .kiosk .chips, .kiosk .icon-btn, .kiosk .seg, .kiosk #mini-board, .kiosk #radar .legend { display: none !important; }
 .kiosk header { padding: 1.6vh 3vh 1vh; }
 .kiosk .brand { font-size: 2.6vh; flex: 1; }
 .kiosk .clock small { display: none; }
@@ -591,6 +597,7 @@ html.kiosk body { grid-template-rows: auto 1fr; }
 .kiosk #radar .tag-sub { font-size: 6.5px; stroke-width: 2px; }
 .kiosk #radar .compass { font-size: 8px; }
 .kiosk #radar .ring-label, .kiosk #radar .place { font-size: 5.5px; }
+.kiosk #radar .bearing { font-size: 4.6px; }
 
 .k-card { height: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: 2vh; min-width: 0; }
 .k-enter { animation: fade .6s ease-out; }
@@ -688,11 +695,13 @@ body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
 /* ===================== radar extras ===================== */
 .tfr { fill: url(#tfr-hatch); stroke: var(--red); stroke-width: .7; vector-effect: non-scaling-stroke; }
 .tfr.later { fill: none; stroke-dasharray: 3 2; opacity: .8; }
-.tfr-label { font: 700 4.6px var(--sans); fill: var(--red); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
+#radar .tfr-label { font: 700 4.6px var(--sans); fill: var(--red); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
 .field { fill: none; stroke: var(--slate); stroke-width: .8; }
 .field-label { font: 4.6px var(--mono); fill: var(--slate); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
-.heard-note { font: 700 5px var(--sans); fill: var(--red); paint-order: stroke; stroke: var(--halo); stroke-width: 1.6px; }
+#radar .heard-note { font: 700 5px var(--sans); fill: var(--red); }
 .kiosk #radar .heard-note { font-size: 6.5px; }
+/* red on the red takeover would vanish: use its light ink instead */
+body.emergency #radar :is(.heard-note, .tfr-label) { fill: var(--ink-2); }
 .sky-moon .moon-dark { fill: #6d7a88; } .sky-moon .moon-lit { fill: #f3f0e2; }
 .sky-moon { filter: drop-shadow(0 0 1.5px rgba(243, 240, 226, .6)); }
 
