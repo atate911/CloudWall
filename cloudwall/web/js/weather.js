@@ -14,7 +14,7 @@ const hourLabel = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "nume
 const compass = (d) => POINTS[Math.round(d / 22.5) % 16];
 
 // ---------- words ----------
-function windWords(w) {
+export function windWords(w) {
   if (!w || !w.speed) return "Calm wind";
   const from = w.variable ? "Variable" : `From ${String(w.dir).padStart(3, "0")}° (${compass(w.dir)})`;
   return `${from} at ${w.speed} kt${w.gust ? `, gusting ${w.gust}` : ""}`;
@@ -23,7 +23,7 @@ function visWords(n) {
   if (n.visibility == null) return null;
   return `${n.visibility_plus || n.visibility >= 10 ? "10+" : num(n.visibility * 10) / 10} mile${n.visibility === 1 ? "" : "s"} visibility`;
 }
-function skyWords(n) {
+export function skyWords(n) {
   if (!n.clouds.length) return "Clear skies";
   const deck = n.clouds.find((c) => c.base === n.ceiling) || n.clouds[0];
   return `${COVER[deck.cover] || deck.cover} at ${num(deck.base)} ft`;
@@ -57,7 +57,7 @@ function sunReadout(sun) {
 }
 
 // ---------- wind and runways ----------
-function runwaysFromMap(home) {
+export function runwaysFromMap(home) {
   if (!map || !map.runways) return [];
   return map.runways.map((r) => {
     const [a, b] = r.ends.map(([lat, lon]) => offset(home, { lat, lon }));
@@ -85,7 +85,7 @@ function components(w, runways) {
   }).sort((a, b) => b.head - a.head);
 }
 
-function windRose(size, w, runways) {
+export function windRose(size, w, runways) {
   const c = size / 2, R = size / 2 - 22, cx = c, cy = c;
   let s = `<circle class="rose-ring" cx="${cx}" cy="${cy}" r="${R}"/>`;
   for (let d = 0; d < 360; d += 30) {

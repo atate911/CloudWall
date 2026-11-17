@@ -767,3 +767,21 @@ class ActivityTest(unittest.TestCase):
         t.update([plane("a1", "ASA512", 1.0)], "test")
         time.sleep(0.2)
         self.assertEqual(calls, ["ASA512"])
+
+
+class ServerTest(unittest.TestCase):
+    def test_kiosk_and_desktop_serve_the_same_page(self):
+        import threading, urllib.request
+        from cloudwall.server import make_server
+        cfg = config.load()
+        cfg["server"]["host"], cfg["server"]["port"] = "127.0.0.1", 0
+        store = Store(":memory:")
+        srv = make_server(cfg, Tracker(cfg, store, StubEnricher()), store)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            base = f"http://127.0.0.1:{srv.server_address[1]}"
+            home = urllib.request.urlopen(base + "/", timeout=5).read()
+            for path in ("/kiosk", "/kiosk/"):
+                self.assertEqual(urllib.request.urlopen(base + path, timeout=5).read(), home)
+        finally:
+            srv.shutdown()

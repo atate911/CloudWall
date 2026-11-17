@@ -47,6 +47,8 @@ def make_server(cfg, tracker, store, tiles=None, logos=None, activity=None):
                 self.send_header("Cache-Control", "public, max-age=604800")
                 self.end_headers()
                 return self.wfile.write(data)
+            if path.rstrip("/") == "/kiosk":
+                path = "/index.html"                  # same page; the script switches to kiosk mode
             f = (WEB / (path.lstrip("/") or "index.html")).resolve()
             if WEB not in f.parents or not f.is_file():
                 return self._send(404, {"error": "not found"})

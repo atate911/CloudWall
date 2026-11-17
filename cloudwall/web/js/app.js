@@ -6,6 +6,13 @@ import { renderHero, tickHero, nextSlide, badges, recordsHtml } from "./hero.js"
 import { chime, soundOn, setSound } from "./fx.js";
 import { airlineColors } from "./data.js";
 import { renderWeatherTab } from "./weather.js";
+import { renderKiosk, tickKiosk, kioskNext } from "./kiosk.js";
+
+// Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
+const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
+document.documentElement.classList.add(KIOSK ? "kiosk" : "desk");
+document.body.classList.add(KIOSK ? "kiosk" : "desk");
+if (KIOSK) store("scope", "auto");   // the kiosk has no switch; sky view when something is overhead
 
 let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastHero = null, view = "now", mapFor = null;
 
@@ -39,6 +46,21 @@ function boardHtml() {
 function shortType(name) {
   if (!name) return "";
   return name.length > 22 ? name.split(/[\s/]/).slice(0, 2).join(" ") : name;
+}
+
+// ---------- desktop: compact list beside the radar on wide screens ----------
+function renderMiniBoard() {
+  const box = $("mini-board");
+  if (!box || getComputedStyle(box).display === "none") return;
+  const R = state.tracking, heroHex = state.hero && state.hero.hex;
+  const air = state.aircraft.filter((a) => !a.on_ground).sort((a, b) => a.dist - b.dist).slice(0, 14);
+  box.innerHTML = `<h2>Nearby</h2>` + (air.map((a) => {
+    const r = a.route && a.route.plausible ? a.route : null, v = a.vrate || 0;
+    const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
+    return `<button class="mb-row ${a.hex === heroHex ? "hero" : ""}" data-hex="${esc(a.hex)}">
+      <span class="mb-id">${esc(ident(a))}</span><span class="mb-rt">${r ? `${esc(r.origin.iata)}–${esc(r.dest.iata)}` : esc(a.type || "")}</span>
+      <span class="mb-alt">${altText(a)}${v > 300 ? " ▲" : v < -300 ? " ▼" : ""}</span><span class="mb-when ${soon ? "soon" : ""}">${soon ? mmss(a.cpa_s) : `${a.dist.toFixed(1)} nm`}</span></button>`;
+  }).join("") || '<p class="dim">No aircraft in range.</p>');
 }
 
 // ---------- logbook ----------
@@ -152,7 +174,7 @@ function render() {
   if (w) $("wx").innerHTML = `${Math.round((w.temp_c * 9) / 5 + 32)}°F, wind ${w.wind_kt ?? 0} kt <b class="cat-${esc(w.category)}">${esc(w.category || "")}</b>`;
   $("link").hidden = state.status.ok || !state.status.source;
   $("n-board").textContent = state.aircraft.filter((a) => !a.on_ground).length || "";
-  if (view === "now") { renderHero($("hero"), state); drawScopeNow(); }
+  if (view === "now") { (KIOSK ? renderKiosk : renderHero)($("hero"), state); drawScopeNow(); if (!KIOSK) renderMiniBoard(); }
   if (view === "board") $("board").innerHTML = boardHtml();
 }
 async function poll() {
@@ -177,20 +199,30 @@ document.addEventListener("error", (e) => {
   const t = e.target;
   if (t instanceof HTMLImageElement && t.classList.contains("logo") && !t.id) t.closest(".logo-tile").remove();
 }, true);
+document.addEventListener("click", (e) => { const b = e.target.closest(".mb-row"); if (b) pin(b.dataset.hex); });
 const pin = (hex) => fetch("api/pin", { method: "POST", body: JSON.stringify({ hex }) }).then(poll);
 
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
 document.querySelector("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });
 $("board").addEventListener("click", (e) => { const r = e.target.closest("tr[data-hex]"); if (r) { pin(r.dataset.hex); setView("now"); } });
 $("radar").addEventListener("click", (e) => { const g = e.target.closest("g[data-hex]"); if (g) pin(g.dataset.hex); });
-$("hero").addEventListener("click", () => { if (!state) return; if (state.pinned) pin(null); else if (!state.hero) { nextSlide(); render(); } });
+$("hero").addEventListener("click", () => {
+  if (!state) return;
+  if (KIOSK) { if (!state.hero) { kioskNext(); render(); } return; }
+  if (state.pinned) pin(null); else if (!state.hero) { nextSlide(); render(); }
+});
 $("scope-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("scope", b.dataset.mode); scopeLabel = ""; } });
 $("btn-sound").addEventListener("click", () => { setSound(!soundOn()); renderToggles(); });
 $("btn-night").addEventListener("click", () => { const m = ["auto", "on", "off"]; store("night", m[(m.indexOf(store("night") || "auto") + 1) % 3]); render(); });
 
 setInterval(poll, 2000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
-setInterval(() => { if (state && state.hero) tickHero((Date.now() - stateAt) / 1000); else if (state && view === "now") renderHero($("hero"), state); }, 1000);
+setInterval(() => {
+  if (!state || view !== "now") return;
+  const elapsed = (Date.now() - stateAt) / 1000;
+  if (KIOSK) tickKiosk(elapsed, state.hero ? null : state);
+  else if (state.hero) tickHero(elapsed); else renderHero($("hero"), state);
+}, 1000);
 setInterval(() => { if (view === "log") loadLog().catch(() => {}); }, 30000);
 setInterval(() => { $("clock").textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }, 1000);
 poll().then(() => loadWeather(false));
