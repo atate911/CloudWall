@@ -1,9 +1,11 @@
-"""Route and airframe lookups (adsbdb.com), cached and fetched off the poll thread."""
+"""Route and airframe lookups (adsbdb.com) and airframe photos (planespotters.net),
+cached and fetched off the poll thread."""
 import logging
 import queue
 import re
 import threading
 import time
+import urllib.parse
 
 from .http import get_json
 
@@ -11,6 +13,7 @@ log = logging.getLogger("cloudwall.enrich")
 AIRLINE_CALLSIGN = re.compile(r"^[A-Z]{3}\d[0-9A-Z]{0,4}$")
 DAY = 86400
 LIVE_ROUTE_TTL = 45 * 60   # a callsign flies several legs a day; don't reuse a live route for long
+PHOTO_TTL = DAY            # look again daily: photos there are added and taken down
 
 
 def _airport(a):
@@ -40,9 +43,24 @@ def fetch_aircraft(hexid):
     name, maker = ac.get("type"), ac.get("manufacturer")
     if name and maker and not name.lower().startswith(maker.lower()):
         name = f"{maker} {name}"
+    # adsbdb's photo (airport-data.com) is filed by tail number, and US tail numbers are
+    # reissued, so it can show an older aircraft that once wore the same one: not used
     return {"type_name": name, "manufacturer": ac.get("manufacturer"),
-            "reg": ac.get("registration"), "owner": ac.get("registered_owner"),
-            "photo": ac.get("url_photo"), "thumb": ac.get("url_photo_thumbnail")}
+            "reg": ac.get("registration"), "owner": ac.get("registered_owner")}
+
+
+def fetch_photo(hexid, reg=None, icao_type=None):
+    """A photo of this airframe from planespotters.net, which files photos by airframe
+    rather than by tail number. Shown only with its credit and a link to its page there."""
+    q = urllib.parse.urlencode({k: v for k, v in (("reg", reg), ("icaoType", icao_type)) if v})
+    data = get_json(f"https://api.planespotters.net/pub/photos/hex/{urllib.parse.quote(hexid.upper())}"
+                    + (f"?{q}" if q else ""))
+    for p in (data or {}).get("photos") or []:
+        src = (p.get("thumbnail_large") or p.get("thumbnail") or {}).get("src") or ""
+        link, by = p.get("link") or "", (p.get("photographer") or "").strip()
+        if src.startswith("https://") and link.startswith("https://www.planespotters.net/") and by:
+            return {"src": src, "link": link, "by": by}
+    return None
 
 
 class Enricher:
@@ -51,10 +69,12 @@ class Enricher:
     def __init__(self, store, demo=None, live=None):
         self.store, self.demo, self.live = store, demo, live
         self.mem, self.pending = {}, set()
-        self.q = queue.Queue()
+        # photos wait in a line of their own, so a slow photo site never holds up a route
+        self.q, self.photo_q = queue.Queue(), queue.Queue()
         self.lock = threading.Lock()
         if not demo:
-            threading.Thread(target=self._worker, daemon=True).start()
+            threading.Thread(target=self._worker, args=(self.q,), daemon=True).start()
+            threading.Thread(target=self._worker, args=(self.photo_q,), daemon=True).start()
 
     def route(self, callsign):
         if self.demo:
@@ -67,6 +87,13 @@ class Enricher:
         if self.demo:
             return self.demo.aircraft.get(hexid)
         return self._get("aircraft", hexid, 30 * DAY)
+
+    def photo(self, hexid, reg=None, icao_type=None):
+        """The airframe's photo with its credit, as {src, link, by}, or None."""
+        if self.demo or not hexid:
+            return None
+        # the registration and type help planespotters pick the airframe flying now
+        return self._get("photo", "|".join((hexid, reg or "", icao_type or "")), PHOTO_TTL)
 
     def live_route(self, callsign, fetch):
         """The paid provider's route for the flight in the air now, as (state, route):
@@ -105,7 +132,7 @@ class Enricher:
                 return value
             if fetch and k not in self.pending:
                 self.pending.add(k)
-                self.q.put(k)
+                (self.photo_q if kind == "photo" else self.q).put(k)
         return None
 
     def _fetch(self, kind, key):
@@ -113,11 +140,13 @@ class Enricher:
             return fetch_route(key)
         if kind == "live_route":
             return self.live.route(key.split(":", 1)[1])
+        if kind == "photo":
+            return fetch_photo(*key.split("|"))
         return fetch_aircraft(key)
 
-    def _worker(self):
+    def _worker(self, q):
         while True:
-            kind, key = k = self.q.get()
+            kind, key = k = q.get()
             try:
                 value = self._fetch(kind, key)
                 self.store.cache_put(kind, key, value)   # None is cached too (unknown)

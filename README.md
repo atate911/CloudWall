@@ -6,7 +6,7 @@ destination, aircraft type, altitude, speed, heading, and where in the sky to lo
 
 No radio hardware needed: positions come from the free [adsb.fi](https://adsb.fi)
 community feed (falling back to [adsb.lol](https://adsb.lol)), routes and airframe details from [adsbdb.com](https://www.adsbdb.com),
-weather from aviationweather.gov. Pure Python standard library, no packages to install.
+airframe photos from [planespotters.net](https://www.planespotters.net), weather from aviationweather.gov. Pure Python standard library, no packages to install.
 
 ## Screens
 
@@ -18,6 +18,9 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
   and a photo of the airframe beside when it passes the house, the aircraft type,
   registration and build year, and what the autopilot is doing. The departure time comes from
   a paid route provider (see below); without one, the card shows an estimated arrival only.
+  The photo is of that very airframe (planespotters.net files photos by airframe, so a tail
+  number that once belonged to another aircraft doesn't bring up its pictures), credited to its
+  photographer in its bottom right corner, with a link to the photo's page there.
   Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
   dimension line with its length. With no photo, the plate fills the frame.
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
