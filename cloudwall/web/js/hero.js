@@ -207,18 +207,21 @@ function showHero(el, a, state) {
   }
   renderFacts(a, state);
 
-  if (a.photo && cur.photo !== a.photo) {
+  if (a.photo && a.photo_by && cur.photo !== a.photo) {
     // a photo of this very airframe takes the top of the frame once it has loaded; the type plate stays below
     cur.photo = a.photo;
+    const fig = document.createElement("figure");
+    fig.className = "photo";
+    fig.innerHTML = credit(a.photo_link, a.photo_by);
     const img = new Image();
     img.referrerPolicy = "no-referrer";
-    img.className = "photo";
     img.alt = "";
     img.onload = () => {
       const m = $("h-media");
       if (cur.photo !== a.photo || !m) return;
       m.querySelectorAll(".photo").forEach((p) => p.remove());
-      m.prepend(img);
+      fig.prepend(img);
+      m.prepend(fig);
       m.classList.add("has-photo");
     };
     img.src = a.photo;
@@ -226,6 +229,10 @@ function showHero(el, a, state) {
   cur.a = a;
   cur.state = state;
 }
+
+// A photo's credit: its photographer and a link to its page on planespotters.net, in the
+// photo's bottom right corner on its edge, as their terms ask
+const credit = (link, by) => `<a class="credit" href="${esc(link)}" target="_blank" rel="noopener noreferrer">© ${esc(by)} · planespotters.net</a>`;
 
 // "autopilot, approach" -> "On, flying the approach". Modes as the aircraft reports them.
 function autopilotWords(modes) {
@@ -499,7 +506,8 @@ function showIdle(el, state) {
   } else {
     const s = L.recent[0];
     const info = typeInfo({ type: s.type, type_name: s.type_name, model: s.model });
-    const pic = s.photo ? `<img class="photo" src="${encodeURI(s.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`
+    // only credited photos: older entries hold uncredited ones that may show another airframe
+    const pic = s.photo && s.photo_by ? `<figure class="photo"><img src="${esc(s.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">${credit(s.photo_link, s.photo_by)}</figure>`
       : drawn(info) ? `<div class="last-plate sil-box">${plate(info)}</div>` : "";
     el.innerHTML = `<div class="idle last">${pic}<div>${lastSlide(s)}</div></div>${dots}`;
   }

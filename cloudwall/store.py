@@ -29,6 +29,9 @@ class Store:
                 self.db.execute("ALTER TABLE sightings ADD COLUMN model TEXT")
             if "seats" not in cols:      # estimated seats on board, added later
                 self.db.execute("ALTER TABLE sightings ADD COLUMN seats INTEGER")
+            if "photo_by" not in cols:   # the photo's credit and its page, for planespotters.net photos
+                self.db.execute("ALTER TABLE sightings ADD COLUMN photo_by TEXT")
+                self.db.execute("ALTER TABLE sightings ADD COLUMN photo_link TEXT")
 
     # -- cache ---------------------------------------------------------------
     def cache_get(self, kind, key, max_age):

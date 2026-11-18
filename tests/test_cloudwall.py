@@ -90,6 +90,9 @@ class StubEnricher:
     def aircraft(self, hexid):
         return None
 
+    def photo(self, hexid, reg=None, icao_type=None):
+        return None
+
     def route(self, callsign):
         return self.routes.get(callsign)
 
@@ -965,6 +968,58 @@ class FeedExtrasTest(unittest.TestCase):
         L = t.store.logbook(time.strftime("%Y-%m-%d"))
         self.assertEqual([(x["type"], x["model"], x["n"]) for x in L["types_today"]], [("RV7", "Vans RV-7A", 1)])
         self.assertEqual(L["types"][0]["model"], "Vans RV-7A")
+
+
+class PhotoTest(unittest.TestCase):
+    def test_photo_comes_from_planespotters_with_its_credit(self):
+        from unittest import mock
+        from cloudwall import enrich
+        answer = {"photos": [
+            {"id": "1", "thumbnail_large": {"src": "javascript:alert(1)"},       # not an image link
+             "link": "https://www.planespotters.net/photo/1/n24706", "photographer": "A. Spotter"},
+            {"id": "2", "thumbnail": {"src": "https://t.plnspttrs.net/2_280.jpg"},
+             "thumbnail_large": {"src": "https://t.plnspttrs.net/2_t.jpg"},
+             "link": "https://www.planespotters.net/photo/2/n24706", "photographer": " B. Spotter "}]}
+        with mock.patch.object(enrich, "get_json", return_value=answer) as get:
+            pic = enrich.fetch_photo("a24c77", "N24706", "B737")
+        url = get.call_args[0][0]
+        self.assertTrue(url.startswith("https://api.planespotters.net/pub/photos/hex/A24C77?"))
+        self.assertIn("reg=N24706", url)
+        self.assertIn("icaoType=B737", url)
+        self.assertEqual(pic, {"src": "https://t.plnspttrs.net/2_t.jpg",
+                               "link": "https://www.planespotters.net/photo/2/n24706", "by": "B. Spotter"})
+        # nothing to credit, or no photos at all: no photo
+        with mock.patch.object(enrich, "get_json", return_value={"photos": [
+                {"thumbnail_large": {"src": "https://t.plnspttrs.net/3.jpg"}, "link": "https://www.planespotters.net/photo/3"}]}):
+            self.assertIsNone(enrich.fetch_photo("a24c77"))
+        with mock.patch.object(enrich, "get_json", return_value=None):
+            self.assertIsNone(enrich.fetch_photo("a24c77"))
+
+    def test_registry_photo_is_not_used(self):
+        # adsbdb's photo is filed by tail number and can show an older aircraft that wore it
+        from unittest import mock
+        from cloudwall import enrich
+        answer = {"response": {"aircraft": {"type": "737NG 724/W", "manufacturer": "Boeing", "registration": "N24706",
+                                            "registered_owner": "United Airlines",
+                                            "url_photo": "https://image.airport-data.com/aircraft/826984.jpg"}}}
+        with mock.patch.object(enrich, "get_json", return_value=answer):
+            self.assertNotIn("photo", enrich.fetch_aircraft("A24C77"))
+
+    def test_credit_follows_the_photo_into_the_logbook(self):
+        class Photos(StubEnricher):
+            def photo(self, hexid, reg=None, icao_type=None):
+                self.asked = (hexid, reg, icao_type)
+                return {"src": "https://t.plnspttrs.net/2_t.jpg", "link": "https://www.planespotters.net/photo/2/n24706",
+                        "by": "B. Spotter"}
+        e = Photos()
+        t = Tracker(config.load(), Store(":memory:"), e)
+        t.update([plane("a24c77", "UAL1420", 0.5, typ="B737", reg="N24706")], "test")
+        h = t.snapshot()["hero"]
+        self.assertEqual(e.asked, ("a24c77", "N24706", "B737"))
+        self.assertEqual((h["photo"], h["photo_by"]), ("https://t.plnspttrs.net/2_t.jpg", "B. Spotter"))
+        s = t.store.logbook(time.strftime("%Y-%m-%d"))["recent"][0]
+        self.assertEqual((s["photo"], s["photo_by"], s["photo_link"]),
+                         ("https://t.plnspttrs.net/2_t.jpg", "B. Spotter", "https://www.planespotters.net/photo/2/n24706"))
 
 
 class ActivityTest(unittest.TestCase):

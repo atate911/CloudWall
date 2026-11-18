@@ -120,8 +120,10 @@ class Tracker:
             # the registry's model ("Vans RV-7A") tells variants apart that share a type code
             a["model"] = info.get("type_name")
             a["owner"] = info.get("owner")
-            a["photo"] = info.get("photo")
             a["reg"] = a.get("reg") or info.get("reg")
+        pic = self.enricher.photo(a["hex"], a.get("reg"), a.get("type"))
+        if pic:
+            a["photo"], a["photo_link"], a["photo_by"] = pic["src"], pic["link"], pic["by"]
         # the feed's own description ("Boeing 737 MAX 8") reads better than the database's variant codes
         if a.get("desc"):
             a["type_name"] = a["desc"]
@@ -338,7 +340,7 @@ class Tracker:
         r = a.get("route")
         if a.get("photo") and not s.get("photo"):
             s["photo"] = True
-            upd.update(photo=a["photo"])
+            upd.update(photo=a["photo"], photo_link=a.get("photo_link"), photo_by=a.get("photo_by"))
         n = (a.get("seats") or {}).get("n")
         if n is not None and n != s.get("seats"):
             s["seats"] = n

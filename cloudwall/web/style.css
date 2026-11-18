@@ -274,7 +274,13 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .sub { color: var(--slate); font-size: .86rem; }
 /* the airframe's own photo over its type plate, drawn on a drafting sheet ruled in chart blue */
 .media { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 3 / 2; max-height: 100%; overflow: hidden; }
-.media .photo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media .photo { width: 100%; height: 100%; }
+/* a photo fills its frame; its credit sits in the bottom right corner, cut into the photo's edge */
+.photo { position: relative; display: block; overflow: hidden; }
+.photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo .credit { position: absolute; right: 0; bottom: 0; max-width: 100%; padding: .1rem 0 0 .35rem;
+  background: var(--sheet); color: var(--slate); font: 400 .5rem/1.25 var(--sans);
+  text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .media .sil-box, .coll .sil-box {
   background: linear-gradient(var(--grid-major) 1px, transparent 0) center / 2.5rem 2.5rem,
     linear-gradient(90deg, var(--grid-major) 1px, transparent 0) center / 2.5rem 2.5rem,
@@ -354,7 +360,7 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
   background: linear-gradient(90deg, color-mix(in srgb, var(--blue) 30%, transparent), var(--blue) 45%, var(--magenta)); }
 .heat-key { font-size: .8rem; }
 .idle.last { flex-direction: row; align-items: center; justify-content: flex-start; gap: 1.8rem; }
-.idle.last .photo { width: 45%; aspect-ratio: 3 / 2; object-fit: cover; flex: none; }
+.idle.last .photo { width: 45%; aspect-ratio: 3 / 2; flex: none; }
 .idle.last .last-plate { width: 45%; height: auto; aspect-ratio: 3 / 2; flex: none; border: 1px solid var(--frame); }
 /* today's fleet: every type seen since midnight at one scale, standing on ground lines */
 .idle.fleet { justify-content: flex-start; gap: 1rem; padding-bottom: 1.4rem; }
