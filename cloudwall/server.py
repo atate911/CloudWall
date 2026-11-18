@@ -11,7 +11,7 @@ from . import airports
 WEB = Path(__file__).resolve().parent / "web"
 
 
-def make_server(cfg, places, tiles=None, logos=None):
+def make_server(cfg, places, charts=None, logos=None):
     """places: a place.Places. Each screen says which place it shows with ?place=; without one,
     the kiosk (?kiosk=1) gets its configured place and any other screen the first. Screens can
     also set up places (POST /api/places) and remove the ones they set up (DELETE)."""
@@ -51,7 +51,7 @@ def make_server(cfg, places, tiles=None, logos=None):
                 place.activity.touch()                # a screen is showing this place
             if path == "/api/state":
                 try:
-                    tracker.want_range(int(q.get("range", ["0"])[0]))   # the radar's range on this screen
+                    tracker.want_range(int(q.get("range", ["0"])[0]), q.get("square") == ["1"])   # the radar's range on this screen
                 except ValueError:
                     pass
                 return self._send(200, dict(tracker.snapshot(), place=place.id, places=places.summaries()))
@@ -93,10 +93,12 @@ def make_server(cfg, places, tiles=None, logos=None):
                 {k: a[k] for k in ("icao", "iata", "name", "city", "size", "dist_nm")} for a in near]))
 
         def _tile(self, path):
+            """/tiles/<layer>/z/x/y for a chart layer (charts.py), or /tiles/z/x/y for the radar's map."""
             parts = path.split("/")[2:]
-            if not tiles or len(parts) != 3 or not all(p.isdigit() for p in parts):
+            layer = parts.pop(0) if len(parts) == 4 else "map"
+            if not charts or len(parts) != 3 or not all(p.isdigit() for p in parts):
                 return self._send(404, {"error": "no such tile"})
-            got = tiles.get(*map(int, parts))
+            got = charts.get(layer, *map(int, parts))
             if not got:
                 return self._send(404, {"error": "no such tile"})
             data, ctype = got

@@ -464,6 +464,13 @@ body.night #radar .basemap { mix-blend-mode: screen; }
 body.night #radar .basemap.dark, body.night #radar .basemap.carto-dark { filter: grayscale(.3) brightness(1.5) blur(.5px); }
 body.night #radar .basemap.light, body.night #radar .basemap.carto-light { filter: invert(1) hue-rotate(180deg) grayscale(.3) brightness(.75) blur(.5px); }
 body.night #radar .basemap.satellite, body.night #radar .basemap.osm, body.night #radar .basemap.custom { filter: grayscale(.7) brightness(.55) blur(.5px); }
+/* the FAA's charts as the chart-style radar's map ([map] style): faded like the street maps, and
+   at night inverted to sit on the night chart */
+#radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) { filter: saturate(.55) contrast(.95); }
+body.night #radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) { filter: invert(1) hue-rotate(180deg) saturate(.5) brightness(.8); }
+/* the ATC style's chart: printed dark on white, so turned light on dark and dimmed well under the traffic */
+#scope.atc #radar .basemap.atc-chart { mix-blend-mode: normal; opacity: .3;
+  filter: invert(1) hue-rotate(180deg) saturate(.35) brightness(.85) contrast(1.1); }
 
 /* ---------- board ---------- */
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -830,36 +837,70 @@ table.board tbody.heard th { padding-top: 1.2rem; position: static; }
 body.emergency #tfr-chip { color: var(--ink-2); }
 
 /* ===================== radar: ATC style ===================== */
-/* Drawn like an air traffic controller's screen, whatever the time of day: a dark display, a grey
-   video map, traffic in green with history dots, leader lines and data blocks, and the aircraft
-   overhead in white. The panel becomes the screen, framed like the other sheets. */
+/* Drawn like a STARS display, the FAA's terminal radar, whatever the time of day: a black square
+   screen with the compass along its edge and the IFR chart dimmed under a grey video map; targets
+   in blue, each with its position symbol; data blocks in green, and white for the aircraft this
+   screen tracks (the one overhead); history dots in fading blues; the status area in green; the
+   radar's buttons as the display control bar's. Colours are STARS's defaults, dimmed to about
+   the brightness controllers run them at. */
 #scope.atc {
-  --sheet: #070b0d; --disc: #090e11; --halo: #090e11;
-  --ink: #d6dfe3; --ink-2: #9fb1b8; --slate: #6b8089; --rule: #1e2b32;
-  --blue: #5ad48e; --magenta: #f2f6f4; --red: #ff6b5e; --water: #34505d;
-  --tick: rgba(214, 223, 227, .45); --frame: #1c272d;
+  --sheet: #030403; --disc: #000; --halo: #000;
+  --ink: #dcdcdc; --ink-2: #8c8c8c; --slate: #6e6e6e; --rule: #1c1f1c; --red: #ff2a2a;
+  --tick: rgba(140, 140, 140, .45); --frame: #1a1d1a;
+  --st-grey: #8c8c8c; --st-owned: #fff; --st-unowned: #00e000; --st-list: #00e000; --st-alert: #ff2a2a;
+  --st-restrict: #e6e600; --st-target: #1e78ff; --st-ptl: #fff;
   padding: 2.4rem .6rem 2.6rem;
 }
-#scope.atc #radar text { font-family: var(--mono); }
-#scope.atc #radar .vmap { fill: none; stroke: var(--water); stroke-width: .4; stroke-linejoin: round; }
-#scope.atc #radar .runway { stroke: var(--ink-2); stroke-width: .8; stroke-linecap: butt; }
-#scope.atc #radar .ring.oh { opacity: .35; }
-#scope.atc #radar .ring-label { font-size: 3.6px; }
-#scope.atc #radar .apt-label { font-weight: 400; fill: var(--ink-2); }
-#scope.atc #radar :is(.legend, .status) { fill: var(--ink-2); }
-#scope.atc #radar :is(.tag, .tag-sub) { font-size: 4.8px; font-weight: 700; fill: var(--blue); stroke-width: 1.2px; }
-#scope.atc #radar .hero :is(.tag, .tag-sub) { fill: var(--magenta); }
-#scope.atc #radar .leader { stroke: var(--blue); stroke-width: .35; }
-#scope.atc #radar .hero .leader { stroke: var(--magenta); }
-#scope.atc #radar .blip { stroke: none; }
-#scope.atc #radar .vec { stroke-width: .35; opacity: .8; }
-#scope.atc #radar .hist circle { fill: var(--blue); }
-#scope.atc #radar .hist.hero circle { fill: var(--magenta); }
+#scope.atc #radar text { font-family: var(--mono); letter-spacing: 0; }
+#scope.atc #radar .scope-bg { fill: var(--disc); }
+/* the video map: runways, final approach courses marked every mile, rivers, satellite fields */
+#scope.atc #radar .vmap { fill: none; stroke: var(--st-grey); stroke-width: .35; stroke-linejoin: round; opacity: .4; }
+#scope.atc #radar .runway { stroke: var(--st-grey); stroke-width: .6; stroke-linecap: butt; }
+#scope.atc #radar :is(.approach, .approach-tick) { fill: none; stroke: var(--st-grey); stroke-width: .3; stroke-dasharray: none; opacity: .6; }
+#scope.atc #radar .field { stroke: var(--st-grey); stroke-width: .4; opacity: .7; }
+#scope.atc #radar .field-rwy { stroke: var(--st-grey); stroke-width: .5; }
+#scope.atc #radar .field-label { font-size: 3.2px; fill: var(--st-grey); stroke-width: 1px; }
+#scope.atc #radar .ring { stroke: var(--st-grey); stroke-width: .3; opacity: .3; }
+#scope.atc #radar .compass-tick { fill: none; stroke: var(--st-grey); stroke-width: .35; }
+#scope.atc #radar .bearing { font-size: 3.3px; fill: var(--st-grey); }
+/* restricted areas (the flight restrictions) in yellow */
+#scope.atc #radar .tfr { fill: none; stroke: var(--st-restrict); stroke-width: .5; opacity: .85; }
+#scope.atc #radar .tfr.later { stroke-dasharray: 2 1.6; opacity: .6; }
+#scope.atc #radar .tfr-label { font: 3.8px var(--mono); fill: var(--st-restrict); stroke-width: 1px; }
+/* the System Status Area and lists */
+#scope.atc #radar :is(.ssa, .heard-note) { font-size: 4px; fill: var(--st-list); text-transform: uppercase; }
+#scope.atc #radar .ssa .alert { fill: var(--st-alert); }
+#scope.atc #radar .ssa-mark rect { fill: none; stroke: var(--st-list); stroke-width: .35; }
+#scope.atc #radar .ssa-mark .tri { fill: var(--st-alert); }
+/* targets: the fused track symbol, and the position symbol on it, outlined in black */
+#scope.atc #radar .blip { fill: var(--st-target); stroke: none; opacity: .85; }
+#scope.atc #radar .pos { font-size: 4.1px; font-weight: 700; fill: var(--st-unowned); paint-order: stroke; stroke: #000; stroke-width: .9px; }
+#scope.atc #radar .sym { fill: none; stroke: var(--st-unowned); stroke-width: .5; stroke-linecap: square; }
+#scope.atc #radar .hero .pos { fill: var(--st-owned); }
+#scope.atc #radar .hist circle { stroke: none; }
+#scope.atc #radar .hist .h0 { fill: rgb(30, 80, 200); }
+#scope.atc #radar .hist .h1 { fill: rgb(70, 70, 170); }
+#scope.atc #radar .hist .h2 { fill: rgb(50, 50, 130); }
+#scope.atc #radar .hist .h3 { fill: rgb(40, 40, 110); }
+#scope.atc #radar .hist .h4 { fill: rgb(30, 30, 90); }
+/* data blocks: green, white when this screen tracks it; special codes in red on the top line;
+   predicted track lines in white */
+#scope.atc #radar :is(.tag, .tag-sub, .tag-top) { font-size: 4.6px; font-weight: 400; fill: var(--st-unowned); stroke: #000; stroke-width: .8px; }
+#scope.atc #radar .hero :is(.tag, .tag-sub) { fill: var(--st-owned); }
+#scope.atc #radar .tag-top { fill: var(--st-alert); }
+#scope.atc #radar .leader { stroke: var(--st-unowned); stroke-width: .3; }
+#scope.atc #radar .hero .leader { stroke: var(--st-owned); }
+#scope.atc #radar .vec { stroke: var(--st-ptl); stroke-width: .3; opacity: .9; }
+/* the radar's buttons as the display control bar's: dark green with a bevel, lighter when on */
+#scope.atc .seg { border: 0; border-radius: 0; gap: 2px; overflow: visible; }
+#scope.atc .seg :is(button, .seg-unit) { background: #002c00; color: #fff; border: 0;
+  box-shadow: inset 1px 1px 0 #323232, inset -1px -1px 0 #000; }
+#scope.atc .seg button + button { border-left: 0; }
+#scope.atc .seg button.on { background: #004e00; color: #fff; box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 #323232; }
+#scope.atc .seg .seg-unit { background: #001600; color: #808080; }
+#scope.atc .attrib { color: #6e6e6e; }
 .kiosk #scope.atc { padding: 1vh; }
-/* the monospaced note is wider: set it smaller so it stays clear of the bezel */
-#scope.atc #radar .heard-note { font-size: 4.2px; }
-.kiosk #scope.atc #radar .heard-note { font-size: 5.4px; }
-.kiosk #scope.atc #radar :is(.tag, .tag-sub) { font-size: 7px; }
-.kiosk #scope.atc #radar .ring-label { font-size: 5px; }
-/* an emergency's data block turns red on the dark screen */
-body.emergency #scope.atc #radar .hero :is(.tag, .tag-sub) { fill: var(--red); }
+.kiosk #scope.atc #radar :is(.tag, .tag-sub, .tag-top) { font-size: 7px; stroke-width: 1.1px; }
+.kiosk #scope.atc #radar .pos { font-size: 5.6px; }
+.kiosk #scope.atc #radar :is(.ssa, .heard-note) { font-size: 5.4px; }
+.kiosk #scope.atc #radar .bearing { font-size: 4.4px; }

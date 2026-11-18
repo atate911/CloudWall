@@ -26,10 +26,9 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
   climbing or descending (`035↑`), and a line to where it will be in a minute. Both views have a
   compass bezel with bearings, and on the desktop a key in the corner.
   Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
-  Along the foot of the radar, Chart / ATC picks its look (ATC draws it like an air traffic
-  controller's screen: dark, a grey map, green targets with history dots, leader lines to data blocks
-  and a status area with UTC time, altimeter, wind and runways), Tracks turns the trails and
-  one-minute lines on or off, and 15 / 20 / 30 sets the range in nm. Past the tracking radius
+  Along the foot of the radar, Chart / ATC picks its look (ATC draws it as a controller's STARS
+  screen over the FAA's IFR chart; see [The ATC radar](#the-atc-radar)), Tracks turns the trails
+  and one-minute lines on or off, and 15 / 20 / 30 sets the range in nm. Past the tracking radius
   (`[tracking] radius_nm`, 15 nm), aircraft are drawn on the radar only: the board, the flight card,
   the logbook and route lookups stay within it, and the longer range is fetched only while a
   screen shows it.
@@ -107,7 +106,9 @@ and elevation, its runways (for the radar, the wind rose and which way it's land
 smaller fields nearby. The tables: airports from airportsdata (MIT licence); small fields it lacks,
 such as Pearson Field and Grove Field around Vancouver, in `cloudwall/data/fields.csv`; runways
 and which airports have airline service from OurAirports (public domain); ZIP codes from the
-Census Bureau's 2025 ZIP code areas (public domain). `python3 tools/build_data.py` rebuilds them.
+Census Bureau's 2025 ZIP code areas (public domain); aircraft types' wake categories, for the
+ATC radar's data blocks, from openScope's aircraft data (MIT licence).
+`python3 tools/build_data.py` rebuilds them.
 For an airport the tables don't cover, give its `iata`, `city`, `lat` and `lon` too.
 
 **More places.** Add a `[[places]]` entry for each, by coordinates or ZIP code:
@@ -197,6 +198,46 @@ range_nm = 30      # 0 for the tracking radius, or 20 or 30
 
 The address can override these on any screen: `/kiosk?radar=atc&tracks=off&range=20`.
 
+## The ATC radar
+
+The ATC style draws the radar as a terminal controller sees it on STARS, the FAA's terminal
+radar display, following its conventions (layouts, symbols, colours and timings as described
+by the FAA's STARS documentation and the open-source [vice](https://github.com/mmp/vice) STARS
+simulator), with the FAA's IFR Enroute Low chart dimmed underneath:
+
+- **The screen** is square. Its range (15, 20 or 30 nm) is from the centre to the edge, as on
+  STARS, so the corners reach about 1.4 times as far; the server fetches traffic out to them. A
+  compass runs along the edge, a tick every 5° and the bearing every 10°. Range rings are every
+  5 nm. The grey video map has the runways, the final approach courses marked every mile, the
+  river and the small airfields; flight restrictions are outlined in yellow.
+- **Targets** are blue (STARS's fused tracks), each with a position symbol on it. A track with
+  a flight plan shows the letter of the position that owns it: here **A** for an arrival at the
+  airport, **D** for a departure, **C** for the rest (the en route centre's). A track with no
+  flight plan (VFR on code 1200) shows **\*** with a limited data block, its altitude; one
+  reporting no altitude shows **+** and no block.
+- **Full data blocks**, at the end of a leader line, read:
+
+  ```
+  ASA512          callsign
+  037 17 F        altitude (hundreds of ft), ground speed (tens of kt), rules, wake category
+  ```
+
+  The second line takes turns with the aircraft type (`037 B739`) on STARS's clock: two
+  seconds of speed, one of type. The rules letter is `V` for VFR; the wake category is the
+  FAA's Consolidated Wake Turbulence group, A (super) to I (small). Emergency codes show in
+  red above the callsign: `EM` (7700), `RF` (7600), `HJ` (7500). Blocks are green, and white for
+  the aircraft this screen tracks, the one overhead. Leaders point north unless that crowds
+  another block, then whichever of the eight directions is clear, as a controller would set
+  them; blocks to the left of their leader are right-justified against it.
+- **History dots** trail each target, five of them 4.5 seconds apart (as near as the feed's
+  updates allow) in fading blues, and a white **predicted track line** shows a minute ahead.
+  Tracks turns both off.
+- **The System Status Area**, top left: the status indicator, UTC time with seconds and the
+  altimeter setting, `OK/OK/NA`, the range and line length (`15NM PTL: 1.0`), the airport's
+  altimeter from its weather report (`PDX 30.02A`), active emergency codes in red, and a general
+  information line with the runways in use and the wind.
+- The radar's buttons take on the display control bar's look: dark green, lit when on.
+
 ## Better routes with a paid provider (optional)
 
 The free route lookup goes by flight number and is often wrong: it only knows the route
@@ -259,9 +300,17 @@ no requests (or, with `"log"`, only the slow position check).
   can be `light`, `satellite`, `osm` or `off`, or `url` can point at any raster tile service,
   such as CARTO with your own API key:
   `url = "https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png?key=YOUR_CARTO_KEY"`).
-  CloudWall downloads each tile once, caches it for a
+  It can also be one of the FAA's aeronautical charts: `sectional` (the VFR Sectional, with its
+  airports, airspace and landmarks), `terminal` (the VFR Terminal Area chart, more detailed,
+  where there is one: Portland has one; the Sectional elsewhere), `ifr-low` or `ifr-high`.
+  The ATC style has its own chart, `[map] atc` (`ifr-low` unless set; `off` for the plain
+  video map). CloudWall downloads each tile once, caches it for a
   month next to the logbook, and serves it to the display itself, so the map provider sees
   only your server and an API key never reaches the browser.
+- The charts are the FAA Aeronautical Information Services' own tiled charts (public domain),
+  current to the 56-day chart cycle within a month. `cloudwall/charts.py` keeps every map and
+  chart in one place and serves each at `/tiles/<layer>/z/x/y`, so a new use for a chart is a
+  layer name in the display.
 - Runways are drawn from the bundled runway table, with extended centrelines for the main
   direction. A hand-drawn map can add rivers and town names: PDX has one
   (`cloudwall/web/maps/kpdx.json`, approximate), drawn when the real map is off and in the ATC

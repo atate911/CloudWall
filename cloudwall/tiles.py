@@ -10,6 +10,7 @@ import logging
 import math
 import threading
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -31,25 +32,44 @@ STYLES = {
 }
 
 
-def tile_center(z, x, y):
+def tile_corner(z, x, y):
+    """The north-west corner of a tile (x, y may be fractional: x + 0.5, y + 0.5 is its centre)."""
     n = 2 ** z
-    lon = (x + 0.5) / n * 360 - 180
-    lat = math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * (y + 0.5) / n))))
-    return lat, lon
+    return math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * y / n)))), x / n * 360 - 180
+
+
+def tile_nearest(z, x, y, lat, lon):
+    """The point of a tile nearest a place (near enough at these sizes: the place clamped into
+    the tile's span of latitude and longitude)."""
+    north, west = tile_corner(z, x, y)
+    south, east = tile_corner(z, x + 1, y + 1)
+    return min(max(lat, south), north), min(max(lon, west), east)
 
 
 class Tiles:
-    def __init__(self, cfg, cache_dir):
+    """One tiled map, cached on disk: the radar's street map from [map] by default, or a layer
+    given as layer={id, url, attribution, zooms, opacity} (see charts.py). fallback is another
+    Tiles to serve from where this one has no tile."""
+
+    def __init__(self, cfg, cache_dir, layer=None):
         m = cfg.get("map", {})
-        self.style = (m.get("style") or "dark").lower()
-        url, attribution = STYLES.get(self.style, ("", ""))
-        self.url = m.get("url") or url
-        self.attribution = m.get("attribution") or attribution
-        self.opacity = float(m.get("opacity", 0.32))
+        if layer:
+            self.style, self.url, self.attribution = layer["id"], layer["url"], layer["attribution"]
+            self.opacity = float(layer.get("opacity", 0.5))
+        else:
+            self.style = (m.get("style") or "dark").lower()
+            url, attribution = STYLES.get(self.style, ("", ""))
+            self.url = m.get("url") or url
+            self.attribution = m.get("attribution") or attribution
+            self.opacity = float(m.get("opacity", 0.32))
+        self.zooms = tuple((layer or {}).get("zooms", (6, 17)))
+        self.is_layer = bool(layer)
+        self.fallback = None
         self.enabled = self.style != "off" and bool(self.url)
         self.homes = [cfg["home"]]      # every place watched (set by the caller when there are several)
-        # only serve the area around home, so the proxy can't be used to scrape a whole map
-        self.reach_nm = max(40, cfg["tracking"]["radius_nm"] * 3)
+        # only serve the area around home, so the proxy can't be used to scrape a whole map: out
+        # to the corners of the ATC radar's square at 30 nm (42 nm), or three tracking radii
+        self.reach_nm = max(45, cfg["tracking"]["radius_nm"] * 3)
         self.dir = Path(cache_dir) / hashlib.sha1(self.url.encode()).hexdigest()[:10]
         self.lock = threading.Lock()
 
@@ -58,16 +78,19 @@ class Tiles:
         u = self.url.lower()
         if "cartocdn" in u:
             return "carto-light" if ("light" in u or "positron" in u or "voyager" in u) else "carto-dark"
-        return self.style if self.style in STYLES else "custom"
+        return self.style if self.style in STYLES or self.is_layer else "custom"
 
     def info(self):
-        return {"enabled": self.enabled, "style": self.look(), "attribution": self.attribution, "opacity": self.opacity}
+        return {"enabled": self.enabled, "style": self.look(), "attribution": self.attribution, "opacity": self.opacity,
+                "zooms": list(self.zooms)}
 
     def allowed(self, z, x, y):
-        if not (6 <= z <= 17 and 0 <= x < 2 ** z and 0 <= y < 2 ** z):
+        if not (self.zooms[0] <= z <= self.zooms[1] and 0 <= x < 2 ** z and 0 <= y < 2 ** z):
             return False
-        lat, lon = tile_center(z, x, y)
-        return any(haversine_nm(h["lat"], h["lon"], lat, lon) <= self.reach_nm for h in self.homes)
+        # any tile with part of it in reach: a square display's corners at the longest range
+        # take tiles whose centres are well beyond it
+        return any(haversine_nm(h["lat"], h["lon"], *tile_nearest(z, x, y, h["lat"], h["lon"])) <= self.reach_nm
+                   for h in self.homes)
 
     def _download(self, z, x, y):
         # Templates copied from map providers often carry {s} (server letter) and {r}
@@ -78,10 +101,20 @@ class Tiles:
             return r.read(), r.headers.get("Content-Type", "image/png")
 
     def get(self, z, x, y):
-        """(bytes, content type) for a tile, or None if it is outside the area or unavailable."""
+        """(bytes, content type) for a tile, or None if it is outside the area or unavailable.
+        Where this map has no tile, the fallback's is served."""
+        got = self._get(z, x, y)
+        if got is None and self.fallback is not None:
+            return self.fallback.get(z, x, y)
+        return got
+
+    def _get(self, z, x, y):
         if not self.enabled or not self.allowed(z, x, y):
             return None
         path = self.dir / str(z) / str(x) / f"{y}.tile"
+        missing = path.with_suffix(".none")       # the provider has no tile here: don't ask again for a month
+        if missing.exists() and time.time() - missing.stat().st_mtime < MAX_AGE:
+            return None
         fresh = path.exists() and time.time() - path.stat().st_mtime < MAX_AGE
         if not fresh:
             try:
@@ -92,6 +125,11 @@ class Tiles:
                     tmp.write_bytes(ctype.encode()[:40].ljust(40) + data)
                     tmp.replace(path)
             except Exception as e:
+                if isinstance(e, urllib.error.HTTPError) and e.code == 404 and not path.exists():
+                    with self.lock:
+                        missing.parent.mkdir(parents=True, exist_ok=True)
+                        missing.touch()
+                    return None
                 if not path.exists():
                     log.warning("tile %s/%s/%s unavailable: %s", z, x, y, e)
                     return None

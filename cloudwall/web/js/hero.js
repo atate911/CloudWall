@@ -380,7 +380,7 @@ function drawHeat(canvas, state, heat) {
   const bm = state.basemap;
   if (!bm || !bm.enabled) return paintHeat(canvas, state, heat, null);
   const R = heat.radius_nm, px = Math.min(canvas.parentElement.clientHeight * 0.94, canvas.parentElement.clientWidth * 0.56) * (window.devicePixelRatio || 1);
-  const tiles = tileLayout(state.home, R, px / (2 * R)).tiles.map((t) => ({ ...t, img: new Image() }));
+  const tiles = tileLayout(state.home, R, px / (2 * R), state.charts && state.charts.map).tiles.map((t) => ({ ...t, img: new Image() }));
   let pending = tiles.length;
   const done = () => { if (--pending === 0 && canvas.isConnected) paintHeat(canvas, state, heat, tiles); };
   for (const t of tiles) { t.img.onload = t.img.onerror = done; t.img.src = t.url; }

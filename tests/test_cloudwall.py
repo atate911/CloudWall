@@ -1,4 +1,5 @@
 import json
+import math
 import time
 import unittest
 from pathlib import Path
@@ -446,6 +447,26 @@ class RadarRangeTest(unittest.TestCase):
         t.range_wanted[30] -= 120                                     # the screen stopped asking
         self.assertEqual(t.fetch_radius(), 15)
 
+    def test_a_square_display_reaches_into_its_corners(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        t.want_range(15, square=True)                                 # the ATC style at 15 nm
+        self.assertEqual(t.fetch_radius(), 21.2)
+        t.want_range(30)
+        self.assertEqual(t.fetch_radius(), 30)
+        t.want_range(30, square=True)
+        self.assertEqual(t.fetch_radius(), 42.4)
+
+    def test_data_blocks_get_wake_categories_and_history_spacing(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        t.update([dict(plane("a1", "ASA1", 2.0), type="B738"), dict(plane("c1", "N123", 3.0), type="C172"),
+                  dict(plane("x1", "XXX1", 4.0), type="ZZZZ")], "test")
+        cwt = {a["hex"]: a["cwt"] for a in t.snapshot()["aircraft"]}
+        self.assertEqual(cwt, {"a1": "F", "c1": "I", "x1": None})       # a type it doesn't know: blank
+        self.assertEqual(t.snapshot()["trail_s"], t.cfg["tracking"]["poll_seconds"])   # one update: the poll interval
+        t.updated_at -= 4.0                                           # updates 4 s apart
+        t.update([plane("a1", "ASA1", 1.9)], "test")
+        self.assertAlmostEqual(t.snapshot()["trail_s"], 4.0, delta=0.1)
+
     def test_far_targets_cant_be_pinned_and_go_stale(self):
         t = Tracker(config.load(), Store(":memory:"), StubEnricher())
         t.want_range(30)
@@ -610,6 +631,83 @@ class TilesTest(unittest.TestCase):
         t = T.Tiles(cfg, "/tmp/x")
         self.assertFalse(t.enabled)
         self.assertIsNone(t.get(11, 326, 731))
+
+
+    def test_tiles_reach_the_corners_of_the_longest_range(self):
+        from cloudwall import tiles as T
+        t = T.Tiles(config.load(), "/tmp/x")
+        h = config.load()["home"]
+        # the zoom-9 tile under the ATC square's north-east corner at 30 nm, 42 nm out
+        z, n = 9, 2 ** 9
+        lat, lon = h["lat"] + 30 / 60, h["lon"] + 30 / (60 * math.cos(math.radians(h["lat"])))
+        x = int((lon + 180) / 360 * n)
+        y = int((1 - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat))) / math.pi) / 2 * n)
+        self.assertTrue(t.allowed(z, x, y))
+        self.assertFalse(t.allowed(z, x + 3, y - 3))                  # well beyond: refused
+
+
+class ChartsTest(unittest.TestCase):
+    def charts(self, d, **m):
+        from cloudwall.charts import Charts
+        cfg = config.load()
+        cfg["map"] = dict(cfg["map"], **m)
+        return Charts(cfg, d)
+
+    def test_the_layers_and_which_display_gets_which(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            info = self.charts(d).info()
+            self.assertEqual(info["map"]["style"], "dark")              # a street map under the chart radar
+            self.assertEqual((info["atc"]["layer"], info["atc"]["name"]), ("ifr-low", "IFR Enroute Low"))
+            self.assertIn("FAA", info["atc"]["attribution"])
+            self.assertEqual(set(info["layers"]), {"ifr-low", "ifr-high", "sectional", "terminal"})
+            self.assertEqual(list(info["layers"]["ifr-low"]["zooms"]), [7, 11])
+            self.assertIn("IFR_AreaLow/MapServer/tile/{z}/{y}/{x}", self.charts(d).layers["ifr-low"].url)
+            c = self.charts(d, style="Sectional", atc="off")            # any case
+            self.assertIs(c.map, c.layers["sectional"])
+            self.assertEqual(c.info()["map"]["style"], "sectional")
+            self.assertIsNone(c.info()["atc"])
+            c = self.charts(d, atc="ifr-high")
+            self.assertEqual(c.info()["atc"]["layer"], "ifr-high")
+            c = self.charts(d, style="sectional", url="https://example.com/{z}/{x}/{y}.png")   # a url wins
+            self.assertEqual(c.map.url, "https://example.com/{z}/{x}/{y}.png")
+
+    def test_terminal_falls_back_to_the_sectional_and_remembers_gaps(self):
+        import tempfile
+        import urllib.error
+        with tempfile.TemporaryDirectory() as d:
+            c = self.charts(d)
+            calls = []
+
+            def none_here(z, x, y):
+                calls.append(("terminal", z, x, y))
+                raise urllib.error.HTTPError("u", 404, "Not Found", {}, None)
+            c.layers["terminal"]._download = none_here
+            c.layers["sectional"]._download = lambda z, x, y: (calls.append(("sectional", z, x, y)), (b"SEC", "image/png"))[1]
+            tile = (11, 326, 731)
+            self.assertEqual(c.get("terminal", *tile), (b"SEC", "image/png"))
+            self.assertEqual(c.get("terminal", *tile), (b"SEC", "image/png"))
+            self.assertEqual([k for k, *_ in calls], ["terminal", "sectional"])   # neither asked twice
+            self.assertEqual(c.get("terminal", 9, 81, 182)[0], b"SEC")  # below the terminal's zooms: the sectional's
+            self.assertIsNone(c.get("terminal", 7, 20, 45))             # below both
+            self.assertIsNone(c.get("nonsense", *tile))                 # no such layer
+
+    def test_every_layer_is_served_around_every_place(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            c = self.charts(d)
+            sfo = (11, 327, 791)
+            self.assertFalse(c.layers["ifr-low"].allowed(*sfo))
+            c.homes = [config.load()["home"], {"lat": 37.62, "lon": -122.38}]
+            self.assertTrue(all(t.allowed(*sfo) for lid, t in c.layers.items() if lid not in ("map", "ifr-high")))
+
+
+class WakeTest(unittest.TestCase):
+    def test_categories(self):
+        from cloudwall import wake
+        self.assertEqual([wake.category(t) for t in ("A388", "B77W", "B738", "e75l", "C172")], ["A", "B", "F", "G", "I"])
+        self.assertIsNone(wake.category(None))
+        self.assertIsNone(wake.category("NOPE"))
 
 
 class LiveFirstTest(unittest.TestCase):
@@ -904,7 +1002,7 @@ class ActivityTest(unittest.TestCase):
 
 
 class ServerTest(unittest.TestCase):
-    def serve(self, cfg, saved=None):
+    def serve(self, cfg, saved=None, charts=None):
         """A server over every place in cfg, with no threads started and no network lookups."""
         import threading
         from cloudwall.place import Place, Places
@@ -920,7 +1018,7 @@ class ServerTest(unittest.TestCase):
         for pc in config.places(cfg):
             places.add_config(pc)
         places.load_saved()
-        srv = make_server(cfg, places)
+        srv = make_server(cfg, places, charts)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         self.addCleanup(srv.shutdown)
         return f"http://127.0.0.1:{srv.server_address[1]}", places
@@ -945,6 +1043,29 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(s["kiosk"], {"place": "", "radar": "chart", "tracks": True, "range_nm": 0})
         self.get(base + "/api/state?range=30")
         self.assertEqual(t.fetch_radius(), 30)
+        self.get(base + "/api/state?range=30&square=1")             # the ATC style's square screen
+        self.assertEqual(t.fetch_radius(), 42.4)
+
+    def test_chart_layers_are_served_by_name(self):
+        import tempfile
+        import urllib.error
+        from cloudwall.charts import Charts
+        with tempfile.TemporaryDirectory() as d:
+            cfg = config.load()
+            charts = Charts(cfg, d)
+            for lid, t in charts.layers.items():
+                t._download = (lambda lid: lambda z, x, y: (lid.encode(), "image/png"))(lid)
+            base, _ = self.serve(cfg, charts=charts)
+            self.assertEqual(self.get(base + "/tiles/ifr-low/11/326/731"), b"ifr-low")
+            self.assertEqual(self.get(base + "/tiles/sectional/11/326/731"), b"sectional")
+            self.assertEqual(self.get(base + "/tiles/11/326/731"), b"map")     # the radar's map, as before
+            for bad in ("/tiles/ifr-low/12/652/1462", "/tiles/nope/11/326/731", "/tiles/ifr-low/11/326/x",
+                        "/tiles/ifr-low/11/100/100"):            # past its zooms, no layer, not a tile, far away
+                with self.assertRaises(urllib.error.HTTPError) as e:
+                    self.get(base + bad)
+                self.assertEqual(e.exception.code, 404)
+            s = json.loads(self.get(base + "/api/state"))
+            self.assertIn("charts", s)
 
     def test_each_screen_shows_its_own_place(self):
         import urllib.request

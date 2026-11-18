@@ -8,7 +8,7 @@ from .flightradar24 import Flightradar24
 from .server import make_server
 from .logos import Logos
 from .place import AnyActivity, Place, Places
-from .tiles import Tiles
+from .charts import Charts
 from .store import Store
 
 log = logging.getLogger("cloudwall")
@@ -57,7 +57,7 @@ def main():
 
     store0 = Store(db_for(first_id))
     tiles_dir = (Path(db).parent if db != ":memory:" else config.default_db_path().parent) / "tiles"
-    tiles = Tiles(cfg, tiles_dir)
+    charts = Charts(cfg, tiles_dir)   # the radar's map and the FAA charts
     logos = Logos(cfg, tiles_dir.parent / "logos")
     # one paid provider and one budget for every place, counted in the first place's store
     providers = [Flightradar24(cfg, store0), FlightAware(cfg, store0)]
@@ -69,7 +69,8 @@ def main():
         store = store0 if pid == first_id else Store(db_for(pid))
         source = sources.Demo() if args.demo else sources.Feeds(cfg["source"]["urls"])
         place = Place(pc, store, source, live=fa, demo=args.demo, named=named)
-        place.tracker.basemap = tiles.info()
+        place.tracker.basemap = charts.map.info()
+        place.tracker.charts = charts.info()
         place.tracker.logos = logos.enabled
         return place
 
@@ -80,7 +81,7 @@ def main():
     places.load_saved()
 
     def map_around_every_place():
-        tiles.homes = [p.cfg["home"] for p in places]
+        charts.homes = [p.cfg["home"] for p in places]
     map_around_every_place()
     places.on_change = map_around_every_place
     for place in places:
@@ -88,7 +89,7 @@ def main():
             place.start()
     for p in providers:
         p.activity = AnyActivity(places)   # e.g. Flightradar24's hourly usage check waits for a screen
-    server = make_server(cfg, places, tiles, logos)
+    server = make_server(cfg, places, charts, logos)
     log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"],
              places.first.source.name)
     for place in places:
@@ -102,7 +103,8 @@ def main():
                  if b["period_budget"] is not None else f"up to {b['daily_limit']} {fa.unit} a day")
     else:
         log.info("live routes: off (free route database only)")
-    log.info("radar map: %s", f"{tiles.style} (cached in {tiles.dir})" if tiles.enabled else "off")
+    log.info("radar map: %s; ATC radar chart: %s (cached in %s)", charts.map.style if charts.map.enabled else "off",
+             charts.atc.style if charts.atc else "off", tiles_dir)
     log.info("config: %s", cfg["_path"] or "built-in defaults")
     try:
         server.serve_forever()

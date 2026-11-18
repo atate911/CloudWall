@@ -166,7 +166,8 @@ function drawScopeNow(now = performance.now()) {
   if (!state || view !== "now") return;
   const mode = scopeMode(), pref = store("scope") || "auto", { style, tracks, range } = radarPrefs();
   const atc = mode === "radar" && style === "atc";
-  const bm = state.basemap, credit = mode === "radar" && !atc && bm && bm.enabled ? bm.attribution : "";
+  const charts = state.charts || { map: state.basemap }, bm = atc ? charts.atc : charts.map;
+  const credit = mode === "radar" && bm && bm.enabled ? bm.attribution : "";
   const label = [pref, mode, credit, style, tracks, range, state.ranges].join("|");
   if (label !== scopeLabel) {
     scopeLabel = label;
@@ -353,9 +354,10 @@ function render() {
 async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
   try {
-    // while the radar is on screen, the server fetches out to its range
-    const range = state && view === "now" && scopeMode() === "radar" ? radarPrefs().range : 0;
-    state = await (await api(`api/state?range=${range}`)).json();
+    // while the radar is on screen, the server fetches out to its range (the ATC style's square
+    // display reaches further, into its corners)
+    const radar = state && view === "now" && scopeMode() === "radar", prefs = radarPrefs();
+    state = await (await api(`api/state?range=${radar ? prefs.range : 0}${radar && prefs.style === "atc" ? "&square=1" : ""}`)).json();
     stateAt = state._at = Date.now();
     stateAtPerf = performance.now();
     if (mapFor !== state.airport.icao) { mapFor = state.airport.icao; loadMap(mapFor).then(() => { scopeLabel = ""; }); }

@@ -3,6 +3,7 @@
     python3 tools/build_data.py runways [runways.csv]      # OurAirports runways (public domain)
     python3 tools/build_data.py airline [airports.csv]     # OurAirports airports with airline service
     python3 tools/build_data.py zips [Gaz_zcta_national]   # Census ZIP code areas (public domain)
+    python3 tools/build_data.py cwt aircraft.json          # wake categories, from openScope's aircraft data
 
 Without a file each downloads its source. Every output is limited to what CloudWall uses:
 
@@ -11,6 +12,9 @@ Without a file each downloads its source. Every output is limited to what CloudW
   elevation of the first end (CloudWall takes it as the field's).
 - airline: the airports in airports.csv with scheduled airline service, and whether each is a
   large one; CloudWall picks a place's airport from these when it isn't given.
+- cwt: each aircraft type's FAA Consolidated Wake Turbulence category (A-I, JO 7110.126), as
+  STARS data blocks show it, from openScope's aircraft file (MIT licence; it has no download URL,
+  so give the file: resources/openscope-aircraft.json in openScope or the vice simulator).
 - zips: each ZIP code area's internal point (its centre, or the nearest point inside it), to
   four decimal places. Takes the Gazetteer file (tab-separated: GEOID ... INTPTLAT INTPTLONG,
   plain or zipped) or a zip,lat,lng CSV of it.
@@ -102,8 +106,21 @@ def zips(arg):
            "Rebuild with: python3 tools/build_data.py zips"], out)
 
 
+def cwt(arg):
+    import json
+    if not arg:
+        raise SystemExit("cwt needs the aircraft file: python3 tools/build_data.py cwt openscope-aircraft.json")
+    data = json.loads(Path(arg).read_text(encoding="utf-8"))
+    out = sorted([a["icao"], a["category"]["cwt"]] for a in data["aircraft"]
+                 if (a.get("category") or {}).get("cwt") and a.get("icao"))
+    write("cwt.csv", ["type", "cwt"],
+          ["Aircraft types' FAA Consolidated Wake Turbulence categories (A super ... I small; JO 7110.126),",
+           "as STARS data blocks show them. Compiled from openScope's aircraft data (MIT licence).",
+           "Rebuild with: python3 tools/build_data.py cwt openscope-aircraft.json"], out)
+
+
 if __name__ == "__main__":
-    jobs = {"runways": runways, "airline": airline, "zips": zips}
+    jobs = {"runways": runways, "airline": airline, "zips": zips, "cwt": cwt}
     if len(sys.argv) < 2 or sys.argv[1] not in jobs:
         raise SystemExit(__doc__)
     jobs[sys.argv[1]](sys.argv[2] if len(sys.argv) > 2 else None)

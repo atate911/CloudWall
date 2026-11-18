@@ -6,7 +6,7 @@ import threading
 import time
 from collections import deque
 
-from . import config, contrails as contrail_mod, geo
+from . import config, contrails as contrail_mod, geo, wake
 from .seats import seats as seat_estimate
 from .logos import AIRLINE_NAMES, flight_number, iata_for
 
@@ -53,6 +53,8 @@ class Tracker:
         self.aircraft = []
         self.beyond = []          # aircraft past the tracking radius, for a radar set to a longer range
         self.range_wanted = {}    # range (nm) -> when a screen last asked for it
+        self.updated_at = None
+        self.trail_s = None       # seconds between trail samples, smoothed (STARS spaces history 4.5 s apart)
         self.hero_hex = None
         self.pinned = None
         self.active = {}          # hex -> {"id", "min", "ts", "badges"}
@@ -61,6 +63,7 @@ class Tracker:
         self.weather_full = None
         self.idle = False         # no screen open: no paid lookups
         self.basemap = None
+        self.charts = None        # the chart layers the displays can draw (charts.Charts.info)
         self.logos = False
         self.status = {"source": None, "ok": False, "updated": 0, "error": None}
         self.trails = {}          # hex -> deque of (lat, lon)
@@ -95,6 +98,7 @@ class Tracker:
         a["dist"] = geo.haversine_nm(h["lat"], h["lon"], a["lat"], a["lon"])
         a["brg"] = geo.bearing_deg(h["lat"], h["lon"], a["lat"], a["lon"])
         a["compass"] = geo.compass(a["brg"])
+        a["cwt"] = wake.category(a.get("type"))          # for the ATC-style radar's data blocks
         a["elev"] = (geo.elevation_deg(a["dist"], a["alt"], h.get("elevation_ft", 0))
                      if a["alt"] is not None else None)
         a["cpa_s"], a["cpa_nm"] = geo.cpa(h["lat"], h["lon"], a["lat"], a["lon"],
@@ -432,10 +436,11 @@ class Tracker:
         r = self.cfg["tracking"]["radius_nm"]
         return sorted({r, *(x for x in RADAR_RANGES if x > r)})
 
-    def want_range(self, nm):
-        """A screen showing the radar at this range asked for data."""
+    def want_range(self, nm, square=False):
+        """A screen showing the radar at this range asked for data. A square display (the ATC
+        style, whose range is from its centre to its edge) reaches √2 times as far in its corners."""
         if nm in self.ranges():
-            self.range_wanted[nm] = time.time()
+            self.range_wanted[round(nm * (math.sqrt(2) if square else 1), 1)] = time.time()
 
     def fetch_radius(self):
         """How far out to ask the feed for: the longest range a screen asked for lately."""
@@ -446,6 +451,10 @@ class Tracker:
 
     def update(self, raw, source):
         now = time.time()
+        if self.updated_at is not None and 0 < now - self.updated_at < 120:
+            gap = now - self.updated_at
+            self.trail_s = gap if self.trail_s is None else self.trail_s * 0.8 + gap * 0.2
+        self.updated_at = now
         for a in raw:
             self._derive(a)
         raw.sort(key=lambda a: a["dist"])
@@ -522,7 +531,8 @@ class Tracker:
                 "tracking": self.cfg["tracking"], "hero": hero, "pinned": self.pinned,
                 "next": nxt, "aircraft": self.aircraft, "flow": self.flow,
                 "beyond": self.beyond, "ranges": self.ranges(), "kiosk": self.cfg["kiosk"],
-                "weather": self.weather, "status": self.status, "basemap": self.basemap, "logos": self.logos,
+                "weather": self.weather, "status": self.status, "basemap": self.basemap, "charts": self.charts, "logos": self.logos,
+                "trail_s": round(self.trail_s or self.cfg["tracking"]["poll_seconds"], 2),
                 "live_routes": p.status() if (p := getattr(self.enricher, "live", None)) else None,
                 "today": self.store.count("day=?", (time.strftime("%Y-%m-%d"),)),
                 "seats_today": self.store.seat_total("day=?", (time.strftime("%Y-%m-%d"),))["seats"],
