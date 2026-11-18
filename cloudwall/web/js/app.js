@@ -16,7 +16,20 @@ document.documentElement.classList.add(KIOSK ? "kiosk" : "desk");
 document.body.classList.add(KIOSK ? "kiosk" : "desk");
 if (KIOSK) store("scope", "auto");   // the kiosk has no switch; sky view when something is overhead
 
-let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastHero = null, view = "now", mapFor = null;
+let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastOverhead = null, view = "now", mapFor = null;
+
+// The flight this screen follows, picked by a tap on the board or the radar. It's this screen's alone:
+// a phone following one flight leaves the wall panel showing what's overhead. Kept through a reload of
+// the tab; released by tapping the card, or when the flight leaves the area. The wall panel, which
+// nobody stays beside, lets go by itself after a minute and a half untouched.
+const KIOSK_PIN_S = 90;
+let myPin = null;
+try { myPin = sessionStorage.getItem("cloudwall.pin"); } catch (e) { /* no storage: just this visit */ }
+function pin(hex) {
+  myPin = hex || null;
+  try { if (myPin) sessionStorage.setItem("cloudwall.pin", myPin); else sessionStorage.removeItem("cloudwall.pin"); } catch (e) { /* as above */ }
+  return poll();
+}
 
 // Phone layout: the desktop page rearranged for a phone in the hand, taken on by any screen that
 // small, and changing with it as the phone turns. ?mode=phone forces it; ?mode=desktop keeps it off.
@@ -332,24 +345,33 @@ function render() {
   }
   if (view === "board") $("board").innerHTML = boardHtml();
 }
+let pollSeq = 0, shownSeq = 0;
 async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
+  const seq = ++pollSeq, asked = myPin;
   try {
     // while the radar is on screen, the server fetches out to its range
     const range = state && view === "now" && scopeMode() === "radar" ? radarPrefs().range : 0;
-    state = await (await fetch(`api/state?range=${range}`)).json();
+    const s = await (await fetch(`api/state?range=${range}${asked ? `&pin=${encodeURIComponent(asked)}` : ""}`)).json();
+    // answers can cross: keep the newest, and drop one asked for a flight no longer followed
+    if (seq < shownSeq || asked !== myPin) return;
+    shownSeq = seq;
+    state = s;
     stateAt = state._at = Date.now();
     stateAtPerf = performance.now();
+    if (asked && state.pinned !== asked) pin(null);   // it left the area: back to what's overhead
     if (mapFor !== state.airport.icao) { mapFor = state.airport.icao; loadMap(mapFor).then(() => { scopeLabel = ""; }); }
-    const hero = state.hero && state.hero.hex;
-    if (hero && hero !== lastHero) {
-      chime(/RARE|MILITARY|EMERGENCY|HIJACK|RADIO/.test((state.hero.badges || []).join(" ")) ? "rare" : "arrival");
+    // the chime is for an aircraft coming overhead, whichever flight this screen follows, and not for a tap
+    const over = state.overhead;
+    if (over && over !== lastOverhead) {
+      const a = state.aircraft.find((x) => x.hex === over);
+      chime(/RARE|MILITARY|EMERGENCY|HIJACK|RADIO/.test(((a && a.badges) || []).join(" ")) ? "rare" : "arrival");
       // A new aircraft overhead takes the screen back, unless someone is using it.
       if (view !== "now" && Date.now() - lastTouch > 45000) setView("now");
     }
-    lastHero = hero;
+    lastOverhead = over;
     render();
-  } catch (e) { $("link").hidden = false; }
+  } catch (e) { if (seq >= shownSeq) $("link").hidden = false; }
 }
 // A logo that doesn't exist (404) leaves the colour swatch showing in its place.
 document.addEventListener("error", (e) => {
@@ -357,7 +379,6 @@ document.addEventListener("error", (e) => {
   if (t instanceof HTMLImageElement && t.classList.contains("logo") && !t.id) t.closest(".logo-tile").remove();
 }, true);
 document.addEventListener("click", (e) => { const b = e.target.closest(".mb-row"); if (b) pin(b.dataset.hex); });
-const pin = (hex) => fetch("api/pin", { method: "POST", body: JSON.stringify({ hex }) }).then(poll);
 
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
 document.querySelector("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });
@@ -375,7 +396,7 @@ $("hero").addEventListener("click", (e) => {
   if (!state) return;
   if (e.target.closest("#em-hide")) { emergencies().forEach((a) => hidden.add(emKey(a))); render(); return; }
   if (emergencies().length) return;
-  if (KIOSK) { if (!state.hero) { kioskNext(); render(); } return; }
+  if (KIOSK) { if (myPin) pin(null); else if (!state.hero) { kioskNext(); render(); } return; }
   if (state.pinned) pin(null); else if (!state.hero) { nextSlide(); render(); }
 });
 $("scope-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("scope", b.dataset.mode); scopeLabel = ""; } });
@@ -389,6 +410,7 @@ $("btn-night").addEventListener("click", () => { const m = ["auto", "on", "off"]
 setInterval(poll, 2000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
 setInterval(() => {
+  if (KIOSK && myPin && Date.now() - lastTouch > KIOSK_PIN_S * 1000) pin(null);
   if (!state || view !== "now") return;
   if (emergencies().length) { renderEmergency($("hero"), state, emergencies(), !KIOSK); return; }
   const elapsed = (Date.now() - stateAt) / 1000;

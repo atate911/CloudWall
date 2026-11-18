@@ -34,7 +34,9 @@ def make_server(cfg, tracker, store, tiles=None, logos=None, activity=None):
                     tracker.want_range(int(q.get("range", ["0"])[0]))   # the radar's range on this screen
                 except ValueError:
                     pass
-                return self._send(200, tracker.snapshot())
+                pin = q.get("pin", [None])[0]                            # the flight this screen follows
+                tracker.want_pin(pin)
+                return self._send(200, tracker.snapshot(pin))
             if path == "/api/weather":
                 return self._send(200, dict(tracker.weather_full or {}, contrails=tracker.contrails,
                                             tfrs=tracker.tfrs))
@@ -76,17 +78,6 @@ def make_server(cfg, tracker, store, tiles=None, logos=None, activity=None):
             self.send_header("Cache-Control", "public, max-age=604800")
             self.end_headers()
             self.wfile.write(data)
-
-        def do_POST(self):
-            if self.path != "/api/pin":
-                return self._send(404, {"error": "not found"})
-            try:
-                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0)) or 0) or b"{}")
-            except ValueError:
-                return self._send(400, {"error": "bad json"})
-            hexid = body.get("hex")
-            tracker.pin(hexid if isinstance(hexid, str) else None)
-            self._send(200, {"pinned": tracker.pinned})
 
     s = cfg["server"]
     return ThreadingHTTPServer((s["host"], s["port"]), Handler)
