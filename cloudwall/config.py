@@ -15,18 +15,15 @@ EXAMPLE = Path(__file__).resolve().parent / "config.example.toml"
 
 DEFAULTS = {
     "home": {
-        # Placeholder: ~6 miles east of PDX under the 28L/28R final. Set your own.
+        # Placeholder: east Vancouver, WA, under PDX's 28L/28R final. Set your own.
         "name": "Home",
         "lat": 45.5900,
         "lon": -122.4740,
         "elevation_ft": 100,
     },
-    "airport": {"icao": "KPDX", "iata": "PDX", "city": "Portland", "lat": 45.5887, "lon": -122.5975,
-                # smaller fields nearby: their traffic is labelled as theirs, not PDX's
-                "others": [{"code": "VUO", "name": "Pearson Field", "city": "Vancouver",
-                            "lat": 45.6205, "lon": -122.6564, "elevation_ft": 25},
-                           {"code": "TTD", "name": "Troutdale", "city": "Troutdale",
-                            "lat": 45.5494, "lon": -122.4013, "elevation_ft": 39}]},
+    # The smaller fields nearby (Pearson Field, Grove Field, Troutdale and so on around Vancouver)
+    # come from the bundled tables; their traffic is labelled as theirs, not PDX's.
+    "airport": {"icao": "KPDX", "iata": "PDX", "city": "Portland", "lat": 45.5887, "lon": -122.5975},
     "tracking": {
         "radius_nm": 15,        # how far out the board, flight card and logbook look (the radar can look further)
         "overhead_nm": 3.5,     # inside this, an aircraft counts as "overhead" and is logged
@@ -140,6 +137,8 @@ def complete_airport(ap, home, radius_nm):
     for f in ap["others"]:
         if f.get("elevation_ft") is None:
             f["elevation_ft"] = airports.elevation_ft(f.get("icao") or f.get("code")) or home.get("elevation_ft") or 0
+        if "runways" not in f:      # drawn inside the field's symbol on the radar
+            f["runways"] = airports.runways((airports.lookup(f.get("icao") or f.get("code")) or {}).get("icao"))
     if "runways" not in ap:
         ap["runways"] = airports.runways(ap["icao"])
     return ap

@@ -736,6 +736,7 @@ body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
 .tfr.later { fill: none; stroke-dasharray: 3 2; opacity: .8; }
 #radar .tfr-label { font: 700 4.6px var(--sans); fill: var(--red); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
 .field { fill: none; stroke: var(--slate); stroke-width: .8; }
+.field-rwy { stroke: var(--ink-2); stroke-width: 1; stroke-linecap: butt; }
 .field-label { font: 4.6px var(--mono); fill: var(--slate); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
 #radar .heard-note { font: 700 5px var(--sans); fill: var(--red); }
 .kiosk #radar .heard-note { font-size: 6.5px; }

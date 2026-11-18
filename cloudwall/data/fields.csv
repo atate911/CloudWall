@@ -1,0 +1,10 @@
+# Small public-use airfields that airports.csv (airlines' airports, by IATA code) doesn't have, so
+# CloudWall can find them near home, label light aircraft landing there, and draw them on the
+# radar. Positions and elevations from OurAirports (ourairports.com, public domain). Around
+# Vancouver, WA for now; add your own local fields here, then run tools/build_runways.py for
+# their runways. code: the field's own code as charts show it (the FAA identifier in the US).
+icao,code,name,city,country,lat,lon,elevation_ft,tz
+1W1,1W1,Grove Field,Camas,US,45.6278,-122.4040,429,America/Los_Angeles
+KSPB,SPB,Scappoose Industrial Airpark,Scappoose,US,45.7710,-122.8620,58,America/Los_Angeles
+KVUO,VUO,Pearson Field,Vancouver,US,45.6205,-122.6560,25,America/Los_Angeles
+W27,W27,Woodland State Airport,Woodland,US,45.8988,-122.7370,29,America/Los_Angeles

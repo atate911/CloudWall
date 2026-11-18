@@ -479,7 +479,10 @@ class PlacesTest(unittest.TestCase):
         [p] = config.places(config.load())
         self.assertEqual((p["place"], p["airport"]["icao"]), ({"id": "home", "name": "Home"}, "KPDX"))
         self.assertEqual([w["name"] for w in p["airport"]["runways"]], ["10R/28L", "10L/28R", "03/21"])
-        self.assertEqual([f["code"] for f in p["airport"]["others"]], ["VUO", "TTD"])
+        # the fields around east Vancouver, nearest first, found in the bundled tables with their runways
+        self.assertEqual([f["code"] for f in p["airport"]["others"]], ["1W1", "TTD", "VUO"])
+        self.assertEqual({f["code"]: [w["name"] for w in f["runways"]] for f in p["airport"]["others"]},
+                         {"1W1": ["07/25"], "TTD": ["07/25"], "VUO": ["08/26"]})
 
     def test_an_icao_code_is_enough(self):
         cfg = self.load('[home]\nlat = 37.66\nlon = -122.40\n[airport]\nicao = "ksfo"\n')
@@ -990,9 +993,9 @@ class EmergencyTest(unittest.TestCase):
 
 class SmallFieldTest(unittest.TestCase):
     def test_light_aircraft_at_pearson(self):
-        cfg = config.load()
-        t = Tracker(cfg, Store(":memory:"), StubEnricher())
-        vuo = cfg["airport"]["others"][0]
+        from cloudwall import airports
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        vuo = airports.lookup("VUO")
         a = plane("g1", "N733NV", 0, alt=900, typ="C172", category="A1", vrate=-500, track=260)
         a.update(lat=vuo["lat"], lon=vuo["lon"] + 0.02)
         self.assertEqual(t._infer_local(a), "arriving")
@@ -1002,6 +1005,15 @@ class SmallFieldTest(unittest.TestCase):
         b.pop("local_field")
         t._infer_local(b)
         self.assertNotIn("local_field", b)
+
+    def test_light_aircraft_at_grove_field(self):
+        from cloudwall import airports
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        grove = airports.lookup("1W1")                                   # Camas, 429 ft
+        a = plane("g2", "N12345", 0, alt=1300, typ="C172", category="A1", vrate=-400, track=250)
+        a.update(lat=grove["lat"], lon=grove["lon"] + 0.015)
+        self.assertEqual(t._infer_local(a), "arriving")
+        self.assertEqual(a["local_field"], {"code": "1W1", "name": "Grove Field", "city": "Camas"})
 
 
 class TFRTest(unittest.TestCase):

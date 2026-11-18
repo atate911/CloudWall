@@ -15,8 +15,9 @@ icao = "KPDX"          # the ICAO code is enough: the rest comes from CloudWall'
 # lat = 45.5887
 # lon = -122.5975
 # Smaller fields nearby: light aircraft low over them are labelled as theirs, and they're
-# marked on the radar. By default, airports in the table within the tracking radius (for PDX,
-# Pearson Field and Troutdale); listing any here replaces them.
+# marked on the radar. By default, the fields in CloudWall's tables within the tracking radius:
+# around Vancouver, Pearson Field, Grove Field, Troutdale, Scappoose and Hillsboro. Listing any
+# here replaces them; to add one CloudWall doesn't know, put it in cloudwall/data/fields.csv.
 # [[airport.others]]
 # code = "VUO"
 # name = "Pearson Field"

@@ -99,9 +99,10 @@ make service      # systemd user service; `make logs` to follow, `make service-r
 CloudWall works at any airport from its ICAO code: set `[airport] icao` and it fills in the rest
 from bundled tables, the airport's name, city, position and elevation, its runways (for the radar,
 the wind rose and which way it's landing) and the smaller fields nearby. The airport table is
-airportsdata (MIT licence) and the runways come from OurAirports (public domain); rebuild them with
-`python3 tools/build_runways.py`. For an airport the tables don't cover, give its `iata`, `city`,
-`lat` and `lon` too.
+airportsdata (MIT licence), small fields it lacks (Pearson Field, Grove Field and others around
+Vancouver) are in `fields.csv`, and the runways come from OurAirports (public domain); rebuild them
+with `python3 tools/build_runways.py`. For an airport the tables don't cover, give its `iata`,
+`city`, `lat` and `lon` too.
 
 To watch more than one place, such as home and a cabin, add a `[[places]]` entry for each:
 
@@ -145,10 +146,12 @@ airline's layout; rows for a specific airline win over the typical ones.
 - **Flight restrictions (TFRs).** The FAA's temporary flight restrictions within 30 nm are drawn on the
   radar, listed on the Weather tab with times, altitudes and the full notice, and shown on an idle
   slide while one is active. Drone-only restrictions are listed but don't interrupt the board.
-- **Small fields nearby.** Light aircraft low over one, such as Pearson Field or Troutdale near PDX,
-  are labelled "Landing at Pearson Field" and so on, instead of being taken for the big airport's
-  traffic. They're marked on the radar. Elsewhere, the airports in the bundled table within the
-  tracking radius are used, or list your own under `[airport] others`.
+- **Small fields nearby.** Around Vancouver that's Pearson Field, Grove Field in Camas, Troutdale,
+  Scappoose and Hillsboro, whichever are within the tracking radius of home. Light aircraft low
+  over one are labelled "Landing at Pearson Field" and so on, instead of being taken for PDX
+  traffic, and each is drawn on the radar as a sectional chart draws it: a circle with its runways
+  inside. Fields the airport table lacks are listed in `cloudwall/data/fields.csv`; add your own
+  there, or list them under `[airport] others`.
 - **Sun, moon and contrails.** The Weather tab shows first light, sunrise, sunset, last light, the
   moon's phase, rise and set, and a contrail forecast by altitude from the GFS weather model's
   upper-air temperature and humidity. The moon appears on the sky view when it's up, and a flight card

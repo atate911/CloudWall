@@ -3,9 +3,9 @@
     python3 tools/build_runways.py              # downloads runways.csv from OurAirports
     python3 tools/build_runways.py runways.csv  # or uses a copy you already have
 
-Keeps the open runways of the airports in cloudwall/data/airports.csv that have both ends
-surveyed, leaving out helipads and water lanes, with positions to about a metre and the
-elevation of the first end (CloudWall takes it as the field's).
+Keeps the open runways of the airports in cloudwall/data/airports.csv and fields.csv that have
+both ends surveyed, leaving out helipads and water lanes, with positions to about a metre and
+the elevation of the first end (CloudWall takes it as the field's).
 """
 import csv
 import io
@@ -25,6 +25,8 @@ def main():
             text = r.read().decode("utf-8")
     with open(DATA / "airports.csv", newline="", encoding="utf-8") as f:
         wanted = {row["icao"] for row in csv.DictReader(f)}
+    with open(DATA / "fields.csv", newline="", encoding="utf-8") as f:        # the small fields added by hand
+        wanted |= {row["icao"] for row in csv.DictReader(line for line in f if not line.startswith("#"))}
     rows = []
     for r in csv.DictReader(io.StringIO(text)):
         if r["airport_ident"] not in wanted or r["closed"] == "1":
@@ -43,7 +45,7 @@ def main():
     rows.sort()
     out = DATA / "runways.csv"
     with open(out, "w", newline="", encoding="utf-8") as f:
-        f.write("# Runways of the airports in airports.csv, from OurAirports (ourairports.com, public domain).\n"
+        f.write("# Runways of the airports in airports.csv and fields.csv, from OurAirports (ourairports.com, public domain).\n"
                 "# Open runways with both ends surveyed; helipads and water lanes left out.\n"
                 "# Rebuild with: python3 tools/build_runways.py\n")
         w = csv.writer(f, lineterminator="\n")

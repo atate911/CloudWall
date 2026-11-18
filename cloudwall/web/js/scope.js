@@ -62,6 +62,7 @@ function mapLayer(home, k, hasBasemap) {
   if (opt.atc) return s;                        // a controller's map has no town names
   for (const p of map.places || []) {
     const o = offset(home, { lat: p.at[0], lon: p.at[1] });
+    if (Math.hypot(o.x, o.y) * k < 7) continue;   // the town you're in: the home reticle already marks it
     s += `<text class="place" x="${o.x * k}" y="${-o.y * k}" text-anchor="middle">${esc(p.name)}</text>`;
     const w = p.name.length * 3.1;
     placeBoxes.push({ x0: o.x * k - w / 2, x1: o.x * k + w / 2, y0: -o.y * k - 4.5, y1: -o.y * k + 1 });
@@ -213,14 +214,21 @@ function tfrLayer(state, k) {
   return s;
 }
 
-// The small airfields nearby (Pearson, Troutdale): a ring and their code.
+// The small airfields nearby (Pearson Field, Grove Field, Troutdale around Vancouver), as a
+// sectional chart shows them: a circle with the runways drawn inside at their true headings, not
+// to scale, and the field's code. A field without runway data is the circle alone.
 function fieldsLayer(state, k) {
   let s = "";
   for (const f of state.airport.others || []) {
-    const o = offset(state.home, f);
+    const o = offset(state.home, f), x = o.x * k, y = -o.y * k;
     if (Math.hypot(o.x, o.y) * k > 95) continue;
-    s += `<circle class="field" cx="${(o.x * k).toFixed(1)}" cy="${(-o.y * k).toFixed(1)}" r="2.2"/>` +
-      `<text class="field-label" x="${(o.x * k).toFixed(1)}" y="${(-o.y * k + 7.5).toFixed(1)}" text-anchor="middle">${esc(f.code)}</text>`;
+    s += `<g class="field-mark"><circle class="field" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6"/>`;
+    for (const r of f.runways || []) {
+      const [a, b] = r.ends.map(([lat, lon]) => offset(state.home, { lat, lon }));
+      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1, ux = ((b.x - a.x) / len) * 1.9, uy = ((b.y - a.y) / len) * 1.9;
+      s += `<line class="field-rwy" x1="${(x - ux).toFixed(2)}" y1="${(y + uy).toFixed(2)}" x2="${(x + ux).toFixed(2)}" y2="${(y - uy).toFixed(2)}"/>`;
+    }
+    s += `</g><text class="field-label" x="${x.toFixed(1)}" y="${(y + 7.9).toFixed(1)}" text-anchor="middle">${esc(f.code)}</text>`;
     // aircraft labels steer around the airfield and its code, as they do around place names
     placeBoxes.push({ x0: o.x * k - 5, x1: o.x * k + 5, y0: -o.y * k - 2.5, y1: -o.y * k + 8.5 });
   }
