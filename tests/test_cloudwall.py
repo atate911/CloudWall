@@ -1176,14 +1176,22 @@ class PathTest(unittest.TestCase):
         t = Tracker(config.load(), Store(":memory:"), StubEnricher())
         for i in range(40):                                           # 40 updates, 0.05 nm apart
             t.update([plane("a1", "ASA1", 10 - i * 0.05, alt=8000 - i * 50)], "test")
-        a = t.snapshot()["aircraft"][0]
-        self.assertEqual(len(a["trail"]), 30)                         # recent positions: the last 30
-        path = [list(q) for q in a["path"]]
+        t.pin("a1")                                                   # tapped on the radar
+        s = t.snapshot()
+        a = s["aircraft"][0]
+        self.assertEqual(len(a["trail"]), 40)                         # recent positions: every update
+        self.assertNotIn("path", a)                                   # only the selected aircraft sends its path
+        self.assertEqual(s["hero"]["hex"], "a1")
+        path = [list(q) for q in s["hero"]["path"]]
         self.assertEqual(path[0], [round(t.home["lat"] + 10 / 60, 4), round(t.home["lon"], 4), 80])
         self.assertTrue(8 <= len(path) <= 14)                         # a point every 0.15 nm or 300 ft
         self.assertIn(path[-1][2], range(60, 63))                     # it followed the descent to about 6,050 ft
         t.update([plane("a1", "ASA1", 8.0, alt=None)], "test")        # no altitude: the last one carries on
-        self.assertEqual(t.snapshot()["aircraft"][0]["path"][-1][2], path[-1][2])
+        self.assertEqual(t.snapshot()["hero"]["path"][-1][2], path[-1][2])
+        t.update([plane("a1", "ASA1", 7.5), plane("b1", "ASA2", 9.0)], "test")
+        t.pin("b1")                                                   # tapped: its whole path, from when it appeared
+        self.assertEqual(len(t.snapshot()["hero"]["path"]), 1)
+        self.assertGreater(len(t.paths["a1"]), len(path))             # a1's is still kept, and growing
         t.update([plane("b1", "ASA2", 5.0)], "test")                  # a1 has gone: its path with it
         self.assertNotIn("a1", t.paths)
 

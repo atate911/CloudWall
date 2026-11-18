@@ -435,14 +435,14 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #radar .apt-label { fill: var(--ink); font-size: 4.6px; font-weight: 700; }
 #radar .apt-mark { fill: none; stroke: var(--slate); stroke-width: .8; }
 #radar .home-mark { fill: none; stroke: var(--ink); stroke-width: .7; }
-/* each aircraft's path since it came in range, in its own colour (chart blue; magenta for the one
-   overhead), strongest near the ground and stepping toward the disc with height: 0-2, 2-5, 5-10,
-   10-18, 18-28 and 28+ thousand ft. Low traffic around the house stands out; high overflights
-   stay quiet. */
-#radar :is(.trk, .path-key) { --trk: var(--blue); stroke: var(--trk); }
-#radar .trk.hero { --trk: var(--magenta); }
-#radar .trk :is(polyline, line) { fill: none; stroke-width: .75; stroke-linecap: round; stroke-linejoin: round; }
-#radar .trk.hero :is(polyline, line) { stroke-width: 1.15; }
+/* trails: the last few minutes behind each aircraft, fading */
+#radar .trail { fill: none; stroke-width: .8; stroke-linecap: round; stroke-linejoin: round; }
+#s-defs stop { stop-color: var(--blue); }
+/* the selected aircraft's whole track since it came in range (overhead, or tapped), in its
+   magenta, strongest near the ground and stepping toward the disc with height: 0-2, 2-5, 5-10,
+   10-18, 18-28 and 28+ thousand ft */
+#radar :is(.trk, .path-key) { --trk: var(--magenta); stroke: var(--trk); }
+#radar .trk :is(polyline, line) { fill: none; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
 #radar :is(.trk, .path-key) .b1 { stroke: color-mix(in oklch, var(--trk) 86%, var(--disc)); }
 #radar :is(.trk, .path-key) .b2 { stroke: color-mix(in oklch, var(--trk) 73%, var(--disc)); }
 #radar :is(.trk, .path-key) .b3 { stroke: color-mix(in oklch, var(--trk) 61%, var(--disc)); }

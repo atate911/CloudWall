@@ -53,8 +53,8 @@ DEFAULTS = {
     "extras": {"military": True, "military_radius_nm": 40, "military_url": "https://opendata.adsb.fi/api/v2/mil",
                "tfr": True, "tfr_radius_nm": 30, "contrails": True},
     # The kiosk has no buttons: its place and radar are set here. place: a place's name (empty for
-    # the first); radar: "chart" or "atc" (drawn like an air traffic control screen); tracks: each
-    # aircraft's track and one-minute line; range_nm: 0 for the tracking radius, or 20 or 30 to see further.
+    # the first); radar: "chart" or "atc" (drawn like an air traffic control screen); tracks: trails
+    # (the selected aircraft's whole track) and one-minute lines; range_nm: 0 for the tracking radius, or 20 or 30 to see further.
     "kiosk": {"place": "", "radar": "chart", "tracks": True, "range_nm": 0},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db

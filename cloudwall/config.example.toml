@@ -84,7 +84,7 @@ general_aviation = false
 [kiosk]                # the wall panel (/kiosk) has no buttons, so its place and radar are set here
 place = ""             # a place's name; empty for [home]
 radar = "chart"        # "chart", or "atc" to draw the radar like an air traffic control screen
-tracks = true          # each aircraft's track behind it and a line to where it will be in a minute
+tracks = true          # trails (the selected aircraft's whole track) and lines to where they will be in a minute
 range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see further
 
 [map]                  # the maps under the radar, cached on disk by CloudWall

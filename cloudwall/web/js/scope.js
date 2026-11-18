@@ -11,7 +11,8 @@ import { moonPosition, moonPhase, moonGlyph } from "./astro.js";
 
 const PLANE = "M0,-4 L1,-1 L4.2,1.2 L4.2,2 L1,1 L.8,3 L2,4 L2,4.6 L0,4 L-2,4.6 L-2,4 L-.8,3 L-1,1 L-4.2,2 L-4.2,1.2 L-1,-1 Z";
 // Drawing options from the page: atc draws the radar like an air traffic control screen;
-// tracks shows each aircraft's path (or history dots) and the one-minute lines; range is how far out the radar
+// tracks shows trails (the selected aircraft's whole track; history dots in the ATC style) and the
+// one-minute lines; range is how far out the radar
 // shows, in nm (the tracking radius, or longer).
 let opt = { atc: false, tracks: true, range: 15 };
 const RAD = Math.PI / 180;
@@ -75,8 +76,8 @@ export function tileLayout(home, radiusNm, screenPxPerNm, layer = null) {
   return { z, tiles };
 }
 
-// Each aircraft's path is drawn in its own colour, strongest near the ground and fading with
-// height: these are the bands' lower edges in feet (0-2, 2-5, 5-10, 10-18, 18-28, 28+ thousand).
+// The selected aircraft's whole track is drawn in its colour, strongest near the ground and fading
+// with height: these are the bands' lower edges in feet (0-2, 2-5, 5-10, 10-18, 18-28, 28+ thousand).
 const BANDS = [2000, 5000, 10000, 18000, 28000];
 const band = (ft) => { let i = 0; while (i < BANDS.length && ft >= BANDS[i]) i++; return i; };
 
@@ -343,9 +344,10 @@ function radarStatic(state) {
   s += SPOKES(rings[0] * k);
   for (const r of rings) s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + " nm")}`;
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
-  // the key, in the drawing's lower left corner, with the paths' shades along its foot
-  s += note("legend", -111, opt.tracks ? 105.25 : 110.5, "start", [`${R} nm around home`, "035↑ 3,500 ft, climbing", opt.tracks ? "Line: 1 minute ahead" : ""].filter(Boolean));
-  if (opt.tracks) s += pathKey(-111, 110.5);
+  // the key, in the drawing's lower left corner, with the selected aircraft's track shades along its foot
+  const keyed = opt.tracks && state.hero && state.hero.path && state.hero.path.length > 1;
+  s += note("legend", -111, keyed ? 105.25 : 110.5, "start", [`${R} nm around home`, "035↑ 3,500 ft, climbing", opt.tracks ? "Line: 1 minute ahead" : ""].filter(Boolean));
+  if (keyed) s += pathKey(-111, 110.5);
   const ap = offset(home, state.airport);
   if (Math.hypot(ap.x, ap.y) < R) s += `<text class="apt-label" x="${ap.x * k}" y="${-ap.y * k + 9}" text-anchor="middle">${esc(state.airport.iata)}</text>${runwaysFor(state).length ? "" : `<rect class="apt-mark" x="${ap.x * k - 2.5}" y="${-ap.y * k - 2.5}" width="5" height="5"/>`}`;
   for (const a of state.aircraft) {
@@ -510,10 +512,16 @@ function craftFor(svg, hex) {
   // hidden until placed: a dot without a position would sit on home
   for (let i = 0; i < HISTORY; i++) el("circle", { r: 1.05, class: `h${i}`, style: "display:none" }, hist);
   const l0 = el("text", { class: "tag-top" }, g), tag = el("text", { class: "tag" }, g), sub = el("text", { class: "tag-sub" }, g);
-  // the chart style's path: its runs, rebuilt on each update, and the stretch from its last
-  // point to the aircraft, moved every frame
+  // the chart style's trail: the last few minutes, fading from transparent at its oldest point to
+  // solid at the aircraft
+  const gid = "tg-" + hex.replace(/[^a-z0-9]/gi, ""), grad = el("linearGradient", { id: gid, gradientUnits: "userSpaceOnUse" }, svg.querySelector("#s-defs"));
+  el("stop", { offset: 0, "stop-opacity": 0 }, grad);       // colour comes from the stylesheet
+  el("stop", { offset: 1, "stop-opacity": 0.8 }, grad);
+  const trail = el("polyline", { class: "trail", stroke: `url(#${gid})` }, svg.querySelector("#s-trails"));
+  // or, selected, its whole track: runs of one altitude band, rebuilt on each update, and the
+  // stretch from its last point to the aircraft, moved every frame
   const trk = el("g", { class: "trk" }, svg.querySelector("#s-trails")), segs = el("g", {}, trk), tail = el("line", {}, trk);
-  c = { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""] };
+  c = { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trail, grad, trk, segs, tail, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""] };
   live.set(hex, c);
   requestAnimationFrame(() => g.classList.remove("entering"));
   return c;
@@ -523,6 +531,8 @@ function dropCraft(hex) {
   const c = live.get(hex);
   c.g.remove();
   c.trk.remove();
+  c.trail.remove();
+  c.grad.remove();
   c.hist.remove();
   live.delete(hex);
 }
@@ -707,6 +717,8 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     } else c.vec.style.display = "none";
     c.g.classList.toggle("hero", isHero);
     c.trk.classList.toggle("hero", isHero);
+    c.trail.classList.toggle("hero", isHero);
+    c.grad.classList.toggle("hero", isHero);
     c.hist.classList.toggle("hero", isHero);
     let text, line0 = "";
     if (opt.atc) {
@@ -733,8 +745,10 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     c.leader.style.display = opt.atc && text ? "" : "none";
     if (opt.atc && opt.tracks && (fresh || arrived)) historyDots(c, a, k, state.home, state.trail_s);
     c.hist.style.display = opt.atc && opt.tracks ? "" : "none";
-    // the chart style's path behind the aircraft, all of it since it came in range
-    const path = !opt.atc && opt.tracks && mode === "radar" && a.path && a.path.length ? a.path : null;
+    // the chart style's trails: the selected aircraft's whole track since it came in range or took
+    // off, and the last few minutes of every other aircraft's
+    const trails = !opt.atc && opt.tracks && mode === "radar";
+    const path = trails && isHero && state.hero.path && state.hero.path.length ? state.hero.path : null;
     if (path && (fresh || !c.drawn)) {
       c.segs.innerHTML = pathRuns(state.home, path, k);
       const [lat, lon] = path[path.length - 1], o = offset(state.home, { lat, lon });
@@ -744,6 +758,15 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     } else if (!path && c.drawn) { c.segs.innerHTML = ""; c.drawn = false; }
     c.trk.style.display = path ? "" : "none";
     if (path) { c.tail.setAttribute("x2", c.x.toFixed(1)); c.tail.setAttribute("y2", c.y.toFixed(1)); }
+    if (trails && !path && a.trail && a.trail.length > 1) {
+      if (fresh || !c.trailPts) {
+        c.trailPts = pts(state.home, a.trail, k);
+        const [x1, y1] = c.trailPts.split(" ")[0].split(",");
+        c.grad.setAttribute("x1", x1); c.grad.setAttribute("y1", y1);
+      }
+      c.grad.setAttribute("x2", c.x.toFixed(1)); c.grad.setAttribute("y2", c.y.toFixed(1));
+      c.trail.setAttribute("points", `${c.trailPts} ${c.x.toFixed(1)},${c.y.toFixed(1)}`);
+    } else if (c.trailPts !== null) { c.trail.setAttribute("points", ""); c.trailPts = null; }
   }
   for (const hex of [...live.keys()]) if (!seen.has(hex)) dropCraft(hex);
   if (fresh) { placeLabels(heroHex); for (const c of live.values()) applyLabel(c); }

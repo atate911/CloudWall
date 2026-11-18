@@ -23,12 +23,12 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
   path across it (centre is straight up), or a radar scope over a faint street map.
   Each aircraft on the radar shows its altitude in hundreds of feet, with an arrow when it is
-  climbing or descending (`035↑`), a line to where it will be in a minute, and its whole track
-  behind it since it came in range or took off, as flight-tracking sites draw it: in its own
-  colour (magenta for the aircraft overhead), strongest near the ground and fading with height
-  in steps at 2,000, 5,000, 10,000, 18,000 and 28,000 ft, so traffic low around the house stands
-  out and high overflights stay quiet. Both views have a compass bezel with bearings, and on the
-  desktop a key in the corner.
+  climbing or descending (`035↑`), a line to where it will be in a minute, and a trail of the
+  last few minutes. The selected aircraft (the one overhead, or one you tap) shows its whole
+  track instead, since it came in range or took off, as flight-tracking sites draw it: in
+  magenta, strongest near the ground and fading with height in steps at 2,000, 5,000, 10,000,
+  18,000 and 28,000 ft. CloudWall keeps every aircraft's track, so one you tap shows all of it at
+  once. Both views have a compass bezel with bearings, and on the desktop a key in the corner.
   Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
   Along the foot of the radar, Chart / ATC picks its look (ATC draws it as a controller's STARS
   screen; see [The ATC radar](#the-atc-radar)), Tracks turns the tracks and one-minute lines on
@@ -198,7 +198,7 @@ The kiosk has no buttons, so its radar is set in the config file:
 ```toml
 [kiosk]
 radar = "atc"      # "chart" (the default) or "atc"
-tracks = true      # each aircraft's track and one-minute line
+tracks = true      # trails, the selected aircraft's whole track, and one-minute lines
 range_nm = 30      # 0 for the tracking radius, or 20 or 30
 ```
 
