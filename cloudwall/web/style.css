@@ -942,10 +942,15 @@ body.emergency #tfr-chip { color: var(--ink-2); }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html.phone { font-size: 15px; }
 html.phone.land { font-size: 13px; }
-/* the narrowest phones: the clock keeps local time only, and the board drops the compass point */
+/* most phones upright: the clock keeps local time only, leaving the place its room (UTC is still on
+   the STARS display's status area). The narrowest: the place takes the wordmark's room too, and the
+   board drops the compass point. */
+@media (max-width: 409px) { html.phone:not(.land) .clock small { display: none; } }
 @media (max-width: 370px) {
   html.phone { font-size: 14px; }
-  html.phone:not(.land) .clock small, .pb-cmp { display: none; }
+  .pb-cmp { display: none; }
+  html.phone:not(.land) .brand { font-size: 0; }
+  html.phone:not(.land) .brand .station { margin-left: 0; padding-left: 0; border-left: 0; }
   .pb-row { grid-template-columns: .3rem 4.7rem minmax(0, 1fr) auto; column-gap: .55rem; }
 }
 html.phone :is(.label, .facts dt, th, .wx-read dt, .sm-sun dt, .htitle, h2) { font-size: .7rem; }
@@ -954,7 +959,18 @@ html.phone th { position: static; }
 /* the status line: brand, sound, night and the clock; alerts drop to a line of their own beneath */
 html.phone header { flex-wrap: wrap; gap: .25rem .4rem;
   padding: max(.45rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-right)) .4rem max(.75rem, env(safe-area-inset-left)); }
-html.phone .brand { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; font-size: .76rem; }
+html.phone .brand { flex: 1; min-width: 0; white-space: nowrap; font-size: .76rem; }
+/* the place: its name cut short if it must, keeping the arrow that opens the menu of places. With
+   several places it takes the wordmark's room (the page's title still says CloudWall). */
+html.phone .brand .station { display: inline-flex; align-items: baseline; min-width: 0; font-size: .76rem; padding-top: .5rem; padding-bottom: .5rem; }
+html.phone .brand .station > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+html.phone .brand:has(.station.many) { font-size: 0; }
+html.phone .brand .station.many { margin-left: 0; padding-left: 0; border-left: 0; }
+html.phone .place-menu { max-width: calc(100vw - 1.5rem); }
+html.phone .place-menu button { padding-top: .75rem; padding-bottom: .75rem; }
+html.phone .place-menu .pm-remove { width: 3rem; }
+/* 16 px type in the location form: below that, an iPhone zooms the page into a field it's typing in */
+html.phone .loc-field input { font-size: 16px; }
 html.phone .icon-btn { width: 2.6rem; height: 2.6rem; justify-content: center; padding: 0; }
 html.phone .icon-btn svg { width: 1.2rem; height: 1.2rem; }
 html.phone .icon-btn span { display: none; }
@@ -1083,9 +1099,16 @@ html.phone #radar .bearing { font-size: 4.3px; }
 html.phone #radar :is(.apt-label, .field-label, .tfr-label, .peak-label) { font-size: 5.4px; }
 html.phone #radar .heard-note { font-size: 5.8px; }
 html.phone #radar :is(.legend, .status) { display: none; }
-html.phone #scope.atc #radar :is(.tag, .tag-sub) { font-size: 6px; }
-html.phone #scope.atc #radar .heard-note { font-size: 5px; }
-html.phone #scope.atc #radar .ring-label { font-size: 4.6px; }
+/* the STARS display: data blocks, position symbols, the status area (whose size scope.js's ssa()
+   allows for) and the map's labels, between the desktop's and the kiosk's */
+html.phone #scope.atc #radar :is(.tag, .tag-sub, .tag-top) { font-size: 6px; stroke-width: 1px; }
+html.phone #scope.atc #radar .pos { font-size: 5px; }
+html.phone #scope.atc #radar :is(.ssa, .heard-note) { font-size: 4.8px; }
+html.phone #scope.atc #radar .bearing { font-size: 3.9px; }
+html.phone #scope.atc #radar :is(.airspace-label, .navaid-label, .field-label) { font-size: 3.7px; }
+html.phone #scope.atc #radar .tfr-label { font-size: 4.4px; }
+/* the photographer's credit, readable at arm's length */
+html.phone .photo .credit { font-size: .62rem; padding: .15rem 0 0 .4rem; }
 
 /* ---- board: two lines a flight (see phoneBoardHtml in app.js) ---- */
 .pboard { display: flex; flex-direction: column; }

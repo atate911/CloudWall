@@ -317,9 +317,11 @@ function renderPlace() {
   const places = state.places || [], here = places.find((p) => p.id === state.place), many = places.length > 1;
   const label = many && here ? `${here.name} · ${state.airport.icao}` : state.airport.icao || "";
   const st = $("station");
-  if (st.textContent !== label) st.textContent = label;
+  // the label in a span of its own, so a long name can be cut short on a phone and keep its arrow
+  if (st.dataset.label !== label) { st.dataset.label = label; st.innerHTML = label ? `<span>${esc(label)}</span>` : ""; }
   st.disabled = KIOSK;
   st.classList.toggle("menu", !KIOSK);
+  st.classList.toggle("many", many);
 }
 function showPlace(id) {
   store("place", id);
