@@ -46,7 +46,7 @@ def ordinal(n):
 class Tracker:
     def __init__(self, cfg, store, enricher):
         if "runways" not in cfg["airport"]:      # not yet filled in by config.places (tests, scripts)
-            cfg = dict(cfg, airport=config.complete_airport(cfg["airport"], cfg["home"], cfg["tracking"]["radius_nm"]))
+            cfg = config.complete_place(cfg)
         self.cfg, self.store, self.enricher = cfg, store, enricher
         self.home = cfg["home"]
         self.lock = threading.Lock()

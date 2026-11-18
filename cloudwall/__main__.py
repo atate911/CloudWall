@@ -7,7 +7,7 @@ from .flightaware import FlightAware
 from .flightradar24 import Flightradar24
 from .server import make_server
 from .logos import Logos
-from .place import AnyActivity, Place
+from .place import AnyActivity, Place, Places
 from .tiles import Tiles
 from .store import Store
 
@@ -46,38 +46,54 @@ def main():
         Path(db).expanduser().parent.mkdir(parents=True, exist_ok=True)
         db = str(Path(db).expanduser())
 
-    def db_for(i, pid):
+    first_id = place_cfgs[0]["place"]["id"]
+
+    def db_for(pid):
         """The first place keeps the logbook it always had; each other place gets its own beside it."""
-        if db == ":memory:" or i == 0:
+        if db == ":memory:" or pid == first_id:
             return db
         p = Path(db)
         return str(p.with_name(f"{p.stem}-{pid}{p.suffix or '.db'}"))
 
-    stores = [Store(db_for(i, pc["place"]["id"])) for i, pc in enumerate(place_cfgs)]
+    store0 = Store(db_for(first_id))
     tiles_dir = (Path(db).parent if db != ":memory:" else config.default_db_path().parent) / "tiles"
     tiles = Tiles(cfg, tiles_dir)
     logos = Logos(cfg, tiles_dir.parent / "logos")
     # one paid provider and one budget for every place, counted in the first place's store
-    providers = [Flightradar24(cfg, stores[0]), FlightAware(cfg, stores[0])]
+    providers = [Flightradar24(cfg, store0), FlightAware(cfg, store0)]
     fa = next((p for p in providers if p.enabled), None)    # first one with a key wins
-    places = {}
-    for pc, store in zip(place_cfgs, stores):
+    named = len(place_cfgs) > 1 or not args.demo   # place names in the log, once there may be several
+
+    def make_place(pc):
+        pid = pc["place"]["id"]
+        store = store0 if pid == first_id else Store(db_for(pid))
         source = sources.Demo() if args.demo else sources.Feeds(cfg["source"]["urls"])
-        place = Place(pc, store, source, live=fa, demo=args.demo, named=len(place_cfgs) > 1)
+        place = Place(pc, store, source, live=fa, demo=args.demo, named=named)
         place.tracker.basemap = tiles.info()
         place.tracker.logos = logos.enabled
-        places[place.id] = place
-    tiles.homes = [p.cfg["home"] for p in places.values()]     # the map is served around every place
-    for place in places.values():
-        place.start()
+        return place
+
+    # places set up from a screen are kept beside the logbook (not in demo mode)
+    places = Places(cfg, make_place, None if db == ":memory:" else Path(db).with_name("places.json"))
+    for pc in place_cfgs:
+        places.add_config(pc)
+    places.load_saved()
+
+    def map_around_every_place():
+        tiles.homes = [p.cfg["home"] for p in places]
+    map_around_every_place()
+    places.on_change = map_around_every_place
+    for place in places:
+        if not place.added:            # (saved ones started as they were added)
+            place.start()
     for p in providers:
-        p.activity = AnyActivity(places.values())   # e.g. Flightradar24's hourly usage check waits for a screen
+        p.activity = AnyActivity(places)   # e.g. Flightradar24's hourly usage check waits for a screen
     server = make_server(cfg, places, tiles, logos)
-    first = next(iter(places.values()))
-    log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"], first.source.name)
-    for i, place in enumerate(places.values()):
+    log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"],
+             places.first.source.name)
+    for place in places:
         log.info("place %s: %s, airport %s | logbook: %s", place.id, place.name, place.cfg["airport"]["icao"],
-                 db_for(i, place.id))
+                 db_for(place.id))
     if fa and not args.demo:
         b = fa.budget()
         log.info("live routes: %s (%s mode) - %s", fa.label, fa.mode,

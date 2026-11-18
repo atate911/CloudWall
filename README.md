@@ -70,7 +70,7 @@ make demo         # simulated traffic, works offline
 Open `http://<server>:5050`. For real traffic:
 
 ```sh
-make config       # writes ~/.config/cloudwall/config.toml; set [home] lat/lon and [airport] icao
+make config       # writes ~/.config/cloudwall/config.toml; set [home] lat/lon or zip
 make run
 ```
 
@@ -91,34 +91,44 @@ make service      # systemd user service; `make logs` to follow, `make service-r
 | What | Where |
 |---|---|
 | Settings | `--config`, `$CLOUDWALL_CONFIG`, `./config.toml`, then `~/.config/cloudwall/config.toml` |
-| Logbook database | `~/.local/share/cloudwall/cloudwall.db` (or `[storage] db_path`, or `--db`); each extra place gets its own beside it, such as `cloudwall-cabin.db` |
+| Logbook database | `~/.local/share/cloudwall/cloudwall.db` (or `[storage] db_path`, or `--db`); each extra place gets its own beside it, such as `cloudwall-cabin.db`, and places set up on the desktop are in `places.json` there |
 | Port | 5050 (`[server] port`, or `--port`) |
 
-## Anywhere, and more than one place
+## Locations
 
-CloudWall works at any airport from its ICAO code: set `[airport] icao` and it fills in the rest
-from bundled tables, the airport's name, city, position and elevation, its runways (for the radar,
-the wind rose and which way it's landing) and the smaller fields nearby. The airport table is
-airportsdata (MIT licence), small fields it lacks (Pearson Field, Grove Field and others around
-Vancouver) are in `fields.csv`, and the runways come from OurAirports (public domain); rebuild them
-with `python3 tools/build_runways.py`. For an airport the tables don't cover, give its `iata`,
-`city`, `lat` and `lon` too.
+Home is set by GPS coordinates, `[home] lat` and `lon` (the default is east Vancouver, WA, under
+PDX's 28L/28R final), or by a US ZIP code, `[home] zip = "98683"`, which places it at the centre of
+that ZIP code's area. Its airport is the closest major one unless `[airport] icao` names another:
+the nearest large airport within 30 nm, else the nearest with airline service, so PDX for anywhere
+in Vancouver, Redmond for Bend.
 
-To watch more than one place, such as home and a cabin, add a `[[places]]` entry for each:
+From the airport's code CloudWall fills in the rest from bundled tables: its name, city, position
+and elevation, its runways (for the radar, the wind rose and which way it's landing) and the
+smaller fields nearby. The tables: airports from airportsdata (MIT licence); small fields it lacks,
+such as Pearson Field and Grove Field around Vancouver, in `cloudwall/data/fields.csv`; runways
+and which airports have airline service from OurAirports (public domain); ZIP codes from the
+Census Bureau's 2025 ZIP code areas (public domain). `python3 tools/build_data.py` rebuilds them.
+For an airport the tables don't cover, give its `iata`, `city`, `lat` and `lon` too.
+
+**More places.** Add a `[[places]]` entry for each, by coordinates or ZIP code:
 
 ```toml
 [[places]]
 name = "Cabin"
-lat = 44.0600
-lon = -121.3100
-airport = "KRDM"       # the rest is filled in, as for [airport]
+zip = "97702"          # or lat = 44.0600 and lon = -121.3100
+airport = "KRDM"       # optional: the closest major airport when left out
 elevation_ft = 3600    # optional: the airport's when left out
 ```
 
-`[home]` with `[airport]` stays the first place. With more than one, the place's name appears
-beside "CloudWall" in the header and opens a menu of them; each screen remembers its own, so the
-kiosk can show home while a laptop shows the cabin. The kiosk takes its place from `[kiosk] place`
-(a place's name), and `?place=` in the address picks one on any screen.
+On the desktop, the airport code beside "CloudWall" in the header opens a menu of the places.
+"Set a location…" there takes a ZIP code or coordinates, shows where that is and the airline
+airports near it, and keeps the closest major airport unless you choose another; the screen then
+shows the new place. Places set up this way are saved beside the logbook (`places.json`) and can
+be removed from the same menu; those in the config file stay. Each screen remembers its own
+place, so the kiosk can show home while a laptop shows the cabin.
+
+The kiosk has no menu: it shows `[kiosk] place` (a place's name, the first when empty), and
+`?place=` in the address picks one on any screen.
 
 Each place keeps its own logbook, weather, flight restrictions and contrail forecast, and its data
 is fetched only while a screen is showing it. A paid route provider is shared: every place's

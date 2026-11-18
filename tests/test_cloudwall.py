@@ -188,7 +188,7 @@ class TrackerTest(unittest.TestCase):
         self.assertEqual(self.store.logbook(time.strftime("%Y-%m-%d"))["records_today"]["furthest_origin"]["origin"], "SFO")
 
     def test_infers_arrival_when_route_is_wrong(self):
-        ap = config.DEFAULTS["airport"]
+        ap = self.t.cfg["airport"]                                       # PDX, as resolved for the default home
         wrong = {"flight": "AS1363", "airline": "Alaska Airlines",
                  "origin": {"iata": "LAX", "city": "Los Angeles", "lat": 33.94, "lon": -118.41},
                  "dest": {"iata": "PVR", "city": "Puerto Vallarta", "lat": 20.68, "lon": -105.25}}
@@ -208,7 +208,7 @@ class TrackerTest(unittest.TestCase):
         self.assertIsNone(ac["a3"]["local"])
 
     def test_flow_and_emergency(self):
-        ap = config.DEFAULTS["airport"]
+        ap = self.t.cfg["airport"]                                       # PDX, as resolved for the default home
         a = plane("a1", "ASA1", 0, alt=1500, squawk="7700")
         a["lat"], a["lon"] = ap["lat"], ap["lon"] + 0.1
         self.t.update([a], "test")
@@ -504,10 +504,28 @@ class PlacesTest(unittest.TestCase):
         self.assertEqual(ps[1]["airport"]["iata"], "RDM")
         self.assertEqual(config.kiosk_place(cfg, ps), "cabin")
         self.assertEqual(ps[1]["kiosk"]["place"], "Cabin")              # shared settings carry over
-        with self.assertRaisesRegex(ValueError, "needs lat, lon and airport"):
+        with self.assertRaisesRegex(ValueError, "needs lat and lon, or zip"):
             config.places(dict(cfg, places=[{"name": "Boat", "lat": 1.0}]))
         with self.assertRaisesRegex(ValueError, "isn't in CloudWall's table"):
             config.places(dict(cfg, places=[{"name": "Strip", "lat": 1.0, "lon": 2.0, "airport": "ZZZZ"}]))
+
+    def test_zip_codes_and_the_closest_major_airport(self):
+        from cloudwall import airports
+        cfg = self.load('[home]\nzip = "98660"\n[[places]]\nname = "Cabin"\nzip = "97702"\n'
+                        '[[places]]\nname = "Allston"\nzip = 2134\n')       # a number: TOML drops the leading 0
+        home, cabin, allston = config.places(cfg)
+        self.assertEqual((home["home"]["lat"], home["home"]["zip"], home["airport"]["icao"]), (45.6612, "98660", "KPDX"))
+        self.assertEqual((cabin["airport"]["icao"], cabin["home"]["elevation_ft"]), ("KRDM", 3070))
+        self.assertEqual((allston["home"]["zip"], allston["airport"]["icao"]), ("02134", "KBOS"))
+        with self.assertRaisesRegex(ValueError, "isn't a US ZIP code CloudWall knows"):
+            config.places(dict(cfg, places=[{"zip": "00501"}]))
+        # the closest major airport: a large one within 30 nm wins over a nearer smaller one
+        self.assertEqual(airports.pick_airport(61.22, -149.86), "PANC")    # not Merrill Field, 1 nm away
+        self.assertEqual(airports.pick_airport(47.98, -122.20), "KPAE")    # Everett: Paine Field, SEA is 32 nm
+        self.assertEqual(airports.locate("98683-1234")["zip"], "98683")
+        self.assertEqual(airports.locate("45.6387 -122.6615")["lon"], -122.6615)
+        for junk in ("hello", "2024-01-15", "91, 10", "123.45"):
+            self.assertIsNone(airports.locate(junk), junk)
 
     def test_runway_flow_at_any_airport(self):
         cfg = self.load('[home]\nlat = 37.66\nlon = -122.40\n[airport]\nicao = "KSFO"\n')
@@ -886,17 +904,22 @@ class ActivityTest(unittest.TestCase):
 
 
 class ServerTest(unittest.TestCase):
-    def serve(self, cfg):
+    def serve(self, cfg, saved=None):
         """A server over every place in cfg, with no threads started and no network lookups."""
         import threading
-        from cloudwall.place import Place
+        from cloudwall.place import Place, Places
         from cloudwall.server import make_server
         cfg["server"]["host"], cfg["server"]["port"] = "127.0.0.1", 0
-        places = {}
-        for pc in config.places(cfg):
+
+        def make(pc):
             place = Place(pc, Store(":memory:"), sources.Demo())
             place.tracker.enricher = StubEnricher()
-            places[place.id] = place
+            place.start = lambda: None
+            return place
+        places = Places(cfg, make, saved)
+        for pc in config.places(cfg):
+            places.add_config(pc)
+        places.load_saved()
         srv = make_server(cfg, places)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         self.addCleanup(srv.shutdown)
@@ -947,6 +970,40 @@ class ServerTest(unittest.TestCase):
         self.assertIsNone(home.tracker.pinned)                      # pinned at the cabin only
         self.assertEqual(json.loads(self.get(base + "/api/logbook?place=cabin"))["today"], 1)   # logged there
         self.assertEqual(json.loads(self.get(base + "/api/logbook"))["today"], 0)
+
+
+    def send(self, url, method, body=None):
+        import urllib.error, urllib.request
+        req = urllib.request.Request(url, data=json.dumps(body).encode() if body is not None else None, method=method)
+        try:
+            return 200, json.loads(urllib.request.urlopen(req, timeout=5).read())
+        except urllib.error.HTTPError as e:
+            return e.code, json.loads(e.read())
+
+    def test_a_screen_sets_up_places_by_zip_code(self):
+        import tempfile
+        saved = Path(tempfile.mkdtemp()) / "places.json"
+        base, places = self.serve(config.load(), saved)
+        loc = json.loads(self.get(base + "/api/locate?q=98660"))        # west Vancouver
+        self.assertEqual((loc["zip"], loc["auto"], loc["airports"][0]["icao"]), ("98660", "KPDX", "KPDX"))
+        self.assertAlmostEqual(loc["lat"], 45.6612, places=3)
+        code, r = self.send(base + "/api/places", "POST", {"q": "97702", "name": "Cabin"})      # Bend: Redmond's airport
+        self.assertEqual((code, r["place"]["id"], r["place"]["icao"], r["place"]["added"]), (200, "cabin", "KRDM", True))
+        code, r = self.send(base + "/api/places", "POST", {"q": "45.64, -122.66", "airport": "khio"})
+        self.assertEqual((r["place"]["name"], r["place"]["icao"]), ("45.640, -122.660", "KHIO"))
+        s = json.loads(self.get(base + "/api/state?place=cabin"))
+        self.assertEqual((s["place"], s["airport"]["icao"], s["home"]["zip"]), ("cabin", "KRDM", "97702"))
+        for bad in ({"q": "hello"}, {"q": "00501"}, {"q": "98660", "airport": "ZZZZ"}):
+            self.assertEqual(self.send(base + "/api/places", "POST", bad)[0], 400)
+        self.assertEqual(self.send(base + "/api/places?id=home", "DELETE")[0], 400)    # the config's stays
+        self.assertEqual(json.loads(saved.read_text())[0]["zip"], "97702")
+        _, places2 = self.serve(config.load(), saved)                   # after a restart: back again
+        self.assertEqual([p.id for p in places2], ["home", "cabin", "45-640-122-660"])
+        cabin = places["cabin"]
+        code, r = self.send(base + "/api/places?id=cabin", "DELETE")
+        self.assertEqual((code, [p["id"] for p in r["places"]]), (200, ["home", "45-640-122-660"]))
+        self.assertTrue(cabin.stopped.is_set())                         # its threads wind down
+        self.assertEqual([e["name"] for e in json.loads(saved.read_text())], ["45.640, -122.660"])
 
 
 class SeatsTest(unittest.TestCase):

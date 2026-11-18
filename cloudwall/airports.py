@@ -50,7 +50,7 @@ def describe(icao=None, iata=None):
     return {"iata": iata or icao, "icao": icao, "city": None, "name": None, "lat": None, "lon": None, "tz": None}
 
 
-# -- runways (OurAirports, public domain; see tools/build_runways.py) ------------
+# -- runways (OurAirports, public domain; see tools/build_data.py) ------------
 _RUNWAYS = Path(__file__).resolve().parent / "data" / "runways.csv"
 _runways = None
 
@@ -108,3 +108,72 @@ def nearby(lat, lon, radius_nm, exclude=()):
                             "city": rec["city"], "lat": rec["lat"], "lon": rec["lon"],
                             "elevation_ft": elevation_ft(rec["icao"])}))
     return [f for _, f in sorted(out, key=lambda x: x[0])]
+
+
+# -- airline airports (OurAirports) and ZIP codes (Census) -----------------------
+_AIRLINE = Path(__file__).resolve().parent / "data" / "airline_airports.csv"
+_ZIPS = Path(__file__).resolve().parent / "data" / "zips.csv"
+_airline = None
+_zips = None
+BIG_AIRPORT_NM = 30       # a large airport this close wins over a nearer smaller one
+
+
+def _rows(path):
+    with open(path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(line for line in f if not line.startswith("#")))
+
+
+def _load_airline():
+    global _airline
+    with _lock:
+        if _airline is None:
+            _airline = {r["icao"]: r["size"] for r in _rows(_AIRLINE)}
+    return _airline
+
+
+def airline_nearby(lat, lon, n=6):
+    """The airports with airline service nearest a point, nearest first: their record, size
+    ("large" or "medium") and distance in nm."""
+    from .geo import haversine_nm
+    table = _load()
+    out = []
+    for icao, size in _load_airline().items():
+        rec = table.get(icao)
+        if rec:
+            out.append(dict(rec, size=size, dist_nm=round(haversine_nm(lat, lon, rec["lat"], rec["lon"]), 1)))
+    return sorted(out, key=lambda a: a["dist_nm"])[:n]
+
+
+def pick_airport(lat, lon):
+    """A place's airport when none is given: the nearest large airport within BIG_AIRPORT_NM,
+    else the nearest with airline service (Portland International for Vancouver, WA; Redmond
+    for Bend). Its ICAO code, or None far from any."""
+    near = airline_nearby(lat, lon, n=40)
+    big = next((a for a in near if a["size"] == "large" and a["dist_nm"] <= BIG_AIRPORT_NM), None)
+    return (big or (near[0] if near else {})).get("icao")
+
+
+def zip_point(zip_code):
+    """A US ZIP code's (lat, lon): the internal point of its Census area. None if unknown."""
+    global _zips
+    with _lock:
+        if _zips is None:
+            _zips = {r["zip"]: (float(r["lat"]), float(r["lon"])) for r in _rows(_ZIPS)}
+    return _zips.get(str(zip_code).strip()[:5])
+
+
+def locate(text):
+    """A place typed as a US ZIP code ("98683", "98683-1234") or as coordinates ("45.63, -122.66"):
+    {"lat", "lon", "zip"}, or None when it's neither."""
+    import re
+    t = str(text or "").strip()
+    m = re.fullmatch(r"(\d{5})(?:-\d{4})?", t)
+    if m:
+        p = zip_point(m.group(1))
+        return {"lat": p[0], "lon": p[1], "zip": m.group(1)} if p else None
+    m = re.fullmatch(r"(-?\d{1,2}(?:\.\d+)?)\s*[, ]\s*(-?\d{1,3}(?:\.\d+)?)", t)
+    if m:
+        lat, lon = float(m.group(1)), float(m.group(2))
+        if -90 <= lat <= 90 and -180 <= lon <= 180:
+            return {"lat": lat, "lon": lon, "zip": None}
+    return None

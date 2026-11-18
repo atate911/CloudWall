@@ -4,11 +4,13 @@ Several places can run at once (config.places), each fetching data only while a 
 showing it, so a place nobody is looking at costs nothing. The paid route provider is shared,
 so all places draw on one budget.
 """
+import json
 import logging
 import threading
 import time
+from pathlib import Path
 
-from . import contrails, sources, tfr, weather
+from . import airports, config, contrails, sources, tfr, weather
 from .activity import Activity
 from .enrich import Enricher
 from .tracker import Tracker
@@ -31,10 +33,18 @@ class Place:
         if demo:
             self.activity.idle = lambda: False      # demo traffic costs nothing
         self.tfrs = tfr.TFRs(cfg["home"], cfg["extras"]["tfr_radius_nm"])
+        self.stopped = threading.Event()
+        self.added = False                          # set up from a screen rather than the config file
 
     def summary(self):
         ap = self.cfg["airport"]
-        return {"id": self.id, "name": self.name, "icao": ap["icao"], "iata": ap["iata"], "city": ap.get("city")}
+        return {"id": self.id, "name": self.name, "icao": ap["icao"], "iata": ap["iata"], "city": ap.get("city"),
+                "zip": self.cfg["home"].get("zip"), "added": self.added}
+
+    def stop(self):
+        """Removed: its threads finish their current step and end."""
+        self.stopped.set()
+        self.activity.touch()                       # wakes the poller if it's waiting for a screen
 
     def start(self):
         threading.Thread(target=self._poll, daemon=True, name=f"poll-{self.id}").start()
@@ -51,7 +61,7 @@ class Place:
     def _poll(self):
         home, trk, activity, tracker = self.cfg["home"], self.cfg["tracking"], self.activity, self.tracker
         paused = False
-        while True:
+        while not self.stopped.is_set():
             idle = activity.idle()
             if idle and self.when_idle == "pause":
                 if not paused:
@@ -74,7 +84,7 @@ class Place:
     # -- weather ---------------------------------------------------------------------
     def _weather(self):
         fetched = 0.0
-        while True:
+        while not self.stopped.is_set():
             if not self.activity.idle() and time.time() - fetched > 300:
                 try:
                     short, full = weather.fetch_all(self.cfg["airport"]["icao"])
@@ -100,7 +110,7 @@ class Place:
              lambda: contrails.fetch(cfg["home"]["lat"], cfg["home"]["lon"]), lambda v: setattr(tracker, "contrails", v)),
         ]
         due = [0.0] * len(jobs)
-        while True:
+        while not self.stopped.is_set():
             for i, (on, every, name, fetch, keep) in enumerate(jobs):
                 if on and not self.activity.idle() and time.time() >= due[i]:
                     try:
@@ -112,12 +122,111 @@ class Place:
             time.sleep(5)
 
 
+class Places:
+    """Every place being watched, first to last: the config file's, then those set up from a
+    screen. Those are saved (saved_path, beside the logbook) so they come back after a restart,
+    and can be removed again; the config file's can't. make(place_config) builds a Place."""
+    LIMIT = 12
+
+    def __init__(self, cfg, make, saved_path=None):
+        self.cfg, self.make, self.saved_path = cfg, make, Path(saved_path) if saved_path else None
+        self.lock = threading.Lock()
+        self.places = {}            # id -> Place, in order
+        self.added = {}             # id -> the entry it was set up from, as saved
+        self.on_change = None       # called after a place is added or removed
+
+    def __iter__(self):
+        return iter(list(self.places.values()))
+
+    def __len__(self):
+        return len(self.places)
+
+    def __getitem__(self, pid):
+        return self.places[pid]
+
+    @property
+    def first(self):
+        return next(iter(self.places.values()))
+
+    def get(self, pid):
+        return self.places.get(pid)
+
+    def kiosk(self):
+        return self.places[config.kiosk_place(self.cfg, [p.cfg for p in self])]
+
+    def summaries(self):
+        return [p.summary() for p in self]
+
+    def add_config(self, pc):
+        place = self.make(pc)
+        self.places[place.id] = place
+        return place
+
+    def load_saved(self):
+        """The places set up from a screen before the last restart."""
+        if not self.saved_path or not self.saved_path.exists():
+            return
+        try:
+            saved = json.loads(self.saved_path.read_text())
+        except (OSError, ValueError) as e:
+            log.warning("couldn't read %s: %s", self.saved_path, e)
+            return
+        for e in saved:
+            try:
+                self.add(e, save=False)
+            except ValueError as err:
+                log.warning("saved place %s left out: %s", e.get("name"), err)
+
+    def add(self, e, save=True):
+        """A place from a screen: {name, lat and lon, zip, airport ("auto" or an ICAO code)}.
+        Raises ValueError with a message for the screen when it can't be set up."""
+        with self.lock:
+            if len(self.places) >= self.LIMIT:
+                raise ValueError(f"CloudWall watches up to {self.LIMIT} places: remove one first")
+            home, ap = config.entry(e, "That place")
+            if str(ap.get("icao", "auto")).lower() != "auto" and not airports.lookup(ap["icao"]):
+                raise ValueError(f"{ap['icao'].upper()} isn't an airport CloudWall knows")
+            pid = config.unique_id(home["name"], self.places)
+            place = self.make(config.place_config(self.cfg, pid, home, ap))
+            place.added = True
+            self.places[pid] = place
+            self.added[pid] = {"name": home["name"], "lat": home["lat"], "lon": home["lon"], "zip": home.get("zip"),
+                               "airport": "auto" if str(ap.get("icao", "auto")).lower() == "auto" else ap["icao"].upper()}
+            if save:
+                self._save()
+        place.start()
+        log.info("place %s added: %s, airport %s", pid, place.name, place.cfg["airport"]["icao"])
+        if self.on_change:
+            self.on_change()
+        return place
+
+    def remove(self, pid):
+        """Remove a place set up from a screen. Its logbook stays on disk."""
+        with self.lock:
+            if pid not in self.added:
+                raise ValueError("Only places set up from a screen can be removed here; the config file's stay")
+            place = self.places.pop(pid)
+            del self.added[pid]
+            self._save()
+        place.stop()
+        log.info("place %s removed", pid)
+        if self.on_change:
+            self.on_change()
+
+    def _save(self):
+        if not self.saved_path:
+            return
+        tmp = self.saved_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(list(self.added.values()), indent=1))
+        tmp.replace(self.saved_path)
+
+
 class AnyActivity:
     """Is a screen showing any place? For shared services, such as Flightradar24's hourly
     usage check, that should wait while nobody is looking at all."""
 
     def __init__(self, places):
-        self.places = list(places)
+        self.places = places
 
     def idle(self):
         return all(p.activity.idle() for p in self.places)

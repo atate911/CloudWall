@@ -1,6 +1,6 @@
 # Runways of the airports in airports.csv and fields.csv, from OurAirports (ourairports.com, public domain).
 # Open runways with both ends surveyed; helipads and water lanes left out.
-# Rebuild with: python3 tools/build_runways.py
+# Rebuild with: python3 tools/build_data.py runways
 icao,le,he,length_ft,le_lat,le_lon,he_lat,he_lon,elev_ft
 07FA,04,22,4500,25.3207,-80.2792,25.3301,-80.2704,
 0CO2,11,29,4000,38.8544,-106.938,38.8488,-106.926,8980
