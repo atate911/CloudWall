@@ -32,7 +32,10 @@ EMERGENCY_CONFIRM = 2       # consecutive updates before the screen turns red: o
 RESIGHT_SECONDS = 30 * 60
 LOOKAHEAD_S = 10 * 60        # look routes up this far ahead of an aircraft reaching the house
 STALE_SECONDS = 60
-TRAIL_POINTS = 48           # ~4 minutes of history at the default poll rate
+TRAIL_POINTS = 30           # recent reported positions, for the ATC-style radar's history dots
+PATH_STEP_NM = 0.15         # an aircraft's full path keeps a point each time it has moved this far,
+PATH_CLIMB_FT = 300         # or climbed or descended this much,
+PATH_POINTS = 1500          # up to this many (hours of circling): the radar draws it all behind the aircraft
 RADAR_RANGES = (20, 30)     # longer ranges a screen can set its radar to, in nm, beyond the tracking radius
 RANGE_HOLD_S = 90           # keep fetching a longer range this long after a screen last asked for it
 HEAT_GRID = 96
@@ -66,7 +69,8 @@ class Tracker:
         self.charts = None        # the chart layers the displays can draw (charts.Charts.info)
         self.logos = False
         self.status = {"source": None, "ok": False, "updated": 0, "error": None}
-        self.trails = {}          # hex -> deque of (lat, lon)
+        self.trails = {}          # hex -> deque of (lat, lon), every update
+        self.paths = {}           # hex -> deque of (lat, lon, alt in hundreds of ft), since it came in range
         self.heat_day = time.strftime("%Y-%m-%d")
         self.heat = {tuple(map(int, k.split(","))): v for k, v in
                      (store.cache_get("heat", self.heat_day, 2 * 86400)[1] or {}).items()}
@@ -355,9 +359,10 @@ class Tracker:
         a["badges"] = s["badges"]
 
     def _remember_tracks(self, airborne, now, beyond=()):
-        """Short trails for the radar and a coarse all-day grid for the traffic heatmap. Aircraft
-        beyond the tracking radius (shown only on a radar set to a longer range) get trails but
-        stay off the heatmap."""
+        """Each aircraft's recent positions (for the ATC style's history dots) and its whole path
+        since it came in range or took off, with its altitude (drawn behind it on the radar), and a
+        coarse all-day grid for the traffic heatmap. Aircraft beyond the tracking radius (shown only
+        on a radar set to a longer range) get trails and paths but stay off the heatmap."""
         seen = set()
         r = self.cfg["tracking"]["radius_nm"]
         day = time.strftime("%Y-%m-%d", time.localtime(now))
@@ -368,6 +373,12 @@ class Tracker:
             trail = self.trails.setdefault(a["hex"], deque(maxlen=TRAIL_POINTS))
             trail.append((round(a["lat"], 4), round(a["lon"], 4)))
             a["trail"] = list(trail)
+            path = self.paths.setdefault(a["hex"], deque(maxlen=PATH_POINTS))
+            alt = round(a["alt"] / 100) if a.get("alt") is not None else (path[-1][2] if path else 0)
+            if (not path or abs(alt - path[-1][2]) * 100 >= PATH_CLIMB_FT
+                    or geo.haversine_nm(path[-1][0], path[-1][1], a["lat"], a["lon"]) >= PATH_STEP_NM):
+                path.append((round(a["lat"], 4), round(a["lon"], 4), alt))
+            a["path"] = list(path)
         for a in airborne:
             x = a["dist"] * math.sin(math.radians(a["brg"]))
             y = a["dist"] * math.cos(math.radians(a["brg"]))
@@ -376,6 +387,7 @@ class Tracker:
                 self.heat[(gx, gy)] = self.heat.get((gx, gy), 0) + 1
         for hexid in [h for h in self.trails if h not in seen]:
             del self.trails[hexid]
+            self.paths.pop(hexid, None)
         if now - self.heat_saved > 60:
             self.heat_saved = now
             self.store.cache_put("heat", self.heat_day, {f"{x},{y}": n for (x, y), n in self.heat.items()})

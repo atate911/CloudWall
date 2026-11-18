@@ -11,7 +11,7 @@ import { moonPosition, moonPhase, moonGlyph } from "./astro.js";
 
 const PLANE = "M0,-4 L1,-1 L4.2,1.2 L4.2,2 L1,1 L.8,3 L2,4 L2,4.6 L0,4 L-2,4.6 L-2,4 L-.8,3 L-1,1 L-4.2,2 L-4.2,1.2 L-1,-1 Z";
 // Drawing options from the page: atc draws the radar like an air traffic control screen;
-// tracks shows trails (or history dots) and the one-minute lines; range is how far out the radar
+// tracks shows each aircraft's path (or history dots) and the one-minute lines; range is how far out the radar
 // shows, in nm (the tracking radius, or longer).
 let opt = { atc: false, tracks: true, range: 15 };
 const RAD = Math.PI / 180;
@@ -73,6 +73,44 @@ export function tileLayout(home, radiusNm, screenPxPerNm, layer = null) {
     tiles.push({ url: `${prefix}/${z}/${x}/${y}`, x0: nw.x, y0: nw.y, x1: se.x, y1: se.y });
   }
   return { z, tiles };
+}
+
+// Each aircraft's path is drawn in its own colour, strongest near the ground and fading with
+// height: these are the bands' lower edges in feet (0-2, 2-5, 5-10, 10-18, 18-28, 28+ thousand).
+const BANDS = [2000, 5000, 10000, 18000, 28000];
+const band = (ft) => { let i = 0; while (i < BANDS.length && ft >= BANDS[i]) i++; return i; };
+
+// The path since it came in range, as runs of one band each: a segment takes the band of the
+// point it ends at. Points are [lat, lon, altitude in hundreds of ft].
+function pathRuns(home, path, k) {
+  const p = path.map(([lat, lon, h]) => { const o = offset(home, { lat, lon }); return [(o.x * k).toFixed(1), (-o.y * k).toFixed(1), band(h * 100)]; });
+  let s = "", run = [], cur = -1;
+  for (let i = 1; i < p.length; i++) {
+    if (p[i][2] !== cur) {
+      if (run.length > 1) s += `<polyline class="b${cur}" points="${run.join(" ")}"/>`;
+      run = [`${p[i - 1][0]},${p[i - 1][1]}`];
+      cur = p[i][2];
+    }
+    run.push(`${p[i][0]},${p[i][1]}`);
+  }
+  if (run.length > 1) s += `<polyline class="b${cur}" points="${run.join(" ")}"/>`;
+  return s;
+}
+
+// The key to the paths' shades, under the radar's legend; laid out once drawn (layoutPathKey),
+// when its text can be measured.
+const pathKey = (x, y) => `<g class="legend path-key" data-x="${x}"><text x="${x}" y="${y}">Track 0</text><g class="pk-sw">` +
+  [...Array(BANDS.length + 1)].map((_, i) => `<line class="b${i}" x1="${i * 3.2}" y1="${y - 1.4}" x2="${i * 3.2 + 2.7}" y2="${y - 1.4}"/>`).join("") +
+  `</g><text class="pk-end" y="${y}">28,000 ft</text></g>`;
+function layoutPathKey(svg) {
+  const k = svg.querySelector(".path-key");
+  if (!k) return;
+  let w = 0;
+  try { w = k.querySelector("text").getComputedTextLength(); } catch (e) { /* hidden (the kiosk) */ }
+  if (!w) return;
+  const x = +k.dataset.x + w + 1.6, sw = (BANDS.length + 1) * 3.2;
+  k.querySelector(".pk-sw").setAttribute("transform", `translate(${x.toFixed(2)},0)`);
+  k.querySelector(".pk-end").setAttribute("x", (x + sw + 1.1).toFixed(2));
 }
 
 const pts = (home, line, k) => line.map(([lat, lon]) => { const o = offset(home, { lat, lon }); return `${(o.x * k).toFixed(1)},${(-o.y * k).toFixed(1)}`; }).join(" ");
@@ -224,26 +262,71 @@ function ssa(state) {
   ssaAltimeter = m ? `${m[1]}.${m[2]}` : "";
   const wind = w && w.wind_kt != null ? `${w.wind_kt ? String(w.wind_dir ?? 0).padStart(3, "0") : "000"}/${pad2(w.wind_kt)}${w.gust_kt ? "G" + w.gust_kt : ""}` : "";
   const spc = [...new Set([...state.aircraft, ...(state.beyond || [])].map(spcOf).filter(Boolean))];
-  const gi = [f && "RWY " + f.runways.replace(/\s*\/\s*/g, " "), wind && "WIND " + wind].filter(Boolean).join(" ");
+  // general information, a line each so the area stays narrow: the runways in use, the wind
+  const gi = [f && "RWY " + f.runways.replace(/\s*\/\s*/g, " "), wind && "WIND " + wind].filter(Boolean);
   const rows = [[ssaClock(), "", "ssa-time"], ["OK/OK/NA"], [`${opt.range}NM PTL: ${opt.tracks ? "1.0" : "0.0"}`],
-    ssaAltimeter && [`${state.airport.iata || state.airport.icao} ${ssaAltimeter}A`], spc.length && [spc.join(" "), "alert"], gi && [gi]].filter(Boolean);
+    ssaAltimeter && [`${state.airport.iata || state.airport.icao} ${ssaAltimeter}A`], spc.length && [spc.join(" "), "alert"], ...gi.map((t) => [t])].filter(Boolean);
   const x = -SQ + 13.5, y = -SQ + 20;
   // the indicator: a green box with a red triangle inside it, point down
   let s = `<g class="ssa-mark" transform="translate(${x + 2.2},${y - 8.5})"><path class="tri" d="M-1.7,-1.2H1.7L0,1.75Z"/><rect x="-2.2" y="-2.2" width="4.4" height="4.4"/></g>`;
   s += `<text class="ssa" x="${x}" y="${y}">` + rows.map(([t, cls, id], i) =>
     `<tspan x="${x}"${i ? ' dy="1.3em"' : ""}${cls ? ` class="${cls}"` : ""}${id ? ` id="${id}"` : ""}>${esc(t)}</tspan>`).join("") + `</text>`;
-  // aircraft data blocks keep clear of it
-  placeBoxes.push({ x0: x - 1, x1: x + 3 + Math.max(...rows.map((r) => r[0].length)) * 2.6, y0: y - 12, y1: y + rows.length * 5.6 });
+  // aircraft data blocks and the map's labels keep clear of it: monospaced at 4 px (the kiosk's
+  // 5.4), 0.6 em a character, 1.3 em a line
+  const fs = document.documentElement.classList.contains("kiosk") ? 5.4 : 4;
+  placeBoxes.push({ x0: x - 1, x1: x + 1 + Math.max(...rows.map((r) => r[0].length)) * fs * 0.6,
+    y0: y - 12, y1: y + (rows.length - 1) * fs * 1.3 + fs * 0.4 });
+  return s;
+}
+
+// The video map's airspace: Class B and C (and the airport's own Class D) outlines, each area
+// labelled with its ceiling over its floor in hundreds of feet ("40/17"; SFC from the surface),
+// as charts and video maps mark them.
+function airspaceLayer(state, k) {
+  let s = "";
+  for (const a of state.airport.airspace || []) {
+    for (const ring of a.rings) s += `<polygon class="airspace ${a.class.toLowerCase()}" points="${pts(state.home, ring, k)}"/>`;
+    const o = offset(state.home, { lat: a.label[0], lon: a.label[1] }), x = o.x * k, y = -o.y * k;
+    const t = `${Math.round(a.ceiling / 100)}/${a.floor ? Math.round(a.floor / 100) : "SFC"}`;
+    const box = { x0: x - t.length * 1.1, x1: x + t.length * 1.1, y0: y - 2, y1: y + 2 };
+    if (Math.max(Math.abs(x), Math.abs(y)) > SQ - 12 || placeBoxes.some((b) => overlap(box, b))) continue;
+    s += `<text class="airspace-label" x="${x.toFixed(1)}" y="${(y + 1.1).toFixed(1)}" text-anchor="middle">${t}</text>`;
+    placeBoxes.push(box);
+  }
+  return s;
+}
+
+// VOR and TACAN stations: a small hexagon and the station's identifier, beside it on whichever
+// side is clear of the status area and other labels (or left off when none is).
+const HEXAGON = "M" + [...Array(6)].map((_, i) => `${(1.7 * Math.cos(i * 60 * RAD)).toFixed(2)},${(1.7 * Math.sin(i * 60 * RAD)).toFixed(2)}`).join("L") + "Z";
+function navaidLayer(state, k) {
+  let s = "";
+  for (const n of state.airport.navaids || []) {
+    const o = offset(state.home, n), x = o.x * k, y = -o.y * k;
+    if (Math.max(Math.abs(x), Math.abs(y)) > SQ - 10) continue;
+    s += `<g class="navaid" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><path d="${HEXAGON}"/><circle r=".35"/></g>`;
+    const w = n.ident.length * 2.1;
+    const spot = [[x + 2.8, y + 1.2, "start", x + 2.6, x + 3 + w], [x - 2.8, y + 1.2, "end", x - 3 - w, x - 2.6],
+      [x, y + 5.4, "middle", x - w / 2, x + w / 2], [x, y - 2.6, "middle", x - w / 2, x + w / 2]]
+      .map(([tx, ty, anchor, x0, x1]) => ({ tx, ty, anchor, box: { x0, x1, y0: ty - 2.6, y1: ty + 0.8 } }))
+      .find((c) => !placeBoxes.some((b) => overlap(c.box, b)));
+    if (spot) {
+      s += `<text class="navaid-label" x="${spot.tx.toFixed(1)}" y="${spot.ty.toFixed(1)}" text-anchor="${spot.anchor}">${esc(n.ident)}</text>`;
+      placeBoxes.push(spot.box);
+    }
+    placeBoxes.push({ x0: x - 2, x1: x + 2, y0: y - 2, y1: y + 2 });
+  }
   return s;
 }
 
 function starsStatic(state) {
   const k = K();
   placeBoxes = [];
-  let s = `<g clip-path="url(#scope-clip)">${mapLayer(state.home, k)}${runwayLayer(state, k)}${tfrLayer(state, k)}${fieldsLayer(state, k)}`;
+  const status = ssa(state);                   // first, so the map's labels keep clear of it
+  let s = `<g clip-path="url(#scope-clip)">${mapLayer(state.home, k)}${airspaceLayer(state, k)}${runwayLayer(state, k)}${tfrLayer(state, k)}${fieldsLayer(state, k)}${navaidLayer(state, k)}`;
   // range rings every 5 nm out to the corners
   for (let r = 5; r * k < SQ * Math.SQRT2; r += 5) s += `<circle class="ring" r="${(r * k).toFixed(2)}"/>`;
-  return s + `</g>${STARS_COMPASS}${ssa(state)}${heardNote(state)}`;
+  return s + `</g>${STARS_COMPASS}${status}${heardNote(state)}`;
 }
 
 // ---- static layer ----
@@ -260,8 +343,9 @@ function radarStatic(state) {
   s += SPOKES(rings[0] * k);
   for (const r of rings) s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + " nm")}`;
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
-  // the key, in the drawing's lower left corner
-  s += note("legend", -111, 110.5, "start", [`${R} nm around home`, "035↑ 3,500 ft, climbing", opt.tracks ? "Line: 1 minute ahead" : ""].filter(Boolean));
+  // the key, in the drawing's lower left corner, with the paths' shades along its foot
+  s += note("legend", -111, opt.tracks ? 105.25 : 110.5, "start", [`${R} nm around home`, "035↑ 3,500 ft, climbing", opt.tracks ? "Line: 1 minute ahead" : ""].filter(Boolean));
+  if (opt.tracks) s += pathKey(-111, 110.5);
   const ap = offset(home, state.airport);
   if (Math.hypot(ap.x, ap.y) < R) s += `<text class="apt-label" x="${ap.x * k}" y="${-ap.y * k + 9}" text-anchor="middle">${esc(state.airport.iata)}</text>${runwaysFor(state).length ? "" : `<rect class="apt-mark" x="${ap.x * k - 2.5}" y="${-ap.y * k - 2.5}" width="5" height="5"/>`}`;
   for (const a of state.aircraft) {
@@ -359,7 +443,7 @@ function domeStatic(state, dt) {
 }
 
 // ---- persistent aircraft elements ----
-const live = new Map();     // hex -> { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trail, grad, x, y, rot, slot, ... }
+const live = new Map();     // hex -> { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, x, y, rot, slot, ... }
 let lastFrame = 0, layerMode = null, staticKey = null, baseKey = null, lastSecond = -1;
 
 // The map under the radar: the chart-style radar's map, or the ATC style's chart (the FAA's
@@ -426,12 +510,10 @@ function craftFor(svg, hex) {
   // hidden until placed: a dot without a position would sit on home
   for (let i = 0; i < HISTORY; i++) el("circle", { r: 1.05, class: `h${i}`, style: "display:none" }, hist);
   const l0 = el("text", { class: "tag-top" }, g), tag = el("text", { class: "tag" }, g), sub = el("text", { class: "tag-sub" }, g);
-  // each trail fades from transparent at its oldest point to solid at the aircraft
-  const gid = "tg-" + hex.replace(/[^a-z0-9]/gi, ""), grad = el("linearGradient", { id: gid, gradientUnits: "userSpaceOnUse" }, svg.querySelector("#s-defs"));
-  el("stop", { offset: 0, "stop-opacity": 0 }, grad);       // colour comes from the stylesheet
-  el("stop", { offset: 1, "stop-opacity": 0.8 }, grad);
-  const trail = el("polyline", { class: "trail", stroke: `url(#${gid})` }, svg.querySelector("#s-trails"));
-  c = { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trail, grad, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""] };
+  // the chart style's path: its runs, rebuilt on each update, and the stretch from its last
+  // point to the aircraft, moved every frame
+  const trk = el("g", { class: "trk" }, svg.querySelector("#s-trails")), segs = el("g", {}, trk), tail = el("line", {}, trk);
+  c = { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""] };
   live.set(hex, c);
   requestAnimationFrame(() => g.classList.remove("entering"));
   return c;
@@ -440,9 +522,8 @@ function craftFor(svg, hex) {
 function dropCraft(hex) {
   const c = live.get(hex);
   c.g.remove();
-  c.trail.remove();
+  c.trk.remove();
   c.hist.remove();
-  c.grad.remove();
   live.delete(hex);
 }
 
@@ -586,6 +667,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   if (fresh) {
     staticKey = key;
     svg.querySelector("#s-static").innerHTML = mode === "sky" ? domeStatic(state, dt) : radarStatic(state);
+    layoutPathKey(svg);
   }
   const wall = Date.now(), phase = clockPhase(wall);
   if (opt.atc && Math.floor(wall / 1000) !== lastSecond) {          // the status area's clock shows seconds
@@ -624,9 +706,8 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       c.vec.style.display = "";
     } else c.vec.style.display = "none";
     c.g.classList.toggle("hero", isHero);
-    c.trail.classList.toggle("hero", isHero);
+    c.trk.classList.toggle("hero", isHero);
     c.hist.classList.toggle("hero", isHero);
-    c.grad.classList.toggle("hero", isHero);
     let text, line0 = "";
     if (opt.atc) {
       const b = starsBlock(a, isHero);
@@ -652,15 +733,17 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     c.leader.style.display = opt.atc && text ? "" : "none";
     if (opt.atc && opt.tracks && (fresh || arrived)) historyDots(c, a, k, state.home, state.trail_s);
     c.hist.style.display = opt.atc && opt.tracks ? "" : "none";
-    if (!opt.atc && opt.tracks && mode === "radar" && a.trail && a.trail.length > 1) {
-      if (fresh || !c.trailPts) {
-        c.trailPts = pts(state.home, a.trail, k);
-        const [x1, y1] = c.trailPts.split(" ")[0].split(",");
-        c.grad.setAttribute("x1", x1); c.grad.setAttribute("y1", y1);
-      }
-      c.grad.setAttribute("x2", c.x.toFixed(1)); c.grad.setAttribute("y2", c.y.toFixed(1));
-      c.trail.setAttribute("points", `${c.trailPts} ${c.x.toFixed(1)},${c.y.toFixed(1)}`);
-    } else c.trail.setAttribute("points", "");
+    // the chart style's path behind the aircraft, all of it since it came in range
+    const path = !opt.atc && opt.tracks && mode === "radar" && a.path && a.path.length ? a.path : null;
+    if (path && (fresh || !c.drawn)) {
+      c.segs.innerHTML = pathRuns(state.home, path, k);
+      const [lat, lon] = path[path.length - 1], o = offset(state.home, { lat, lon });
+      c.tail.setAttribute("x1", (o.x * k).toFixed(1)); c.tail.setAttribute("y1", (-o.y * k).toFixed(1));
+      c.tail.setAttribute("class", `b${band(a.alt ?? path[path.length - 1][2] * 100)}`);
+      c.drawn = true;
+    } else if (!path && c.drawn) { c.segs.innerHTML = ""; c.drawn = false; }
+    c.trk.style.display = path ? "" : "none";
+    if (path) { c.tail.setAttribute("x2", c.x.toFixed(1)); c.tail.setAttribute("y2", c.y.toFixed(1)); }
   }
   for (const hex of [...live.keys()]) if (!seen.has(hex)) dropCraft(hex);
   if (fresh) { placeLabels(heroHex); for (const c of live.values()) applyLabel(c); }

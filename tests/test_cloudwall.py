@@ -658,6 +658,8 @@ class ChartsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             info = self.charts(d).info()
             self.assertEqual(info["map"]["style"], "dark")              # a street map under the chart radar
+            self.assertIsNone(info["atc"])                              # and nothing under the ATC radar
+            info = self.charts(d, atc="ifr-low").info()
             self.assertEqual((info["atc"]["layer"], info["atc"]["name"]), ("ifr-low", "IFR Enroute Low"))
             self.assertIn("FAA", info["atc"]["attribution"])
             self.assertEqual(set(info["layers"]), {"ifr-low", "ifr-high", "sectional", "terminal"})
@@ -1167,6 +1169,55 @@ class EmergencyTest(unittest.TestCase):
         for _ in range(2):
             t.update([plane("e1", "N123", 6, emergency_status="nordo")], "test")
         self.assertEqual(t.snapshot()["emergency"][0]["emergency_code"], "7600")
+
+
+class PathTest(unittest.TestCase):
+    def test_the_whole_path_is_kept_compactly_with_its_altitude(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        for i in range(40):                                           # 40 updates, 0.05 nm apart
+            t.update([plane("a1", "ASA1", 10 - i * 0.05, alt=8000 - i * 50)], "test")
+        a = t.snapshot()["aircraft"][0]
+        self.assertEqual(len(a["trail"]), 30)                         # recent positions: the last 30
+        path = [list(q) for q in a["path"]]
+        self.assertEqual(path[0], [round(t.home["lat"] + 10 / 60, 4), round(t.home["lon"], 4), 80])
+        self.assertTrue(8 <= len(path) <= 14)                         # a point every 0.15 nm or 300 ft
+        self.assertIn(path[-1][2], range(60, 63))                     # it followed the descent to about 6,050 ft
+        t.update([plane("a1", "ASA1", 8.0, alt=None)], "test")        # no altitude: the last one carries on
+        self.assertEqual(t.snapshot()["aircraft"][0]["path"][-1][2], path[-1][2])
+        t.update([plane("b1", "ASA2", 5.0)], "test")                  # a1 has gone: its path with it
+        self.assertNotIn("a1", t.paths)
+
+
+class VideoMapTest(unittest.TestCase):
+    def test_portlands_class_c_and_the_vors_around_it(self):
+        from cloudwall import airports
+        home = config.DEFAULTS["home"]
+        areas = airports.airspace_near(home["lat"], home["lon"], own="PDX")
+        self.assertEqual(sorted((a["id"], a["class"], a["floor"], a["ceiling"]) for a in areas),
+                         [("PDX", "C", f, 4000) for f in (0, 1100, 1700, 1800, 2000, 2300)])
+        self.assertTrue(all(len(r) >= 3 and len(r[0]) == 2 for a in areas for r in a["rings"]))
+        self.assertEqual([n["ident"] for n in airports.navaids_near(home["lat"], home["lon"])], ["CBU", "BTG", "UBG"])
+        cfg = config.complete_place(config.load())
+        self.assertEqual(len(cfg["airport"]["airspace"]), 6)
+        self.assertEqual(cfg["airport"]["navaids"][1]["type"], "VORTAC")
+
+    def test_class_d_only_for_the_places_own_airport(self):
+        from cloudwall import airports
+        rdm = airports.lookup("KRDM")
+        self.assertEqual({a["class"] for a in airports.airspace_near(rdm["lat"], rdm["lon"], own="RDM")}, {"D"})
+        self.assertEqual(airports.airspace_near(rdm["lat"], rdm["lon"], own="XXX"), [])
+
+    def test_label_points_fall_inside_a_wrapped_shelf(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("build_data", Path(__file__).resolve().parent.parent / "tools" / "build_data.py")
+        bd = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bd)
+        # a C-shaped shelf around a gap where its centre of mass falls
+        shelf = [[0, 0], [0, 3], [1, 3], [1, 1], [2, 1], [2, 3], [3, 3], [3, 0]]
+        self.assertFalse(bd.inside(1.5, 2, shelf))
+        self.assertTrue(bd.inside(*bd.label_point(shelf), shelf))
+        line = [[0, 0], [0.5, 0.0001], [1, 0], [1, 1]]
+        self.assertEqual(bd.simplify(line, 0.001), [[0, 0], [1, 0], [1, 1]])
 
 
 class SmallFieldTest(unittest.TestCase):

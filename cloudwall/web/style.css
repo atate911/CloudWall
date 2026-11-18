@@ -435,9 +435,21 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #radar .apt-label { fill: var(--ink); font-size: 4.6px; font-weight: 700; }
 #radar .apt-mark { fill: none; stroke: var(--slate); stroke-width: .8; }
 #radar .home-mark { fill: none; stroke: var(--ink); stroke-width: .7; }
-#radar .trail { fill: none; stroke-width: .8; stroke-linecap: round; stroke-linejoin: round; }
-#radar .trail.hero { stroke-width: 1.1; }
-#s-defs stop { stop-color: var(--blue); } #s-defs .hero stop { stop-color: var(--magenta); }
+/* each aircraft's path since it came in range, in its own colour (chart blue; magenta for the one
+   overhead), strongest near the ground and stepping toward the disc with height: 0-2, 2-5, 5-10,
+   10-18, 18-28 and 28+ thousand ft. Low traffic around the house stands out; high overflights
+   stay quiet. */
+#radar :is(.trk, .path-key) { --trk: var(--blue); stroke: var(--trk); }
+#radar .trk.hero { --trk: var(--magenta); }
+#radar .trk :is(polyline, line) { fill: none; stroke-width: .75; stroke-linecap: round; stroke-linejoin: round; }
+#radar .trk.hero :is(polyline, line) { stroke-width: 1.15; }
+#radar :is(.trk, .path-key) .b1 { stroke: color-mix(in oklch, var(--trk) 86%, var(--disc)); }
+#radar :is(.trk, .path-key) .b2 { stroke: color-mix(in oklch, var(--trk) 73%, var(--disc)); }
+#radar :is(.trk, .path-key) .b3 { stroke: color-mix(in oklch, var(--trk) 61%, var(--disc)); }
+#radar :is(.trk, .path-key) .b4 { stroke: color-mix(in oklch, var(--trk) 51%, var(--disc)); }
+#radar :is(.trk, .path-key) .b5 { stroke: color-mix(in oklch, var(--trk) 42%, var(--disc)); }
+#radar .path-key line { stroke-width: 1.6; }
+#radar .path-key text { stroke: none; }
 #radar .craft { transition: opacity .6s; } #radar .craft.entering { opacity: 0; }
 #radar .blip { fill: var(--blue); stroke: var(--disc); stroke-width: .5; }
 #radar .hero .blip { fill: var(--magenta); }
@@ -864,6 +876,11 @@ body.emergency #tfr-chip { color: var(--ink-2); }
 #scope.atc #radar .field { stroke: var(--st-grey); stroke-width: .4; opacity: .7; }
 #scope.atc #radar .field-rwy { stroke: var(--st-grey); stroke-width: .5; }
 #scope.atc #radar .field-label { font-size: 3.2px; fill: var(--st-grey); stroke-width: 1px; }
+#scope.atc #radar .airspace { fill: none; stroke: var(--st-grey); stroke-width: .3; stroke-linejoin: round; opacity: .5; }
+#scope.atc #radar .airspace-label { font-size: 3px; fill: var(--st-grey); opacity: .75; }
+#scope.atc #radar .navaid { fill: none; stroke: var(--st-grey); stroke-width: .35; }
+#scope.atc #radar .navaid circle { fill: var(--st-grey); stroke: none; }
+#scope.atc #radar .navaid-label { font-size: 3.2px; fill: var(--st-grey); }
 #scope.atc #radar .ring { stroke: var(--st-grey); stroke-width: .3; opacity: .3; }
 #scope.atc #radar .compass-tick { fill: none; stroke: var(--st-grey); stroke-width: .35; }
 #scope.atc #radar .bearing { font-size: 3.3px; fill: var(--st-grey); }
@@ -908,3 +925,4 @@ body.emergency #tfr-chip { color: var(--ink-2); }
 .kiosk #scope.atc #radar .pos { font-size: 5.6px; }
 .kiosk #scope.atc #radar :is(.ssa, .heard-note) { font-size: 5.4px; }
 .kiosk #scope.atc #radar .bearing { font-size: 4.4px; }
+.kiosk #scope.atc #radar :is(.airspace-label, .navaid-label, .field-label) { font-size: 4.2px; }

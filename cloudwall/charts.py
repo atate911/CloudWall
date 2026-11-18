@@ -11,8 +11,9 @@ The FAA charts are the Aeronautical Information Services' own tiled charts on Ar
     terminal   VFR Terminal Area, where there is one (Portland has one); the Sectional elsewhere
 
 A display asks for a layer by name, so a new use of a chart is a new layer here and a line in
-the display, nothing else. [map] style picks the chart-style radar's map (a street map, or one
-of these charts) and [map] atc the ATC-style radar's chart.
+the display, nothing else. [map] style picks the chart-style radar's map (a street map unless
+set, or one of these charts) and [map] atc the ATC-style radar's chart (none unless set: a real
+controller's screen has only its video map).
 """
 from .tiles import Tiles
 
@@ -32,7 +33,7 @@ FAA_LAYERS = {
 
 class Charts:
     """The layers by name. "map" is the chart-style radar's map: [map] style, which may name an
-    FAA chart; "atc" is the ATC-style radar's chart, [map] atc ("ifr-low" unless set, or "off")."""
+    FAA chart; "atc" is the ATC-style radar's chart, [map] atc ("off" unless set)."""
 
     def __init__(self, cfg, cache_dir):
         m = cfg.get("map", {})
@@ -50,7 +51,7 @@ class Charts:
         else:
             self.map = Tiles(cfg, cache_dir)
         self.layers["map"] = self.map
-        atc = str(m.get("atc", "ifr-low")).lower()
+        atc = str(m.get("atc") or "off").lower()
         self.atc = self.layers.get(atc) if atc in FAA_LAYERS else None
 
     @property

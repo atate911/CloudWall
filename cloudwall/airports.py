@@ -2,6 +2,8 @@
 so CloudWall never has to pay a flight-data service for them, plus the small fields that table
 leaves out (fields.csv) and every airport's runways (runways.csv, from OurAirports)."""
 import csv
+import json
+import math
 import threading
 from pathlib import Path
 
@@ -177,3 +179,50 @@ def locate(text):
         if -90 <= lat <= 90 and -180 <= lon <= 180:
             return {"lat": lat, "lon": lon, "zip": None}
     return None
+
+
+# -- airspace and navaids (FAA NASR), for the ATC-style radar's video map ----------
+_AIRSPACE = Path(__file__).resolve().parent / "data" / "airspace.json"
+_NAVAIDS = Path(__file__).resolve().parent / "data" / "navaids.csv"
+_airspace = None
+_navaids = None
+VIDEO_MAP_NM = 45         # out to the corners of the ATC radar's square at its longest range
+
+
+def _load_airspace():
+    global _airspace
+    with _lock:
+        if _airspace is None:
+            areas = json.loads(_AIRSPACE.read_text(encoding="utf-8"))["areas"]
+            for a in areas:           # the box around each, to find those near a place quickly
+                pts = [p for r in a["rings"] for p in r]
+                a["box"] = (min(p[0] for p in pts), max(p[0] for p in pts), min(p[1] for p in pts), max(p[1] for p in pts))
+            _airspace = areas
+    return _airspace
+
+
+def airspace_near(lat, lon, reach_nm=VIDEO_MAP_NM, own=None):
+    """The Class B and C areas reaching within about reach_nm of a point, and the Class D areas of
+    `own` (the place's airport, by its three-letter code), as the ATC radar's video map draws
+    them: {id, class, floor, ceiling (ft; floor 0 is the surface), label: [lat, lon] inside it,
+    rings: [[[lat, lon], ...], ...]}."""
+    dlat, dlon = reach_nm / 60, reach_nm / (60 * max(0.1, math.cos(math.radians(lat))))
+    out = []
+    for a in _load_airspace():
+        if a["class"] == "D" and a["id"] != own:
+            continue
+        s, n, w, e = a["box"]
+        if s <= lat + dlat and n >= lat - dlat and w <= lon + dlon and e >= lon - dlon:
+            out.append({k: v for k, v in a.items() if k != "box"})
+    return out
+
+
+def navaids_near(lat, lon, reach_nm=VIDEO_MAP_NM):
+    """The VOR and TACAN stations within reach_nm of a point, nearest first: {ident, name, type, lat, lon}."""
+    global _navaids
+    from .geo import haversine_nm
+    with _lock:
+        if _navaids is None:
+            _navaids = [dict(r, lat=float(r["lat"]), lon=float(r["lon"])) for r in _rows(_NAVAIDS)]
+    near = [(haversine_nm(lat, lon, r["lat"], r["lon"]), r) for r in _navaids]
+    return [dict(r) for d, r in sorted(near, key=lambda x: x[0]) if d <= reach_nm]

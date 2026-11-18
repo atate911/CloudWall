@@ -84,7 +84,7 @@ general_aviation = false
 [kiosk]                # the wall panel (/kiosk) has no buttons, so its place and radar are set here
 place = ""             # a place's name; empty for [home]
 radar = "chart"        # "chart", or "atc" to draw the radar like an air traffic control screen
-tracks = true          # trails behind aircraft and lines to where they will be in a minute
+tracks = true          # each aircraft's track behind it and a line to where it will be in a minute
 range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see further
 
 [map]                  # the maps under the radar, cached on disk by CloudWall
@@ -92,8 +92,8 @@ style = "dark"         # the Chart-style radar's map: "dark" or "light" grey str
                        # "osm" (OpenStreetMap), an FAA chart ("sectional", "terminal", "ifr-low",
                        # "ifr-high"), or "off"
 opacity = 0.32         # 0 to 1: how strongly the map shows under the radar
-atc = "ifr-low"        # the ATC-style radar's chart: "ifr-low" (IFR Enroute Low), "ifr-high",
-                       # "sectional", "terminal", or "off" for the plain video map
+atc = "off"            # a chart under the ATC-style radar: "off" (a controller's screen has only
+                       # its video map), or "ifr-low" (IFR Enroute Low), "ifr-high", "sectional", "terminal"
 # Any other raster tile service, e.g. CARTO with your API key. Paste the provider's
 # raster URL template; {z} {x} {y} (and {s} {r}) are filled in. The key stays on
 # your server: the browser only ever loads tiles from CloudWall.

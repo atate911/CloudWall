@@ -21,14 +21,18 @@ weather from aviationweather.gov. Pure Python standard library, no packages to i
   Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
   dimension line with its length. With no photo, the plate fills the frame.
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
-  path across it (centre is straight up), or a radar scope with trails over a faint map.
+  path across it (centre is straight up), or a radar scope over a faint street map.
   Each aircraft on the radar shows its altitude in hundreds of feet, with an arrow when it is
-  climbing or descending (`035↑`), and a line to where it will be in a minute. Both views have a
-  compass bezel with bearings, and on the desktop a key in the corner.
+  climbing or descending (`035↑`), a line to where it will be in a minute, and its whole track
+  behind it since it came in range or took off, as flight-tracking sites draw it: in its own
+  colour (magenta for the aircraft overhead), strongest near the ground and fading with height
+  in steps at 2,000, 5,000, 10,000, 18,000 and 28,000 ft, so traffic low around the house stands
+  out and high overflights stay quiet. Both views have a compass bezel with bearings, and on the
+  desktop a key in the corner.
   Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
   Along the foot of the radar, Chart / ATC picks its look (ATC draws it as a controller's STARS
-  screen over the FAA's IFR chart; see [The ATC radar](#the-atc-radar)), Tracks turns the trails
-  and one-minute lines on or off, and 15 / 20 / 30 sets the range in nm. Past the tracking radius
+  screen; see [The ATC radar](#the-atc-radar)), Tracks turns the tracks and one-minute lines on
+  or off, and 15 / 20 / 30 sets the range in nm. Past the tracking radius
   (`[tracking] radius_nm`, 15 nm), aircraft are drawn on the radar only: the board, the flight card,
   the logbook and route lookups stay within it, and the longer range is fetched only while a
   screen shows it.
@@ -107,7 +111,9 @@ smaller fields nearby. The tables: airports from airportsdata (MIT licence); sma
 such as Pearson Field and Grove Field around Vancouver, in `cloudwall/data/fields.csv`; runways
 and which airports have airline service from OurAirports (public domain); ZIP codes from the
 Census Bureau's 2025 ZIP code areas (public domain); aircraft types' wake categories, for the
-ATC radar's data blocks, from openScope's aircraft data (MIT licence).
+ATC radar's data blocks, from openScope's aircraft data (MIT licence); Class B, C and D airspace
+and the VOR and TACAN stations, for the ATC radar's video map, from the FAA's NASR data (public
+domain) as packaged by the `@squawk/airspace-data` and `@squawk/navaid-data` npm packages (MIT).
 `python3 tools/build_data.py` rebuilds them.
 For an airport the tables don't cover, give its `iata`, `city`, `lat` and `lon` too.
 
@@ -192,7 +198,7 @@ The kiosk has no buttons, so its radar is set in the config file:
 ```toml
 [kiosk]
 radar = "atc"      # "chart" (the default) or "atc"
-tracks = true      # trails and one-minute lines
+tracks = true      # each aircraft's track and one-minute line
 range_nm = 30      # 0 for the tracking radius, or 20 or 30
 ```
 
@@ -203,13 +209,18 @@ The address can override these on any screen: `/kiosk?radar=atc&tracks=off&range
 The ATC style draws the radar as a terminal controller sees it on STARS, the FAA's terminal
 radar display, following its conventions (layouts, symbols, colours and timings as described
 by the FAA's STARS documentation and the open-source [vice](https://github.com/mmp/vice) STARS
-simulator), with the FAA's IFR Enroute Low chart dimmed underneath:
+simulator). Like a real one, it has no chart underneath: a controller's screen is black, with
+line maps ("video maps") of what the controller needs on top:
 
 - **The screen** is square. Its range (15, 20 or 30 nm) is from the centre to the edge, as on
   STARS, so the corners reach about 1.4 times as far; the server fetches traffic out to them. A
   compass runs along the edge, a tick every 5° and the bearing every 10°. Range rings are every
   5 nm. The grey video map has the runways, the final approach courses marked every mile, the
-  river and the small airfields; flight restrictions are outlined in yellow.
+  Class B and C airspace around (Portland's Class C, its surface area and five shelves, each
+  marked with its ceiling over its floor in hundreds of feet: `40/SFC`, `40/17`), the airport's
+  own Class D if it has one, the VOR and TACAN stations (Battle Ground, Columbia, Newberg) as
+  hexagons with their identifiers, the river and the small airfields; flight restrictions are
+  outlined in yellow. `[map] atc` can still put an FAA chart underneath (below).
 - **Targets** are blue (STARS's fused tracks), each with a position symbol on it. A track with
   a flight plan shows the letter of the position that owns it: here **A** for an arrival at the
   airport, **D** for a departure, **C** for the rest (the en route centre's). A track with no
@@ -303,8 +314,8 @@ no requests (or, with `"log"`, only the slow position check).
   It can also be one of the FAA's aeronautical charts: `sectional` (the VFR Sectional, with its
   airports, airspace and landmarks), `terminal` (the VFR Terminal Area chart, more detailed,
   where there is one: Portland has one; the Sectional elsewhere), `ifr-low` or `ifr-high`.
-  The ATC style has its own chart, `[map] atc` (`ifr-low` unless set; `off` for the plain
-  video map). CloudWall downloads each tile once, caches it for a
+  The ATC style can have one too, `[map] atc` (none unless set, as on a real controller's
+  screen). CloudWall downloads each tile once, caches it for a
   month next to the logbook, and serves it to the display itself, so the map provider sees
   only your server and an API key never reaches the browser.
 - The charts are the FAA Aeronautical Information Services' own tiled charts (public domain),
