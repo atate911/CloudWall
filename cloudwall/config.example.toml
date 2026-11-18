@@ -3,18 +3,23 @@
 
 [home]
 name = "Home"
-lat = 45.5900          # <-- set to your house (decimal degrees)
+lat = 45.5900          # <-- set to your house (decimal degrees), east Vancouver, WA here
 lon = -122.4740
-elevation_ft = 100
+# zip = "98683"        # or a US ZIP code instead of lat and lon: the centre of its area
+# elevation_ft = 100   # feet above sea level; the airport's when left out
 
-[airport]              # the local airport: used for arriving/departing labels and weather
-icao = "KPDX"
-iata = "PDX"
-city = "Portland"
-lat = 45.5887
-lon = -122.5975
+[airport]              # the local airport: arriving/departing labels, runways, weather
+icao = "auto"          # the nearest large airport within 30 nm, else the nearest with airline service
+                       # (PDX for Vancouver, WA); or its ICAO code. The rest comes from CloudWall's tables.
+# Only for an airport the tables don't have (CloudWall says so when it starts):
+# iata = "PDX"
+# city = "Portland"
+# lat = 45.5887
+# lon = -122.5975
 # Smaller fields nearby: light aircraft low over them are labelled as theirs, and they're
-# marked on the radar. Pearson Field and Troutdale are built in; listing any here replaces them.
+# marked on the radar. By default, the fields in CloudWall's tables within the tracking radius:
+# around Vancouver, Pearson Field, Grove Field, Troutdale, Scappoose and Hillsboro. Listing any
+# here replaces them; to add one CloudWall doesn't know, put it in cloudwall/data/fields.csv.
 # [[airport.others]]
 # code = "VUO"
 # name = "Pearson Field"
@@ -66,14 +71,29 @@ daily_limit = 0
 mode = "always"
 general_aviation = false
 
-[kiosk]                # the wall panel (/kiosk) has no buttons, so its radar is set here
+# More places to watch, such as a cabin: each needs a name and lat and lon, or a ZIP code. The
+# airport is chosen as for [airport] unless given. The desktop can also add places (see the menu
+# beside "CloudWall"), and each screen can show a different one. Every place keeps its own
+# logbook, and data is fetched only for places a screen is showing.
+# [[places]]
+# name = "Cabin"
+# zip = "97702"        # or lat = 44.0600 and lon = -121.3100
+# airport = "KRDM"     # optional: "auto" when left out
+# elevation_ft = 3600  # optional: the airport's when left out
+
+[kiosk]                # the wall panel (/kiosk) has no buttons, so its place and radar are set here
+place = ""             # a place's name; empty for [home]
 radar = "chart"        # "chart", or "atc" to draw the radar like an air traffic control screen
-tracks = true          # trails behind aircraft and lines to where they will be in a minute
+tracks = true          # trails (the selected aircraft's whole track) and lines to where they will be in a minute
 range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see further
 
-[map]                  # faint map under the radar, cached on disk by CloudWall
-style = "dark"         # "dark" or "light" grey street map, "satellite", "osm" (OpenStreetMap), or "off"
-opacity = 0.32         # 0 to 1: how strongly the streets show under the radar
+[map]                  # the maps under the radar, cached on disk by CloudWall
+style = "dark"         # the Chart-style radar's map: "dark" or "light" grey street map, "satellite",
+                       # "osm" (OpenStreetMap), an FAA chart ("sectional", "terminal", "ifr-low",
+                       # "ifr-high"), or "off"
+opacity = 0.32         # 0 to 1: how strongly the map shows under the radar
+atc = "off"            # a chart under the ATC-style radar: "off" (a controller's screen has only
+                       # its video map), or "ifr-low" (IFR Enroute Low), "ifr-high", "sectional", "terminal"
 # Any other raster tile service, e.g. CARTO with your API key. Paste the provider's
 # raster URL template; {z} {x} {y} (and {s} {r}) are filled in. The key stays on
 # your server: the browser only ever loads tiles from CloudWall.

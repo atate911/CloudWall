@@ -1,5 +1,5 @@
 "use strict";
-import { $, esc, num, mmss, ident, altText, store } from "./util.js";
+import { $, esc, num, mmss, ident, altText, store, api } from "./util.js";
 import { updateSky, sky } from "./sky.js";
 import { drawScope, loadMap } from "./scope.js";
 import { renderHero, tickHero, nextSlide, badges, recordsHtml, forgetHero } from "./hero.js";
@@ -93,7 +93,7 @@ function budgetLine(fa) {
 }
 
 async function loadLog() {
-  const L = await (await fetch("api/logbook")).json();
+  const L = await (await api("api/logbook")).json();
   const fa = state && state.live_routes;
   const max = Math.max(1, ...L.hours.map((h) => h.n)), byHour = Object.fromEntries(L.hours.map((h) => [h.hour, h.n]));
   let bars = "";
@@ -166,7 +166,8 @@ function drawScopeNow(now = performance.now()) {
   if (!state || view !== "now") return;
   const mode = scopeMode(), pref = store("scope") || "auto", { style, tracks, range } = radarPrefs();
   const atc = mode === "radar" && style === "atc";
-  const bm = state.basemap, credit = mode === "radar" && !atc && bm && bm.enabled ? bm.attribution : "";
+  const charts = state.charts || { map: state.basemap }, bm = atc ? charts.atc : charts.map;
+  const credit = mode === "radar" && bm && bm.enabled ? bm.attribution : "";
   const label = [pref, mode, credit, style, tracks, range, state.ranges].join("|");
   if (label !== scopeLabel) {
     scopeLabel = label;
@@ -197,7 +198,7 @@ requestAnimationFrame(frame);
 let wxData = null, wxAt = 0;
 async function loadWeather(draw) {
   try {
-    if (Date.now() - wxAt > 60000 || !wxData) { wxData = await (await fetch("api/weather")).json(); wxAt = Date.now(); }
+    if (Date.now() - wxAt > 60000 || !wxData) { wxData = await (await api("api/weather")).json(); wxAt = Date.now(); }
     $("n-wx").textContent = (wxData && wxData.now && wxData.now.category) || "";
     if (draw && view === "wx" && state) renderWeatherTab($("wx-tab"), wxData, state);
   } catch (e) { /* keep what's shown */ }
@@ -225,12 +226,104 @@ function renderToggles() {
   $("night-text").textContent = n === "auto" ? "Night auto" : n === "on" ? "Night on" : "Night off";
   $("btn-night").classList.toggle("on", sky.night);
 }
+// The place in the header: its airport's code, and with several places its name too. On the
+// desktop it opens a menu of the places, to switch this screen to another (it starts afresh on
+// it), to set up a new one by ZIP code or coordinates, or to remove one set up that way.
+function renderPlace() {
+  const places = state.places || [], here = places.find((p) => p.id === state.place), many = places.length > 1;
+  const label = many && here ? `${here.name} · ${state.airport.icao}` : state.airport.icao || "";
+  const st = $("station");
+  if (st.textContent !== label) st.textContent = label;
+  st.disabled = KIOSK;
+  st.classList.toggle("menu", !KIOSK);
+}
+function showPlace(id) {
+  store("place", id);
+  const u = new URL(location.href);
+  u.searchParams.delete("place");          // the menu's choice wins over one given in the address
+  location.href = u.toString();
+}
+function closePlaceMenu() { $("place-menu").hidden = true; $("station").setAttribute("aria-expanded", "false"); }
+function openPlaceMenu() {
+  const m = $("place-menu");
+  m.innerHTML = (state.places || []).map((p) => `<div class="pm-row">
+    <button role="menuitemradio" aria-checked="${p.id === state.place}" data-place="${esc(p.id)}">
+      <b>${esc(p.name)}</b><span>${esc(p.icao)}${p.city ? ` · ${esc(p.city)}` : ""}${p.zip && !p.name.includes(p.zip) ? ` · ZIP ${esc(p.zip)}` : ""}</span></button>
+    ${p.added ? `<button class="pm-remove" data-remove="${esc(p.id)}" title="Remove ${esc(p.name)}" aria-label="Remove ${esc(p.name)}"></button>` : ""}</div>`).join("") +
+    `<button class="pm-add" id="pm-add" role="menuitem">Set a location…</button>`;
+  m.hidden = false;
+  $("station").setAttribute("aria-expanded", "true");
+}
+$("station").addEventListener("click", () => ($("place-menu").hidden ? openPlaceMenu() : closePlaceMenu()));
+$("place-menu").addEventListener("click", async (e) => {
+  if (e.target.closest("#pm-add")) { closePlaceMenu(); return openLocation(); }
+  const rm = e.target.closest("button[data-remove]");
+  if (rm) {
+    const p = (state.places || []).find((x) => x.id === rm.dataset.remove);
+    if (!p || !confirm(`Remove ${p.name}? Its logbook stays on disk.`)) return;
+    const r = await (await fetch(`api/places?id=${encodeURIComponent(p.id)}`, { method: "DELETE" })).json();
+    if (r.error) return alert(r.error);
+    if (p.id === state.place) return showPlace("");      // this screen was on it: back to the first
+    state.places = r.places;
+    return openPlaceMenu();
+  }
+  const b = e.target.closest("button[data-place]");
+  if (!b) return;
+  if (b.dataset.place === state.place) return closePlaceMenu();
+  showPlace(b.dataset.place);
+});
+document.addEventListener("pointerdown", (e) => { if (!e.target.closest(".brand")) closePlaceMenu(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePlaceMenu(); });
+
+// Setting a location: a ZIP code or coordinates, then the airport: the closest major one by
+// default, or another of the airline airports nearby. Shows where it is as it's typed.
+let locTimer = null, locFound = null;
+function openLocation() {
+  $("loc-form").reset();
+  $("loc-where").textContent = ""; $("loc-airports").innerHTML = ""; $("loc-error").textContent = "";
+  $("loc-save").disabled = true;
+  locFound = null;
+  $("loc-dialog").showModal();
+  $("loc-q").focus();
+}
+async function lookUpLocation() {
+  const q = $("loc-q").value.trim();
+  locFound = null;
+  $("loc-save").disabled = true;
+  if (!q) { $("loc-where").textContent = ""; $("loc-airports").innerHTML = ""; return; }
+  const r = await (await fetch(`api/locate?q=${encodeURIComponent(q)}`)).json().catch(() => ({ error: "CloudWall isn't answering" }));
+  if (q !== $("loc-q").value.trim()) return;            // typed on since
+  if (r.error) { $("loc-where").textContent = r.error; $("loc-where").classList.add("bad"); $("loc-airports").innerHTML = ""; return; }
+  locFound = r;
+  $("loc-where").classList.remove("bad");
+  $("loc-where").textContent = `${r.zip ? `ZIP ${r.zip}, ` : ""}${r.lat.toFixed(4)}, ${r.lon.toFixed(4)}`;
+  const auto = r.airports.find((a) => a.icao === r.auto);
+  const opt = (value, html, checked) => `<label class="loc-opt"><input type="radio" name="loc-ap" value="${esc(value)}"${checked ? " checked" : ""}><span>${html}</span></label>`;
+  $("loc-airports").innerHTML = `<legend class="label">Airport</legend>` +
+    opt("auto", `<b>Closest major airport</b><small>${auto ? `${esc(auto.iata || auto.icao)} · ${esc(auto.name)} · ${auto.dist_nm} nm` : esc(r.auto || "")}</small>`, true) +
+    r.airports.filter((a) => a.icao !== r.auto)            // the automatic choice is the first option already
+      .map((a) => opt(a.icao, `<b>${esc(a.iata || a.icao)} · ${esc(a.name)}</b><small>${esc(a.city || "")} · ${a.dist_nm} nm${a.size === "large" ? " · large" : ""}</small>`)).join("");
+  $("loc-save").disabled = false;
+}
+$("loc-q").addEventListener("input", () => { clearTimeout(locTimer); locTimer = setTimeout(lookUpLocation, 250); });
+$("loc-cancel").addEventListener("click", () => $("loc-dialog").close());
+$("loc-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!locFound) return;
+  const airport = ($("loc-form").querySelector("input[name=loc-ap]:checked") || {}).value || "auto";
+  $("loc-save").disabled = true;
+  const r = await (await fetch("api/places", { method: "POST", body: JSON.stringify({ q: $("loc-q").value.trim(), name: $("loc-name").value.trim(), airport }) })).json()
+    .catch(() => ({ error: "CloudWall isn't answering" }));
+  if (r.error) { $("loc-error").textContent = r.error; $("loc-save").disabled = false; return; }
+  showPlace(r.place.id);                                 // this screen moves to the new place
+});
+
 function render() {
   if (!state) return;
   updateSky(state);
   renderToggles();
   const w = state.weather, f = state.flow;
-  $("station").textContent = state.airport.icao || "";
+  renderPlace();
   $("flow").hidden = !f;
   if (f) $("flow").innerHTML = `${esc(state.airport.iata)} landing ${esc(f.dir)}, runways ${esc(f.runways.replace(" / ", " and "))}`;
   $("wx").hidden = !w;
@@ -261,9 +354,10 @@ function render() {
 async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
   try {
-    // while the radar is on screen, the server fetches out to its range
-    const range = state && view === "now" && scopeMode() === "radar" ? radarPrefs().range : 0;
-    state = await (await fetch(`api/state?range=${range}`)).json();
+    // while the radar is on screen, the server fetches out to its range (the ATC style's square
+    // display reaches further, into its corners)
+    const radar = state && view === "now" && scopeMode() === "radar", prefs = radarPrefs();
+    state = await (await api(`api/state?range=${radar ? prefs.range : 0}${radar && prefs.style === "atc" ? "&square=1" : ""}`)).json();
     stateAt = state._at = Date.now();
     stateAtPerf = performance.now();
     if (mapFor !== state.airport.icao) { mapFor = state.airport.icao; loadMap(mapFor).then(() => { scopeLabel = ""; }); }
@@ -283,7 +377,7 @@ document.addEventListener("error", (e) => {
   if (t instanceof HTMLImageElement && t.classList.contains("logo") && !t.id) t.closest(".logo-tile").remove();
 }, true);
 document.addEventListener("click", (e) => { const b = e.target.closest(".mb-row"); if (b) pin(b.dataset.hex); });
-const pin = (hex) => fetch("api/pin", { method: "POST", body: JSON.stringify({ hex }) }).then(poll);
+const pin = (hex) => api("api/pin", { method: "POST", body: JSON.stringify({ hex }) }).then(poll);
 
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
 document.querySelector("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });

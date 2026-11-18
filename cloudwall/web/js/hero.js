@@ -1,5 +1,5 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords } from "./util.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, api } from "./util.js";
 import { typeInfo } from "./data.js";
 import { plate, renderLineup, drawn } from "./plate.js";
 import { flap, roll } from "./fx.js";
@@ -380,7 +380,7 @@ function drawHeat(canvas, state, heat) {
   const bm = state.basemap;
   if (!bm || !bm.enabled) return paintHeat(canvas, state, heat, null);
   const R = heat.radius_nm, px = Math.min(canvas.parentElement.clientHeight * 0.94, canvas.parentElement.clientWidth * 0.56) * (window.devicePixelRatio || 1);
-  const tiles = tileLayout(state.home, R, px / (2 * R)).tiles.map((t) => ({ ...t, img: new Image() }));
+  const tiles = tileLayout(state.home, R, px / (2 * R), state.charts && state.charts.map).tiles.map((t) => ({ ...t, img: new Image() }));
   let pending = tiles.length;
   const done = () => { if (--pending === 0 && canvas.isConnected) paintHeat(canvas, state, heat, tiles); };
   for (const t of tiles) { t.img.onload = t.img.onerror = done; t.img.src = t.url; }
@@ -443,8 +443,8 @@ async function refreshExtras() {
   if (Date.now() - extras.at < 60000) return;
   extras.at = Date.now();
   try {
-    const [log, heat, wx] = await Promise.all([fetch("api/logbook").then((r) => r.json()), fetch("api/heat").then((r) => r.json()),
-      fetch("api/weather").then((r) => r.json()).catch(() => null)]);
+    const [log, heat, wx] = await Promise.all([api("api/logbook").then((r) => r.json()), api("api/heat").then((r) => r.json()),
+      api("api/weather").then((r) => r.json()).catch(() => null)]);
     extras.log = log; extras.heat = heat; extras.wx = wx;
   } catch (e) { /* keep showing what we had */ }
 }
@@ -476,7 +476,7 @@ function showIdle(el, state) {
   slideShown = slide;
   el._key = null;
   if (kind === "military") {
-    el.innerHTML = `<div class="idle">${militaryHtml(state.heard)}</div>${dots}`;
+    el.innerHTML = `<div class="idle">${militaryHtml(state.heard, state.airport.city)}</div>${dots}`;
   } else if (kind === "airspace") {
     el.innerHTML = `<div class="idle">${airspaceHtml(state)}</div>${dots}`;
   } else if (kind === "weather") {
@@ -527,11 +527,11 @@ export function heardGroups(heard) {
   return [...by.values()];
 }
 
-function militaryHtml(heard) {
+function militaryHtml(heard, city) {
   const groups = heardGroups(heard);
   const lines = groups.map((g) => `<div class="mil-row"><b>${g.n > 1 ? `${g.n} × ` : ""}${esc(g.name)}</b><span>${g.alts.length ? `around ${num(Math.min(...g.alts))}${g.alts.length > 1 && Math.max(...g.alts) - Math.min(...g.alts) > 400 ? `–${num(Math.max(...g.alts))}` : ""} ft` : "altitude unknown"}</span></div>`).join("");
   return `<div class="dim">Heard nearby, position unknown</div><h1>Military jets up</h1>${lines}
-    <p class="dim">Their transponders send altitude but no position, so receivers near Portland can hear them without placing them on the map. Look and listen: they're usually within a few dozen miles.</p>`;
+    <p class="dim">Their transponders send altitude but no position, so receivers near ${esc(city || "here")} can hear them without placing them on the map. Look and listen: they're usually within a few dozen miles.</p>`;
 }
 
 export function airspaceHtml(state) {

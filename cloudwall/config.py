@@ -1,26 +1,32 @@
 """Configuration: defaults overlaid with an optional TOML file."""
 import copy
+import logging
 import os
+import re
 import shutil
 import tomllib
 from pathlib import Path
+
+from . import airports, geo
+
+log = logging.getLogger("cloudwall")
 
 EXAMPLE = Path(__file__).resolve().parent / "config.example.toml"
 
 DEFAULTS = {
     "home": {
-        # Placeholder: ~6 miles east of PDX under the 28L/28R final. Set your own.
+        # Placeholder: east Vancouver, WA, under PDX's 28L/28R final. Set your own, by lat and lon
+        # or by zip (a US ZIP code). elevation_ft: the airport's when not given.
         "name": "Home",
         "lat": 45.5900,
         "lon": -122.4740,
-        "elevation_ft": 100,
+        "elevation_ft": None,
     },
-    "airport": {"icao": "KPDX", "iata": "PDX", "city": "Portland", "lat": 45.5887, "lon": -122.5975,
-                # smaller fields nearby: their traffic is labelled as theirs, not PDX's
-                "others": [{"code": "VUO", "name": "Pearson Field", "city": "Vancouver",
-                            "lat": 45.6205, "lon": -122.6564, "elevation_ft": 25},
-                           {"code": "TTD", "name": "Troutdale", "city": "Troutdale",
-                            "lat": 45.5494, "lon": -122.4013, "elevation_ft": 39}]},
+    # The smaller fields nearby (Pearson Field, Grove Field, Troutdale and so on around Vancouver)
+    # come from the bundled tables; their traffic is labelled as theirs, not PDX's.
+    # "auto": the nearest large airport within 30 nm, else the nearest with airline service (PDX for
+    # Vancouver, WA). Or give its ICAO code.
+    "airport": {"icao": "auto"},
     "tracking": {
         "radius_nm": 15,        # how far out the board, flight card and logbook look (the radar can look further)
         "overhead_nm": 3.5,     # inside this, an aircraft counts as "overhead" and is logged
@@ -46,10 +52,10 @@ DEFAULTS = {
     # restrictions (FAA), and the contrail forecast (Open-Meteo upper-air data).
     "extras": {"military": True, "military_radius_nm": 40, "military_url": "https://opendata.adsb.fi/api/v2/mil",
                "tfr": True, "tfr_radius_nm": 30, "contrails": True},
-    # The kiosk has no buttons: its radar is set here. radar: "chart" or "atc" (drawn like an air
-    # traffic control screen); tracks: trails and one-minute lines; range_nm: 0 for the tracking
-    # radius, or 20 or 30 to see further.
-    "kiosk": {"radar": "chart", "tracks": True, "range_nm": 0},
+    # The kiosk has no buttons: its place and radar are set here. place: a place's name (empty for
+    # the first); radar: "chart" or "atc" (drawn like an air traffic control screen); tracks: trails
+    # (the selected aircraft's whole track) and one-minute lines; range_nm: 0 for the tracking radius, or 20 or 30 to see further.
+    "kiosk": {"place": "", "radar": "chart", "tracks": True, "range_nm": 0},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }
@@ -85,12 +91,156 @@ def load(path=None):
     if path:
         with open(path, "rb") as f:
             for section, values in tomllib.load(f).items():
-                cfg.setdefault(section, {}).update(values)
+                if section == "places":
+                    cfg["places"] = [dict(v) for v in values] if isinstance(values, list) else []
+                elif section == "airport" and "icao" in values:
+                    cfg["airport"] = dict(values)    # this airport only: nothing carries over from the defaults
+                elif section == "home" and "zip" in values and "lat" not in values and "lon" not in values:
+                    cfg["home"] = dict(values, name=values.get("name", "Home"))   # placed by ZIP code, not the placeholder
+                else:
+                    cfg.setdefault(section, {}).update(values)
     src = cfg["source"]
     if src.get("url"):                      # older single-feed setting: try it first
         src["urls"] = [src["url"]] + [u for u in src["urls"] if u != src["url"]]
     cfg["_path"] = str(path) if path else None
     return cfg
+
+
+# -- places -------------------------------------------------------------------
+# CloudWall can watch several places: [home] with [airport] is the first, and each [[places]]
+# entry adds one. A place needs only a name, a position and its airport's ICAO code; the rest
+# of the airport (name, city, position, elevation, runways, the small fields nearby) comes from
+# the bundled tables unless the config gives it.
+
+def _slug(name):
+    return re.sub(r"[^a-z0-9]+", "-", str(name).lower()).strip("-") or "place"
+
+
+def _zip(z):
+    """A ZIP code as a string, whether the config wrote it as text or as a number (02134 -> 2134)."""
+    return str(z).strip().zfill(5) if isinstance(z, int) else str(z).strip()
+
+
+def locate_home(h, what="[home]"):
+    """A home with lat and lon, from the ones given or from its ZIP code."""
+    h = dict(h)
+    if h.get("lat") is not None and h.get("lon") is not None:
+        h["lat"], h["lon"] = float(h["lat"]), float(h["lon"])
+    elif h.get("zip"):
+        h["zip"] = _zip(h["zip"])
+        p = airports.zip_point(h["zip"])
+        if not p:
+            raise ValueError(f"{what}: {h['zip']} isn't a US ZIP code CloudWall knows: give lat and lon instead")
+        h["lat"], h["lon"] = p
+    else:
+        raise ValueError(f"{what} needs lat and lon, or zip")
+    return h
+
+
+def complete_airport(ap, home, radius_nm):
+    """An airport filled in from its ICAO (or IATA) code, keeping whatever the config gives. With no
+    code, or "auto", it's the one airports.pick_airport chooses for home."""
+    ap = dict(ap)
+    if str(ap.get("icao") or "auto").lower() == "auto" and not ap.get("iata"):
+        ap["icao"] = airports.pick_airport(home["lat"], home["lon"])
+        if not ap["icao"]:
+            raise ValueError(f"no airport with airline service near {home['lat']:.3f}, {home['lon']:.3f}: give its ICAO code")
+    rec = airports.lookup(ap.get("icao")) or airports.lookup(ap.get("iata"))
+    if rec and ap.get("lat") is not None and ap.get("lon") is not None:
+        off = geo.haversine_nm(float(ap["lat"]), float(ap["lon"]), rec["lat"], rec["lon"])
+        if off > 10:      # e.g. a new icao left with another airport's position
+            log.warning("[airport] %s: the config's lat/lon are %.0f nm from %s; the position from the config is used",
+                        rec["icao"], off, rec["name"])
+    if rec:
+        for k in ("icao", "iata", "city", "name", "lat", "lon"):
+            if ap.get(k) in (None, ""):
+                ap[k] = rec[k]
+    if ap.get("lat") is None or ap.get("lon") is None:
+        raise ValueError(f"airport {ap.get('icao') or '(no code)'} isn't in CloudWall's table: "
+                         "give its lat and lon (and iata and city) in the config")
+    ap["icao"] = str(ap.get("icao") or "").upper()
+    ap.setdefault("iata", ap["icao"])
+    ap.setdefault("city", ap.get("name") or ap["iata"])
+    if ap.get("elevation_ft") is None:
+        ap["elevation_ft"] = airports.elevation_ft(ap["icao"]) or 0
+    if "others" not in ap:      # small fields nearby, whose light aircraft are theirs, not this airport's
+        ap["others"] = airports.nearby(home["lat"], home["lon"], radius_nm, exclude=[ap["icao"], ap["iata"]])[:6]
+    for f in ap["others"]:
+        if f.get("elevation_ft") is None:
+            f["elevation_ft"] = airports.elevation_ft(f.get("icao") or f.get("code")) or home.get("elevation_ft") or 0
+        if "runways" not in f:      # drawn inside the field's symbol on the radar
+            f["runways"] = airports.runways((airports.lookup(f.get("icao") or f.get("code")) or {}).get("icao"))
+    if "runways" not in ap:
+        ap["runways"] = airports.runways(ap["icao"])
+    # the ATC radar's video map: Class B and C airspace (and the airport's own Class D) and VORs
+    if "airspace" not in ap:
+        ap["airspace"] = airports.airspace_near(home["lat"], home["lon"], own=ap["iata"])
+    if "navaids" not in ap:
+        ap["navaids"] = airports.navaids_near(home["lat"], home["lon"])
+    return ap
+
+
+def complete_place(cfg):
+    """A config with its home located and its airport filled in, ready for a tracker."""
+    c = dict(cfg)
+    c["home"] = locate_home(cfg["home"])
+    c["airport"] = complete_airport(cfg["airport"], c["home"], cfg["tracking"]["radius_nm"])
+    if c["home"].get("elevation_ft") is None:         # not given: near enough the airport's
+        c["home"]["elevation_ft"] = c["airport"]["elevation_ft"]
+    return c
+
+
+def entry(p, what):
+    """A place as [[places]] (or the desktop's location setting) gives it: name, lat and lon or
+    zip, and optionally airport (an ICAO code, "auto" or a table), elevation_ft and others.
+    Returns its home and airport."""
+    home = locate_home({"name": p.get("name"), "lat": p.get("lat"), "lon": p.get("lon"), "zip": p.get("zip"),
+                        "elevation_ft": p.get("elevation_ft")}, what)
+    if not home["name"]:
+        home["name"] = f"ZIP {home['zip']}" if home.get("zip") else f"{home['lat']:.3f}, {home['lon']:.3f}"
+    a = p.get("airport") or "auto"
+    ap = dict(a) if isinstance(a, dict) else {"icao": str(a)}
+    if "others" in p:
+        ap["others"] = p["others"]
+    return home, ap
+
+
+def place_config(cfg, pid, home, airport):
+    """One place's full config: the shared settings with its own home and airport."""
+    c = copy.deepcopy({k: v for k, v in cfg.items() if k != "places"})
+    c["home"], c["airport"] = dict(home), dict(airport)
+    c = complete_place(c)
+    c["place"] = {"id": pid, "name": home["name"]}
+    return c
+
+
+def unique_id(name, taken):
+    pid = base = _slug(name)
+    n = 2
+    while pid in taken:
+        pid, n = f"{base}-{n}", n + 1
+    return pid
+
+
+def places(cfg):
+    """Every place to watch, first to last, each a full config of its own: the shared settings
+    with this place's [home] and [airport], and place = {id, name}."""
+    entries = [(dict(cfg["home"], name=cfg["home"].get("name") or "Home"), cfg["airport"])]
+    for i, p in enumerate(cfg.get("places") or []):
+        entries.append(entry(p, f"[[places]] entry {i + 1} ({p.get('name') or 'no name'})"))
+    out, ids = [], set()
+    for home, airport in entries:
+        pid = unique_id(home["name"], ids)
+        ids.add(pid)
+        out.append(place_config(cfg, pid, home, airport))
+    return out
+
+
+def kiosk_place(cfg, places_):
+    """The place the kiosk shows: [kiosk] place, by name or id, or the first."""
+    want = str(cfg.get("kiosk", {}).get("place") or "").strip().lower()
+    return next((p["place"]["id"] for p in places_ if want in (p["place"]["id"], p["place"]["name"].lower())),
+                places_[0]["place"]["id"])
 
 
 def init(path=None):
