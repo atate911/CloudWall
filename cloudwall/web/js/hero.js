@@ -1,5 +1,5 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords } from "./util.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone } from "./util.js";
 import { typeInfo } from "./data.js";
 import { plate, renderLineup, drawn } from "./plate.js";
 import { flap, roll } from "./fx.js";
@@ -375,11 +375,18 @@ function lastSlide(s) {
     <div class="badges">${badges(s.badges)}</div>`;
 }
 
+// The heatmap is square: beside its caption, as tall as the card allows; on an upright phone, under
+// the caption and as wide as the card.
+function heatSize(canvas) {
+  const box = canvas.parentElement;
+  return Math.floor(phone() === "stack" ? Math.min(box.clientWidth, 300) : Math.min(box.clientHeight * 0.94, box.clientWidth * 0.56));
+}
+
 // Load the map tiles for the heatmap, then draw (and draw again once they arrive).
 function drawHeat(canvas, state, heat) {
   const bm = state.basemap;
   if (!bm || !bm.enabled) return paintHeat(canvas, state, heat, null);
-  const R = heat.radius_nm, px = Math.min(canvas.parentElement.clientHeight * 0.94, canvas.parentElement.clientWidth * 0.56) * (window.devicePixelRatio || 1);
+  const R = heat.radius_nm, px = heatSize(canvas) * (window.devicePixelRatio || 1);
   const tiles = tileLayout(state.home, R, px / (2 * R)).tiles.map((t) => ({ ...t, img: new Image() }));
   let pending = tiles.length;
   const done = () => { if (--pending === 0 && canvas.isConnected) paintHeat(canvas, state, heat, tiles); };
@@ -389,7 +396,7 @@ function drawHeat(canvas, state, heat) {
 
 function paintHeat(canvas, state, heat, tiles) {
   // a square that fits beside the caption, sized here because CSS can't keep a canvas square in a flex row
-  const box = canvas.parentElement, css = Math.floor(Math.min(box.clientHeight * 0.94, box.clientWidth * 0.56));
+  const css = heatSize(canvas);
   canvas.style.width = canvas.style.height = css + "px";
   const size = css * (window.devicePixelRatio || 1);
   canvas.width = canvas.height = size;

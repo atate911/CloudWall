@@ -1,8 +1,8 @@
 "use strict";
-import { $, esc, num, mmss, ident, altText, store } from "./util.js";
+import { $, esc, num, mmss, ident, altText, store, phone } from "./util.js";
 import { updateSky, sky } from "./sky.js";
 import { drawScope, loadMap } from "./scope.js";
-import { renderHero, tickHero, nextSlide, badges, recordsHtml, forgetHero } from "./hero.js";
+import { renderHero, tickHero, nextSlide, badges, recordsHtml, forgetHero, boardFlight } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
 import { chime, soundOn, setSound } from "./fx.js";
 import { airlineColors, typeInfo } from "./data.js";
@@ -17,6 +17,44 @@ document.body.classList.add(KIOSK ? "kiosk" : "desk");
 if (KIOSK) store("scope", "auto");   // the kiosk has no switch; sky view when something is overhead
 
 let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastHero = null, view = "now", mapFor = null;
+
+// Phone layout: the desktop page rearranged for a phone in the hand, taken on by any screen that
+// small, and changing with it as the phone turns. ?mode=phone forces it; ?mode=desktop keeps it off.
+const MODE = new URLSearchParams(location.search).get("mode");
+const phoneQ = matchMedia("(max-width: 700px), (max-height: 500px) and (orientation: landscape)");
+const landQ = matchMedia("(orientation: landscape)");
+function applyPhone() {
+  const on = !KIOSK && MODE !== "desktop" && (MODE === "phone" || phoneQ.matches);
+  const was = phone(), cl = document.documentElement.classList;
+  cl.toggle("phone", on);
+  cl.toggle("land", on && landQ.matches);
+  if (phone() === was) return;
+  forgetHero();                    // the card and its slides are sized for the layout: draw them again
+  scopeLabel = "";
+  if (view === "wx") loadWeather(true);
+  render();
+}
+phoneQ.addEventListener("change", applyPhone);
+landQ.addEventListener("change", applyPhone);
+
+// Upright on a phone the radar sits under the card, so a card that changes height (the next slide, a
+// new flight) would move the radar under the reader's eyes. Browsers that anchor the scroll keep it
+// still themselves; elsewhere, when the card is mostly scrolled past, scroll by what it grew.
+const anchors = CSS.supports("overflow-anchor", "auto");
+function keepPlace(draw) {
+  if (anchors || phone() !== "stack") return draw();
+  const hero = $("hero"), h0 = hero.offsetHeight, above = hero.getBoundingClientRect().bottom < innerHeight / 2;
+  draw();
+  const d = hero.offsetHeight - h0;
+  if (d && above) scrollBy(0, d);
+}
+
+// The browser's own bars take the chart's paper colour, by day, by night and in an emergency.
+const themeMeta = document.querySelector('meta[name="theme-color"]');
+function paintTheme() {
+  const c = getComputedStyle(document.body).getPropertyValue("--paper").trim();
+  if (themeMeta && c && themeMeta.content !== c) themeMeta.content = c;
+}
 
 // ---------- emergencies ----------
 const hidden = new Set();                 // "hex:code" the desktop user chose to hide
@@ -34,6 +72,7 @@ function boardHtml() {
     const ia = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm, ib = b.cpa_s > 0 && b.cpa_nm <= R.overhead_nm;
     return ia !== ib ? ib - ia : ia ? a.cpa_s - b.cpa_s : a.dist - b.dist;
   });
+  if (phone()) return phoneBoardHtml(air, heroHex, R);
   const rows = air.map((a) => {
     const r = a.route && a.route.plausible ? a.route : null, v = a.vrate || 0, c = airlineColors(a);
     const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
@@ -54,6 +93,35 @@ function boardHtml() {
       <td class="rt"><span class="dim">No position sent</span></td><td class="ty">${esc(a.type || "")}<small>${esc(shortType(a.desc))}</small></td>
       <td class="num">${a.alt == null ? "–" : num(a.alt)} <small class="u">ft</small></td><td class="num">${a.gs == null ? "–" : num(a.gs)} <small class="u">kt</small></td>
       <td class="num"><span class="dim">within ~${Math.max(a.rough_nm, 10)}</span> <small class="u">nm</small></td><td class="num"><span class="dim">—</span></td></tr>`).join("")}</tbody>` : ""}</table>
+    <div class="board-foot">Soonest overhead first. Tap a flight to show it on the flight card.</div>`;
+}
+
+// On a phone the eight columns become two lines a flight, everything the table says in a thumb's width:
+//   AS 512   SFO to PDX              2:14      (overhead in, or how far away)
+//   [Alaska logo] B739      12,300 ft ▼ 280 kt
+function phoneBoardHtml(air, heroHex, R) {
+  const vs = (v) => (v > 300 ? ' <span class="up">▲</span>' : v < -300 ? ' <span class="down">▼</span>' : "");
+  const row = (a) => {
+    const r = a.route && a.route.plausible ? a.route : null, c = airlineColors(a);
+    const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
+    const name = (r && r.airline) || a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || shortType(a.type_name) || "";
+    // the logo stands for the airline's name; if it fails to load, the name shows instead
+    const logo = state.logos && a.airline_iata && name ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(name)}"></span>` : "";
+    return `<button class="pb-row${a.hex === heroHex ? " hero" : ""}" data-hex="${esc(a.hex)}">
+      <i class="sw" style="background:${c ? c[0] : "var(--rule)"}"></i>
+      <span class="pb-id">${esc(boardFlight(ident(a)))}</span>
+      <span class="pb-rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}` : a.local ? `<span class="dim">${esc(a.local === "arriving" ? "Landing" : a.local === "departing" ? "Departing" : "Local")}</span>` : '<span class="dim">—</span>'}</span>
+      <span class="pb-when${soon ? " soon" : ""}">${soon ? mmss(a.cpa_s) : `${a.dist.toFixed(1)}<small> nm<span class="pb-cmp"> ${esc(a.compass)}</span></small>`}</span>
+      <span class="pb-l2"><span class="pb-sub">${logo}${name ? `<span class="pb-name">${esc(name)}</span>` : ""}${a.type ? `<span class="pb-type">${esc(a.type)}</span>` : ""}</span>
+      <span class="pb-data">${altText(a)}<small> ft</small>${vs(a.vrate || 0)}<span class="pb-gs">${num(a.gs)}<small> kt</small></span></span></span></button>`;
+  };
+  const heard = (state.heard || []).map((a) => `<div class="pb-row heard">
+      <i class="sw"></i><span class="pb-id">${esc(a.callsign || a.reg || a.hex.toUpperCase())}</span>
+      <span class="pb-rt"><span class="dim">No position</span></span><span class="pb-when"><small>~${Math.max(a.rough_nm, 10)} nm</small></span>
+      <span class="pb-l2"><span class="pb-sub"><span class="pb-name">${esc(a.owner_op || "Military")}</span>${a.type ? `<span class="pb-type">${esc(a.type)}</span>` : ""}</span>
+      <span class="pb-data">${a.alt == null ? "–" : num(a.alt)}<small> ft</small><span class="pb-gs">${a.gs == null ? "–" : num(a.gs)}<small> kt</small></span></span></span></div>`).join("");
+  return `<div class="pboard">${air.map(row).join("") || `<p class="empty">No airborne traffic within ${R.radius_nm} nm.</p>`}</div>
+    ${heard ? `<h2>Heard nearby, position unknown</h2><div class="pboard">${heard}</div>` : ""}
     <div class="board-foot">Soonest overhead first. Tap a flight to show it on the flight card.</div>`;
 }
 
@@ -183,11 +251,13 @@ function drawScopeNow(now = performance.now()) {
   drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range });
 }
 
-// Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi.
-let lastDraw = 0;
+// Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi. On a phone
+// the radar can be scrolled out of sight under the card, and then it rests.
+let lastDraw = 0, scopeSeen = true;
+new IntersectionObserver(([e]) => { scopeSeen = e.isIntersecting; }).observe($("scope"));
 function frame(now) {
   requestAnimationFrame(frame);
-  if (document.hidden || now - lastDraw < 48) return;
+  if (document.hidden || !scopeSeen || now - lastDraw < 48) return;
   lastDraw = now;
   drawScopeNow(now);
 }
@@ -213,6 +283,7 @@ function setView(v) {
   document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
   if (v === "log") loadLog().catch(() => {});
   if (v === "wx") loadWeather(true);
+  if (phone() === "stack") scrollTo(0, 0);        // each tab starts at its top
   render();
 }
 function renderToggles() {
@@ -229,6 +300,7 @@ function render() {
   if (!state) return;
   updateSky(state);
   renderToggles();
+  paintTheme();
   const w = state.weather, f = state.flow;
   $("station").textContent = state.airport.icao || "";
   $("flow").hidden = !f;
@@ -252,8 +324,10 @@ function render() {
   }
   if (em.length) state.hero = em[0];            // the radar highlights it
   if (view === "now") {
-    if (em.length) renderEmergency($("hero"), state, em, !KIOSK);
-    else (KIOSK ? renderKiosk : renderHero)($("hero"), state);
+    keepPlace(() => {
+      if (em.length) renderEmergency($("hero"), state, em, !KIOSK);
+      else (KIOSK ? renderKiosk : renderHero)($("hero"), state);
+    });
     drawScopeNow(); if (!KIOSK) renderMiniBoard();
   }
   if (view === "board") $("board").innerHTML = boardHtml();
@@ -287,11 +361,15 @@ const pin = (hex) => fetch("api/pin", { method: "POST", body: JSON.stringify({ h
 
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
 document.querySelector("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });
-$("board").addEventListener("click", (e) => { const r = e.target.closest("tr[data-hex]"); if (r) { pin(r.dataset.hex); setView("now"); } });
+$("board").addEventListener("click", (e) => { const r = e.target.closest("[data-hex]"); if (r) { pin(r.dataset.hex); setView("now"); } });
 // a target past the tracking radius (on a longer-range radar) has no flight card to show
 $("radar").addEventListener("click", (e) => {
   const g = e.target.closest("g[data-hex]");
-  if (g && state && state.aircraft.some((a) => a.hex === g.dataset.hex)) pin(g.dataset.hex);
+  if (g && state && state.aircraft.some((a) => a.hex === g.dataset.hex)) {
+    pin(g.dataset.hex);
+    // on a phone the card is above the radar, out of sight: bring it up to show what was tapped
+    if (phone() === "stack") $("hero").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 });
 $("hero").addEventListener("click", (e) => {
   if (!state) return;
@@ -315,7 +393,7 @@ setInterval(() => {
   if (emergencies().length) { renderEmergency($("hero"), state, emergencies(), !KIOSK); return; }
   const elapsed = (Date.now() - stateAt) / 1000;
   if (KIOSK) tickKiosk(elapsed, state.hero ? null : state);
-  else if (state.hero) tickHero(elapsed); else renderHero($("hero"), state);
+  else if (state.hero) tickHero(elapsed); else keepPlace(() => renderHero($("hero"), state));
 }, 1000);
 setInterval(() => { if (view === "log") loadLog().catch(() => {}); }, 30000);
 // Local time, with coordinated universal time beside it as aviation writes it ("0324Z").
@@ -323,6 +401,7 @@ setInterval(() => {
   const d = new Date(), z = String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0") + "Z";
   $("clock").innerHTML = `${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}<small>${z}</small>`;
 }, 1000);
+applyPhone();
 poll().then(() => loadWeather(false));
 $("em-chip").addEventListener("click", () => { hidden.clear(); emShown = ""; setView("now"); render(); });
 $("tfr-chip").addEventListener("click", () => setView("wx"));

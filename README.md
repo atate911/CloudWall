@@ -132,12 +132,17 @@ On the Pi, install the same way and run `make service`. Then start `deploy/kiosk
 from the desktop autostart to open the board full-screen. To drive a display from a
 board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk script.
 
-## Two interfaces
+## Three layouts
 
 | Address | For | What it shows |
 |---|---|---|
 | `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, sound and night buttons. On screens 1500 px wide and up, the Overhead view adds a live list of nearby flights; click one to follow it. |
+| `http://<server>:5050/` on a phone | A phone in the hand | The same tabs and switches, laid out for a phone. Upright, the page scrolls: the flight card at full width, then a square radar with its switches above and below it, the tabs along the foot and the status line held at the top. The Board becomes a two-line list (flight, route and when it's overhead; airline, type, altitude and speed), and Weather and Logbook stack into one column. Turned sideways, the card and radar sit side by side. Tapping a blip on the radar brings its flight card into view. |
 | `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Built to read from across the room: one big card (flight number, airline logo, route, altitude, speed and time until overhead) beside the radar or sky view. No tabs, buttons or small print. When the sky is empty it rotates every 12 seconds between the next flight, the weather with a windsock, and today's count. Tap the card to skip ahead. |
+
+The phone layout is chosen by screen size (up to 700 px wide, or 500 px tall when turned sideways),
+so it follows the phone as it turns and also suits a narrow desktop window. `?mode=phone` forces it and
+`?mode=desktop` keeps it off.
 
 `?mode=kiosk` on any address does the same as `/kiosk`. The kiosk sizes everything from
 the screen's height, so the 1024×600 and 1920×1080 panels look the same.
