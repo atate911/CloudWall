@@ -464,13 +464,17 @@ body.night #radar .basemap { mix-blend-mode: screen; }
 body.night #radar .basemap.dark, body.night #radar .basemap.carto-dark { filter: grayscale(.3) brightness(1.5) blur(.5px); }
 body.night #radar .basemap.light, body.night #radar .basemap.carto-light { filter: invert(1) hue-rotate(180deg) grayscale(.3) brightness(.75) blur(.5px); }
 body.night #radar .basemap.satellite, body.night #radar .basemap.osm, body.night #radar .basemap.custom { filter: grayscale(.7) brightness(.55) blur(.5px); }
-/* the FAA's charts as the chart-style radar's map ([map] style): faded like the street maps, and
-   at night inverted to sit on the night chart */
-#radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) { filter: saturate(.55) contrast(.95); }
-body.night #radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) { filter: invert(1) hue-rotate(180deg) saturate(.5) brightness(.8); }
-/* the ATC style's chart: printed dark on white, so turned light on dark and dimmed well under the traffic */
-#scope.atc #radar .basemap.atc-chart { mix-blend-mode: normal; opacity: .3;
-  filter: invert(1) hue-rotate(180deg) saturate(.35) brightness(.85) contrast(1.1); }
+/* the FAA's charts as the chart-style radar's map ([map] style): a busy print, so its colours
+   muted, its contrast lowered and its small print softened, until it sits quietly behind the
+   traffic; at night inverted to sit on the night chart */
+#radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) { filter: saturate(.3) contrast(.7) brightness(1.1) blur(.5px); }
+body.night #radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) {
+  filter: invert(1) hue-rotate(180deg) saturate(.3) contrast(.75) brightness(.75) blur(.5px); }
+/* the ATC style's chart: printed dark on white, so turned light on dark, in grey, and faint and
+   soft enough that its airways and boundaries show as texture and its print doesn't compete
+   with the data blocks */
+#scope.atc #radar .basemap.atc-chart { mix-blend-mode: normal; opacity: .18;
+  filter: invert(1) grayscale(1) blur(.8px) contrast(.9); }
 
 /* ---------- board ---------- */
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
