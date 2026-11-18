@@ -38,3 +38,60 @@ def describe(icao=None, iata=None):
         return {"iata": rec["iata"], "icao": rec["icao"], "city": rec["city"], "name": rec["name"],
                 "lat": rec["lat"], "lon": rec["lon"], "tz": rec["tz"]}
     return {"iata": iata or icao, "icao": icao, "city": None, "name": None, "lat": None, "lon": None, "tz": None}
+
+
+# -- runways (OurAirports, public domain; see tools/build_runways.py) ------------
+_RUNWAYS = Path(__file__).resolve().parent / "data" / "runways.csv"
+_runways = None
+
+
+def _pad(ident):
+    """"3" -> "03", "3L" -> "03L": runway numbers as charts print them."""
+    return "0" + ident if ident[:1].isdigit() and not ident[1:2].isdigit() else ident
+
+
+def _load_runways():
+    global _runways
+    with _lock:
+        if _runways is None:
+            table = {}
+            with open(_RUNWAYS, newline="", encoding="utf-8") as f:
+                rows = csv.DictReader(line for line in f if not line.startswith("#"))
+                for r in rows:
+                    table.setdefault(r["icao"], []).append({
+                        "name": f"{_pad(r['le'])}/{_pad(r['he'])}",
+                        "ends": [[float(r["le_lat"]), float(r["le_lon"])], [float(r["he_lat"]), float(r["he_lon"])]],
+                        "length_ft": int(r["length_ft"]),
+                        "elev_ft": int(r["elev_ft"]) if r["elev_ft"] else None})
+            for rws in table.values():
+                rws.sort(key=lambda w: -w["length_ft"])
+            _runways = table
+    return _runways
+
+
+def runways(icao):
+    """The airport's runways, longest first: name ("10R/28L"), ends [[lat, lon], [lat, lon]] in
+    the order the name gives them, and length. Empty for an airport not in the table."""
+    return [{k: w[k] for k in ("name", "ends", "length_ft")} for w in _load_runways().get(str(icao or "").upper(), [])]
+
+
+def elevation_ft(icao):
+    """The field's elevation, from its longest runway with one on record, or None."""
+    return next((w["elev_ft"] for w in _load_runways().get(str(icao or "").upper(), []) if w["elev_ft"] is not None), None)
+
+
+def nearby(lat, lon, radius_nm, exclude=()):
+    """Airports in the table within radius_nm, nearest first, in the shape of [airport] others."""
+    from .geo import haversine_nm
+    skip = {str(c).upper() for c in exclude if c}
+    out, seen = [], set()
+    for rec in _load().values():
+        if id(rec) in seen or rec["icao"] in skip or rec["iata"] in skip:
+            continue
+        seen.add(id(rec))
+        d = haversine_nm(lat, lon, rec["lat"], rec["lon"])
+        if d <= radius_nm:
+            out.append((d, {"code": rec["iata"] or rec["icao"], "icao": rec["icao"], "name": rec["name"],
+                            "city": rec["city"], "lat": rec["lat"], "lon": rec["lon"],
+                            "elevation_ft": elevation_ft(rec["icao"])}))
+    return [f for _, f in sorted(out, key=lambda x: x[0])]

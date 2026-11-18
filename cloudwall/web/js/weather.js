@@ -2,7 +2,7 @@
 // Charts are drawn as SVG at the container's real pixel size, so text stays a fixed,
 // readable size from across a room.
 import { $, esc, num, offset, POINTS } from "./util.js";
-import { map } from "./scope.js";
+import { runwaysFor } from "./scope.js";
 import { skyToday, moonSvg } from "./astro.js";
 
 const CAT_NAME = { VFR: "Visual flight rules", MVFR: "Marginal visual flight rules", IFR: "Instrument flight rules", LIFR: "Low instrument flight rules" };
@@ -37,9 +37,9 @@ export function summary(n) {
 
 // ---------- sunrise / sunset ----------
 // ---------- wind and runways ----------
-export function runwaysFromMap(home) {
-  if (!map || !map.runways) return [];
-  return map.runways.map((r) => {
+export function runwayHeadings(state) {
+  const home = state.home;
+  return runwaysFor(state).map((r) => {
     const [a, b] = r.ends.map(([lat, lon]) => offset(home, { lat, lon }));
     const hdg = (Math.atan2(b.x - a.x, b.y - a.y) / RAD + 360) % 360;   // true heading of the first end's direction
     const [n1, n2] = r.name.split("/");
@@ -247,7 +247,7 @@ export function renderWeatherTab(el, W, state) {
     el.innerHTML = `<div class="wx-empty"><h1>Weather</h1><p>Waiting for the latest report from ${esc(state ? state.airport.icao : "the airport")}.</p></div>`;
     return;
   }
-  const n = W.now, home = state.home, runways = runwaysFromMap(home);
+  const n = W.now, home = state.home, runways = runwayHeadings(state);
   const age = Math.round((Date.now() / 1000 - n.time) / 60);
   el.innerHTML = `<div class="wx-grid">
     <section class="wx-now">
@@ -380,7 +380,7 @@ function hookCrosshair(hist) {
 
 // ---------- compact version for the quiet-sky rotation ----------
 export function weatherSlide(el, W, state) {
-  const n = W.now, runways = runwaysFromMap(state.home);
+  const n = W.now, runways = runwayHeadings(state);
   el.innerHTML = `<div class="idle wx-slide">
       <div class="wx-head">
         <div class="cat-badge"><i class="sw big cat-${n.category}"></i><b>${n.category}</b></div>

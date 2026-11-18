@@ -7,14 +7,16 @@ lat = 45.5900          # <-- set to your house (decimal degrees)
 lon = -122.4740
 elevation_ft = 100
 
-[airport]              # the local airport: used for arriving/departing labels and weather
-icao = "KPDX"
-iata = "PDX"
-city = "Portland"
-lat = 45.5887
-lon = -122.5975
+[airport]              # the local airport: arriving/departing labels, runways, weather
+icao = "KPDX"          # the ICAO code is enough: the rest comes from CloudWall's airport and runway tables
+# Only for an airport the tables don't have (CloudWall says so when it starts):
+# iata = "PDX"
+# city = "Portland"
+# lat = 45.5887
+# lon = -122.5975
 # Smaller fields nearby: light aircraft low over them are labelled as theirs, and they're
-# marked on the radar. Pearson Field and Troutdale are built in; listing any here replaces them.
+# marked on the radar. By default, airports in the table within the tracking radius (for PDX,
+# Pearson Field and Troutdale); listing any here replaces them.
 # [[airport.others]]
 # code = "VUO"
 # name = "Pearson Field"
@@ -66,7 +68,18 @@ daily_limit = 0
 mode = "always"
 general_aviation = false
 
-[kiosk]                # the wall panel (/kiosk) has no buttons, so its radar is set here
+# More places to watch, such as a cabin: each needs a name, a position and its airport's ICAO
+# code. The desktop picks one from the menu beside "CloudWall"; each screen can show a different
+# one. Every place keeps its own logbook, and data is fetched only for places a screen is showing.
+# [[places]]
+# name = "Cabin"
+# lat = 44.0600
+# lon = -121.3100
+# airport = "KRDM"
+# elevation_ft = 3600  # optional: the airport's when left out
+
+[kiosk]                # the wall panel (/kiosk) has no buttons, so its place and radar are set here
+place = ""             # a place's name; empty for [home]
 radar = "chart"        # "chart", or "atc" to draw the radar like an air traffic control screen
 tracks = true          # trails behind aircraft and lines to where they will be in a minute
 range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see further

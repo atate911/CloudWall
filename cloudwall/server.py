@@ -6,10 +6,18 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
+from .config import kiosk_place
+
 WEB = Path(__file__).resolve().parent / "web"
 
 
-def make_server(cfg, tracker, store, tiles=None, logos=None, activity=None):
+def make_server(cfg, places, tiles=None, logos=None):
+    """places: {id: Place}, first to last. Each screen says which it shows with ?place=; without
+    one, the kiosk (?kiosk=1) gets its configured place and any other screen the first."""
+    first = next(iter(places.values()))
+    kiosk = places[kiosk_place(cfg, [p.cfg for p in places.values()])]
+    summaries = [p.summary() for p in places.values()]
+
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *a):
             pass
@@ -24,24 +32,29 @@ def make_server(cfg, tracker, store, tiles=None, logos=None, activity=None):
             self.end_headers()
             self.wfile.write(body)
 
+        def _place(self, q):
+            return places.get((q.get("place") or [""])[0]) or (kiosk if q.get("kiosk") else first)
+
         def do_GET(self):
             path = self.path.split("?")[0]
-            if activity and path in ("/api/state", "/api/weather"):
-                activity.touch()                      # a screen is open
+            q = parse_qs(urlsplit(self.path).query)
+            place = self._place(q)
+            tracker = place.tracker
+            if path in ("/api/state", "/api/weather"):
+                place.activity.touch()                # a screen is showing this place
             if path == "/api/state":
-                q = parse_qs(urlsplit(self.path).query)
                 try:
                     tracker.want_range(int(q.get("range", ["0"])[0]))   # the radar's range on this screen
                 except ValueError:
                     pass
-                return self._send(200, tracker.snapshot())
+                return self._send(200, dict(tracker.snapshot(), place=place.id, places=summaries))
             if path == "/api/weather":
                 return self._send(200, dict(tracker.weather_full or {}, contrails=tracker.contrails,
                                             tfrs=tracker.tfrs))
             if path == "/api/heat":
                 return self._send(200, tracker.heatmap())
             if path == "/api/logbook":
-                return self._send(200, store.logbook(time.strftime("%Y-%m-%d")))
+                return self._send(200, place.store.logbook(time.strftime("%Y-%m-%d")))
             if path.startswith("/tiles/"):
                 return self._tile(path)
             if path.startswith("/logos/"):
@@ -78,13 +91,14 @@ def make_server(cfg, tracker, store, tiles=None, logos=None, activity=None):
             self.wfile.write(data)
 
         def do_POST(self):
-            if self.path != "/api/pin":
+            if self.path.split("?")[0] != "/api/pin":
                 return self._send(404, {"error": "not found"})
             try:
                 body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0)) or 0) or b"{}")
             except ValueError:
                 return self._send(400, {"error": "bad json"})
             hexid = body.get("hex")
+            tracker = self._place(parse_qs(urlsplit(self.path).query)).tracker
             tracker.pin(hexid if isinstance(hexid, str) else None)
             self._send(200, {"pinned": tracker.pinned})
 

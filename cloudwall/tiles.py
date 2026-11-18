@@ -47,7 +47,7 @@ class Tiles:
         self.attribution = m.get("attribution") or attribution
         self.opacity = float(m.get("opacity", 0.32))
         self.enabled = self.style != "off" and bool(self.url)
-        self.home = cfg["home"]
+        self.homes = [cfg["home"]]      # every place watched (set by the caller when there are several)
         # only serve the area around home, so the proxy can't be used to scrape a whole map
         self.reach_nm = max(40, cfg["tracking"]["radius_nm"] * 3)
         self.dir = Path(cache_dir) / hashlib.sha1(self.url.encode()).hexdigest()[:10]
@@ -67,7 +67,7 @@ class Tiles:
         if not (6 <= z <= 17 and 0 <= x < 2 ** z and 0 <= y < 2 ** z):
             return False
         lat, lon = tile_center(z, x, y)
-        return haversine_nm(self.home["lat"], self.home["lon"], lat, lon) <= self.reach_nm
+        return any(haversine_nm(h["lat"], h["lon"], lat, lon) <= self.reach_nm for h in self.homes)
 
     def _download(self, z, x, y):
         # Templates copied from map providers often carry {s} (server letter) and {r}

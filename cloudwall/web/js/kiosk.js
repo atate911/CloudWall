@@ -2,11 +2,11 @@
 // Only a few things, very large: who's overhead, where it's going, how high and fast,
 // and when it passes. When the sky is quiet, a slow rotation of large slides.
 // Sizes are in vh so the same design reads the same on 1024×600 and 1920×1080 panels.
-import { $, esc, num, mmss, ident, clamp } from "./util.js";
+import { $, esc, num, mmss, ident, clamp, api } from "./util.js";
 import { boardFlight, showLogo, localWords, heardGroups } from "./hero.js";
 import { typeInfo } from "./data.js";
 import { flap } from "./fx.js";
-import { windRose, runwaysFromMap, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
+import { windRose, runwayHeadings, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
 
 const SLIDE_SECONDS = 12;
 const CAT_NAME = { VFR: "Visual flight rules", MVFR: "Marginal VFR", IFR: "Instrument flight rules", LIFR: "Low IFR" };
@@ -17,8 +17,8 @@ let wx = null, wxAt = 0, log = null, logAt = 0;
 async function refresh() {
   const now = Date.now();
   try {
-    if (now - wxAt > 60000) { wxAt = now; wx = await (await fetch("api/weather")).json(); }
-    if (now - logAt > 60000) { logAt = now; log = await (await fetch("api/logbook")).json(); }
+    if (now - wxAt > 60000) { wxAt = now; wx = await (await api("api/weather")).json(); }
+    if (now - logAt > 60000) { logAt = now; log = await (await api("api/logbook")).json(); }
   } catch (e) { /* keep what we had */ }
 }
 
@@ -168,7 +168,7 @@ function showIdle(el, state) {
   else {
     el.innerHTML = weatherSlideHtml(wx, state);
     const box = $("k-rose"), size = Math.floor(Math.min(box.clientWidth, box.clientHeight));
-    box.innerHTML = windRose(size, wx.now.wind, runwaysFromMap(state.home));
+    box.innerHTML = windRose(size, wx.now.wind, runwayHeadings(state));
   }
   el.firstElementChild.classList.add("k-enter");
 }

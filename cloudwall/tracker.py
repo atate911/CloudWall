@@ -6,7 +6,7 @@ import threading
 import time
 from collections import deque
 
-from . import contrails as contrail_mod, geo
+from . import config, contrails as contrail_mod, geo
 from .seats import seats as seat_estimate
 from .logos import AIRLINE_NAMES, flight_number, iata_for
 
@@ -45,6 +45,8 @@ def ordinal(n):
 
 class Tracker:
     def __init__(self, cfg, store, enricher):
+        if "runways" not in cfg["airport"]:      # not yet filled in by config.places (tests, scripts)
+            cfg = dict(cfg, airport=config.complete_airport(cfg["airport"], cfg["home"], cfg["tracking"]["radius_nm"]))
         self.cfg, self.store, self.enricher = cfg, store, enricher
         self.home = cfg["home"]
         self.lock = threading.Lock()
@@ -396,19 +398,30 @@ class Tracker:
         return s
 
     def _update_flow(self, aircraft):
-        """Guess the airport's runway direction from low, descending traffic near it."""
+        """Guess which way the airport is landing from low, descending traffic near it, and so
+        which runways are in use: those whose landing direction its track matches."""
         ap = self.cfg["airport"]
+        ways = []          # (runway as named for landing that way, its landing direction in degrees true)
+        for w in ap.get("runways") or []:
+            (lat1, lon1), (lat2, lon2) = w["ends"]
+            first, second = w["name"].split("/")
+            h = geo.bearing_deg(lat1, lon1, lat2, lon2)       # landing on the first-named end
+            ways += [(first, h), (second, (h + 180) % 360)]
+        if not ways:
+            return
+        off = lambda a, b: abs((a - b + 180) % 360 - 180)
         for a in aircraft:
             if (a["on_ground"] or a["alt"] is None or a["alt"] > 4000 or a.get("track") is None
                     or (a.get("vrate") or 0) > -200 or (a.get("gs") or 0) < 110):
                 continue
             if geo.haversine_nm(ap["lat"], ap["lon"], a["lat"], a["lon"]) > 12:
                 continue
-            # PDX's parallel runways lie along 119/299 degrees true
-            if abs((a["track"] - 299 + 180) % 360 - 180) < 25:
-                self.flow = {"dir": "west", "label": "West flow", "runways": "28L / 28R"}
-            elif abs((a["track"] - 119 + 180) % 360 - 180) < 25:
-                self.flow = {"dir": "east", "label": "East flow", "runways": "10L / 10R"}
+            name, hdg = min(ways, key=lambda w: off(a["track"], w[1]))
+            if off(a["track"], hdg) >= 25:
+                continue
+            word = ("north", "east", "south", "west")[round(hdg / 90) % 4]
+            in_use = sorted(n for n, h in ways if off(h, hdg) < 10)      # the parallels landing the same way
+            self.flow = {"dir": word, "label": f"{word.capitalize()} flow", "runways": " / ".join(in_use)}
 
     # -- main entry points ------------------------------------------------------
     # -- radar range -------------------------------------------------------------
@@ -455,8 +468,7 @@ class Tracker:
                 if self._overhead(a):
                     self._log(a, now)
             self._remember_tracks(airborne, now, beyond)
-            if self.cfg["airport"]["icao"] == "KPDX":
-                self._update_flow(raw)
+            self._update_flow(raw)
             self.aircraft = raw
             self.beyond = beyond
             self.emergency = emergency

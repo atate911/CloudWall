@@ -1,5 +1,5 @@
 "use strict";
-import { $, esc, num, mmss, ident, altText, store } from "./util.js";
+import { $, esc, num, mmss, ident, altText, store, api } from "./util.js";
 import { updateSky, sky } from "./sky.js";
 import { drawScope, loadMap } from "./scope.js";
 import { renderHero, tickHero, nextSlide, badges, recordsHtml, forgetHero } from "./hero.js";
@@ -93,7 +93,7 @@ function budgetLine(fa) {
 }
 
 async function loadLog() {
-  const L = await (await fetch("api/logbook")).json();
+  const L = await (await api("api/logbook")).json();
   const fa = state && state.live_routes;
   const max = Math.max(1, ...L.hours.map((h) => h.n)), byHour = Object.fromEntries(L.hours.map((h) => [h.hour, h.n]));
   let bars = "";
@@ -197,7 +197,7 @@ requestAnimationFrame(frame);
 let wxData = null, wxAt = 0;
 async function loadWeather(draw) {
   try {
-    if (Date.now() - wxAt > 60000 || !wxData) { wxData = await (await fetch("api/weather")).json(); wxAt = Date.now(); }
+    if (Date.now() - wxAt > 60000 || !wxData) { wxData = await (await api("api/weather")).json(); wxAt = Date.now(); }
     $("n-wx").textContent = (wxData && wxData.now && wxData.now.category) || "";
     if (draw && view === "wx" && state) renderWeatherTab($("wx-tab"), wxData, state);
   } catch (e) { /* keep what's shown */ }
@@ -225,12 +225,43 @@ function renderToggles() {
   $("night-text").textContent = n === "auto" ? "Night auto" : n === "on" ? "Night on" : "Night off";
   $("btn-night").classList.toggle("on", sky.night);
 }
+// The place in the header: its airport's code, and with several places its name too. On the
+// desktop it opens a menu of the places; choosing one starts this screen afresh on it.
+function renderPlace() {
+  const places = state.places || [], here = places.find((p) => p.id === state.place), many = places.length > 1;
+  const label = many && here ? `${here.name} · ${state.airport.icao}` : state.airport.icao || "";
+  const st = $("station");
+  if (st.textContent !== label) st.textContent = label;
+  st.disabled = !many || KIOSK;
+  st.classList.toggle("menu", many && !KIOSK);
+}
+function closePlaceMenu() { $("place-menu").hidden = true; $("station").setAttribute("aria-expanded", "false"); }
+$("station").addEventListener("click", () => {
+  const m = $("place-menu");
+  if (!m.hidden) return closePlaceMenu();
+  m.innerHTML = (state.places || []).map((p) => `<button role="menuitemradio" aria-checked="${p.id === state.place}" data-place="${esc(p.id)}">
+    <b>${esc(p.name)}</b><span>${esc(p.icao)}${p.city ? ` · ${esc(p.city)}` : ""}</span></button>`).join("");
+  m.hidden = false;
+  $("station").setAttribute("aria-expanded", "true");
+});
+$("place-menu").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-place]");
+  if (!b) return;
+  if (b.dataset.place === state.place) return closePlaceMenu();
+  store("place", b.dataset.place);
+  const u = new URL(location.href);
+  u.searchParams.delete("place");          // the menu's choice wins over one given in the address
+  location.href = u.toString();
+});
+document.addEventListener("pointerdown", (e) => { if (!e.target.closest(".brand")) closePlaceMenu(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePlaceMenu(); });
+
 function render() {
   if (!state) return;
   updateSky(state);
   renderToggles();
   const w = state.weather, f = state.flow;
-  $("station").textContent = state.airport.icao || "";
+  renderPlace();
   $("flow").hidden = !f;
   if (f) $("flow").innerHTML = `${esc(state.airport.iata)} landing ${esc(f.dir)}, runways ${esc(f.runways.replace(" / ", " and "))}`;
   $("wx").hidden = !w;
@@ -263,7 +294,7 @@ async function poll() {
   try {
     // while the radar is on screen, the server fetches out to its range
     const range = state && view === "now" && scopeMode() === "radar" ? radarPrefs().range : 0;
-    state = await (await fetch(`api/state?range=${range}`)).json();
+    state = await (await api(`api/state?range=${range}`)).json();
     stateAt = state._at = Date.now();
     stateAtPerf = performance.now();
     if (mapFor !== state.airport.icao) { mapFor = state.airport.icao; loadMap(mapFor).then(() => { scopeLabel = ""; }); }
@@ -283,7 +314,7 @@ document.addEventListener("error", (e) => {
   if (t instanceof HTMLImageElement && t.classList.contains("logo") && !t.id) t.closest(".logo-tile").remove();
 }, true);
 document.addEventListener("click", (e) => { const b = e.target.closest(".mb-row"); if (b) pin(b.dataset.hex); });
-const pin = (hex) => fetch("api/pin", { method: "POST", body: JSON.stringify({ hex }) }).then(poll);
+const pin = (hex) => api("api/pin", { method: "POST", body: JSON.stringify({ hex }) }).then(poll);
 
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
 document.querySelector("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });

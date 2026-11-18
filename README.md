@@ -70,7 +70,7 @@ make demo         # simulated traffic, works offline
 Open `http://<server>:5050`. For real traffic:
 
 ```sh
-make config       # writes ~/.config/cloudwall/config.toml; set [home] lat/lon
+make config       # writes ~/.config/cloudwall/config.toml; set [home] lat/lon and [airport] icao
 make run
 ```
 
@@ -91,8 +91,37 @@ make service      # systemd user service; `make logs` to follow, `make service-r
 | What | Where |
 |---|---|
 | Settings | `--config`, `$CLOUDWALL_CONFIG`, `./config.toml`, then `~/.config/cloudwall/config.toml` |
-| Logbook database | `~/.local/share/cloudwall/cloudwall.db` (or `[storage] db_path`, or `--db`) |
+| Logbook database | `~/.local/share/cloudwall/cloudwall.db` (or `[storage] db_path`, or `--db`); each extra place gets its own beside it, such as `cloudwall-cabin.db` |
 | Port | 5050 (`[server] port`, or `--port`) |
+
+## Anywhere, and more than one place
+
+CloudWall works at any airport from its ICAO code: set `[airport] icao` and it fills in the rest
+from bundled tables, the airport's name, city, position and elevation, its runways (for the radar,
+the wind rose and which way it's landing) and the smaller fields nearby. The airport table is
+airportsdata (MIT licence) and the runways come from OurAirports (public domain); rebuild them with
+`python3 tools/build_runways.py`. For an airport the tables don't cover, give its `iata`, `city`,
+`lat` and `lon` too.
+
+To watch more than one place, such as home and a cabin, add a `[[places]]` entry for each:
+
+```toml
+[[places]]
+name = "Cabin"
+lat = 44.0600
+lon = -121.3100
+airport = "KRDM"       # the rest is filled in, as for [airport]
+elevation_ft = 3600    # optional: the airport's when left out
+```
+
+`[home]` with `[airport]` stays the first place. With more than one, the place's name appears
+beside "CloudWall" in the header and opens a menu of them; each screen remembers its own, so the
+kiosk can show home while a laptop shows the cabin. The kiosk takes its place from `[kiosk] place`
+(a place's name), and `?place=` in the address picks one on any screen.
+
+Each place keeps its own logbook, weather, flight restrictions and contrail forecast, and its data
+is fetched only while a screen is showing it. A paid route provider is shared: every place's
+lookups count against the one budget, so two screens on two places can use it about twice as fast.
 
 ## Seats on board
 
@@ -116,8 +145,10 @@ airline's layout; rows for a specific airline win over the typical ones.
 - **Flight restrictions (TFRs).** The FAA's temporary flight restrictions within 30 nm are drawn on the
   radar, listed on the Weather tab with times, altitudes and the full notice, and shown on an idle
   slide while one is active. Drone-only restrictions are listed but don't interrupt the board.
-- **Pearson Field and Troutdale.** Light aircraft low over either field are labelled "Landing at
-  Pearson Field" and so on, instead of being taken for PDX traffic. Both fields are marked on the radar.
+- **Small fields nearby.** Light aircraft low over one, such as Pearson Field or Troutdale near PDX,
+  are labelled "Landing at Pearson Field" and so on, instead of being taken for the big airport's
+  traffic. They're marked on the radar. Elsewhere, the airports in the bundled table within the
+  tracking radius are used, or list your own under `[airport] others`.
 - **Sun, moon and contrails.** The Weather tab shows first light, sunrise, sunset, last light, the
   moon's phase, rise and set, and a contrail forecast by altitude from the GFS weather model's
   upper-air temperature and humidity. The moon appears on the sky view when it's up, and a flight card
@@ -201,7 +232,8 @@ has the board open (a hidden browser tab doesn't count). After 90 seconds with n
 `[tracking] when_idle = "pause"` (the default) stops all requests until a screen asks
 again; `"log"` keeps checking the free position feed every 15 seconds so the logbook
 stays complete. Either way, no paid route lookups and no weather requests are made while
-nobody is looking.
+nobody is looking. With several places this holds for each: a place no screen is showing makes
+no requests (or, with `"log"`, only the slow position check).
 
 ## Notes
 
@@ -217,9 +249,10 @@ nobody is looking.
   CloudWall downloads each tile once, caches it for a
   month next to the logbook, and serves it to the display itself, so the map provider sees
   only your server and an API key never reaches the browser.
-- The river and runway map is hand-drawn for PDX (`cloudwall/web/maps/kpdx.json`) and
-  approximate; with the real map turned on only its runways and approach lines are
-  drawn. For another airport, add a file named after its ICAO code.
+- Runways are drawn from the bundled runway table, with extended centrelines for the main
+  direction. A hand-drawn map can add rivers and town names: PDX has one
+  (`cloudwall/web/maps/kpdx.json`, approximate), drawn when the real map is off and in the ATC
+  style. For another airport, add a file named after its ICAO code.
 - Aircraft photos come from the free airframe database and load directly in the browser.
 - The side elevations are drawn in the browser from measurements, not stored as pictures. Each
   family (`cloudwall/web/js/profiles/`) records its fuselage outline, flight-deck glazing, doors

@@ -59,12 +59,6 @@ function mapLayer(home, k, hasBasemap) {
   // style draws them as thin lines, as a controller's video map shows coastlines and rivers
   if (opt.atc) for (const w of map.water || []) s += `<polyline class="vmap" points="${pts(home, w.line, k)}"/>`;
   else if (!hasBasemap) for (const w of map.water || []) s += `<polyline class="water" stroke-width="${Math.max(1.2, w.width_nm * k)}" points="${pts(home, w.line, k)}"/>`;
-  for (const r of map.runways || []) {
-    const [a, b] = r.ends.map(([lat, lon]) => offset(home, { lat, lon }));
-    const len = Math.hypot(b.x - a.x, b.y - a.y), ux = (b.x - a.x) / len, uy = (b.y - a.y) / len, far = 12;   // nm of extended centreline
-    s += `<line class="approach" x1="${(a.x - ux * far) * k}" y1="${-(a.y - uy * far) * k}" x2="${(b.x + ux * far) * k}" y2="${-(b.y + uy * far) * k}"/>`;
-    s += `<line class="runway" x1="${a.x * k}" y1="${-a.y * k}" x2="${b.x * k}" y2="${-b.y * k}"/>`;
-  }
   if (opt.atc) return s;                        // a controller's map has no town names
   for (const p of map.places || []) {
     const o = offset(home, { lat: p.at[0], lon: p.at[1] });
@@ -72,6 +66,32 @@ function mapLayer(home, k, hasBasemap) {
     const w = p.name.length * 3.1;
     placeBoxes.push({ x0: o.x * k - w / 2, x1: o.x * k + w / 2, y0: -o.y * k - 4.5, y1: -o.y * k + 1 });
   }
+  return s;
+}
+
+// The airport's runways: from the server's runway table, or the hand-drawn map for an airport
+// the table doesn't cover. Each is { name: "10R/28L", ends: [[lat, lon], [lat, lon]] }.
+export function runwaysFor(state) {
+  const r = state && state.airport && state.airport.runways;
+  return r && r.length ? r : (map && map.runways) || [];
+}
+
+// Runways, and extended centrelines 12 nm out for the main direction (the longest runway and
+// its parallels), so a crosswind runway doesn't draw approach lines across the scope.
+function runwayLayer(state, k) {
+  const home = state.home, rws = runwaysFor(state).map((r) => {
+    const [a, b] = r.ends.map(([lat, lon]) => offset(home, { lat, lon }));
+    const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    return { a, b, len, ux: (b.x - a.x) / len, uy: (b.y - a.y) / len };
+  });
+  if (!rws.length) return "";
+  const main = rws.reduce((m, r) => (r.len > m.len ? r : m)), far = 12;
+  let s = "";
+  for (const r of rws) {
+    if (Math.abs(r.ux * main.ux + r.uy * main.uy) > 0.985)        // within about 10° of the main direction
+      s += `<line class="approach" x1="${(r.a.x - r.ux * far) * k}" y1="${-(r.a.y - r.uy * far) * k}" x2="${(r.b.x + r.ux * far) * k}" y2="${-(r.b.y + r.uy * far) * k}"/>`;
+  }
+  for (const r of rws) s += `<line class="runway" x1="${r.a.x * k}" y1="${-r.a.y * k}" x2="${r.b.x * k}" y2="${-r.b.y * k}"/>`;
   return s;
 }
 
@@ -153,7 +173,7 @@ function radarStatic(state) {
   for (let r = step; r < R - 0.01; r += step) rings.push(r);
   rings.push(R);
   const based = !!(state.basemap && state.basemap.enabled);
-  let s = `<g clip-path="url(#scope-clip)">${mapLayer(home, k, based)}${tfrLayer(state, k)}${fieldsLayer(state, k)}</g>`;
+  let s = `<g clip-path="url(#scope-clip)">${mapLayer(home, k, based)}${runwayLayer(state, k)}${tfrLayer(state, k)}${fieldsLayer(state, k)}</g>`;
   if (!opt.atc) s += SPOKES(rings[0] * k);
   for (const r of rings) s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + (opt.atc ? "" : " nm"))}`;
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
@@ -163,7 +183,7 @@ function radarStatic(state) {
     s += note("legend", -111, 110.5, "start", ["Data block: callsign", "Alt/100 ft ↑↓ speed kt", "or type, destination"]);
   } else s += note("legend", -111, 110.5, "start", [`${R} nm around home`, "035↑ 3,500 ft, climbing", opt.tracks ? "Line: 1 minute ahead" : ""].filter(Boolean));
   const ap = offset(home, state.airport);
-  if (Math.hypot(ap.x, ap.y) < R) s += `<text class="apt-label" x="${ap.x * k}" y="${-ap.y * k + 9}" text-anchor="middle">${esc(state.airport.iata)}</text>${map ? "" : `<rect class="apt-mark" x="${ap.x * k - 2.5}" y="${-ap.y * k - 2.5}" width="5" height="5"/>`}`;
+  if (Math.hypot(ap.x, ap.y) < R) s += `<text class="apt-label" x="${ap.x * k}" y="${-ap.y * k + 9}" text-anchor="middle">${esc(state.airport.iata)}</text>${runwaysFor(state).length ? "" : `<rect class="apt-mark" x="${ap.x * k - 2.5}" y="${-ap.y * k - 2.5}" width="5" height="5"/>`}`;
   for (const a of state.aircraft) {
     if (!a.on_ground) continue;
     const o = offset(home, a);
