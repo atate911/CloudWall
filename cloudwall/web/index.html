@@ -45,6 +45,11 @@
       <svg id="radar" viewBox="-112 -112 224 224" role="img" aria-label="Nearby aircraft"></svg>
       <div class="attrib" id="scope-attrib"></div>
     </div>
+    <div class="pane-split" id="pane-split" role="separator" aria-orientation="vertical" aria-controls="mini-board"
+      aria-valuemin="0" aria-valuemax="100" tabindex="0" title="Drag to give the radar more or less room. Double-click for the usual width.">
+      <button class="ps-toggle" id="ps-toggle" aria-controls="mini-board" aria-expanded="true">
+        <svg viewBox="0 0 10 16" aria-hidden="true"><path d="M3.5 3.5L7.5 8l-4 4.5"/></svg></button>
+    </div>
     <div class="panel scroll" id="mini-board"></div>
   </section>
   <section id="view-board" class="view"><div class="panel scroll" id="board"></div></section>

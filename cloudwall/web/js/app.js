@@ -9,6 +9,7 @@ import { airlineColors, typeInfo } from "./data.js";
 import { plate, drawn } from "./plate.js";
 import { renderWeatherTab } from "./weather.js";
 import { renderKiosk, tickKiosk, kioskNext, forgetKiosk } from "./kiosk.js";
+import { nearbyDivider } from "./divider.js";
 
 // Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
 const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
@@ -77,6 +78,8 @@ function renderMiniBoard() {
       <span class="mb-alt">${altText(a)}${v > 300 ? " ▲" : v < -300 ? " ▼" : ""}</span><span class="mb-when ${soon ? "soon" : ""}">${soon ? mmss(a.cpa_s) : `${a.dist.toFixed(1)} nm`}</span></button>`;
   }).join("") || '<p class="dim">No aircraft in range.</p>');
 }
+
+if (!KIOSK) nearbyDivider(() => { if (state && view === "now") renderMiniBoard(); });
 
 // ---------- logbook ----------
 function budgetLine(fa) {
