@@ -26,10 +26,10 @@ airframe photos from [planespotters.net](https://www.planespotters.net), weather
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
   path across it (centre is straight up), or a radar scope over a faint street map.
   Each aircraft on the radar shows its altitude in hundreds of feet, with an arrow when it is
-  climbing or descending (`035↑`), a line to where it will be in a minute, and a trail of the
-  last few minutes. The selected aircraft (the one overhead, or one you tap) shows its whole
-  track instead, since it came in range or took off, as flight-tracking sites draw it: in
-  magenta, strongest near the ground and fading with height in steps at 2,000, 5,000, 10,000,
+  climbing or descending (`035↑`) and a line to where it will be in a minute. Only the selected
+  aircraft (the one overhead, or one you tap) shows where it has been, so a busy sky stays
+  readable: its whole track since it came in range or took off, as flight-tracking sites draw it,
+  in magenta, strongest near the ground and fading with height in steps at 2,000, 5,000, 10,000,
   18,000 and 28,000 ft. CloudWall keeps every aircraft's track, so one you tap shows all of it at
   once. Both views have a compass bezel with bearings, and on the desktop a key in the corner.
   Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
@@ -201,7 +201,7 @@ The kiosk has no buttons, so its radar is set in the config file:
 ```toml
 [kiosk]
 radar = "atc"      # "chart" (the default) or "atc"
-tracks = true      # trails, the selected aircraft's whole track, and one-minute lines
+tracks = true      # the selected aircraft's track, and one-minute lines
 range_nm = 30      # 0 for the tracking radius, or 20 or 30
 ```
 
@@ -243,9 +243,10 @@ line maps ("video maps") of what the controller needs on top:
   the aircraft this screen tracks, the one overhead. Leaders point north unless that crowds
   another block, then whichever of the eight directions is clear, as a controller would set
   them; blocks to the left of their leader are right-justified against it.
-- **History dots** trail each target, five of them 4.5 seconds apart (as near as the feed's
-  updates allow) in fading blues, and a white **predicted track line** shows a minute ahead.
-  Tracks turns both off.
+- **History dots** trail the aircraft this screen tracks (only that one, to keep a busy scope
+  clear), five of them 4.5 seconds apart (as near as the feed's updates allow) in fading blues,
+  and a white **predicted track line** shows a minute ahead of every target. Tracks turns both
+  off.
 - **The System Status Area**, top left: the status indicator, UTC time with seconds and the
   altimeter setting, `OK/OK/NA`, the range and line length (`15NM PTL: 1.0`), the airport's
   altimeter from its weather report (`PDX 30.02A`), active emergency codes in red, and a general

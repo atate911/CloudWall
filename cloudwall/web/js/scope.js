@@ -11,9 +11,9 @@ import { moonPosition, moonPhase, moonGlyph } from "./astro.js";
 
 const PLANE = "M0,-4 L1,-1 L4.2,1.2 L4.2,2 L1,1 L.8,3 L2,4 L2,4.6 L0,4 L-2,4.6 L-2,4 L-.8,3 L-1,1 L-4.2,2 L-4.2,1.2 L-1,-1 Z";
 // Drawing options from the page: atc draws the radar like an air traffic control screen;
-// tracks shows trails (the selected aircraft's whole track; history dots in the ATC style) and the
-// one-minute lines; range is how far out the radar
-// shows, in nm (the tracking radius, or longer).
+// tracks shows the selected aircraft's past track (all of it; its history dots in the ATC style;
+// no other aircraft has one) and the one-minute lines; range is how far out the radar shows, in nm
+// (the tracking radius, or longer).
 let opt = { atc: false, tracks: true, range: 15 };
 const RAD = Math.PI / 180;
 
@@ -30,7 +30,7 @@ const OCTAGON = "M" + [...Array(8)].map((_, i) => {
 // Position symbols of tracks with no flight plan: * reporting altitude, + without.
 const STAR_SYM = "M0,-1.9V1.9M-1.9,0H1.9M-1.35,-1.35L1.35,1.35M-1.35,1.35L1.35,-1.35";
 const PLUS_SYM = "M0,-1.9V1.9M-1.9,0H1.9";
-const HISTORY = 5, HISTORY_S = 4.5;          // history dots behind each target, this many seconds apart
+const HISTORY = 5, HISTORY_S = 4.5;          // history dots behind the selected target, this many seconds apart
 // Special purpose codes: shown in red on the data block's top line and in the status area.
 const SPC = { 7500: "HJ", 7600: "RF", 7700: "EM", 7777: "MI" };
 const SPC_STATUS = { general: "7700", nordo: "7600", unlawful: "7500" };
@@ -512,16 +512,10 @@ function craftFor(svg, hex) {
   // hidden until placed: a dot without a position would sit on home
   for (let i = 0; i < HISTORY; i++) el("circle", { r: 1.05, class: `h${i}`, style: "display:none" }, hist);
   const l0 = el("text", { class: "tag-top" }, g), tag = el("text", { class: "tag" }, g), sub = el("text", { class: "tag-sub" }, g);
-  // the chart style's trail: the last few minutes, fading from transparent at its oldest point to
-  // solid at the aircraft
-  const gid = "tg-" + hex.replace(/[^a-z0-9]/gi, ""), grad = el("linearGradient", { id: gid, gradientUnits: "userSpaceOnUse" }, svg.querySelector("#s-defs"));
-  el("stop", { offset: 0, "stop-opacity": 0 }, grad);       // colour comes from the stylesheet
-  el("stop", { offset: 1, "stop-opacity": 0.8 }, grad);
-  const trail = el("polyline", { class: "trail", stroke: `url(#${gid})` }, svg.querySelector("#s-trails"));
-  // or, selected, its whole track: runs of one altitude band, rebuilt on each update, and the
-  // stretch from its last point to the aircraft, moved every frame
+  // the chart style's track, while it is the selected aircraft: runs of one altitude band,
+  // rebuilt on each update, and the stretch from its last point to the aircraft, moved every frame
   const trk = el("g", { class: "trk" }, svg.querySelector("#s-trails")), segs = el("g", {}, trk), tail = el("line", {}, trk);
-  c = { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trail, grad, trk, segs, tail, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""] };
+  c = { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""] };
   live.set(hex, c);
   requestAnimationFrame(() => g.classList.remove("entering"));
   return c;
@@ -531,8 +525,6 @@ function dropCraft(hex) {
   const c = live.get(hex);
   c.g.remove();
   c.trk.remove();
-  c.trail.remove();
-  c.grad.remove();
   c.hist.remove();
   live.delete(hex);
 }
@@ -645,10 +637,10 @@ function starsBlock(a, owned) {
     subs: a.type ? [p1, `${f34}${a.type}`] : [p1] };
 }
 
-// ATC style: history dots at the aircraft's reported positions 4.5 s apart (as near as the
-// feed's update rate allows), newest first, each a dimmer blue.
-function historyDots(c, a, k, home, trailS) {
-  const dots = c.hist.children, t = a.trail || [], step = Math.max(1, Math.round(HISTORY_S / (trailS || HISTORY_S)));
+// ATC style: history dots behind the selected aircraft, at its reported positions (`trail`)
+// 4.5 s apart (as near as the feed's update rate allows), newest first, each a dimmer blue.
+function historyDots(c, trail, k, home, trailS) {
+  const dots = c.hist.children, t = trail || [], step = Math.max(1, Math.round(HISTORY_S / (trailS || HISTORY_S)));
   let n = 0;
   for (let i = t.length - 1 - step; i >= 0 && n < HISTORY; i -= step, n++) {
     const o = offset(home, { lat: t[i][0], lon: t[i][1] });
@@ -717,8 +709,6 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     } else c.vec.style.display = "none";
     c.g.classList.toggle("hero", isHero);
     c.trk.classList.toggle("hero", isHero);
-    c.trail.classList.toggle("hero", isHero);
-    c.grad.classList.toggle("hero", isHero);
     c.hist.classList.toggle("hero", isHero);
     let text, line0 = "";
     if (opt.atc) {
@@ -743,12 +733,12 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     const line2 = c.subs[phase === 1 || c.subs.length < 2 ? 0 : 1];
     if (c.sub.textContent !== line2) c.sub.textContent = line2;
     c.leader.style.display = opt.atc && text ? "" : "none";
-    if (opt.atc && opt.tracks && (fresh || arrived)) historyDots(c, a, k, state.home, state.trail_s);
-    c.hist.style.display = opt.atc && opt.tracks ? "" : "none";
-    // the chart style's trails: the selected aircraft's whole track since it came in range or took
-    // off, and the last few minutes of every other aircraft's
-    const trails = !opt.atc && opt.tracks && mode === "radar";
-    const path = trails && isHero && state.hero.path && state.hero.path.length ? state.hero.path : null;
+    // only the selected aircraft (overhead, or tapped) shows where it has been: the ATC style's
+    // history dots, or the chart style's whole track since it came in range or took off
+    const dots = opt.atc && opt.tracks && isHero;
+    if (dots && (fresh || arrived)) historyDots(c, state.hero.trail, k, state.home, state.trail_s);
+    c.hist.style.display = dots ? "" : "none";
+    const path = !opt.atc && opt.tracks && mode === "radar" && isHero && state.hero.path && state.hero.path.length ? state.hero.path : null;
     if (path && (fresh || !c.drawn)) {
       c.segs.innerHTML = pathRuns(state.home, path, k);
       const [lat, lon] = path[path.length - 1], o = offset(state.home, { lat, lon });
@@ -758,15 +748,6 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     } else if (!path && c.drawn) { c.segs.innerHTML = ""; c.drawn = false; }
     c.trk.style.display = path ? "" : "none";
     if (path) { c.tail.setAttribute("x2", c.x.toFixed(1)); c.tail.setAttribute("y2", c.y.toFixed(1)); }
-    if (trails && !path && a.trail && a.trail.length > 1) {
-      if (fresh || !c.trailPts) {
-        c.trailPts = pts(state.home, a.trail, k);
-        const [x1, y1] = c.trailPts.split(" ")[0].split(",");
-        c.grad.setAttribute("x1", x1); c.grad.setAttribute("y1", y1);
-      }
-      c.grad.setAttribute("x2", c.x.toFixed(1)); c.grad.setAttribute("y2", c.y.toFixed(1));
-      c.trail.setAttribute("points", `${c.trailPts} ${c.x.toFixed(1)},${c.y.toFixed(1)}`);
-    } else if (c.trailPts !== null) { c.trail.setAttribute("points", ""); c.trailPts = null; }
   }
   for (const hex of [...live.keys()]) if (!seen.has(hex)) dropCraft(hex);
   if (fresh) { placeLabels(heroHex); for (const c of live.values()) applyLabel(c); }

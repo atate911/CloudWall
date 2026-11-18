@@ -32,8 +32,7 @@ EMERGENCY_CONFIRM = 2       # consecutive updates before the screen turns red: o
 RESIGHT_SECONDS = 30 * 60
 LOOKAHEAD_S = 10 * 60        # look routes up this far ahead of an aircraft reaching the house
 STALE_SECONDS = 60
-TRAIL_POINTS = 48           # recent reported positions (~4 minutes at the default poll rate): the
-                            # radar's short trails and the ATC style's history dots
+TRAIL_POINTS = 30           # recent reported positions, for the ATC style's history dots behind the selected aircraft
 PATH_STEP_NM = 0.15         # an aircraft's full path keeps a point each time it has moved this far,
 PATH_CLIMB_FT = 300         # or climbed or descended this much,
 PATH_POINTS = 1500          # up to this many (hours of circling); the radar draws the selected one's
@@ -362,11 +361,11 @@ class Tracker:
         a["badges"] = s["badges"]
 
     def _remember_tracks(self, airborne, now, beyond=()):
-        """Each aircraft's recent positions (the radar's short trails, the ATC style's history
-        dots) and its whole path since it came in range or took off, with its altitude (drawn on the
-        radar behind the selected aircraft, so kept for every one in case it is tapped), and a
-        coarse all-day grid for the traffic heatmap. Aircraft beyond the tracking radius (shown only
-        on a radar set to a longer range) get trails and paths but stay off the heatmap."""
+        """Each aircraft's recent positions (the ATC style's history dots) and its whole path since
+        it came in range or took off, with its altitude, and a coarse all-day grid for the traffic
+        heatmap. The radar draws only the selected aircraft's track, but every one's is kept, so one
+        that is tapped shows all of it at once. Aircraft beyond the tracking radius (shown only on a
+        radar set to a longer range) get trails and paths but stay off the heatmap."""
         seen = set()
         r = self.cfg["tracking"]["radius_nm"]
         day = time.strftime("%Y-%m-%d", time.localtime(now))
@@ -376,7 +375,6 @@ class Tracker:
             seen.add(a["hex"])
             trail = self.trails.setdefault(a["hex"], deque(maxlen=TRAIL_POINTS))
             trail.append((round(a["lat"], 4), round(a["lon"], 4)))
-            a["trail"] = list(trail)
             path = self.paths.setdefault(a["hex"], deque(maxlen=PATH_POINTS))
             alt = round(a["alt"] / 100) if a.get("alt") is not None else (path[-1][2] if path else 0)
             if (not path or abs(alt - path[-1][2]) * 100 >= PATH_CLIMB_FT
@@ -536,8 +534,8 @@ class Tracker:
             if (self.aircraft or self.beyond) and time.time() - self.status["updated"] > STALE_SECONDS:
                 self.aircraft, self.beyond, self.hero_hex = [], [], None   # don't show positions we can't trust
             hero = next((a for a in self.aircraft if a["hex"] == self.hero_hex), None)
-            if hero:      # the selected aircraft (overhead, or tapped) carries its whole path
-                hero = dict(hero, path=list(self.paths.get(hero["hex"], ())))
+            if hero:      # the selected aircraft (overhead, or tapped) carries its track: no other does
+                hero = dict(hero, path=list(self.paths.get(hero["hex"], ())), trail=list(self.trails.get(hero["hex"], ())))
             nxt = None
             if not hero:
                 inbound = [a for a in self.aircraft if not a["on_ground"] and a["cpa_s"] > 0

@@ -419,9 +419,9 @@ class TracksTest(unittest.TestCase):
         t = Tracker(config.load(), store, StubEnricher())
         for north in (3.0, 2.0, 1.0):
             t.update([plane("a1", "ASA1", north), plane("g1", "ASA2", 0.5, alt=0, on_ground=True)], "test")
-        a = next(x for x in t.snapshot()["aircraft"] if x["hex"] == "a1")
-        self.assertEqual(len(a["trail"]), 3)
-        self.assertGreater(a["trail"][0][0], a["trail"][-1][0])       # moving south toward home
+        trail = list(t.trails["a1"])
+        self.assertEqual(len(trail), 3)
+        self.assertGreater(trail[0][0], trail[-1][0])                 # moving south toward home
         heat = t.heatmap()
         self.assertEqual(sum(c[2] for c in heat["cells"]), 3)         # the parked aircraft isn't counted
         self.assertTrue(all(c[0] == heat["grid"] // 2 for c in heat["cells"]))   # due north: centre column
@@ -445,7 +445,8 @@ class RadarRangeTest(unittest.TestCase):
         s = t.snapshot()
         self.assertEqual([a["hex"] for a in s["aircraft"]], ["a1"])  # board, card and logbook: 15 nm only
         self.assertEqual([a["hex"] for a in s["beyond"]], ["f1"])
-        self.assertEqual(len(s["beyond"][0]["trail"]), 2)             # its trail is kept for the radar
+        self.assertEqual(len(t.trails["f1"]), 2)                      # its trail is kept, should it come in range
+        self.assertNotIn("trail", s["beyond"][0])                     # but only the selected aircraft's is sent
         self.assertEqual(sum(c[2] for c in t.heatmap()["cells"]), 2)  # but it stays off the heatmap
         t.range_wanted[30] -= 120                                     # the screen stopped asking
         self.assertEqual(t.fetch_radius(), 15)
@@ -1234,9 +1235,10 @@ class PathTest(unittest.TestCase):
         t.pin("a1")                                                   # tapped on the radar
         s = t.snapshot()
         a = s["aircraft"][0]
-        self.assertEqual(len(a["trail"]), 40)                         # recent positions: every update
-        self.assertNotIn("path", a)                                   # only the selected aircraft sends its path
+        self.assertNotIn("path", a)                                   # only the selected aircraft sends its track
+        self.assertNotIn("trail", a)
         self.assertEqual(s["hero"]["hex"], "a1")
+        self.assertEqual(len(s["hero"]["trail"]), 30)                 # its recent positions, for the history dots
         path = [list(q) for q in s["hero"]["path"]]
         self.assertEqual(path[0], [round(t.home["lat"] + 10 / 60, 4), round(t.home["lon"], 4), 80])
         self.assertTrue(8 <= len(path) <= 14)                         # a point every 0.15 nm or 300 ft
@@ -1245,7 +1247,10 @@ class PathTest(unittest.TestCase):
         self.assertEqual(t.snapshot()["hero"]["path"][-1][2], path[-1][2])
         t.update([plane("a1", "ASA1", 7.5), plane("b1", "ASA2", 9.0)], "test")
         t.pin("b1")                                                   # tapped: its whole path, from when it appeared
-        self.assertEqual(len(t.snapshot()["hero"]["path"]), 1)
+        s = t.snapshot()
+        self.assertEqual(len(s["hero"]["path"]), 1)
+        self.assertEqual(len(s["hero"]["trail"]), 1)
+        self.assertEqual([a.get("trail") for a in s["aircraft"]], [None, None])   # no aircraft but the selected one carries a trail
         self.assertGreater(len(t.paths["a1"]), len(path))             # a1's is still kept, and growing
         t.update([plane("b1", "ASA2", 5.0)], "test")                  # a1 has gone: its path with it
         self.assertNotIn("a1", t.paths)
