@@ -6,7 +6,7 @@ import threading
 import time
 from collections import deque
 
-from . import contrails as contrail_mod, geo
+from . import config, contrails as contrail_mod, geo, wake
 from .seats import seats as seat_estimate
 from .logos import AIRLINE_NAMES, flight_number, iata_for
 
@@ -32,7 +32,11 @@ EMERGENCY_CONFIRM = 2       # consecutive updates before the screen turns red: o
 RESIGHT_SECONDS = 30 * 60
 LOOKAHEAD_S = 10 * 60        # look routes up this far ahead of an aircraft reaching the house
 STALE_SECONDS = 60
-TRAIL_POINTS = 48           # ~4 minutes of history at the default poll rate
+TRAIL_POINTS = 48           # recent reported positions (~4 minutes at the default poll rate): the
+                            # radar's short trails and the ATC style's history dots
+PATH_STEP_NM = 0.15         # an aircraft's full path keeps a point each time it has moved this far,
+PATH_CLIMB_FT = 300         # or climbed or descended this much,
+PATH_POINTS = 1500          # up to this many (hours of circling); the radar draws the selected one's
 RADAR_RANGES = (20, 30)     # longer ranges a screen can set its radar to, in nm, beyond the tracking radius
 RANGE_HOLD_S = 90           # keep fetching a longer range this long after a screen last asked for it
 PIN_HOLD_S = 15             # a flight a screen follows counts as wanted this long after it last asked
@@ -46,12 +50,16 @@ def ordinal(n):
 
 class Tracker:
     def __init__(self, cfg, store, enricher):
+        if "runways" not in cfg["airport"]:      # not yet filled in by config.places (tests, scripts)
+            cfg = config.complete_place(cfg)
         self.cfg, self.store, self.enricher = cfg, store, enricher
         self.home = cfg["home"]
         self.lock = threading.Lock()
         self.aircraft = []
         self.beyond = []          # aircraft past the tracking radius, for a radar set to a longer range
         self.range_wanted = {}    # range (nm) -> when a screen last asked for it
+        self.updated_at = None
+        self.trail_s = None       # seconds between trail samples, smoothed (STARS spaces history 4.5 s apart)
         self.hero_hex = None      # the aircraft overhead, shared by every screen
         self.pins = {}            # hex -> when a screen last asked to follow it: each screen picks its own
         self.pinned_now = set()   # the flights screens follow, as of the last update
@@ -61,9 +69,11 @@ class Tracker:
         self.weather_full = None
         self.idle = False         # no screen open: no paid lookups
         self.basemap = None
+        self.charts = None        # the chart layers the displays can draw (charts.Charts.info)
         self.logos = False
         self.status = {"source": None, "ok": False, "updated": 0, "error": None}
-        self.trails = {}          # hex -> deque of (lat, lon)
+        self.trails = {}          # hex -> deque of (lat, lon), every update
+        self.paths = {}           # hex -> deque of (lat, lon, alt in hundreds of ft), since it came in range
         self.heat_day = time.strftime("%Y-%m-%d")
         self.heat = {tuple(map(int, k.split(","))): v for k, v in
                      (store.cache_get("heat", self.heat_day, 2 * 86400)[1] or {}).items()}
@@ -95,6 +105,7 @@ class Tracker:
         a["dist"] = geo.haversine_nm(h["lat"], h["lon"], a["lat"], a["lon"])
         a["brg"] = geo.bearing_deg(h["lat"], h["lon"], a["lat"], a["lon"])
         a["compass"] = geo.compass(a["brg"])
+        a["cwt"] = wake.category(a.get("type"))          # for the ATC-style radar's data blocks
         a["elev"] = (geo.elevation_deg(a["dist"], a["alt"], h.get("elevation_ft", 0))
                      if a["alt"] is not None else None)
         a["cpa_s"], a["cpa_nm"] = geo.cpa(h["lat"], h["lon"], a["lat"], a["lon"],
@@ -111,8 +122,10 @@ class Tracker:
             # the registry's model ("Vans RV-7A") tells variants apart that share a type code
             a["model"] = info.get("type_name")
             a["owner"] = info.get("owner")
-            a["photo"] = info.get("photo")
             a["reg"] = a.get("reg") or info.get("reg")
+        pic = self.enricher.photo(a["hex"], a.get("reg"), a.get("type"))
+        if pic:
+            a["photo"], a["photo_link"], a["photo_by"] = pic["src"], pic["link"], pic["by"]
         # the feed's own description ("Boeing 737 MAX 8") reads better than the database's variant codes
         if a.get("desc"):
             a["type_name"] = a["desc"]
@@ -326,7 +339,7 @@ class Tracker:
         r = a.get("route")
         if a.get("photo") and not s.get("photo"):
             s["photo"] = True
-            upd.update(photo=a["photo"])
+            upd.update(photo=a["photo"], photo_link=a.get("photo_link"), photo_by=a.get("photo_by"))
         n = (a.get("seats") or {}).get("n")
         if n is not None and n != s.get("seats"):
             s["seats"] = n
@@ -348,9 +361,11 @@ class Tracker:
         a["badges"] = s["badges"]
 
     def _remember_tracks(self, airborne, now, beyond=()):
-        """Short trails for the radar and a coarse all-day grid for the traffic heatmap. Aircraft
-        beyond the tracking radius (shown only on a radar set to a longer range) get trails but
-        stay off the heatmap."""
+        """Each aircraft's recent positions (the radar's short trails, the ATC style's history
+        dots) and its whole path since it came in range or took off, with its altitude (drawn on the
+        radar behind the selected aircraft, so kept for every one in case it is tapped), and a
+        coarse all-day grid for the traffic heatmap. Aircraft beyond the tracking radius (shown only
+        on a radar set to a longer range) get trails and paths but stay off the heatmap."""
         seen = set()
         r = self.cfg["tracking"]["radius_nm"]
         day = time.strftime("%Y-%m-%d", time.localtime(now))
@@ -361,6 +376,11 @@ class Tracker:
             trail = self.trails.setdefault(a["hex"], deque(maxlen=TRAIL_POINTS))
             trail.append((round(a["lat"], 4), round(a["lon"], 4)))
             a["trail"] = list(trail)
+            path = self.paths.setdefault(a["hex"], deque(maxlen=PATH_POINTS))
+            alt = round(a["alt"] / 100) if a.get("alt") is not None else (path[-1][2] if path else 0)
+            if (not path or abs(alt - path[-1][2]) * 100 >= PATH_CLIMB_FT
+                    or geo.haversine_nm(path[-1][0], path[-1][1], a["lat"], a["lon"]) >= PATH_STEP_NM):
+                path.append((round(a["lat"], 4), round(a["lon"], 4), alt))
         for a in airborne:
             x = a["dist"] * math.sin(math.radians(a["brg"]))
             y = a["dist"] * math.cos(math.radians(a["brg"]))
@@ -369,6 +389,7 @@ class Tracker:
                 self.heat[(gx, gy)] = self.heat.get((gx, gy), 0) + 1
         for hexid in [h for h in self.trails if h not in seen]:
             del self.trails[hexid]
+            self.paths.pop(hexid, None)
         if now - self.heat_saved > 60:
             self.heat_saved = now
             self.store.cache_put("heat", self.heat_day, {f"{x},{y}": n for (x, y), n in self.heat.items()})
@@ -395,19 +416,30 @@ class Tracker:
         return s
 
     def _update_flow(self, aircraft):
-        """Guess the airport's runway direction from low, descending traffic near it."""
+        """Guess which way the airport is landing from low, descending traffic near it, and so
+        which runways are in use: those whose landing direction its track matches."""
         ap = self.cfg["airport"]
+        ways = []          # (runway as named for landing that way, its landing direction in degrees true)
+        for w in ap.get("runways") or []:
+            (lat1, lon1), (lat2, lon2) = w["ends"]
+            first, second = w["name"].split("/")
+            h = geo.bearing_deg(lat1, lon1, lat2, lon2)       # landing on the first-named end
+            ways += [(first, h), (second, (h + 180) % 360)]
+        if not ways:
+            return
+        off = lambda a, b: abs((a - b + 180) % 360 - 180)
         for a in aircraft:
             if (a["on_ground"] or a["alt"] is None or a["alt"] > 4000 or a.get("track") is None
                     or (a.get("vrate") or 0) > -200 or (a.get("gs") or 0) < 110):
                 continue
             if geo.haversine_nm(ap["lat"], ap["lon"], a["lat"], a["lon"]) > 12:
                 continue
-            # PDX's parallel runways lie along 119/299 degrees true
-            if abs((a["track"] - 299 + 180) % 360 - 180) < 25:
-                self.flow = {"dir": "west", "label": "West flow", "runways": "28L / 28R"}
-            elif abs((a["track"] - 119 + 180) % 360 - 180) < 25:
-                self.flow = {"dir": "east", "label": "East flow", "runways": "10L / 10R"}
+            name, hdg = min(ways, key=lambda w: off(a["track"], w[1]))
+            if off(a["track"], hdg) >= 25:
+                continue
+            word = ("north", "east", "south", "west")[round(hdg / 90) % 4]
+            in_use = sorted(n for n, h in ways if off(h, hdg) < 10)      # the parallels landing the same way
+            self.flow = {"dir": word, "label": f"{word.capitalize()} flow", "runways": " / ".join(in_use)}
 
     # -- main entry points ------------------------------------------------------
     # -- radar range -------------------------------------------------------------
@@ -418,10 +450,11 @@ class Tracker:
         r = self.cfg["tracking"]["radius_nm"]
         return sorted({r, *(x for x in RADAR_RANGES if x > r)})
 
-    def want_range(self, nm):
-        """A screen showing the radar at this range asked for data."""
+    def want_range(self, nm, square=False):
+        """A screen showing the radar at this range asked for data. A square display (the ATC
+        style, whose range is from its centre to its edge) reaches √2 times as far in its corners."""
         if nm in self.ranges():
-            self.range_wanted[nm] = time.time()
+            self.range_wanted[round(nm * (math.sqrt(2) if square else 1), 1)] = time.time()
 
     def fetch_radius(self):
         """How far out to ask the feed for: the longest range a screen asked for lately."""
@@ -445,6 +478,10 @@ class Tracker:
 
     def update(self, raw, source):
         now = time.time()
+        if self.updated_at is not None and 0 < now - self.updated_at < 120:
+            gap = now - self.updated_at
+            self.trail_s = gap if self.trail_s is None else self.trail_s * 0.8 + gap * 0.2
+        self.updated_at = now
         self.pinned_now = self._pins_wanted(now)
         self.pins = {h: at for h, at in list(self.pins.items()) if h in self.pinned_now}   # forget the rest
         for a in raw:
@@ -473,8 +510,7 @@ class Tracker:
                 if self._overhead(a):
                     self._log(a, now)
             self._remember_tracks(airborne, now, beyond)
-            if self.cfg["airport"]["icao"] == "KPDX":
-                self._update_flow(raw)
+            self._update_flow(raw)
             self.aircraft = raw
             self.beyond = beyond
             self.emergency = emergency
@@ -514,6 +550,8 @@ class Tracker:
             overhead = next((a for a in self.aircraft if a["hex"] == self.hero_hex), None)
             chosen = next((a for a in self.aircraft if a["hex"] == pin), None) if pin else None
             hero = chosen or overhead
+            if hero:      # the selected aircraft (this screen's choice, or overhead) carries its whole path
+                hero = dict(hero, path=list(self.paths.get(hero["hex"], ())))
             nxt = None
             if not hero:
                 inbound = [a for a in self.aircraft if not a["on_ground"] and a["cpa_s"] > 0
@@ -525,7 +563,8 @@ class Tracker:
                 "overhead": overhead and overhead["hex"],
                 "next": nxt, "aircraft": self.aircraft, "flow": self.flow,
                 "beyond": self.beyond, "ranges": self.ranges(), "kiosk": self.cfg["kiosk"],
-                "weather": self.weather, "status": self.status, "basemap": self.basemap, "logos": self.logos,
+                "weather": self.weather, "status": self.status, "basemap": self.basemap, "charts": self.charts, "logos": self.logos,
+                "trail_s": round(self.trail_s or self.cfg["tracking"]["poll_seconds"], 2),
                 "live_routes": p.status() if (p := getattr(self.enricher, "live", None)) else None,
                 "today": self.store.count("day=?", (time.strftime("%Y-%m-%d"),)),
                 "seats_today": self.store.seat_total("day=?", (time.strftime("%Y-%m-%d"),))["seats"],

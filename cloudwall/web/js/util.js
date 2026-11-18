@@ -65,6 +65,18 @@ export function store(key, value) {
   return value;
 }
 
+// Which place this screen shows, when CloudWall watches several: ?place= in the address, else
+// the desktop's choice from the place menu. Without either, the kiosk asks for the place its
+// settings name and any other screen gets the first. Every API call carries it.
+const PAGE = typeof location === "undefined" ? { search: "", pathname: "" } : location;   // no page: the tests' Node
+const PARAMS = new URLSearchParams(PAGE.search);
+const KIOSK_PAGE = /\/kiosk\/?$/.test(PAGE.pathname) || PARAMS.get("mode") === "kiosk";
+export const placeChoice = PARAMS.get("place") || (KIOSK_PAGE ? "" : store("place") || "");
+export function api(path, opts) {
+  const q = placeChoice ? `place=${encodeURIComponent(placeChoice)}` : KIOSK_PAGE ? "kiosk=1" : "";
+  return fetch(q ? `${path}${path.includes("?") ? "&" : "?"}${q}` : path, opts);
+}
+
 // "AERO MAINTENANCE INC" -> "Aero Maintenance Inc"; leaves mixed-case names alone.
 const KEEP_UPPER = new Set(["LLC", "LLP", "LP", "USA", "US", "FAA", "II", "III", "IV", "PDX", "CO.", "DBA"]);
 export function tidyName(name) {

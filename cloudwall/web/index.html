@@ -12,7 +12,8 @@
 </head>
 <body>
 <header>
-  <div class="brand">CloudWall<span id="station"></span></div>
+  <div class="brand">CloudWall<button class="station" id="station" aria-haspopup="menu" aria-expanded="false" disabled></button>
+    <div class="place-menu" id="place-menu" role="menu" aria-label="Places" hidden></div></div>
   <div class="chips">
     <span class="chip" id="flow" hidden></span>
     <span class="chip" id="wx" hidden></span>
@@ -38,7 +39,7 @@
           <button data-style="chart" title="Radar drawn as a chart">Chart</button>
           <button data-style="atc" title="Radar drawn like an air traffic control screen">ATC</button>
         </div>
-        <div class="seg"><button id="btn-tracks" aria-pressed="true" title="Trails behind aircraft and lines to where they will be in a minute">Tracks</button></div>
+        <div class="seg"><button id="btn-tracks" aria-pressed="true" title="Trails behind aircraft (the selected one's whole track; history dots in the ATC style) and lines to where they will be in a minute">Tracks</button></div>
         <div class="seg" id="range-seg" role="group" aria-label="Radar range" title="How far out the radar shows"></div>
       </div>
       <svg id="radar" viewBox="-112 -112 224 224" role="img" aria-label="Nearby aircraft"></svg>
@@ -56,6 +57,19 @@
   <button data-view="wx">Weather <span id="n-wx"></span></button>
   <button data-view="log">Logbook <span id="n-log"></span></button>
 </nav>
+<dialog class="loc-dialog" id="loc-dialog" aria-labelledby="loc-title">
+  <form id="loc-form">
+    <h2 id="loc-title">Set a location</h2>
+    <label class="loc-field"><span class="label">ZIP code or coordinates</span>
+      <input id="loc-q" autocomplete="postal-code" spellcheck="false" placeholder="98683   or   45.63, -122.66" required></label>
+    <p class="loc-where" id="loc-where" aria-live="polite"></p>
+    <label class="loc-field"><span class="label">Name</span><input id="loc-name" maxlength="40" placeholder="Optional, such as Cabin"></label>
+    <fieldset class="loc-airports" id="loc-airports"></fieldset>
+    <p class="loc-error" id="loc-error" role="alert"></p>
+    <div class="loc-actions"><button type="button" class="loc-btn" id="loc-cancel">Cancel</button>
+      <button class="loc-btn primary" id="loc-save" disabled>Show this place</button></div>
+  </form>
+</dialog>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

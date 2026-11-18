@@ -164,8 +164,9 @@ def fetch_all(icao):
     return short, full
 
 
-def demo():
-    """Plausible Portland weather for demo mode: a day of showers clearing, with a TAF."""
+def demo(icao="KPDX", name="Portland Intl, OR, US"):
+    """Plausible Portland weather for demo mode: a day of showers clearing, with a TAF. Another
+    place's demo gets the same weather under its own airport's code and name."""
     now = int(time.time()) // 3600 * 3600
     metars = []
     for h in range(24, -1, -1):
@@ -174,15 +175,15 @@ def demo():
         clouds = ([{"cover": "FEW", "base": 1200}, {"cover": "BKN", "base": 2200 + 150 * (h % 4)}, {"cover": "OVC", "base": 4500}]
                   if rainy else [{"cover": "SCT", "base": 3500}, {"cover": "BKN", "base": 6000}])
         temp = 9.0 + 3 * math.sin((24 - h - 8) / 24 * 2 * math.pi)
-        metars.append({"icaoId": "KPDX", "name": "Portland Intl, OR, US", "elev": 7, "obsTime": t,
+        metars.append({"icaoId": icao, "name": name, "elev": 7, "obsTime": t,
                        "temp": round(temp, 1), "dewp": round(temp - (1.0 if rainy else 3.5), 1),
                        "wdir": 150 if rainy else 300, "wspd": 12 if rainy else 6, "wgst": 21 if 8 <= h <= 11 else None,
                        "visib": 4 if 9 <= h <= 11 else "10+", "altim": 1012.0 + 0.4 * (24 - h) / 2,
                        "clouds": clouds, "wxString": "-SHRA" if 8 <= h <= 12 else None, "metarType": "METAR",
-                       "rawOb": f"METAR KPDX {time.strftime('%d%H%M', time.gmtime(t))}Z 30006KT 10SM SCT035 BKN060 11/07 A3002"})
+                       "rawOb": f"METAR {icao} {time.strftime('%d%H%M', time.gmtime(t))}Z 30006KT 10SM SCT035 BKN060 11/07 A3002"})
     for m in metars:
         m["fltCat"] = category(ceiling(m["clouds"]), parse_vis(m["visib"]))
-    taf = {"rawTAF": "TAF KPDX 170305Z 1703/1724 30006KT P6SM SCT035 BKN060 FM171200 15010G18KT 5SM -RA BKN025 OVC045 TEMPO 1714/1718 3SM -RA BKN012 FM171900 18008KT P6SM BKN040",
+    taf = {"rawTAF": f"TAF {icao} 170305Z 1703/1724 30006KT P6SM SCT035 BKN060 FM171200 15010G18KT 5SM -RA BKN025 OVC045 TEMPO 1714/1718 3SM -RA BKN012 FM171900 18008KT P6SM BKN040",
            "issueTime": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now)), "validTimeFrom": now, "validTimeTo": now + 24 * 3600,
            "fcsts": [
                {"timeFrom": now, "timeTo": now + 8 * 3600, "fcstChange": None, "wdir": 300, "wspd": 6, "visib": "6+",
@@ -195,10 +196,10 @@ def demo():
                 "clouds": [{"cover": "BKN", "base": 4000}]}]}
     latest = metars[-1]
     elev_ft = 23
-    short = {"station": "KPDX", "raw": latest["rawOb"], "category": latest["fltCat"], "temp_c": latest["temp"],
+    short = {"station": icao, "raw": latest["rawOb"], "category": latest["fltCat"], "temp_c": latest["temp"],
              "wind_dir": latest["wdir"], "wind_kt": latest["wspd"], "gust_kt": latest["wgst"],
              "visibility": latest["visib"], "cover": "BKN", "clouds": latest["clouds"]}
-    full = {"station": "KPDX", "name": "Portland Intl, OR, US", "elevation_ft": elev_ft, "fetched": time.time(),
+    full = {"station": icao, "name": name, "elevation_ft": elev_ft, "fetched": time.time(),
             "now": decode_metar(latest, elev_ft), "history": [decode_metar(m, elev_ft) for m in metars],
             "taf": decode_taf(taf)}
     return short, full

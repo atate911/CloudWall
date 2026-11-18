@@ -1,5 +1,5 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone } from "./util.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, api } from "./util.js";
 import { typeInfo } from "./data.js";
 import { plate, renderLineup, drawn } from "./plate.js";
 import { flap, roll } from "./fx.js";
@@ -207,18 +207,21 @@ function showHero(el, a, state) {
   }
   renderFacts(a, state);
 
-  if (a.photo && cur.photo !== a.photo) {
+  if (a.photo && a.photo_by && cur.photo !== a.photo) {
     // a photo of this very airframe takes the top of the frame once it has loaded; the type plate stays below
     cur.photo = a.photo;
+    const fig = document.createElement("figure");
+    fig.className = "photo";
+    fig.innerHTML = credit(a.photo_link, a.photo_by);
     const img = new Image();
     img.referrerPolicy = "no-referrer";
-    img.className = "photo";
     img.alt = "";
     img.onload = () => {
       const m = $("h-media");
       if (cur.photo !== a.photo || !m) return;
       m.querySelectorAll(".photo").forEach((p) => p.remove());
-      m.prepend(img);
+      fig.prepend(img);
+      m.prepend(fig);
       m.classList.add("has-photo");
     };
     img.src = a.photo;
@@ -226,6 +229,10 @@ function showHero(el, a, state) {
   cur.a = a;
   cur.state = state;
 }
+
+// A photo's credit: its photographer and a link to its page on planespotters.net, in the
+// photo's bottom right corner on its edge, as their terms ask
+const credit = (link, by) => `<a class="credit" href="${esc(link)}" target="_blank" rel="noopener noreferrer">© ${esc(by)} · planespotters.net</a>`;
 
 // "autopilot, approach" -> "On, flying the approach". Modes as the aircraft reports them.
 function autopilotWords(modes) {
@@ -387,7 +394,7 @@ function drawHeat(canvas, state, heat) {
   const bm = state.basemap;
   if (!bm || !bm.enabled) return paintHeat(canvas, state, heat, null);
   const R = heat.radius_nm, px = heatSize(canvas) * (window.devicePixelRatio || 1);
-  const tiles = tileLayout(state.home, R, px / (2 * R)).tiles.map((t) => ({ ...t, img: new Image() }));
+  const tiles = tileLayout(state.home, R, px / (2 * R), state.charts && state.charts.map).tiles.map((t) => ({ ...t, img: new Image() }));
   let pending = tiles.length;
   const done = () => { if (--pending === 0 && canvas.isConnected) paintHeat(canvas, state, heat, tiles); };
   for (const t of tiles) { t.img.onload = t.img.onerror = done; t.img.src = t.url; }
@@ -450,8 +457,8 @@ async function refreshExtras() {
   if (Date.now() - extras.at < 60000) return;
   extras.at = Date.now();
   try {
-    const [log, heat, wx] = await Promise.all([fetch("api/logbook").then((r) => r.json()), fetch("api/heat").then((r) => r.json()),
-      fetch("api/weather").then((r) => r.json()).catch(() => null)]);
+    const [log, heat, wx] = await Promise.all([api("api/logbook").then((r) => r.json()), api("api/heat").then((r) => r.json()),
+      api("api/weather").then((r) => r.json()).catch(() => null)]);
     extras.log = log; extras.heat = heat; extras.wx = wx;
   } catch (e) { /* keep showing what we had */ }
 }
@@ -483,7 +490,7 @@ function showIdle(el, state) {
   slideShown = slide;
   el._key = null;
   if (kind === "military") {
-    el.innerHTML = `<div class="idle">${militaryHtml(state.heard)}</div>${dots}`;
+    el.innerHTML = `<div class="idle">${militaryHtml(state.heard, state.airport.city)}</div>${dots}`;
   } else if (kind === "airspace") {
     el.innerHTML = `<div class="idle">${airspaceHtml(state)}</div>${dots}`;
   } else if (kind === "weather") {
@@ -506,7 +513,8 @@ function showIdle(el, state) {
   } else {
     const s = L.recent[0];
     const info = typeInfo({ type: s.type, type_name: s.type_name, model: s.model });
-    const pic = s.photo ? `<img class="photo" src="${encodeURI(s.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">`
+    // only credited photos: older entries hold uncredited ones that may show another airframe
+    const pic = s.photo && s.photo_by ? `<figure class="photo"><img src="${esc(s.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">${credit(s.photo_link, s.photo_by)}</figure>`
       : drawn(info) ? `<div class="last-plate sil-box">${plate(info)}</div>` : "";
     el.innerHTML = `<div class="idle last">${pic}<div>${lastSlide(s)}</div></div>${dots}`;
   }
@@ -534,11 +542,11 @@ export function heardGroups(heard) {
   return [...by.values()];
 }
 
-function militaryHtml(heard) {
+function militaryHtml(heard, city) {
   const groups = heardGroups(heard);
   const lines = groups.map((g) => `<div class="mil-row"><b>${g.n > 1 ? `${g.n} × ` : ""}${esc(g.name)}</b><span>${g.alts.length ? `around ${num(Math.min(...g.alts))}${g.alts.length > 1 && Math.max(...g.alts) - Math.min(...g.alts) > 400 ? `–${num(Math.max(...g.alts))}` : ""} ft` : "altitude unknown"}</span></div>`).join("");
   return `<div class="dim">Heard nearby, position unknown</div><h1>Military jets up</h1>${lines}
-    <p class="dim">Their transponders send altitude but no position, so receivers near Portland can hear them without placing them on the map. Look and listen: they're usually within a few dozen miles.</p>`;
+    <p class="dim">Their transponders send altitude but no position, so receivers near ${esc(city || "here")} can hear them without placing them on the map. Look and listen: they're usually within a few dozen miles.</p>`;
 }
 
 export function airspaceHtml(state) {

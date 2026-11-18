@@ -1,20 +1,15 @@
 import argparse
 import logging
-import threading
-import time
-
 from pathlib import Path
 
-from . import __version__, config, contrails, sources, tfr, weather
-from .enrich import Enricher
+from . import __version__, config, sources
 from .flightaware import FlightAware
 from .flightradar24 import Flightradar24
 from .server import make_server
-from .activity import Activity
 from .logos import Logos
-from .tiles import Tiles
+from .place import AnyActivity, Place, Places
+from .charts import Charts
 from .store import Store
-from .tracker import Tracker
 
 log = logging.getLogger("cloudwall")
 
@@ -42,104 +37,64 @@ def main():
         cfg["server"]["host"] = args.host
     if args.port:
         cfg["server"]["port"] = args.port
+    try:
+        place_cfgs = config.places(cfg)
+    except ValueError as e:
+        raise SystemExit(f"cloudwall: {e}")
     db = args.db or (":memory:" if args.demo else cfg["storage"]["db_path"] or config.default_db_path())
     if db != ":memory:":
         Path(db).expanduser().parent.mkdir(parents=True, exist_ok=True)
         db = str(Path(db).expanduser())
-    store = Store(db)
-    source = sources.Demo() if args.demo else sources.Feeds(cfg["source"]["urls"])
+
+    first_id = place_cfgs[0]["place"]["id"]
+
+    def db_for(pid):
+        """The first place keeps the logbook it always had; each other place gets its own beside it."""
+        if db == ":memory:" or pid == first_id:
+            return db
+        p = Path(db)
+        return str(p.with_name(f"{p.stem}-{pid}{p.suffix or '.db'}"))
+
+    store0 = Store(db_for(first_id))
     tiles_dir = (Path(db).parent if db != ":memory:" else config.default_db_path().parent) / "tiles"
-    tiles = Tiles(cfg, tiles_dir)
+    charts = Charts(cfg, tiles_dir)   # the radar's map and the FAA charts
     logos = Logos(cfg, tiles_dir.parent / "logos")
-    providers = [Flightradar24(cfg, store), FlightAware(cfg, store)]
+    # one paid provider and one budget for every place, counted in the first place's store
+    providers = [Flightradar24(cfg, store0), FlightAware(cfg, store0)]
     fa = next((p for p in providers if p.enabled), None)    # first one with a key wins
-    tracker = Tracker(cfg, store, Enricher(store, demo=source if args.demo else None, live=fa))
-    tracker.basemap = tiles.info()
-    tracker.logos = logos.enabled
-    home, trk = cfg["home"], cfg["tracking"]
+    named = len(place_cfgs) > 1 or not args.demo   # place names in the log, once there may be several
 
-    # Only use the data services while a screen is open: "pause" stops all requests when
-    # nobody is looking; "log" keeps checking the free position feed slowly so the logbook
-    # stays complete, but still makes no paid route lookups and fetches no weather.
-    when_idle = str(trk.get("when_idle", "pause")).lower()
-    activity = Activity(int(trk.get("idle_after_seconds", 90)))
-    if args.demo:
-        activity.idle = lambda: False      # demo traffic costs nothing
+    def make_place(pc):
+        pid = pc["place"]["id"]
+        store = store0 if pid == first_id else Store(db_for(pid))
+        source = sources.Demo() if args.demo else sources.Feeds(cfg["source"]["urls"])
+        place = Place(pc, store, source, live=fa, demo=args.demo, named=named)
+        place.tracker.basemap = charts.map.info()
+        place.tracker.charts = charts.info()
+        place.tracker.logos = logos.enabled
+        return place
 
-    def poll():
-        paused = False
-        while True:
-            idle = activity.idle()
-            if idle and when_idle == "pause":
-                if not paused:
-                    log.info("no screen open: pausing data requests until one asks again")
-                    paused = True
-                activity.sleep(60)
-                continue
-            if paused:
-                log.info("screen open: resuming data requests")
-                paused = False
-            tracker.idle = idle
-            try:
-                # out to the tracking radius, or further while a screen shows the radar at a longer range
-                tracker.update(source.fetch(home["lat"], home["lon"], tracker.fetch_radius()), source.name)
-            except Exception as e:
-                log.warning("no position feed is answering (last error: %s)", e)
-                tracker.failed(source.name, e)
-            activity.sleep(1 if args.demo else max(trk["poll_seconds"], 15) if idle else trk["poll_seconds"])
+    # places set up from a screen are kept beside the logbook (not in demo mode)
+    places = Places(cfg, make_place, None if db == ":memory:" else Path(db).with_name("places.json"))
+    for pc in place_cfgs:
+        places.add_config(pc)
+    places.load_saved()
 
-    def wx():
-        fetched = 0.0
-        while True:
-            if not activity.idle() and time.time() - fetched > 300:
-                try:
-                    short, full = weather.fetch_all(cfg["airport"]["icao"])
-                    if short:
-                        tracker.weather, tracker.weather_full = short, full
-                    fetched = time.time()
-                except Exception as e:
-                    log.warning("weather fetch failed: %s", e)
-                    fetched = time.time() - 240          # try again in a minute
-            time.sleep(5)
-
-    ex = cfg["extras"]
-    tfrs = tfr.TFRs(cfg["home"], ex["tfr_radius_nm"])
-
-    def extras():
-        """Military jets heard without a position (every minute), flight restrictions
-        (every 15 minutes) and the contrail forecast (hourly). Paused with no screen open."""
-        jobs = [  # (enabled, every seconds, name, fetch, store)
-            (ex["military"], 60, "military aircraft",
-             lambda: sources.military_heard(cfg["home"], ex["military_radius_nm"], ex["military_url"]),
-             lambda v: setattr(tracker, "heard", v)),
-            (ex["tfr"], 900, "flight restrictions", tfrs.refresh, lambda v: setattr(tracker, "tfrs", v)),
-            (ex["contrails"], 3600, "contrail forecast",
-             lambda: contrails.fetch(cfg["home"]["lat"], cfg["home"]["lon"]), lambda v: setattr(tracker, "contrails", v)),
-        ]
-        due = [0.0] * len(jobs)
-        while True:
-            for i, (on, every, name, fetch, keep) in enumerate(jobs):
-                if on and not activity.idle() and time.time() >= due[i]:
-                    try:
-                        keep(fetch())
-                        due[i] = time.time() + every
-                    except Exception as e:
-                        log.warning("%s fetch failed: %s", name, e)
-                        due[i] = time.time() + min(every, 120)
-            time.sleep(5)
-
-    threading.Thread(target=poll, daemon=True).start()
-    if not args.demo:
-        threading.Thread(target=wx, daemon=True).start()
-        threading.Thread(target=extras, daemon=True).start()
-    else:
-        tracker.weather, tracker.weather_full = weather.demo()
-        tracker.tfrs, tracker.contrails = tfr.demo(cfg["home"]), contrails.demo()
-        tracker.heard = sources.demo_heard()
+    def map_around_every_place():
+        charts.homes = [p.cfg["home"] for p in places]
+    map_around_every_place()
+    places.on_change = map_around_every_place
+    for place in places:
+        if not place.added:            # (saved ones started as they were added)
+            place.start()
     for p in providers:
-        p.activity = activity                 # e.g. Flightradar24's hourly usage check waits for a screen
-    server = make_server(cfg, tracker, store, tiles, logos, activity)
-    log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"], source.name)
+        p.activity = AnyActivity(places)   # e.g. Flightradar24's hourly usage check waits for a screen
+    server = make_server(cfg, places, charts, logos)
+    log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"],
+             places.first.source.name)
+    for place in places:
+        log.info("place %s: %s, airport %s | logbook: %s", place.id, place.name, place.cfg["airport"]["icao"],
+                 db_for(place.id))
     if fa and not args.demo:
         b = fa.budget()
         log.info("live routes: %s (%s mode) - %s", fa.label, fa.mode,
@@ -148,8 +103,9 @@ def main():
                  if b["period_budget"] is not None else f"up to {b['daily_limit']} {fa.unit} a day")
     else:
         log.info("live routes: off (free route database only)")
-    log.info("radar map: %s", f"{tiles.style} (cached in {tiles.dir})" if tiles.enabled else "off")
-    log.info("config: %s | logbook: %s", cfg["_path"] or "built-in defaults", db)
+    log.info("radar map: %s; ATC radar chart: %s (cached in %s)", charts.map.style if charts.map.enabled else "off",
+             charts.atc.style if charts.atc else "off", tiles_dir)
+    log.info("config: %s", cfg["_path"] or "built-in defaults")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

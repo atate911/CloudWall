@@ -1,4 +1,5 @@
 import json
+import math
 import time
 import unittest
 from pathlib import Path
@@ -89,12 +90,15 @@ class StubEnricher:
     def aircraft(self, hexid):
         return None
 
+    def photo(self, hexid, reg=None, icao_type=None):
+        return None
+
     def route(self, callsign):
         return self.routes.get(callsign)
 
 
-def plane(hexid, callsign, north_nm, alt=3000, typ="B738", **kw):
-    home = config.DEFAULTS["home"]
+def plane(hexid, callsign, north_nm, alt=3000, typ="B738", home=None, **kw):
+    home = home or config.DEFAULTS["home"]
     return dict({"hex": hexid, "callsign": callsign, "reg": None, "type": typ, "alt": alt,
                  "on_ground": False, "gs": 180, "track": 280, "vrate": -700,
                  "lat": home["lat"] + north_nm / 60, "lon": home["lon"], "squawk": "1234",
@@ -208,7 +212,7 @@ class TrackerTest(unittest.TestCase):
         self.assertEqual(self.store.logbook(time.strftime("%Y-%m-%d"))["records_today"]["furthest_origin"]["origin"], "SFO")
 
     def test_infers_arrival_when_route_is_wrong(self):
-        ap = config.DEFAULTS["airport"]
+        ap = self.t.cfg["airport"]                                       # PDX, as resolved for the default home
         wrong = {"flight": "AS1363", "airline": "Alaska Airlines",
                  "origin": {"iata": "LAX", "city": "Los Angeles", "lat": 33.94, "lon": -118.41},
                  "dest": {"iata": "PVR", "city": "Puerto Vallarta", "lat": 20.68, "lon": -105.25}}
@@ -228,7 +232,7 @@ class TrackerTest(unittest.TestCase):
         self.assertIsNone(ac["a3"]["local"])
 
     def test_flow_and_emergency(self):
-        ap = config.DEFAULTS["airport"]
+        ap = self.t.cfg["airport"]                                       # PDX, as resolved for the default home
         a = plane("a1", "ASA1", 0, alt=1500, squawk="7700")
         a["lat"], a["lon"] = ap["lat"], ap["lon"] + 0.1
         self.t.update([a], "test")
@@ -466,6 +470,26 @@ class RadarRangeTest(unittest.TestCase):
         t.range_wanted[30] -= 120                                     # the screen stopped asking
         self.assertEqual(t.fetch_radius(), 15)
 
+    def test_a_square_display_reaches_into_its_corners(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        t.want_range(15, square=True)                                 # the ATC style at 15 nm
+        self.assertEqual(t.fetch_radius(), 21.2)
+        t.want_range(30)
+        self.assertEqual(t.fetch_radius(), 30)
+        t.want_range(30, square=True)
+        self.assertEqual(t.fetch_radius(), 42.4)
+
+    def test_data_blocks_get_wake_categories_and_history_spacing(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        t.update([dict(plane("a1", "ASA1", 2.0), type="B738"), dict(plane("c1", "N123", 3.0), type="C172"),
+                  dict(plane("x1", "XXX1", 4.0), type="ZZZZ")], "test")
+        cwt = {a["hex"]: a["cwt"] for a in t.snapshot()["aircraft"]}
+        self.assertEqual(cwt, {"a1": "F", "c1": "I", "x1": None})       # a type it doesn't know: blank
+        self.assertEqual(t.snapshot()["trail_s"], t.cfg["tracking"]["poll_seconds"])   # one update: the poll interval
+        t.updated_at -= 4.0                                           # updates 4 s apart
+        t.update([plane("a1", "ASA1", 1.9)], "test")
+        self.assertAlmostEqual(t.snapshot()["trail_s"], 4.0, delta=0.1)
+
     def test_far_targets_cant_be_pinned_and_go_stale(self):
         t = Tracker(config.load(), Store(":memory:"), StubEnricher())
         t.want_range(30)
@@ -483,6 +507,84 @@ class RadarRangeTest(unittest.TestCase):
         demo.next_spawn = 0
         demo.fetch(home["lat"], home["lon"], 30)
         self.assertLessEqual(min(a["along"] for a in demo.active), -28)   # new arrivals start near 30 nm
+
+
+class PlacesTest(unittest.TestCase):
+    def load(self, toml):
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f:
+            f.write(toml)
+        self.addCleanup(Path(f.name).unlink)
+        return config.load(f.name)
+
+    def test_the_defaults_are_one_place_at_pdx(self):
+        [p] = config.places(config.load())
+        self.assertEqual((p["place"], p["airport"]["icao"]), ({"id": "home", "name": "Home"}, "KPDX"))
+        self.assertEqual([w["name"] for w in p["airport"]["runways"]], ["10R/28L", "10L/28R", "03/21"])
+        # the fields around east Vancouver, nearest first, found in the bundled tables with their runways
+        self.assertEqual([f["code"] for f in p["airport"]["others"]], ["1W1", "TTD", "VUO"])
+        self.assertEqual({f["code"]: [w["name"] for w in f["runways"]] for f in p["airport"]["others"]},
+                         {"1W1": ["07/25"], "TTD": ["07/25"], "VUO": ["08/26"]})
+
+    def test_an_icao_code_is_enough(self):
+        cfg = self.load('[home]\nlat = 37.66\nlon = -122.40\n[airport]\nicao = "ksfo"\n')
+        ap = config.places(cfg)[0]["airport"]
+        self.assertEqual((ap["icao"], ap["iata"], ap["city"]), ("KSFO", "SFO", "San Francisco"))
+        self.assertAlmostEqual(ap["lat"], 37.619, places=2)              # not PDX's position
+        self.assertIn("OAK", [f["code"] for f in ap["others"]])          # small fields found nearby
+        self.assertNotIn("VUO", [f["code"] for f in ap["others"]])
+        self.assertEqual(len(ap["runways"]), 4)
+
+    def test_more_places(self):
+        cfg = self.load('[[places]]\nname = "Cabin"\nlat = 44.06\nlon = -121.31\nairport = "KRDM"\n'
+                        '[[places]]\nname = "cabin"\nlat = 37.66\nlon = -122.40\nairport = "KSFO"\nelevation_ft = 20\n'
+                        '[kiosk]\nplace = "Cabin"\n')
+        ps = config.places(cfg)
+        self.assertEqual([p["place"]["id"] for p in ps], ["home", "cabin", "cabin-2"])
+        self.assertEqual(ps[1]["home"]["elevation_ft"], 3070)           # the airport's, when not given
+        self.assertEqual(ps[2]["home"]["elevation_ft"], 20)
+        self.assertEqual(ps[1]["airport"]["iata"], "RDM")
+        self.assertEqual(config.kiosk_place(cfg, ps), "cabin")
+        self.assertEqual(ps[1]["kiosk"]["place"], "Cabin")              # shared settings carry over
+        with self.assertRaisesRegex(ValueError, "needs lat and lon, or zip"):
+            config.places(dict(cfg, places=[{"name": "Boat", "lat": 1.0}]))
+        with self.assertRaisesRegex(ValueError, "isn't in CloudWall's table"):
+            config.places(dict(cfg, places=[{"name": "Strip", "lat": 1.0, "lon": 2.0, "airport": "ZZZZ"}]))
+
+    def test_zip_codes_and_the_closest_major_airport(self):
+        from cloudwall import airports
+        cfg = self.load('[home]\nzip = "98660"\n[[places]]\nname = "Cabin"\nzip = "97702"\n'
+                        '[[places]]\nname = "Allston"\nzip = 2134\n')       # a number: TOML drops the leading 0
+        home, cabin, allston = config.places(cfg)
+        self.assertEqual((home["home"]["lat"], home["home"]["zip"], home["airport"]["icao"]), (45.6612, "98660", "KPDX"))
+        self.assertEqual((cabin["airport"]["icao"], cabin["home"]["elevation_ft"]), ("KRDM", 3070))
+        self.assertEqual((allston["home"]["zip"], allston["airport"]["icao"]), ("02134", "KBOS"))
+        with self.assertRaisesRegex(ValueError, "isn't a US ZIP code CloudWall knows"):
+            config.places(dict(cfg, places=[{"zip": "00501"}]))
+        # the closest major airport: a large one within 30 nm wins over a nearer smaller one
+        self.assertEqual(airports.pick_airport(61.22, -149.86), "PANC")    # not Merrill Field, 1 nm away
+        self.assertEqual(airports.pick_airport(47.98, -122.20), "KPAE")    # Everett: Paine Field, SEA is 32 nm
+        self.assertEqual(airports.locate("98683-1234")["zip"], "98683")
+        self.assertEqual(airports.locate("45.6387 -122.6615")["lon"], -122.6615)
+        for junk in ("hello", "2024-01-15", "91, 10", "123.45"):
+            self.assertIsNone(airports.locate(junk), junk)
+
+    def test_runway_flow_at_any_airport(self):
+        cfg = self.load('[home]\nlat = 37.66\nlon = -122.40\n[airport]\nicao = "KSFO"\n')
+        t = Tracker(config.places(cfg)[0], Store(":memory:"), StubEnricher())
+        sfo = {"lat": 37.62, "lon": -122.37}
+        t.update([plane("w1", "UAL1", -3.0, alt=2500, gs=150, track=298, home=sfo)], "test")
+        self.assertEqual(t.flow, {"dir": "west", "label": "West flow", "runways": "28L / 28R"})
+        t.update([plane("e1", "UAL2", 3.0, alt=2500, gs=150, track=118, home=sfo)], "test")
+        self.assertEqual(t.flow["runways"], "10L / 10R")
+
+    def test_the_map_is_served_around_every_place(self):
+        from cloudwall import tiles as T
+        t = T.Tiles(config.load(), "/tmp/x")
+        sfo = (12, 655, 1583)                                            # a zoom-12 tile over SFO
+        self.assertFalse(t.allowed(*sfo))
+        t.homes.append({"lat": 37.66, "lon": -122.40})
+        self.assertTrue(t.allowed(*sfo))
 
 
 class TilesTest(unittest.TestCase):
@@ -550,6 +652,85 @@ class TilesTest(unittest.TestCase):
         t = T.Tiles(cfg, "/tmp/x")
         self.assertFalse(t.enabled)
         self.assertIsNone(t.get(11, 326, 731))
+
+
+    def test_tiles_reach_the_corners_of_the_longest_range(self):
+        from cloudwall import tiles as T
+        t = T.Tiles(config.load(), "/tmp/x")
+        h = config.load()["home"]
+        # the zoom-9 tile under the ATC square's north-east corner at 30 nm, 42 nm out
+        z, n = 9, 2 ** 9
+        lat, lon = h["lat"] + 30 / 60, h["lon"] + 30 / (60 * math.cos(math.radians(h["lat"])))
+        x = int((lon + 180) / 360 * n)
+        y = int((1 - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat))) / math.pi) / 2 * n)
+        self.assertTrue(t.allowed(z, x, y))
+        self.assertFalse(t.allowed(z, x + 3, y - 3))                  # well beyond: refused
+
+
+class ChartsTest(unittest.TestCase):
+    def charts(self, d, **m):
+        from cloudwall.charts import Charts
+        cfg = config.load()
+        cfg["map"] = dict(cfg["map"], **m)
+        return Charts(cfg, d)
+
+    def test_the_layers_and_which_display_gets_which(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            info = self.charts(d).info()
+            self.assertEqual(info["map"]["style"], "dark")              # a street map under the chart radar
+            self.assertIsNone(info["atc"])                              # and nothing under the ATC radar
+            info = self.charts(d, atc="ifr-low").info()
+            self.assertEqual((info["atc"]["layer"], info["atc"]["name"]), ("ifr-low", "IFR Enroute Low"))
+            self.assertIn("FAA", info["atc"]["attribution"])
+            self.assertEqual(set(info["layers"]), {"ifr-low", "ifr-high", "sectional", "terminal"})
+            self.assertEqual(list(info["layers"]["ifr-low"]["zooms"]), [7, 11])
+            self.assertIn("IFR_AreaLow/MapServer/tile/{z}/{y}/{x}", self.charts(d).layers["ifr-low"].url)
+            c = self.charts(d, style="Sectional", atc="off")            # any case
+            self.assertIs(c.map, c.layers["sectional"])
+            self.assertEqual(c.info()["map"]["style"], "sectional")
+            self.assertIsNone(c.info()["atc"])
+            c = self.charts(d, atc="ifr-high")
+            self.assertEqual(c.info()["atc"]["layer"], "ifr-high")
+            c = self.charts(d, style="sectional", url="https://example.com/{z}/{x}/{y}.png")   # a url wins
+            self.assertEqual(c.map.url, "https://example.com/{z}/{x}/{y}.png")
+
+    def test_terminal_falls_back_to_the_sectional_and_remembers_gaps(self):
+        import tempfile
+        import urllib.error
+        with tempfile.TemporaryDirectory() as d:
+            c = self.charts(d)
+            calls = []
+
+            def none_here(z, x, y):
+                calls.append(("terminal", z, x, y))
+                raise urllib.error.HTTPError("u", 404, "Not Found", {}, None)
+            c.layers["terminal"]._download = none_here
+            c.layers["sectional"]._download = lambda z, x, y: (calls.append(("sectional", z, x, y)), (b"SEC", "image/png"))[1]
+            tile = (11, 326, 731)
+            self.assertEqual(c.get("terminal", *tile), (b"SEC", "image/png"))
+            self.assertEqual(c.get("terminal", *tile), (b"SEC", "image/png"))
+            self.assertEqual([k for k, *_ in calls], ["terminal", "sectional"])   # neither asked twice
+            self.assertEqual(c.get("terminal", 9, 81, 182)[0], b"SEC")  # below the terminal's zooms: the sectional's
+            self.assertIsNone(c.get("terminal", 7, 20, 45))             # below both
+            self.assertIsNone(c.get("nonsense", *tile))                 # no such layer
+
+    def test_every_layer_is_served_around_every_place(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            c = self.charts(d)
+            sfo = (11, 327, 791)
+            self.assertFalse(c.layers["ifr-low"].allowed(*sfo))
+            c.homes = [config.load()["home"], {"lat": 37.62, "lon": -122.38}]
+            self.assertTrue(all(t.allowed(*sfo) for lid, t in c.layers.items() if lid not in ("map", "ifr-high")))
+
+
+class WakeTest(unittest.TestCase):
+    def test_categories(self):
+        from cloudwall import wake
+        self.assertEqual([wake.category(t) for t in ("A388", "B77W", "B738", "e75l", "C172")], ["A", "B", "F", "G", "I"])
+        self.assertIsNone(wake.category(None))
+        self.assertIsNone(wake.category("NOPE"))
 
 
 class LiveFirstTest(unittest.TestCase):
@@ -814,6 +995,58 @@ class FeedExtrasTest(unittest.TestCase):
         self.assertEqual(L["types"][0]["model"], "Vans RV-7A")
 
 
+class PhotoTest(unittest.TestCase):
+    def test_photo_comes_from_planespotters_with_its_credit(self):
+        from unittest import mock
+        from cloudwall import enrich
+        answer = {"photos": [
+            {"id": "1", "thumbnail_large": {"src": "javascript:alert(1)"},       # not an image link
+             "link": "https://www.planespotters.net/photo/1/n24706", "photographer": "A. Spotter"},
+            {"id": "2", "thumbnail": {"src": "https://t.plnspttrs.net/2_280.jpg"},
+             "thumbnail_large": {"src": "https://t.plnspttrs.net/2_t.jpg"},
+             "link": "https://www.planespotters.net/photo/2/n24706", "photographer": " B. Spotter "}]}
+        with mock.patch.object(enrich, "get_json", return_value=answer) as get:
+            pic = enrich.fetch_photo("a24c77", "N24706", "B737")
+        url = get.call_args[0][0]
+        self.assertTrue(url.startswith("https://api.planespotters.net/pub/photos/hex/A24C77?"))
+        self.assertIn("reg=N24706", url)
+        self.assertIn("icaoType=B737", url)
+        self.assertEqual(pic, {"src": "https://t.plnspttrs.net/2_t.jpg",
+                               "link": "https://www.planespotters.net/photo/2/n24706", "by": "B. Spotter"})
+        # nothing to credit, or no photos at all: no photo
+        with mock.patch.object(enrich, "get_json", return_value={"photos": [
+                {"thumbnail_large": {"src": "https://t.plnspttrs.net/3.jpg"}, "link": "https://www.planespotters.net/photo/3"}]}):
+            self.assertIsNone(enrich.fetch_photo("a24c77"))
+        with mock.patch.object(enrich, "get_json", return_value=None):
+            self.assertIsNone(enrich.fetch_photo("a24c77"))
+
+    def test_registry_photo_is_not_used(self):
+        # adsbdb's photo is filed by tail number and can show an older aircraft that wore it
+        from unittest import mock
+        from cloudwall import enrich
+        answer = {"response": {"aircraft": {"type": "737NG 724/W", "manufacturer": "Boeing", "registration": "N24706",
+                                            "registered_owner": "United Airlines",
+                                            "url_photo": "https://image.airport-data.com/aircraft/826984.jpg"}}}
+        with mock.patch.object(enrich, "get_json", return_value=answer):
+            self.assertNotIn("photo", enrich.fetch_aircraft("A24C77"))
+
+    def test_credit_follows_the_photo_into_the_logbook(self):
+        class Photos(StubEnricher):
+            def photo(self, hexid, reg=None, icao_type=None):
+                self.asked = (hexid, reg, icao_type)
+                return {"src": "https://t.plnspttrs.net/2_t.jpg", "link": "https://www.planespotters.net/photo/2/n24706",
+                        "by": "B. Spotter"}
+        e = Photos()
+        t = Tracker(config.load(), Store(":memory:"), e)
+        t.update([plane("a24c77", "UAL1420", 0.5, typ="B737", reg="N24706")], "test")
+        h = t.snapshot()["hero"]
+        self.assertEqual(e.asked, ("a24c77", "N24706", "B737"))
+        self.assertEqual((h["photo"], h["photo_by"]), ("https://t.plnspttrs.net/2_t.jpg", "B. Spotter"))
+        s = t.store.logbook(time.strftime("%Y-%m-%d"))["recent"][0]
+        self.assertEqual((s["photo"], s["photo_by"], s["photo_link"]),
+                         ("https://t.plnspttrs.net/2_t.jpg", "B. Spotter", "https://www.planespotters.net/photo/2/n24706"))
+
+
 class ActivityTest(unittest.TestCase):
     def test_idle_and_wake(self):
         import threading
@@ -851,42 +1084,130 @@ class ActivityTest(unittest.TestCase):
 
 
 class ServerTest(unittest.TestCase):
-    def test_kiosk_and_desktop_serve_the_same_page(self):
-        import threading, urllib.request
+    def serve(self, cfg, saved=None, charts=None):
+        """A server over every place in cfg, with no threads started and no network lookups."""
+        import threading
+        from cloudwall.place import Place, Places
         from cloudwall.server import make_server
-        cfg = config.load()
         cfg["server"]["host"], cfg["server"]["port"] = "127.0.0.1", 0
-        store = Store(":memory:")
-        srv = make_server(cfg, Tracker(cfg, store, StubEnricher()), store)
+
+        def make(pc):
+            place = Place(pc, Store(":memory:"), sources.Demo())
+            place.tracker.enricher = StubEnricher()
+            place.start = lambda: None
+            return place
+        places = Places(cfg, make, saved)
+        for pc in config.places(cfg):
+            places.add_config(pc)
+        places.load_saved()
+        srv = make_server(cfg, places, charts)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
-        try:
-            base = f"http://127.0.0.1:{srv.server_address[1]}"
-            home = urllib.request.urlopen(base + "/", timeout=5).read()
-            for path in ("/kiosk", "/kiosk/"):
-                self.assertEqual(urllib.request.urlopen(base + path, timeout=5).read(), home)
-        finally:
-            srv.shutdown()
+        self.addCleanup(srv.shutdown)
+        return f"http://127.0.0.1:{srv.server_address[1]}", places
+
+    def get(self, url):
+        import urllib.request
+        return urllib.request.urlopen(url, timeout=5).read()
+
+    def test_kiosk_and_desktop_serve_the_same_page(self):
+        base, _ = self.serve(config.load())
+        home = self.get(base + "/")
+        for path in ("/kiosk", "/kiosk/"):
+            self.assertEqual(self.get(base + path), home)
 
     def test_a_screen_asks_for_its_radar_range(self):
-        import threading, urllib.request
-        from cloudwall.server import make_server
+        base, places = self.serve(config.load())
+        t = places["home"].tracker
+        for q in ("?range=99", "?range=x", ""):                     # not offered, not a number, none
+            s = json.loads(self.get(base + "/api/state" + q))
+            self.assertEqual(t.fetch_radius(), 15)
+        self.assertEqual(s["ranges"], [15, 20, 30])
+        self.assertEqual(s["kiosk"], {"place": "", "radar": "chart", "tracks": True, "range_nm": 0})
+        self.get(base + "/api/state?range=30")
+        self.assertEqual(t.fetch_radius(), 30)
+        self.get(base + "/api/state?range=30&square=1")             # the ATC style's square screen
+        self.assertEqual(t.fetch_radius(), 42.4)
+
+    def test_chart_layers_are_served_by_name(self):
+        import tempfile
+        import urllib.error
+        from cloudwall.charts import Charts
+        with tempfile.TemporaryDirectory() as d:
+            cfg = config.load()
+            charts = Charts(cfg, d)
+            for lid, t in charts.layers.items():
+                t._download = (lambda lid: lambda z, x, y: (lid.encode(), "image/png"))(lid)
+            base, _ = self.serve(cfg, charts=charts)
+            self.assertEqual(self.get(base + "/tiles/ifr-low/11/326/731"), b"ifr-low")
+            self.assertEqual(self.get(base + "/tiles/sectional/11/326/731"), b"sectional")
+            self.assertEqual(self.get(base + "/tiles/11/326/731"), b"map")     # the radar's map, as before
+            for bad in ("/tiles/ifr-low/12/652/1462", "/tiles/nope/11/326/731", "/tiles/ifr-low/11/326/x",
+                        "/tiles/ifr-low/11/100/100"):            # past its zooms, no layer, not a tile, far away
+                with self.assertRaises(urllib.error.HTTPError) as e:
+                    self.get(base + bad)
+                self.assertEqual(e.exception.code, 404)
+            s = json.loads(self.get(base + "/api/state"))
+            self.assertIn("charts", s)
+
+    def test_each_screen_shows_its_own_place(self):
+        import urllib.request
         cfg = config.load()
-        cfg["server"]["host"], cfg["server"]["port"] = "127.0.0.1", 0
-        store = Store(":memory:")
-        t = Tracker(cfg, store, StubEnricher())
-        srv = make_server(cfg, t, store)
-        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        cfg["places"] = [{"name": "Cabin", "lat": 44.06, "lon": -121.31, "airport": "KRDM"}]
+        cfg["kiosk"]["place"] = "Cabin"
+        base, places = self.serve(cfg)
+        home, cabin = places["home"], places["cabin"]
+        s = json.loads(self.get(base + "/api/state"))               # no place: the first
+        self.assertEqual((s["place"], s["airport"]["icao"]), ("home", "KPDX"))
+        self.assertEqual([p["id"] for p in s["places"]], ["home", "cabin"])
+        self.assertTrue(home.activity.idle() is False and cabin.activity.idle())   # only the one asked for wakes
+        s = json.loads(self.get(base + "/api/state?kiosk=1"))       # the kiosk's configured place
+        self.assertEqual((s["place"], s["airport"]["icao"], s["home"]["lat"]), ("cabin", "KRDM", 44.06))
+        self.assertFalse(cabin.activity.idle())
+        s = json.loads(self.get(base + "/api/state?place=nowhere"))  # not a place: the first
+        self.assertEqual(s["place"], "home")
+        # the cabin sits at Redmond's elevation (3,070 ft) unless told otherwise: fly well above it
+        self.assertEqual(cabin.cfg["home"]["elevation_ft"], 3070)
+        cabin.tracker.update([plane("c1", "ASA9", 0.5, alt=8000, home=cabin.cfg["home"])], "test")
+        s = json.loads(self.get(base + "/api/state?place=cabin&pin=c1"))   # a screen at the cabin taps c1
+        self.assertEqual((s["pinned"], s["hero"]["hex"]), ("c1", "c1"))
+        self.assertEqual(set(cabin.tracker.pins), {"c1"})
+        self.assertEqual(home.tracker.pins, {})                      # wanted at the cabin only
+        self.assertEqual(json.loads(self.get(base + "/api/logbook?place=cabin"))["today"], 1)   # logged there
+        self.assertEqual(json.loads(self.get(base + "/api/logbook"))["today"], 0)
+
+
+    def send(self, url, method, body=None):
+        import urllib.error, urllib.request
+        req = urllib.request.Request(url, data=json.dumps(body).encode() if body is not None else None, method=method)
         try:
-            base = f"http://127.0.0.1:{srv.server_address[1]}/api/state"
-            for q in ("?range=99", "?range=x", ""):                 # not offered, not a number, none
-                s = json.loads(urllib.request.urlopen(base + q, timeout=5).read())
-                self.assertEqual(t.fetch_radius(), 15)
-            self.assertEqual(s["ranges"], [15, 20, 30])
-            self.assertEqual(s["kiosk"], {"radar": "chart", "tracks": True, "range_nm": 0})
-            urllib.request.urlopen(base + "?range=30", timeout=5).read()
-            self.assertEqual(t.fetch_radius(), 30)
-        finally:
-            srv.shutdown()
+            return 200, json.loads(urllib.request.urlopen(req, timeout=5).read())
+        except urllib.error.HTTPError as e:
+            return e.code, json.loads(e.read())
+
+    def test_a_screen_sets_up_places_by_zip_code(self):
+        import tempfile
+        saved = Path(tempfile.mkdtemp()) / "places.json"
+        base, places = self.serve(config.load(), saved)
+        loc = json.loads(self.get(base + "/api/locate?q=98660"))        # west Vancouver
+        self.assertEqual((loc["zip"], loc["auto"], loc["airports"][0]["icao"]), ("98660", "KPDX", "KPDX"))
+        self.assertAlmostEqual(loc["lat"], 45.6612, places=3)
+        code, r = self.send(base + "/api/places", "POST", {"q": "97702", "name": "Cabin"})      # Bend: Redmond's airport
+        self.assertEqual((code, r["place"]["id"], r["place"]["icao"], r["place"]["added"]), (200, "cabin", "KRDM", True))
+        code, r = self.send(base + "/api/places", "POST", {"q": "45.64, -122.66", "airport": "khio"})
+        self.assertEqual((r["place"]["name"], r["place"]["icao"]), ("45.640, -122.660", "KHIO"))
+        s = json.loads(self.get(base + "/api/state?place=cabin"))
+        self.assertEqual((s["place"], s["airport"]["icao"], s["home"]["zip"]), ("cabin", "KRDM", "97702"))
+        for bad in ({"q": "hello"}, {"q": "00501"}, {"q": "98660", "airport": "ZZZZ"}):
+            self.assertEqual(self.send(base + "/api/places", "POST", bad)[0], 400)
+        self.assertEqual(self.send(base + "/api/places?id=home", "DELETE")[0], 400)    # the config's stays
+        self.assertEqual(json.loads(saved.read_text())[0]["zip"], "97702")
+        _, places2 = self.serve(config.load(), saved)                   # after a restart: back again
+        self.assertEqual([p.id for p in places2], ["home", "cabin", "45-640-122-660"])
+        cabin = places["cabin"]
+        code, r = self.send(base + "/api/places?id=cabin", "DELETE")
+        self.assertEqual((code, [p["id"] for p in r["places"]]), (200, ["home", "45-640-122-660"]))
+        self.assertTrue(cabin.stopped.is_set())                         # its threads wind down
+        self.assertEqual([e["name"] for e in json.loads(saved.read_text())], ["45.640, -122.660"])
 
 
 class SeatsTest(unittest.TestCase):
@@ -931,11 +1252,66 @@ class EmergencyTest(unittest.TestCase):
         self.assertEqual(t.snapshot()["emergency"][0]["emergency_code"], "7600")
 
 
+class PathTest(unittest.TestCase):
+    def test_the_whole_path_is_kept_compactly_with_its_altitude(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        for i in range(40):                                           # 40 updates, 0.05 nm apart
+            t.update([plane("a1", "ASA1", 10 - i * 0.05, alt=8000 - i * 50)], "test")
+        s = t.snapshot("a1")                                          # tapped on the radar
+        a = s["aircraft"][0]
+        self.assertEqual(len(a["trail"]), 40)                         # recent positions: every update
+        self.assertNotIn("path", a)                                   # only the selected aircraft sends its path
+        self.assertEqual(s["hero"]["hex"], "a1")
+        path = [list(q) for q in s["hero"]["path"]]
+        self.assertEqual(path[0], [round(t.home["lat"] + 10 / 60, 4), round(t.home["lon"], 4), 80])
+        self.assertTrue(8 <= len(path) <= 14)                         # a point every 0.15 nm or 300 ft
+        self.assertIn(path[-1][2], range(60, 63))                     # it followed the descent to about 6,050 ft
+        t.update([plane("a1", "ASA1", 8.0, alt=None)], "test")        # no altitude: the last one carries on
+        self.assertEqual(t.snapshot("a1")["hero"]["path"][-1][2], path[-1][2])
+        t.update([plane("a1", "ASA1", 7.5), plane("b1", "ASA2", 9.0)], "test")
+        self.assertEqual(len(t.snapshot("b1")["hero"]["path"]), 1)    # tapped: its whole path, from when it appeared
+        self.assertGreater(len(t.paths["a1"]), len(path))             # a1's is still kept, and growing
+        t.update([plane("b1", "ASA2", 5.0)], "test")                  # a1 has gone: its path with it
+        self.assertNotIn("a1", t.paths)
+
+
+class VideoMapTest(unittest.TestCase):
+    def test_portlands_class_c_and_the_vors_around_it(self):
+        from cloudwall import airports
+        home = config.DEFAULTS["home"]
+        areas = airports.airspace_near(home["lat"], home["lon"], own="PDX")
+        self.assertEqual(sorted((a["id"], a["class"], a["floor"], a["ceiling"]) for a in areas),
+                         [("PDX", "C", f, 4000) for f in (0, 1100, 1700, 1800, 2000, 2300)])
+        self.assertTrue(all(len(r) >= 3 and len(r[0]) == 2 for a in areas for r in a["rings"]))
+        self.assertEqual([n["ident"] for n in airports.navaids_near(home["lat"], home["lon"])], ["CBU", "BTG", "UBG"])
+        cfg = config.complete_place(config.load())
+        self.assertEqual(len(cfg["airport"]["airspace"]), 6)
+        self.assertEqual(cfg["airport"]["navaids"][1]["type"], "VORTAC")
+
+    def test_class_d_only_for_the_places_own_airport(self):
+        from cloudwall import airports
+        rdm = airports.lookup("KRDM")
+        self.assertEqual({a["class"] for a in airports.airspace_near(rdm["lat"], rdm["lon"], own="RDM")}, {"D"})
+        self.assertEqual(airports.airspace_near(rdm["lat"], rdm["lon"], own="XXX"), [])
+
+    def test_label_points_fall_inside_a_wrapped_shelf(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("build_data", Path(__file__).resolve().parent.parent / "tools" / "build_data.py")
+        bd = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bd)
+        # a C-shaped shelf around a gap where its centre of mass falls
+        shelf = [[0, 0], [0, 3], [1, 3], [1, 1], [2, 1], [2, 3], [3, 3], [3, 0]]
+        self.assertFalse(bd.inside(1.5, 2, shelf))
+        self.assertTrue(bd.inside(*bd.label_point(shelf), shelf))
+        line = [[0, 0], [0.5, 0.0001], [1, 0], [1, 1]]
+        self.assertEqual(bd.simplify(line, 0.001), [[0, 0], [1, 0], [1, 1]])
+
+
 class SmallFieldTest(unittest.TestCase):
     def test_light_aircraft_at_pearson(self):
-        cfg = config.load()
-        t = Tracker(cfg, Store(":memory:"), StubEnricher())
-        vuo = cfg["airport"]["others"][0]
+        from cloudwall import airports
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        vuo = airports.lookup("VUO")
         a = plane("g1", "N733NV", 0, alt=900, typ="C172", category="A1", vrate=-500, track=260)
         a.update(lat=vuo["lat"], lon=vuo["lon"] + 0.02)
         self.assertEqual(t._infer_local(a), "arriving")
@@ -945,6 +1321,15 @@ class SmallFieldTest(unittest.TestCase):
         b.pop("local_field")
         t._infer_local(b)
         self.assertNotIn("local_field", b)
+
+    def test_light_aircraft_at_grove_field(self):
+        from cloudwall import airports
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        grove = airports.lookup("1W1")                                   # Camas, 429 ft
+        a = plane("g2", "N12345", 0, alt=1300, typ="C172", category="A1", vrate=-400, track=250)
+        a.update(lat=grove["lat"], lon=grove["lon"] + 0.015)
+        self.assertEqual(t._infer_local(a), "arriving")
+        self.assertEqual(a["local_field"], {"code": "1W1", "name": "Grove Field", "city": "Camas"})
 
 
 class TFRTest(unittest.TestCase):
