@@ -84,6 +84,11 @@ The install is editable, so changes to the Python or to `cloudwall/web/` take ef
 without reinstalling: restart for Python changes, just reload the browser for the
 web files.
 
+After an update (`git pull`), restart CloudWall: `make restart` for the service below, or stop
+`make run` and start it again. Until then the server keeps running the old code while browsers
+load the new pages, so anything new on both sides (such as setting a location) can't work; the
+header says **Updated: restart CloudWall** while that's so.
+
 To keep it running in the background across logouts and reboots:
 
 ```sh

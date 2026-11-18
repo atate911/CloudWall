@@ -1125,6 +1125,25 @@ class ServerTest(unittest.TestCase):
             s = json.loads(self.get(base + "/api/state"))
             self.assertIn("charts", s)
 
+    def test_screens_are_told_when_the_code_has_changed_since_it_started(self):
+        from cloudwall import server as S
+        base, _ = self.serve(config.load())
+        self.assertFalse(json.loads(self.get(base + "/api/state"))["restart"])
+        watch = S.CodeWatch()
+        self.assertFalse(watch())                                   # just started
+        real = S.code_stamp
+        S.code_stamp = lambda: "pulled"                              # an update lands on disk
+        try:
+            self.assertFalse(watch())                               # not looked at again within the minute
+            watch.checked -= S.CODE_CHECK_S
+            self.assertTrue(watch())
+            S.code_stamp = real                                     # it stays said until a restart
+            watch.checked -= S.CODE_CHECK_S
+            self.assertTrue(watch())
+        finally:
+            S.code_stamp = real
+        self.assertEqual(S.code_stamp(), S.code_stamp())            # the same code, the same stamp
+
     def test_each_screen_shows_its_own_place(self):
         import urllib.request
         cfg = config.load()
