@@ -7,7 +7,8 @@ from pathlib import Path
 from cloudwall import config, geo, sources
 from cloudwall.enrich import Enricher
 from cloudwall.store import Store
-from cloudwall.tracker import Tracker, ordinal
+from cloudwall.logbook import ordinal
+from cloudwall.tracker import Tracker
 
 PDX = (45.5887, -122.5975)
 SFO = (37.619, -122.375)
@@ -150,7 +151,7 @@ class TrackerTest(unittest.TestCase):
         self.assertEqual(self.store.count("1"), 1)
         self.assertAlmostEqual(self.store.query("SELECT min_dist_nm FROM sightings")[0]["min_dist_nm"], 0.4, 1)
         # the same airframe returning an hour later is a repeat visitor, not a new type
-        self.t.active.clear()
+        self.t.logbook.active.clear()
         with self.store.db:
             self.store.db.execute("UPDATE sightings SET ts = ts - 3600")
         self.t.update([plane("a1", "ASA777", 1.0)], "test")
@@ -365,7 +366,7 @@ class FlightAwareTest(unittest.TestCase):
         self.assertEqual(hero["local"], "arriving")
         row = self.store.query("SELECT origin, dest FROM sightings")[0]
         self.assertEqual((row["origin"], row["dest"]), ("SMF", "PDX"))
-        self.assertEqual(t.snapshot()["live_routes"]["used_today"], 1)
+        self.assertEqual(self.fa.status()["used_today"], 1)
         json.dumps(t.snapshot())
 
 
@@ -469,14 +470,14 @@ class TracksTest(unittest.TestCase):
         t = Tracker(config.load(), store, StubEnricher())
         for north in (3.0, 2.0, 1.0):
             t.update([plane("a1", "ASA1", north), plane("g1", "ASA2", 0.5, alt=0, on_ground=True)], "test")
-        trail = list(t.trails["a1"])
+        trail = list(t.tracks.trails["a1"])
         self.assertEqual(len(trail), 3)
         self.assertGreater(trail[0][0], trail[-1][0])                 # moving south toward home
         heat = t.heatmap()
         self.assertEqual(sum(c[2] for c in heat["cells"]), 3)         # the parked aircraft isn't counted
         self.assertTrue(all(c[0] == heat["grid"] // 2 for c in heat["cells"]))   # due north: centre column
         t.update([], "test")
-        self.assertEqual(t.trails, {})                                # gone from range: trail dropped
+        self.assertEqual(t.tracks.trails, {})                                # gone from range: trail dropped
         self.assertIn("photo", {r["name"] for r in store.db.execute("PRAGMA table_info(sightings)")})
 
 
@@ -495,7 +496,7 @@ class RadarRangeTest(unittest.TestCase):
         s = t.snapshot()
         self.assertEqual([a["hex"] for a in s["aircraft"]], ["a1"])  # board, card and logbook: 15 nm only
         self.assertEqual([a["hex"] for a in s["beyond"]], ["f1"])
-        self.assertEqual(len(t.trails["f1"]), 2)                      # its trail is kept, should it come in range
+        self.assertEqual(len(t.tracks.trails["f1"]), 2)                      # its trail is kept, should it come in range
         self.assertNotIn("trail", s["beyond"][0])                     # but only the selected aircraft's is sent
         self.assertEqual(sum(c[2] for c in t.heatmap()["cells"]), 2)  # but it stays off the heatmap
         t.range_wanted[30] -= 120                                     # the screen stopped asking
@@ -1136,11 +1137,9 @@ class ActivityTest(unittest.TestCase):
         store.cache_put("aircraft", "a1", None)
         store.cache_put("route", "ASA512", None)          # no free-database lookup in the way
         t = Tracker(config.load(), store, Enricher(store, live=Provider()))
-        t.idle = True
-        t.update([plane("a1", "ASA512", 1.0)], "test")
+        t.update([plane("a1", "ASA512", 1.0)], "test", idle=True)      # no screen open
         time.sleep(0.1)
         self.assertEqual(calls, [])
-        t.idle = False
         t.update([plane("a1", "ASA512", 1.0)], "test")
         time.sleep(0.2)
         self.assertEqual(calls, ["ASA512"])
@@ -1416,9 +1415,9 @@ class PathTest(unittest.TestCase):
         self.assertEqual(len(s["hero"]["path"]), 1)
         self.assertEqual(len(s["hero"]["trail"]), 1)
         self.assertEqual([a.get("trail") for a in s["aircraft"]], [None, None])   # no aircraft but the selected one carries a trail
-        self.assertGreater(len(t.paths["a1"]), len(path))             # a1's is still kept, and growing
+        self.assertGreater(len(t.tracks.paths["a1"]), len(path))             # a1's is still kept, and growing
         t.update([plane("b1", "ASA2", 5.0)], "test")                  # a1 has gone: its path with it
-        self.assertNotIn("a1", t.paths)
+        self.assertNotIn("a1", t.tracks.paths)
 
 
 class VideoMapTest(unittest.TestCase):
@@ -1460,12 +1459,12 @@ class SmallFieldTest(unittest.TestCase):
         vuo = airports.lookup("VUO")
         a = plane("g1", "N733NV", 0, alt=900, typ="C172", category="A1", vrate=-500, track=260)
         a.update(lat=vuo["lat"], lon=vuo["lon"] + 0.02)
-        self.assertEqual(t._infer_local(a), "arriving")
+        self.assertEqual(t.details.infer_local(a), "arriving")
         self.assertEqual(a["local_field"]["code"], "VUO")
         # an airliner low over the same spot is still PDX traffic, not Pearson's
         b = dict(a, callsign="ASA512", category="A3")
         b.pop("local_field")
-        t._infer_local(b)
+        t.details.infer_local(b)
         self.assertNotIn("local_field", b)
 
     def test_light_aircraft_at_grove_field(self):
@@ -1474,7 +1473,7 @@ class SmallFieldTest(unittest.TestCase):
         grove = airports.lookup("1W1")                                   # Camas, 429 ft
         a = plane("g2", "N12345", 0, alt=1300, typ="C172", category="A1", vrate=-400, track=250)
         a.update(lat=grove["lat"], lon=grove["lon"] + 0.015)
-        self.assertEqual(t._infer_local(a), "arriving")
+        self.assertEqual(t.details.infer_local(a), "arriving")
         self.assertEqual(a["local_field"], {"code": "1W1", "name": "Grove Field", "city": "Camas"})
 
 
@@ -1721,11 +1720,11 @@ class FollowedThroughGapsTest(unittest.TestCase):
     def test_finished_flyovers_and_stale_runways_are_forgotten(self):
         t = self.t
         t.update([plane("a1", "ASA1", 1.0)], "test")                    # overhead, low and descending toward PDX
-        self.assertEqual((list(t.active), t.flow["dir"]), (["a1"], "west"))
-        t.active["a1"]["ts"] -= 3600                                    # an hour on, with nothing landing
-        t.tidied, t.flow_at = 0, t.flow_at - 3601
+        self.assertEqual((list(t.logbook.active), t.flow["dir"]), (["a1"], "west"))
+        t.logbook.active["a1"]["ts"] -= 3600                                    # an hour on, with nothing landing
+        t.logbook.tidied, t.flow_at = 0, t.flow_at - 3601
         t.update([], "test")
-        self.assertEqual((t.active, t.flow), ({}, None))
+        self.assertEqual((t.logbook.active, t.flow), ({}, None))
 
 
 class HousekeepingTest(unittest.TestCase):
@@ -1788,7 +1787,7 @@ class PlaceThreadsTest(unittest.TestCase):
                 place.stopped.set()                                     # (one turn of the loop)
                 return [plane("a1", "ASA1", 1.0)]
         place = self.place(Source())
-        place.tracker.update = lambda raw, source: 1 / 0
+        place.tracker.update = lambda raw, source, **how: 1 / 0
         with self.assertLogs("cloudwall", "ERROR") as logs:
             place._poll()
         self.assertIn("the board couldn't be worked out", logs.output[0])
@@ -1853,3 +1852,31 @@ class SharedTest(unittest.TestCase):
         self.assertEqual(calls, ["ASA512"])
         self.assertTrue(cache.cache_get("live_route", "fake:ASA512", 3600)[0])          # kept in the one cache,
         self.assertFalse(home.store.cache_get("live_route", "fake:ASA512", 3600)[0])    # not with either logbook
+
+
+class PlaceStateTest(unittest.TestCase):
+    """A place gives a screen everything it draws; the tracker only tracks."""
+
+    def test_a_screen_gets_the_board_with_the_places_own_weather_and_airspace(self):
+        from cloudwall.place import Place
+        [pc] = config.places(config.load())
+        place = Place(pc, Store(":memory:"), sources.Demo(), demo=True)
+        self.assertEqual(place.state()["weather"], None)                 # nothing fetched yet: still a full answer
+        place.start = lambda: None
+        place.weather, place.weather_full = {"station": "KPDX"}, {"now": {"category": "VFR"}}
+        place.tfrs, place.heard = [{"id": "6/1"}], [{"hex": "ae01"}]
+        place.contrails = {"summary": "None today", "levels": [{"ft": 34000, "state": "persistent"}]}
+        place.tracker.update([plane("a1", "ASA512", 1.0, alt=34000)], "test", contrails=place.contrails)
+        s = place.state(pin="a1", range_nm=30)
+        self.assertEqual((s["place"], s["hero"]["hex"], s["pinned"], s["weather"], s["tfrs"], s["heard"]),
+                         ("home", "a1", "a1", {"station": "KPDX"}, [{"id": "6/1"}], [{"hex": "ae01"}]))
+        self.assertEqual(s["contrails"], {"summary": "None today"})      # the levels are the Weather tab's
+        self.assertEqual(s["hero"]["contrail"], "persistent")            # each aircraft is marked from the forecast
+        self.assertEqual(place.tracker.fetch_radius(), 30)               # the screen's radar range was noted
+        self.assertIsNone(s["live_routes"])
+        w = place.weather_report()
+        self.assertEqual((w["now"], len(w["contrails"]["levels"]), w["tfrs"]), ({"category": "VFR"}, 1, [{"id": "6/1"}]))
+        self.assertEqual(place.heatmap()["grid"], 96)
+        self.assertEqual(place.logbook()["total"], 1)                    # and its flyover is in the place's logbook
+        # the tracker knows none of it
+        self.assertFalse({"weather", "tfrs", "heard", "contrails", "basemap", "charts", "logos"} & set(place.tracker.snapshot()))

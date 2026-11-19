@@ -48,11 +48,15 @@ class CodeWatch:
 
 
 def make_server(cfg, places, charts=None, logos=None):
-    """places: a place.Places. Each screen says which place it shows with ?place=; without one,
+    """places: a place.Places; all the server asks of a place is its state, weather report,
+    heatmap and logbook. Each screen says which place it shows with ?place=; without one,
     the kiosk (?kiosk=1) gets its configured place and any other screen the first. Screens can
     also set up places (POST /api/places) and remove the ones they set up (DELETE)."""
 
     code_changed = CodeWatch()
+    # what the displays may draw with, the same for every place: the radar's map, the chart layers, logos
+    display = {"basemap": charts.map.info() if charts else None, "charts": charts.info() if charts else None,
+               "logos": bool(logos and logos.enabled)}
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -101,25 +105,20 @@ def make_server(cfg, places, charts=None, logos=None):
             if path == "/api/locate":
                 return self._locate((q.get("q") or [""])[0])
             place = self._place(q)
-            tracker = place.tracker
-            if path in ("/api/state", "/api/weather"):
-                place.activity.touch()                # a screen is showing this place
             if path == "/api/state":
                 try:
-                    tracker.want_range(int(q.get("range", ["0"])[0]), q.get("square") == ["1"])   # the radar's range on this screen
+                    nm = int(q.get("range", ["0"])[0])                   # the radar's range on this screen
                 except ValueError:
-                    pass
+                    nm = 0
                 pin = q.get("pin", [None])[0]                            # the flight this screen follows
-                tracker.want_pin(pin)
-                return self._send(200, dict(tracker.snapshot(pin), place=place.id, places=places.summaries(),
-                                            restart=code_changed()))
+                return self._send(200, dict(place.state(pin, nm, q.get("square") == ["1"]), **display,
+                                            places=places.summaries(), restart=code_changed()))
             if path == "/api/weather":
-                return self._send(200, dict(tracker.weather_full or {}, contrails=tracker.contrails,
-                                            tfrs=tracker.tfrs))
+                return self._send(200, place.weather_report())
             if path == "/api/heat":
-                return self._send(200, tracker.heatmap())
+                return self._send(200, place.heatmap())
             if path == "/api/logbook":
-                return self._send(200, place.store.logbook(time.strftime("%Y-%m-%d")))
+                return self._send(200, place.logbook())
             if path.startswith("/tiles/"):
                 return self._tile(path)
             if path.startswith("/logos/"):

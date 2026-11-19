@@ -78,11 +78,7 @@ def main():
         if store is not store0:
             store.forget(KINDS)            # lookups from when each place kept its own
         source = sources.Demo() if args.demo else sources.Feeds(cfg["source"]["urls"])
-        place = Place(pc, store, source, shared, demo=args.demo, named=named)
-        place.tracker.basemap = charts.map.info()
-        place.tracker.charts = charts.info()
-        place.tracker.logos = logos.enabled
-        return place
+        return Place(pc, store, source, shared, demo=args.demo, named=named)
 
     # places set up from a screen are kept beside the logbook (not in demo mode); a new one never
     # gets an id whose logbook file, left by a removed place, is somewhere else's

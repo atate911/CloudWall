@@ -1,4 +1,5 @@
-"""One place CloudWall watches: its tracker and logbook, and the threads that keep them fed.
+"""One place CloudWall watches: its tracker and logbook, its weather and airspace, the threads
+that keep them fed, and what a screen showing it is given.
 
 Several places can run at once (config.places), each fetching data only while a screen is
 showing it, so a place nobody is looking at costs nothing. What isn't particular to a place
@@ -40,12 +41,45 @@ class Place:
             self.activity.idle = lambda: False      # demo traffic costs nothing
         self.stopped = threading.Event()
         self.added = False                          # set up from a screen rather than the config file
+        # what its threads fetch, beside the tracker's positions
+        self.weather = None         # the airport's latest report, in short (the header, the idle card)
+        self.weather_full = None    # and in full: a day of reports and the forecast (the Weather tab)
+        self.tfrs = []              # flight restrictions nearby
+        self.heard = []             # military aircraft heard nearby with no position
+        self.contrails = None       # the contrail forecast overhead
 
     def summary(self):
         ap = self.cfg["airport"]
         return {"id": self.id, "name": self.name, "icao": ap["icao"], "iata": ap["iata"], "city": ap.get("city"),
                 "zip": self.cfg["home"].get("zip"), "added": self.added}
 
+    # -- what a screen asks for (server.py) ---------------------------------------------
+    def state(self, pin=None, range_nm=0, square=False):
+        """Everything a screen showing this place draws, and a note that one is looking: the
+        tracker's board, with this screen's own flight (pin) on the card if it follows one, and
+        the place's weather in short, its airspace and what is heard nearby. range_nm and square
+        say how far out this screen's radar looks, so the feed is asked that far."""
+        self.activity.touch()
+        self.tracker.want_range(range_nm, square)
+        self.tracker.want_pin(pin)
+        live = getattr(self.shared.enricher, "live", None)
+        return dict(self.tracker.snapshot(pin), place=self.id, weather=self.weather, heard=self.heard, tfrs=self.tfrs,
+                    contrails={k: v for k, v in self.contrails.items() if k != "levels"} if self.contrails else None,
+                    live_routes=live.status() if live else None)
+
+    def weather_report(self):
+        """The Weather tab: the day's reports and the forecast, the contrail forecast level by
+        level, and the restrictions with their notices. Counts as a screen looking, too."""
+        self.activity.touch()
+        return dict(self.weather_full or {}, contrails=self.contrails, tfrs=self.tfrs)
+
+    def heatmap(self):
+        return self.tracker.heatmap()
+
+    def logbook(self):
+        return self.store.logbook(time.strftime("%Y-%m-%d"))
+
+    # -- its threads ------------------------------------------------------------------------
     def stop(self):
         """Removed: its threads finish their current step and end."""
         self.stopped.set()
@@ -67,11 +101,11 @@ class Place:
 
     def start(self):
         self._thread(self._poll, "poll")
-        t, ap = self.tracker, self.cfg["airport"]
+        ap = self.cfg["airport"]
         if self.demo:
-            t.weather, t.weather_full = weather.demo(ap["icao"], ap.get("name") or ap.get("city") or ap["icao"])
-            t.tfrs, t.contrails = tfr.demo(self.cfg["home"]), contrails.demo()
-            t.heard = sources.demo_heard()
+            self.weather, self.weather_full = weather.demo(ap["icao"], ap.get("name") or ap.get("city") or ap["icao"])
+            self.tfrs, self.contrails = tfr.demo(self.cfg["home"]), contrails.demo()
+            self.heard = sources.demo_heard()
         else:
             self._thread(self._weather, "wx")
             self._thread(self._extras, "extras")
@@ -91,7 +125,6 @@ class Place:
             if paused:
                 log.info("%sscreen open: resuming data requests", self.tag)
                 paused = False
-            tracker.idle = idle
             try:
                 # out to the tracking radius, or further while a screen shows the radar at a longer range
                 raw = self.source.fetch(home["lat"], home["lon"], tracker.fetch_radius())
@@ -100,7 +133,8 @@ class Place:
                 tracker.failed(self.source.name, e)
             else:
                 try:
-                    tracker.update(raw, self.source.name)
+                    # with no screen open nothing is paid for; the contrail forecast marks each aircraft
+                    tracker.update(raw, self.source.name, idle=idle, contrails=self.contrails)
                 except Exception as e:      # CloudWall's own fault, not the feed's: say so, with where
                     log.exception("%sthe feed answered, but the board couldn't be worked out from it", self.tag)
                     tracker.failed(self.source.name, e)
@@ -114,7 +148,7 @@ class Place:
                 try:
                     short, full = self.shared.weather(self.cfg["airport"]["icao"])
                     if short:
-                        self.tracker.weather, self.tracker.weather_full = short, full
+                        self.weather, self.weather_full = short, full
                     fetched = time.time()
                 except Exception as e:
                     log.warning("%sweather fetch failed: %s", self.tag, e)
@@ -125,22 +159,20 @@ class Place:
     def _extras(self):
         """Military jets heard without a position (every minute), flight restrictions
         (every 15 minutes) and the contrail forecast (hourly). Paused with no screen open."""
-        cfg, ex, tracker, shared = self.cfg, self.cfg["extras"], self.tracker, self.shared
-        jobs = [  # (enabled, every seconds, name, fetch, keep)
-            (ex["military"], 60, "military aircraft",
-             lambda: sources.heard_near(shared.military(ex["military_url"]), cfg["home"], ex["military_radius_nm"]),
-             lambda v: setattr(tracker, "heard", v)),
-            (ex["tfr"], 900, "flight restrictions",
-             lambda: shared.restrictions(cfg["home"], ex["tfr_radius_nm"]), lambda v: setattr(tracker, "tfrs", v)),
-            (ex["contrails"], 3600, "contrail forecast",
-             lambda: contrails.fetch(cfg["home"]["lat"], cfg["home"]["lon"]), lambda v: setattr(tracker, "contrails", v)),
+        cfg, ex, shared = self.cfg, self.cfg["extras"], self.shared
+        jobs = [  # (enabled, every seconds, name, what it sets, fetch)
+            (ex["military"], 60, "military aircraft", "heard",
+             lambda: sources.heard_near(shared.military(ex["military_url"]), cfg["home"], ex["military_radius_nm"])),
+            (ex["tfr"], 900, "flight restrictions", "tfrs", lambda: shared.restrictions(cfg["home"], ex["tfr_radius_nm"])),
+            (ex["contrails"], 3600, "contrail forecast", "contrails",
+             lambda: contrails.fetch(cfg["home"]["lat"], cfg["home"]["lon"])),
         ]
         due = [0.0] * len(jobs)
         while not self.stopped.is_set():
-            for i, (on, every, name, fetch, keep) in enumerate(jobs):
+            for i, (on, every, name, field, fetch) in enumerate(jobs):
                 if on and not self.activity.idle() and time.time() >= due[i]:
                     try:
-                        keep(fetch())
+                        setattr(self, field, fetch())
                         due[i] = time.time() + every
                     except Exception as e:
                         log.warning("%s%s fetch failed: %s", self.tag, name, e)
