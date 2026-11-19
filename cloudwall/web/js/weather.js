@@ -2,7 +2,7 @@
 // Charts are drawn as SVG at the container's real pixel size, so text stays a fixed,
 // readable size from across a room.
 import { $, esc, num, offset, POINTS, degF } from "./util.js";
-import { runwaysFor } from "./scope.js";
+import { runwaysFor } from "./map.js";
 import { skyToday, moonSvg } from "./astro.js";
 
 const CAT_NAME = { VFR: "Visual flight rules", MVFR: "Marginal visual flight rules", IFR: "Instrument flight rules", LIFR: "Low instrument flight rules" };

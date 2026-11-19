@@ -1,20 +1,11 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, api, since, runwayList } from "./util.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, since, runwayList } from "./util.js";
 import { plate, renderLineup, drawn, typeInfo } from "./plate.js";
 import { flap, roll } from "./fx.js";
-import { sky } from "./sky.js";
-import { map, tileLayout } from "./scope.js";
+import { map, tileLayout } from "./map.js";
 import { weatherSlide } from "./weather.js";
-
-// Show an airline's logo on its white tile; if there isn't one, show the name instead.
-export function showLogo(tile, img, state, code, nameEl) {
-  tile.hidden = true;
-  if (nameEl) nameEl.hidden = false;
-  if (!state.logos || !code) return;
-  img.onload = () => { tile.hidden = false; if (nameEl) nameEl.hidden = true; };
-  img.onerror = () => { tile.hidden = true; if (nameEl) nameEl.hidden = false; };
-  img.src = `logos/${encodeURIComponent(code)}`;
-}
+import { showLogo, badges, boardFlight, localPlace, localWords, recordsHtml, heardGroups } from "./parts.js";
+import { latest, refresh } from "./fresh.js";
 
 // Play the entrance animation once for freshly inserted content.
 function enter(el) {
@@ -24,16 +15,8 @@ function enter(el) {
 }
 
 let cur = { hex: null, routeKey: null, cpa0: 0, photo: null };
-let slide = 0, slideAt = Date.now(), slideShown = -1, extras = { log: null, heat: null, at: 0 };
+let slide = 0, slideAt = Date.now(), slideShown = -1;
 const SLIDE_SECONDS = 14;
-
-function badgeClass(b) {
-  if (/EMERGENCY|HIJACK|RADIO|MILITARY/.test(b)) return "hot";
-  if (/^NEW/.test(b)) return "new";
-  if (/RARE/.test(b)) return "rare";
-  return "";
-}
-export const badges = (list) => (list || []).map((b) => `<span class="badge ${badgeClass(b)}">${esc(b)}</span>`).join("");
 
 const SKELETON = `
   <div class="h-top">
@@ -53,23 +36,7 @@ const SKELETON = `
     <dl class="facts" id="h-facts"></dl>
   </div>`;
 
-// "AS508" -> "AS 508", the way departure boards set flight numbers
-export function boardFlight(f) {
-  const m = /^([A-Z0-9]{2})(\d{1,4}[A-Z]?)$/.exec(f || "");
-  return m && /[A-Z]/.test(m[1]) ? `${m[1]} ${m[2]}` : f;
-}
 const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-
-// The airport an inferred arrival or departure belongs to: PDX, or Pearson / Troutdale for light aircraft.
-export function localPlace(a, state) {
-  const f = a.local_field;
-  return f ? { iata: f.code, city: f.name, name: f.name } : { iata: state.airport.iata, city: state.airport.city, name: state.airport.iata };
-}
-export function localWords(a, state) {
-  const p = localPlace(a, state);
-  return a.local === "arriving" ? `Landing at ${p.name}` : a.local === "departing" ? `Just left ${p.name}`
-    : a.local === "local" ? `Flying near ${p.name}` : "";
-}
 
 function routeHtml(a, state) {
   const r = a.route, ap = localPlace(a, state);
@@ -365,14 +332,6 @@ function quietSlide(el, state, dots, changed) {
   const box = el.querySelector(".idle.quiet");
   if (box._html !== html) box.innerHTML = box._html = html;
 }
-const REC = [["highest", "Highest", (v) => num(v) + " ft"], ["lowest", "Lowest", (v) => num(v) + " ft"], ["fastest", "Fastest", (v) => num(v) + " kt"],
-  ["closest", "Closest pass", (v) => v.toFixed(2) + " nm"], ["furthest_origin", "Furthest origin", (v) => num(v) + " nm"]];
-export function recordsHtml(title, r) {
-  return (title ? `<h2>${title}</h2>` : "") + REC.map(([k, label, f]) => {
-    const x = r[k];
-    return `<div class="rec"><span>${label}</span><span>${x ? `<b>${f(x.value)}</b> <span class="dim">${esc(x.flight || x.callsign || "")} ${esc(k === "furthest_origin" ? x.origin : x.type || "")}</span>` : '<span class="dim">—</span>'}</span></div>`;
-  }).join("");
-}
 function lastSlide(s) {
   const when = new Date(s.ts * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   return `<div class="dim">Last flyover, ${when}</div><h1>${esc(s.flight || s.callsign || s.reg || s.hex)}</h1>
@@ -452,24 +411,14 @@ function paintHeat(canvas, state, heat, tiles) {
   g.font = `${Math.round(size / 30)}px "B612 Mono", monospace`; g.fillStyle = v("--ink-2"); g.textAlign = "center"; g.fillText(state.airport.iata, ax, ay + size / 24);
 }
 
-async function refreshExtras() {
-  if (Date.now() - extras.at < 60000) return;
-  extras.at = Date.now();
-  try {
-    const [log, heat, wx] = await Promise.all([api("api/logbook").then((r) => r.json()), api("api/heat").then((r) => r.json()),
-      api("api/weather").then((r) => r.json()).catch(() => null)]);
-    extras.log = log; extras.heat = heat; extras.wx = wx;
-  } catch (e) { /* keep showing what we had */ }
-}
-
 function showIdle(el, state) {
   if (cur.hex !== null) { cur = { hex: null }; slide = 0; slideAt = Date.now(); slideShown = -1; }   // a flight just left
-  refreshExtras();
-  const L = extras.log, H = extras.heat;
+  for (const what of ["api/logbook", "api/heat", "api/weather"]) refresh(what);     // each at most once a minute
+  const L = latest("api/logbook"), H = latest("api/heat"), W = latest("api/weather");
   const slides = ["quiet"];
   if ((state.heard || []).length) slides.unshift("military");
   if ((state.tfrs || []).some((t) => t.active && !t.drones_only)) slides.push("airspace");
-  if (extras.wx && extras.wx.now) slides.push("weather");
+  if (W && W.now) slides.push("weather");
   if (H && H.cells.length > 8) slides.push("heat");
   const fleet = fleetToday(L);
   if (fleet.length >= 2) slides.push("fleet");
@@ -494,7 +443,7 @@ function showIdle(el, state) {
     el.innerHTML = `<div class="idle">${airspaceHtml(state)}</div>${dots}`;
   } else if (kind === "weather") {
     el.innerHTML = `<div class="wx-slot"></div>${dots}`;
-    weatherSlide(el.querySelector(".wx-slot"), extras.wx, state);
+    weatherSlide(el.querySelector(".wx-slot"), W, state);
   } else if (kind === "heat") {
     el.innerHTML = `<div class="idle heat"><div><h1>Today’s traffic</h1>
       <div class="heat-text">Every aircraft tracked within ${H.radius_nm} nm since midnight, laid on top of each other.
@@ -528,18 +477,6 @@ function fleetToday(L) {
 export function nextSlide() { slide++; slideAt = Date.now(); }
 // Something else drew in the card (the emergency takeover): rebuild from scratch next time.
 export function forgetHero() { cur = { hex: undefined }; }
-
-// "F15" -> "F-15": how people say military type codes
-export const milType = (code) => (/^[A-Z]{1,2}\d{1,3}[A-Z]?$/.test(code || "") ? code.replace(/^([A-Z]+)(\d)/, "$1-$2") : code || "military aircraft");
-
-export function heardGroups(heard) {
-  const by = new Map();
-  for (const a of heard) {
-    const k = a.desc || milType(a.type), g = by.get(k) || { name: k, type: milType(a.type), n: 0, alts: [] };
-    g.n++; if (a.alt != null) g.alts.push(a.alt); by.set(k, g);
-  }
-  return [...by.values()];
-}
 
 function militaryHtml(heard, city) {
   const groups = heardGroups(heard);

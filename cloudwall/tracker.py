@@ -100,6 +100,8 @@ class Tracker:
                       "climbing" if v > 300 else "descending" if v < -300 else "level")
         code = emergency_code(a)
         a["emergency"] = EMERGENCIES[code][0] if code else None
+        if code:
+            a["spc"] = code                              # the code itself, for the ATC style's data block
 
     # -- selection ------------------------------------------------------------
     def _soon(self, a):

@@ -1391,6 +1391,9 @@ class EmergencyTest(unittest.TestCase):
         for _ in range(2):
             t.update([plane("e1", "N123", 6, emergency_status="nordo")], "test")
         self.assertEqual(t.snapshot()["emergency"][0]["emergency_code"], "7600")
+        self.assertEqual(t.snapshot()["aircraft"][0]["spc"], "7600")    # on the record, for the radar's data block
+        t.update([plane("a1", "ASA1", 6)], "test")
+        self.assertNotIn("spc", t.snapshot()["aircraft"][0])
 
 
 class PathTest(unittest.TestCase):

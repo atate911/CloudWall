@@ -2,22 +2,14 @@
 // Only a few things, very large: who's overhead, where it's going, how high and fast,
 // and when it passes. When the sky is quiet, a slow rotation of large slides.
 // Sizes are in vh so the same design reads the same on 1024×600 and 1920×1080 panels.
-import { $, esc, num, mmss, ident, api, since, degF } from "./util.js";
-import { boardFlight, showLogo, localWords, heardGroups } from "./hero.js";
+import { $, esc, num, mmss, ident, since, degF } from "./util.js";
+import { boardFlight, showLogo, localWords, heardGroups } from "./parts.js";
+import { latest, refresh } from "./fresh.js";
 import { flap } from "./fx.js";
 import { windRose, runwayHeadings, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
 
 const SLIDE_SECONDS = 12;
 let cur = { hex: null }, slide = 0, slideAt = Date.now(), shownKey = null;
-let wx = null, wxAt = 0, log = null, logAt = 0;
-
-async function refresh() {
-  const now = Date.now();
-  try {
-    if (now - wxAt > 60000) { wxAt = now; wx = await (await api("api/weather")).json(); }
-    if (now - logAt > 60000) { logAt = now; log = await (await api("api/logbook")).json(); }
-  } catch (e) { /* keep what we had */ }
-}
 
 // ---------- a plane overhead ----------
 function routeBlock(a, state) {
@@ -142,7 +134,8 @@ function quietHtml(state) {
 
 function showIdle(el, state) {
   if (cur.hex !== null) { cur = { hex: null }; slide = 0; slideAt = Date.now(); shownKey = null; }
-  refresh();
+  refresh("api/weather"); refresh("api/logbook");                  // each at most once a minute
+  const wx = latest("api/weather"), log = latest("api/logbook");
   const slides = [state.next ? "next" : "quiet"];
   if ((state.heard || []).length) slides.unshift("military");
   if ((state.tfrs || []).some((t) => t.active && !t.drones_only)) slides.push("airspace");

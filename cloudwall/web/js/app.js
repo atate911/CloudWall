@@ -1,14 +1,18 @@
 "use strict";
-import { $, esc, num, mmss, ident, altText, store, phone, api, runwayList, since, degF } from "./util.js";
+import { $, esc, store, phone, api, runwayList, degF } from "./util.js";
 import { updateSky, sky } from "./sky.js";
-import { drawScope, loadMap } from "./scope.js";
-import { renderHero, tickHero, nextSlide, badges, recordsHtml, forgetHero, boardFlight } from "./hero.js";
+import { drawScope } from "./scope.js";
+import { loadMap } from "./map.js";
+import { renderHero, tickHero, nextSlide, forgetHero } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
 import { chime, soundOn, setSound } from "./fx.js";
-import { plate, drawn, typeInfo } from "./plate.js";
 import { renderWeatherTab } from "./weather.js";
 import { renderKiosk, tickKiosk, kioskNext, forgetKiosk } from "./kiosk.js";
 import { nearbyDivider } from "./divider.js";
+import { boardHtml, renderMiniBoard } from "./board.js";
+import { loadLog } from "./logbook.js";
+import { renderPlace, placeMenu } from "./places.js";
+import { refresh } from "./fresh.js";
 
 // Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
 const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
@@ -77,156 +81,8 @@ function emergencies() {
   return ((state && state.emergency) || []).filter((a) => !hidden.has(emKey(a)));
 }
 
-// ---------- board ----------
-// Time until an aircraft is overhead, as the flight card counts it: from when its position was reported.
-const overheadIn = (a) => mmss(Math.max(0, a.cpa_s - since(state)));
-function boardHtml() {
-  const R = state.tracking, heroHex = state.hero && state.hero.hex;
-  const air = state.aircraft.filter((a) => !a.on_ground).sort((a, b) => {
-    // inbound to the house first, soonest first; then everything else by distance
-    const ia = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm, ib = b.cpa_s > 0 && b.cpa_nm <= R.overhead_nm;
-    return ia !== ib ? ib - ia : ia ? a.cpa_s - b.cpa_s : a.dist - b.dist;
-  });
-  if (phone()) return phoneBoardHtml(air, heroHex, R);
-  const rows = air.map((a) => {
-    const r = a.route && a.route.plausible ? a.route : null, v = a.vrate || 0, c = a.colors;
-    const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
-    return `<tr data-hex="${esc(a.hex)}" class="${a.hex === heroHex ? "hero" : ""}">
-      <td class="lg">${state.logos && a.airline_iata ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc((r && r.airline) || a.airline || "")}"></span>` : ""}<i class="sw" style="background:${c ? esc(c[0]) : "var(--rule)"}"></i></td>
-      <td class="fl">${esc(ident(a))}<small>${esc((r && r.airline) || a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || a.type_name || "")}</small></td>
-      <td class="rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : '<span class="dim">—</span>'}</td>
-      <td class="ty">${esc(a.type || "")}<small>${esc(shortType(a.type_name))}</small></td>
-      <td class="num">${altText(a)} <small class="u">ft</small><span class="vs">${v > 300 ? '<span class="up">▲</span>' : v < -300 ? '<span class="down">▼</span>' : ""}</span></td>
-      <td class="num">${num(a.gs)} <small class="u">kt</small></td>
-      <td class="num">${a.dist.toFixed(1)} <small class="u">nm</small><span class="cmp">${a.compass}</span></td>
-      <td class="num ${soon ? "soon" : ""}">${soon ? overheadIn(a) : '<span class="dim">—</span>'}</td></tr>`;
-  });
-  return `<table class="board"><thead><tr><th></th><th>Flight</th><th>Route</th><th>Type</th><th class="num">Altitude</th><th class="num">Speed</th><th class="num">Distance</th><th class="num">Overhead in</th></tr></thead>
-    <tbody>${rows.join("") || '<tr><td colspan="8" class="empty">No airborne traffic within ' + R.radius_nm + " nm.</td></tr>"}</tbody>
-    ${(state.heard || []).length ? `<tbody class="heard"><tr><th colspan="8">Heard nearby, position unknown</th></tr>${state.heard.map((a) => `<tr>
-      <td class="lg"></td><td class="fl">${esc(a.callsign || a.reg || a.hex.toUpperCase())}<small>${esc(a.owner_op || "Military")}</small></td>
-      <td class="rt"><span class="dim">No position sent</span></td><td class="ty">${esc(a.type || "")}<small>${esc(shortType(a.desc))}</small></td>
-      <td class="num">${a.alt == null ? "–" : num(a.alt)} <small class="u">ft</small></td><td class="num">${a.gs == null ? "–" : num(a.gs)} <small class="u">kt</small></td>
-      <td class="num"><span class="dim">within ~${Math.max(a.rough_nm, 10)}</span> <small class="u">nm</small></td><td class="num"><span class="dim">—</span></td></tr>`).join("")}</tbody>` : ""}</table>
-    <div class="board-foot">Soonest overhead first. Tap a flight to show it on the flight card.</div>`;
-}
-
-// On a phone the eight columns become two lines a flight, everything the table says in a thumb's width:
-//   AS 512   SFO to PDX              2:14      (overhead in, or how far away)
-//   [Alaska logo] B739      12,300 ft ▼ 280 kt
-function phoneBoardHtml(air, heroHex, R) {
-  const vs = (v) => (v > 300 ? ' <span class="up">▲</span>' : v < -300 ? ' <span class="down">▼</span>' : "");
-  const row = (a) => {
-    const r = a.route && a.route.plausible ? a.route : null, c = a.colors;
-    const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
-    const name = (r && r.airline) || a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || shortType(a.type_name) || "";
-    // the logo stands for the airline's name; if it fails to load, the name shows instead
-    const logo = state.logos && a.airline_iata && name ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(name)}"></span>` : "";
-    return `<button class="pb-row${a.hex === heroHex ? " hero" : ""}" data-hex="${esc(a.hex)}">
-      <i class="sw" style="background:${c ? esc(c[0]) : "var(--rule)"}"></i>
-      <span class="pb-id">${esc(boardFlight(ident(a)))}</span>
-      <span class="pb-rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}` : a.local ? `<span class="dim">${esc(a.local === "arriving" ? "Landing" : a.local === "departing" ? "Departing" : "Local")}</span>` : '<span class="dim">—</span>'}</span>
-      <span class="pb-when${soon ? " soon" : ""}">${soon ? overheadIn(a) : `${a.dist.toFixed(1)}<small> nm<span class="pb-cmp"> ${esc(a.compass)}</span></small>`}</span>
-      <span class="pb-l2"><span class="pb-sub">${logo}${name ? `<span class="pb-name">${esc(name)}</span>` : ""}${a.type ? `<span class="pb-type">${esc(a.type)}</span>` : ""}</span>
-      <span class="pb-data">${altText(a)}<small> ft</small>${vs(a.vrate || 0)}<span class="pb-gs">${num(a.gs)}<small> kt</small></span></span></span></button>`;
-  };
-  const heard = (state.heard || []).map((a) => `<div class="pb-row heard">
-      <i class="sw"></i><span class="pb-id">${esc(a.callsign || a.reg || a.hex.toUpperCase())}</span>
-      <span class="pb-rt"><span class="dim">No position</span></span><span class="pb-when"><small>~${Math.max(a.rough_nm, 10)} nm</small></span>
-      <span class="pb-l2"><span class="pb-sub"><span class="pb-name">${esc(a.owner_op || "Military")}</span>${a.type ? `<span class="pb-type">${esc(a.type)}</span>` : ""}</span>
-      <span class="pb-data">${a.alt == null ? "–" : num(a.alt)}<small> ft</small><span class="pb-gs">${a.gs == null ? "–" : num(a.gs)}<small> kt</small></span></span></span></div>`).join("");
-  return `<div class="pboard">${air.map(row).join("") || `<p class="empty">No airborne traffic within ${R.radius_nm} nm.</p>`}</div>
-    ${heard ? `<h2>Heard nearby, position unknown</h2><div class="pboard">${heard}</div>` : ""}
-    <div class="board-foot">Soonest overhead first. Tap a flight to show it on the flight card.</div>`;
-}
-
-// "Boeing 737-800" stays; the database's long variants ("737NG 890/W") are trimmed to the model
-function shortType(name) {
-  if (!name) return "";
-  return name.length > 22 ? name.split(/[\s/]/).slice(0, 2).join(" ") : name;
-}
-
-// ---------- desktop: compact list beside the radar on wide screens ----------
-function renderMiniBoard() {
-  const box = $("mini-board");
-  if (!box || getComputedStyle(box).display === "none") return;
-  const R = state.tracking, heroHex = state.hero && state.hero.hex;
-  const air = state.aircraft.filter((a) => !a.on_ground).sort((a, b) => a.dist - b.dist).slice(0, 14);
-  box.innerHTML = `<h2>Nearby</h2>` + (air.map((a) => {
-    const r = a.route && a.route.plausible ? a.route : null, v = a.vrate || 0;
-    const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
-    return `<button class="mb-row ${a.hex === heroHex ? "hero" : ""}" data-hex="${esc(a.hex)}">
-      <span class="mb-id">${esc(ident(a))}</span><span class="mb-rt">${r ? `${esc(r.origin.iata)}–${esc(r.dest.iata)}` : esc(a.type || "")}</span>
-      <span class="mb-alt">${altText(a)}${v > 300 ? " ▲" : v < -300 ? " ▼" : ""}</span><span class="mb-when ${soon ? "soon" : ""}">${soon ? overheadIn(a) : `${a.dist.toFixed(1)} nm`}</span></button>`;
-  }).join("") || '<p class="dim">No aircraft in range.</p>');
-}
-
-if (!KIOSK) nearbyDivider(() => { if (state && view === "now") renderMiniBoard(); });
-
-// ---------- logbook ----------
-function budgetLine(fa) {
-  const u = fa.unit || "lookups";
-  const parts = [`${esc(fa.label)} ${u} used today: ${num(fa.used_today)}${fa.daily_limit != null ? ` of ${num(fa.daily_limit)} allowed` : ""}`];
-  if (fa.period_budget != null) {
-    parts.push(`${num(fa.period_used)} of ${num(fa.period_budget)} this billing period (${Math.round(fa.margin * 100)}% of ${num(fa.monthly_limit)} held back, resets ${esc(fa.resets)})`);
-  }
-  if (fa.reported) parts.push(`${esc(fa.label)} itself reports ${num(fa.reported["24h"])} ${u} in the last 24 hours and ${num(fa.reported["30d"])} in 30 days`);
-  if (fa.problem) parts.push(`paused: ${esc(fa.problem)}`);
-  else if (fa.period_budget != null && fa.period_used >= fa.period_budget) parts.push("budget used up: free routes until the period resets");
-  else if (fa.daily_limit != null && fa.used_today >= fa.daily_limit) parts.push("today's share used: free routes until midnight");
-  return parts.join(". ") + ".";
-}
-
-async function loadLog() {
-  const L = await (await api("api/logbook")).json();
-  const fa = state && state.live_routes;
-  const max = Math.max(1, ...L.hours.map((h) => h.n)), byHour = Object.fromEntries(L.hours.map((h) => [h.hour, h.n]));
-  let bars = "";
-  for (let h = 0; h < 24; h++) bars += `<i class="${byHour[h] ? "" : "z"}" style="height:${((byHour[h] || 0) / max) * 100}%" title="${h}:00"></i>`;
-  const axis = ["12a", "6a", "12p", "6p", ""].map((t) => `<span>${t}</span>`).join("");
-  $("n-log").textContent = L.today || "";
-  $("log").innerHTML = `
-    <div class="stats">
-      <div class="stat"><div class="label">Flyovers today</div><div class="v">${num(L.today)}</div></div>
-      <div class="stat"><div class="label">Seats today</div><div class="v">≈ ${num(L.seats_today.seats)}</div></div>
-      <div class="stat"><div class="label">Flyovers, all time</div><div class="v">${num(L.total)}</div></div>
-      <div class="stat"><div class="label">Seats, all time</div><div class="v">≈ ${num(L.seats_total.seats)}</div></div>
-      <div class="stat"><div class="label">Types collected</div><div class="v">${L.types.length}</div></div>
-      <div class="stat"><div class="label">Airlines</div><div class="v">${L.airlines.length}</div></div>
-    </div>
-    <p class="stats-note">Seats are estimated from each flight's airline and aircraft type; cargo flights count as none.${
-      L.seats_total.flights - L.seats_total.known ? ` ${num(L.seats_total.flights - L.seats_total.known)} flyover${L.seats_total.flights - L.seats_total.known === 1 ? "" : "s"} of unknown type left out.` : ""}</p>
-    <h2>Today by hour</h2><div class="hours">${bars}</div><div class="hours-axis">${axis}</div>
-    <h2>Type collection</h2><div id="log-coll"></div>
-    <div class="cols"><div>${recordsHtml("Records today", L.records_today)}</div><div>${recordsHtml("Records all time", L.records_all)}</div></div>
-    <h2 style="margin-top:.9rem">Recent flyovers</h2>
-    ${L.recent.map((s) => `<div class="rec"><span><b>${esc(s.flight || s.callsign || s.reg || s.hex)}</b> <span class="dim">${esc(s.type || "")} ${s.origin ? esc(s.origin) + " → " + esc(s.dest) : ""}</span> ${badges(s.badges)}</span>
-      <span class="dim">${new Date(s.ts * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}, ${num(s.alt_ft)} ft, ${s.min_dist_nm.toFixed(1)} nm from home</span></div>`).join("")}
-    ${fa && fa.enabled ? `<h2 style="margin-top:1.4rem">Flight data usage</h2><div class="usage">${budgetLine(fa)}</div>` : ""}`;
-  $("log-coll").replaceWith(collection(L.types));
-}
-
-// The type collection: a drawing of every type logged, with how often and since when. Its
-// drawings are kept between the logbook's refreshes and rebuilt only when the list changes.
-let coll = { key: null, el: null };
-function collection(types) {
-  const key = types.map((t) => `${t.type}:${t.n}:${t.model || ""}`).join(",");
-  if (coll.key === key && coll.el) return coll.el;
-  const el = document.createElement("div");
-  el.className = "collection";
-  const day = (ts) => {
-    const d = new Date(ts * 1000);
-    return d.toLocaleDateString([], d.getFullYear() === new Date().getFullYear() ? { month: "short", day: "numeric" } : { month: "short", year: "numeric" });
-  };
-  el.innerHTML = types.map((t) => {
-    const info = typeInfo(t);
-    return `<figure class="coll${drawn(info) ? "" : " unknown"}"><div class="sil-box">${drawn(info) ? plate(info, { dim: false }) : `<code>${esc(t.type)}</code>`}</div>
-      <figcaption><div><code>${esc(t.type)}</code> <span>${esc(shortType(t.name) || "")}</span></div>
-      <div class="dim"><b>${num(t.n)}</b> ${t.n === 1 ? "sighting" : "sightings"}${t.first ? `, since ${day(t.first)}` : ""}</div></figcaption></figure>`;
-  }).join("") || '<span class="dim">Nothing yet. The first flyover starts the collection.</span>';
-  coll = { key, el };
-  return el;
-}
+if (!KIOSK) nearbyDivider(() => { if (state && view === "now") renderMiniBoard(state); });
+placeMenu(() => state);
 
 // ---------- scope: sky dome while something is overhead, radar otherwise ----------
 function scopeMode() {
@@ -282,13 +138,10 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 // ---------- weather ----------
-let wxData = null, wxAt = 0;
 async function loadWeather(draw) {
-  try {
-    if (Date.now() - wxAt > 60000 || !wxData) { wxData = await (await api("api/weather")).json(); wxAt = Date.now(); }
-    $("n-wx").textContent = (wxData && wxData.now && wxData.now.category) || "";
-    if (draw && view === "wx" && state) renderWeatherTab($("wx-tab"), wxData, state);
-  } catch (e) { /* keep what's shown */ }
+  const wx = await refresh("api/weather");                 // at most once a minute, shared with the weather slides
+  $("n-wx").textContent = (wx && wx.now && wx.now.category) || "";
+  if (draw && view === "wx" && state) renderWeatherTab($("wx-tab"), wx, state);
 }
 let resizeTimer = null;
 addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (view === "wx") loadWeather(true); }, 250); });
@@ -299,7 +152,7 @@ function setView(v) {
   view = v;
   document.querySelectorAll(".view").forEach((e) => e.classList.toggle("active", e.id === "view-" + v));
   document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
-  if (v === "log") loadLog().catch(() => {});
+  if (v === "log") loadLog(state).catch(() => {});
   if (v === "wx") loadWeather(true);
   if (phone() === "stack") scrollTo(0, 0);        // each tab starts at its top
   render();
@@ -314,115 +167,13 @@ function renderToggles() {
   $("night-text").textContent = n === "auto" ? "Night auto" : n === "on" ? "Night on" : "Night off";
   $("btn-night").classList.toggle("on", sky.night);
 }
-// The place in the header: its airport's code, and with several places its name too. On the
-// desktop it opens a menu of the places, to switch this screen to another (it starts afresh on
-// it), to set up a new one by ZIP code or coordinates, or to remove one set up that way.
-function renderPlace() {
-  const places = state.places || [], here = places.find((p) => p.id === state.place), many = places.length > 1;
-  const label = many && here ? `${here.name} · ${state.airport.icao}` : state.airport.icao || "";
-  const st = $("station");
-  // the label in a span of its own, so a long name can be cut short on a phone and keep its arrow
-  if (st.dataset.label !== label) { st.dataset.label = label; st.innerHTML = label ? `<span>${esc(label)}</span>` : ""; }
-  st.disabled = KIOSK;
-  st.classList.toggle("menu", !KIOSK);
-  st.classList.toggle("many", many);
-}
-function showPlace(id) {
-  store("place", id);
-  const u = new URL(location.href);
-  u.searchParams.delete("place");          // the menu's choice wins over one given in the address
-  location.href = u.toString();
-}
-function closePlaceMenu() { $("place-menu").hidden = true; $("station").setAttribute("aria-expanded", "false"); }
-function openPlaceMenu() {
-  const m = $("place-menu");
-  m.innerHTML = (state.places || []).map((p) => `<div class="pm-row">
-    <button role="menuitemradio" aria-checked="${p.id === state.place}" data-place="${esc(p.id)}">
-      <b>${esc(p.name)}</b><span>${esc(p.icao)}${p.city ? ` · ${esc(p.city)}` : ""}${p.zip && !p.name.includes(p.zip) ? ` · ZIP ${esc(p.zip)}` : ""}</span></button>
-    ${p.added ? `<button class="pm-remove" data-remove="${esc(p.id)}" title="Remove ${esc(p.name)}" aria-label="Remove ${esc(p.name)}"></button>` : ""}</div>`).join("") +
-    `<button class="pm-add" id="pm-add" role="menuitem">Set a location…</button>`;
-  m.hidden = false;
-  $("station").setAttribute("aria-expanded", "true");
-}
-$("station").addEventListener("click", () => ($("place-menu").hidden ? openPlaceMenu() : closePlaceMenu()));
-$("place-menu").addEventListener("click", async (e) => {
-  if (e.target.closest("#pm-add")) { closePlaceMenu(); return openLocation(); }
-  const rm = e.target.closest("button[data-remove]");
-  if (rm) {
-    const p = (state.places || []).find((x) => x.id === rm.dataset.remove);
-    if (!p || !confirm(`Remove ${p.name}? Its logbook stays on disk.`)) return;
-    const r = await placesApi(`api/places?id=${encodeURIComponent(p.id)}`, { method: "DELETE" });
-    if (r.error) return alert(r.error);
-    if (p.id === state.place) return showPlace("");      // this screen was on it: back to the first
-    state.places = r.places;
-    return openPlaceMenu();
-  }
-  const b = e.target.closest("button[data-place]");
-  if (!b) return;
-  if (b.dataset.place === state.place) return closePlaceMenu();
-  showPlace(b.dataset.place);
-});
-document.addEventListener("pointerdown", (e) => { if (!e.target.closest(".brand")) closePlaceMenu(); });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePlaceMenu(); });
-
-// Setting a location: a ZIP code or coordinates, then the airport: the closest major one by
-// default, or another of the airline airports nearby. Shows where it is as it's typed.
-let locTimer = null, locFound = null;
-// The places routes answer 200, or 400 with a message, so a 404 means the server doesn't have
-// them: it is still running code from before an update that this page, read fresh from disk,
-// comes from.
-async function placesApi(url, opts) {
-  let r;
-  try { r = await fetch(url, opts); } catch (e) { return { error: "CloudWall isn't answering" }; }
-  if (r.status === 404) return { error: "CloudWall was updated but is still running the old version: restart it, then try again" };
-  return r.json().catch(() => ({ error: "CloudWall isn't answering" }));
-}
-function openLocation() {
-  $("loc-form").reset();
-  $("loc-where").textContent = ""; $("loc-airports").innerHTML = ""; $("loc-error").textContent = "";
-  $("loc-save").disabled = true;
-  locFound = null;
-  $("loc-dialog").showModal();
-  $("loc-q").focus();
-}
-async function lookUpLocation() {
-  const q = $("loc-q").value.trim();
-  locFound = null;
-  $("loc-save").disabled = true;
-  if (!q) { $("loc-where").textContent = ""; $("loc-airports").innerHTML = ""; return; }
-  const r = await placesApi(`api/locate?q=${encodeURIComponent(q)}`);
-  if (q !== $("loc-q").value.trim()) return;            // typed on since
-  if (r.error) { $("loc-where").textContent = r.error; $("loc-where").classList.add("bad"); $("loc-airports").innerHTML = ""; return; }
-  locFound = r;
-  $("loc-where").classList.remove("bad");
-  $("loc-where").textContent = `${r.zip ? `ZIP ${r.zip}, ` : ""}${r.lat.toFixed(4)}, ${r.lon.toFixed(4)}`;
-  const auto = r.airports.find((a) => a.icao === r.auto);
-  const opt = (value, html, checked) => `<label class="loc-opt"><input type="radio" name="loc-ap" value="${esc(value)}"${checked ? " checked" : ""}><span>${html}</span></label>`;
-  $("loc-airports").innerHTML = `<legend class="label">Airport</legend>` +
-    opt("auto", `<b>Closest major airport</b><small>${auto ? `${esc(auto.iata || auto.icao)} · ${esc(auto.name)} · ${auto.dist_nm} nm` : esc(r.auto || "")}</small>`, true) +
-    r.airports.filter((a) => a.icao !== r.auto)            // the automatic choice is the first option already
-      .map((a) => opt(a.icao, `<b>${esc(a.iata || a.icao)} · ${esc(a.name)}</b><small>${esc(a.city || "")} · ${a.dist_nm} nm${a.size === "large" ? " · large" : ""}</small>`)).join("");
-  $("loc-save").disabled = false;
-}
-$("loc-q").addEventListener("input", () => { clearTimeout(locTimer); locTimer = setTimeout(lookUpLocation, 250); });
-$("loc-cancel").addEventListener("click", () => $("loc-dialog").close());
-$("loc-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  if (!locFound) return;
-  const airport = ($("loc-form").querySelector("input[name=loc-ap]:checked") || {}).value || "auto";
-  $("loc-save").disabled = true;
-  const r = await placesApi("api/places", { method: "POST", body: JSON.stringify({ q: $("loc-q").value.trim(), name: $("loc-name").value.trim(), airport }) });
-  if (r.error) { $("loc-error").textContent = r.error; $("loc-save").disabled = false; return; }
-  showPlace(r.place.id);                                 // this screen moves to the new place
-});
-
 function render() {
   if (!state) return;
   updateSky(state);
   renderToggles();
   paintTheme();
   const w = state.weather, f = state.flow;
-  renderPlace();
+  renderPlace(state, KIOSK);
   $("flow").hidden = !f;
   if (f) $("flow").innerHTML = `${esc(state.airport.iata)} landing ${esc(f.dir)}, runways ${esc(runwayList(f.runways))}`;
   $("wx").hidden = !w;
@@ -449,9 +200,9 @@ function render() {
       if (em.length) renderEmergency($("hero"), state, em, !KIOSK);
       else (KIOSK ? renderKiosk : renderHero)($("hero"), state);
     });
-    drawScopeNow(); if (!KIOSK) renderMiniBoard();
+    drawScopeNow(); if (!KIOSK) renderMiniBoard(state);
   }
-  if (view === "board") $("board").innerHTML = boardHtml();
+  if (view === "board") $("board").innerHTML = boardHtml(state);
 }
 // When CloudWall itself stops answering (the server is down, the network gone), the last positions
 // are shown for a minute, as the server does with a silent feed, and then cleared: a flight card
@@ -547,7 +298,7 @@ setInterval(() => {
   if (KIOSK) tickKiosk(elapsed, state.hero ? null : state);
   else if (state.hero) tickHero(elapsed); else keepPlace(() => renderHero($("hero"), state));
 }, 1000);
-setInterval(() => { if (view === "log") loadLog().catch(() => {}); }, 30000);
+setInterval(() => { if (view === "log") loadLog(state).catch(() => {}); }, 30000);
 // Local time, with coordinated universal time beside it as aviation writes it ("0324Z").
 setInterval(() => {
   const d = new Date(), z = String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0") + "Z";

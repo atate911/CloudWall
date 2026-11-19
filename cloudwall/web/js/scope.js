@@ -6,6 +6,7 @@
 // dead-reckoned from the last report and eased toward each new one, so aircraft glide
 // instead of hopping between updates.
 import { esc, ident, projected, offset, azEl, clamp } from "./util.js";
+import { map, tileLayout, runwaysFor } from "./map.js";
 import { sky } from "./sky.js";
 import { moonPosition, moonPhase, moonGlyph } from "./astro.js";
 
@@ -33,8 +34,8 @@ const PLUS_SYM = "M0,-1.9V1.9M-1.9,0H1.9";
 const HISTORY = 5, HISTORY_S = 4.5;          // history dots behind the selected target, this many seconds apart
 // Special purpose codes: shown in red on the data block's top line and in the status area.
 const SPC = { 7500: "HJ", 7600: "RF", 7700: "EM", 7777: "MI" };
-const SPC_STATUS = { general: "7700", nordo: "7600", unlawful: "7500" };
-const spcOf = (a) => SPC[a.squawk] || SPC[SPC_STATUS[a.emergency_status]] || "";
+// a.spc is the trouble code the server found, by the squawk or by the transponder's own status
+const spcOf = (a) => SPC[a.spc] || SPC[a.squawk] || "";
 // Leader directions, clockwise from north. A data block left of its leader (south through
 // north-west) is right-justified against it.
 const DIRS = [...Array(8)].map((_, i) => ({ ux: Math.sin(i * 45 * RAD), uy: -Math.cos(i * 45 * RAD), right: i >= 4 }));
@@ -42,39 +43,7 @@ const DIRS = [...Array(8)].map((_, i) => ({ ux: Math.sin(i * 45 * RAD), uy: -Mat
 const clockPhase = (ms) => { const t = (ms / 1000) % 6; return t < 2 ? 1 : t < 3 ? 2 : t < 5 ? 1 : 3; };
 const NS = "http://www.w3.org/2000/svg";
 const CHAR_W = 3.35;                          // estimated label width per character, until a label can be measured
-export let map = null;
 let placeBoxes = [];        // where the place names sit, so aircraft labels can avoid them
-
-export async function loadMap(icao) {
-  try {
-    const m = await (await fetch(`maps/${String(icao).toLowerCase()}.json`)).json();
-    if (m && (m.water || m.runways)) map = m;
-  } catch (e) { /* no map for this airport: the scope simply has no backdrop */ }
-}
-
-// ---- background map tiles (Web Mercator), served and cached by CloudWall at /tiles ----
-const lon2x = (lon, z) => ((lon + 180) / 360) * 2 ** z;
-const lat2y = (lat, z) => ((1 - Math.log(Math.tan(lat * RAD) + 1 / Math.cos(lat * RAD)) / Math.PI) / 2) * 2 ** z;
-const x2lon = (x, z) => (x / 2 ** z) * 360 - 180;
-const y2lat = (y, z) => Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / 2 ** z))) / RAD;
-
-// Tiles covering `radiusNm` around home, at a zoom that gives about one tile pixel per
-// screen pixel, within the layer's zooms. Rectangles are in nm east (x) and north (y) of home.
-// layer: a chart layer from state.charts ({layer, zooms}); the radar's map when left out.
-export function tileLayout(home, radiusNm, screenPxPerNm, layer = null) {
-  const [zmin, zmax] = layer && layer.zooms ? [Math.max(layer.zooms[0], 6), layer.zooms[1]] : [8, 15];
-  const prefix = layer && layer.layer && layer.layer !== "map" ? `tiles/${layer.layer}` : "tiles";
-  const z = clamp(Math.round(Math.log2((40075016.686 * Math.cos(home.lat * RAD) * screenPxPerNm) / (256 * 1852))), zmin, zmax);
-  const dLat = radiusNm / 60, dLon = radiusNm / (60 * Math.cos(home.lat * RAD));
-  const x0 = Math.floor(lon2x(home.lon - dLon, z)), x1 = Math.floor(lon2x(home.lon + dLon, z));
-  const y0 = Math.floor(lat2y(home.lat + dLat, z)), y1 = Math.floor(lat2y(home.lat - dLat, z));
-  const tiles = [];
-  for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
-    const nw = offset(home, { lat: y2lat(y, z), lon: x2lon(x, z) }), se = offset(home, { lat: y2lat(y + 1, z), lon: x2lon(x + 1, z) });
-    tiles.push({ url: `${prefix}/${z}/${x}/${y}`, x0: nw.x, y0: nw.y, x1: se.x, y1: se.y });
-  }
-  return { z, tiles };
-}
 
 // The selected aircraft's whole track is drawn in its colour, strongest near the ground and fading
 // with height: these are the bands' lower edges in feet (0-2, 2-5, 5-10, 10-18, 18-28, 28+ thousand).
@@ -135,13 +104,6 @@ function mapLayer(home, k, hasBasemap, charted = false) {
     placeBoxes.push({ x0: o.x * k - w / 2, x1: o.x * k + w / 2, y0: -o.y * k - 4.5, y1: -o.y * k + 1 });
   }
   return s;
-}
-
-// The airport's runways: from the server's runway table, or the hand-drawn map for an airport
-// the table doesn't cover. Each is { name: "10R/28L", ends: [[lat, lon], [lat, lon]] }.
-export function runwaysFor(state) {
-  const r = state && state.airport && state.airport.runways;
-  return r && r.length ? r : (map && map.runways) || [];
 }
 
 // Runways, and extended centrelines 12 nm out for the main direction (the longest runway and
