@@ -88,6 +88,9 @@ class Tracker:
         a["brg"] = geo.bearing_deg(h["lat"], h["lon"], a["lat"], a["lon"])
         a["compass"] = geo.compass(a["brg"])
         a["cwt"] = aircraft.wake(a.get("type"))          # for the ATC-style radar's data blocks
+        icon = aircraft.icon(a.get("type"), a.get("desc"), a.get("category"))    # and the chart style's icon
+        if icon:
+            a["icon"] = icon
         colors = airlines.colors(a.get("callsign"))      # and the board's swatch
         if colors:
             a["colors"] = colors

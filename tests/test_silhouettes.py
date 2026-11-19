@@ -34,11 +34,11 @@ console.log(JSON.stringify(out));
 
 
 def data_types():
-    """ICAO type -> [shape, length] from the server's table of types (those it has a shape for)."""
+    """ICAO type -> [shape, length] from the server's table of types (those it has measured)."""
     table = WEB.parent.parent / "data" / "types.csv"
     with open(table, newline="", encoding="utf-8") as f:
         return {r["type"]: [r["shape"], float(r["length_m"])]
-                for r in csv.DictReader(line for line in f if not line.startswith("#")) if r["shape"]}
+                for r in csv.DictReader(line for line in f if not line.startswith("#")) if r["shape"] and r["length_m"]}
 
 
 @unittest.skipUnless(shutil.which("node"), "needs node")

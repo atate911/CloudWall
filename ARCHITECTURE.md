@@ -65,7 +65,7 @@ It is layered, each layer using only those below it:
 | `live.py`, `flightradar24.py`, `flightaware.py` | The optional paid route providers. `LiveProvider` holds the key, the credit budget (monthly allowance spread over the days left) and the back-off; the two subclasses know each API. |
 | `sources.py` | Position feeds: `Feeds` (readsb-style JSON with failover), `normalise()` into CloudWall's aircraft shape, the military "heard, no position" feed, and `Demo` (simulated traffic). |
 | `weather.py`, `tfr.py`, `contrails.py` | Fetch and decode METAR/TAF, FAA flight restrictions, and the contrail forecast into plain values and words. |
-| `airlines.py`, `aircraft.py` | The two reference tables everything asks: airlines (`data/airlines.csv`: code, name, freight-only, colours) and aircraft types (`data/types.csv`: shape, length, rarity; `data/cwt.csv`: wake category). |
+| `airlines.py`, `aircraft.py` | The two reference tables everything asks: airlines (`data/airlines.csv`: code, name, freight-only, colours) and aircraft types (`data/types.csv`: shape, length, rarity, radar icon; `data/cwt.csv`: wake category). `aircraft.icon()` also decides which kind of traffic an aircraft is drawn as on the radar. |
 | `airports.py`, `seats.py`, `geo.py` | The other bundled tables (airports, runways, ZIP codes, airspace, navaids, seats) and the geometry helpers. `tools/build_data.py` rebuilds the generated ones. |
 | `store.py` | SQLite: the `sightings` table (the logbook and its queries) and a `cache` table of JSON values by kind and key. One connection, one lock. `prune()` clears cached values past their use; each logbook notes the place it is kept at (`claim`, `another_places`). |
 | `tiles.py`, `charts.py`, `logos.py` | Disk-cached proxies: map and chart tiles (only around the watched places), and airline logos. |
@@ -140,8 +140,9 @@ so a snapshot can be serialised without holding it.
   flight (45 minutes) whichever places see it; counted before they are sent; never past the
   day's share of the budget.
 - **The display only draws.** Decoding, units and reference facts are the server's: each record
-  the page draws carries what it needs (an aircraft's shape and length for its drawing, its
-  airline's colours, its trouble code). The page keeps no tables of airlines or aircraft types.
+  the page draws carries what it needs (an aircraft's shape and length for its drawing, the kind
+  of icon it is on the radar, its airline's colours, its trouble code). The page keeps no tables
+  of airlines or aircraft types.
 - **One home for each fact.** An airline is a line in `data/airlines.csv`; an aircraft type a
   line in `data/types.csv`. Nothing else lists them.
 - **No dependencies.** Python standard library on the server, no framework or bundler in the page.
@@ -185,7 +186,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 ```
  app                                         polling, the views, the radar's options, the wiring
  hero  kiosk  emergency  board  logbook  places  weather  scope    one display each
- parts  plate  map  fresh  astro  sky  fx  divider                 what several of them use
+ parts  plate  icons  map  fresh  astro  sky  fx  divider          what several of them use
  silhouette  profiles  util                                        drawing and helpers
 ```
 
@@ -204,6 +205,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | `map.js` | The ground under the displays: map tiles around home, the hand-drawn map, runways. |
 | `fresh.js` | One copy for the page of what changes slowly (weather, logbook, heatmap), fetched at most once a minute whoever asks. |
 | `plate.js`, `silhouette.js`, `profiles.js`, `profiles/*.js` | Aircraft side elevations drawn from measurements, the type plates and the fleet line-up. |
+| `icons.js` | The chart-style radar's top-down icons, one for each kind of traffic. Which kind an aircraft is comes on its record. |
 | `astro.js`, `sky.js`, `fx.js`, `divider.js`, `util.js` | Sun and moon; day and night; split-flap and rolling-number effects and chimes; the Nearby list's divider; DOM, formatting and geometry helpers. |
 
 Between updates the page moves aircraft itself: each position is dead-reckoned from the time
@@ -221,7 +223,8 @@ toward each new report. Countdowns use the same clock (`since(state)` in `util.j
   (`renderFacts`) and, if it earns the space, `kiosk.js`.
 - **An airline:** a line in `data/airlines.csv`.
 - **An aircraft type:** a line in `data/types.csv` and its family in the right `profiles/` file;
-  `tests/test_silhouettes.py` checks the two agree.
+  `tests/test_silhouettes.py` checks the two agree. Its `icon` column names its radar icon where
+  its shape doesn't (a light twin, a seaplane); a new kind of icon is drawn in `icons.js`.
 - **A chart layer:** an entry in `charts.FAA_LAYERS`; the page asks for it by name.
 - **Something several displays say the same way:** `parts.js`, not one of the displays.
 - **A setting:** its default in `config.DEFAULTS` (which is also what says what kind of value it
@@ -232,7 +235,8 @@ toward each new report. Countdowns use the same clock (`since(state)` in `util.j
 ## Tests
 
 `python3 -m unittest discover -s tests`. `tests/test_cloudwall.py` covers the server side with
-stubbed feeds and providers; `tests/test_silhouettes.py` runs the drawing modules under Node.
+stubbed feeds and providers; `tests/test_silhouettes.py` and `tests/test_icons.py` run the
+drawing modules under Node.
 The tests stay on the machine: `setUpModule` stops any request to another host and fails the
 run if one was tried, and `.github/workflows/tests.yml` runs them on every pull request.
 `cloudwall --demo` runs the whole thing on simulated traffic. The demo's feed updates every
