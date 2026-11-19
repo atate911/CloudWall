@@ -28,6 +28,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 |---|---|
 | `range` | How far out the asker's radar shows, in nm (one of `ranges`). The feed is asked that far while something keeps asking; left out, the tracking radius. |
 | `square=1` | The radar is the ATC style's square, whose corners reach 1.4 times as far. |
+| `reach=` | The Map view, a rectangle the shape of its panel: how many times `range` its corners reach (1 to 3). |
 | `pin` | The `hex` of a flight this screen follows: it takes `hero` for this request only. |
 
 <!-- shape: state -->
@@ -42,7 +43,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `airport` | always | Its airport: `icao`, `iata`, `name`, `city`, `lat`, `lon`, `elevation_ft`; `runways` (each `name`, `ends` as two `[lat, lon]`, `length_ft`); `others`, the small fields nearby (`code`, `icao`, `name`, `city`, `lat`, `lon`, `elevation_ft`, `runways`); `airspace` (Class B, C and its own D: `id`, `class`, `floor`, `ceiling`, `label`, `rings`); `navaids` (`ident`, `name`, `type`, `lat`, `lon`). |
 | `tracking` | always | The `[tracking]` settings in force: `radius_nm`, `overhead_nm`, `max_overhead_alt_ft`, `poll_seconds`, `when_idle`, `idle_after_seconds`. |
 | `ranges` | always | The ranges a radar can ask for, in nm: the tracking radius, then the longer ones. |
-| `kiosk` | always | The `[kiosk]` settings: `place`, `radar`, `tracks`, `range_nm`. |
+| `kiosk` | always | The `[kiosk]` settings: `place`, `view` (`radar` or `map`), `radar`, `tracks`, `range_nm`. |
 | `aircraft` | always | Every aircraft within the tracking radius, nearest first: [aircraft](#an-aircraft). |
 | `beyond` | always | Aircraft in the air past the tracking radius, there only while a longer `range` is asked for. They are for the radar alone: never looked up, never on the card. |
 | `hero` | always | The aircraft on the flight card: the one this screen follows, else the one overhead; else null. An [aircraft](#an-aircraft) with its track. |
@@ -60,7 +61,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `contrails` | always | The contrail forecast in short, or null: `summary`, `persistent` and `short` (each `[from_ft, to_ft]` or null), `at`, `source`. |
 | `live_routes` | always | The paid route provider's state, or null without one: `name`, `label`, `enabled`, `mode`, `unit`, `margin`, `used_today`, `daily_limit`, `period_used`, `period_budget`, `monthly_limit`, `resets`, `reported`, `problem`. |
 | `basemap` | always | The radar's map: `enabled`, `style`, `attribution`, `opacity`, `zooms`. |
-| `charts` | always | The chart layers the server can serve as tiles: `map`, `atc` (or null) and `layers` by name. |
+| `charts` | always | The chart layers the server can serve as tiles: `map`, `atc` (or null) and `layers` by name, among them `world`, the flight card's route map, served everywhere at zooms 0 to 6 (absent when `[map] route` is off). |
 | `logos` | always | Whether airline logos are served at `/logos/<IATA>`. |
 | `restart` | always | True when the server's code has changed on disk since it started: it wants restarting. |
 

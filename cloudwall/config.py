@@ -45,7 +45,8 @@ DEFAULTS = {
                     "daily_limit": 0, "mode": "always",
                     "general_aviation": False},
     # Map behind the radar: "dark", "light", "satellite", "osm" or "off" (or set url = a tile URL template)
-    "map": {"style": "dark", "opacity": 0.32, "url": "", "attribution": ""},
+    # route: the map behind the flight's route on its card, one of the same styles (not a url), or "off"
+    "map": {"style": "dark", "opacity": 0.45, "url": "", "attribution": "", "route": "satellite"},
     # Airline logos on the flight card, fetched by airline code and cached on disk
     "logos": {"enabled": True, "url": ""},
     # Extra free data: military jets heard without a position, temporary flight
@@ -53,9 +54,10 @@ DEFAULTS = {
     "extras": {"military": True, "military_radius_nm": 40, "military_url": "https://opendata.adsb.fi/api/v2/mil",
                "tfr": True, "tfr_radius_nm": 30, "contrails": True},
     # The kiosk has no buttons: its place and radar are set here. place: a place's name (empty for
-    # the first); radar: "chart" or "atc" (drawn like an air traffic control screen); tracks: the
+    # the first); view: "radar", or "map" for the flights on an everyday map; radar: "chart" or
+    # "atc" (drawn like an air traffic control screen); tracks: the
     # selected aircraft's track and one-minute lines; range_nm: 0 for the tracking radius, or 20 or 30 to see further.
-    "kiosk": {"place": "", "radar": "chart", "tracks": True, "range_nm": 0},
+    "kiosk": {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }

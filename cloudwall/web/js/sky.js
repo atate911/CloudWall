@@ -1,4 +1,4 @@
-// The sun's position, for the sun on the sky dome and the switch to the night chart after dusk.
+// The sun's position, for the switch to the night chart after dusk.
 import { sunPosition, store } from "./util.js";
 
 export const sky = { sun: { el: 45, az: 180 }, night: false };

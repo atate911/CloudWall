@@ -168,11 +168,14 @@ class Tracker:
         r = self.cfg["tracking"]["radius_nm"]
         return sorted({r, *(x for x in RADAR_RANGES if x > r)})
 
-    def want_range(self, nm, square=False):
+    def want_range(self, nm, square=False, reach=1.0):
         """A screen showing the radar at this range asked for data. A square display (the ATC
-        style, whose range is from its centre to its edge) reaches √2 times as far in its corners."""
+        style, whose range is from its centre to its edge) reaches √2 times as far in its corners;
+        the Map view, a rectangle the shape of its panel, gives how much further its corners reach
+        (no more than three times)."""
         if nm in self.ranges():
-            self.range_wanted[round(nm * (math.sqrt(2) if square else 1), 1)] = time.time()
+            far = max(math.sqrt(2) if square else 1, min(max(float(reach or 1), 1), 3))
+            self.range_wanted[round(nm * far, 1)] = time.time()
 
     def fetch_radius(self):
         """How far out to ask the feed for: the longest range a screen asked for lately."""

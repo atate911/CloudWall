@@ -6,6 +6,7 @@ import { map, tileLayout } from "./map.js";
 import { weatherSlide } from "./weather.js";
 import { showLogo, badges, boardFlight, localPlace, localWords, recordsHtml, heardGroups } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
+import { mappable, drawRouteMap, moveRouteMap } from "./routemap.js";
 
 // Play the entrance animation once for freshly inserted content.
 function enter(el) {
@@ -64,6 +65,15 @@ function routeHtml(a, state) {
     return `<div class="noroute">${esc(a.type_name || a.type || "Unknown aircraft")}<small>${esc(what)}</small></div>`;
   }
   const iata = state.airport.iata;
+  if (worldLayer(state) && mappable(r)) {
+    // the route on a real map: the airports either side of the distance and flight time, the map below
+    return `<div class="route mapped ${r.plausible ? "" : "unsure"}">
+    <div class="apt ${r.origin.iata === iata ? "local" : ""}"><small>${esc(r.origin.city || r.origin.name || "")}</small><div class="flaps" id="h-orig"></div><div class="apt-when" id="h-dep"></div></div>
+    <div class="arc-note"><div id="h-note"></div><div class="arc-time" id="h-dur"></div></div>
+    <div class="apt r ${r.dest.iata === iata ? "local" : ""}"><small>${esc(r.dest.city || r.dest.name || "")}</small><div class="flaps" id="h-dest"></div><div class="apt-when" id="h-arr"></div></div>
+    <div class="rmap" id="h-map"></div>
+  </div>`;
+  }
   return `<div class="route ${r.plausible ? "" : "unsure"}">
     <div class="apt ${r.origin.iata === iata ? "local" : ""}"><small>${esc(r.origin.city || r.origin.name || "")}</small><div class="flaps" id="h-orig"></div><div class="apt-when" id="h-dep"></div></div>
     <div><svg class="arc" viewBox="0 0 200 40">
@@ -90,6 +100,12 @@ function routeTimes(r) {
     dur: min > 0 ? `Flight time ${est ? "about " : ""}${hm(min)}` : "",
   };
 }
+
+// The server's whole-world map layer for the route, if it has one switched on ([map] route).
+const worldLayer = (state) => {
+  const w = state.charts && state.charts.layers && state.charts.layers.world;
+  return w && w.enabled ? w : null;
+};
 
 function routeNote(r) {
   if (!r.plausible) return "Listed route doesn't match where it's flying";
@@ -127,15 +143,19 @@ function showHero(el, a, state) {
       const here = localPlace(a, state).iata;
       flap($(a.local === "arriving" ? "h-dest" : "h-orig"), here);
     } else if (r) { flap($("h-orig"), r.origin.iata || "???"); flap($("h-dest"), r.dest.iata || "???"); }
+    if ($("h-map")) drawRouteMap($("h-map"), r, worldLayer(state), state.airport.iata);
   }
   if (r && !inferred) {
-    // no progress figure (far airport's position unknown): show the arc without a position
+    // no progress figure (far airport's position unknown): show the route without a position
     const known = r.progress != null;
-    $("h-arc").style.display = $("h-arc-dot").style.display = known ? "" : "none";
-    const p = clamp(r.progress ?? 0.5, 0.03, 0.97);
-    $("h-arc").setAttribute("stroke-dasharray", `${p} 1`);
-    $("h-arc-dot").setAttribute("cx", (1 - p) ** 2 * 4 + 2 * (1 - p) * p * 100 + p * p * 196);
-    $("h-arc-dot").setAttribute("cy", (1 - p) ** 2 * 34 + 2 * (1 - p) * p * -22 + p * p * 34);
+    if ($("h-map")) moveRouteMap($("h-map"), known ? r.progress : null);
+    if ($("h-arc")) {
+      $("h-arc").style.display = $("h-arc-dot").style.display = known ? "" : "none";
+      const p = clamp(r.progress ?? 0.5, 0.03, 0.97);
+      $("h-arc").setAttribute("stroke-dasharray", `${p} 1`);
+      $("h-arc-dot").setAttribute("cx", (1 - p) ** 2 * 4 + 2 * (1 - p) * p * 100 + p * p * 196);
+      $("h-arc-dot").setAttribute("cy", (1 - p) ** 2 * 34 + 2 * (1 - p) * p * -22 + p * p * 34);
+    }
     $("h-note").textContent = routeNote(r);
     const t = routeTimes(r.plausible ? r : null);
     for (const [id, html] of [["h-dep", t.dep], ["h-arr", t.arr], ["h-dur", t.dur]]) {

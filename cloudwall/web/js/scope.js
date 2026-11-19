@@ -1,28 +1,36 @@
-// The right-hand panel: a top-down radar scope, or a dome view of the sky.
+// The right-hand panel: a top-down radar scope (drawn as a chart or as an air traffic control
+// screen), or the Map view: the same flights on an everyday satellite or street map, labelled in
+// words for anyone ("Delta 178, to Denver, 12,000 ft").
 //
-// Drawn in two layers. The static layer (map, rings, the overhead aircraft's sky
-// path) is rebuilt only when the data or mode changes. The aircraft layer is a set of
+// Drawn in two layers. The static layer (map, rings, place names) is rebuilt only when the data
+// or mode changes. The aircraft layer is a set of
 // persistent elements, one per aircraft, moved every animation frame: positions are
 // dead-reckoned from the last report and eased toward each new one, so aircraft glide
 // instead of hopping between updates.
-import { esc, ident, projected, offset, azEl, clamp } from "./util.js";
+import { esc, ident, projected, offset, clamp } from "./util.js";
 import { map, tileLayout, runwaysFor } from "./map.js";
-import { sky } from "./sky.js";
-import { moonPosition, moonPhase, moonGlyph } from "./astro.js";
 import { iconFor } from "./icons.js";
 
 // Drawing options from the page: atc draws the radar like an air traffic control screen;
 // tracks shows the selected aircraft's past track (all of it; its history dots in the ATC style;
 // no other aircraft has one) and the one-minute lines; range is how far out the radar shows, in nm
 // (the tracking radius, or longer).
-let opt = { atc: false, tracks: true, range: 15 };
+let opt = { atc: false, map: false, tracks: true, range: 15, mapStyle: "sat" };
 const RAD = Math.PI / 180;
 
 // ---- the ATC style: a STARS display, the FAA's terminal radar, drawn to its conventions ----
 // The display is a square, and its range is from the centre to the edge, as STARS sets it.
 const SQ = 108;
-const K = () => (opt.atc ? SQ : 100) / opt.range;          // drawing units per nm
-const inView = (x, y) => (opt.atc ? Math.max(Math.abs(x), Math.abs(y)) <= SQ : Math.hypot(x, y) <= 100);
+// The Map view fills its panel: a rectangle of half-width MX and half-height MY drawing units, the
+// range from the centre to its nearer edges, so it reaches further toward the others. UI is where
+// the panel's buttons sit over it, in drawing units, so labels stay out from under them.
+let MX = SQ, MY = SQ, UI = [];
+const square = () => opt.atc || opt.map;
+const K = () => (square() ? SQ : 100) / opt.range;          // drawing units per nm
+const inView = (x, y) => (opt.map ? Math.abs(x) <= MX && Math.abs(y) <= MY
+  : square() ? Math.max(Math.abs(x), Math.abs(y)) <= SQ : Math.hypot(x, y) <= 100);
+// how many times the range the Map view's corners reach, for the server to fetch that far
+export const mapReach = () => Math.hypot(MX, MY) / SQ;
 // A fused track's target: a filled circle, which STARS draws with eight sides at this size.
 const OCTAGON = "M" + [...Array(8)].map((_, i) => {
   const t = (22.5 + 45 * i) * RAD;
@@ -179,23 +187,38 @@ const note = (cls, x, y, anchor, lines) => `<text class="${cls}" x="${x}" y="${y
 const COMPASS = `${BEZEL}<text class="compass" x="0" y="-104" text-anchor="middle">N</text><text class="compass" x="106" y="2" text-anchor="middle">E</text>
   <text class="compass" x="0" y="110" text-anchor="middle">S</text><text class="compass" x="-106" y="2" text-anchor="middle">W</text>`;
 
-// ---- geometry for each mode ----
-const domeXY = (p) => { const r = ((90 - clamp(p.el, 0, 90)) / 90) * 100; return [r * Math.sin(p.az * RAD), -r * Math.cos(p.az * RAD)]; };
-const skyPos = (home, a, t) => azEl(home, projected(a, t), (a.alt || 0) + ((a.vrate || 0) * t) / 60);
-
-function place(state, a, t, mode) {
-  if (mode === "sky") {
-    const p = skyPos(state.home, a, t);
-    if (p.el < 1) return null;
-    const [x, y] = domeXY(p), [x2, y2] = domeXY(skyPos(state.home, a, t + 8));
-    const rot = Math.hypot(x2 - x, y2 - y) > 0.01 ? Math.atan2(x2 - x, -(y2 - y)) / RAD : a.track || 0;
-    return { x, y, rot, scale: 0.9 + clamp(p.el / 60, 0, 1) * 0.9, sub: `${Math.round(p.el)}° up`, el: p.el };
-  }
+// ---- where an aircraft is drawn ----
+function place(state, a, t) {
   const k = K(), o = offset(state.home, projected(a, t));
   if (!inView(o.x * k, -o.y * k)) return null;
+  if (opt.map) return { x: o.x * k, y: -o.y * k, rot: a.track || 0, scale: 1.15, sub: plainLine(a, state) };
   // the altitude in hundreds of feet, as a controller's scope shows it, with an arrow when climbing or descending
   const v = a.vrate || 0, trend = v > 300 ? "↑" : v < -300 ? "↓" : "";
   return { x: o.x * k, y: -o.y * k, rot: a.track || 0, scale: 1, sub: a.alt == null ? "" : String(Math.max(0, Math.round(a.alt / 100))).padStart(3, "0") + trend };
+}
+
+// ---- the Map view's words: who it is, where it's going and how high, for anyone ----
+// "Delta Air Lines" and flight DL178 make "Delta 178"; without an airline, what kind of aircraft it is.
+const KIND_WORDS = { light: "Small plane", twin: "Small plane", ultralight: "Small plane", seaplane: "Seaplane", glider: "Glider",
+  turboprop: "Propeller plane", bizjet: "Private jet", heli: "Helicopter", gyro: "Gyrocopter", fighter: "Military jet",
+  tandem: "Military helicopter", tiltrotor: "Military aircraft", balloon: "Balloon", airship: "Airship", drone: "Drone" };
+export function plainName(a) {
+  if (a.airline) {
+    const short = a.airline.replace(/\s+(Air ?Lines|Airlines|Airways|Air|Aviation)$/i, "");
+    const num = /^[A-Z0-9]{2,3}?(\d{1,4}[A-Z]?)$/.exec((a.flight || ident(a) || "").replace(/\s/g, ""));
+    return num ? `${short} ${num[1]}` : short;
+  }
+  return KIND_WORDS[a.icon] || (a.type_name ? a.type_name.replace(/\s+\(.*\)$/, "") : "Plane");
+}
+const city = (p) => (p && (p.city || p.name || p.iata)) || "";
+function plainLine(a, state) {
+  const r = a.route && a.route.plausible ? a.route : null, here = state.airport.iata;
+  let where = "";
+  if (r) where = r.dest.iata === here || a.local === "arriving" ? `from ${city(r.origin)}` : `to ${city(r.dest)}`;
+  else if (a.local === "arriving") where = "landing";
+  else if (a.local === "departing") where = "just took off";
+  const alt = a.alt == null ? "" : `${Math.round(a.alt / 100) * 100 >= 1000 ? (Math.round(a.alt / 100) * 100).toLocaleString("en-US") : Math.max(0, Math.round(a.alt / 50) * 50)} ft`;
+  return [where, alt].filter(Boolean).join(" · ");
 }
 
 // ---- the ATC style's fixed parts ----
@@ -324,6 +347,29 @@ function radarStatic(state) {
   return s + HOME + heardNote(state);
 }
 
+// The Map view's own marks: home, the airport, and a note of what's shown. The map itself (with
+// its place names) is the base layer under it.
+function mapStatic(state) {
+  const k = K(), home = state.home, miles = Math.round(opt.range * 1.15078);
+  placeBoxes = [{ x0: -4, x1: 22, y0: -4, y1: 4 }];
+  let s = `<g class="map-home"><circle r="3.2"/><circle class="dot" r="1.3"/></g><text class="map-label" x="5" y="1.7">Home</text>`;
+  const ap = offset(home, state.airport), ax = ap.x * k, ay = -ap.y * k;
+  if (inView(ax, ay) && Math.hypot(ap.x, ap.y) > 1.5) {
+    const name = `${state.airport.iata} airport`;
+    s += `<g class="map-apt" transform="translate(${ax.toFixed(1)},${ay.toFixed(1)})"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" rx="1"/>` +
+      `<path d="M0,-1.8L.45,-.5L1.9,.3V.8L.45,.35V1.1L.9,1.5V1.8L0,1.55L-.9,1.8V1.5L-.45,1.1V.35L-1.9,.8V.3L-.45,-.5Z"/></g>` +
+      `<text class="map-label" x="${(ax + 4).toFixed(1)}" y="${(ay + 1.7).toFixed(1)}">${esc(name)}</text>`;
+    placeBoxes.push({ x0: ax - 3, x1: ax + 5 + name.length * 3, y0: ay - 4, y1: ay + 4 });
+  }
+  // the note sits just above the buttons along the foot of the panel
+  const note = `Live flights within ${miles} miles of home`, foot = UI.reduce((y, b) => (b.y1 >= MY - 0.5 ? Math.min(y, b.y0) : y), MY);
+  const nx = -MX + 2, ny = foot - 10;
+  s += `<g class="map-note"><rect x="${nx}" y="${ny}" width="${note.length * 2.25 + 6}" height="8" rx="2"/>` +
+    `<text x="${nx + 3}" y="${ny + 5.4}">${esc(note)}</text></g>`;
+  placeBoxes.push({ x0: nx - 1, x1: nx + note.length * 2.25 + 8, y0: ny - 1, y1: ny + 9 }, ...UI);
+  return s;
+}
+
 // Temporary flight restrictions: hatched while active, dashed outline when they start later.
 function tfrLayer(state, k) {
   let s = "";
@@ -378,38 +424,6 @@ function heardNote(state) {
     : note("heard-note", 111, 110.5, "end", ["Heard nearby,", "no position:", what]);
 }
 
-function domeStatic(state, dt) {
-  let s = `<circle class="dome-bg" r="100"/>${SPOKES(100 / 3)}`;
-  for (const el of [30, 60]) { const r = ((90 - el) / 90) * 100; s += `<circle class="ring" r="${r}"/>${ringLabel(r, el + "°")}`; }
-  s += note("legend", -111, 110.5, "start", ["Sky view from home", "Centre: straight up", "Edge: the horizon"]);
-  s += `<circle class="ring horizon" r="100"/><line class="ring" x1="-4" y1="0" x2="4" y2="0"/><line class="ring" x1="0" y1="-4" x2="0" y2="4"/>${COMPASS}`;
-  if (sky.sun.el > 0) { const [x, y] = domeXY(sky.sun); s += `<circle class="sun-glow" cx="${x}" cy="${y}" r="11"/><circle class="sun" cx="${x}" cy="${y}" r="4.5"/>`; }
-  const moon = moonPosition(Date.now(), state.home.lat, state.home.lon);
-  if (moon.el > 0) { const [x, y] = domeXY(moon), ph = moonPhase(Date.now()); s += `<g class="sky-moon" transform="translate(${x.toFixed(1)},${y.toFixed(1)})">${moonGlyph(4, ph.phase, ph.fraction)}</g>`; }
-  const h = state.hero;
-  if (h && !h.on_ground && h.alt != null) {
-    // where it has been and where it is going across the sky
-    const past = [], future = [];
-    let best = null;
-    for (let t = -180; t <= 360; t += 5) {
-      const p = skyPos(state.home, h, dt + t);
-      if (p.el < 0.5) continue;
-      (t <= 0 ? past : future).push(domeXY(p).map((v) => v.toFixed(1)).join(","));
-      if (!best || p.el > best.el) best = { ...p, t };
-    }
-    if (past.length && future.length) future.unshift(past[past.length - 1]);
-    if (past.length > 1) s += `<polyline class="sky-path past" points="${past.join(" ")}"/>`;
-    if (future.length > 1) s += `<polyline class="sky-path" points="${future.join(" ")}"/>`;
-    if (best && best.t > 6) {
-      const [x, y] = domeXY(best);
-      // label inward, toward the centre, where the path isn't
-      const d = Math.hypot(x, y) || 1, lx = x - (x / d) * 7, ly = y - (y / d) * 7 + 1.5;
-      s += `<circle class="sky-peak" cx="${x}" cy="${y}" r="2.2"/><text class="peak-label" x="${lx}" y="${ly}" text-anchor="${x > 0 ? "end" : "start"}">highest ${Math.round(best.el)}°</text>`;
-    }
-  }
-  return s + heardNote(state);
-}
-
 // ---- persistent aircraft elements ----
 const live = new Map();     // hex -> { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, x, y, rot, slot, ... }
 let lastFrame = 0, layerMode = null, staticKey = null, baseKey = null, lastSecond = -1;
@@ -419,22 +433,27 @@ let lastFrame = 0, layerMode = null, staticKey = null, baseKey = null, lastSecon
 // when the zoom or view changes, so it never flickers.
 function drawBase(svg, state, mode) {
   const g = svg.querySelector("#s-base"), charts = state.charts || { map: state.basemap };
-  const bm = opt.atc ? charts.atc : charts.map;
+  const layers = charts.layers || {}, bm = opt.map ? layers[opt.mapStyle] : opt.atc ? charts.atc : charts.map;
+  // the satellite imagery has no names on it: Esri's roads and place names go over it
+  const over = opt.map && opt.mapStyle === "sat" ? [layers.roads, layers.places].filter((l) => l && l.enabled) : [];
   const R = opt.range, k = K();
   const box = svg.getBoundingClientRect(), unitsPx = Math.min(box.width, box.height) / 224;
   const screenPxPerNm = unitsPx * k * (window.devicePixelRatio || 1);
-  if (mode !== "radar" || !bm || !bm.enabled || !unitsPx) {
+  if (!bm || !bm.enabled || !unitsPx) {
     if (baseKey !== "none") { g.innerHTML = ""; baseKey = "none"; }
     return;
   }
-  const layout = tileLayout(state.home, R * 1.05, screenPxPerNm, bm);      // the ATC square reaches R east, west, north and south
-  const key = `${layout.z}|${R}|${state.home.lat},${state.home.lon}|${bm.layer}|${bm.style}|${opt.atc}`;
+  // the square displays reach R east, west, north and south, so their corners a little further
+  const layout = tileLayout(state.home, R * (opt.map ? (Math.max(MX, MY) / SQ) * 1.02 : square() ? 1.45 : 1.05), screenPxPerNm, bm);
+  const key = `${layout.z}|${R}|${state.home.lat},${state.home.lon}|${bm.layer}|${bm.style}|${opt.atc}|${opt.map}|${opt.mapStyle}|${MX.toFixed(1)},${MY.toFixed(1)}`;
   if (key === baseKey) return;
   baseKey = key;
-  g.style.opacity = opt.atc ? "" : bm.opacity;          // the ATC chart's dimming is in the stylesheet
-  g.setAttribute("class", `basemap ${bm.style}${opt.atc ? " atc-chart" : ""}`);
-  g.innerHTML = layout.tiles.map((t) => `<image href="${t.url}" x="${(t.x0 * k).toFixed(2)}" y="${(-t.y0 * k).toFixed(2)}"
+  g.style.opacity = opt.atc || opt.map ? "" : bm.opacity;          // the ATC chart's dimming is in the stylesheet; the Map view's map is full strength
+  g.setAttribute("class", `basemap ${bm.style}${opt.atc ? " atc-chart" : ""}${opt.map ? " plain-map" : ""}`);
+  const images = (prefix) => layout.tiles.map((t) => `<image href="${t.url.replace(/^tiles\/(?:[a-z-]+\/)?/, prefix)}" x="${(t.x0 * k).toFixed(2)}" y="${(-t.y0 * k).toFixed(2)}"
     width="${((t.x1 - t.x0) * k + 0.15).toFixed(2)}" height="${((t.y0 - t.y1) * k + 0.15).toFixed(2)}" preserveAspectRatio="none"/>`).join("");
+  const prefixOf = (l) => (l.layer && l.layer !== "map" ? `tiles/${l.layer}/` : "tiles/");
+  g.innerHTML = images(prefixOf(bm)) + over.map((l) => `<g class="overlay">${images(prefixOf(l))}</g>`).join("");
 }
 
 function el(name, attrs, parent) {
@@ -459,7 +478,8 @@ function ensureLayers(svg) {
 
 // The display's outline, which also clips the map: a disc, or the ATC style's square screen.
 function setShape(svg) {
-  const shape = opt.atc ? `<rect x="${-SQ}" y="${-SQ}" width="${2 * SQ}" height="${2 * SQ}"/>` : `<circle r="100"/>`;
+  const shape = opt.atc ? `<rect x="${-SQ}" y="${-SQ}" width="${2 * SQ}" height="${2 * SQ}"/>`
+    : opt.map ? `<rect x="${-MX}" y="${-MY}" width="${2 * MX}" height="${2 * MY}"/>` : `<circle r="100"/>`;
   svg.querySelector("#scope-clip").innerHTML = shape;
   svg.querySelector("#s-bg").innerHTML = shape.replace(/^<(\w+)/, '<$1 class="scope-bg"');
 }
@@ -546,7 +566,7 @@ const overlap = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0
 // the edge. Re-run on each data update, not every frame, and keep the current place unless it
 // is clearly worse, so labels don't flicker. The ATC style prefers its leaders pointing north.
 function placeLabels(heroHex) {
-  const placed = opt.atc ? [...placeBoxes] : [...(layerMode.startsWith("radar") ? placeBoxes : []), ...BEARING_BOXES,
+  const placed = opt.atc || opt.map ? [...placeBoxes] : [...placeBoxes, ...BEARING_BOXES,
     { x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
   const all = [...live.values()].filter((c) => c.x != null), r = (c) => (opt.atc ? 3 : Math.max(3.5, c.reach || 4.5));
   const blips = all.map((c) => ({ x0: c.x - r(c), x1: c.x + r(c), y0: c.y - r(c), y1: c.y + r(c), c }));
@@ -557,13 +577,14 @@ function placeLabels(heroHex) {
   const labelled = all.filter((c) => c.text);
   labelled.forEach(measure);
   labelled.sort((a, b) => (b.hex === heroHex) - (a.hex === heroHex));
-  const edge = opt.atc ? SQ - 9.5 : 112;          // the ATC style keeps data blocks inside the compass
+  const edge = opt.atc ? SQ - 9.5 : opt.map ? MX - 1.5 : 112;          // the ATC style keeps data blocks inside the compass
+  const edgeY = opt.map ? MY - 1.5 : edge;
   for (const c of labelled) {
     const score = (i) => {
       const b = labelBox(c, i);
       let s = placed.reduce((n, p) => n + overlap(b, p), 0) + blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
       s += (Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0)) * 20;
-      if (opt.atc) s += (Math.max(0, b.y1 - edge) + Math.max(0, -edge - b.y0)) * 20 + (i ? 1.5 : 0);
+      if (square()) s += (Math.max(0, b.y1 - edgeY) + Math.max(0, -edgeY - b.y0)) * 20 + (opt.atc && i ? 1.5 : 0);
       return s - (i === c.slot ? 6 : 0);                                    // stickiness
     };
     let best = 0, bestScore = Infinity;
@@ -619,13 +640,46 @@ function historyDots(c, trail, k, home, trailS) {
   for (; n < HISTORY; n++) dots[n].style.display = "none";
 }
 
+// The note's box, fitted to its text as drawn (a phone or the kiosk sets it larger), and kept
+// clear of the labels.
+function fitMapNote(svg) {
+  const t = svg.querySelector(".map-note text"), r = svg.querySelector(".map-note rect");
+  let w = 0;
+  try { w = t.getComputedTextLength(); } catch (e) { /* not laid out yet */ }
+  if (!w) return;
+  r.setAttribute("width", (w + 6).toFixed(1));
+  const x0 = +r.getAttribute("x"), y0 = +r.getAttribute("y");
+  placeBoxes.push({ x0: x0 - 1, x1: x0 + w + 8, y0: y0 - 1, y1: y0 + 9 });
+}
+
+// The Map view's rectangle, from the panel's shape: the drawing's viewBox is widened (or made
+// taller) to match it, with the shorter side the radar's usual 224 units. The radar keeps its square.
+const SQUARE_BOX = "-112 -112 224 224";
+function mapShape(svg) {
+  const r = svg.getBoundingClientRect(), panel = svg.parentElement.getBoundingClientRect();
+  if (!r.width || !r.height) return `|${MX}x${MY}`;
+  const u = 224 / Math.min(r.width, r.height);           // drawing units per CSS px
+  const vx = (r.width * u) / 2, vy = (r.height * u) / 2;
+  MX = vx - 1; MY = vy - 1;
+  // the buttons over the map (the panel's own controls), as boxes in drawing units
+  UI = [...svg.parentElement.querySelectorAll(":scope > .seg, :scope > .scope-tools > .seg, :scope > .attrib")]
+    .map((e) => e.getBoundingClientRect()).filter((b) => b.width && b.height)
+    .map((b) => ({ x0: (b.left - r.left) * u - vx - 2, x1: (b.right - r.left) * u - vx + 2, y0: (b.top - r.top) * u - vy - 2, y1: (b.bottom - r.top) * u - vy + 2 }));
+  const box = `${(-vx).toFixed(2)} ${(-vy).toFixed(2)} ${(2 * vx).toFixed(2)} ${(2 * vy).toFixed(2)}`;
+  if (svg.getAttribute("viewBox") !== box) svg.setAttribute("viewBox", box);
+  return `|${Math.round(r.width)}x${Math.round(r.height)}|${Math.round(panel.width)}`;
+}
+
 // ---- entry point: called every animation frame ----
 export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   ensureLayers(svg);
   const dt = (now - stateAt) / 1000, frameDt = lastFrame ? Math.min(1, (now - lastFrame) / 1000) : 1;
   lastFrame = now;
-  opt = { atc: !!options.atc && mode === "radar", tracks: options.tracks !== false, range: options.range || state.tracking.radius_nm };
-  const layer = mode + (opt.atc ? ":atc" : "");
+  opt = { atc: !!options.atc && mode === "radar", map: mode === "map", tracks: options.tracks !== false,
+    range: options.range || state.tracking.radius_nm, mapStyle: options.mapStyle || "sat" };
+  if (!opt.map && svg.getAttribute("viewBox") !== SQUARE_BOX) { svg.setAttribute("viewBox", SQUARE_BOX); MX = MY = SQ; UI = []; }
+  const shape = opt.map ? mapShape(svg) : "";
+  const layer = mode + (opt.atc ? ":atc" : "") + shape;
   if (layer !== layerMode) {                      // switching views or styles: start every aircraft fresh
     for (const hex of [...live.keys()]) dropCraft(hex);
     layerMode = layer;
@@ -638,7 +692,8 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   const fresh = key !== staticKey;
   if (fresh) {
     staticKey = key;
-    svg.querySelector("#s-static").innerHTML = mode === "sky" ? domeStatic(state, dt) : radarStatic(state);
+    svg.querySelector("#s-static").innerHTML = opt.map ? mapStatic(state) : radarStatic(state);
+    if (opt.map) fitMapNote(svg);
     layoutPathKey(svg);
   }
   const wall = Date.now(), phase = clockPhase(wall);
@@ -652,10 +707,10 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   const box = svg.getBoundingClientRect(), unitPx = Math.min(box.width, box.height) / 224;
   const boost = unitPx ? clamp(ICON_UNIT_PX / unitPx, 1, ICON_BOOST_MAX) : 1;
   // past the tracking radius, aircraft are fetched only for a radar set to a longer range
-  const aircraft = mode === "radar" ? [...state.aircraft, ...(state.beyond || [])] : state.aircraft;
+  const aircraft = [...state.aircraft, ...(state.beyond || [])];
   for (const a of aircraft) {
-    if (a.on_ground || (mode === "sky" && a.alt == null)) continue;
-    const p = place(state, a, dt, mode);
+    if (a.on_ground) continue;
+    const p = place(state, a, dt);
     if (!p) continue;
     seen.add(a.hex);
     const c = craftFor(svg, a.hex), isHero = a.hex === heroHex;
@@ -681,7 +736,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     }
     // the lead line: one minute ahead at its ground speed, from the nose (the ATC style's
     // predicted track line, from the target), on the radar only
-    const lead = opt.tracks && mode === "radar" && a.gs && a.track != null ? (a.gs / 60) * k : 0;
+    const lead = opt.tracks && !opt.map && a.gs && a.track != null ? (a.gs / 60) * k : 0;
     const sin = Math.sin(c.rot * RAD), cos = -Math.cos(c.rot * RAD), nose = opt.atc ? 2.3 : c.ic.nose * size;
     c.vx = sin * lead; c.vy = cos * lead;
     if (lead > nose) {
@@ -704,10 +759,9 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       }
       text = b.l1; line0 = b.l0; c.subs = b.subs;
     } else {
-      // the chart style's label: the flight, then the altitude and its trend
-      const showLabel = mode !== "sky" || isHero || p.el > 6;
-      text = showLabel ? ident(a) : "";
-      c.subs = [showLabel ? p.sub : ""];
+      // the chart style's label: the flight, then the altitude and its trend; the Map view's in words
+      text = opt.map ? plainName(a) : ident(a);
+      c.subs = [p.sub];
     }
     if (text !== c.text) { c.text = text; c.tag.textContent = text; }
     if (c.l0.textContent !== line0) c.l0.textContent = line0;
@@ -720,7 +774,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     const dots = opt.atc && opt.tracks && isHero;
     if (dots && (fresh || arrived)) historyDots(c, state.hero.trail, k, state.home, state.trail_s);
     c.hist.style.display = dots ? "" : "none";
-    const path = !opt.atc && opt.tracks && mode === "radar" && isHero && state.hero.path && state.hero.path.length ? state.hero.path : null;
+    const path = !opt.atc && (opt.tracks || opt.map) && isHero && state.hero.path && state.hero.path.length ? state.hero.path : null;
     if (path && (fresh || !c.drawn)) {
       c.segs.innerHTML = pathRuns(state.home, path, k);
       const [lat, lon] = path[path.length - 1], o = offset(state.home, { lat, lon });

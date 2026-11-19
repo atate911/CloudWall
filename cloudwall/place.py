@@ -54,13 +54,13 @@ class Place:
                 "zip": self.cfg["home"].get("zip"), "added": self.added}
 
     # -- what a screen asks for (server.py) ---------------------------------------------
-    def state(self, pin=None, range_nm=0, square=False):
+    def state(self, pin=None, range_nm=0, square=False, reach=1.0):
         """Everything a screen showing this place draws, and a note that one is looking: the
         tracker's board, with this screen's own flight (pin) on the card if it follows one, and
-        the place's weather in short, its airspace and what is heard nearby. range_nm and square
-        say how far out this screen's radar looks, so the feed is asked that far."""
+        the place's weather in short, its airspace and what is heard nearby. range_nm, square and
+        reach say how far out this screen's radar or map looks, so the feed is asked that far."""
         self.activity.touch()
-        self.tracker.want_range(range_nm, square)
+        self.tracker.want_range(range_nm, square, reach)
         self.tracker.want_pin(pin)
         live = getattr(self.shared.enricher, "live", None)
         return dict(self.tracker.snapshot(pin), place=self.id, weather=self.weather, heard=self.heard, tfrs=self.tfrs,
