@@ -8,6 +8,7 @@ import time
 import urllib.parse
 
 from .http import get_json
+from .live import NotYet
 
 log = logging.getLogger("cloudwall.enrich")
 AIRLINE_CALLSIGN = re.compile(r"^[A-Z]{3}\d[0-9A-Z]{0,4}$")
@@ -15,6 +16,7 @@ DAY = 86400
 LIVE_ROUTE_TTL = 45 * 60   # a callsign flies several legs a day; don't reuse a live route for long
 LIVE_RETRY = 5 * 60        # a paid lookup that failed or was refused: leave that flight alone this long
 PHOTO_TTL = DAY            # look again daily: photos there are added and taken down
+MEM_MAX = 5000             # lookups kept in memory; the rest are a database read away
 
 
 def _airport(a):
@@ -73,9 +75,23 @@ class Enricher:
         # photos wait in a line of their own, so a slow photo site never holds up a route
         self.q, self.photo_q = queue.Queue(), queue.Queue()
         self.lock = threading.Lock()
-        if not demo:
-            threading.Thread(target=self._worker, args=(self.q,), daemon=True).start()
-            threading.Thread(target=self._worker, args=(self.photo_q,), daemon=True).start()
+        self.threads = [] if demo else [threading.Thread(target=self._worker, args=(q,), daemon=True)
+                                        for q in (self.q, self.photo_q)]
+        for t in self.threads:
+            t.start()
+
+    def stop(self):
+        """No more lookups (its place was removed): the workers finish what they're on and end."""
+        for q in (self.q, self.photo_q):
+            q.put(None)
+
+    def _keep(self, k, value, at=None):
+        """Remember a lookup in memory (called with the lock held). Past MEM_MAX the older half is
+        let go, or this would grow with every aircraft and callsign ever seen; the database has them."""
+        self.mem[k] = (value, time.time() if at is None else at)
+        if len(self.mem) > MEM_MAX:
+            for old in sorted(self.mem, key=lambda x: self.mem[x][1])[:MEM_MAX // 2]:
+                del self.mem[old]
 
     def route(self, callsign):
         if self.demo:
@@ -112,7 +128,7 @@ class Enricher:
                 return "done", self.mem[k][0]
             hit, value = self.store.cache_get(k[0], k[1], LIVE_ROUTE_TTL)
             if hit:
-                self.mem[k] = (value, time.time())
+                self._keep(k, value)
                 return "done", value
             if k in self.pending:
                 return "pending", None
@@ -129,7 +145,7 @@ class Enricher:
                 return self.mem[k][0]
             hit, value = self.store.cache_get(kind, key, max_age)
             if hit:
-                self.mem[k] = (value, time.time())
+                self._keep(k, value)
                 return value
             if fetch and k not in self.pending:
                 self.pending.add(k)
@@ -151,11 +167,14 @@ class Enricher:
         minutes is dozens of billed requests. Remembered as "nothing yet" (in memory only, so the
         free route shows) and asked again after LIVE_RETRY."""
         with self.lock:
-            self.mem[k] = (None, time.time() - LIVE_ROUTE_TTL + LIVE_RETRY)
+            self._keep(k, None, time.time() - LIVE_ROUTE_TTL + LIVE_RETRY)
 
     def _worker(self, q):
         while True:
-            kind, key = k = q.get()
+            k = q.get()
+            if k is None:            # stopped
+                return
+            kind, key = k
             try:
                 value = self._fetch(kind, key)
                 if kind == "live_route" and value is None and not self.live.available():
@@ -165,7 +184,9 @@ class Enricher:
                     continue
                 self.store.cache_put(kind, key, value)   # None is cached too (unknown)
                 with self.lock:
-                    self.mem[k] = (value, time.time())
+                    self._keep(k, value)
+            except NotYet:          # the provider hasn't caught up with this flight: ask again in a while
+                self._later(k)
             except Exception as e:  # network trouble: retry on a later sighting
                 log.warning("lookup %s %s failed: %s", kind, key, e)
                 if kind == "live_route":

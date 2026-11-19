@@ -61,6 +61,66 @@ DEFAULTS = {
 }
 
 
+# Settings that have no default, and what each may be. ([airport] takes an airport's own details,
+# as many as are needed, so it isn't checked name by name.)
+NUMBER = (int, float)
+OPTIONAL = {
+    "home": {"zip": (str, int), "elevation_ft": NUMBER},
+    "source": {"url": str},
+    "flightradar24": {"monthly_credits": NUMBER},
+    "flightaware": {"monthly_credits": NUMBER},
+    "map": {"atc": str},
+}
+MORE_THAN_ZERO = {"tracking": ("radius_nm", "overhead_nm", "max_overhead_alt_ft", "poll_seconds", "idle_after_seconds")}
+
+
+def _fits(v, want):
+    """Is v the kind of value wanted? (true and false aren't numbers, though Python counts them so.)"""
+    kinds = want if isinstance(want, tuple) else (want,)
+    return isinstance(v, kinds) and (bool in kinds or not isinstance(v, bool))
+
+
+def check(section, values):
+    """Refuse a setting CloudWall can't use, in words that name it: text where a number is wanted
+    would otherwise surface later as a thread that stops, with nothing on screen to say why. A
+    name CloudWall doesn't know (most often a typo) is only warned about. True if the section is
+    one to take in."""
+    if section == "places":
+        if not isinstance(values, list) or not all(isinstance(v, dict) for v in values):
+            raise ValueError("places must be [[places]] sections, one for each place")
+        return True
+    if section not in DEFAULTS:
+        if isinstance(values, dict):
+            log.warning("config: [%s] isn't a section CloudWall knows: left out", section)
+        else:
+            log.warning("config: %s is set outside any section (settings go under a [section] heading): left out", section)
+        return False
+    if not isinstance(values, dict):
+        raise ValueError(f"{section} must be a section: write [{section}] and its settings on the lines under it")
+    if section == "airport":
+        return True
+    for key, v in values.items():
+        default = DEFAULTS[section].get(key)
+        want = OPTIONAL.get(section, {}).get(key)
+        if want is None and default is not None:      # the kind of value its default is
+            want = type(default) if isinstance(default, bool) or not isinstance(default, NUMBER) else NUMBER
+        if want is None:
+            log.warning("config: [%s] %s isn't a setting CloudWall knows (a typo?): it has no effect", section, key)
+            continue
+        if not _fits(v, want):
+            words = {bool: "true or false", str: "text in quotes", list: "a list", NUMBER: "a number"}.get(want, "text or a number")
+            raise ValueError(f"[{section}] {key} must be {words}, not {v!r}")
+        if key in MORE_THAN_ZERO.get(section, ()) and v <= 0:
+            raise ValueError(f"[{section}] {key} must be more than 0, not {v!r}")
+    if section == "tracking" and str(values.get("when_idle", "pause")).lower() not in ("pause", "log"):
+        raise ValueError(f'[tracking] when_idle must be "pause" or "log", not {values["when_idle"]!r}')
+    if section == "server" and "port" in values and not (isinstance(values["port"], int) and 0 < values["port"] < 65536):
+        raise ValueError(f"[server] port must be a whole number from 1 to 65535, not {values['port']!r}")
+    if section == "source" and "urls" in values and not (values["urls"] and all(isinstance(u, str) for u in values["urls"])):
+        raise ValueError("[source] urls must be a list of at least one address, each in quotes")
+    return True
+
+
 def _xdg(var, fallback):
     return Path(os.environ.get(var) or Path.home() / fallback) / "cloudwall"
 
@@ -91,6 +151,8 @@ def load(path=None):
     if path:
         with open(path, "rb") as f:
             for section, values in tomllib.load(f).items():
+                if not check(section, values):
+                    continue
                 if section == "places":
                     cfg["places"] = [dict(v) for v in values] if isinstance(values, list) else []
                 elif section == "airport" and "icao" in values:
@@ -215,10 +277,12 @@ def place_config(cfg, pid, home, airport):
     return c
 
 
-def unique_id(name, taken):
+def unique_id(name, taken, unusable=None):
+    """An id for a place from its name ("Cabin" -> "cabin"), numbered on ("cabin-2") past those
+    taken and any that unusable(id) rules out."""
     pid = base = _slug(name)
     n = 2
-    while pid in taken:
+    while pid in taken or (unusable and unusable(pid)):
         pid, n = f"{base}-{n}", n + 1
     return pid
 

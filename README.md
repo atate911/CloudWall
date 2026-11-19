@@ -47,8 +47,10 @@ airframe photos from [planespotters.net](https://www.planespotters.net), weather
   blip on the scope) to pin that aircraft to the flight card; tap the card to release.
   A pin belongs to the screen it was made on: following a flight on your phone leaves the
   wall panel and everyone else's screens showing what's overhead. It holds through a reload
-  of the page and lets go when the flight leaves the area. The chime still sounds for a new
-  aircraft overhead while you're following another.
+  of the page and lets go when the flight leaves the area. If the feed loses a followed flight
+  for a few seconds, as it does with low aircraft, CloudWall carries it on along its track for
+  up to half a minute rather than letting go. The chime still sounds for a new aircraft overhead
+  while you're following another.
 - **Weather** – aviation weather for the airport from aviationweather.gov: flight category,
   a plain-English summary, temperature and dew point, humidity, altimeter, density
   altitude and sunset; a windsock seen from above at the middle of a compass of the
@@ -83,6 +85,10 @@ Open `http://<server>:5050`. For real traffic:
 make config       # writes ~/.config/cloudwall/config.toml; set [home] lat/lon or zip
 make run
 ```
+
+CloudWall checks the file as it starts. A setting it can't use (text where a number belongs,
+say) stops it with a line naming the setting; a name it doesn't know, most often a typo, gets a
+warning in the log and is otherwise ignored.
 
 The install is editable, so changes to the Python or to `cloudwall/web/` take effect
 without reinstalling: restart for Python changes, just reload the browser for the
@@ -143,8 +149,10 @@ On the desktop, the airport code beside "CloudWall" in the header opens a menu o
 "Set a location…" there takes a ZIP code or coordinates, shows where that is and the airline
 airports near it, and keeps the closest major airport unless you choose another; the screen then
 shows the new place. Places set up this way are saved beside the logbook (`places.json`) and can
-be removed from the same menu; those in the config file stay. Each screen remembers its own
-place, so the kiosk can show home while a laptop shows the cabin.
+be removed from the same menu; those in the config file stay. A removed place's logbook stays on
+disk: set the same place up again and it carries on in it, while a different place given the
+same name starts one of its own. Each screen remembers its own place, so the kiosk can show home
+while a laptop shows the cabin.
 
 The kiosk has no menu: it shows `[kiosk] place` (a place's name, the first when empty), and
 `?place=` in the address picks one on any screen.
@@ -298,7 +306,9 @@ Lookups are billed, so CloudWall is frugal with them:
 - only airliners heading for the house (from about 10 minutes out), overhead, or pinned on a screen are
   looked up, early enough that the right route is on screen when they arrive;
 - `mode = "fallback"` saves lookups by asking only when the free route looks wrong;
-- each flight is looked up once and remembered for 45 minutes, airports for a year;
+- each flight is looked up once and remembered for 45 minutes, airports for a year; a lookup
+  that fails, or finds only the flight's previous leg (just after takeoff), is tried again
+  after five minutes, not on every update;
 - each day may use the budget that's left divided by the days left in the billing period, so
   busy days can borrow from quiet ones but the period's total never exceeds the budget; when
   it's reached, routes come from the free database until the plan renews. `daily_limit` adds
@@ -367,4 +377,7 @@ no requests (or, with `"log"`, only the slow position check).
   the radar and sky view carry a compass bezel, and the clock shows UTC beside local time. Type is
   B612, the typeface Airbus designed for cockpit displays, bundled under the SIL Open Font
   License (see `cloudwall/web/fonts/`), so the board looks the same on every machine.
-- Tests: `python3 -m unittest discover -s tests`. [ARCHITECTURE.md](ARCHITECTURE.md) maps the code.
+- CloudWall has no logins: it is meant for a home network, not the open internet. It refuses
+  requests to add or remove places that come from another site's page.
+- Tests: `python3 -m unittest discover -s tests` (no network needed; they also run on every pull
+  request). [ARCHITECTURE.md](ARCHITECTURE.md) maps the code.

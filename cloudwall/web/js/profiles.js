@@ -56,5 +56,4 @@ export function profileFor(type, shape, length, name = "") {
 }
 // Whether a type has a drawing of its own (otherwise it gets a stand-in for its broad shape).
 export const hasProfile = (type) => Object.prototype.hasOwnProperty.call(TYPES, type);
-export const knownFamilies = () => Object.keys(F);
 export const knownTypes = () => Object.keys(TYPES);

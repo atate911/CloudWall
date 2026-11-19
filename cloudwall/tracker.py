@@ -1,5 +1,6 @@
 """Turns raw positions into the board state: geometry, hero selection, logbook, badges."""
 import json
+import logging
 import math
 import re
 import threading
@@ -9,6 +10,8 @@ from collections import deque
 from . import config, contrails as contrail_mod, geo, wake
 from .seats import seats as seat_estimate
 from .logos import AIRLINE_NAMES, flight_number, iata_for
+
+log = logging.getLogger("cloudwall.tracker")
 
 RARE_TYPES = {
     "A388", "B741", "B742", "B744", "B748", "BLCF", "A3ST", "A337", "A342", "A343", "A345",
@@ -39,6 +42,9 @@ PATH_POINTS = 1500          # up to this many (hours of circling); the radar dra
 RADAR_RANGES = (20, 30)     # longer ranges a screen can set its radar to, in nm, beyond the tracking radius
 RANGE_HOLD_S = 90           # keep fetching a longer range this long after a screen last asked for it
 PIN_HOLD_S = 15             # a flight a screen follows counts as wanted this long after it last asked
+PIN_GRACE_S = 30            # and is carried on from its last report this long when the feed leaves it out
+FLOW_KEEP_S = 60 * 60       # the runways in use are forgotten when nothing has landed for this long
+PRUNE_EVERY_S = 6 * 3600    # how often cached lookups past their use are cleared from the database
 HEAT_GRID = 96
 
 
@@ -64,6 +70,10 @@ class Tracker:
         self.pinned_now = set()   # the flights screens follow, as of the last update
         self.active = {}          # hex -> {"id", "min", "ts", "badges"}
         self.flow = None
+        self.flow_at = 0.0        # when an arrival last showed which way the airport is landing
+        self.tidied = 0.0         # when finished flyovers were last cleared out of active
+        self.pruned = time.time() - PRUNE_EVERY_S + 300    # the database's cache: first a few minutes in
+        self.complained = 0.0     # when a record that couldn't be used was last reported
         self.weather = None
         self.weather_full = None
         self.idle = False         # no screen open: no paid lookups
@@ -372,6 +382,8 @@ class Tracker:
             self.heat, self.heat_day = {}, day
         for a in list(beyond) + airborne:
             seen.add(a["hex"])
+            if a.get("coasting"):       # carried on from its last report: nothing new to remember, nothing forgotten
+                continue
             trail = self.trails.setdefault(a["hex"], deque(maxlen=TRAIL_POINTS))
             trail.append((round(a["lat"], 4), round(a["lon"], 4)))
             path = self.paths.setdefault(a["hex"], deque(maxlen=PATH_POINTS))
@@ -380,6 +392,8 @@ class Tracker:
                     or geo.haversine_nm(path[-1][0], path[-1][1], a["lat"], a["lon"]) >= PATH_STEP_NM):
                 path.append((round(a["lat"], 4), round(a["lon"], 4), alt))
         for a in airborne:
+            if a.get("coasting"):
+                continue
             x = a["dist"] * math.sin(math.radians(a["brg"]))
             y = a["dist"] * math.cos(math.radians(a["brg"]))
             gx, gy = int((x + r) / (2 * r) * HEAT_GRID), int((r - y) / (2 * r) * HEAT_GRID)
@@ -413,9 +427,13 @@ class Tracker:
         self.active[hexid] = s
         return s
 
-    def _update_flow(self, aircraft):
+    def _update_flow(self, aircraft, now=None):
         """Guess which way the airport is landing from low, descending traffic near it, and so
-        which runways are in use: those whose landing direction its track matches."""
+        which runways are in use: those whose landing direction its track matches. The guess
+        lapses when nothing has landed for an hour: overnight the wind, and the runways, change."""
+        now = now or time.time()
+        if self.flow and now - self.flow_at > FLOW_KEEP_S:
+            self.flow = None
         ap = self.cfg["airport"]
         ways = []          # (runway as named for landing that way, its landing direction in degrees true)
         for w in ap.get("runways") or []:
@@ -438,6 +456,7 @@ class Tracker:
             word = ("north", "east", "south", "west")[round(hdg / 90) % 4]
             in_use = sorted(n for n, h in ways if off(h, hdg) < 10)      # the parallels landing the same way
             self.flow = {"dir": word, "label": f"{word.capitalize()} flow", "runways": " / ".join(in_use)}
+            self.flow_at = now
 
     # -- main entry points ------------------------------------------------------
     # -- radar range -------------------------------------------------------------
@@ -474,6 +493,36 @@ class Tracker:
         # a copy: the server's threads add to pins while this runs on the poller's
         return {h for h, at in list(self.pins.items()) if now - at < PIN_HOLD_S}
 
+    def _coast(self, here, now):
+        """The flights screens follow that the feed left out of this update. Aircraft drop out of
+        the feed for a few seconds at a time, low ones most of all, and a screen lets go of a
+        flight that isn't there. So for up to PIN_GRACE_S each is carried on from its last report,
+        moved along its track, with "coasting" saying since when. here: the hex of every aircraft
+        the feed did report."""
+        out, last = [], self.status["updated"]
+        for a in self.aircraft:
+            if a["hex"] not in self.pinned_now or a["hex"] in here or a["on_ground"] or not last:
+                continue
+            since = a.get("coasting") or last
+            if now - since > PIN_GRACE_S:
+                continue
+            b = dict(a, coasting=since)
+            nm, track = (a.get("gs") or 0) * (now - last) / 3600, math.radians(a.get("track") or 0)
+            b["lat"] = a["lat"] + nm * math.cos(track) / 60
+            b["lon"] = a["lon"] + nm * math.sin(track) / (60 * math.cos(math.radians(a["lat"])))
+            self._derive(b)
+            if b["dist"] <= self.cfg["tracking"]["radius_nm"]:
+                out.append(b)
+        return out
+
+    def _left_out(self, what, a, e):
+        """One aircraft's record couldn't be used. The update goes ahead without it (or without
+        its details): one odd record mustn't take the whole board down. Said once a minute at most."""
+        if time.time() - self.complained > 60:
+            self.complained = time.time()
+            log.warning("%s of %s couldn't be worked out (%s: %s): going on without",
+                        what, a.get("hex"), type(e).__name__, e)
+
     def update(self, raw, source):
         now = time.time()
         if self.updated_at is not None and 0 < now - self.updated_at < 120:
@@ -482,12 +531,19 @@ class Tracker:
         self.updated_at = now
         self.pinned_now = self._pins_wanted(now)
         self.pins = {h: at for h, at in list(self.pins.items()) if h in self.pinned_now}   # forget the rest
+        placed = []
         for a in raw:
-            self._derive(a)
-        raw.sort(key=lambda a: a["dist"])
+            try:
+                self._derive(a)
+                placed.append(a)
+            except Exception as e:
+                self._left_out("the position", a, e)
+        placed.sort(key=lambda a: a["dist"])
         r = self.cfg["tracking"]["radius_nm"]
-        beyond = [a for a in raw if a["dist"] > r and not a["on_ground"]]
-        raw = [a for a in raw if a["dist"] <= r]
+        beyond = [a for a in placed if a["dist"] > r and not a["on_ground"]]
+        raw = [a for a in placed if a["dist"] <= r]
+        raw += self._coast({a["hex"] for a in placed}, now)
+        raw.sort(key=lambda a: a["dist"])
         airborne = [a for a in raw if not a["on_ground"]]
         # look up the nearest aircraft, anything heading for the house soon, and any a screen follows
         t = self.cfg["tracking"]
@@ -498,17 +554,27 @@ class Tracker:
         for a in airborne[:10] + soon + emergency + followed:
             if a["hex"] not in done:
                 done.add(a["hex"])
-                self._enrich(a)
+                try:
+                    self._enrich(a)
+                except Exception as e:
+                    self._left_out("the details", a, e)
         for a in airborne:
             a["contrail"] = contrail_mod.for_altitude(self.contrails, a["alt"])
         by_hex = {a["hex"]: a for a in raw}
         with self.lock:
             self.hero_hex = self._pick_hero(by_hex)
             for a in airborne:
-                if self._overhead(a):
+                if self._overhead(a) and not a.get("coasting"):     # the logbook takes reported positions only
                     self._log(a, now)
             self._remember_tracks(airborne, now, beyond)
-            self._update_flow(raw)
+            self._update_flow(raw, now)
+            if now - self.tidied > 60:
+                self.tidied = now
+                # flyovers that ended over half an hour ago: seen again, they'd be new entries anyway
+                self.active = {h: s for h, s in self.active.items() if now - s["ts"] <= RESIGHT_SECONDS}
+            if now - self.pruned > PRUNE_EVERY_S:
+                self.pruned = now
+                self.store.prune()
             self.aircraft = raw
             self.beyond = beyond
             self.emergency = emergency

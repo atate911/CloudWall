@@ -1,5 +1,5 @@
 "use strict";
-import { $, esc, num, mmss, ident, altText, store, phone, api, runwayList, since } from "./util.js";
+import { $, esc, num, mmss, ident, altText, store, phone, api, runwayList, since, degF } from "./util.js";
 import { updateSky, sky } from "./sky.js";
 import { drawScope, loadMap } from "./scope.js";
 import { renderHero, tickHero, nextSlide, badges, recordsHtml, forgetHero, boardFlight } from "./hero.js";
@@ -427,7 +427,7 @@ function render() {
   $("flow").hidden = !f;
   if (f) $("flow").innerHTML = `${esc(state.airport.iata)} landing ${esc(f.dir)}, runways ${esc(runwayList(f.runways))}`;
   $("wx").hidden = !w;
-  if (w) $("wx").innerHTML = `${Math.round((w.temp_c * 9) / 5 + 32)}°F, wind ${w.wind_kt ?? 0} kt <b class="cat-${esc(w.category)}">${esc(w.category || "")}</b>`;
+  if (w) $("wx").innerHTML = `${w.temp_c == null ? "" : `${degF(w.temp_c)}, `}wind ${w.wind_kt ?? 0} kt <b class="cat-${esc(w.category)}">${esc(w.category || "")}</b>`;
   $("link").hidden = state.status.ok || !state.status.source;
   $("restart").hidden = !state.restart;
   const tfr = (state.tfrs || []).find((t) => t.active && !t.drones_only);

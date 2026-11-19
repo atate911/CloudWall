@@ -13,6 +13,7 @@ from . import airports
 CODE = Path(__file__).resolve().parent
 WEB = CODE / "web"
 CODE_CHECK_S = 60
+MAX_BODY = 16 * 1024        # bytes: a place to set up is a few dozen
 log = logging.getLogger("cloudwall")
 
 
@@ -71,11 +72,28 @@ def make_server(cfg, places, charts=None, logos=None):
             return places.get((q.get("place") or [""])[0]) or (places.kiosk() if q.get("kiosk") else places.first)
 
         def _body(self):
+            """The request's JSON object; None if it isn't one, or is longer than any real one."""
             try:
-                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0)) or 0) or b"{}")
+                n = int(self.headers.get("Content-Length") or 0)
+                if not 0 <= n <= MAX_BODY:
+                    return None
+                body = json.loads(self.rfile.read(n) or b"{}")
                 return body if isinstance(body, dict) else {}
             except ValueError:
                 return None
+
+        def _foreign(self):
+            """Was this request made by a page from somewhere else? CloudWall has no logins, so
+            without this any web page open in a browser on the home network could add or remove
+            places here. A browser names the page's site in Origin on such requests; a page of
+            CloudWall's own names this server, and a script or curl names none."""
+            if self.headers.get("Sec-Fetch-Site") == "cross-site":
+                return True
+            origin = self.headers.get("Origin")
+            if not origin:
+                return False
+            ours = {self.headers.get("Host"), self.headers.get("X-Forwarded-Host")}     # behind a proxy, the address it is known by
+            return urlsplit(origin).netloc not in ours
 
         def do_GET(self):
             path = self.path.split("?")[0]
@@ -153,6 +171,8 @@ def make_server(cfg, places, charts=None, logos=None):
             path = self.path.split("?")[0]
             if path != "/api/places":
                 return self._send(404, {"error": "not found"})
+            if self._foreign():
+                return self._send(403, {"error": "Places can only be changed from CloudWall's own page"})
             body = self._body()
             if body is None:
                 return self._send(400, {"error": "bad json"})
@@ -170,6 +190,8 @@ def make_server(cfg, places, charts=None, logos=None):
             q = parse_qs(urlsplit(self.path).query)
             if self.path.split("?")[0] != "/api/places":
                 return self._send(404, {"error": "not found"})
+            if self._foreign():
+                return self._send(403, {"error": "Places can only be changed from CloudWall's own page"})
             try:
                 places.remove((q.get("id") or [""])[0])
             except ValueError as e:

@@ -11,11 +11,11 @@ import datetime as dt
 import logging
 import threading
 import time
-from urllib.parse import quote, urlencode
+from urllib.parse import urlencode
 
 from . import airports
 from .http import get_json
-from .live import LiveProvider
+from .live import LiveProvider, NotYet
 
 log = logging.getLogger("cloudwall.flightradar24")
 BASE = "https://fr24api.flightradar24.com/api"
@@ -53,9 +53,11 @@ class Flightradar24(LiveProvider):
         super().__init__(cfg, store)
         self.sandbox = bool(cfg.get(self.name, {}).get("sandbox", False))
         self.base = f"{BASE}/sandbox" if self.sandbox else BASE
-        self._usage_at = 0
+
+    def start(self, activity=None):
+        super().start(activity)
         if self.enabled and not self.sandbox:
-            threading.Thread(target=self._usage_loop, daemon=True).start()
+            threading.Thread(target=self._usage_loop, daemon=True, name="fr24-usage").start()
 
     def headers(self):
         return {"Authorization": f"Bearer {self.key}", "Accept-Version": "v1"}
@@ -64,8 +66,7 @@ class Flightradar24(LiveProvider):
     def _usage_loop(self):
         checked = 0.0
         while True:
-            activity = getattr(self, "activity", None)
-            if (activity is None or not activity.idle()) and time.time() - checked > USAGE_EVERY:
+            if (self.activity is None or not self.activity.idle()) and time.time() - checked > USAGE_EVERY:
                 try:
                     self.reported = self.fetch_usage()
                 except Exception as e:
@@ -84,7 +85,8 @@ class Flightradar24(LiveProvider):
 
     # -- routes -----------------------------------------------------------------
     def route(self, callsign):
-        """Route of the flight in the air now with this callsign, or None."""
+        """Route of the flight in the air now with this callsign, or None. Raises NotYet when
+        the latest flight it knows by that callsign has already landed."""
         now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
         q = {"callsigns": callsign, "flight_datetime_from": (now - dt.timedelta(hours=14)).strftime("%Y-%m-%dT%H:%M:%S"),
              "flight_datetime_to": now.strftime("%Y-%m-%dT%H:%M:%S"), "sort": "desc", "limit": 1}
@@ -105,7 +107,7 @@ class Flightradar24(LiveProvider):
             return None
         if f.get("flight_ended"):
             log.info("Flightradar24: latest %s flight has already landed; the current one isn't tracked yet", callsign)
-            return None
+            raise NotYet(callsign)
         orig = f.get("orig_icao") or f.get("origin_icao") or f.get("orig_iata")
         dest = (f.get("dest_icao_actual") or f.get("destination_icao_actual") or f.get("dest_icao")
                 or f.get("destination_icao") or f.get("dest_iata"))

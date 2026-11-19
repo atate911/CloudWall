@@ -39,14 +39,14 @@ every screen (desktop, phone, wall panel) is the same page with a different layo
 | Module | What it owns |
 |---|---|
 | `__main__.py` | Start-up: reads the config, builds the stores, the shared charts, logos and paid provider, a `Place` for each place, and the HTTP server. |
-| `config.py` | Defaults overlaid with the TOML file; turns `[home]`, `[airport]` and `[[places]]` into one complete config per place (home located, airport filled in from the tables). |
-| `place.py` | `Place`: one watched place and its three threads (positions, weather, extras). `Places`: the set of them, including those added from a screen (`places.json`). `AnyActivity`: "is any screen open at all". |
+| `config.py` | Defaults overlaid with the TOML file; turns `[home]`, `[airport]` and `[[places]]` into one complete config per place (home located, airport filled in from the tables). The file's settings are checked as it is read (`check`): a wrong kind of value is refused by name, an unknown name warned about. |
+| `place.py` | `Place`: one watched place and its three threads (positions, weather, extras). `Places`: the set of them, including those added from a screen (`places.json`). `AnyActivity`: "is any screen open at all". Each thread's loop is restarted if it trips on an error nobody foresaw (`_keep_going`). |
 | `activity.py` | `Activity`: when a screen last asked for data. Everything that costs a request checks it. |
 | `sources.py` | Position feeds: `Feeds` (readsb-style JSON with failover), `normalise()` into CloudWall's aircraft shape, the military "heard nearby" feed, and `Demo` (simulated traffic). |
 | `tracker.py` | The core. `update()` turns a list of positions into the board state: distance, bearing, elevation angle, closest approach, on-ground and arriving/departing inference, route checks, the aircraft overhead, emergencies, logbook entries and badges, trails, whole paths and the heatmap. `snapshot()` is what a screen gets. |
-| `enrich.py` | `Enricher`: non-blocking lookups. Returns what is cached now and fetches the rest on worker threads: routes and airframes (adsbdb), photos (planespotters), and the paid provider's route. |
+| `enrich.py` | `Enricher`: non-blocking lookups. Returns what is cached now and fetches the rest on worker threads: routes and airframes (adsbdb), photos (planespotters), and the paid provider's route. What it holds in memory is bounded, and its workers stop when their place is removed. |
 | `live.py`, `flightradar24.py`, `flightaware.py` | The optional paid route providers. `LiveProvider` holds the key, the credit budget (monthly allowance spread over the days left) and the back-off; the two subclasses know each API. |
-| `store.py` | SQLite: the `sightings` table (the logbook and its queries) and a `cache` table of JSON values by kind and key. One connection, one lock. |
+| `store.py` | SQLite: the `sightings` table (the logbook and its queries) and a `cache` table of JSON values by kind and key. One connection, one lock. `prune()` clears cached values past their use; each logbook notes the place it is kept at (`claim`, `another_places`). |
 | `weather.py`, `tfr.py`, `contrails.py` | Fetch and decode METAR/TAF, FAA flight restrictions, and the contrail forecast into plain values and words. |
 | `airports.py`, `seats.py`, `wake.py`, `geo.py` | Bundled tables (airports, runways, ZIP codes, airspace, navaids, seats, wake categories) and the geometry helpers. `tools/build_data.py` rebuilds the tables. |
 | `tiles.py`, `charts.py`, `logos.py` | Disk-cached proxies: map and chart tiles (only around the watched places), and airline logos. |
@@ -59,7 +59,9 @@ every screen (desktop, phone, wall panel) is the same page with a different layo
    or further while a screen shows a longer-range radar) and calls `Tracker.update(raw)`.
 2. `update` derives geometry for every aircraft, splits them into those within the tracking
    radius and those `beyond` it (radar only), then enriches the ones that matter: the ten
-   nearest, anything about to pass overhead, emergencies, and any a screen follows.
+   nearest, anything about to pass overhead, emergencies, and any a screen follows. A followed
+   flight the feed left out this time is carried on from its last report, moved along its
+   track, for up to 30 s (`_coast`), so a gap in the feed doesn't make its screen let go.
 3. `_enrich` asks the `Enricher` for the airframe, photo and route. Nothing blocks: a lookup that
    isn't cached is queued and shows up in a later update. A route is checked against where the
    aircraft actually is (`geo.route_plausible`), and a paid provider's route replaces the free
@@ -74,7 +76,14 @@ every screen (desktop, phone, wall panel) is the same page with a different layo
 
 Per place: one position poller, one weather thread, one extras thread, two `Enricher` workers
 (routes and airframes; photos). Shared: the HTTP server (a thread per request) and, with a
-Flightradar24 key, its hourly usage check. All are daemon threads.
+Flightradar24 key, its hourly usage check. All are daemon threads. Building an object starts
+none of them and makes no request: `Place.start()` and `LiveProvider.start()` do, and a removed
+place's threads all end.
+
+A poll has two ways to fail, and they are told apart: the feed not answering (a warning; the
+screen says "offline" after 30 s), and CloudWall failing to work the board out from an answer
+(logged with its traceback). Within an update, one aircraft's record that can't be used is left
+out and the rest go ahead.
 
 `Store.lock` is always the innermost lock: `Tracker.lock`, `Enricher.lock` and
 `LiveProvider.lock` may each be held while the store is used, never the other way round, and
@@ -92,6 +101,9 @@ so a snapshot can be serialised without holding it.
 - **The display only draws.** Decoding, units and wording of data happen in Python; the page
   gets values ready to show.
 - **No dependencies.** Python standard library on the server, no framework or bundler in the page.
+- **Nothing grows without bound** in a process meant to run for months: finished flyovers leave
+  `Tracker.active`, lookups in memory are capped, and cached rows past their use are cleared
+  every few hours. Only the logbook itself is kept for good.
 
 ### HTTP API
 
@@ -105,13 +117,15 @@ so a snapshot can be serialised without holding it.
 | `GET /tiles/<layer>/z/x/y`, `GET /logos/<IATA>` | Cached map/chart tile; cached airline logo. |
 | `GET /`, `/kiosk`, other paths | The page (`web/index.html`) and its files. |
 
-There is no authentication: CloudWall is meant for a home network.
+There is no authentication: CloudWall is meant for a home network. The two requests that change
+anything (`POST` and `DELETE /api/places`) are refused when a browser says they come from another
+site's page (`Origin`, `Sec-Fetch-Site`), and a request body over 16 KB isn't read.
 
 ### What is stored where
 
 | Where | What |
 |---|---|
-| `cloudwall.db` (first place), `cloudwall-<id>.db` (each other place) | `sightings`: one row per flyover. `cache`: lookups (`route` 7 days, `aircraft` 30 days, `photo` 1 day, `live_route` 45 minutes, `fa_airport` a year), the paid provider's usage per day (in the first place's file), and the heatmap per day. |
+| `cloudwall.db` (first place), `cloudwall-<id>.db` (each other place) | `sightings`: one row per flyover. `cache`: lookups (`route` 7 days, `aircraft` 30 days, `photo` 1 day, `live_route` 45 minutes, `fa_airport` a year), the paid provider's usage per day (in the first place's file), the heatmap per day, and the place the logbook is kept at. Rows past those ages are cleared. |
 | `places.json` beside it | Places added from a screen, each with its id. |
 | `tiles/`, `logos/` beside it | Downloaded tiles (a month) and logos (three months). |
 | Browser `localStorage` (`cloudwall.*`) | This screen's settings: place, scope, radar style, tracks, range, night, sound. |
@@ -131,6 +145,7 @@ chosen by class names on `<html>`; the modules are the same for all three.
 | `weather.js`, `astro.js`, `sky.js` | The Weather tab and slide; sun and moon; day/night. |
 | `emergency.js` | The red takeover for 7500/7600/7700. |
 | `silhouette.js`, `profiles.js`, `profiles/*.js`, `plate.js`, `data.js` | Aircraft side elevations drawn from measurements, the type plates and fleet line-up, and the type and airline tables. |
+| `divider.js` | The divider that hides or resizes the Nearby list beside the radar. |
 | `fx.js`, `util.js` | Split-flap and rolling-number effects, chimes; DOM, formatting and geometry helpers. |
 
 Between updates the page moves aircraft itself: each position is dead-reckoned from the time
@@ -148,6 +163,8 @@ toward each new report. Countdowns use the same clock (`since(state)` in `util.j
 - **A chart layer:** an entry in `charts.FAA_LAYERS`; the page asks for it by name.
 - **An aircraft type:** its length in `data.js` and its family in the right `profiles/` file;
   `tests/test_silhouettes.py` checks the two agree.
+- **A setting:** its default in `config.DEFAULTS` (which is also what says what kind of value it
+  takes), a line in `config.example.toml`.
 - **A folder of files under `web/` or `data/`:** list it in `pyproject.toml`'s package data
   (a test checks this).
 
@@ -155,6 +172,8 @@ toward each new report. Countdowns use the same clock (`since(state)` in `util.j
 
 `python3 -m unittest discover -s tests`. `tests/test_cloudwall.py` covers the server side with
 stubbed feeds and providers; `tests/test_silhouettes.py` runs the drawing modules under Node.
+The tests stay on the machine: `setUpModule` stops any request to another host and fails the
+run if one was tried, and `.github/workflows/tests.yml` runs them on every pull request.
 `cloudwall --demo` runs the whole thing on simulated traffic. The demo's feed updates every
 second where the live one updates every five, so timing between updates is worth checking
 against a slower feed too.

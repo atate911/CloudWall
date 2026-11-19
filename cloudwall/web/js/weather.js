@@ -1,7 +1,7 @@
 // Aviation weather: the Weather tab, and a compact version for the quiet-sky rotation.
 // Charts are drawn as SVG at the container's real pixel size, so text stays a fixed,
 // readable size from across a room.
-import { $, esc, num, offset, POINTS } from "./util.js";
+import { $, esc, num, offset, POINTS, degF } from "./util.js";
 import { runwaysFor } from "./scope.js";
 import { skyToday, moonSvg } from "./astro.js";
 
@@ -175,21 +175,26 @@ function histCharts(width, hist) {
   let strip = "";
   hist.forEach((o, i) => {
     const xa = x(o.time), xb = i < hist.length - 1 ? x(hist[i + 1].time) : width - padR;
-    strip += `<rect class="cat-fill cat-${o.category}" x="${xa}" y="4" width="${Math.max(1, xb - xa - 2)}" height="18" rx="3"/>`;
+    strip += `<rect class="cat-fill cat-${esc(o.category)}" x="${xa}" y="4" width="${Math.max(1, xb - xa - 2)}" height="18" rx="3"/>`;
   });
   const catLegend = `<span class="lg">${CAT_ORDER.map((k) => `<i class="sw cat-${k}"></i>${k}`).join(" ")}</span>`;
   charts.push(frame(26, strip, "Flight category", "", catLegend));
 
   // temperature and dew point (°F)
+  // (a report can lack either, when a sensor is out: its point is left off the line, and the
+  // chart is left out when no report in the day has one)
   const temps = hist.flatMap((o) => [f(o.temp_c), f(o.dew_c)]).filter((v) => v != null);
-  const lo = Math.floor(Math.min(...temps) - 2), hi = Math.ceil(Math.max(...temps) + 2), h1 = 96, y1 = scale(lo, hi, h1);
   const tLast = hist[hist.length - 1];
-  const tBody = `<path class="ln temp" d="${path(hist.map((o) => [x(o.time), o.temp_c == null ? null : y1(f(o.temp_c))]))}"/>
+  if (temps.length) {
+    const lo = Math.floor(Math.min(...temps) - 2), hi = Math.ceil(Math.max(...temps) + 2), h1 = 96, y1 = scale(lo, hi, h1);
+    const tNow = f(tLast.temp_c), dNow = f(tLast.dew_c), close = tNow != null && dNow != null && tNow - dNow < 3;
+    const tBody = `<path class="ln temp" d="${path(hist.map((o) => [x(o.time), o.temp_c == null ? null : y1(f(o.temp_c))]))}"/>
     <path class="ln dew" d="${path(hist.map((o) => [x(o.time), o.dew_c == null ? null : y1(f(o.dew_c))]))}"/>
-    <text class="dlabel" x="${width - padR + 8}" y="${y1(f(tLast.temp_c)) + 4}">${Math.round(f(tLast.temp_c))}° temp</text>
-    <text class="dlabel" x="${width - padR + 8}" y="${y1(f(tLast.dew_c)) + (f(tLast.temp_c) - f(tLast.dew_c) < 3 ? 16 : 4)}">${Math.round(f(tLast.dew_c))}° dew pt</text>`;
-  const tTicks = ticks([lo + 2, Math.round((lo + hi) / 2), hi - 2], y1, (v) => `${v}°`);
-  charts.push(frame(h1, tBody, "Temperature and dew point, °F", tTicks, `<span class="lg"><i class="sw ln-temp"></i>Temperature <i class="sw ln-dew"></i>Dew point</span>`));
+    ${tNow == null ? "" : `<text class="dlabel" x="${width - padR + 8}" y="${y1(tNow) + 4}">${Math.round(tNow)}° temp</text>`}
+    ${dNow == null ? "" : `<text class="dlabel" x="${width - padR + 8}" y="${y1(dNow) + (close ? 16 : 4)}">${Math.round(dNow)}° dew pt</text>`}`;
+    const tTicks = ticks([lo + 2, Math.round((lo + hi) / 2), hi - 2], y1, (v) => `${v}°`);
+    charts.push(frame(h1, tBody, "Temperature and dew point, °F", tTicks, `<span class="lg"><i class="sw ln-temp"></i>Temperature <i class="sw ln-dew"></i>Dew point</span>`));
+  }
 
   // wind and gusts (kt)
   const wmax = Math.ceil(Math.max(10, ...hist.map((o) => Math.max(o.wind.speed || 0, o.wind.gust || 0))) / 10) * 10, h2 = 76, y2 = scale(0, wmax, h2);
@@ -252,13 +257,13 @@ export function renderWeatherTab(el, W, state) {
   el.innerHTML = `<div class="wx-grid">
     <section class="wx-now">
       <div class="wx-head">
-        <div class="cat-badge"><i class="sw big cat-${n.category}"></i><b>${n.category}</b></div>
+        <div class="cat-badge"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category)}</b></div>
         <div><h1>${esc(CAT_NAME[n.category] || n.category)}</h1><p class="sum">${esc(summary(n))}</p>
           <p class="dim">${esc(W.station)} ${n.special ? "special report" : "report"} from ${clock(n.time)}, ${age < 1 ? "just now" : `${age} min ago`}</p></div>
       </div>
       <dl class="wx-read">
-        <div><dt>Temperature</dt><dd>${Math.round(f(n.temp_c))}°F</dd><dd class="s">dew point ${Math.round(f(n.dew_c))}°F</dd></div>
-        <div><dt>Humidity</dt><dd>${n.humidity ?? "–"}%</dd><dd class="s">${n.temp_c - n.dew_c <= 2 ? "fog or low cloud likely" : `${Math.round((n.temp_c - n.dew_c) * 1.8)}°F spread`}</dd></div>
+        <div><dt>Temperature</dt><dd>${degF(n.temp_c)}</dd><dd class="s">dew point ${degF(n.dew_c)}</dd></div>
+        <div><dt>Humidity</dt><dd>${n.humidity == null ? "–" : `${n.humidity}%`}</dd><dd class="s">${n.temp_c == null || n.dew_c == null ? "" : n.temp_c - n.dew_c <= 2 ? "fog or low cloud likely" : `${Math.round((n.temp_c - n.dew_c) * 1.8)}°F spread`}</dd></div>
         <div><dt>Altimeter</dt><dd>${n.altimeter_inhg ?? "–"}</dd><dd class="s">inHg, ${num(n.altimeter_hpa)} hPa</dd></div>
         <div><dt>Density altitude</dt><dd>${num(n.density_alt)}</dd><dd class="s">feet; field is ${num(W.elevation_ft)} ft</dd></div>
       </dl>
@@ -371,7 +376,7 @@ function hookCrosshair(hist) {
     hist.forEach((o, i) => { if (Math.abs(hover.x(o.time) - px) < Math.abs(hover.x(hist[best].time) - px)) best = i; });
     const o = hist[best], xx = hover.x(o.time);
     box.querySelectorAll(".xh").forEach((l) => { l.setAttribute("x1", xx); l.setAttribute("x2", xx); l.removeAttribute("visibility"); });
-    $("wx-readout").textContent = `${clock(o.time)}: ${o.category}, ${Math.round(f(o.temp_c))}°F with dew point ${Math.round(f(o.dew_c))}°F, ${lowerFirst(windWords(o.wind))}, ` +
+    $("wx-readout").textContent = `${clock(o.time)}: ${o.category}, ${degF(o.temp_c)} with dew point ${degF(o.dew_c)}, ${lowerFirst(windWords(o.wind))}, ` +
       `${o.ceiling == null ? "no ceiling" : `ceiling ${num(o.ceiling)} ft`}, ${o.visibility >= 10 ? "10+" : o.visibility} mi${o.weather ? `, ${o.weather}` : ""}`;
   };
   box.addEventListener("pointermove", move);
@@ -383,9 +388,9 @@ export function weatherSlide(el, W, state) {
   const n = W.now, runways = runwayHeadings(state);
   el.innerHTML = `<div class="idle wx-slide">
       <div class="wx-head">
-        <div class="cat-badge"><i class="sw big cat-${n.category}"></i><b>${n.category}</b></div>
+        <div class="cat-badge"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category)}</b></div>
         <div><h1>Weather at ${esc(state.airport.iata)}</h1><p class="sum">${esc(summary(n))}</p>
-          <p class="dim">${Math.round(f(n.temp_c))}°F, dew point ${Math.round(f(n.dew_c))}°F, altimeter ${n.altimeter_inhg}. Report from ${clock(n.time)}.</p>
+          <p class="dim">${degF(n.temp_c)}, dew point ${degF(n.dew_c)}, altimeter ${n.altimeter_inhg ?? "–"}. Report from ${clock(n.time)}.</p>
           <p class="dim">${esc(sunMoonLine(state.home))}.${W.contrails ? ` ${esc(W.contrails.summary)}.` : ""}</p></div>
       </div>
       <div class="wx-figs"><figure class="fig-wind" id="sw-wind"></figure><figure class="fig-clouds" id="sw-clouds"></figure></div>

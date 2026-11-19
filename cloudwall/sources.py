@@ -17,6 +17,7 @@ def normalise(a):
     if not isinstance(alt, (int, float)):
         alt = 0 if on_ground else None
     vrate = a.get("baro_rate", a.get("geom_rate"))
+    flags = a.get("dbFlags") if isinstance(a.get("dbFlags"), int) else 0
     return {
         "hex": (a.get("hex") or "").lstrip("~").lower(),
         "callsign": (a.get("flight") or "").strip() or None,
@@ -24,29 +25,29 @@ def normalise(a):
         "type": a.get("t"),
         "alt": alt,
         "on_ground": on_ground,
-        "gs": a.get("gs"),
-        "vrate": vrate,
-        "lat": a.get("lat"),
-        "lon": a.get("lon"),
+        "gs": _num(a.get("gs")),          # numbers or nothing: a feed's odd value mustn't reach the sums
+        "vrate": _num(vrate),
+        "lat": _num(a.get("lat")),
+        "lon": _num(a.get("lon")),
         "squawk": a.get("squawk"),
         # the transponder's own emergency status: general, lifeguard, minfuel, nordo, unlawful, downed
         "emergency_status": a.get("emergency") if a.get("emergency") not in (None, "none") else None,
         "category": a.get("category"),
-        "military": bool(a.get("dbFlags", 0) & 1),
+        "military": bool(flags & 1),
         # privacy programmes (LADD, PIA): the owner asked not to be identified
-        "private_owner": bool(a.get("dbFlags", 0) & 12),
+        "private_owner": bool(flags & 12),
         "desc": tidy_type(a.get("desc")),
         "year": _year(a.get("year")),
         "owner_op": a.get("ownOp"),
         "target_alt": _num(a.get("nav_altitude_mcp") or a.get("nav_altitude_fms")),
         "modes": [m for m in a.get("nav_modes") or [] if isinstance(m, str)],
         "alt_gps": _num(a.get("alt_geom")),
-        "track": a.get("track") if a.get("track") is not None else a.get("true_heading"),
+        "track": _num(a.get("track") if a.get("track") is not None else a.get("true_heading")),
     }
 
 
 def _num(v):
-    return v if isinstance(v, (int, float)) else None
+    return v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
 
 
 def _year(v):

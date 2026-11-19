@@ -46,17 +46,32 @@ class Place:
         """Removed: its threads finish their current step and end."""
         self.stopped.set()
         self.activity.touch()                       # wakes the poller if it's waiting for a screen
+        self.tracker.enricher.stop()                # and its lookups' workers
+
+    def _keep_going(self, loop):
+        """A thread's body. An error nobody foresaw is logged with where it happened and the loop
+        starts again in a few seconds: otherwise the thread would end without a word, and the
+        place stand still (no positions, or no weather) until CloudWall was restarted."""
+        while not self.stopped.is_set():
+            try:
+                return loop()
+            except Exception:
+                log.exception("%s%s stopped on an unexpected error: starting it again", self.tag, loop.__name__.strip("_"))
+                self.stopped.wait(5)
+
+    def _thread(self, loop, name):
+        threading.Thread(target=self._keep_going, args=(loop,), daemon=True, name=f"{name}-{self.id}").start()
 
     def start(self):
-        threading.Thread(target=self._poll, daemon=True, name=f"poll-{self.id}").start()
+        self._thread(self._poll, "poll")
         t, ap = self.tracker, self.cfg["airport"]
         if self.demo:
             t.weather, t.weather_full = weather.demo(ap["icao"], ap.get("name") or ap.get("city") or ap["icao"])
             t.tfrs, t.contrails = tfr.demo(self.cfg["home"]), contrails.demo()
             t.heard = sources.demo_heard()
         else:
-            threading.Thread(target=self._weather, daemon=True, name=f"wx-{self.id}").start()
-            threading.Thread(target=self._extras, daemon=True, name=f"extras-{self.id}").start()
+            self._thread(self._weather, "wx")
+            self._thread(self._extras, "extras")
 
     # -- positions -----------------------------------------------------------------
     def _poll(self):
@@ -76,10 +91,16 @@ class Place:
             tracker.idle = idle
             try:
                 # out to the tracking radius, or further while a screen shows the radar at a longer range
-                tracker.update(self.source.fetch(home["lat"], home["lon"], tracker.fetch_radius()), self.source.name)
+                raw = self.source.fetch(home["lat"], home["lon"], tracker.fetch_radius())
             except Exception as e:
                 log.warning("%sno position feed is answering (last error: %s)", self.tag, e)
                 tracker.failed(self.source.name, e)
+            else:
+                try:
+                    tracker.update(raw, self.source.name)
+                except Exception as e:      # CloudWall's own fault, not the feed's: say so, with where
+                    log.exception("%sthe feed answered, but the board couldn't be worked out from it", self.tag)
+                    tracker.failed(self.source.name, e)
             activity.sleep(1 if self.demo else max(trk["poll_seconds"], 15) if idle else trk["poll_seconds"])
 
     # -- weather ---------------------------------------------------------------------
@@ -126,11 +147,14 @@ class Place:
 class Places:
     """Every place being watched, first to last: the config file's, then those set up from a
     screen. Those are saved (saved_path, beside the logbook) so they come back after a restart,
-    and can be removed again; the config file's can't. make(place_config) builds a Place."""
+    and can be removed again; the config file's can't. make(place_config) builds a Place.
+    elsewhere(id, home) says whether the logbook already on disk under an id is another place's
+    (a removed place leaves its logbook behind): a new place is never given such an id."""
     LIMIT = 12
 
-    def __init__(self, cfg, make, saved_path=None):
+    def __init__(self, cfg, make, saved_path=None, elsewhere=None):
         self.cfg, self.make, self.saved_path = cfg, make, Path(saved_path) if saved_path else None
+        self.elsewhere = elsewhere or (lambda pid, home: False)
         self.lock = threading.Lock()
         self.places = {}            # id -> Place, in order
         self.added = {}             # id -> the entry it was set up from, as saved
@@ -201,7 +225,9 @@ class Places:
             if str(ap.get("icao", "auto")).lower() != "auto" and not airports.lookup(ap["icao"]):
                 raise ValueError(f"{ap['icao'].upper()} isn't an airport CloudWall knows")
             if not (isinstance(pid, str) and re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", pid) and pid not in self.places):
-                pid = config.unique_id(home["name"], self.places)
+                # the next free id that doesn't lead to the logbook a removed place left behind,
+                # unless it is this very place coming back: then it carries on in its own logbook
+                pid = config.unique_id(home["name"], self.places, lambda i: self.elsewhere(i, home))
             place = self.make(config.place_config(self.cfg, pid, home, ap))
             place.added = True
             self.places[pid] = place

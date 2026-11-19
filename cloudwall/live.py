@@ -29,6 +29,12 @@ def billing_period(today, billing_day):
     return start, on(y, m)
 
 
+class NotYet(Exception):
+    """The provider answered (and billed), but doesn't have the flight that's in the air yet: just
+    after takeoff the latest it knows by that callsign is the leg before. Worth asking again in a
+    few minutes; not something to remember as "no route" for as long as a route is."""
+
+
 class LiveProvider:
     name = ""            # config section and cache prefix
     label = ""           # shown in the UI
@@ -54,6 +60,13 @@ class LiveProvider:
         self.blocked_until = 0
         self.problem = None
         self.reported = None          # the provider's own usage figures, where it offers them
+        self.activity = None          # is any screen open? (place.AnyActivity, given to start)
+
+    def start(self, activity=None):
+        """Begin whatever the provider does on its own in the background (nothing, unless a
+        subclass says so). Called once the places exist; building a provider starts nothing and
+        makes no requests."""
+        self.activity = activity
 
     def headers(self):
         raise NotImplementedError

@@ -2,15 +2,12 @@
 // Only a few things, very large: who's overhead, where it's going, how high and fast,
 // and when it passes. When the sky is quiet, a slow rotation of large slides.
 // Sizes are in vh so the same design reads the same on 1024×600 and 1920×1080 panels.
-import { $, esc, num, mmss, ident, api, since } from "./util.js";
+import { $, esc, num, mmss, ident, api, since, degF } from "./util.js";
 import { boardFlight, showLogo, localWords, heardGroups } from "./hero.js";
-import { typeInfo } from "./data.js";
 import { flap } from "./fx.js";
 import { windRose, runwayHeadings, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
 
 const SLIDE_SECONDS = 12;
-const CAT_NAME = { VFR: "Visual flight rules", MVFR: "Marginal VFR", IFR: "Instrument flight rules", LIFR: "Low IFR" };
-const f = (c) => (c == null ? null : Math.round((c * 9) / 5 + 32));
 let cur = { hex: null }, slide = 0, slideAt = Date.now(), shownKey = null;
 let wx = null, wxAt = 0, log = null, logAt = 0;
 
@@ -57,7 +54,6 @@ function showPlane(el, a, state) {
     showLogo($("k-logo"), $("k-logo-img"), state, a.airline_iata, $("k-airline"));
   }
   flap($("k-flight"), boardFlight(ident(a)));
-  const ga = ["piston", "heli"].includes(typeInfo(a).shape);
   $("k-airline").textContent = a.airline || (a.route && a.route.airline) || (a.private_owner ? "" : a.owner || "");
   const key = JSON.stringify([a.route && [a.route.origin.iata, a.route.dest.iata, a.route.plausible], a.local, a.route_pending, a.type_name]);
   if (key !== cur.routeKey) { cur.routeKey = key; $("k-route").innerHTML = routeBlock(a, state); }
@@ -97,8 +93,8 @@ function weatherSlideHtml(W, state) {
   return `<div class="k-card k-slide k-wx">
     <div class="k-wx-text">
       <div class="k-kicker">Weather at ${esc(state.airport.iata)}</div>
-      <div class="k-cat"><i class="sw big cat-${n.category}"></i><b>${n.category}</b></div>
-      <div class="k-mid">${f(n.temp_c)}°F</div>
+      <div class="k-cat"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category)}</b></div>
+      <div class="k-mid">${degF(n.temp_c)}</div>
       <div class="k-small">${esc(skyWords(n))}<br>${esc(shortWind(n.wind))}</div>
       <div class="k-small k-dim">${sunMoonLine(state.home, true)}</div>
     </div>
