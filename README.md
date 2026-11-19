@@ -157,9 +157,11 @@ while a laptop shows the cabin.
 The kiosk has no menu: it shows `[kiosk] place` (a place's name, the first when empty), and
 `?place=` in the address picks one on any screen.
 
-Each place keeps its own logbook, weather, flight restrictions and contrail forecast, and its data
-is fetched only while a screen is showing it. A paid route provider is shared: every place's
-lookups count against the one budget, so two screens on two places can use it about twice as fast.
+Each place keeps its own logbook, and its data is fetched only while a screen is showing it. What
+isn't particular to a place is fetched once for all of them: a flight in range of two places is
+looked up once (and, with a paid route provider, paid for once, from the one budget), two places
+with the same airport share its weather, and the FAA's list of flight restrictions is downloaded
+once however many places there are. A second place costs a second position feed and little else.
 
 ## Seats on board
 
@@ -363,8 +365,9 @@ no requests (or, with `"log"`, only the slow position check).
   each family cites its source. Stretches of a family share one nose and tail, so a 737-900 is
   a longer 737-700, not a scaled one. `silhouette.js` turns a profile into the drawing: the
   wing is projected into side view from its sweep and dihedral, nacelles hang on pylons, and so
-  on. To add a type, map its ICAO code to a family in the right group file; to add a family,
-  measure it the same way. `tests/test_silhouettes.py` checks that every type in `data.js` has
+  on. To add a type, give it a line in `cloudwall/data/types.csv` (its shape and length) and map
+  its ICAO code to a family in the right group file; to add a family, measure it the same way.
+  `tests/test_silhouettes.py` checks that every type in the table has
   a profile and draws cleanly (it needs Node).
 - Airline logos are fetched by airline code from a public logo service (pics.avs.io) the
   first time each airline appears, cached on disk, and shown on a white tile. Logos are
@@ -377,6 +380,9 @@ no requests (or, with `"log"`, only the slow position check).
   the radar and sky view carry a compass bezel, and the clock shows UTC beside local time. Type is
   B612, the typeface Airbus designed for cockpit displays, bundled under the SIL Open Font
   License (see `cloudwall/web/fonts/`), so the board looks the same on every machine.
+- Airlines are one table, `cloudwall/data/airlines.csv`: the code a callsign starts with, the code
+  its flights are sold under (which its logo and flight numbers go by), its name, whether it flies
+  freight only, and its livery's colours for the board. Add a line to teach CloudWall an airline.
 - CloudWall has no logins: it is meant for a home network, not the open internet. It refuses
   requests to add or remove places that come from another site's page.
 - Tests: `python3 -m unittest discover -s tests` (no network needed; they also run on every pull
