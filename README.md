@@ -338,7 +338,7 @@ no requests (or, with `"log"`, only the slow position check).
   direction. A hand-drawn map can add rivers and town names: PDX has one
   (`cloudwall/web/maps/kpdx.json`, approximate), drawn when the real map is off and in the ATC
   style. For another airport, add a file named after its ICAO code.
-- Aircraft photos come from the free airframe database and load directly in the browser.
+- Aircraft photos come from planespotters.net and load directly in the browser.
 - The side elevations are drawn in the browser from measurements, not stored as pictures. Each
   family (`cloudwall/web/js/profiles/`) records its fuselage outline, flight-deck glazing, doors
   and windows, wing planform, nacelles, wingtip devices, fin and tailplane in metres, taken from
@@ -361,4 +361,4 @@ no requests (or, with `"log"`, only the slow position check).
   the radar and sky view carry a compass bezel, and the clock shows UTC beside local time. Type is
   B612, the typeface Airbus designed for cockpit displays, bundled under the SIL Open Font
   License (see `cloudwall/web/fonts/`), so the board looks the same on every machine.
-- Tests: `python3 -m unittest discover -s tests`
+- Tests: `python3 -m unittest discover -s tests`. [ARCHITECTURE.md](ARCHITECTURE.md) maps the code.
