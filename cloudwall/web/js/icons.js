@@ -58,19 +58,19 @@ const sc = (v, s) => v.map((n) => n * s);
 
 // light aircraft (a Cessna, a Piper, an RV): a short body, a long straight wing, the tail plane,
 // and the propeller's arc across the nose
-const LIGHT = [[0, -3.0], [0.36, -2.92], [0.46, -2.3], [0.5, -1.55], [3.9, -1.5], [3.95, -0.6], [0.5, -0.55],
-  [0.38, 0.6], [0.2, 2.05], [1.45, 2.1], [1.5, 2.75], [0.16, 2.8], [0, 2.95]];
-const LIGHT_PROP = [-1.2, -3.2, 1.2, -2.94];
+const LIGHT = [[0, -3.0], [0.42, -2.92], [0.56, -2.4], [0.6, -1.7], [3.9, -1.65], [3.95, -0.45], [0.6, -0.4],
+  [0.46, 0.7], [0.27, 2.0], [1.5, 2.02], [1.55, 2.85], [0.22, 2.9], [0, 3.0]];
+const LIGHT_PROP = [-1.25, -3.42, 1.25, -2.97];
 
 // seaplane (a Beaver or Caravan on floats, a Lake, a CL-415): the light aircraft's shape with a
 // float either side of the fuselage, reaching well ahead of the wing
-const FLOAT = [[1.24, -3.25], [1.46, -2.75], [1.46, 0.75], [1.34, 1.05], [1.14, 1.05], [1.02, 0.75], [1.02, -2.75]];
+const FLOAT = [[1.3, -3.4], [1.6, -2.8], [1.6, 0.8], [1.45, 1.1], [1.15, 1.1], [1.02, 0.8], [1.02, -2.8]];
 
 // turboprop and, smaller, light twin (a King Air, a Dash 8, an ATR; a Baron, a Seneca): a slim
 // body, a straight wing with an engine on each side reaching ahead of it, each with its propeller's arc
-const TURBOPROP = [[0, -4.0], [0.32, -3.85], [0.5, -3.3], [0.55, -0.95], [4.55, -0.8], [4.6, -0.2], [0.55, -0.05],
-  [0.5, 1.2], [0.28, 3.25], [1.75, 3.35], [1.8, 3.95], [0.2, 4.0], [0, 4.25]];
-const TP_NACELLE = [1.22, -2.1, 1.82, 0.55], TP_PROP = [0.62, -2.42, 2.42, -2.2];
+const TURBOPROP = [[0, -4.0], [0.38, -3.85], [0.6, -3.3], [0.64, -1.05], [4.55, -0.85], [4.6, -0.1], [0.64, 0.05],
+  [0.56, 1.2], [0.32, 3.2], [1.8, 3.28], [1.85, 3.98], [0.24, 4.02], [0, 4.25]];
+const TP_NACELLE = [1.12, -2.35, 1.9, 0.65], TP_PROP = [0.4, -2.78, 2.62, -2.36];
 
 // business jet, and at a larger size a regional jet (a Citation, a Gulfstream; a CRJ, an MD-80):
 // a slim body, a swept wing set well back, the engines on the tail, and a T-tail swept back
@@ -88,15 +88,15 @@ const AL_ENGINE = [1.32, -1.15, 1.95, 0.25];
 const HEAVY = [[0, -4.6], [0.42, -4.3], [0.68, -3.65], [0.72, -1.2], [4.4, 1.55], [4.45, 2.0], [1.9, 1.15], [0.72, 1.0],
   [0.62, 2.8], [0.48, 3.2], [2.0, 4.15], [2.03, 4.55], [0.32, 4.25], [0.14, 4.7], [0, 4.8]];
 const HV_ENGINE = [1.45, -1.35, 2.25, 0.35];
-const QUAD_ENGINES = [[1.25, -1.25, 1.85, 0.05], [2.5, -0.35, 3.08, 0.85]];
+const QUAD_ENGINES = [[1.2, -1.3, 1.86, 0.1], [2.6, -0.4, 3.28, 0.95]];
 
 // fighter (an F-15, an F-16): a pointed nose, intakes, short trapezoid wings and the tailplanes
 const FIGHTER = [[0, -4.6], [0.28, -3.7], [0.5, -2.8], [0.8, -2.35], [0.88, -1.5], [3.55, 0.95], [3.55, 1.65],
   [0.98, 1.75], [0.98, 2.3], [2.3, 3.35], [2.3, 4.0], [0.88, 3.95], [0.62, 4.45], [0, 4.4]];
 
 // glider: a slim fuselage, long slender wings tapering to the tips, a T-tail
-const GLIDER = [[0, -2.9], [0.24, -2.75], [0.32, -2.2], [0.32, -1.15], [5.0, -0.82], [5.05, -0.45], [0.32, -0.35],
-  [0.22, 1.0], [0.11, 2.55], [1.15, 2.6], [1.15, 2.95], [0, 3.0]];
+const GLIDER = [[0, -2.95], [0.32, -2.8], [0.42, -2.25], [0.42, -1.25], [5.6, -0.95], [5.65, -0.38], [0.42, -0.2],
+  [0.3, 1.0], [0.2, 2.45], [1.4, 2.5], [1.4, 3.0], [0, 3.05]];
 
 // tiltrotor (a V-22, an AW609): a fuselage, a straight wing with a nacelle and a big three-bladed
 // rotor on each tip, twin fins on the tail plane
@@ -105,22 +105,22 @@ const TILTROTOR = [[0, -4.2], [0.38, -3.95], [0.6, -3.3], [0.65, -0.95], [2.85, 
 const TR_FIN = [1.42, 2.35, 1.72, 3.75], TR_NACELLE = [2.72, -1.8, 3.24, 0.45], TR_HUB = [2.98, -1.8];
 
 // helicopter: the main rotor's two blades across a pod, the tail boom, its tail plane and rotor
-const HELI_POD = [[0, -2.0], [0.62, -1.85], [0.95, -1.2], [1.0, -0.2], [0.8, 0.75], [0.42, 1.35], [0.2, 1.5],
-  [0.18, 3.35], [0.95, 3.4], [0.95, 3.75], [0.18, 3.8], [0.14, 4.2], [0, 4.25]];
-const HELI_TAIL_ROTOR = [0.14, 3.75, 0.34, 4.75];
+const HELI_POD = [[0, -2.0], [0.62, -1.85], [0.95, -1.2], [1.0, -0.2], [0.8, 0.75], [0.45, 1.35], [0.26, 1.5],
+  [0.25, 3.3], [1.0, 3.33], [1.0, 3.8], [0.25, 3.82], [0.2, 4.2], [0, 4.25]];
+const HELI_TAIL_ROTOR = [0.18, 3.65, 0.5, 4.8];
 
 // tandem-rotor helicopter (a Chinook, a Sea Knight): a long body under two three-bladed rotors
-const TANDEM = [[0, -3.7], [0.55, -3.55], [0.78, -3.0], [0.8, 2.8], [0.68, 3.4], [0.32, 3.65], [0, 3.7]];
+const TANDEM = [[0, -3.7], [0.6, -3.55], [0.85, -3.0], [0.88, 2.8], [0.74, 3.4], [0.36, 3.65], [0, 3.7]];
 
 // gyroplane: a small open pod, one long two-bladed rotor over it, the pusher propeller behind it,
 // a tail on a keel
-const GYRO_POD = [[0, -1.7], [0.5, -1.5], [0.68, -0.7], [0.62, 0.4], [0.35, 0.9], [0.14, 1.1], [0.12, 2.5],
-  [0.75, 2.55], [0.75, 2.9], [0, 2.95]];
+const GYRO_POD = [[0, -1.9], [0.58, -1.7], [0.8, -0.8], [0.74, 0.4], [0.42, 0.95], [0.22, 1.15], [0.2, 2.4],
+  [0.95, 2.45], [0.95, 2.95], [0, 3.0]];
 
 // ultralight (a weight-shift trike, a hang glider): a delta wing over a little pod and its pusher propeller
-const TRIKE_WING = [[0, -1.15], [4.0, 0.85], [3.95, 1.3], [0, 1.0]];
-const TRIKE_POD = [[0, 0.2], [0.36, 0.35], [0.36, 1.85], [0, 2.15]];
-const TRIKE_PROP = [-1.1, 2.1, 1.1, 2.38];
+const TRIKE_WING = [[0, -1.35], [4.0, 0.75], [3.92, 1.4], [0, 1.15]];
+const TRIKE_POD = [[0, 0.2], [0.44, 0.35], [0.44, 1.9], [0, 2.2]];
+const TRIKE_PROP = [-1.2, 2.15, 1.2, 2.6];
 
 // airship: a long hull and its tail fins
 const HULL = [...Array(13)].map((_, i) => { const t = rad(-90 + i * 15); return [1.9 * Math.cos(t), 4.3 * Math.sin(t)]; });
@@ -141,26 +141,26 @@ function make(s, build, upright = false) {
   return { d, nose: f(nose), r: f(r), upright };
 }
 export const ICONS = {
-  light: make(0.82, (s) => outline(k(LIGHT, s)) + rect(...sc(LIGHT_PROP, s))),
-  twin: make(0.72, (s) => outline(k(TURBOPROP, s)) + pods(...sc(TP_NACELLE, s)) + pair(...sc(TP_PROP, s))),
-  turboprop: make(0.84, (s) => outline(k(TURBOPROP, s)) + pods(...sc(TP_NACELLE, s)) + pair(...sc(TP_PROP, s))),
+  light: make(0.9, (s) => outline(k(LIGHT, s)) + rect(...sc(LIGHT_PROP, s))),
+  twin: make(0.76, (s) => outline(k(TURBOPROP, s)) + pods(...sc(TP_NACELLE, s)) + pair(...sc(TP_PROP, s))),
+  turboprop: make(0.86, (s) => outline(k(TURBOPROP, s)) + pods(...sc(TP_NACELLE, s)) + pair(...sc(TP_PROP, s))),
   bizjet: make(0.8, (s) => outline(k(TAILJET, s)) + pods(...sc(TJ_ENGINE, s))),
   regional: make(0.98, (s) => outline(k(TAILJET, s)) + pods(...sc(TJ_ENGINE, s))),
   airliner: make(1, (s) => outline(k(AIRLINER, s)) + pods(...sc(AL_ENGINE, s))),
   heavy: make(1.3, (s) => outline(k(HEAVY, s)) + pods(...sc(HV_ENGINE, s))),
   quad: make(1.34, (s) => outline(k(HEAVY, s)) + QUAD_ENGINES.map((e) => pods(...sc(e, s))).join("")),
   fighter: make(0.86, (s) => outline(k(FIGHTER, s))),
-  seaplane: make(0.9, (s) => outline(k(LIGHT, s)) + rect(...sc(LIGHT_PROP, s)) + mirror(k(FLOAT, s))),
+  seaplane: make(0.92, (s) => outline(k(LIGHT, s)) + rect(...sc(LIGHT_PROP, s)) + mirror(k(FLOAT, s))),
   glider: make(0.8, (s) => outline(k(GLIDER, s))),
   tiltrotor: make(0.95, (s) => outline(k(TILTROTOR, s)) + pods(...sc(TR_FIN, s)) + pods(...sc(TR_NACELLE, s)) +
-    rotor(TR_HUB[0] * s, TR_HUB[1] * s, 3, 2.3 * s, 0.42 * s, 0) + rotor(-TR_HUB[0] * s, TR_HUB[1] * s, 3, 2.3 * s, 0.42 * s, 0)),
-  heli: make(0.95, (s) => outline(k(HELI_POD, s)) + bar(0, -0.45 * s, 4.1 * s, 0.5 * s, 45) + bar(0, -0.45 * s, 4.1 * s, 0.5 * s, -45) +
+    rotor(TR_HUB[0] * s, TR_HUB[1] * s, 3, 2.3 * s, 0.58 * s, 0) + rotor(-TR_HUB[0] * s, TR_HUB[1] * s, 3, 2.3 * s, 0.58 * s, 0)),
+  heli: make(0.95, (s) => outline(k(HELI_POD, s)) + bar(0, -0.45 * s, 4.1 * s, 0.64 * s, 45) + bar(0, -0.45 * s, 4.1 * s, 0.64 * s, -45) +
     rect(...sc(HELI_TAIL_ROTOR, s))),
-  tandem: make(1.0, (s) => outline(k(TANDEM, s)) + rotor(0, -2.6 * s, 3, 3.5 * s, 0.55 * s, 0) + rotor(0, 2.5 * s, 3, 3.5 * s, 0.55 * s, 60)),
-  gyro: make(0.85, (s) => outline(k(GYRO_POD, s)) + bar(0, -0.3 * s, 4.0 * s, 0.42 * s, 32) + rect(...sc([-1.05, 1.0, 1.05, 1.22], s))),
-  ultralight: make(0.82, (s) => outline(k(TRIKE_WING, s)) + outline(k(TRIKE_POD, s)) + rect(...sc(TRIKE_PROP, s))),
-  drone: make(0.72, (s) => bar(0, 0, 2.9 * s, 0.42 * s, 45) + bar(0, 0, 2.9 * s, 0.42 * s, -45) + rect(...sc([-0.75, -0.75, 0.75, 0.75], s)) +
-    [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([x, y]) => circle(2.05 * x * s, 2.05 * y * s, 1.0 * s)).join("")),
+  tandem: make(1.0, (s) => outline(k(TANDEM, s)) + rotor(0, -2.6 * s, 3, 3.5 * s, 0.62 * s, 0) + rotor(0, 2.5 * s, 3, 3.5 * s, 0.62 * s, 60)),
+  gyro: make(0.95, (s) => outline(k(GYRO_POD, s)) + bar(0, -0.35 * s, 4.6 * s, 0.62 * s, 45) + rect(...sc([-1.15, 1.0, 1.15, 1.42], s))),
+  ultralight: make(0.95, (s) => outline(k(TRIKE_WING, s)) + outline(k(TRIKE_POD, s)) + rect(...sc(TRIKE_PROP, s))),
+  drone: make(0.8, (s) => bar(0, 0, 2.9 * s, 0.62 * s, 45) + bar(0, 0, 2.9 * s, 0.62 * s, -45) + rect(...sc([-0.8, -0.8, 0.8, 0.8], s)) +
+    [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([x, y]) => circle(2.05 * x * s, 2.05 * y * s, 1.05 * s)).join("")),
   airship: make(1.05, (s) => outline(k(HULL, s)) + mirror(k(AIRSHIP_FIN, s))),
   balloon: make(0.9, (s) => outline(k(ENVELOPE, s)) + mirror(k(BALLOON_LINE, s)) + rect(...sc([-0.6, 3.15, 0.6, 4.0], s)), true),
   // nothing says what it is: the radar's plain aircraft, as before

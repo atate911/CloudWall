@@ -33,7 +33,9 @@ airframe photos from [planespotters.net](https://www.planespotters.net), weather
   aircraft's type, or what its description gives away, else what its transponder says it is (its
   ADS-B emitter category), else its wake category; with none of those it is a plain aircraft. A
   Beaver or Caravan on floats shares its type with one on wheels, so it's a seaplane only when its
-  description says so. (The ATC style draws STARS's own targets instead.)
+  description says so. On a small radar, such as the 7.5" kiosk's or a phone's, the icons are
+  drawn up to half as large again, so even a light aircraft stays recognizable. (The ATC style
+  draws STARS's own targets instead.)
   Each aircraft on the radar shows its altitude in hundreds of feet, with an arrow when it is
   climbing or descending (`035↑`) and a line to where it will be in a minute. Only the selected
   aircraft (the one overhead, or one you tap) shows where it has been, so a busy sky stays

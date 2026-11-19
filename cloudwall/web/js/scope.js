@@ -43,6 +43,10 @@ const DIRS = [...Array(8)].map((_, i) => ({ ux: Math.sin(i * 45 * RAD), uy: -Mat
 const clockPhase = (ms) => { const t = (ms / 1000) % 6; return t < 2 ? 1 : t < 3 ? 2 : t < 5 ? 1 : 3; };
 const NS = "http://www.w3.org/2000/svg";
 const CHAR_W = 3.35;                          // estimated label width per character, until a label can be measured
+// Icons are drawn at least as large on screen as on a 1920-wide desktop's radar (2.5 CSS px to the
+// unit): on a smaller radar (the 7.5" kiosk, a phone) up to half as large again, so a light
+// aircraft is still more than a speck. Labels and lines make room for them.
+const ICON_UNIT_PX = 2.5, ICON_BOOST_MAX = 1.5;
 export let map = null;
 let placeBoxes = [];        // where the place names sit, so aircraft labels can avoid them
 
@@ -684,6 +688,8 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   }
 
   const heroHex = state.hero && state.hero.hex, seen = new Set(), ease = 1 - Math.exp(-frameDt / 0.6), k = K();
+  const box = svg.getBoundingClientRect(), unitPx = Math.min(box.width, box.height) / 224;
+  const boost = unitPx ? clamp(ICON_UNIT_PX / unitPx, 1, ICON_BOOST_MAX) : 1;
   // past the tracking radius, aircraft are fetched only for a radar set to a longer range
   const aircraft = mode === "radar" ? [...state.aircraft, ...(state.beyond || [])] : state.aircraft;
   for (const a of aircraft) {
@@ -704,7 +710,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     // the chart style's icon: its kind of aircraft (a light aircraft or twin, a turboprop, a business
     // or regional jet, an airliner, a heavy, a fighter, a helicopter, a balloon, ...), at about its size; the selected
     // one a little larger, but not so much that an airliner passes for a heavy
-    const size = (isHero ? 1.25 : 1) * p.scale;
+    const size = (isHero ? 1.25 : 1) * p.scale * boost;
     if (!opt.atc) {
       const kind = fresh || !c.ic ? iconKind(a) : c.kind;          // looked at again on each update
       if (kind !== c.kind || !c.ic) { c.kind = kind; c.ic = iconFor(kind); c.icon.setAttribute("d", c.ic.d); }
