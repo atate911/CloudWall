@@ -1,8 +1,8 @@
 """Airline logos for the flight card, fetched on demand and cached on disk.
 
 Logos are trademarks of their airlines, so none are shipped with CloudWall: each
-is downloaded the first time that airline appears, by its two-letter IATA code,
-and kept for a few months.
+is downloaded the first time that airline appears, by its two-letter IATA code
+(airlines.py says which code an aircraft's logo goes by), and kept for a few months.
 """
 import logging
 import re
@@ -18,52 +18,6 @@ log = logging.getLogger("cloudwall.logos")
 MAX_AGE = 90 * 86400
 MISSING_AGE = 7 * 86400
 CODE = re.compile(r"^[A-Z0-9]{2}$")
-
-# ICAO airline code (the start of a callsign) -> IATA code used to fetch the logo.
-# Covers what's common around PDX and major long-haul visitors; anything else uses
-# the code from the route database when it has one.
-ICAO_TO_IATA = {
-    "ASA": "AS", "QXE": "AS", "SKW": "OO", "SWA": "WN", "DAL": "DL", "UAL": "UA", "AAL": "AA",
-    "ENY": "MQ", "RPA": "YX", "ASH": "YV", "JBU": "B6", "NKS": "NK", "FFT": "F9", "HAL": "HA",
-    "AAY": "G4", "SCX": "SY", "FDX": "FX", "UPS": "5X", "ABX": "GB", "ATN": "8C", "GTI": "5Y",
-    "CKS": "K4", "PAC": "PO", "AMF": "", "BAW": "BA", "DLH": "LH", "ICE": "FI", "ACA": "AC",
-    "JZA": "QK", "ROU": "RV", "WJA": "WS", "WEN": "WR", "VOI": "Y4", "AMX": "AM", "VIV": "VB",
-    "KLM": "KL", "AFR": "AF", "ANA": "NH", "JAL": "JL", "KAL": "KE", "AAR": "OZ", "UAE": "EK",
-    "QTR": "QR", "CPA": "CX", "EVA": "BR", "SIA": "SQ", "CAL": "CI", "VIR": "VS", "TAP": "TP",
-    "FIN": "AY", "SAS": "SK", "CFG": "DE", "QFA": "QF", "ANZ": "NZ", "FJI": "FJ", "PAL": "PR",
-    "CES": "MU", "CSN": "CZ", "CCA": "CA", "THY": "TK", "IBE": "IB", "AZA": "AZ", "SWR": "LX",
-    "AUA": "OS", "EIN": "EI", "LOT": "LO", "ETH": "ET", "ETD": "EY", "GJS": "G7", "CPZ": "OH",
-    "EDV": "9E", "PDT": "PT", "JIA": "OH", "SCE": "YR", "MXY": "MX", "VXP": "XP", "BRZ": "",
-}
-# Names for the airlines above, for "operated by" lines and when the route database is silent.
-AIRLINE_NAMES = {
-    "ASA": "Alaska Airlines", "QXE": "Horizon Air", "SKW": "SkyWest Airlines", "SWA": "Southwest Airlines",
-    "DAL": "Delta Air Lines", "UAL": "United Airlines", "AAL": "American Airlines", "ENY": "Envoy Air",
-    "RPA": "Republic Airways", "ASH": "Mesa Airlines", "JBU": "JetBlue", "NKS": "Spirit Airlines",
-    "FFT": "Frontier Airlines", "HAL": "Hawaiian Airlines", "AAY": "Allegiant Air", "SCX": "Sun Country Airlines",
-    "FDX": "FedEx", "UPS": "UPS Airlines", "ABX": "ABX Air", "ATN": "Air Transport International",
-    "GTI": "Atlas Air", "CKS": "Kalitta Air", "PAC": "Polar Air Cargo", "AMF": "Ameriflight",
-    "BAW": "British Airways", "DLH": "Lufthansa", "ICE": "Icelandair", "ACA": "Air Canada", "JZA": "Jazz",
-    "ROU": "Air Canada Rouge", "WJA": "WestJet", "WEN": "WestJet Encore", "VOI": "Volaris", "AMX": "Aeroméxico",
-    "KLM": "KLM", "AFR": "Air France", "ANA": "All Nippon Airways", "JAL": "Japan Airlines", "KAL": "Korean Air",
-    "UAE": "Emirates", "QTR": "Qatar Airways", "CPA": "Cathay Pacific", "EVA": "EVA Air", "SIA": "Singapore Airlines",
-    "VIR": "Virgin Atlantic", "CFG": "Condor", "QFA": "Qantas", "ANZ": "Air New Zealand", "EDV": "Endeavor Air",
-    "GJS": "GoJet", "CPZ": "Compass Airlines", "MXY": "Breeze Airways",
-}
-
-# Brands that fly under another airline's name and have no logo of their own.
-SAME_AS = {"QX": "AS"}
-
-
-def iata_for(callsign, route_iata=None):
-    """The IATA code to show a logo for, or None."""
-    m = re.match(r"^([A-Z]{3})\d", callsign or "")
-    code = (ICAO_TO_IATA.get(m.group(1)) if m else None)
-    if code is None:
-        code = route_iata if m else None     # only trust the database for airline-style callsigns
-    code = SAME_AS.get(code or "", code)
-    return code if code and CODE.match(code) else None
-
 
 class Logos:
     def __init__(self, cfg, cache_dir):
@@ -104,11 +58,3 @@ class Logos:
                 log.warning("logo %s unavailable: %s", code, e)
         return path.read_bytes() if path.exists() else None
 
-
-def flight_number(callsign):
-    """'ASA508' -> 'AS508': the airline-code form shown on departure boards, or None."""
-    m = re.match(r"^([A-Z]{3})0*(\d{1,4}[A-Z]?)$", callsign or "")
-    if not m:
-        return None
-    code = ICAO_TO_IATA.get(m.group(1))
-    return f"{code}{m.group(2)}" if code else None

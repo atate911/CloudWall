@@ -241,7 +241,7 @@ F.e190 = {
   stab: { le: 4.7, z: 0.737, span: 12.08, root: 0.9, cr: 3.03, ct: 0.85, sweep: 34.6, dih: 6 },
 };
 // E170/E175 (ERJ 170-100/-200): no planning manual found online (the E175 APM link is dead).
-// The E190's fuselage shortened by the plugs ahead of and behind the wing (data.js length), with
+// The E190's fuselage shortened by the plugs ahead of and behind the wing (types.csv length), with
 // the smaller wing (Wikipedia "Embraer E-Jet family": span 26.0 m over the original winglets,
 // area 72.7 m2: chords scaled from the E190's), smaller CF34-8E, a lower fin and a 10 m tailplane.
 F.e175 = {

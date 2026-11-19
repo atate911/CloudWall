@@ -7,19 +7,11 @@ visitor) are worked out as the entry starts, from what the logbook already holds
 themselves, and the Logbook tab's totals, are store.py's.
 """
 import json
-import re
 import time
 
-AIRLINE = re.compile(r"^([A-Z]{3})\d")
-RESIGHT_SECONDS = 30 * 60      # overhead again after this long is a new flyover
+from . import aircraft, airlines
 
-RARE_TYPES = {
-    "A388", "B741", "B742", "B744", "B748", "BLCF", "A3ST", "A337", "A342", "A343", "A345",
-    "A346", "MD11", "DC10", "DC3", "DC6", "B703", "B722", "B752", "B753", "IL76", "A124",
-    "A225", "C17", "C5M", "C130", "C30J", "K35R", "KC10", "K46", "B52", "B1", "E3TF", "E6",
-    "P8", "F15", "F16", "F18", "F35", "F22", "A10", "V22", "H60", "H47", "B17", "B29", "P51",
-    "CONC", "U2", "T38", "SF50", "PC24", "GLF6", "GL7T", "B37M", "A35K", "B78X", "B779",
-}
+RESIGHT_SECONDS = 30 * 60      # overhead again after this long is a new flyover
 
 
 def ordinal(n):
@@ -51,7 +43,7 @@ class Logbook:
             b.append(a["emergency"])
         if a.get("military"):
             b.append("MILITARY")
-        if a.get("type") in RARE_TYPES:
+        if aircraft.rare(a.get("type")):
             b.append("RARE TYPE")
         if a.get("category") == "A5":
             b.append("HEAVY")
@@ -69,8 +61,7 @@ class Logbook:
     def record(self, a, now):
         """An aircraft is overhead: start its entry, or carry on with the one it has, filling in
         what has been learned since. Sets the aircraft's badges."""
-        m = AIRLINE.match(a.get("callsign") or "")
-        airline_icao = m.group(1) if m else None
+        airline_icao = airlines.code(a.get("callsign"))
         s = self.active.get(a["hex"])
         if not s:
             s = self._resume(a["hex"], now)

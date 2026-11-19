@@ -1,7 +1,6 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
 import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, api, since, runwayList } from "./util.js";
-import { typeInfo } from "./data.js";
-import { plate, renderLineup, drawn } from "./plate.js";
+import { plate, renderLineup, drawn, typeInfo } from "./plate.js";
 import { flap, roll } from "./fx.js";
 import { sky } from "./sky.js";
 import { map, tileLayout } from "./scope.js";
@@ -512,7 +511,7 @@ function showIdle(el, state) {
     el.innerHTML = `<div class="idle"><h1>Today’s records</h1><div class="dim">${L.today} flyovers so far, ${L.types.length} aircraft types seen since CloudWall started</div>${recordsHtml("", L.records_today)}</div>${dots}`;
   } else {
     const s = L.recent[0];
-    const info = typeInfo({ type: s.type, type_name: s.type_name, model: s.model });
+    const info = typeInfo(s);
     // only credited photos: older entries hold uncredited ones that may show another airframe
     const pic = s.photo && s.photo_by ? `<figure class="photo"><img src="${esc(s.photo)}" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">${credit(s.photo_link, s.photo_by)}</figure>`
       : drawn(info) ? `<div class="last-plate sil-box">${plate(info)}</div>` : "";
@@ -522,7 +521,7 @@ function showIdle(el, state) {
 
 // Types seen today that have a drawing, most frequent first (at most 36), for the lineup.
 function fleetToday(L) {
-  return ((L && L.types_today) || []).map((t) => ({ info: typeInfo({ type: t.type, type_name: t.name, model: t.model }), n: t.n }))
+  return ((L && L.types_today) || []).map((t) => ({ info: typeInfo(t), n: t.n }))
     .filter((t) => drawn(t.info)).slice(0, 36);
 }
 

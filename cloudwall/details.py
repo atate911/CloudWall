@@ -5,14 +5,10 @@ Routes come from a database of callsigns that is often out of date, so each is c
 where the aircraft actually is; a paid provider's route, when there is one, replaces it; and with
 no believable route at all, the aircraft's own behaviour near the airport says what it is doing.
 """
-import re
 import time
 
-from . import geo
-from .logos import AIRLINE_NAMES, flight_number, iata_for
+from . import aircraft, airlines, geo
 from .seats import seats as seat_estimate
-
-AIRLINE = re.compile(r"^([A-Z]{3})\d")
 
 
 class Details:
@@ -43,13 +39,14 @@ class Details:
         if a.get("year"):
             a["age"] = max(0, time.localtime().tm_year - a["year"])
         free = self.enricher.route(a.get("callsign"))
+        a.update(aircraft.shape(a.get("type"), a.get("category")))      # for its drawing: shape, length, known
+        airline = airlines.code(a.get("callsign"))
         if free and free.get("airline"):
             a["airline"] = free["airline"]      # the airline is reliable even when the route isn't
-        elif (a.get("callsign") or "")[:3] in AIRLINE_NAMES and re.match(r"^[A-Z]{3}\d", a["callsign"]):
-            a["airline"] = AIRLINE_NAMES[a["callsign"][:3]]
-        a["airline_iata"] = iata_for(a.get("callsign"), (free or {}).get("airline_iata"))
-        m = AIRLINE.match(a.get("callsign") or "")
-        a["seats"] = seat_estimate(m.group(1) if m else None, a.get("type"))
+        elif airlines.name(airline):
+            a["airline"] = airlines.name(airline)
+        a["airline_iata"] = airlines.iata_for(a.get("callsign"), (free or {}).get("airline_iata"))
+        a["seats"] = seat_estimate(airline, a.get("type"))
         route = self._with_geometry(a, free)
         state, live = self._live_route(a, route, wanted and not idle)
         if live:
@@ -75,16 +72,16 @@ class Details:
             a["landing_est"] = self._eta_estimate(a, geo.haversine_nm(a["lat"], a["lon"], ap["lat"], ap["lon"]), ap)
         r = a.get("route")
         a["flight_no"] = (r["flight"] if r and r.get("plausible") and r.get("source") else None) \
-            or flight_number(a.get("callsign")) or (r["flight"] if r and r.get("plausible") else None)
+            or airlines.flight_number(a.get("callsign")) or (r["flight"] if r and r.get("plausible") else None)
 
     def _airline_from_route(self, a, route):
         """A regional partner flying for a bigger airline (SkyWest as Alaska): show the airline
         you'd book with, and say who operates it."""
         painted, operating = route.get("painted_as"), route.get("operating_as")
         if painted and operating and painted != operating:
-            a["airline_iata"] = iata_for(painted + "1") or a.get("airline_iata")
-            a["airline"] = AIRLINE_NAMES.get(painted) or a.get("airline")
-            a["operated_by"] = AIRLINE_NAMES.get(operating) or operating
+            a["airline_iata"] = airlines.iata_for(painted + "1") or a.get("airline_iata")
+            a["airline"] = airlines.name(painted) or a.get("airline")
+            a["operated_by"] = airlines.name(operating) or operating
 
     def infer_local(self, a):
         """No believable route: the aircraft's own behaviour near the airport still
@@ -110,7 +107,7 @@ class Details:
 
     def _small_field(self, a, d_main):
         """Light aircraft low over Pearson Field or Troutdale are theirs, not the big airport's."""
-        if AIRLINE.match(a.get("callsign") or "") or a.get("category") in ("A3", "A4", "A5"):
+        if airlines.code(a.get("callsign")) or a.get("category") in ("A3", "A4", "A5"):
             return None
         for f in self.cfg["airport"].get("others") or []:
             d = geo.haversine_nm(a["lat"], a["lon"], f["lat"], f["lon"])

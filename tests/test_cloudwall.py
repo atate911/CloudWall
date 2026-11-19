@@ -784,10 +784,10 @@ class ChartsTest(unittest.TestCase):
 
 class WakeTest(unittest.TestCase):
     def test_categories(self):
-        from cloudwall import wake
-        self.assertEqual([wake.category(t) for t in ("A388", "B77W", "B738", "e75l", "C172")], ["A", "B", "F", "G", "I"])
-        self.assertIsNone(wake.category(None))
-        self.assertIsNone(wake.category("NOPE"))
+        from cloudwall import aircraft
+        self.assertEqual([aircraft.wake(t) for t in ("A388", "B77W", "B738", "e75l", "C172")], ["A", "B", "F", "G", "I"])
+        self.assertIsNone(aircraft.wake(None))
+        self.assertIsNone(aircraft.wake("NOPE"))
 
 
 class LiveFirstTest(unittest.TestCase):
@@ -864,7 +864,7 @@ class LiveFirstTest(unittest.TestCase):
 
 class LogosTest(unittest.TestCase):
     def test_airline_codes(self):
-        from cloudwall.logos import iata_for
+        from cloudwall.airlines import iata_for
         self.assertEqual(iata_for("DAL2008"), "DL")
         self.assertEqual(iata_for("QXE2162"), "AS")            # Horizon flies as Alaska
         self.assertEqual(iata_for("XYZ123", "XY"), "XY")       # unknown airline: trust the database code
@@ -970,7 +970,7 @@ class PresentationDataTest(unittest.TestCase):
         self.t = Tracker(config.load(), self.store, self.enricher)
 
     def test_flight_number_and_partner_airline(self):
-        from cloudwall.logos import flight_number
+        from cloudwall.airlines import flight_number
         self.assertEqual([flight_number(c) for c in ("ASA508", "SKW3108", "DAL0012", "N733NV")], ["AS508", "OO3108", "DL12", None])
         apt = lambda code, ll: {"iata": code, "city": code, "lat": ll[0], "lon": ll[1]}
         self.enricher.routes["SKW3108"] = {"flight": "AS3108", "airline": None, "source": "fr24", "painted_as": "ASA",
@@ -1880,3 +1880,42 @@ class PlaceStateTest(unittest.TestCase):
         self.assertEqual(place.logbook()["total"], 1)                    # and its flyover is in the place's logbook
         # the tracker knows none of it
         self.assertFalse({"weather", "tfrs", "heard", "contrails", "basemap", "charts", "logos"} & set(place.tracker.snapshot()))
+
+
+class ReferenceTablesTest(unittest.TestCase):
+    """One table of airlines and one of aircraft types, on the server; the display keeps none."""
+
+    def test_airlines(self):
+        from cloudwall import airlines
+        self.assertEqual((airlines.code("ASA512"), airlines.code("N733NV"), airlines.code(None)), ("ASA", None, None))
+        self.assertEqual((airlines.name("QXE"), airlines.name("ZZZ")), ("Horizon Air", None))
+        self.assertEqual((airlines.cargo("FDX"), airlines.cargo("ASA"), airlines.cargo(None)), (True, False, False))
+        self.assertEqual(airlines.colors("SWA1420"), ["#304cb2", "#ffbf27"])
+        self.assertIsNone(airlines.colors("N733NV"))
+        self.assertEqual((airlines.scheduled("ASA512"), airlines.scheduled("LIFE3"), airlines.scheduled(None)), (True, False, False))
+        # an airline the table has, but with no code of its own to sell flights under: no logo, no flight number
+        self.assertEqual((airlines.iata_for("AMF1977", "ZZ"), airlines.flight_number("AMF1977")), (None, None))
+        # one it knows only by its colours or as a freight carrier: the route database's code is used
+        self.assertEqual((airlines.iata_for("EJA512", "1I"), airlines.iata_for("CLX4", "CV")), ("1I", "CV"))
+
+    def test_aircraft_types(self):
+        from cloudwall import aircraft
+        self.assertEqual(aircraft.shape("B738"), {"shape": "narrow", "length": 39.5, "known": True})
+        self.assertEqual(aircraft.shape("zzzz", "A7"), {"shape": "heli", "length": 12, "known": False})   # by its category
+        self.assertEqual(aircraft.shape(None), {"shape": "narrow", "length": 36, "known": False})
+        self.assertEqual(aircraft.shape("CONC")["known"], False)       # known only as rare: no shape of its own
+        self.assertEqual([aircraft.rare(t) for t in ("A388", "CONC", "B738", None)], [True, True, False, False])
+
+    def test_each_record_the_display_draws_carries_them(self):
+        from cloudwall.place import Place
+        [pc] = config.places(config.load())
+        place = Place(pc, Store(":memory:"), sources.Demo(), demo=True)
+        place.tracker.enricher = place.tracker.details.enricher = StubEnricher()
+        place.tracker.update([plane("a1", "SWA1420", 1.0, typ="B37M"), plane("a2", "N733NV", 9.0, typ="C172", category="A1")], "test")
+        hero = place.state()["hero"]
+        self.assertEqual((hero["shape"], hero["length"], hero["known"], hero["colors"]), ("narrow", 35.6, True, ["#304cb2", "#ffbf27"]))
+        self.assertNotIn("colors", next(a for a in place.state()["aircraft"] if a["hex"] == "a2"))
+        book = place.logbook()
+        self.assertEqual([(t["type"], t["shape"], t["length"]) for t in book["types"]], [("B37M", "narrow", 35.6)])
+        self.assertEqual((book["recent"][0]["shape"], book["types_today"][0]["known"]), ("narrow", True))
+        self.assertIn("RARE TYPE", book["recent"][0]["badges"])        # the 737 MAX 7's flag, from the same table

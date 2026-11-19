@@ -1,5 +1,6 @@
 """The flight card's side-view drawings: every aircraft type CloudWall knows draws as its own
 profile. Runs the browser modules under Node, so it is skipped where Node isn't installed."""
+import csv
 import json
 import re
 import shutil
@@ -33,10 +34,11 @@ console.log(JSON.stringify(out));
 
 
 def data_types():
-    """ICAO type -> [shape, length] from the table in data.js."""
-    src = (WEB / "data.js").read_text()
-    block = src[src.index("const T = {"):src.index("};", src.index("const T = {"))]
-    return {t: [shape, float(length)] for t, shape, length in re.findall(r'(\w+): \["(\w+)", ([\d.]+)\]', block)}
+    """ICAO type -> [shape, length] from the server's table of types (those it has a shape for)."""
+    table = WEB.parent.parent / "data" / "types.csv"
+    with open(table, newline="", encoding="utf-8") as f:
+        return {r["type"]: [r["shape"], float(r["length_m"])]
+                for r in csv.DictReader(line for line in f if not line.startswith("#")) if r["shape"]}
 
 
 @unittest.skipUnless(shutil.which("node"), "needs node")

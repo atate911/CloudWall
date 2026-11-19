@@ -1,0 +1,103 @@
+# What CloudWall knows of each airline, by its ICAO code (the three letters a callsign starts with).
+#   iata    the code its flights are sold and its logo is filed under; "-" where it has none (no
+#           logo, no flight number); empty where CloudWall doesn't know, and the route database's is used
+#   name    for the flight card when the route database is silent, and for "operated by"
+#   cargo   1 for an airline that flies freight only: no seats to count
+#   color, accent   its livery, for the board's swatch
+# Read by cloudwall/airlines.py. Add a line to teach CloudWall an airline.
+icao,iata,name,cargo,color,accent
+ASA,AS,Alaska Airlines,,#01426a,#7fc241
+QXE,AS,Horizon Air,,#01426a,#7fc241
+SKW,OO,SkyWest Airlines,,#1d4f91,#9fb4c7
+SWA,WN,Southwest Airlines,,#304cb2,#ffbf27
+DAL,DL,Delta Air Lines,,#c8102e,#003a70
+UAL,UA,United Airlines,,#005daa,#6cace4
+AAL,AA,American Airlines,,#0078d2,#c30019
+ENY,MQ,Envoy Air,,#0078d2,#c30019
+RPA,YX,Republic Airways,,,
+ASH,YV,Mesa Airlines,,,
+JBU,B6,JetBlue,,#003876,#00a1de
+NKS,NK,Spirit Airlines,,#ffec00,#222222
+FFT,F9,Frontier Airlines,,#006643,#b7d433
+HAL,HA,Hawaiian Airlines,,#413691,#ce0c88
+AAY,G4,Allegiant Air,,#01579b,#fbcd08
+SCX,SY,Sun Country Airlines,,#f58232,#003876
+FDX,FX,FedEx,1,#4d148c,#ff6600
+UPS,5X,UPS Airlines,1,#4b2e1e,#ffb500
+ABX,GB,ABX Air,1,#c8102e,#ffffff
+ATN,8C,Air Transport International,1,#f7941d,#232f3e
+GTI,5Y,Atlas Air,1,#002d72,#d4a017
+CKS,K4,Kalitta Air,1,#003b7a,#e31837
+PAC,PO,Polar Air Cargo,1,#00205b,#f2a900
+AMF,-,Ameriflight,1,#c8102e,#1c3f94
+BAW,BA,British Airways,,#075aaa,#eb2226
+DLH,LH,Lufthansa,,#05164d,#ffad00
+ICE,FI,Icelandair,,#003a7d,#ffcb05
+ACA,AC,Air Canada,,#d22630,#222222
+JZA,QK,Jazz,,#d22630,#222222
+ROU,RV,Air Canada Rouge,,,
+WJA,WS,WestJet,,#00aaa5,#003c71
+WEN,WR,WestJet Encore,,,
+VOI,Y4,Volaris,,#a6228c,#222222
+AMX,AM,Aeroméxico,,#0b2343,#e91b2f
+VIV,VB,,,,
+KLM,KL,KLM,,#00a1de,#ffffff
+AFR,AF,Air France,,#002157,#ed1c24
+ANA,NH,All Nippon Airways,,#13448f,#00b3ef
+JAL,JL,Japan Airlines,,#c8102e,#ffffff
+KAL,KE,Korean Air,,#5aa9d6,#00256c
+AAR,OZ,,,#8a8d8f,#e60012
+UAE,EK,Emirates,,#d71921,#c5a05a
+QTR,QR,Qatar Airways,,#5c0632,#a0a0a0
+CPA,CX,Cathay Pacific,,#005d63,#c1b49a
+EVA,BR,EVA Air,,#00693e,#f58220
+SIA,SQ,Singapore Airlines,,#f99f1c,#00266b
+CAL,CI,,,,
+VIR,VS,Virgin Atlantic,,#da0530,#5f2a75
+TAP,TP,,,#00a551,#e30613
+FIN,AY,,,#0b1560,#ffffff
+SAS,SK,,,,
+CFG,DE,Condor,,#ffb000,#222222
+QFA,QF,Qantas,,,
+ANZ,NZ,Air New Zealand,,,
+FJI,FJ,,,,
+PAL,PR,,,,
+CES,MU,,,,
+CSN,CZ,,,,
+CCA,CA,,,,
+THY,TK,,,,
+IBE,IB,,,,
+AZA,AZ,,,,
+SWR,LX,,,,
+AUA,OS,,,,
+EIN,EI,,,,
+LOT,LO,,,,
+ETH,ET,,,,
+ETD,EY,,,,
+GJS,G7,GoJet,,,
+CPZ,OH,Compass Airlines,,,
+EDV,9E,Endeavor Air,,,
+PDT,PT,,,,
+JIA,OH,,,,
+SCE,YR,,,,
+MXY,MX,Breeze Airways,,,
+VXP,XP,,,,
+BRZ,-,,,,
+EJA,,,,#1a1a1a,#c5a05a
+LXJ,,,,#7a0019,#c0c0c0
+BOE,,,,#0033a0,#ffffff
+AIP,,,1,,
+AJT,,,1,,
+BOX,,,1,,
+CAO,,,1,,
+CFS,,,1,,
+CLX,,,1,,
+DHK,,,1,,
+DHL,,,1,,
+KYE,,,1,,
+MTN,,,1,,
+NCR,,,1,,
+SOO,,,1,,
+SRR,,,1,,
+WCW,,,1,,
+WGN,,,1,,

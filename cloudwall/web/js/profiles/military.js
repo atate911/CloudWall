@@ -56,7 +56,7 @@ F.c17 = {
 // side elevation of the 707-120B (p. 13; overall 44.22 m, fuselage 42.32 m, fuselage height 4.33 m
 // from fig. 2.2). The KC-135 shares that nose, wing, tall fin and tail cone on a fuselage 2.7 m
 // shorter (KC-135R 41.53 m long, 39.88 m span, 12.70 m high per Wikipedia); its length comes from
-// data.js. Engine stations (8.28 / 14.05 m out), wing root, cargo door and fuselage height
+// types.csv. Engine stations (8.28 / 14.05 m out), wing root, cargo door and fuselage height
 // (4.22 m) from the USAF "Boeing KC-135A Stratotanker 3-view line drawing" (Wikimedia Commons).
 // The E-3 and E-6 are 707-320B airframes (46.61 m, span 44.42 m): longer fuselage, bigger wing. Engines from published data: F108 (CFM56-2) on KC-135R and E-6, TF33 (JT3D) on the E-3.
 const C135_NOSE = {
@@ -234,7 +234,7 @@ F.c130 = {
   extras: [sponson(9.6, 16.9, 1.55)],
   overlays: [tpNacelle(T56)],
 };
-// C-130J-30: 2.54 m plug ahead of the wing and 2.03 m behind it (4.57 m in all, data.js length);
+// C-130J-30: 2.54 m plug ahead of the wing and 2.03 m behind it (4.57 m in all, types.csv length);
 // the wing (and so the nacelles) moves with the forward plug, the sponson with the wing, the
 // paratroop doors and rear windows with both plugs.
 F.c30j = {

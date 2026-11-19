@@ -13,7 +13,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import airports, config, contrails, sources, tfr, weather
+from . import aircraft, airports, config, contrails, sources, tfr, weather
 from .activity import Activity
 from .enrich import Enricher
 from .shared import Shared
@@ -77,7 +77,12 @@ class Place:
         return self.tracker.heatmap()
 
     def logbook(self):
-        return self.store.logbook(time.strftime("%Y-%m-%d"))
+        """The Logbook tab. Each type and flyover carries its type's shape and length, as the
+        aircraft on the board do, for the display to draw it by."""
+        book = self.store.logbook(time.strftime("%Y-%m-%d"))
+        for row in book["types"] + book["types_today"] + book["recent"]:
+            row.update(aircraft.shape(row.get("type")))
+        return book
 
     # -- its threads ------------------------------------------------------------------------
     def stop(self):

@@ -5,8 +5,7 @@ import { drawScope, loadMap } from "./scope.js";
 import { renderHero, tickHero, nextSlide, badges, recordsHtml, forgetHero, boardFlight } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
 import { chime, soundOn, setSound } from "./fx.js";
-import { airlineColors, typeInfo } from "./data.js";
-import { plate, drawn } from "./plate.js";
+import { plate, drawn, typeInfo } from "./plate.js";
 import { renderWeatherTab } from "./weather.js";
 import { renderKiosk, tickKiosk, kioskNext, forgetKiosk } from "./kiosk.js";
 import { nearbyDivider } from "./divider.js";
@@ -90,10 +89,10 @@ function boardHtml() {
   });
   if (phone()) return phoneBoardHtml(air, heroHex, R);
   const rows = air.map((a) => {
-    const r = a.route && a.route.plausible ? a.route : null, v = a.vrate || 0, c = airlineColors(a);
+    const r = a.route && a.route.plausible ? a.route : null, v = a.vrate || 0, c = a.colors;
     const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
     return `<tr data-hex="${esc(a.hex)}" class="${a.hex === heroHex ? "hero" : ""}">
-      <td class="lg">${state.logos && a.airline_iata ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc((r && r.airline) || a.airline || "")}"></span>` : ""}<i class="sw" style="background:${c ? c[0] : "var(--rule)"}"></i></td>
+      <td class="lg">${state.logos && a.airline_iata ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc((r && r.airline) || a.airline || "")}"></span>` : ""}<i class="sw" style="background:${c ? esc(c[0]) : "var(--rule)"}"></i></td>
       <td class="fl">${esc(ident(a))}<small>${esc((r && r.airline) || a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || a.type_name || "")}</small></td>
       <td class="rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}<small>${esc(r.origin.city || "")} to ${esc(r.dest.city || "")}</small>` : '<span class="dim">—</span>'}</td>
       <td class="ty">${esc(a.type || "")}<small>${esc(shortType(a.type_name))}</small></td>
@@ -118,13 +117,13 @@ function boardHtml() {
 function phoneBoardHtml(air, heroHex, R) {
   const vs = (v) => (v > 300 ? ' <span class="up">▲</span>' : v < -300 ? ' <span class="down">▼</span>' : "");
   const row = (a) => {
-    const r = a.route && a.route.plausible ? a.route : null, c = airlineColors(a);
+    const r = a.route && a.route.plausible ? a.route : null, c = a.colors;
     const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
     const name = (r && r.airline) || a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || shortType(a.type_name) || "";
     // the logo stands for the airline's name; if it fails to load, the name shows instead
     const logo = state.logos && a.airline_iata && name ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(name)}"></span>` : "";
     return `<button class="pb-row${a.hex === heroHex ? " hero" : ""}" data-hex="${esc(a.hex)}">
-      <i class="sw" style="background:${c ? c[0] : "var(--rule)"}"></i>
+      <i class="sw" style="background:${c ? esc(c[0]) : "var(--rule)"}"></i>
       <span class="pb-id">${esc(boardFlight(ident(a)))}</span>
       <span class="pb-rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}` : a.local ? `<span class="dim">${esc(a.local === "arriving" ? "Landing" : a.local === "departing" ? "Departing" : "Local")}</span>` : '<span class="dim">—</span>'}</span>
       <span class="pb-when${soon ? " soon" : ""}">${soon ? overheadIn(a) : `${a.dist.toFixed(1)}<small> nm<span class="pb-cmp"> ${esc(a.compass)}</span></small>`}</span>
@@ -220,7 +219,7 @@ function collection(types) {
     return d.toLocaleDateString([], d.getFullYear() === new Date().getFullYear() ? { month: "short", day: "numeric" } : { month: "short", year: "numeric" });
   };
   el.innerHTML = types.map((t) => {
-    const info = typeInfo({ type: t.type, type_name: t.name, model: t.model });
+    const info = typeInfo(t);
     return `<figure class="coll${drawn(info) ? "" : " unknown"}"><div class="sil-box">${drawn(info) ? plate(info, { dim: false }) : `<code>${esc(t.type)}</code>`}</div>
       <figcaption><div><code>${esc(t.type)}</code> <span>${esc(shortType(t.name) || "")}</span></div>
       <div class="dim"><b>${num(t.n)}</b> ${t.n === 1 ? "sighting" : "sightings"}${t.first ? `, since ${day(t.first)}` : ""}</div></figcaption></figure>`;

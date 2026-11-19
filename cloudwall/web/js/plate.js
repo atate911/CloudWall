@@ -6,6 +6,15 @@ import { esc, num } from "./util.js";
 
 export const feet = (m) => Math.round(m * 3.28084);
 
+// What a drawing needs of an aircraft, or of a type or flyover from the logbook: its type code,
+// its broad shape and length (the server sends these on each record, from its table of types) and
+// its model names, which pick a variant that shares a type code (RV-7 or RV-7A, F-15E or F-15EX).
+// A record without them, one the server hasn't looked up yet, gets a single-aisle stand-in.
+export function typeInfo(a) {
+  return { type: a.type, shape: a.shape || "narrow", length: a.length || 36, known: !!a.known,
+    name: [a.model, a.type_name || a.name].filter(Boolean).join(" ") };
+}
+
 // A side elevation over a dimension line giving the overall length. The figure sizes itself
 // inside its nearest size container (a .sil-box): `share` of its width, or as wide as its
 // height allows. A type without a drawing of its own is a faint stand-in for its broad shape,

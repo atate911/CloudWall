@@ -2,16 +2,15 @@
 cached and fetched off the poll thread."""
 import logging
 import queue
-import re
 import threading
 import time
 import urllib.parse
 
+from . import airlines
 from .http import get_json
 from .live import NotYet
 
 log = logging.getLogger("cloudwall.enrich")
-AIRLINE_CALLSIGN = re.compile(r"^[A-Z]{3}\d[0-9A-Z]{0,4}$")
 DAY = 86400
 LIVE_ROUTE_TTL = 45 * 60   # a callsign flies several legs a day; don't reuse a live route for long
 LIVE_RETRY = 5 * 60        # a paid lookup that failed or was refused: leave that flight alone this long
@@ -95,7 +94,7 @@ class Enricher:
     def route(self, callsign):
         if self.demo:
             return self.demo.routes.get(callsign)
-        if not callsign or not AIRLINE_CALLSIGN.match(callsign):
+        if not airlines.scheduled(callsign):
             return None
         return self._get("route", callsign, 7 * DAY)
 
@@ -119,7 +118,7 @@ class Enricher:
         p = self.live
         if self.demo or not p or not p.enabled or not callsign:
             return "n/a", None
-        if not p.general_aviation and not AIRLINE_CALLSIGN.match(callsign):
+        if not p.general_aviation and not airlines.scheduled(callsign):
             return "n/a", None
         k = ("live_route", f"{p.name}:{callsign}")
         with self.lock:

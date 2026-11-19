@@ -10,7 +10,7 @@ import re
 import threading
 import time
 
-from . import config, contrails as contrail_mod, geo, wake
+from . import aircraft, airlines, config, contrails as contrail_mod, geo
 from .details import Details
 from .logbook import Logbook
 from .tracks import Tracks
@@ -87,7 +87,10 @@ class Tracker:
         a["dist"] = geo.haversine_nm(h["lat"], h["lon"], a["lat"], a["lon"])
         a["brg"] = geo.bearing_deg(h["lat"], h["lon"], a["lat"], a["lon"])
         a["compass"] = geo.compass(a["brg"])
-        a["cwt"] = wake.category(a.get("type"))          # for the ATC-style radar's data blocks
+        a["cwt"] = aircraft.wake(a.get("type"))          # for the ATC-style radar's data blocks
+        colors = airlines.colors(a.get("callsign"))      # and the board's swatch
+        if colors:
+            a["colors"] = colors
         a["elev"] = (geo.elevation_deg(a["dist"], a["alt"], h.get("elevation_ft", 0))
                      if a["alt"] is not None else None)
         a["cpa_s"], a["cpa_nm"] = geo.cpa(h["lat"], h["lon"], a["lat"], a["lon"],
