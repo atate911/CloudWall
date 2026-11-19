@@ -701,15 +701,16 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       c.rot += (((p.rot - c.rot + 540) % 360) - 180) * ease;
     }
     c.g.setAttribute("transform", `translate(${c.x.toFixed(2)},${c.y.toFixed(2)})`);
-    // the chart style's icon: its kind of aircraft (a light aircraft, a turboprop, a business or
-    // regional jet, an airliner, a heavy, a helicopter, a fighter), at about its size; the selected
+    // the chart style's icon: its kind of aircraft (a light aircraft or twin, a turboprop, a business
+    // or regional jet, an airliner, a heavy, a fighter, a helicopter, a balloon, ...), at about its size; the selected
     // one a little larger, but not so much that an airliner passes for a heavy
     const size = (isHero ? 1.25 : 1) * p.scale;
     if (!opt.atc) {
       const kind = fresh || !c.ic ? iconKind(a) : c.kind;          // looked at again on each update
       if (kind !== c.kind || !c.ic) { c.kind = kind; c.ic = iconFor(kind); c.icon.setAttribute("d", c.ic.d); }
       c.reach = c.ic.r * size;
-      c.icon.setAttribute("transform", `rotate(${c.rot.toFixed(1)}) scale(${size})`);
+      // a balloon stays upright whichever way it drifts
+      c.icon.setAttribute("transform", `rotate(${c.ic.upright ? 0 : c.rot.toFixed(1)}) scale(${size})`);
     }
     // the lead line: one minute ahead at its ground speed, from the nose (the ATC style's
     // predicted track line, from the target), on the radar only

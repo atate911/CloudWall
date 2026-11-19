@@ -185,6 +185,10 @@ DEMO_FLIGHTS = [
     ("GTI8315", "5Y8315", "Atlas Air", "B744", "Boeing 747-400F", "N415MC", "PDX", "ANC", "dep"),
     ("EJA524", "EJA524", "NetJets", "C56X", "Cessna Citation Excel", "N524QS", "PDX", "LAX", "dep"),
     (None, None, None, "B350", "Beechcraft King Air 350", "N350TW", None, None, "ga"),
+    # and a few that aren't aeroplanes at all: a balloon drifting, a glider, a twin-rotor helicopter
+    (None, None, None, "BALL", "Cameron Balloons Z-105", "N105CB", None, None, "balloon"),
+    (None, None, None, "AS21", "Schleicher ASK 21", "N921SG", None, None, "glider"),
+    (None, None, None, "H47", "Boeing 234 Chinook", "N245CH", None, None, "heli"),
 ]
 
 
@@ -212,16 +216,20 @@ class Demo:
                                      "origin": _airport(f[6]), "dest": _airport(f[7])}
 
     def _spawn(self, lat, lon, along=None, radius_nm=15):
-        idx = self.rng.randrange(len(DEMO_FLIGHTS))
-        hexid = f"a{idx:05x}"
-        if any(a["hex"] == hexid for a in self.active):
+        flying = {a["hex"] for a in self.active}
+        free = [i for i in range(len(DEMO_FLIGHTS)) if f"a{i:05x}" not in flying]   # one not already in the air
+        if not free:
             return
+        idx = self.rng.choice(free)
+        hexid = f"a{idx:05x}"
         cs, _, _, typ, _, reg, _, _, kind = DEMO_FLIGHTS[idx]
         profile = {
             "arr": (299, 165, 2600, -700, "A3"), "dep": (119, 230, 5200, 2200, "A3"),
             "over": (self.rng.choice([165, 345]), 455, 36000, 0, "A5"),
             "ga": (self.rng.uniform(0, 360), 105, 2800, 0, "A1"),
             "heli": (self.rng.uniform(0, 360), 120, 1400, 0, "A7"),
+            "balloon": (self.rng.uniform(0, 360), 9, 1800, 0, "B2"),
+            "glider": (self.rng.uniform(0, 360), 52, 4200, 0, "B1"),
         }[kind]
         track, gs, alt, vrate, cat = profile
         if typ in ("A339", "A332", "B788", "MD11", "B77W", "B744"):

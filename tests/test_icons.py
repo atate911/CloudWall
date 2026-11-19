@@ -24,7 +24,7 @@ console.log(JSON.stringify({
   kinds: Object.keys(ICONS),
   table: Object.fromEntries(types.map((t) => [t, iconKind({ type: t })])),
   cases: cases.map((c) => iconKind(c)),
-  icons: Object.fromEntries(Object.entries(ICONS).map(([k, v]) => [k, { d: v.d, nose: v.nose, r: v.r, areas: k === "plain" ? [] : areas(v.d) }])),
+  icons: Object.fromEntries(Object.entries(ICONS).map(([k, v]) => [k, { d: v.d, nose: v.nose, r: v.r, upright: v.upright, areas: k === "plain" ? [] : areas(v.d) }])),
 }));
 """
 
@@ -36,7 +36,7 @@ CASES = [
     ({"type": "B744"}, "quad"), ({"type": "F15"}, "fighter"), ({"type": "EC35"}, "heli"),
     # helicopters the table doesn't have, by their type or their description
     ({"type": "A109"}, "heli"), ({"type": "B429"}, "heli"), ({"type": "ZZZZ", "desc": "Airbus Helicopters H125"}, "heli"),
-    ({"type": "ZZZZ", "desc": "Bell 407GXi"}, "heli"), ({"type": "ZZZZ", "desc": "Boeing CH-47F Chinook"}, "heli"),
+    ({"type": "ZZZZ", "desc": "Bell 407GXi"}, "heli"), ({"type": "ZZZZ", "desc": "Bell UH-1Y Venom"}, "heli"),
     # descriptions that aren't helicopters
     ({"type": "ZZZZ", "desc": "Boeing MD-11"}, None), ({"type": "ZZZZ", "desc": "Lockheed C-130H Hercules"}, None),
     ({"type": "ZZZZ", "desc": "Learjet 45"}, None),
@@ -46,6 +46,19 @@ CASES = [
     ({"type": "ZZZZ", "category": "A6"}, "fighter"), ({"type": "ZZZZ", "cwt": "B"}, "heavy"),
     ({"type": "ZZZZ", "cwt": "I"}, "light"), ({"type": "B738", "category": "A7"}, "airliner"),   # the type wins
     ({}, None),                                                                                     # nothing to go on
+    # the other kinds of traffic: by ICAO's catch-all codes and other types, descriptions and categories
+    ({"type": "BALL"}, "balloon"), ({"type": "ZZZZ", "category": "B2"}, "balloon"),
+    ({"type": "ZZZZ", "desc": "Cameron Balloons Z-105"}, "balloon"), ({"type": "ZZZZ", "desc": "Goodyear Zeppelin NT"}, "airship"),
+    ({"type": "GLID"}, "glider"), ({"type": "AS21", "category": "B1"}, "glider"),
+    ({"type": "ZZZZ", "desc": "Wills Wing hang glider"}, "ultralight"), ({"type": "ZZZZ", "category": "B4"}, "ultralight"),
+    ({"type": "GYRO"}, "gyro"), ({"type": "ZZZZ", "desc": "AutoGyro Calidus"}, "gyro"),
+    ({"type": "H47", "category": "A7"}, "tandem"), ({"type": "H46"}, "tandem"),
+    ({"type": "V22"}, "tiltrotor"), ({"type": "ZZZZ", "desc": "Leonardo AW609"}, "tiltrotor"),
+    ({"type": "Q9"}, "drone"), ({"type": "ZZZZ", "category": "B6"}, "drone"),
+    ({"type": "CL2T"}, "seaplane"), ({"type": "C208", "desc": "Cessna 208 Caravan Amphibian"}, "seaplane"),
+    ({"type": "DHC2", "desc": "de Havilland Canada DHC-2 Beaver"}, None),          # on wheels or floats: can't tell
+    ({"type": "BE58"}, "twin"), ({"type": "PA34"}, "twin"), ({"type": "ZZZZ", "category": "B3"}, None),
+    ({"type": "ZZZZ", "desc": "Bombardier Global 7500"}, None), ({"type": "ZZZZ", "desc": "Piper PA-46 Malibu Mirage"}, None),
 ]
 
 
@@ -73,6 +86,10 @@ class IconTest(unittest.TestCase):
         self.assertLess(reach["bizjet"], reach["regional"])
         self.assertLess(reach["airliner"], reach["heavy"])
         self.assertLessEqual(reach["heavy"], reach["quad"])
+        self.assertLess(reach["drone"], reach["light"])
+        self.assertLess(reach["twin"], reach["turboprop"])
+        self.assertTrue(self.r["icons"]["balloon"]["upright"])                    # drawn from the side, always upright
+        self.assertFalse(any(v["upright"] for k, v in self.r["icons"].items() if k != "balloon"))
 
     def test_every_part_is_wound_the_same_way(self):
         # so the parts (wings, engines, rotor blades) join into one filled shape with no holes

@@ -62,22 +62,50 @@ export function typeInfo(a) {
   return { type: a.type, shape, length, known: !!known, name: [a.model, a.type_name].filter(Boolean).join(" ") };
 }
 
-// The radar's icon for an aircraft (icons.js): one of a few kinds, told apart at a glance. From its
-// type when the table above has it; else its type or description when it's a helicopter; else what
-// its transponder says it is (the ADS-B emitter category); else its wake category. Null when nothing
-// says, and the radar draws its plain aircraft.
+// The radar's icon for an aircraft (icons.js): one kind of traffic, told apart at a glance.
+// First the kinds the table below names by type (balloons, gliders, twin-rotor helicopters,
+// seaplanes, light twins, ...), or that the aircraft's description gives away; then its type in the
+// table above; then its type or description when it's a helicopter; then what its transponder says
+// it is (the ADS-B emitter category); then its wake category. Null when nothing says, and the radar
+// draws its plain aircraft. A Beaver or a Caravan on floats has the same type as one on wheels, so
+// it is a seaplane only when its description says so.
+const KIND_OF_TYPE = {
+  BALL: "balloon", SHIP: "airship", GLID: "glider", ULAC: "ultralight", GYRO: "gyro", UHEL: "heli",   // ICAO's catch-all codes
+  H46: "tandem", H47: "tandem", V22: "tiltrotor", Q1: "drone", Q4: "drone", Q9: "drone",
+  CL2P: "seaplane", CL2T: "seaplane", LA4: "seaplane", G21: "seaplane", G44: "seaplane", G73: "seaplane", U16: "seaplane",
+};
+for (const t of ("AEST BE55 BE58 BE76 BE95 BN2P C310 C335 C340 C402 C404 C414 C421 DA42 DA62 P68 PA23 PA27 PA30 PA31 " +
+  "PA34 PA44").split(" ")) KIND_OF_TYPE[t] = "twin";                                                  // piston twins
+// what a description gives away, in this order (a hang glider is an ultralight, not a glider;
+// a Chinook a twin-rotor helicopter)
+const KIND_OF_WORDS = [
+  ["balloon", /balloon|\bcameron\b|lindstrand|ultramagic|kubicek|thunder (and|&) colt/i],
+  ["airship", /airship|blimp|zeppelin/i],
+  ["ultralight", /ultra-?light|microlight|\btrike\b|paramotor|powered parachute|paraglider|hang ?glider|weight.shift/i],
+  ["glider", /glider|sailplane|schleicher|schempp|\bstemme\b|jonker/i],
+  ["gyro", /gyro(plane|copter)?\b|autogiro|autogyro|\bcalidus\b|\bcavalon\b|\bmagni\b/i],
+  ["tiltrotor", /osprey|tilt.?rotor|\baw ?609\b|bell 609/i],
+  ["tandem", /chinook|sea knight|\bch-4[67]|vertol|tandem/i],
+  ["drone", /unmanned|\bua[sv]\b|drone|reaper|predator|global hawk|triton|scaneagle/i],
+  ["seaplane", /seaplane|float ?plane|\bfloats\b|amphib|flying boat|catalina|canadair cl-?[24]15|\bicon a5\b|water ?bomber/i],
+];
 const ICON_OF_SHAPE = { piston: "light", turboprop: "turboprop", bizjet: "bizjet", regional: "regional", narrow: "airliner",
   wide: "heavy", quad: "quad", heli: "heli", fighter: "fighter" };
 const HELI_TYPES = new Set(("A109 A119 A129 A139 A149 A169 A189 AS32 AS3B AS50 AS55 AS65 B06 B06T B105 B212 B222 B230 B407 B412 " +
-  "B427 B429 B430 B47G B505 BK17 EC20 EC25 EC30 EC35 EC45 EC55 EC75 EN28 EN48 EXPL G2CA H160 H269 H47 H500 H53 H60 H64 " +
+  "B427 B429 B430 B47G B505 BK17 EC20 EC25 EC30 EC35 EC45 EC55 EC75 EN28 EN48 EXPL G2CA H160 H269 H500 H53 H60 H64 " +
   "KMAX MD52 MD60 MI8 NH90 R22 R44 R66 S61 S64 S76 S92 UH1").split(" "));
 const HELI_WORDS = /helicopter|copter|robinson|sikorsky|agusta|enstrom|schweizer|guimbal|kaman|\bbell [245]\d\d|\baw ?1\d\d\b|\b[acmhu]h-\d/i;
 // A1 light, A2 small, A3 large, A4 high vortex large (the 757), A5 heavy, A6 high performance,
-// A7 rotorcraft; B1 glider, B4 ultralight
-const ICON_OF_CATEGORY = { A1: "light", A2: "bizjet", A3: "airliner", A4: "airliner", A5: "heavy", A6: "fighter", A7: "heli", B1: "light", B4: "light" };
+// A7 rotorcraft; B1 glider, B2 lighter than air, B4 ultralight, hang glider or paraglider, B6 unmanned.
+// (B3, parachutists, and B7, space vehicles, are left plain.)
+const ICON_OF_CATEGORY = { A1: "light", A2: "bizjet", A3: "airliner", A4: "airliner", A5: "heavy", A6: "fighter", A7: "heli",
+  B1: "glider", B2: "balloon", B4: "ultralight", B6: "drone" };
 // A super ... D heavy, E the 757, F and G large, H small over 15,500 lb, I small under it
 const ICON_OF_CWT = { A: "heavy", B: "heavy", C: "heavy", D: "heavy", E: "airliner", F: "airliner", G: "airliner", H: "bizjet", I: "light" };
 export function iconKind(a) {
+  if (KIND_OF_TYPE[a.type]) return KIND_OF_TYPE[a.type];
+  const said = a.desc && KIND_OF_WORDS.find(([, re]) => re.test(a.desc));
+  if (said) return said[0];
   const known = T[a.type];
   if (known) return ICON_OF_SHAPE[known[0]] || null;
   if (HELI_TYPES.has(a.type) || HELI_WORDS.test(a.desc || "")) return "heli";
