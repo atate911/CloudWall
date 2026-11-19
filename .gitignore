@@ -7,3 +7,4 @@ config.toml
 build/
 dist/
 *.egg-info/
+node_modules/

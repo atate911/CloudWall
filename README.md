@@ -396,7 +396,13 @@ no requests (or, with `"log"`, only the slow position check).
   freight only, and its livery's colours for the board. Add a line to teach CloudWall an airline.
 - CloudWall has no logins: it is meant for a home network, not the open internet. It refuses
   requests to add or remove places that come from another site's page.
+- Anything else on your network can read what the screens read: [API.md](API.md) lists every
+  answer, key by key (a Home Assistant card or a widget needs only `/api/state`).
+- The logbook notes where each flyover's closest point was and which way it was flying, as well as
+  how near, high and fast.
 - Tests: `python3 -m unittest discover -s tests` (no network needed; they also run on every pull
-  request). [ARCHITECTURE.md](ARCHITECTURE.md) maps the code.
+  request). The ones that walk the page in a browser need Playwright and are skipped without it:
+  `npm install --no-save playwright && npx playwright install chromium`.
+  [ARCHITECTURE.md](ARCHITECTURE.md) maps the code.
 - CloudWall is released under the MIT licence ([LICENSE](LICENSE)). The bundled tables and the
   typeface keep their own licences, beside them in `cloudwall/data/` and `cloudwall/web/fonts/`.

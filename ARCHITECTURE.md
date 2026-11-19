@@ -152,6 +152,9 @@ so a snapshot can be serialised without holding it.
 
 ### HTTP API
 
+[API.md](API.md) lists every key of every answer, and `tests/test_api.py` holds the code to it.
+In short:
+
 | Request | Returns |
 |---|---|
 | `GET /api/state?place=&range=&square=1&pin=` (`kiosk=1` instead of `place` for the wall panel) | Everything a screen shows for one place. `range`/`square` say how far its radar looks; `pin` is the flight it follows. |
@@ -170,7 +173,7 @@ site's page (`Origin`, `Sec-Fetch-Site`), and a request body over 16 KB isn't re
 
 | Where | What |
 |---|---|
-| `cloudwall.db` (the first place) | Its logbook (`sightings`: one row per flyover) and, in `cache`, its heatmap per day, plus what all places share: lookups (`route` 7 days, `aircraft` 30 days, `photo` 1 day, `live_route` 45 minutes, `fa_airport` a year) and the paid provider's usage per day. |
+| `cloudwall.db` (the first place) | Its logbook (`sightings`: one row per flyover, with where its closest point was and which way it was flying) and, in `cache`, its heatmap per day, plus what all places share: lookups (`route` 7 days, `aircraft` 30 days, `photo` 1 day, `live_route` 45 minutes, `fa_airport` a year) and the paid provider's usage per day. |
 | `cloudwall-<id>.db` (each other place) | Its logbook and its heatmap per day. |
 | Both | The place the logbook is kept at. Cached rows past their ages are cleared. |
 | `places.json` beside them | Places added from a screen, each with its id. |
@@ -221,6 +224,8 @@ toward each new report. Countdowns use the same clock (`since(state)` in `util.j
   place, fetch it through `Shared.once`.
 - **A field on the flight card:** set it in `Details.fill`, show it in `hero.js`
   (`renderFacts`) and, if it earns the space, `kiosk.js`.
+- **Any key in an answer:** a row in [API.md](API.md), or `tests/test_api.py` fails. Removing one,
+  or changing what it means, also raises `API` in `server.py`.
 - **An airline:** a line in `data/airlines.csv`.
 - **An aircraft type:** a line in `data/types.csv` and its family in the right `profiles/` file;
   `tests/test_silhouettes.py` checks the two agree. Its `icon` column names its radar icon where
@@ -234,12 +239,18 @@ toward each new report. Countdowns use the same clock (`since(state)` in `util.j
 
 ## Tests
 
-`python3 -m unittest discover -s tests`. `tests/test_cloudwall.py` covers the server side with
-stubbed feeds and providers; `tests/test_silhouettes.py` and `tests/test_icons.py` run the
-drawing modules under Node.
-The tests stay on the machine: `setUpModule` stops any request to another host and fails the
-run if one was tried, and `.github/workflows/tests.yml` runs them on every pull request.
+`python3 -m unittest discover -s tests` runs all of these; `.github/workflows/tests.yml` runs them
+on every pull request.
+
+| File | What it holds to account |
+|---|---|
+| `tests/test_cloudwall.py` | The server, with stubbed feeds and providers. It stays on the machine: `setUpModule` stops any request to another host and fails the run if one was tried. |
+| `tests/test_api.py` | The shape of every answer, against [API.md](API.md): a key added, dropped or renamed fails until the reference says so, and a key the reference lists that nothing sends fails too. |
+| `tests/test_browser.py`, `tests/browser_smoke.js` | The page, in headless Chromium against the demo: each layout and tab, following a flight, the radar's switches, the quiet-sky slides, an emergency, the server gone. Nothing on the console, nothing fetched from elsewhere. Needs Playwright (`npm install --no-save playwright && npx playwright install chromium`); skipped without it, except in the workflow. |
+| `tests/test_silhouettes.py`, `tests/test_icons.py` | The aircraft drawings and the radar's icons, run under Node. |
+
+The displays are drawing code with no unit tests of their own, so the browser test is what says a
+change to the page didn't break one: run it after touching anything under `web/`.
 `cloudwall --demo` runs the whole thing on simulated traffic. The demo's feed updates every
 second where the live one updates every five, so timing between updates is worth checking
-against a slower feed too. The page's displays have no tests of their own: after changing one,
-open each layout (`/`, `/kiosk`, a phone-sized window) and each tab.
+against a slower feed too.
