@@ -1,8 +1,8 @@
 """Temporary flight restrictions near home, from the FAA's public TFR service.
 
-Shapes come from the FAA's map service (one request for the whole country); each nearby
-restriction's details (name, times, altitudes, full notice) from its XML record, fetched
-once and kept until the FAA changes it.
+Shapes come from the FAA's map service: one request for the whole country, which serves every
+place CloudWall watches. Each nearby restriction's details (name, times, altitudes, full
+notice) come from its XML record, fetched once and kept until the FAA changes it.
 """
 import logging
 import math
@@ -131,23 +131,31 @@ def parse_detail(xml):
 
 
 class TFRs:
-    def __init__(self, home, radius_nm=30, fetch_json=get_json, fetch_text=get_text):
-        self.home, self.radius = home, radius_nm
+    """The FAA's restrictions. Its list is one for the whole country (fetch), from which each
+    place takes those near it (near). A restriction's details are read the first time any place
+    is near it and kept until the FAA changes it."""
+
+    def __init__(self, fetch_json=get_json, fetch_text=get_text):
         self.fetch_json, self.fetch_text = fetch_json, fetch_text
         self.details = {}          # NOTAM key -> (last modified, parsed detail)
 
-    def refresh(self, now=None):
+    def fetch(self):
+        """Every restriction's outline, as the FAA's map service lists them."""
+        return (self.fetch_json(SHAPES, timeout=30) or {}).get("features") or []
+
+    def near(self, features, home, radius_nm=30, now=None):
+        """The restrictions among fetch()'s within radius_nm of home, with their details: those
+        in force first, then nearest first."""
         now = now or time.time()
-        data = self.fetch_json(SHAPES, timeout=30) or {}
         found = {}
-        for f in data.get("features") or []:
+        for f in features:
             p = f.get("properties") or {}
             key = p.get("NOTAM_KEY") or ""
             rings = _rings(f.get("geometry") or {})
             if not key or not rings:
                 continue
-            d = min(_dist_to_ring(self.home, r) for r in rings)
-            if d > self.radius:
+            d = min(_dist_to_ring(home, r) for r in rings)
+            if d > radius_nm:
                 continue
             nid = key.split("-")[0]                      # "6/8034-1-FDC-F" -> "6/8034"
             t = found.setdefault(nid, {"id": nid, "dist_nm": d, "shapes": [], "title": p.get("TITLE"),
@@ -164,7 +172,7 @@ class TFRs:
                 except Exception as e:                       # shapes alone are still worth showing
                     log.warning("TFR %s details failed: %s", nid, e)
                     cached = (None, {"name": title_place(t["title"]) or t["title"], "kind": "Flight restriction"})
-            t.update(cached[1])
+            t = dict(t, **cached[1])
             if not t.get("name") or t["name"] == nid:      # many records are named only by their number
                 t["name"] = title_place(t["title"]) or t.get("name")
             if t.get("end") and t["end"] < now:

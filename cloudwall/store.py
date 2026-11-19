@@ -93,6 +93,12 @@ class Store:
                     gone += self.db.execute("DELETE FROM cache WHERE kind=? AND ts<?", (kind, now - age)).rowcount
         return gone
 
+    def forget(self, kinds):
+        """Clear every cached value of these kinds (e.g. the lookups each place's file held
+        before they were kept in one place for all)."""
+        with self.lock, self.db:
+            self.db.execute(f"DELETE FROM cache WHERE kind IN ({','.join('?' * len(kinds))})", tuple(kinds))
+
     def claim(self, home):
         """Note the place this logbook is kept at, so its file isn't later taken for another's."""
         self.cache_put("place", "home", {"lat": home["lat"], "lon": home["lon"]})

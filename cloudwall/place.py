@@ -1,8 +1,9 @@
 """One place CloudWall watches: its tracker and logbook, and the threads that keep them fed.
 
 Several places can run at once (config.places), each fetching data only while a screen is
-showing it, so a place nobody is looking at costs nothing. The paid route provider is shared,
-so all places draw on one budget.
+showing it, so a place nobody is looking at costs nothing. What isn't particular to a place
+(lookups of routes and airframes, the country's flight restrictions, an airport's weather) is
+fetched once for all of them: see shared.py.
 """
 import json
 import logging
@@ -14,17 +15,21 @@ from pathlib import Path
 from . import airports, config, contrails, sources, tfr, weather
 from .activity import Activity
 from .enrich import Enricher
+from .shared import Shared
 from .tracker import Tracker
 
 log = logging.getLogger("cloudwall")
 
 
 class Place:
-    def __init__(self, cfg, store, source, live=None, demo=False, named=False):
+    def __init__(self, cfg, store, source, shared=None, demo=False, named=False):
+        """store: this place's logbook. shared: what all places share (one of its own if none is
+        given, as for a place on its own in a test)."""
         self.cfg, self.store, self.source, self.demo = cfg, store, source, demo
         self.id, self.name = cfg["place"]["id"], cfg["place"]["name"]
         self.tag = f"{self.name}: " if named else ""        # log prefix, when there's more than one
-        self.tracker = Tracker(cfg, store, Enricher(store, demo=source if demo else None, live=live))
+        self.shared = shared or Shared(Enricher(store, demo=source if demo else None))
+        self.tracker = Tracker(cfg, store, self.shared.enricher)
         trk = cfg["tracking"]
         # Only use the data services while a screen shows this place: "pause" stops all
         # requests when nobody is looking; "log" keeps checking the free position feed slowly
@@ -33,7 +38,6 @@ class Place:
         self.activity = Activity(int(trk.get("idle_after_seconds", 90)))
         if demo:
             self.activity.idle = lambda: False      # demo traffic costs nothing
-        self.tfrs = tfr.TFRs(cfg["home"], cfg["extras"]["tfr_radius_nm"])
         self.stopped = threading.Event()
         self.added = False                          # set up from a screen rather than the config file
 
@@ -46,7 +50,6 @@ class Place:
         """Removed: its threads finish their current step and end."""
         self.stopped.set()
         self.activity.touch()                       # wakes the poller if it's waiting for a screen
-        self.tracker.enricher.stop()                # and its lookups' workers
 
     def _keep_going(self, loop):
         """A thread's body. An error nobody foresaw is logged with where it happened and the loop
@@ -109,7 +112,7 @@ class Place:
         while not self.stopped.is_set():
             if not self.activity.idle() and time.time() - fetched > 300:
                 try:
-                    short, full = weather.fetch_all(self.cfg["airport"]["icao"])
+                    short, full = self.shared.weather(self.cfg["airport"]["icao"])
                     if short:
                         self.tracker.weather, self.tracker.weather_full = short, full
                     fetched = time.time()
@@ -122,12 +125,13 @@ class Place:
     def _extras(self):
         """Military jets heard without a position (every minute), flight restrictions
         (every 15 minutes) and the contrail forecast (hourly). Paused with no screen open."""
-        cfg, ex, tracker = self.cfg, self.cfg["extras"], self.tracker
+        cfg, ex, tracker, shared = self.cfg, self.cfg["extras"], self.tracker, self.shared
         jobs = [  # (enabled, every seconds, name, fetch, keep)
             (ex["military"], 60, "military aircraft",
-             lambda: sources.military_heard(cfg["home"], ex["military_radius_nm"], ex["military_url"]),
+             lambda: sources.heard_near(shared.military(ex["military_url"]), cfg["home"], ex["military_radius_nm"]),
              lambda v: setattr(tracker, "heard", v)),
-            (ex["tfr"], 900, "flight restrictions", self.tfrs.refresh, lambda v: setattr(tracker, "tfrs", v)),
+            (ex["tfr"], 900, "flight restrictions",
+             lambda: shared.restrictions(cfg["home"], ex["tfr_radius_nm"]), lambda v: setattr(tracker, "tfrs", v)),
             (ex["contrails"], 3600, "contrail forecast",
              lambda: contrails.fetch(cfg["home"]["lat"], cfg["home"]["lon"]), lambda v: setattr(tracker, "contrails", v)),
         ]

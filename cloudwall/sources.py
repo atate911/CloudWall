@@ -5,6 +5,7 @@ import random
 import time
 from urllib.parse import urlparse
 
+from .geo import haversine_nm
 from .http import get_json
 
 log = logging.getLogger("cloudwall.sources")
@@ -118,27 +119,29 @@ class Feeds:
         raise last
 
 
-def military_heard(home, radius_nm, url="https://opendata.adsb.fi/api/v2/mil"):
-    """Military aircraft that receivers near home can hear but nobody can place.
+def military_unplaced(url="https://opendata.adsb.fi/api/v2/mil"):
+    """Military aircraft that receivers can hear but nobody can place, anywhere: the feed's own
+    records. One request serves every place (shared.py); heard_near picks out a place's.
 
     Many military jets carry a Mode S transponder that sends altitude but no position. The
     network still reports them, with the rough location of the receiver that heard them
     (rr_lat/rr_lon), so we can say "an F-16 is up nearby" even with no dot for the map.
     Aircraft with a position arrive through the normal feed instead."""
-    from .geo import haversine_nm
     data = get_json(url, timeout=10)
+    return [a for a in (data or {}).get("ac") or []
+            if a.get("lat") is None and a.get("rr_lat") is not None and a.get("rr_lon") is not None
+            and (a.get("seen") or 0) <= 90]
+
+
+def heard_near(unplaced, home, radius_nm):
+    """Those of military_unplaced's aircraft heard by a receiver within radius_nm of home."""
     out = []
-    for a in (data or {}).get("ac") or []:
-        if a.get("lat") is not None or a.get("rr_lat") is None:
-            continue
-        if (a.get("seen") or 0) > 90:
-            continue
+    for a in unplaced:
         d = haversine_nm(home["lat"], home["lon"], a["rr_lat"], a["rr_lon"])
-        if d > radius_nm:
-            continue
-        n = normalise(a)
-        n.update(rough_nm=round(d), lat=None, lon=None)
-        out.append(n)
+        if d <= radius_nm:
+            n = normalise(a)
+            n.update(rough_nm=round(d), lat=None, lon=None)
+            out.append(n)
     return out
 
 

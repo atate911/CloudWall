@@ -124,9 +124,6 @@ class StubEnricher:
     def route(self, callsign):
         return self.routes.get(callsign)
 
-    def stop(self):
-        pass
-
 
 def plane(hexid, callsign, north_nm, alt=3000, typ="B738", home=None, **kw):
     home = home or config.DEFAULTS["home"]
@@ -1505,12 +1502,16 @@ class TFRTest(unittest.TestCase):
             {"properties": {"NOTAM_KEY": "6/1111-1-FDC-F", "LAST_MODIFICATION_DATETIME": "1"}, "geometry": square(45.59, -122.47, 0.05)},
             {"properties": {"NOTAM_KEY": "6/2222-1-FDC-F", "LAST_MODIFICATION_DATETIME": "1"}, "geometry": square(38.9, -77.0, 0.1)}]}
         texts = []
-        t = TFRs(home, 30, fetch_json=lambda url, timeout: shapes, fetch_text=lambda url, timeout: texts.append(url) or self.XML)
-        out = t.refresh(now=1e9)
+        lists = []
+        t = TFRs(fetch_json=lambda url, timeout: lists.append(url) or shapes, fetch_text=lambda url, timeout: texts.append(url) or self.XML)
+        out = t.near(t.fetch(), home, 30, now=1e9)
         self.assertEqual([x["id"] for x in out], ["6/1111"])
         self.assertEqual(out[0]["dist_nm"], 0.0)                     # home is inside it
-        t.refresh(now=1e9)
+        t.near(t.fetch(), home, 30, now=1e9)
         self.assertEqual(len(texts), 1)                                # details fetched once
+        # the one list serves every place: another, by Washington, takes its own share of it
+        self.assertEqual([x["id"] for x in t.near(shapes["features"], {"lat": 38.9, "lon": -77.0}, 30, now=1e9)], ["6/2222"])
+        self.assertEqual(len(lists), 2)
 
     def test_the_records_the_faa_issues_now(self):
         """A paragraph after the regulation, drone restrictions under 49 U.S.C. 44812 with the
@@ -1527,8 +1528,9 @@ class TFRTest(unittest.TestCase):
             {"properties": {"NOTAM_KEY": "6/1111-1-FDC-F", "TITLE": "Camas, WA, Saturday, November 21, 2026 Local"},
              "geometry": {"type": "Polygon", "coordinates": [ring]}},
             {"properties": {"NOTAM_KEY": "6/3333-1-FDC-F"}, "geometry": None}]}       # no shape: left out, not an error
-        t = TFRs({"lat": 45.59, "lon": -122.47}, 30, fetch_json=lambda url, timeout: shapes, fetch_text=lambda url, timeout: fire)
-        self.assertEqual([(x["id"], x["name"]) for x in t.refresh(now=1e9)], [("6/1111", "Camas, WA")])
+        t = TFRs(fetch_json=lambda url, timeout: shapes, fetch_text=lambda url, timeout: fire)
+        near = t.near(t.fetch(), {"lat": 45.59, "lon": -122.47}, 30, now=1e9)
+        self.assertEqual([(x["id"], x["name"]) for x in near], [("6/1111", "Camas, WA")])
 
 
 class ContrailTest(unittest.TestCase):
@@ -1572,7 +1574,9 @@ class MilitaryTest(unittest.TestCase):
         real = sources.get_json
         sources.get_json = lambda url, timeout: feed
         try:
-            out = sources.military_heard({"lat": 45.59, "lon": -122.47}, 40)
+            heard = sources.military_unplaced()                          # one request, whatever the places
+            out = sources.heard_near(heard, {"lat": 45.59, "lon": -122.47}, 40)
+            self.assertEqual([a["hex"] for a in sources.heard_near(heard, {"lat": 47.6, "lon": -122.3}, 40)], ["ae0002"])
         finally:
             sources.get_json = real
         self.assertEqual([(a["hex"], a["alt"], a["military"]) for a in out], [("ae0001", 15000, True)])
@@ -1744,20 +1748,15 @@ class HousekeepingTest(unittest.TestCase):
         s.prune()
         self.assertTrue(s.cache_get("place", "home", float("inf"))[0])
 
-    def test_lookups_in_memory_are_bounded_and_workers_stop(self):
+    def test_lookups_in_memory_are_bounded(self):
         from cloudwall import enrich
-        e = Enricher(Store(":memory:"))
-        self.assertEqual(len(e.threads), 2)
+        e = Enricher(Store(":memory:"), demo=object())                  # (demo: no worker threads)
         with e.lock:
             for i in range(enrich.MEM_MAX + 10):
                 e._keep(("aircraft", str(i)), None, at=i)
         self.assertLessEqual(len(e.mem), enrich.MEM_MAX)
         self.assertIn(("aircraft", str(enrich.MEM_MAX + 9)), e.mem)     # the newest stay
         self.assertNotIn(("aircraft", "0"), e.mem)
-        e.stop()                                                        # its place was removed
-        for t in e.threads:
-            t.join(2)
-            self.assertFalse(t.is_alive())
 
 
 class PlaceThreadsTest(unittest.TestCase):
@@ -1795,3 +1794,62 @@ class PlaceThreadsTest(unittest.TestCase):
         self.assertIn("the board couldn't be worked out", logs.output[0])
         self.assertIn("ZeroDivisionError", logs.output[0])              # with where it happened
         self.assertIn("division by zero", place.tracker.status["error"])
+
+
+class SharedTest(unittest.TestCase):
+    """What isn't about one place is fetched once for all of them."""
+
+    def test_one_fetch_serves_every_asker(self):
+        from cloudwall.shared import Shared
+        shared, fetched = Shared(StubEnricher()), []
+        fetch = lambda: fetched.append(1) or len(fetched)
+        self.assertEqual([shared.once("list", 60, fetch) for _ in range(3)], [1, 1, 1])
+        shared.kept["list"]["at"] -= 61                                 # a minute on: fetched afresh
+        self.assertEqual(shared.once("list", 60, fetch), 2)
+        with self.assertRaises(ZeroDivisionError):                      # a failure is the asker's, and isn't kept
+            shared.once("other", 60, lambda: 1 / 0)
+        self.assertEqual(shared.once("other", 60, lambda: "ok"), "ok")
+
+    def test_two_places_one_list_and_one_weather_report(self):
+        from cloudwall import weather
+        from cloudwall.shared import Shared
+        shared, asked = Shared(StubEnricher()), []
+        ring = [[-122.5, 45.5], [-122.4, 45.5], [-122.4, 45.7], [-122.5, 45.7], [-122.5, 45.5]]
+        shared.tfrs.fetch_json = lambda url, timeout: asked.append("list") or {"features": [
+            {"properties": {"NOTAM_KEY": "6/1111-1-FDC-F", "TITLE": "Camas, WA"}, "geometry": {"type": "Polygon", "coordinates": [ring]}}]}
+        shared.tfrs.fetch_text = lambda url, timeout: TFRTest.XML
+        home, cabin = {"lat": 45.59, "lon": -122.47}, {"lat": 44.06, "lon": -121.31}
+        self.assertEqual([len(shared.restrictions(p, 30)) for p in (home, cabin, home)], [1, 0, 1])
+        real, weather.fetch_all = weather.fetch_all, lambda icao: asked.append(icao) or ({"station": icao}, {})
+        try:
+            for _ in range(2):                                          # two places with the same airport
+                self.assertEqual(shared.weather("KPDX")[0], {"station": "KPDX"})
+            shared.weather("KRDM")
+        finally:
+            weather.fetch_all = real
+        self.assertEqual(asked, ["list", "KPDX", "KRDM"])
+
+    def test_a_flight_two_places_can_see_is_looked_up_and_paid_for_once(self):
+        from cloudwall.place import Place
+        from cloudwall.shared import Shared
+        calls = []
+
+        class Provider:
+            name, label, mode, general_aviation, enabled = "fake", "Fake24", "always", False, True
+            def available(self): return True
+            def status(self): return {}
+            def route(self, callsign): calls.append(callsign); return None
+        cache = Store(":memory:")
+        for kind, key in (("aircraft", "a1"), ("route", "ASA512"), ("photo", "a1||B738")):
+            cache.cache_put(kind, key, None)                            # (no free lookups in the way)
+        shared = Shared(Enricher(cache, live=Provider()))
+        cfg = config.load()
+        cfg["places"] = [{"name": "Next door", "lat": cfg["home"]["lat"] + 0.01, "lon": cfg["home"]["lon"]}]
+        home, neighbour = [Place(pc, Store(":memory:"), sources.Demo(), shared) for pc in config.places(cfg)]
+        self.assertIs(home.tracker.enricher, neighbour.tracker.enricher)
+        for place in (home, neighbour):
+            place.tracker.update([plane("a1", "ASA512", 1.0)], "test")
+        time.sleep(0.3)
+        self.assertEqual(calls, ["ASA512"])
+        self.assertTrue(cache.cache_get("live_route", "fake:ASA512", 3600)[0])          # kept in the one cache,
+        self.assertFalse(home.store.cache_get("live_route", "fake:ASA512", 3600)[0])    # not with either logbook

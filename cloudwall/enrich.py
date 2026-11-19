@@ -17,6 +17,8 @@ LIVE_ROUTE_TTL = 45 * 60   # a callsign flies several legs a day; don't reuse a 
 LIVE_RETRY = 5 * 60        # a paid lookup that failed or was refused: leave that flight alone this long
 PHOTO_TTL = DAY            # look again daily: photos there are added and taken down
 MEM_MAX = 5000             # lookups kept in memory; the rest are a database read away
+KINDS = ("route", "aircraft", "photo", "live_route")     # what it keeps in the store's cache
+PRUNE_EVERY = 6 * 3600     # how often cached lookups past their use are cleared from the database
 
 
 def _airport(a):
@@ -67,7 +69,9 @@ def fetch_photo(hexid, reg=None, icao_type=None):
 
 
 class Enricher:
-    """Non-blocking lookups: returns what is cached now, fetches the rest in the background."""
+    """Non-blocking lookups: returns what is cached now, fetches the rest in the background.
+    There is one for the whole process (shared.py): a route or an airframe is the same from
+    every place, so each is looked up, paid for and cached once however many places see it."""
 
     def __init__(self, store, demo=None, live=None):
         self.store, self.demo, self.live = store, demo, live
@@ -75,15 +79,10 @@ class Enricher:
         # photos wait in a line of their own, so a slow photo site never holds up a route
         self.q, self.photo_q = queue.Queue(), queue.Queue()
         self.lock = threading.Lock()
-        self.threads = [] if demo else [threading.Thread(target=self._worker, args=(q,), daemon=True)
-                                        for q in (self.q, self.photo_q)]
-        for t in self.threads:
-            t.start()
-
-    def stop(self):
-        """No more lookups (its place was removed): the workers finish what they're on and end."""
-        for q in (self.q, self.photo_q):
-            q.put(None)
+        self.pruned = time.time() - PRUNE_EVERY + 600      # first ten minutes in, then every few hours
+        if not demo:
+            for q in (self.q, self.photo_q):
+                threading.Thread(target=self._worker, args=(q,), daemon=True).start()
 
     def _keep(self, k, value, at=None):
         """Remember a lookup in memory (called with the lock held). Past MEM_MAX the older half is
@@ -171,10 +170,7 @@ class Enricher:
 
     def _worker(self, q):
         while True:
-            k = q.get()
-            if k is None:            # stopped
-                return
-            kind, key = k
+            kind, key = k = q.get()
             try:
                 value = self._fetch(kind, key)
                 if kind == "live_route" and value is None and not self.live.available():
@@ -195,3 +191,8 @@ class Enricher:
             finally:
                 with self.lock:
                     self.pending.discard(k)
+                    prune = time.time() - self.pruned > PRUNE_EVERY
+                    if prune:
+                        self.pruned = time.time()
+                if prune:           # as good a moment as any: rows nobody will read again
+                    self.store.prune()
