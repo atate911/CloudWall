@@ -26,10 +26,10 @@ airframe photos from [planespotters.net](https://www.planespotters.net), weather
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
   path across it (centre is straight up), or a radar scope over a faint street map.
   Each aircraft on the radar shows its altitude in hundreds of feet, with an arrow when it is
-  climbing or descending (`035↑`), a line to where it will be in a minute, and a trail of the
-  last few minutes. The selected aircraft (the one overhead, or one you tap) shows its whole
-  track instead, since it came in range or took off, as flight-tracking sites draw it: in
-  magenta, strongest near the ground and fading with height in steps at 2,000, 5,000, 10,000,
+  climbing or descending (`035↑`) and a line to where it will be in a minute. Only the selected
+  aircraft (the one overhead, or one you tap) shows where it has been, so a busy sky stays
+  readable: its whole track since it came in range or took off, as flight-tracking sites draw it,
+  in magenta, strongest near the ground and fading with height in steps at 2,000, 5,000, 10,000,
   18,000 and 28,000 ft. CloudWall keeps every aircraft's track, so one you tap shows all of it at
   once. Both views have a compass bezel with bearings, and on the desktop a key in the corner.
   Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
@@ -87,6 +87,11 @@ make run
 The install is editable, so changes to the Python or to `cloudwall/web/` take effect
 without reinstalling: restart for Python changes, just reload the browser for the
 web files.
+
+After an update (`git pull`), restart CloudWall: `make restart` for the service below, or stop
+`make run` and start it again. Until then the server keeps running the old code while browsers
+load the new pages, so anything new on both sides (such as setting a location) can't work; the
+header says **Updated: restart CloudWall** while that's so.
 
 To keep it running in the background across logouts and reboots:
 
@@ -194,7 +199,7 @@ board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk 
 
 | Address | For | What it shows |
 |---|---|---|
-| `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, sound and night buttons. On screens 1500 px wide and up, the Overhead view adds a live list of nearby flights; click one to follow it. |
+| `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, sound and night buttons. On screens 1500 px wide and up, the Overhead view adds a live list of nearby flights; click one to follow it. The arrow on the divider between the radar and the list hides or shows the list, and dragging the divider gives the radar more or less room (double-click it for the usual width); the flight card keeps its size, and each screen remembers its setting. |
 | `http://<server>:5050/` on a phone | A phone in the hand | The same tabs and switches, laid out for a phone. Upright, the page scrolls: the flight card at full width, then a square radar with its switches above and below it, the tabs along the foot and the status line held at the top. The Board becomes a two-line list (flight, route and when it's overhead; airline, type, altitude and speed), and Weather and Logbook stack into one column. Turned sideways, the card and radar sit side by side. Tapping a blip on the radar brings its flight card into view. |
 | `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Built to read from across the room: one big card (flight number, airline logo, route, altitude, speed and time until overhead) beside the radar or sky view. No tabs, buttons or small print. When the sky is empty it rotates every 12 seconds between the next flight, the weather with a windsock, and today's count. Tap the card to skip ahead. Tap a blip to show that flight; it goes back to what's overhead after 90 seconds untouched, or when the card is tapped. |
 
@@ -210,7 +215,7 @@ The kiosk has no buttons, so its radar is set in the config file:
 ```toml
 [kiosk]
 radar = "atc"      # "chart" (the default) or "atc"
-tracks = true      # trails, the selected aircraft's whole track, and one-minute lines
+tracks = true      # the selected aircraft's track, and one-minute lines
 range_nm = 30      # 0 for the tracking radius, or 20 or 30
 ```
 
@@ -252,9 +257,10 @@ line maps ("video maps") of what the controller needs on top:
   the aircraft this screen tracks, the one overhead. Leaders point north unless that crowds
   another block, then whichever of the eight directions is clear, as a controller would set
   them; blocks to the left of their leader are right-justified against it.
-- **History dots** trail each target, five of them 4.5 seconds apart (as near as the feed's
-  updates allow) in fading blues, and a white **predicted track line** shows a minute ahead.
-  Tracks turns both off.
+- **History dots** trail the aircraft this screen tracks (only that one, to keep a busy scope
+  clear), five of them 4.5 seconds apart (as near as the feed's updates allow) in fading blues,
+  and a white **predicted track line** shows a minute ahead of every target. Tracks turns both
+  off.
 - **The System Status Area**, top left: the status indicator, UTC time with seconds and the
   altimeter setting, `OK/OK/NA`, the range and line length (`15NM PTL: 1.0`), the airport's
   altimeter from its weather report (`PDX 30.02A`), active emergency codes in red, and a general

@@ -9,6 +9,7 @@ import { airlineColors, typeInfo } from "./data.js";
 import { plate, drawn } from "./plate.js";
 import { renderWeatherTab } from "./weather.js";
 import { renderKiosk, tickKiosk, kioskNext, forgetKiosk } from "./kiosk.js";
+import { nearbyDivider } from "./divider.js";
 
 // Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
 const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
@@ -158,6 +159,8 @@ function renderMiniBoard() {
       <span class="mb-alt">${altText(a)}${v > 300 ? " ▲" : v < -300 ? " ▼" : ""}</span><span class="mb-when ${soon ? "soon" : ""}">${soon ? mmss(a.cpa_s) : `${a.dist.toFixed(1)} nm`}</span></button>`;
   }).join("") || '<p class="dim">No aircraft in range.</p>');
 }
+
+if (!KIOSK) nearbyDivider(() => { if (state && view === "now") renderMiniBoard(); });
 
 // ---------- logbook ----------
 function budgetLine(fa) {
@@ -347,7 +350,7 @@ $("place-menu").addEventListener("click", async (e) => {
   if (rm) {
     const p = (state.places || []).find((x) => x.id === rm.dataset.remove);
     if (!p || !confirm(`Remove ${p.name}? Its logbook stays on disk.`)) return;
-    const r = await (await fetch(`api/places?id=${encodeURIComponent(p.id)}`, { method: "DELETE" })).json();
+    const r = await placesApi(`api/places?id=${encodeURIComponent(p.id)}`, { method: "DELETE" });
     if (r.error) return alert(r.error);
     if (p.id === state.place) return showPlace("");      // this screen was on it: back to the first
     state.places = r.places;
@@ -364,6 +367,15 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePlace
 // Setting a location: a ZIP code or coordinates, then the airport: the closest major one by
 // default, or another of the airline airports nearby. Shows where it is as it's typed.
 let locTimer = null, locFound = null;
+// The places routes answer 200, or 400 with a message, so a 404 means the server doesn't have
+// them: it is still running code from before an update that this page, read fresh from disk,
+// comes from.
+async function placesApi(url, opts) {
+  let r;
+  try { r = await fetch(url, opts); } catch (e) { return { error: "CloudWall isn't answering" }; }
+  if (r.status === 404) return { error: "CloudWall was updated but is still running the old version: restart it, then try again" };
+  return r.json().catch(() => ({ error: "CloudWall isn't answering" }));
+}
 function openLocation() {
   $("loc-form").reset();
   $("loc-where").textContent = ""; $("loc-airports").innerHTML = ""; $("loc-error").textContent = "";
@@ -377,7 +389,7 @@ async function lookUpLocation() {
   locFound = null;
   $("loc-save").disabled = true;
   if (!q) { $("loc-where").textContent = ""; $("loc-airports").innerHTML = ""; return; }
-  const r = await (await fetch(`api/locate?q=${encodeURIComponent(q)}`)).json().catch(() => ({ error: "CloudWall isn't answering" }));
+  const r = await placesApi(`api/locate?q=${encodeURIComponent(q)}`);
   if (q !== $("loc-q").value.trim()) return;            // typed on since
   if (r.error) { $("loc-where").textContent = r.error; $("loc-where").classList.add("bad"); $("loc-airports").innerHTML = ""; return; }
   locFound = r;
@@ -398,8 +410,7 @@ $("loc-form").addEventListener("submit", async (e) => {
   if (!locFound) return;
   const airport = ($("loc-form").querySelector("input[name=loc-ap]:checked") || {}).value || "auto";
   $("loc-save").disabled = true;
-  const r = await (await fetch("api/places", { method: "POST", body: JSON.stringify({ q: $("loc-q").value.trim(), name: $("loc-name").value.trim(), airport }) })).json()
-    .catch(() => ({ error: "CloudWall isn't answering" }));
+  const r = await placesApi("api/places", { method: "POST", body: JSON.stringify({ q: $("loc-q").value.trim(), name: $("loc-name").value.trim(), airport }) });
   if (r.error) { $("loc-error").textContent = r.error; $("loc-save").disabled = false; return; }
   showPlace(r.place.id);                                 // this screen moves to the new place
 });
@@ -416,6 +427,7 @@ function render() {
   $("wx").hidden = !w;
   if (w) $("wx").innerHTML = `${Math.round((w.temp_c * 9) / 5 + 32)}°F, wind ${w.wind_kt ?? 0} kt <b class="cat-${esc(w.category)}">${esc(w.category || "")}</b>`;
   $("link").hidden = state.status.ok || !state.status.source;
+  $("restart").hidden = !state.restart;
   const tfr = (state.tfrs || []).find((t) => t.active && !t.drones_only);
   $("tfr-chip").hidden = !tfr;
   if (tfr) $("tfr-chip").textContent = `Flight restriction ${tfr.dist_nm < 0.5 ? "overhead" : `${Math.round(tfr.dist_nm)} nm`}`;

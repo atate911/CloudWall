@@ -441,9 +441,6 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #radar .apt-label { fill: var(--ink); font-size: 4.6px; font-weight: 700; }
 #radar .apt-mark { fill: none; stroke: var(--slate); stroke-width: .8; }
 #radar .home-mark { fill: none; stroke: var(--ink); stroke-width: .7; }
-/* trails: the last few minutes behind each aircraft, fading */
-#radar .trail { fill: none; stroke-width: .8; stroke-linecap: round; stroke-linejoin: round; }
-#s-defs stop { stop-color: var(--blue); }
 /* the selected aircraft's whole track since it came in range (overhead, or tapped), in its
    magenta, strongest near the ground and stepping toward the disc with height: 0-2, 2-5, 5-10,
    10-18, 18-28 and 28+ thousand ft */
@@ -669,11 +666,36 @@ body.night .sock-band.o { fill: #d0611f; } body.night .sock-band.w { fill: #d3d6
 /* sized for arm's length: a 1920-wide monitor shows more, not bigger */
 html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
 @media (max-aspect-ratio: 1/1) { html.desk { font-size: clamp(12px, 2.1vw, 18px); } }
-#mini-board { display: none; }
+#mini-board, .pane-split { display: none; }
+/* wide enough for a third panel: the Nearby list, behind a divider that hides it or, dragged,
+   gives the radar more or less room (divider.js sets the radar's and the list's columns; the
+   card's stays put). Not on the phone layout, which a short, wide window also takes. */
 @media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
-  html.desk #view-now { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, .72fr); }
-  html.desk #mini-board { display: block; padding: 1rem 1.1rem; }
+  html.desk:not(.phone) #view-now { column-gap: 0;
+    grid-template-columns: minmax(0, 1.45fr) 1.4rem minmax(0, var(--scope-w, 1fr)) 1.4rem minmax(0, var(--mb-w, .72fr)); }
+  html.desk:not(.phone) #view-now.animate { transition: grid-template-columns .22s ease-out; }
+  html.desk:not(.phone) #hero { grid-column: 1; }
+  html.desk:not(.phone) #scope { grid-column: 3; }
+  html.desk:not(.phone) .pane-split { grid-column: 4; display: flex; }
+  html.desk:not(.phone) #mini-board { grid-column: 5; display: block; padding: 1rem 1.1rem; overflow-x: hidden; }
+  /* while its column opens or closes, the list slides out from under the divider rather than re-wrapping */
+  html.desk:not(.phone) #mini-board > * { min-width: 10.5rem; }
+  html.desk:not(.phone) #view-now.nearby-closed #mini-board { display: none; }
 }
+/* the divider: a hairline down the gutter, darker when it can be taken hold of, with a tab on it
+   whose arrow points the way the list will go */
+.pane-split { position: relative; justify-content: center; align-items: center; cursor: col-resize; touch-action: none; outline: none; }
+.pane-split::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1px dashed var(--rule); }
+.pane-split:hover::before, .pane-split:focus-visible::before, .dragging .pane-split::before { border-left: 1px solid var(--ink-2); }
+.dragging, .dragging * { cursor: col-resize !important; }
+.dragging #radar, .dragging #mini-board { pointer-events: none; }
+.ps-toggle { position: relative; width: 1.15rem; height: 3.2rem; display: grid; place-items: center; cursor: pointer;
+  background: var(--sheet); border: 1px solid var(--frame); color: var(--slate); }
+.ps-toggle:hover, .pane-split:focus-visible .ps-toggle { color: var(--ink); border-color: var(--ink-2); }
+.ps-toggle svg { width: .62rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .22s ease-out; }
+.nearby-closed .ps-toggle svg { transform: scaleX(-1); }
+.pane-split:focus-visible .ps-toggle { outline: 2px solid var(--blue); outline-offset: 2px; }
 #mini-board h2 { margin: 0 0 .5rem; }
 .mb-row { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "id when" "rt alt"; width: 100%; text-align: left;
   padding: .5rem .3rem; border-top: 1px solid var(--rule); row-gap: .1rem; }
