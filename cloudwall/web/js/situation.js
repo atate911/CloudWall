@@ -19,8 +19,6 @@ const DIR8 = ["north", "northeast", "east", "southeast", "south", "southwest", "
 export const dir8 = (deg) => DIR8[Math.round((((deg || 0) % 360) + 360) % 360 / 45) % 8];
 const SHORT8 = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
 export const short8 = (deg) => SHORT8[Math.round((((deg || 0) % 360) + 360) % 360 / 45) % 8];
-const DIR16 = ["north", "north-northeast", "northeast", "east-northeast", "east", "east-southeast", "southeast", "south-southeast",
-  "south", "south-southwest", "southwest", "west-southwest", "west", "west-northwest", "northwest", "north-northwest"];
 const FROM = { west: "east", east: "west", north: "south", south: "north" };     // landing west, arrivals come from the east
 const NUMS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
 const n2w = (n) => NUMS[n] || String(n);
@@ -33,7 +31,22 @@ const city = (p) => (p && (p.city || p.name || p.iata)) || "";
 export const flightName = (a) => boardFlight(ident(a));
 // A countdown, as it stands when shown: "now" for the last few seconds.
 export const until = (s) => (s < 12 ? "now" : mmss(s));
-const apart = (s) => (s < 100 ? `about ${Math.round(s / 5) * 5} seconds apart` : `about ${(s / 60).toFixed(1).replace(/\.0$/, "")} minutes apart`);
+// A gap between landings in words: "35 seconds", "2½ minutes"
+function gapWords(s) {
+  if (s < 90) return `${Math.max(5, Math.round(s / 5) * 5)} seconds`;
+  const h = Math.round(s / 30) / 2;
+  return `${Math.floor(h)}${h % 1 ? "½" : ""} minute${h === 1 ? "" : "s"}`;
+}
+// How far apart the arrivals land: about the same, or the range when the gaps differ
+function spacing(arr) {
+  const gaps = arr.map((a) => a.gap_s).filter((g) => g != null);
+  if (!gaps.length) return "";
+  const lo = Math.min(...gaps), hi = Math.max(...gaps);
+  if (hi - lo < 30 || gapWords(lo) === gapWords(hi)) return `about ${gapWords(gaps.reduce((s, g) => s + g, 0) / gaps.length)} apart`;
+  return `${gapWords(lo)} to ${gapWords(hi)} apart`;
+}
+// Due over the house soon enough to count down to: within ten minutes, and moving (not a drifting balloon)
+export const overheadSoon = (a, state) => a.cpa_s > 0 && a.cpa_s < 600 && a.cpa_nm <= state.tracking.overhead_nm && (a.gs || 0) > 40;
 
 // ---- the picture, worked out once for each answer from the server ----
 const pictures = new WeakMap();
@@ -45,20 +58,22 @@ export function picture(state) {
   for (const a of air) (groups[a.activity] || groups.pass).push(a);
   groups.arr.sort((a, b) => (a.seq || 99) - (b.seq || 99));
   groups.dep.sort((a, b) => (b.alt || 0) - (a.alt || 0));
-  groups.loc.sort((a, b) => a.dist - b.dist);
   groups.pass.sort((a, b) => a.dist - b.dist);
+  // anything worth a look first among the local traffic, so the sentence names it
+  groups.loc.sort((a, b) => !!b.notable - !!a.notable || a.dist - b.dist);
   const rwys = [...new Set(groups.arr.map((a) => a.rwy).filter(Boolean))].sort();
-  const gaps = groups.arr.map((a) => a.gap_s).filter((g) => g != null);
-  p = { air, groups, rwys, avgGap: gaps.length ? gaps.reduce((s, g) => s + g, 0) / gaps.length : null };
+  p = { air, groups, rwys };
   pictures.set(state, p);
   return p;
 }
-// Which way the departures are heading, on average, in words.
+// Which way the departures are heading, on average, in words (eight points, as the Board says it).
 function depDir(list) {
   const v = list.reduce((s, a) => ({ x: s.x + Math.sin((a.track || 0) * RAD), y: s.y + Math.cos((a.track || 0) * RAD) }), { x: 0, y: 0 });
-  return DIR16[Math.round(((Math.atan2(v.x, v.y) / RAD + 360) % 360) / 22.5) % 16];
+  return dir8(Math.atan2(v.x, v.y) / RAD);
 }
 const rwyWords = (p, state) => runwayList(p.rwys.join(" / ")) || state.airport.iata;
+// "on 28L and 28R", or "at PDX" when the runways aren't known
+const landOn = (p, state) => (p.rwys.length ? `on ${runwayList(p.rwys.join(" / "))}` : `at ${state.airport.iata}`);
 
 // ---- what kind of aircraft, where, in words ----
 function milWho(a) {
@@ -91,7 +106,7 @@ export function kind(a) {
 }
 const withArticle = (k) => `${article(k)} ${k}`;
 // Where it is: over or near a town on the airport's map, or so far and which way from home
-export function where(a, state) {
+export function where(a, state, { town = false } = {}) {
   const places = (map && map.places) || [];
   let best = null;
   for (const p of places) {
@@ -99,7 +114,7 @@ export function where(a, state) {
     if (!best || d < best.d) best = { name: p.name, d };
   }
   if (best && best.d < 4) return `${best.d < 1.5 ? (a.alt != null && a.alt < 2500 ? "low over" : "over") : "near"} ${best.name}`;
-  return `${a.dist.toFixed(a.dist < 10 ? 1 : 0)} nm ${dir8(a.brg)} of home`;
+  return town ? "" : `${a.dist.toFixed(a.dist < 10 ? 1 : 0)} nm ${dir8(a.brg)} of home`;
 }
 const trend = (a) => ((a.vrate || 0) > 300 ? "climbing" : (a.vrate || 0) < -300 ? "descending" : "level");
 const arrow = (a) => ((a.vrate || 0) > 300 ? "↑" : (a.vrate || 0) < -300 ? "↓" : "");
@@ -112,7 +127,8 @@ export function situation(state) {
   const p = picture(state), g = p.groups, n = p.air.length, R = state.tracking.radius_nm, parts = [];
   if (g.arr.length) {
     const from = state.flow && FROM[state.flow.dir] ? ` from the ${FROM[state.flow.dir]}` : "";
-    parts.push(`${cap(n2w(g.arr.length))} coming in${from} to land on ${rwyWords(p, state)}${g.arr.length > 1 && p.avgGap ? `, ${apart(p.avgGap)}` : ""}.`);
+    const gap = spacing(g.arr);
+    parts.push(`${cap(n2w(g.arr.length))} coming in${from} to land ${landOn(p, state)}${gap ? `, ${gap}` : ""}.`);
   }
   if (g.dep.length) parts.push(`${cap(n2w(g.dep.length))} climbing out to the ${depDir(g.dep)}.`);
   if (g.pass.length) {
@@ -123,9 +139,12 @@ export function situation(state) {
     const by = new Map();
     for (const a of g.loc) by.set(kind(a), (by.get(kind(a)) || 0) + 1);
     const list = [...by].map(([k, c]) => (c > 1 ? `${n2w(c)} ${k.endsWith("s") ? k : k + "s"}` : withArticle(k)));
-    parts.push(`${cap(n2w(g.loc.length))} flying locally: ${words(list.length > 4 ? [...list.slice(0, 3), "others"] : list)}.`);
+    parts.push(`${cap(n2w(g.loc.length))} flying locally: ${words(list.length > 4 ? [...list.slice(0, 3), `${n2w(list.length - 3)} more`] : list)}.`);
   }
-  const head = n === 0 ? `Nothing in the air within ${R} nm` : n <= 4 ? `A quiet spell: ${n2w(n)} aircraft within ${R} nm` : `${n} aircraft within ${R} nm`;
+  // an emergency leads, in the takeover's own words
+  const em = (state.emergency || [])[0];
+  const head = em ? `${flightName(em)} is squawking ${em.emergency_code}: ${String(em.emergency_title || "emergency").toLowerCase()}`
+    : n === 0 ? `Nothing on the radar within ${R} nm` : n <= 4 ? `A quiet spell: ${n2w(n)} aircraft within ${R} nm` : `${n} aircraft within ${R} nm`;
   return { head, text: parts.join(" ") };
 }
 
@@ -154,17 +173,17 @@ function rowHtml(a, state, heroHex, multi) {
   let lead, detail, right;
   if (a.activity === "arr" && a.seq) {
     lead = `<span class="seq">${a.seq}</span>`;
-    detail = `${multi && a.rwy ? `<b class="rwy">${esc(a.rwy)}</b>` : ""}${r ? `from ${esc(city(r.origin))}` : "landing"}${ty}`;
+    detail = `${multi && a.rwy ? `<b class="rwy">${esc(a.rwy)}</b>` : ""}${r ? `from ${esc(r.origin.iata || city(r.origin))}` : "landing"}${ty}`;
     right = `<span class="alt">${num(a.alt)}${arr}</span>` +
       `<span class="when"><b data-until="${a.lands_s}">${until(a.lands_s - since(state))}</b><small>${a.gap_s != null ? `+${mmss(a.gap_s)}` : "next"}</small></span>`;
   } else if (a.activity === "dep") {
     lead = catIcon("dep", a);
-    detail = `${r ? `to ${esc(city(r.dest))}` : "just took off"}${ty}`;
+    detail = `${r ? `to ${esc(r.dest.iata || city(r.dest))}` : "just took off"}${ty}`;
     right = `<span class="alt">${num(a.alt)}${arr}</span><span class="when"><b>${a.dist.toFixed(1)}</b><small>nm ${esc(a.compass)}</small></span>`;
   } else {
-    const soon = a.cpa_s > 0 && a.cpa_nm <= state.tracking.overhead_nm;
+    const soon = overheadSoon(a, state);
     lead = catIcon(a.activity || "pass", a);
-    detail = a.activity === "loc" ? `${esc(cap(kind(a)))}, ${esc(where(a, state))}` : `${r ? `${esc(city(r.origin))} to ${esc(city(r.dest))}` : ""}${ty}`;
+    detail = a.activity === "loc" ? esc(cap(kind(a))) : `${r ? `${esc(r.origin.iata || city(r.origin))}–${esc(r.dest.iata || city(r.dest))}` : "en route"}${ty}`;
     right = `<span class="alt">${num(a.alt)}${arr}</span>` +
       (soon ? `<span class="when soon"><b data-oh="${a.cpa_s}">${mmss(Math.max(0, a.cpa_s - since(state)))}</b><small>overhead</small></span>`
         : `<span class="when"><b>${a.dist.toFixed(1)}</b><small>nm ${esc(a.compass)}</small></span>`);
@@ -179,7 +198,7 @@ export function listHtml(state) {
   if (g.arr.length) s += head("arr", `Arriving ${esc(here)}`, `${rwyWords(p, state)}, in landing order`) + rows("arr");
   if (g.dep.length) s += head("dep", `Departing ${esc(here)}`, `climbing out ${depDir(g.dep)}`) + rows("dep");
   if (g.pass.length) s += head("pass", "Passing over", "en route") + rows("pass");
-  if (g.loc.length) s += head("loc", "Flying locally", "no flight plan") + rows("loc");
+  if (g.loc.length) s += head("loc", "Flying locally", "no published route") + rows("loc");
   for (const h of heardGroups(state.heard || [])) {
     s += `<div class="gh heard"><span class="gl">${heardIcon()}Heard, no position<b>${h.n}</b></span><span class="gn">${esc(h.type)}${h.n > 1 ? "s" : ""}${h.alts.length ? `, around ${num(h.alts[0])} ft` : ""}</span></div>`;
   }
@@ -192,7 +211,10 @@ function doing(a, state) {
   const r = plausible(a), here = state.airport.iata, what = a.military ? kind(a) : shortType(a.type_name) || cap(kind(a));
   if (a.activity === "arr") return `${what}${r ? ` from ${city(r.origin)}` : ""}, landing ${a.seq ? ORD[a.seq] || `#${a.seq}` : ""} at ${here}`.replace("  ", " ");
   if (a.activity === "dep") return `${what}${r ? ` to ${city(r.dest)}, climbing out` : `, just took off from ${here}`}`;
-  if (a.activity === "loc") return `${a.local_field && a.local ? `${what}, ${a.local === "arriving" ? "landing at" : a.local === "departing" ? "just left" : "flying around"} ${a.local_field.name}` : `${cap(kind(a))}, ${where(a, state)}`}`;
+  if (a.activity === "loc") {      // the distance is in the figures beside: only a town here
+    const w = where(a, state, { town: true });
+    return a.local_field && a.local ? `${what}, ${a.local === "arriving" ? "landing at" : a.local === "departing" ? "just took off from" : "flying around"} ${a.local_field.name}` : `${cap(kind(a))}${w ? `, ${w}` : ""}`;
+  }
   return `${what}${r ? `, ${city(r.origin)} to ${city(r.dest)}` : ", passing over"}`;
 }
 function overHtml(state, { compact = false } = {}) {
@@ -202,21 +224,21 @@ function overHtml(state, { compact = false } = {}) {
     return `<section class="ss-over quiet"><div class="label">Over the house</div><p class="so-what">Nothing is heading over the house right now.</p>` +
       (near ? `<p class="so-sub">The nearest is ${esc(flightName(near))}, ${esc(withArticle(kind(near)))} ${esc(where(near, state))}.</p>` : `<p class="so-sub">${state.today ? `${num(state.today)} flyover${state.today === 1 ? "" : "s"} so far today.` : "The sky is quiet."}</p>`) + `</section>`;
   }
-  const comes = a.cpa_s > 0 && a.cpa_nm <= state.tracking.overhead_nm, now = comes && a.cpa_s - t < 6 || (!comes && a.dist <= state.tracking.overhead_nm);
-  const label = state.pinned ? "Selected" : now ? "Overhead now" : "Over the house next";
-  const first = comes && !now ? `<div><b data-oh="${a.cpa_s}">${mmss(Math.max(0, a.cpa_s - t))}</b><span>overhead in</span></div>`
-    : now ? `<div><b>${a.dist.toFixed(1)}<small> nm</small></b><span>${a.dist < 0.3 ? "right overhead" : `to the ${dir8(a.brg)}`}</span></div>`
-      : `<div><b>${a.dist.toFixed(1)}<small> nm</small></b><span>to the ${dir8(a.brg)}</span></div>`;
-  return `<section class="ss-over${compact ? " compact" : ""}"><div class="so-head"><span class="label">${label}</span>${state.pinned ? '<span class="so-hint">Tap the card to let go</span>' : ""}</div>
+  // coming over the house: a countdown; else where it is, and whether it is overhead or has passed
+  const coming = a.cpa_s > 0 && a.cpa_nm <= state.tracking.overhead_nm && a.cpa_s - t > 5;
+  const label = state.pinned ? "Selected" : coming ? "Over the house next" : a.dist < 1 ? "Overhead now" : a.cpa_s - t <= 5 ? "Just passed" : "Nearest now";
+  const first = coming ? `<div><b data-oh="${a.cpa_s}">${mmss(Math.max(0, a.cpa_s - t))}</b><span>overhead in</span></div>`
+    : `<div><b>${a.dist.toFixed(1)}<small> nm</small></b><span>${a.dist < 0.3 ? "right overhead" : `to the ${dir8(a.brg)}`}</span></div>`;
+  return `<section class="ss-over${compact ? " compact" : ""}"><div class="so-head"><span class="label">${label}</span>${state.pinned ? '<button class="so-let" data-let>Back to overhead</button>' : ""}</div>
     <div class="so-id"><div class="flaps so-flight" data-hex="${esc(a.hex)}" data-flight="${esc(flightName(a))}"></div>${state.logos && a.airline_iata ? `<span class="logo-tile"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(a.airline || "")}"></span>` : ""}</div>
     <p class="so-what">${esc(doing(a, state))}</p>
-    <div class="so-row">${compact ? "" : `<div class="so-plate sil-box">${plate(typeInfo(a), { share: 0.98, dim: false })}</div>`}
+    <div class="so-row">${compact || !a.known ? "" : `<div class="so-plate sil-box">${plate(typeInfo(a), { share: 0.98, dim: false })}</div>`}
       <div class="so-nums">${first}<div><b>${a.alt == null ? "–" : num(a.alt)}<small> ft</small></b><span>${trend(a)}</span></div></div></div></section>`;
 }
 function queueHtml(state, max = 4) {
   const p = picture(state), arr = p.groups.arr.filter((a) => a.seq), heroHex = state.hero && state.hero.hex, t = since(state);
   if (!arr.length) return "";
-  return `<section class="ss-queue"><div class="label">Landing next on ${esc(rwyWords(p, state))}</div>
+  return `<section class="ss-queue"><div class="label">Landing next ${esc(landOn(p, state))}</div>
     ${arr.slice(0, max).map((a) => `<button class="q-row${a.hex === heroHex ? " sel" : ""}" data-hex="${esc(a.hex)}"><span class="seq">${a.seq}</span><b class="q-fl">${esc(flightName(a))}</b>` +
       `<span class="q-from">${plausible(a) ? `from ${esc(city(a.route.origin))}` : esc(cap(kind(a)))}</span><b class="q-t" data-until="${a.lands_s}">${until(a.lands_s - t)}</b></button>`).join("")}
     ${arr.length > max ? `<div class="q-more">and ${n2w(arr.length - max)} more behind them</div>` : ""}</section>`;

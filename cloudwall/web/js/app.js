@@ -13,7 +13,7 @@ import { boardHtml, renderMiniBoard } from "./board.js";
 import { loadLog } from "./logbook.js";
 import { renderPlace, placeMenu } from "./places.js";
 import { refresh } from "./fresh.js";
-import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture } from "./situation.js";
+import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture, notables } from "./situation.js";
 
 // Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
 const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
@@ -118,7 +118,7 @@ function density() {
 const simple = () => density() === "simple";
 // Simple shows the flight card's quiet-sky slides (the weather, the day so far) when there is nothing
 // to say about the traffic: nothing overhead or on its way, nothing landing.
-const quietSky = () => !!state && !state.hero && !state.next && !picture(state).groups.arr.length;
+const quietSky = () => !!state && !state.hero && !state.next && !picture(state).groups.arr.length && !notables(state).some((n) => n.a);
 const cardShown = () => !simple() || quietSky();
 let scopeLabel = "";
 function drawScopeNow(now = performance.now()) {
@@ -195,13 +195,22 @@ let allOpen = false;
 function renderPicture(dens) {
   const easy = dens === "simple", ph = phone();
   if (!KIOSK) renderInto($("strip"), stripHtml(state, { text: !(ph && easy) }) + (ph ? densSeg(dens) : ""));
-  if (easy && KIOSK) renderInto($("side"), `<section class="k-sit">${stripHtml(state, { text: false })}</section>` + sideHtml(state, { queue: 3, notes: 2 }));
+  if (easy && KIOSK) { renderInto($("side"), `<section class="k-sit">${stripHtml(state, { text: false })}</section>` + sideHtml(state, { queue: 3, notes: 2 })); fitSide($("side")); }
+  else if (easy && ph === "side") renderInto($("side"), sideHtml(state, { compact: true }));      // sideways: all in one column beside the radar
   else if (easy && ph) { renderInto($("side"), sideHtml(state, { compact: true, notes: 0 })); renderInto($("notes"), notesHtml(state)); }
   else if (easy) renderInto($("side"), sideHtml(state));
   const n = picture(state).air.length;
   $("show-all").innerHTML = `${allOpen ? "Hide the list" : `Show all ${n} aircraft, grouped`}<span aria-hidden="true">${allOpen ? "⌃" : "⌄"}</span>`;
   $("show-all").setAttribute("aria-expanded", String(allOpen));
   $("view-now").classList.toggle("all-open", allOpen);
+}
+// The wall panel's side column has a fixed height: what's worth a look gives way, a whole row at a
+// time, when the rest leaves no room for it.
+function fitSide(el) {
+  let rows;
+  while (el.scrollHeight > el.clientHeight + 1 && (rows = el.querySelectorAll(".ss-note .n-row")).length) rows[rows.length - 1].remove();
+  const note = el.querySelector(".ss-note");
+  if (note && !note.querySelector(".n-row")) note.remove();
 }
 const densSeg = (dens) => `<div class="seg dens mini" role="group" aria-label="How much to show">${["simple", "detailed"].map((d) =>
   `<button data-dens="${d}" class="${d === dens ? "on" : ""}" aria-pressed="${d === dens}">${d === "simple" ? "Simple" : "Detailed"}</button>`).join("")}</div>`;
@@ -316,7 +325,7 @@ document.addEventListener("click", (e) => {
   }
 });
 // the next aircraft over the house, in Simple: a tap on the one this screen follows lets it go
-$("side").addEventListener("click", (e) => { if (state && state.pinned && e.target.closest(".ss-over")) pin(null); });
+$("side").addEventListener("click", (e) => { if (state && state.pinned && e.target.closest("[data-let]")) pin(null); });
 $("show-all").addEventListener("click", () => { allOpen = !allOpen; render(); });
 
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
@@ -353,8 +362,8 @@ setInterval(() => {
   if (KIOSK && myPin && Date.now() - lastTouch > KIOSK_PIN_S * 1000) pin(null);
   dropStale();
   if (!state || view !== "now") return;
-  if (emergencies().length) { renderEmergency($("hero"), state, emergencies(), !KIOSK); return; }
   tickCounts($("view-now"), state);
+  if (emergencies().length) { renderEmergency($("hero"), state, emergencies(), !KIOSK); return; }
   if (!cardShown()) return;
   const elapsed = (Date.now() - stateAt) / 1000;
   if (KIOSK) tickKiosk(elapsed, state.hero ? null : state);

@@ -1290,7 +1290,8 @@ body.night { --c-arr: #3987e5; --c-dep: #199e70; --c-loc: #d95926; --c-pass: #86
 .ss section { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
 .ss section + section { padding-top: 1.1rem; border-top: 1px solid var(--rule); }
 .so-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
-.so-hint { font-size: .75rem; color: var(--slate); }
+.so-let { font: .78rem var(--sans); color: var(--blue); padding: .3rem .65rem; border: 1px solid var(--frame); border-radius: var(--corner); }
+.so-let:hover { border-color: var(--ink-2); }
 .so-id { display: flex; align-items: center; gap: 1.1rem; min-width: 0; }
 .so-flight { font-size: 3.4rem; letter-spacing: -.02em; }
 .ss .logo-tile { height: 2.3rem; }
@@ -1322,7 +1323,7 @@ body.night { --c-arr: #3987e5; --c-dep: #199e70; --c-loc: #d95926; --c-pass: #86
 .gh:first-child { margin-top: 0; }
 .gl { display: inline-flex; align-items: center; gap: .45rem; font: 700 max(11px, .66rem) var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
 .gl b { color: var(--slate); font-weight: 400; margin-left: .15rem; }
-.gn { font-size: .74rem; color: var(--slate); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gn { font-size: .78rem; color: var(--slate); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gh.heard .gl { color: var(--advisory); }
 .tr { display: grid; grid-template-columns: 1.4rem 4.6rem minmax(0, 1fr) 4rem 3.2rem; align-items: center; column-gap: .5rem; width: 100%; text-align: left;
   padding: .26rem .25rem; border-top: 1px solid var(--rule); font-size: .82rem; }
@@ -1335,8 +1336,7 @@ body.night { --c-arr: #3987e5; --c-dep: #199e70; --c-loc: #d95926; --c-pass: #86
 .tr .alt i { font-style: normal; font-size: .7em; margin-left: .15rem; }
 .tr .when { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.05; }
 .tr .when b { font-variant-numeric: tabular-nums; }
-.tr .when.soon b { color: var(--magenta); }
-.tr .when small { font-size: .62rem; color: var(--slate); }
+.tr .when small { font-size: .68rem; color: var(--slate); }
 .tr.sel { background: color-mix(in srgb, var(--magenta) 8%, transparent); box-shadow: inset 2px 0 0 var(--magenta); }
 .t-empty { color: var(--slate); padding: 1rem 0; }
 .sheet-title { font: max(11px, .64rem) var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); }
@@ -1361,6 +1361,7 @@ body.night .el-cloud { fill: #2a3b50; stroke: #43586f; }
 .pf-craft.c-arr .sil { --sil-line: var(--c-arr); --sil-body: color-mix(in srgb, var(--c-arr) 10%, var(--sheet)); --sil-wing: color-mix(in srgb, var(--c-arr) 28%, var(--sheet)); }
 .pf-craft.c-dep .sil { --sil-line: color-mix(in srgb, var(--c-dep) 80%, var(--ink)); --sil-body: color-mix(in srgb, var(--c-dep) 10%, var(--sheet)); --sil-wing: color-mix(in srgb, var(--c-dep) 28%, var(--sheet)); }
 .pf-craft.c-loc .sil { --sil-line: color-mix(in srgb, var(--c-loc) 85%, var(--ink)); --sil-body: color-mix(in srgb, var(--c-loc) 10%, var(--sheet)); --sil-wing: color-mix(in srgb, var(--c-loc) 28%, var(--sheet)); }
+.pf-craft.off { opacity: .3; }
 .pf-sel { fill: color-mix(in srgb, var(--magenta) 9%, transparent); stroke: var(--magenta); stroke-width: 1.2; }
 .pf-lab { font: 700 10px var(--mono); fill: var(--ink); paint-order: stroke; stroke: var(--sheet); stroke-width: 3px; stroke-linejoin: round; }
 .pf-seq circle { fill: var(--sheet); stroke: var(--c-arr); stroke-width: 1.3; }
@@ -1386,6 +1387,7 @@ body.night #scope:not(.map, .atc) #radar .basemap:is(.dark, .carto-dark) { filte
 #radar .tl line { stroke: var(--c-pass); stroke-width: .9; stroke-linecap: round; }
 #radar .tl.c-arr line { stroke: var(--c-arr); } #radar .tl.c-dep line { stroke: var(--c-dep); } #radar .tl.c-loc line { stroke: var(--c-loc); }
 #radar .tl > line { opacity: .6; }
+#radar .tl.hero line { stroke: var(--magenta); stroke-width: 1.1; }
 #radar .final-tick { fill: none; stroke: var(--ink-2); stroke-width: .35; opacity: .7; }
 #radar .final-label { font: 700 4.2px var(--mono); fill: var(--ink-2); paint-order: stroke; stroke: var(--land); stroke-width: 1.2px; stroke-linejoin: round; }
 #radar .heard-note { fill: var(--advisory); }
@@ -1397,6 +1399,13 @@ body.night #scope:not(.map, .atc) #radar .basemap:is(.dark, .carto-dark) { filte
 #radar.simple .tag:not(.seqtag) { font-size: 5.6px; }
 #radar.simple .tag-sub { font-family: var(--sans); font-size: 4.6px; }
 #radar.simple .ring-label { opacity: .8; }
+/* Simple keeps the Radar / Map switch and the range; the radar's look and its tracks are Detailed's */
+body.d-simple #scope:not(.map) .scope-tools > :is(#style-seg, .seg:has(#btn-tracks)) { display: none; }
+
+/* an emergency: the radar takes the takeover's colours, its map as before, so its white lettering reads */
+body.emergency { --land: var(--disc); }
+body.emergency #scope:not(.map, .atc) #radar .basemap:is(.dark, .carto-dark) {
+  filter: invert(1) hue-rotate(180deg) grayscale(.4) contrast(.8) brightness(1.25) blur(.3px); mix-blend-mode: multiply; opacity: .45 !important; }
 
 /* ---- the desktop ---- */
 html.desk:not(.phone) #view-now { grid-template-rows: auto minmax(0, 1fr); row-gap: .9rem; }
@@ -1405,6 +1414,17 @@ html.desk:not(.phone) #view-now > :not(#strip) { grid-row: 2; }
 html.desk:not(.phone) body.d-detailed #mini-board { flex-direction: column; overflow: hidden; padding: .8rem 1rem .5rem; }
 html.desk:not(.phone) body.d-detailed #mini-board > * { min-width: 18rem; }
 html.desk:not(.phone) body.d-detailed .mb-list { flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+/* Detailed on a laptop (1200 px and up) keeps the third panel too, a little narrower */
+@media (min-width: 1200px) and (max-width: 1499.98px) and (min-aspect-ratio: 1/1) {
+  html.desk:not(.phone) body.d-detailed #view-now { column-gap: 0;
+    grid-template-columns: minmax(0, 1.3fr) 1rem minmax(0, var(--scope-w, 1fr)) 1rem minmax(0, var(--mb-w, .85fr)); }
+  html.desk:not(.phone) body.d-detailed #hero { grid-column: 1; }
+  html.desk:not(.phone) body.d-detailed #scope { grid-column: 3; }
+  html.desk:not(.phone) body.d-detailed .pane-split { grid-column: 4; display: flex; }
+  html.desk:not(.phone) body.d-detailed #mini-board { grid-column: 5; display: flex; }
+  html.desk:not(.phone) body.d-detailed #view-now.nearby-closed #mini-board { display: none; }
+  html.desk:not(.phone) body.d-detailed #mini-board > * { min-width: 15rem; }
+}
 @media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
   html.desk:not(.phone) body.d-detailed #mini-board { display: flex; }
   html.desk:not(.phone) body.d-detailed #view-now.nearby-closed #mini-board { display: none; }
@@ -1448,15 +1468,17 @@ html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #side { display: 
 .kiosk .q-more, .kiosk .so-sub { font-size: 2vh; }
 .kiosk .n-row { grid-template-columns: 4.2vh minmax(0, 1fr); gap: 2vh; padding: .8vh 0; border-top-width: 2px; }
 .kiosk .n-row b { font-size: 2.7vh; } .kiosk .n-row small { display: none; } .kiosk .n-row .ci { width: 3.2vh; height: 3.2vh; margin-top: 0; }
-/* if it still doesn't fit, the last of what's worth a look gives way first */
-.kiosk .ss-note { flex: 0 1 auto; min-height: 0; overflow: hidden; }
+/* if it still doesn't fit, the last of what's worth a look gives way, a whole row at a time (fitSide in app.js) */
+.kiosk .ss-note { flex: none; }
 .kiosk #radar.simple .tag:not(.seqtag) { font-size: 8.4px; stroke-width: 2.2px; }
 .kiosk #radar.simple .tag.seqtag { font-size: 6.4px; }
 .kiosk #radar.simple .tag-sub { font-size: 6.6px; }
 .kiosk #radar .final-label { font-size: 5.4px; }
 
 /* ---- the phone ---- */
-html.phone #strip { display: flex; flex-direction: column; align-items: stretch; gap: .55rem; }
+html.phone :is(#strip, .board-strip) { display: flex; flex-direction: column; align-items: stretch; gap: .55rem; }
+/* magenta is the selected aircraft's alone: a countdown to overhead is bold ink */
+.pb-when.soon { color: var(--ink); }
 html.phone .keys { justify-content: flex-start; max-width: none; }
 html.phone header .seg.dens { display: none; }
 html.phone .seg.dens.mini { align-self: flex-start; }

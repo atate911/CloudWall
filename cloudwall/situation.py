@@ -11,9 +11,10 @@ import math
 
 from . import aircraft, geo
 
-# Kinds of aircraft that, with no flight plan to say otherwise, are flying locally: sightseeing,
-# training, a medical or news helicopter, a balloon.
-LOCAL_KINDS = {"heli", "tandem", "glider", "balloon", "light", "gyro", "ultralight", "twin", "turboprop",
+# Kinds of aircraft that, with no published route to say otherwise, are flying locally: sightseeing,
+# training, a medical or news helicopter, a balloon. (A turboprop with no route and no VFR code is
+# more likely passing through on a flight plan.)
+LOCAL_KINDS = {"heli", "tandem", "glider", "balloon", "light", "gyro", "ultralight", "twin",
                "seaplane", "airship", "drone"}
 # Worth pointing out to the household even when nothing about the flight is unusual.
 UNUSUAL_KINDS = {"balloon", "airship", "glider", "tandem", "tiltrotor", "gyro"}

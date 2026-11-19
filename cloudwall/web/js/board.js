@@ -3,7 +3,7 @@
 // next for each; a two-line version of it for a phone; and the grouped traffic list beside the radar.
 import { $, esc, num, mmss, ident, altText, phone, since } from "./util.js";
 import { boardFlight, shortType, heardGroups } from "./parts.js";
-import { picture, stripHtml, listHtml, catIcon, kind, where, dir8, until, flightName } from "./situation.js";
+import { picture, stripHtml, listHtml, catIcon, kind, where, dir8, until, flightName, overheadSoon } from "./situation.js";
 import { profileHtml } from "./profile.js";
 
 const plausible = (a) => (a.route && a.route.plausible ? a.route : null);
@@ -11,7 +11,7 @@ const city = (p) => (p && (p.city || p.name || p.iata)) || "";
 const arrowOf = (a) => ((a.vrate || 0) > 300 ? ' <span class="up">▲</span>' : (a.vrate || 0) < -300 ? ' <span class="down">▼</span>' : "");
 // What happens next for an aircraft: its landing (and who it follows), its climb out, its pass over the house.
 function nextHtml(a, state, arr) {
-  const t = since(state), R = state.tracking, soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
+  const t = since(state), soon = overheadSoon(a, state);
   const overIn = `<b data-oh="${a.cpa_s}">${mmss(Math.max(0, a.cpa_s - t))}</b>`;
   if (a.activity === "arr" && a.seq) {
     const ahead = arr[a.seq - 2];
@@ -24,9 +24,9 @@ function nextHtml(a, state, arr) {
 }
 function routeHtml(a, state) {
   const r = plausible(a);
-  if (a.activity === "loc") return `${esc(kind(a)[0].toUpperCase() + kind(a).slice(1))}<small>${esc(where(a, state))}</small>`;
+  if (a.activity === "loc") { const w = where(a, state, { town: true }); return `${esc(kind(a)[0].toUpperCase() + kind(a).slice(1))}${w ? `<small>${esc(w)}</small>` : ""}`; }
   if (r) return `<b>${esc(r.origin.iata)}</b> <span class="b-to">to</span> <b>${esc(r.dest.iata)}</b><small>${esc(city(r.origin))} to ${esc(city(r.dest))}</small>`;
-  return `<span class="dim">${a.activity === "arr" ? `Landing at ${esc(state.airport.iata)}` : a.activity === "dep" ? `Just left ${esc(state.airport.iata)}` : "—"}</span>`;
+  return `<span class="dim">${a.activity === "arr" ? `Landing at ${esc(state.airport.iata)}` : a.activity === "dep" ? `Just took off from ${esc(state.airport.iata)}` : "—"}</span>`;
 }
 
 export function boardHtml(state) {
@@ -35,7 +35,7 @@ export function boardHtml(state) {
   const row = (a) => `<tr data-hex="${esc(a.hex)}" class="${a.hex === heroHex ? "sel" : ""}">
       <td class="b-k">${catIcon(a.activity || "pass", a, 22)}</td>
       <td class="lg">${state.logos && a.airline_iata ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(a.airline || "")}"></span>` : ""}</td>
-      <td class="fl">${esc(ident(a))}<small>${esc(a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || a.owner || "")}</small></td>
+      <td class="fl">${esc(flightName(a))}<small>${esc(a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || a.owner || "")}</small></td>
       <td class="rt">${routeHtml(a, state)}</td>
       <td class="ty">${esc(a.type || "")}<small>${esc(shortType(a.type_name))}</small></td>
       <td class="num">${altText(a)} <small class="u">ft</small>${arrowOf(a)}</td>
@@ -54,7 +54,7 @@ export function boardHtml(state) {
   return `<div class="strip board-strip">${stripHtml(state)}</div>
     <table class="board grouped"><thead><tr><th></th><th></th><th>Flight</th><th>Route</th><th>Aircraft</th><th class="num">Altitude</th><th class="num">Speed</th><th>What happens next</th></tr></thead>
     ${sec("arr", `Arriving ${here}`, `${rw}, in landing order`)}${sec("dep", `Departing ${here}`, "climbing out")}
-    ${sec("pass", "Passing over", "en route, not landing here")}${sec("loc", "Flying locally", "no flight plan, or to and from a small field")}
+    ${sec("pass", "Passing over", "en route, not landing here")}${sec("loc", "Flying locally", "no published route, or to and from a small field")}
     ${p.air.length ? "" : `<tbody><tr><td colspan="8" class="empty">No airborne traffic within ${state.tracking.radius_nm} nm.</td></tr></tbody>`}${heard}</table>
     <div class="board-foot">Tap a flight to show it on the radar and the flight card.</div>`;
 }
@@ -65,7 +65,7 @@ export function boardHtml(state) {
 function phoneBoardHtml(state) {
   const p = picture(state), heroHex = state.hero && state.hero.hex, t = since(state), R = state.tracking;
   const row = (a) => {
-    const r = plausible(a), soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
+    const r = plausible(a), soon = overheadSoon(a, state);
     const name = a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || shortType(a.type_name) || "";
     const logo = state.logos && a.airline_iata && name ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(name)}"></span>` : "";
     const when = a.activity === "arr" && a.seq ? `<b data-until="${a.lands_s}">${until(a.lands_s - t)}</b><small> lands</small>`
@@ -73,7 +73,7 @@ function phoneBoardHtml(state) {
     return `<button class="pb-row${a.hex === heroHex ? " hero" : ""}" data-hex="${esc(a.hex)}">
       <span class="pb-k">${a.activity === "arr" && a.seq ? `<span class="seq">${a.seq}</span>` : catIcon(a.activity || "pass", a, 18)}</span>
       <span class="pb-id">${esc(boardFlight(ident(a)))}</span>
-      <span class="pb-rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}` : `<span class="dim">${esc(a.activity === "loc" ? kind(a) : a.activity === "arr" ? "Landing" : a.activity === "dep" ? "Departing" : "")}</span>`}</span>
+      <span class="pb-rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}` : `<span class="dim">${esc(a.activity === "loc" ? kind(a)[0].toUpperCase() + kind(a).slice(1) : a.activity === "arr" ? "Landing" : a.activity === "dep" ? "Just took off" : "")}</span>`}</span>
       <span class="pb-when${soon || a.seq ? " soon" : ""}">${when}</span>
       <span class="pb-l2"><span class="pb-sub">${logo}${name ? `<span class="pb-name">${esc(name)}</span>` : ""}${a.type ? `<span class="pb-type">${esc(a.type)}</span>` : ""}</span>
       <span class="pb-data">${altText(a)}<small> ft</small>${arrowOf(a)}<span class="pb-gs">${num(a.gs)}<small> kt</small></span></span></span></button>`;
@@ -86,7 +86,7 @@ function phoneBoardHtml(state) {
       <span class="pb-data">${a.alt == null ? "–" : num(a.alt)}<small> ft</small><span class="pb-gs">${a.gs == null ? "–" : num(a.gs)}<small> kt</small></span></span></span></div>`).join("");
   return `${sec("arr", `Arriving ${esc(state.airport.iata)}`)}${sec("dep", `Departing ${esc(state.airport.iata)}`)}${sec("pass", "Passing over")}${sec("loc", "Flying locally")}
     ${p.air.length ? "" : `<p class="empty">No airborne traffic within ${R.radius_nm} nm.</p>`}
-    ${heard ? `<h2>Heard nearby, position unknown</h2><div class="pboard">${heard}</div>` : ""}
+    ${heard ? `<h2>Heard, no position</h2><div class="pboard">${heard}</div>` : ""}
     <div class="board-foot">Tap a flight to show it on the flight card.</div>`;
 }
 

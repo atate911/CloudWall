@@ -383,7 +383,7 @@ function radarStatic(state) {
   }
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
   // the key, in the drawing's lower left corner, with the selected aircraft's track shades along its foot
-  const keyed = opt.tracks && state.hero && state.hero.path && state.hero.path.length > 1;
+  const keyed = opt.tracks && !opt.simple && state.hero && state.hero.path && state.hero.path.length > 1;
   s += note("legend", -111, keyed ? 105.25 : 110.5, "start", opt.simple ? [`${R} nm around home`]
     : [`${R} nm around home`, "035↑ 3,500 ft, climbing", opt.tracks ? "Line: 1 minute ahead" : ""].filter(Boolean));
   if (keyed) s += pathKey(-111, 110.5);
@@ -675,7 +675,8 @@ function placeLabels(heroHex) {
     const b = labelBox(c, best), area = (b.x1 - b.x0) * (b.y1 - b.y0);
     const textHit = placed.reduce((n, p) => n + overlap(b, p), 0), iconHit = blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
     const off = Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0) + (square() ? Math.max(0, b.y1 - edgeY) + Math.max(0, -edgeY - b.y0) : 0);
-    c.hide = !opt.atc && !opt.map && c.hex !== heroHex && (textHit > 0.03 * area || iconHit > 0.25 * area || off > 1.5);
+    const key = c.act === "arr" || c.act === "dep";          // arrivals and departures may sit over an icon
+    c.hide = !opt.atc && !opt.map && c.hex !== heroHex && !c.seqtag && (textHit > 0.03 * area || (!key && iconHit > 0.25 * area) || off > 1.5);
     if (!c.hide) placed.push(b);
   }
 }
@@ -849,8 +850,10 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     const act = a.activity || "pass";
     if (act !== c.act) {
       if (c.act) c.g.classList.remove("c-" + c.act);
-      c.g.classList.add("c-" + act); c.tl.setAttribute("class", "tl c-" + act); c.act = act;
+      c.g.classList.add("c-" + act); c.act = act;
     }
+    const tlClass = `tl c-${act}${isHero ? " hero" : ""}`;
+    if (c.tl.getAttribute("class") !== tlClass) c.tl.setAttribute("class", tlClass);
     c.pri = isHero || a.hex === nextHex ? 0 : act === "arr" ? 1 + (a.seq || 50) / 100 : act === "dep" ? 2 : act === "pass" ? 2.5 : 3 + a.dist / 100;
     const ringed = isHero && !opt.atc && !opt.map;
     c.ring.style.display = ringed ? "" : "none";
@@ -875,7 +878,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       // runway or a departure's destination
       const r = a.route && a.route.plausible ? a.route : null;
       text = ident(a);
-      c.subs = [p.sub + (a.activity === "arr" && a.rwy ? ` ${a.rwy}` : a.activity === "dep" && r && r.dest.iata ? ` ${r.dest.iata}` : "")];
+      c.subs = [p.sub + (a.activity === "arr" && a.rwy ? ` ${a.rwy}${a.seq ? ` #${a.seq}` : ""}` : a.activity === "dep" && r && r.dest.iata ? ` ${r.dest.iata}` : "")];
     }
     if (!!seqtag !== !!c.seqtag) { c.seqtag = !!seqtag; c.tag.classList.toggle("seqtag", c.seqtag); }
     if (text !== c.text) { c.text = text; c.tag.textContent = text; }
@@ -889,7 +892,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     const dots = opt.atc && opt.tracks && isHero;
     if (dots && (fresh || arrived)) historyDots(c, state.hero.trail, k, state.home, state.trail_s);
     c.hist.style.display = dots ? "" : "none";
-    const path = !opt.atc && (opt.tracks || opt.map) && isHero && state.hero.path && state.hero.path.length ? state.hero.path : null;
+    const path = !opt.atc && !opt.simple && (opt.tracks || opt.map) && isHero && state.hero.path && state.hero.path.length ? state.hero.path : null;
     if (path && (fresh || !c.drawn)) {
       c.segs.innerHTML = pathRuns(state.home, path, k);
       const [lat, lon] = path[path.length - 1], o = offset(state.home, { lat, lon });
@@ -899,8 +902,9 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     } else if (!path && c.drawn) { c.segs.innerHTML = ""; c.drawn = false; }
     c.trk.style.display = path ? "" : "none";
     if (path) { c.tail.setAttribute("x2", c.x.toFixed(1)); c.tail.setAttribute("y2", c.y.toFixed(1)); }
-    // the chart style's short track behind each other aircraft, in Detailed with tracks on
-    const tl = !opt.atc && !opt.map && opt.tracks && !opt.simple && !path && a.tail && a.tail.length > 1 ? a.tail : null;
+    // the chart style's short track behind each other aircraft, in Detailed with tracks on; Simple
+    // draws it for the selected aircraft alone, in place of its whole path
+    const tl = !opt.atc && !opt.map && opt.tracks && (!opt.simple || isHero) && !path && a.tail && a.tail.length > 1 ? a.tail : null;
     if (tl && (fresh || !c.tlDrawn)) {
       c.tlSegs.innerHTML = tailSegs(state.home, tl, k);
       const [lat, lon] = tl[tl.length - 1], o = offset(state.home, { lat, lon });
