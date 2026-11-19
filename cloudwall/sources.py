@@ -146,11 +146,10 @@ def heard_near(unplaced, home, radius_nm):
 
 
 def demo_heard():
-    """A pair of fighters heard but not placed (demo mode)."""
-    base = {"callsign": None, "reg": None, "type": "F15", "desc": "Boeing F-15EX Eagle II",
-            "on_ground": False, "gs": None, "vrate": None, "lat": None, "lon": None, "squawk": None,
-            "category": None, "military": True, "rough_nm": 3, "owner_op": "United States Air Force"}
-    return [dict(base, hex="ae0412", alt=14000), dict(base, hex="ae0413", alt=14200)]
+    """A pair of fighters heard but not placed (demo mode), as heard_near gives them."""
+    heard = [{"hex": hexid, "t": "F15", "desc": "Boeing F-15EX Eagle II", "alt_baro": alt, "dbFlags": 1,
+              "ownOp": "United States Air Force"} for hexid, alt in (("ae0412", 14000), ("ae0413", 14200))]
+    return [dict(normalise(a), rough_nm=3) for a in heard]
 
 
 # --- Demo mode: plausible PDX traffic with no network needed -----------------
@@ -274,7 +273,7 @@ class Demo:
             out.append({
                 "desc": info[4], "year": 2008 + int(a["hex"][1:], 16) % 15, "owner_op": None, "private_owner": False,
                 "target_alt": alt_target, "modes": ["autopilot", "approach"] if a["kind"] == "arr" else ["autopilot", "lnav", "vnav"] if a["kind"] in ("dep", "over") else [],
-                "alt_gps": None,
+                "alt_gps": None, "emergency_status": None,
                 "hex": a["hex"], "callsign": a["callsign"], "reg": a["reg"], "type": a["type"],
                 "alt": int(alt / 25) * 25, "on_ground": False,
                 "gs": a["gs"] + self.rng.uniform(-2, 2), "track": a["track"],

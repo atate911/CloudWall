@@ -14,6 +14,9 @@ CODE = Path(__file__).resolve().parent
 WEB = CODE / "web"
 CODE_CHECK_S = 60
 MAX_BODY = 16 * 1024        # bytes: a place to set up is a few dozen
+# The shape of what the API answers, as API.md sets it out. Raised when a key is taken away or
+# comes to mean something else, so that anything else reading it can tell; adding a key doesn't.
+API = 1
 log = logging.getLogger("cloudwall")
 
 
@@ -111,7 +114,7 @@ def make_server(cfg, places, charts=None, logos=None):
                 except ValueError:
                     nm = 0
                 pin = q.get("pin", [None])[0]                            # the flight this screen follows
-                return self._send(200, dict(place.state(pin, nm, q.get("square") == ["1"]), **display,
+                return self._send(200, dict(place.state(pin, nm, q.get("square") == ["1"]), **display, api=API,
                                             places=places.summaries(), restart=code_changed()))
             if path == "/api/weather":
                 return self._send(200, place.weather_report())
