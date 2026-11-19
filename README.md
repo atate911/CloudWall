@@ -23,8 +23,11 @@ airframe photos from [planespotters.net](https://www.planespotters.net), weather
   photographer in its bottom right corner, with a link to the photo's page there.
   Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
   dimension line with its length. With no photo, the plate fills the frame.
-- **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
-  path across it (centre is straight up), or a radar scope over a faint street map.
+- **Radar / Map** – beside the card, a radar scope over a street map, or the Map view: the
+  same flights on an everyday map for anyone, satellite photos with roads and place names (or a
+  street map), filling the panel, every aircraft labelled in words ("Delta 178", "to Denver ·
+  12,000 ft", "Small plane", "Helicopter"), with home and the airport marked and no rings,
+  codes or jargon. The wall panel can show it too: `[kiosk] view = "map"`.
   Each aircraft is drawn as its kind, about its size, as flight-tracking maps draw traffic: a light
   aircraft or light twin, a turboprop, a business jet, a regional jet with its engines on the tail,
   an airliner, a heavy with two or four engines, a fighter, a seaplane, a glider, an ultralight, a
@@ -42,8 +45,8 @@ airframe photos from [planespotters.net](https://www.planespotters.net), weather
   readable: its whole track since it came in range or took off, as flight-tracking sites draw it,
   in magenta, strongest near the ground and fading with height in steps at 2,000, 5,000, 10,000,
   18,000 and 28,000 ft. CloudWall keeps every aircraft's track, so one you tap shows all of it at
-  once. Both views have a compass bezel with bearings, and on the desktop a key in the corner.
-  Auto shows the sky view while something is overhead; the Auto / Radar / Sky switch picks one.
+  once. The radar has a compass bezel with bearings, and on the desktop a key in the corner.
+  The Radar / Map switch picks the view; an emergency always shows on the radar.
   Along the foot of the radar, Chart / ATC picks its look (ATC draws it as a controller's STARS
   screen; see [The ATC radar](#the-atc-radar)), Tracks turns the tracks and one-minute lines on
   or off, and 15 / 20 / 30 sets the range in nm. Past the tracking radius
@@ -204,7 +207,7 @@ airline's layout; rows for a specific airline win over the typical ones.
   there, or list them under `[airport] others`.
 - **Sun, moon and contrails.** The Weather tab shows first light, sunrise, sunset, last light, the
   moon's phase, rise and set, and a contrail forecast by altitude from the GFS weather model's
-  upper-air temperature and humidity. The moon appears on the sky view when it's up, and a flight card
+  upper-air temperature and humidity, and a flight card
   says when the aircraft is likely leaving a contrail.
 
 These use free services (adsb.fi, tfr.faa.gov, api.open-meteo.com) and pause when no screen is open.
@@ -222,7 +225,7 @@ board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk 
 |---|---|---|
 | `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, sound and night buttons. On screens 1500 px wide and up, the Overhead view adds a live list of nearby flights; click one to follow it. The arrow on the divider between the radar and the list hides or shows the list, and dragging the divider gives the radar more or less room (double-click it for the usual width); the flight card keeps its size, and each screen remembers its setting. |
 | `http://<server>:5050/` on a phone | A phone in the hand | The same tabs and switches, laid out for a phone. Upright, the page scrolls: the flight card at full width, then a square radar with its switches above and below it, the tabs along the foot and the status line held at the top. The Board becomes a two-line list (flight, route and when it's overhead; airline, type, altitude and speed), and Weather and Logbook stack into one column. Turned sideways, the card and radar sit side by side. Tapping a blip on the radar brings its flight card into view. |
-| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Built to read from across the room: one big card (flight number, airline logo, route, altitude, speed and time until overhead) beside the radar or sky view. No tabs, buttons or small print. When the sky is empty it rotates every 12 seconds between the next flight, the weather with a windsock, and today's count. Tap the card to skip ahead. Tap a blip to show that flight; it goes back to what's overhead after 90 seconds untouched, or when the card is tapped. |
+| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Built to read from across the room: one big card (flight number, airline logo, route, altitude, speed and time until overhead) beside the radar (or the Map view, `[kiosk] view = "map"`). No tabs, buttons or small print. When the sky is empty it rotates every 12 seconds between the next flight, the weather with a windsock, and today's count. Tap the card to skip ahead. Tap a blip to show that flight; it goes back to what's overhead after 90 seconds untouched, or when the card is tapped. |
 
 The phone layout is chosen by screen size (up to 700 px wide, or 500 px tall when turned sideways),
 so it follows the phone as it turns and also suits a narrow desktop window. `?mode=phone` forces it and
@@ -348,7 +351,7 @@ no requests (or, with `"log"`, only the slow position check).
   they disagree.
 - `[source] urls` lists position feeds, tried in order with automatic failover. Any
   readsb-style JSON feed works, so a local ADS-B receiver can replace the public APIs later.
-- The radar sits over a faint real map (Esri's dark grey basemap by default; `[map] style`
+- The radar sits over a real map (Esri's dark grey basemap by default, at `opacity` 0.45; `[map] style`
   can be `light`, `satellite`, `osm` or `off`, or `url` can point at any raster tile service,
   such as CARTO with your own API key:
   `url = "https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png?key=YOUR_CARTO_KEY"`).
@@ -396,7 +399,7 @@ no requests (or, with `"log"`, only the slow position check).
   paper, navy ink, chart blue for traffic and magenta only for the aircraft overhead, switching
   to a night chart after dusk. Panels are framed as drawing sheets with corner marks, labels are
   lettered in small capitals, type plates sit on a drafting grid with their ICAO type designator,
-  the radar and sky view carry a compass bezel, and the clock shows UTC beside local time. Type is
+  the radar carries a compass bezel, and the clock shows UTC beside local time. Type is
   B612, the typeface Airbus designed for cockpit displays, bundled under the SIL Open Font
   License (see `cloudwall/web/fonts/`), so the board looks the same on every machine.
 - Airlines are one table, `cloudwall/data/airlines.csv`: the code a callsign starts with, the code

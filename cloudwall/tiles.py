@@ -27,6 +27,10 @@ STYLES = {
     "dark": (ESRI.format(service="Canvas/World_Dark_Gray_Base"), f"Tiles © Esri — Esri, HERE, Garmin, {OSM}"),
     "light": (ESRI.format(service="Canvas/World_Light_Gray_Base"), f"Tiles © Esri — Esri, HERE, Garmin, {OSM}"),
     "satellite": (ESRI.format(service="World_Imagery"), "Imagery © Esri, Maxar, Earthstar Geographics"),
+    # for the Map view: a street map, and the labels and roads that go over the satellite imagery
+    "streets": (ESRI.format(service="World_Street_Map"), f"Map © Esri — Esri, HERE, Garmin, USGS, {OSM}"),
+    "places": (ESRI.format(service="Reference/World_Boundaries_and_Places"), "Labels © Esri, HERE, Garmin"),
+    "roads": (ESRI.format(service="Reference/World_Transportation"), "Roads © Esri, HERE, Garmin"),
     # OpenStreetMap's own tiles: fine for light personal use like this, with the cache
     "osm": ("https://tile.openstreetmap.org/{z}/{x}/{y}.png", OSM),
 }
@@ -61,7 +65,7 @@ class Tiles:
             url, attribution = STYLES.get(self.style, ("", ""))
             self.url = m.get("url") or url
             self.attribution = m.get("attribution") or attribution
-            self.opacity = float(m.get("opacity", 0.32))
+            self.opacity = float(m.get("opacity", 0.45))
         self.zooms = tuple((layer or {}).get("zooms", (6, 17)))
         self.is_layer = bool(layer)
         # a layer for the whole world (the flight card's route map) is served anywhere, but only at

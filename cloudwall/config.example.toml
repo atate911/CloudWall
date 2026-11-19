@@ -83,6 +83,7 @@ general_aviation = false
 
 [kiosk]                # the wall panel (/kiosk) has no buttons, so its place and radar are set here
 place = ""             # a place's name; empty for [home]
+view = "radar"         # "radar", or "map" for the flights on an everyday satellite map
 radar = "chart"        # "chart", or "atc" to draw the radar like an air traffic control screen
 tracks = true          # the selected aircraft's track and lines to where aircraft will be in a minute
 range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see further
@@ -91,7 +92,7 @@ range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see fur
 style = "dark"         # the Chart-style radar's map: "dark" or "light" grey street map, "satellite",
                        # "osm" (OpenStreetMap), an FAA chart ("sectional", "terminal", "ifr-low",
                        # "ifr-high"), or "off"
-opacity = 0.32         # 0 to 1: how strongly the map shows under the radar
+opacity = 0.45         # 0 to 1: how strongly the map shows under the radar
 route = "satellite"    # the map behind the flight's route on its card: "satellite", "light" or "dark"
                        # grey, "osm", or "off" for the plain arc
 atc = "off"            # a chart under the ATC-style radar: "off" (a controller's screen has only

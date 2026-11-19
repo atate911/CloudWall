@@ -125,7 +125,16 @@ class BrowserTest(unittest.TestCase):
         self.assertIn("atc", c["atc"]["scope"])
         self.assertGreaterEqual(c["atc"]["status"], 3)                       # the status area's lines
         self.assertGreaterEqual(c["atc"]["blocks"], 1)
-        self.assertEqual(c["sky"], 1)
+        self.assertEqual(c["buttons"], ["radar", "map"])                    # no sky view
+        m = c["map"]
+        self.assertEqual(m["layers"], ["places", "roads", "sat"])            # satellite, with roads and names over it
+        self.assertEqual(c["streets"], ["streets"])
+        self.assertTrue(m["names"] and all(" " in n or n.isalpha() for n in m["names"]))   # "Delta 178", "Glider": words
+        self.assertTrue(any(line.endswith(" ft") for line in m["lines"]))
+        self.assertNotEqual(m["box"], "-112 -112 224 224")                   # the shape of its panel, not the radar's square
+        self.assertEqual(m["home"], 1)
+        self.assertRegex(m["note"], r"within \d+ miles of home")
+        self.assertTrue(c["backToRadar"])
         self.assertTrue(c["nightChanges"])
         self.assertGreaterEqual(c["places"], 1)
         self.assertIn("98683", c["located"]["where"])
@@ -149,7 +158,11 @@ class BrowserTest(unittest.TestCase):
         k = self.scenario("kiosk")
         self.assertIn("kiosk", k["layout"])
         self.assertEqual((k["card"], k["tabsShown"]), (1, False))
+        self.assertNotIn("map", k["scope"])                                  # the radar unless [kiosk] view says map
         self.assertGreaterEqual(k["onScope"], 1)
+
+    def test_the_wall_panel_on_the_map(self):
+        self.assertGreaterEqual(self.scenario("kioskMap")["onMap"], 1)
 
     def test_a_phone(self):
         p = self.scenario("phone")

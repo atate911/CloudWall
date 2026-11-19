@@ -1,7 +1,7 @@
 "use strict";
 import { $, esc, store, phone, api, runwayList, degF } from "./util.js";
 import { updateSky, sky } from "./sky.js";
-import { drawScope } from "./scope.js";
+import { drawScope, mapReach } from "./scope.js";
 import { loadMap } from "./map.js";
 import { renderHero, tickHero, nextSlide, forgetHero } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
@@ -18,7 +18,6 @@ import { refresh } from "./fresh.js";
 const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
 document.documentElement.classList.add(KIOSK ? "kiosk" : "desk");
 document.body.classList.add(KIOSK ? "kiosk" : "desk");
-if (KIOSK) store("scope", "auto");   // the kiosk has no switch; sky view when something is overhead
 
 let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastOverhead = null, view = "now", mapFor = null;
 
@@ -84,12 +83,16 @@ function emergencies() {
 if (!KIOSK) nearbyDivider(() => { if (state && view === "now") renderMiniBoard(state); });
 placeMenu(() => state);
 
-// ---------- scope: sky dome while something is overhead, radar otherwise ----------
-function scopeMode() {
-  if (emergencies().length) return "radar";      // where it is matters more than how high it looks
-  const pref = store("scope") || "auto";
-  return pref === "auto" ? (state && state.hero ? "sky" : "radar") : pref;
+// ---------- scope: the radar, or the Map view (the flights on a plain satellite or street map) ----------
+// The desktop's buttons choose for each screen; the kiosk takes [kiosk] view. An emergency always
+// shows on the radar, where the controllers' codes and the restrictions are.
+function scopePref() {
+  const v = KIOSK ? state && state.kiosk && state.kiosk.view : store("scope");
+  return v === "map" ? "map" : "radar";
 }
+const scopeMode = () => (emergencies().length ? "radar" : scopePref());
+// the Map view's map: satellite imagery with roads and names over it, or a street map
+const mapStyle = () => (store("mapStyle") === "streets" ? "streets" : "sat");
 // Radar options: drawn as a chart or as an air traffic control screen, track lines on or off, and
 // the range. The desktop's buttons set them for each screen; the kiosk, which has no buttons, takes
 // them from the [kiosk] settings. The address overrides either (?radar=atc&tracks=off&range=30).
@@ -105,24 +108,26 @@ function radarPrefs() {
 let scopeLabel = "";
 function drawScopeNow(now = performance.now()) {
   if (!state || view !== "now") return;
-  const mode = scopeMode(), pref = store("scope") || "auto", { style, tracks, range } = radarPrefs();
+  const mode = scopeMode(), pref = scopePref(), ms = mapStyle(), { style, tracks, range } = radarPrefs();
   const atc = mode === "radar" && style === "atc";
-  const charts = state.charts || { map: state.basemap }, bm = atc ? charts.atc : charts.map;
-  const credit = mode === "radar" && bm && bm.enabled ? bm.attribution : "";
-  const label = [pref, mode, credit, style, tracks, range, state.ranges].join("|");
+  const charts = state.charts || { map: state.basemap }, layers = charts.layers || {};
+  const bm = mode === "map" ? layers[ms] : atc ? charts.atc : charts.map;
+  const credit = bm && bm.enabled ? bm.attribution : "";
+  const label = [pref, mode, ms, credit, style, tracks, range, state.ranges].join("|");
   if (label !== scopeLabel) {
     scopeLabel = label;
     document.querySelectorAll("#scope-seg button").forEach((b) => b.classList.toggle("on", b.dataset.mode === pref));
     document.querySelectorAll("#style-seg button").forEach((b) => b.classList.toggle("on", b.dataset.style === style));
+    document.querySelectorAll("#mapstyle-seg button").forEach((b) => b.classList.toggle("on", b.dataset.map === ms));
     $("btn-tracks").classList.toggle("on", tracks);
     $("btn-tracks").setAttribute("aria-pressed", String(tracks));
     $("range-seg").innerHTML = (state.ranges || []).map((r) => `<button data-range="${r}"${r === range ? ' class="on"' : ""}>${r}</button>`).join("") +
       `<span class="seg-unit">nm</span>`;
     $("scope").classList.toggle("atc", atc);
-    $("scope").classList.toggle("sky", mode === "sky");     // the radar's options don't apply to the sky view
+    $("scope").classList.toggle("map", mode === "map");     // the radar's own options give way to the map's
     $("scope-attrib").textContent = credit;
   }
-  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range });
+  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range, mapStyle: ms });
 }
 
 // Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi. On a phone
@@ -222,10 +227,12 @@ async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
   const seq = ++pollSeq, asked = myPin;
   try {
-    // while the radar is on screen, the server fetches out to its range (the ATC style's square
-    // display reaches further, into its corners); and the flight this screen follows, if any
-    const radar = state && view === "now" && scopeMode() === "radar", prefs = radarPrefs();
-    const s = await (await api(`api/state?range=${radar ? prefs.range : 0}${radar && prefs.style === "atc" ? "&square=1" : ""}` +
+    // while the radar or the map is on screen, the server fetches out to its range, and the
+    // flight this screen follows, if any
+    // (the ATC style's square and the Map view's rectangle reach further, into their corners)
+    const shown = state && view === "now" ? scopeMode() : null, prefs = radarPrefs();
+    const far = shown === "radar" && prefs.style === "atc" ? "&square=1" : shown === "map" ? `&reach=${mapReach().toFixed(2)}` : "";
+    const s = await (await api(`api/state?range=${shown ? prefs.range : 0}${far}` +
       (asked ? `&pin=${encodeURIComponent(asked)}` : ""))).json();
     // answers can cross: keep the newest, and drop one asked for a flight no longer followed
     if (seq < shownSeq || asked !== myPin) return;
@@ -281,6 +288,7 @@ $("hero").addEventListener("click", (e) => {
 });
 $("scope-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("scope", b.dataset.mode); scopeLabel = ""; } });
 // a button wins over the same setting given in the address
+$("mapstyle-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { store("mapStyle", b.dataset.map); scopeLabel = ""; } });
 $("style-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { qs.delete("radar"); store("radarStyle", b.dataset.style); scopeLabel = ""; } });
 $("btn-tracks").addEventListener("click", () => { const on = radarPrefs().tracks; qs.delete("tracks"); store("tracks", on ? "off" : "on"); scopeLabel = ""; });
 $("range-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { qs.delete("range"); store("range", b.dataset.range); scopeLabel = ""; poll(); } });

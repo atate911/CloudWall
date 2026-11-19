@@ -14,7 +14,7 @@
   /* day chart */
   --paper: #e8ebe5;     /* the wall: cool chart paper */
   --sheet: #f4f5f1;     /* the flight card */
-  --disc: #eef1ec;      /* radar and sky dome */
+  --disc: #eef1ec;      /* the radar's disc */
   --ink: #1c2b3a;       /* text */
   --ink-2: #3c4b5a;
   --slate: #6b7884;     /* secondary text */
@@ -435,7 +435,7 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 .nu-foot .wx { color: var(--ink-2); font-size: .88rem; }
 .nu-foot .raw { font-size: .62rem; }
 
-/* ---------- radar and sky dome ---------- */
+/* ---------- radar and Map view ---------- */
 .scope { display: flex; padding: 2.4rem .2rem 2.6rem; }
 .seg { position: absolute; top: .4rem; left: .2rem; z-index: 3; display: inline-flex; border: 1px solid var(--rule); border-radius: var(--corner); overflow: hidden; }
 .seg button { font: .62rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); padding: .5rem .75rem; }
@@ -454,14 +454,14 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 .scope-tools #range-seg { margin-left: auto; }
 .seg .seg-unit { font: .62rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); padding: .5rem .6rem;
   border-left: 1px solid var(--rule); display: flex; align-items: center; }
-#scope.sky .scope-tools { visibility: hidden; }
+/* each view shows its own options: the radar its style and tracks, the Map view satellite or streets */
+#scope:not(.map) #mapstyle-seg, #scope.map #style-seg, #scope.map #btn-tracks { display: none; }
 .attrib:empty { display: none; }
 #radar { width: 100%; height: 100%; overflow: visible; }
 #radar.fade-in { animation: fade .45s ease-out; }
 #radar text { font-family: var(--sans); fill: var(--slate); }
-#radar .scope-bg, #radar .dome-bg { fill: var(--disc); }
+#radar .scope-bg { fill: var(--disc); }
 #radar .ring { fill: none; stroke: var(--rule); stroke-width: .5; }
-#radar .ring.horizon { stroke: var(--slate); stroke-width: .7; }
 #radar .ring.oh { stroke: var(--magenta); stroke-dasharray: 1.4 2.2; stroke-width: .6; opacity: .8; }
 #radar .ring-label { font-size: 4.2px; }
 #radar .compass { font-size: 5.6px; font-weight: 700; fill: var(--ink-2); }
@@ -496,33 +496,44 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 #radar .vec { stroke: var(--blue); stroke-width: .45; stroke-linecap: round; opacity: .7; }
 #radar .hero .vec { stroke: var(--magenta); stroke-width: .6; opacity: .9; }
 #radar .hero .tag { fill: var(--magenta); }
-#radar .sun { fill: #e3b23c; } #radar .sun-glow { fill: #e3b23c; opacity: .18; }
-body.night #radar .sun { fill: #c99a3a; }
-#radar .sky-path { fill: none; stroke: var(--magenta); stroke-width: .9; stroke-dasharray: 2 2.4; stroke-linecap: round; }
-#radar .sky-path.past { stroke-dasharray: none; opacity: .3; }
-#radar .sky-peak { fill: var(--disc); stroke: var(--magenta); stroke-width: .7; }
-#radar .peak-label { font-size: 4.2px; fill: var(--magenta); }
-/* the real map: a faint print of the streets and rivers under the traffic, in the chart's own tones */
+/* the real map: a print of the streets and rivers under the traffic, in the chart's own tones */
 #radar .basemap { transition: opacity .6s; mix-blend-mode: multiply; }
 /* each filter ends in a slight blur over the whole map, so the tiles' edges don't show as seams */
-#radar .basemap.dark, #radar .basemap.carto-dark { filter: invert(1) hue-rotate(180deg) grayscale(.5) contrast(.6) brightness(1.32) blur(.5px); }
-#radar .basemap.light, #radar .basemap.carto-light { filter: grayscale(.4) contrast(.95) blur(.5px); }
-#radar .basemap.satellite, #radar .basemap.osm, #radar .basemap.custom { filter: grayscale(.6) contrast(.9) brightness(1.15) blur(.5px); }
+#radar .basemap.dark, #radar .basemap.carto-dark { filter: invert(1) hue-rotate(180deg) grayscale(.4) contrast(.8) brightness(1.25) blur(.3px); }
+#radar .basemap.light, #radar .basemap.carto-light { filter: grayscale(.3) contrast(1.05) blur(.3px); }
+#radar .basemap.satellite, #radar .basemap.osm, #radar .basemap.custom { filter: grayscale(.45) contrast(.95) brightness(1.1) blur(.3px); }
 body.night #radar .basemap { mix-blend-mode: screen; }
-body.night #radar .basemap.dark, body.night #radar .basemap.carto-dark { filter: grayscale(.3) brightness(1.5) blur(.5px); }
-body.night #radar .basemap.light, body.night #radar .basemap.carto-light { filter: invert(1) hue-rotate(180deg) grayscale(.3) brightness(.75) blur(.5px); }
-body.night #radar .basemap.satellite, body.night #radar .basemap.osm, body.night #radar .basemap.custom { filter: grayscale(.7) brightness(.55) blur(.5px); }
+body.night #radar .basemap.dark, body.night #radar .basemap.carto-dark { filter: grayscale(.2) brightness(1.75) blur(.3px); }
+body.night #radar .basemap.light, body.night #radar .basemap.carto-light { filter: invert(1) hue-rotate(180deg) grayscale(.2) brightness(.9) blur(.3px); }
+body.night #radar .basemap.satellite, body.night #radar .basemap.osm, body.night #radar .basemap.custom { filter: grayscale(.55) brightness(.7) blur(.3px); }
 /* the FAA's charts as the chart-style radar's map ([map] style): a busy print, so its colours
    muted, its contrast lowered and its small print softened, until it sits quietly behind the
    traffic; at night inverted to sit on the night chart */
-#radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) { filter: saturate(.3) contrast(.7) brightness(1.1) blur(.5px); }
+#radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) { filter: saturate(.4) contrast(.8) brightness(1.05) blur(.3px); }
 body.night #radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) {
-  filter: invert(1) hue-rotate(180deg) saturate(.3) contrast(.75) brightness(.75) blur(.5px); }
+  filter: invert(1) hue-rotate(180deg) saturate(.4) contrast(.85) brightness(.85) blur(.3px); }
 /* the ATC style's chart: printed dark on white, so turned light on dark, in grey, and faint and
    soft enough that its airways and boundaries show as texture and its print doesn't compete
    with the data blocks */
-#scope.atc #radar .basemap.atc-chart { mix-blend-mode: normal; opacity: .18;
-  filter: invert(1) grayscale(1) blur(.8px) contrast(.9); }
+#scope.atc #radar .basemap.atc-chart { mix-blend-mode: normal; opacity: .26;
+  filter: invert(1) grayscale(1) blur(.6px) contrast(.9); }
+
+/* ---------- the Map view: the flights on an everyday map, at full strength, for anyone ---------- */
+#scope.map #radar .basemap.plain-map { mix-blend-mode: normal; filter: none; opacity: 1; }
+body.night #scope.map #radar .basemap.plain-map { filter: brightness(.82); }
+#scope.map #radar .scope-bg { fill: #3a4a3e; }
+#scope.map #radar .blip { fill: #fff; stroke: rgb(10 20 30 / .85); stroke-width: 1.3; }
+#scope.map #radar .hero .blip { fill: var(--magenta); stroke: #fff; }
+#scope.map #radar .tag { fill: #fff; font-size: 5.4px; stroke: rgb(10 20 30 / .85); stroke-width: 1.9px; }
+#scope.map #radar .tag-sub { font-family: var(--sans); font-size: 4.4px; fill: #f1f4f6; stroke: rgb(10 20 30 / .85); stroke-width: 1.7px; }
+#scope.map #radar .hero .tag { fill: #ffd2e6; }
+#radar .map-home circle { fill: rgb(255 255 255 / .25); stroke: #fff; stroke-width: .8; }
+#radar .map-home .dot { fill: var(--blue); stroke: #fff; stroke-width: .6; }
+#radar .map-apt rect { fill: #2c5d9e; stroke: #fff; stroke-width: .5; }
+#radar .map-apt path { fill: #fff; }
+#radar .map-label { font-size: 4.6px; font-weight: 700; fill: #fff; paint-order: stroke; stroke: rgb(10 20 30 / .85); stroke-width: 1.6px; stroke-linejoin: round; }
+#radar .map-note rect { fill: rgb(10 20 30 / .6); }
+#radar .map-note text { font-size: 4px; fill: #fff; }
 
 /* ---------- board ---------- */
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -867,8 +878,6 @@ body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
 .kiosk #radar .heard-note { font-size: 6.5px; }
 /* red on the red takeover would vanish: use its light ink instead */
 body.emergency #scope:not(.atc) #radar :is(.heard-note, .tfr-label) { fill: var(--ink-2); }
-.sky-moon .moon-dark { fill: #6d7a88; } .sky-moon .moon-lit { fill: #f3f0e2; }
-.sky-moon { filter: drop-shadow(0 0 1.5px rgba(243, 240, 226, .6)); }
 
 /* ===================== weather tab: sun and moon, contrails, airspace ===================== */
 .wx-more { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 2rem;
@@ -1153,7 +1162,7 @@ html.phone #radar .tag-sub { font-size: 5.6px; stroke-width: 1.7px; }
 html.phone #radar .compass { font-size: 7px; }
 html.phone #radar :is(.ring-label, .place) { font-size: 5px; }
 html.phone #radar .bearing { font-size: 4.3px; }
-html.phone #radar :is(.apt-label, .field-label, .tfr-label, .peak-label) { font-size: 5.4px; }
+html.phone #radar :is(.apt-label, .field-label, .tfr-label) { font-size: 5.4px; }
 html.phone #radar .heard-note { font-size: 5.8px; }
 html.phone #radar :is(.legend, .status) { display: none; }
 /* the STARS display: data blocks, position symbols, the status area (whose size scope.js's ssa()

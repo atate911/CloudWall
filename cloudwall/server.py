@@ -114,7 +114,12 @@ def make_server(cfg, places, charts=None, logos=None):
                 except ValueError:
                     nm = 0
                 pin = q.get("pin", [None])[0]                            # the flight this screen follows
-                return self._send(200, dict(place.state(pin, nm, q.get("square") == ["1"]), **display, api=API,
+                try:
+                    reach = float(q.get("reach", ["1"])[0])              # how much further the Map view's corners reach
+                except ValueError:
+                    reach = 1.0
+                reach = reach if reach == reach else 1.0                 # not NaN
+                return self._send(200, dict(place.state(pin, nm, q.get("square") == ["1"], reach), **display, api=API,
                                             places=places.summaries(), restart=code_changed()))
             if path == "/api/weather":
                 return self._send(200, place.weather_report())

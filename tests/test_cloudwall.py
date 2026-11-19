@@ -541,6 +541,16 @@ class RadarRangeTest(unittest.TestCase):
         t.want_range(30, square=True)
         self.assertEqual(t.fetch_radius(), 42.4)
 
+    def test_the_map_view_reaches_into_its_corners(self):
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        t.want_range(15, reach=2.02)                                  # a tall panel: corners twice as far
+        self.assertEqual(t.fetch_radius(), 30.3)
+        t.want_range(20, reach=9)                                     # never more than three times
+        self.assertEqual(t.fetch_radius(), 60)
+        t.range_wanted.clear()
+        t.want_range(15, reach=0.2)                                   # nor less than the range itself
+        self.assertEqual(t.fetch_radius(), 15)
+
     def test_data_blocks_get_wake_categories_and_history_spacing(self):
         t = Tracker(config.load(), Store(":memory:"), StubEnricher())
         t.update([dict(plane("a1", "ASA1", 2.0), type="B738"), dict(plane("c1", "N123", 3.0), type="C172"),
@@ -770,7 +780,8 @@ class ChartsTest(unittest.TestCase):
             info = self.charts(d, atc="ifr-low").info()
             self.assertEqual((info["atc"]["layer"], info["atc"]["name"]), ("ifr-low", "IFR Enroute Low"))
             self.assertIn("FAA", info["atc"]["attribution"])
-            self.assertEqual(set(info["layers"]), {"ifr-low", "ifr-high", "sectional", "terminal", "world"})
+            self.assertEqual(set(info["layers"]), {"ifr-low", "ifr-high", "sectional", "terminal", "world",
+                                                   "sat", "streets", "places", "roads"})
             self.assertEqual(list(info["layers"]["ifr-low"]["zooms"]), [7, 11])
             self.assertIn("IFR_AreaLow/MapServer/tile/{z}/{y}/{x}", self.charts(d).layers["ifr-low"].url)
             c = self.charts(d, style="Sectional", atc="off")            # any case
@@ -810,6 +821,7 @@ class ChartsTest(unittest.TestCase):
             self.assertFalse(c.layers["ifr-low"].allowed(*sfo))
             c.homes = [config.load()["home"], {"lat": 37.62, "lon": -122.38}]
             self.assertTrue(all(t.allowed(*sfo) for lid, t in c.layers.items() if lid not in ("map", "ifr-high", "world")))
+            self.assertFalse(c.layers["streets"].allowed(*[11, 327 + 40, 791]))   # the Map view's layers stay near home too
 
     def test_the_route_maps_borders_and_cities(self):
         import json
@@ -1240,11 +1252,15 @@ class ServerTest(unittest.TestCase):
             s = json.loads(self.get(base + "/api/state" + q))
             self.assertEqual(t.fetch_radius(), 15)
         self.assertEqual(s["ranges"], [15, 20, 30])
-        self.assertEqual(s["kiosk"], {"place": "", "radar": "chart", "tracks": True, "range_nm": 0})
+        self.assertEqual(s["kiosk"], {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0})
         self.get(base + "/api/state?range=30")
         self.assertEqual(t.fetch_radius(), 30)
         self.get(base + "/api/state?range=30&square=1")             # the ATC style's square screen
         self.assertEqual(t.fetch_radius(), 42.4)
+        self.get(base + "/api/state?range=30&reach=1.8")            # the Map view on a tall panel
+        self.assertEqual(t.fetch_radius(), 54)
+        for bad in ("x", "nan", "inf"):                              # not a number, or not one to take
+            self.get(base + f"/api/state?range=15&reach={bad}")
 
     def test_chart_layers_are_served_by_name(self):
         import tempfile

@@ -10,6 +10,13 @@ The FAA charts are the Aeronautical Information Services' own tiled charts on Ar
     sectional  VFR Sectional
     terminal   VFR Terminal Area, where there is one (Portland has one); the Sectional elsewhere
 
+The Map view, a plain map for anyone, has its own layers around home:
+
+    sat        Esri's satellite imagery, with
+    places     its place names and borders, and
+    roads      its roads, laid over it (the two transparent, so together they make a hybrid map)
+    streets    Esri's street map
+
 One more layer covers the whole world instead of the area around home:
 
     world      the flight card's route map, [map] route ("satellite" unless set), zooms 0 to 6
@@ -57,6 +64,9 @@ class Charts:
         self.layers["map"] = self.map
         atc = str(m.get("atc") or "off").lower()
         self.atc = self.layers.get(atc) if atc in FAA_LAYERS else None
+        for lid, style in (("sat", "satellite"), ("streets", "streets"), ("places", "places"), ("roads", "roads")):
+            url, credit = STYLES[style]
+            self.layers[lid] = Tiles(cfg, cache_dir, layer={"id": style, "url": url, "attribution": credit, "zooms": (6, 17)})
         route = str(m.get("route") or "satellite").lower()
         if route in STYLES:
             url, credit = STYLES[route]

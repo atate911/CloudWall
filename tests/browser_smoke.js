@@ -34,6 +34,9 @@ async function open(browser, size, path, errors, tamper, before) {
   await page.waitForSelector("#s-craft g.craft", { state: "attached", timeout: 15000 });      // the first aircraft is on the scope
   return page;
 }
+// a stand-in map tile, so that the views drawn over real maps fetch nothing from the map provider
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkqP9fDwAEhAGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+const fakeTiles = (seen) => (page) => page.route("**/tiles/**", (route) => { if (seen) seen.push(route.request().url()); return route.fulfill({ contentType: "image/png", body: PNG }); });
 const count = (page, selector) => page.locator(selector).count();
 const text = async (page, selector) => ((await count(page, selector)) ? (await page.locator(selector).first().textContent()).trim() : null);
 const tab = async (page, name) => { await page.click(`nav button[data-view="${name}"]`); await page.waitForSelector(`#view-${name}.active`); };
@@ -86,10 +89,11 @@ const SCENARIOS = {
 
   // the radar's switches, the night chart, and the place menu
   async controls(browser, errors) {
-    const page = await open(browser, "desktop", "/", errors), out = {};
+    const tiles = [], page = await open(browser, "desktop", "/", errors, null, fakeTiles(tiles)), out = {};
     const scope = () => page.evaluate(() => document.getElementById("scope").className);
+    out.buttons = await page.evaluate(() => [...document.querySelectorAll("#scope-seg button")].map((b) => b.dataset.mode));
     await page.click('#scope-seg button[data-mode="radar"]');
-    await page.waitForFunction(() => !document.getElementById("scope").classList.contains("sky"));
+    await page.waitForFunction(() => !document.getElementById("scope").classList.contains("map"));
     out.icons = await page.evaluate(() => [...document.querySelectorAll("#s-craft path.blip")].every((p) => (p.getAttribute("d") || "").length > 20));
     out.ranges = await count(page, "#range-seg button");
     await page.click('#style-seg button[data-style="atc"]');
@@ -97,9 +101,24 @@ const SCENARIOS = {
     out.atc = { scope: await scope(), status: await count(page, "#radar text.ssa tspan"), blocks: await count(page, "#s-craft .tag") };
     await page.click('#style-seg button[data-style="chart"]');
     await page.waitForFunction(() => !document.getElementById("scope").classList.contains("atc"));
-    await page.click('#scope-seg button[data-mode="sky"]');
-    await page.waitForFunction(() => document.getElementById("scope").classList.contains("sky"));
-    out.sky = await count(page, "#radar .dome-bg");
+    // the Map view: the flights on an everyday map, filling the panel, labelled in words
+    await page.click('#scope-seg button[data-mode="map"]');
+    await page.waitForFunction(() => document.getElementById("scope").classList.contains("map"));
+    await page.waitForSelector("#s-craft g.craft .tag", { state: "attached" });
+    await page.waitForSelector("#s-base image", { state: "attached" });
+    const mapFacts = () => page.evaluate(() => ({
+      layers: [...new Set([...document.querySelectorAll("#s-base image")].map((i) => i.getAttribute("href").split("/")[1]))].sort(),
+      names: [...document.querySelectorAll("#s-craft .tag")].map((t) => t.textContent).filter(Boolean),
+      lines: [...document.querySelectorAll("#s-craft .tag-sub")].map((t) => t.textContent).filter(Boolean),
+      box: document.getElementById("radar").getAttribute("viewBox"), home: document.querySelectorAll("#radar .map-home").length,
+      note: (document.querySelector("#radar .map-note text") || {}).textContent || "" }));
+    out.map = await mapFacts();
+    await page.click('#mapstyle-seg button[data-map="streets"]');
+    await page.waitForFunction(() => [...document.querySelectorAll("#s-base image")].some((i) => i.getAttribute("href").startsWith("tiles/streets/")));
+    out.streets = (await mapFacts()).layers;
+    await page.click('#scope-seg button[data-mode="radar"]');
+    await page.waitForFunction(() => document.getElementById("radar").getAttribute("viewBox") === "-112 -112 224 224");
+    out.backToRadar = true;
     const night = () => page.evaluate(() => document.body.classList.contains("night"));
     const before = await night(), seen = new Set([before]);
     for (let i = 0; i < 3; i++) { await page.click("#btn-night"); seen.add(await night()); }      // auto, on, off
@@ -120,9 +139,19 @@ const SCENARIOS = {
   async kiosk(browser, errors) {
     const page = await open(browser, "kiosk", "/kiosk", errors), out = {};
     out.layout = await page.evaluate(() => document.documentElement.className);
+    out.scope = await page.evaluate(() => document.getElementById("scope").className);
     out.card = await count(page, "#hero .k-card");
     out.onScope = await count(page, "#s-craft g.craft");
     out.tabsShown = await page.evaluate(() => getComputedStyle(document.querySelector("nav")).display !== "none");
+    await page.close();
+    return out;
+  },
+
+  // the wall panel set to the Map view ([kiosk] view = "map")
+  async kioskMap(browser, errors) {
+    const page = await open(browser, "kiosk", "/kiosk", errors, (state) => { state.kiosk.view = "map"; }, fakeTiles()), out = {};
+    await page.waitForFunction(() => document.getElementById("scope").classList.contains("map"));
+    out.onMap = await count(page, "#s-craft g.craft");
     await page.close();
     return out;
   },
@@ -185,7 +214,6 @@ const SCENARIOS = {
   // the flight card's route on a real map: switched on, with a flight across the Pacific (over the
   // date line) and stand-in tiles, so that nothing is fetched from the map provider
   async routeMap(browser, errors) {
-    const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkqP9fDwAEhAGAhKmMIQAAAABJRU5ErkJggg==", "base64");
     const tiles = [];
     const pacific = (state) => {
       state.charts.layers.world = { enabled: true, style: "satellite", attribution: "Test imagery", zooms: [0, 6], layer: "world" };
@@ -195,8 +223,7 @@ const SCENARIOS = {
         flown_nm: 3900, left_nm: 430 } });
       state.hero = a;
     };
-    const fake = (page) => page.route("**/tiles/world/**", (route) => { tiles.push(route.request().url()); return route.fulfill({ contentType: "image/png", body: PNG }); });
-    const page = await open(browser, "desktop", "/", errors, pacific, fake), out = {};
+    const page = await open(browser, "desktop", "/", errors, pacific, fakeTiles(tiles)), out = {};
     await page.waitForSelector("#h-map svg.rm .rm-border", { state: "attached" });      // once the borders and cities are in
     out.tiles = tiles.length;
     out.zooms = [...new Set(tiles.map((u) => +u.split("/tiles/world/")[1].split("/")[0]))];
