@@ -54,7 +54,7 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
   const ax = axis(state);
   if (!ax) return "";
   const padL = 46 * fs, padR = 70 * fs, padT = 14 * fs, padB = 22 * fs;
-  const band = 12 * fs, top0 = padT + band;
+  const band = 20 * fs, top0 = padT + band;
   const ys = (alt) => (alt > TOP ? padT + band * 0.45 : top0 + (H - top0 - padB) * (1 - clamp(alt, 0, TOP) / TOP));
   const xs = (nm) => padL + ((W - padL - padR) * (nm + range)) / (2 * range);
   const g0 = ys(0), heroHex = state.hero && state.hero.hex;
@@ -62,7 +62,7 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
   for (const alt of [2000, 4000, 6000, 8000, 10000]) {
     s += `<line class="el-grid" x1="${padL}" x2="${W - padR}" y1="${f1(ys(alt))}" y2="${f1(ys(alt))}"/><text class="el-tick" x="${padL - 6}" y="${f1(ys(alt) + 3.5)}" text-anchor="end">${num(alt)}${alt === TOP ? " ft" : ""}</text>`;
   }
-  s += `<text class="el-tick" x="${padL - 6}" y="${f1(padT + band * 0.45 + 3.5)}" text-anchor="end">higher</text>`;
+  s += `<text class="el-tick" x="${padL - 6}" y="${f1(padT + band * 0.45 + 1)}" text-anchor="end">higher</text>`;
   s += `<rect x="${padL}" y="${g0}" width="${W - padL - padR}" height="${6 * fs}" fill="url(#pf-hatch)"/><line class="el-ground" x1="${padL}" x2="${W - padR}" y1="${g0}" y2="${g0}"/>`;
   // miles along the ground, left out where the airport's and home's names sit
   const apX = ax.along(state.airport), busy = [0, apX], side = (nm) => (nm > 0 ? ax.out : ax.back);
