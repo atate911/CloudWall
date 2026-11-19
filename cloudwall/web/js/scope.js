@@ -8,8 +8,9 @@
 import { esc, ident, projected, offset, azEl, clamp } from "./util.js";
 import { sky } from "./sky.js";
 import { moonPosition, moonPhase, moonGlyph } from "./astro.js";
+import { iconFor } from "./icons.js";
+import { iconKind } from "./data.js";
 
-const PLANE = "M0,-4 L1,-1 L4.2,1.2 L4.2,2 L1,1 L.8,3 L2,4 L2,4.6 L0,4 L-2,4.6 L-2,4 L-.8,3 L-1,1 L-4.2,2 L-4.2,1.2 L-1,-1 Z";
 // Drawing options from the page: atc draws the radar like an air traffic control screen;
 // tracks shows the selected aircraft's past track (all of it; its history dots in the ATC style;
 // no other aircraft has one) and the one-minute lines; range is how far out the radar shows, in nm
@@ -42,6 +43,10 @@ const DIRS = [...Array(8)].map((_, i) => ({ ux: Math.sin(i * 45 * RAD), uy: -Mat
 const clockPhase = (ms) => { const t = (ms / 1000) % 6; return t < 2 ? 1 : t < 3 ? 2 : t < 5 ? 1 : 3; };
 const NS = "http://www.w3.org/2000/svg";
 const CHAR_W = 3.35;                          // estimated label width per character, until a label can be measured
+// Icons are drawn at least as large on screen as on a 1920-wide desktop's radar (2.5 CSS px to the
+// unit): on a smaller radar (the 7.5" kiosk, a phone) up to half as large again, so a light
+// aircraft is still more than a speck. Labels and lines make room for them.
+const ICON_UNIT_PX = 2.5, ICON_BOOST_MAX = 1.5;
 export let map = null;
 let placeBoxes = [];        // where the place names sit, so aircraft labels can avoid them
 
@@ -505,7 +510,8 @@ function craftFor(svg, hex) {
   el("circle", { r: 10, fill: "transparent" }, g);                    // generous touch target
   const vec = el("line", { class: "vec" }, g);                         // where it will be in a minute
   const leader = el("line", { class: "leader" }, g);                   // ATC style: target to data block
-  const icon = el("path", { class: "blip", d: opt.atc ? OCTAGON : PLANE }, g);   // a change of style rebuilds every craft
+  // the chart style's icon is set for its kind of aircraft as it's placed; a change of style rebuilds every craft
+  const icon = el("path", { class: "blip", d: opt.atc ? OCTAGON : "" }, g);
   // ATC style: the position symbol on the target, a letter, or a drawn * or +
   const pos = el("text", { class: "pos", "text-anchor": "middle", dy: "0.36em" }, g), sym = el("path", { class: "sym" }, g);
   const hist = el("g", { class: "hist" }, svg.querySelector("#s-trails"));
@@ -535,7 +541,10 @@ function dropCraft(hex) {
 const CHART_CORNERS = [[7, -2.5, "start"], [7, 7.5, "start"], [-7, -2.5, "end"], [-7, 7.5, "end"]];
 const slotCount = () => (opt.atc ? DIRS.length : CHART_CORNERS.length);
 function slot(c, i) {
-  if (!opt.atc) { const [tx, ty, anchor] = CHART_CORNERS[i]; return { tx, ty, anchor }; }
+  if (!opt.atc) {             // further out beside a large icon (a heavy, the selected aircraft)
+    const [tx, ty, anchor] = CHART_CORNERS[i], out = Math.max(0, (c.reach || 0) - 6.5);
+    return { tx: tx + Math.sign(tx) * out, ty, anchor };
+  }
   const d = DIRS[i], ex = d.ux * c.lead, ey = d.uy * c.lead;
   return { d, ex, ey, tx: ex + (d.right ? -c.gap : c.gap), ty: ey, anchor: d.right ? "end" : "start" };
 }
@@ -578,8 +587,8 @@ const overlap = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0
 function placeLabels(heroHex) {
   const placed = opt.atc ? [...placeBoxes] : [...(layerMode.startsWith("radar") ? placeBoxes : []), ...BEARING_BOXES,
     { x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
-  const all = [...live.values()].filter((c) => c.x != null), r = opt.atc ? 3 : 4.5;
-  const blips = all.map((c) => ({ x0: c.x - r, x1: c.x + r, y0: c.y - r, y1: c.y + r, c }));
+  const all = [...live.values()].filter((c) => c.x != null), r = (c) => (opt.atc ? 3 : Math.max(3.5, c.reach || 4.5));
+  const blips = all.map((c) => ({ x0: c.x - r(c), x1: c.x + r(c), y0: c.y - r(c), y1: c.y + r(c), c }));
   for (const c of all) for (const f of [0.4, 0.7, 1]) {
     const x = c.x + c.vx * f, y = c.y + c.vy * f;
     if (Math.hypot(c.vx, c.vy) * f > 5) blips.push({ x0: x - 2, x1: x + 2, y0: y - 2, y1: y + 2, c: null });   // its own line too
@@ -679,6 +688,8 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   }
 
   const heroHex = state.hero && state.hero.hex, seen = new Set(), ease = 1 - Math.exp(-frameDt / 0.6), k = K();
+  const box = svg.getBoundingClientRect(), unitPx = Math.min(box.width, box.height) / 224;
+  const boost = unitPx ? clamp(ICON_UNIT_PX / unitPx, 1, ICON_BOOST_MAX) : 1;
   // past the tracking radius, aircraft are fetched only for a radar set to a longer range
   const aircraft = mode === "radar" ? [...state.aircraft, ...(state.beyond || [])] : state.aircraft;
   for (const a of aircraft) {
@@ -696,11 +707,21 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       c.rot += (((p.rot - c.rot + 540) % 360) - 180) * ease;
     }
     c.g.setAttribute("transform", `translate(${c.x.toFixed(2)},${c.y.toFixed(2)})`);
-    if (!opt.atc) c.icon.setAttribute("transform", `rotate(${c.rot.toFixed(1)}) scale(${(isHero ? 1.55 : 1) * p.scale})`);
+    // the chart style's icon: its kind of aircraft (a light aircraft or twin, a turboprop, a business
+    // or regional jet, an airliner, a heavy, a fighter, a helicopter, a balloon, ...), at about its size; the selected
+    // one a little larger, but not so much that an airliner passes for a heavy
+    const size = (isHero ? 1.25 : 1) * p.scale * boost;
+    if (!opt.atc) {
+      const kind = fresh || !c.ic ? iconKind(a) : c.kind;          // looked at again on each update
+      if (kind !== c.kind || !c.ic) { c.kind = kind; c.ic = iconFor(kind); c.icon.setAttribute("d", c.ic.d); }
+      c.reach = c.ic.r * size;
+      // a balloon stays upright whichever way it drifts
+      c.icon.setAttribute("transform", `rotate(${c.ic.upright ? 0 : c.rot.toFixed(1)}) scale(${size})`);
+    }
     // the lead line: one minute ahead at its ground speed, from the nose (the ATC style's
     // predicted track line, from the target), on the radar only
     const lead = opt.tracks && mode === "radar" && a.gs && a.track != null ? (a.gs / 60) * k : 0;
-    const sin = Math.sin(c.rot * RAD), cos = -Math.cos(c.rot * RAD), nose = opt.atc ? 2.3 : 4.2 * (isHero ? 1.55 : 1);
+    const sin = Math.sin(c.rot * RAD), cos = -Math.cos(c.rot * RAD), nose = opt.atc ? 2.3 : c.ic.nose * size;
     c.vx = sin * lead; c.vy = cos * lead;
     if (lead > nose) {
       c.vec.setAttribute("x1", (sin * nose).toFixed(2)); c.vec.setAttribute("y1", (cos * nose).toFixed(2));
