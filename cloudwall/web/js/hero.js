@@ -1,5 +1,5 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, api } from "./util.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, api, since, runwayList } from "./util.js";
 import { typeInfo } from "./data.js";
 import { plate, renderLineup, drawn } from "./plate.js";
 import { flap, roll } from "./fx.js";
@@ -205,7 +205,7 @@ function showHero(el, a, state) {
     // the type designator in the sheet's corner, for types drawn from their own measurements
     if (drawn(info)) sil.dataset.code = info.type; else delete sil.dataset.code;
   }
-  renderFacts(a, state);
+  renderFacts(a, state, since(state));
 
   if (a.photo && a.photo_by && cur.photo !== a.photo) {
     // a photo of this very airframe takes the top of the frame once it has loaded; the type plate stays below
@@ -289,7 +289,7 @@ function weatherWords(w) {
 
 function todayLine(state) {
   const bits = [`<b>${state.today}</b> flyover${state.today === 1 ? "" : "s"} logged today${state.seats_today ? `, about <b>${num(state.seats_today)}</b> seats` : ""}`];
-  if (state.flow) bits.push(`${esc(state.airport.iata)} landing <b>${esc(state.flow.dir)}</b> on runways ${esc(state.flow.runways.replace(" / ", " and "))}`);
+  if (state.flow) bits.push(`${esc(state.airport.iata)} landing <b>${esc(state.flow.dir)}</b> on runways ${esc(runwayList(state.flow.runways))}`);
   return bits.join('<span class="sep"></span>');
 }
 
@@ -329,7 +329,7 @@ function fillNext(state, n) {
     pl.hidden = !drawn(info);
   }
   $("nu-look").textContent = passText(state, n);
-  const left = n.cpa_s - (Date.now() - (state._at || Date.now())) / 1000;
+  const left = n.cpa_s - since(state);
   nextCpa0 = Math.max(nextCpa0, n.cpa_s, 60);
   $("nu-ring").setAttribute("stroke-dasharray", `${clamp((left / nextCpa0) * 100, 0, 100)} 100`);
   $("nu-count").textContent = left > 2 ? mmss(left) : "NOW";

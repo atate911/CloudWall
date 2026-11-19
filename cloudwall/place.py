@@ -6,6 +6,7 @@ so all places draw on one budget.
 """
 import json
 import logging
+import re
 import threading
 import time
 from pathlib import Path
@@ -171,26 +172,40 @@ class Places:
         except (OSError, ValueError) as e:
             log.warning("couldn't read %s: %s", self.saved_path, e)
             return
+        if not isinstance(saved, list):
+            log.warning("%s isn't a list of places: left alone", self.saved_path)
+            return
+        renumbered = False
         for e in saved:
+            if not isinstance(e, dict):
+                continue
             try:
-                self.add(e, save=False)
+                place = self.add(e, save=False, pid=e.get("id"))
+                renumbered = renumbered or place.id != e.get("id")
             except ValueError as err:
                 log.warning("saved place %s left out: %s", e.get("name"), err)
+        if renumbered:      # a file from before ids were kept, or an id the config file has since taken
+            with self.lock:
+                self._save()
 
-    def add(self, e, save=True):
+    def add(self, e, save=True, pid=None):
         """A place from a screen: {name, lat and lon, zip, airport ("auto" or an ICAO code)}.
-        Raises ValueError with a message for the screen when it can't be set up."""
+        Raises ValueError with a message for the screen when it can't be set up. pid: the id a
+        saved place had before the restart. Its logbook's file is named after its id, as is each
+        screen's choice of place, so it keeps that id whatever has been removed or renamed around
+        it; without one (a new place), or if the id has been taken, it gets the next free one."""
         with self.lock:
             if len(self.places) >= self.LIMIT:
                 raise ValueError(f"CloudWall watches up to {self.LIMIT} places: remove one first")
             home, ap = config.entry(e, "That place")
             if str(ap.get("icao", "auto")).lower() != "auto" and not airports.lookup(ap["icao"]):
                 raise ValueError(f"{ap['icao'].upper()} isn't an airport CloudWall knows")
-            pid = config.unique_id(home["name"], self.places)
+            if not (isinstance(pid, str) and re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", pid) and pid not in self.places):
+                pid = config.unique_id(home["name"], self.places)
             place = self.make(config.place_config(self.cfg, pid, home, ap))
             place.added = True
             self.places[pid] = place
-            self.added[pid] = {"name": home["name"], "lat": home["lat"], "lon": home["lon"], "zip": home.get("zip"),
+            self.added[pid] = {"id": pid, "name": home["name"], "lat": home["lat"], "lon": home["lon"], "zip": home.get("zip"),
                                "airport": "auto" if str(ap.get("icao", "auto")).lower() == "auto" else ap["icao"].upper()}
             if save:
                 self._save()

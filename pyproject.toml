@@ -17,7 +17,7 @@ cloudwall = "cloudwall.__main__:main"
 packages = ["cloudwall"]
 
 [tool.setuptools.package-data]
-cloudwall = ["web/*", "web/js/*", "web/maps/*", "web/fonts/*", "data/*", "config.example.toml"]
+cloudwall = ["web/*", "web/js/*", "web/js/profiles/*", "web/maps/*", "web/fonts/*", "data/*", "config.example.toml"]
 
 [tool.setuptools.dynamic]
 version = { attr = "cloudwall.__version__" }

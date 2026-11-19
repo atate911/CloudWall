@@ -551,6 +551,12 @@ class PlacesTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "isn't in CloudWall's table"):
             config.places(dict(cfg, places=[{"name": "Strip", "lat": 1.0, "lon": 2.0, "airport": "ZZZZ"}]))
 
+    def test_a_field_with_no_iata_code_goes_by_its_local_one(self):
+        cfg = self.load('[home]\nlat = 45.62\nlon = -122.65\n[airport]\nicao = "KVUO"\n')
+        ap = config.places(cfg)[0]["airport"]
+        self.assertEqual((ap["icao"], ap["iata"], ap["name"]), ("KVUO", "VUO", "Pearson Field"))   # not a blank code
+        self.assertNotIn("VUO", [f["code"] for f in ap["others"]])       # and it isn't one of its own neighbours
+
     def test_zip_codes_and_the_closest_major_airport(self):
         from cloudwall import airports
         cfg = self.load('[home]\nzip = "98660"\n[[places]]\nname = "Cabin"\nzip = "97702"\n'
@@ -1209,6 +1215,23 @@ class ServerTest(unittest.TestCase):
         self.assertTrue(cabin.stopped.is_set())                         # its threads wind down
         self.assertEqual([e["name"] for e in json.loads(saved.read_text())], ["45.640, -122.660"])
 
+    def test_a_saved_place_keeps_its_id_and_so_its_logbook(self):
+        import tempfile
+        saved = Path(tempfile.mkdtemp()) / "places.json"
+        base, places = self.serve(config.load(), saved)
+        for q in ("97702", "47.60, -122.30"):                           # two cabins: near Bend, then near Seattle
+            self.assertEqual(self.send(base + "/api/places", "POST", {"q": q, "name": "Cabin"})[0], 200)
+        self.assertEqual([(p.id, p.cfg["airport"]["icao"]) for p in places][1:], [("cabin", "KRDM"), ("cabin-2", "KSEA")])
+        self.send(base + "/api/places?id=cabin", "DELETE")
+        _, again = self.serve(config.load(), saved)                     # after a restart
+        # Seattle's is still cabin-2: as "cabin" it would carry on in Bend's logbook (cloudwall-cabin.db)
+        self.assertEqual([(p.id, p.cfg["airport"]["icao"]) for p in again][1:], [("cabin-2", "KSEA")])
+        # a file from before ids were kept: numbered as it always was, and the ids written down
+        saved.write_text(json.dumps([{"name": "Cabin", "lat": 47.6, "lon": -122.3, "zip": None, "airport": "auto"}, "junk"]))
+        _, old = self.serve(config.load(), saved)
+        self.assertEqual([p.id for p in old], ["home", "cabin"])
+        self.assertEqual([e["id"] for e in json.loads(saved.read_text())], ["cabin"])
+
 
 class SeatsTest(unittest.TestCase):
     def test_airline_layout_then_type_then_cargo(self):
@@ -1363,6 +1386,24 @@ class TFRTest(unittest.TestCase):
         t.refresh(now=1e9)
         self.assertEqual(len(texts), 1)                                # details fetched once
 
+    def test_the_records_the_faa_issues_now(self):
+        """A paragraph after the regulation, drone restrictions under 49 U.S.C. 44812 with the
+        requesting office's reference before the name, and records named only by their number."""
+        from cloudwall.tfr import TFRs, parse_detail
+        drones = parse_detail(self.XML.replace("261121 Parade Portland, OR DHS - UAS Only", "2026-44812-CSA-0138 MDW Mag Mile Lights")
+                              .replace("99.7", "44812"))
+        self.assertEqual((drones["name"], drones["drones_only"]), ("MDW Mag Mile Lights", True))
+        fire = self.XML.replace("261121 Parade Portland, OR DHS - UAS Only", "6/1111").replace("99.7", "91.137(a)(1)")
+        self.assertEqual((parse_detail(fire)["kind"], parse_detail(fire)["drones_only"]),
+                         ("Disaster or hazard area (often a wildfire)", False))
+        ring = [[-122.5, 45.5], [-122.4, 45.5], [-122.4, 45.7], [-122.5, 45.7], [-122.5, 45.5]]
+        shapes = {"features": [
+            {"properties": {"NOTAM_KEY": "6/1111-1-FDC-F", "TITLE": "Camas, WA, Saturday, November 21, 2026 Local"},
+             "geometry": {"type": "Polygon", "coordinates": [ring]}},
+            {"properties": {"NOTAM_KEY": "6/3333-1-FDC-F"}, "geometry": None}]}       # no shape: left out, not an error
+        t = TFRs({"lat": 45.59, "lon": -122.47}, 30, fetch_json=lambda url, timeout: shapes, fetch_text=lambda url, timeout: fire)
+        self.assertEqual([(x["id"], x["name"]) for x in t.refresh(now=1e9)], [("6/1111", "Camas, WA")])
+
 
 class ContrailTest(unittest.TestCase):
     def test_schmidt_appleman(self):
@@ -1373,6 +1414,27 @@ class ContrailTest(unittest.TestCase):
         c = {"levels": [level(250, -55, 110, 10400)]}
         self.assertEqual(for_altitude(c, 34000), "persistent")
         self.assertIsNone(for_altitude(c, 12000))
+
+    @unittest.skipUnless(hasattr(time, "tzset"), "needs tzset")
+    def test_the_forecast_hours_are_utc(self):
+        import os
+        from cloudwall import contrails
+        hours = {"time": [f"2026-07-15T{h:02d}:00" for h in range(24)]}
+        for p in contrails.LEVELS:                                      # each hour a degree colder, to tell them apart
+            hours.update({f"temperature_{p}hPa": [-30.0 - h for h in range(24)], f"relative_humidity_{p}hPa": [50] * 24,
+                          f"geopotential_height_{p}hPa": [10000] * 24})
+        real, tz = contrails.get_json, os.environ.get("TZ")
+        contrails.get_json = lambda url, timeout=0: {"hourly": hours}
+        os.environ["TZ"] = "America/Los_Angeles"                        # in July its clock is on daylight time
+        time.tzset()
+        try:
+            noon = 1784116800                                           # 2026-07-15 12:00 UTC
+            c = contrails.fetch(45.6, -122.5, now=noon + 600)
+            self.assertEqual((c["at"], c["levels"][0]["temp_c"]), (noon, -42.0))     # the 12:00 hour, not 13:00's
+        finally:
+            contrails.get_json = real
+            os.environ.pop("TZ", None) if tz is None else os.environ.update(TZ=tz)
+            time.tzset()
 
 
 class MilitaryTest(unittest.TestCase):
@@ -1388,3 +1450,85 @@ class MilitaryTest(unittest.TestCase):
         finally:
             sources.get_json = real
         self.assertEqual([(a["hex"], a["alt"], a["military"]) for a in out], [("ae0001", 15000, True)])
+
+
+
+class PaidLookupTroubleTest(unittest.TestCase):
+    """A paid provider that is down or turns a request away isn't asked again with every update."""
+
+    def provider(self, route):
+        class Provider:
+            name, label, mode, general_aviation, enabled, ok = "fake", "Fake24", "always", False, True, True
+            def available(self): return self.ok
+        p = Provider()
+        p.route = lambda callsign: route(p, callsign)
+        return p
+
+    def settle(self, e):
+        for _ in range(300):
+            if e.live_route("ASA512", fetch=False)[0] == "done":
+                return
+            time.sleep(0.01)
+        self.fail("the lookup never finished")
+
+    def test_a_failed_lookup_waits_before_it_is_tried_again(self):
+        from cloudwall import enrich
+        calls = []
+
+        def route(p, callsign):
+            calls.append(callsign)
+            raise OSError("timed out")
+        e = Enricher(Store(":memory:"), live=self.provider(route))
+        self.assertEqual(e.live_route("ASA512", fetch=True), ("pending", None))
+        self.settle(e)
+        # the next updates get "nothing yet" (so the free route shows) without another billed request
+        self.assertEqual([e.live_route("ASA512", fetch=True) for _ in range(5)], [("done", None)] * 5)
+        self.assertEqual(calls, ["ASA512"])
+        self.assertFalse(e.store.cache_get("live_route", "fake:ASA512", 3600)[0])     # and it isn't kept as "no route"
+        k = ("live_route", "fake:ASA512")
+        e.mem[k] = (None, e.mem[k][1] - enrich.LIVE_RETRY)                              # five minutes on
+        self.assertNotEqual(e.live_route("ASA512", fetch=False)[0], "done")           # it may be asked again
+
+    def test_a_refused_lookup_is_not_kept_as_no_route(self):
+        def route(p, callsign):
+            p.ok = False                                                # HTTP 429: paused for a minute, nothing learned
+            return None
+        e = Enricher(Store(":memory:"), live=self.provider(route))
+        e.live_route("ASA512", fetch=True)
+        self.settle(e)
+        self.assertFalse(e.store.cache_get("live_route", "fake:ASA512", 3600)[0])
+
+    def test_no_route_found_is_kept(self):
+        e = Enricher(Store(":memory:"), live=self.provider(lambda p, callsign: None))
+        e.live_route("ASA512", fetch=True)
+        self.settle(e)
+        self.assertEqual(e.store.cache_get("live_route", "fake:ASA512", 3600), (True, None))
+
+
+class PackagingTest(unittest.TestCase):
+    def test_every_bundled_file_is_packaged(self):
+        """An installed copy (pip install ., not the editable one) carries every file the display and
+        the tables need: a new folder under web/ or data/ has to be listed in pyproject.toml."""
+        import glob
+        import tomllib
+        root = Path(__file__).resolve().parent.parent
+        pkg = root / "cloudwall"
+        patterns = tomllib.loads((root / "pyproject.toml").read_text())["tool"]["setuptools"]["package-data"]["cloudwall"]
+        packaged = {Path(f) for pattern in patterns for f in glob.glob(pattern, root_dir=pkg)}
+        bundled = {f.relative_to(pkg) for f in pkg.rglob("*") if f.is_file() and f.suffix not in (".py", ".pyc")}
+        self.assertEqual(bundled - packaged, set())
+
+
+class DisplayWordsTest(unittest.TestCase):
+    def test_runways_in_words(self):
+        import shutil
+        import subprocess
+        if not shutil.which("node"):
+            self.skipTest("needs node")
+        util = Path(__file__).resolve().parent.parent / "cloudwall" / "web" / "js" / "util.js"
+        script = ("const { runwayList } = await import(process.argv[1]);"
+                  'console.log(JSON.stringify(["28L / 28R", "27C / 27L / 27R / 28C", "08", ""].map(runwayList)));')
+        run = subprocess.run(["node", "--input-type=module", "-e", script, str(util)], capture_output=True, text=True, timeout=60)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        self.assertEqual(json.loads(run.stdout), ["28L and 28R", "27C, 27L, 27R and 28C", "08", ""])
+

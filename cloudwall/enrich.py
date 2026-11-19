@@ -13,6 +13,7 @@ log = logging.getLogger("cloudwall.enrich")
 AIRLINE_CALLSIGN = re.compile(r"^[A-Z]{3}\d[0-9A-Z]{0,4}$")
 DAY = 86400
 LIVE_ROUTE_TTL = 45 * 60   # a callsign flies several legs a day; don't reuse a live route for long
+LIVE_RETRY = 5 * 60        # a paid lookup that failed or was refused: leave that flight alone this long
 PHOTO_TTL = DAY            # look again daily: photos there are added and taken down
 
 
@@ -144,16 +145,31 @@ class Enricher:
             return fetch_photo(*key.split("|"))
         return fetch_aircraft(key)
 
+    def _later(self, k):
+        """A paid lookup didn't get an answer. Asking again on the next update, as free lookups
+        do, would spend the budget on a provider that is down: one flight overhead for a few
+        minutes is dozens of billed requests. Remembered as "nothing yet" (in memory only, so the
+        free route shows) and asked again after LIVE_RETRY."""
+        with self.lock:
+            self.mem[k] = (None, time.time() - LIVE_ROUTE_TTL + LIVE_RETRY)
+
     def _worker(self, q):
         while True:
             kind, key = k = q.get()
             try:
                 value = self._fetch(kind, key)
+                if kind == "live_route" and value is None and not self.live.available():
+                    # not asked, or turned away (key rejected, rate limited, budget used up while
+                    # this waited its turn): that isn't "no route" to keep for 45 minutes
+                    self._later(k)
+                    continue
                 self.store.cache_put(kind, key, value)   # None is cached too (unknown)
                 with self.lock:
                     self.mem[k] = (value, time.time())
             except Exception as e:  # network trouble: retry on a later sighting
                 log.warning("lookup %s %s failed: %s", kind, key, e)
+                if kind == "live_route":
+                    self._later(k)
                 time.sleep(5)
             finally:
                 with self.lock:

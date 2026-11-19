@@ -29,7 +29,10 @@ KINDS = {
     "91.144": "Abnormally high air pressure",
     "91.145": "Air show or major sporting event",
     "99.7": "Security",
+    # 49 U.S.C. 44812 (2024): drones kept away from a large public gathering; other aircraft are not affected
+    "44812": "Drones kept clear of a public event",
 }
+DRONES_ONLY = {"44812"}
 REFS = {"HEI": "above ground", "ALT": "", "STD": ""}
 
 
@@ -52,11 +55,29 @@ def _dist_to_ring(home, ring):
 
 
 def _rings(geom):
-    if geom["type"] == "Polygon":
+    kind = (geom or {}).get("type")
+    if kind == "Polygon":
         return [geom["coordinates"][0]]
-    if geom["type"] == "MultiPolygon":
+    if kind == "MultiPolygon":
         return [p[0] for p in geom["coordinates"]]
     return []
+
+
+def _rule(code):
+    """'91.137(a)(1)' -> '91.137': the regulation without its paragraph, which is what says the kind."""
+    m = re.match(r"\d+(\.\d+)?", code or "")
+    return m.group(0) if m else code
+
+
+# What the FAA puts before a restriction's name: its date ("261121 "), or a reference of the
+# office that asked for it ("2026-44812-CSA-0138 ", "26-#127-ESA-").
+NAME_PREFIX = re.compile(r"^(\d{6}(-\d{6})?\s+|\d{4}-\d{5}-[A-Z]{2,4}-\d{2,5}\s+|\d{2}-#\d+-[A-Z]{2,4}-)")
+
+
+def title_place(title):
+    """'Key West, FL, Tuesday, May 6, 2025 Local' -> 'Key West, FL': where a restriction is, from
+    its title in the FAA's list, for the many whose record gives no name."""
+    return re.split(r",\s+(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day\b", title or "")[0].strip()
 
 
 def _thin(ring, n=72):
@@ -94,13 +115,13 @@ def parse_detail(xml):
         if hi: highs.append(hi)
     name = t(".//NotUid/txtLocalName") or ""
     # "261121 Grand Illumination Parade Norfolk, VA DHS - UAS Only" -> drop the date prefix
-    name = re.sub(r"^\d{6}(-\d{6})?\s+", "", name)
+    name = NAME_PREFIX.sub("", name)
     code = t(".//TfrNot/codeType")
     return {
         "name": name,
-        "kind": KINDS.get(code, "Flight restriction"),
+        "kind": KINDS.get(_rule(code), "Flight restriction"),
         "code": code,
-        "drones_only": "UAS ONLY" in name.upper() or "UAS-ONLY" in name.upper(),
+        "drones_only": "UAS ONLY" in name.upper() or "UAS-ONLY" in name.upper() or _rule(code) in DRONES_ONLY,
         "start": _when(t(".//dateEffective")),
         "end": _when(t(".//dateExpire")),
         "floor": min(lows, key=lambda a: a["ft"]) if lows else None,
@@ -142,8 +163,10 @@ class TFRs:
                         self.fetch_text(DETAIL.format(id=nid.replace("/", "_")), timeout=20)))
                 except Exception as e:                       # shapes alone are still worth showing
                     log.warning("TFR %s details failed: %s", nid, e)
-                    cached = (None, {"name": t["title"], "kind": "Flight restriction"})
+                    cached = (None, {"name": title_place(t["title"]) or t["title"], "kind": "Flight restriction"})
             t.update(cached[1])
+            if not t.get("name") or t["name"] == nid:      # many records are named only by their number
+                t["name"] = title_place(t["title"]) or t.get("name")
             if t.get("end") and t["end"] < now:
                 continue
             t["active"] = not t.get("start") or t["start"] <= now

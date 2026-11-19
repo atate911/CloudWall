@@ -159,7 +159,8 @@ def complete_airport(ap, home, radius_nm):
         raise ValueError(f"airport {ap.get('icao') or '(no code)'} isn't in CloudWall's table: "
                          "give its lat and lon (and iata and city) in the config")
     ap["icao"] = str(ap.get("icao") or "").upper()
-    ap.setdefault("iata", ap["icao"])
+    if not ap.get("iata"):      # no IATA code (Pearson Field): its local code (VUO), else its ICAO code
+        ap["iata"] = (rec or {}).get("code") or ap["icao"]
     ap.setdefault("city", ap.get("name") or ap["iata"])
     if ap.get("elevation_ft") is None:
         ap["elevation_ft"] = airports.elevation_ft(ap["icao"]) or 0

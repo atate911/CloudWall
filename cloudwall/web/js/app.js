@@ -1,5 +1,5 @@
 "use strict";
-import { $, esc, num, mmss, ident, altText, store, phone, api } from "./util.js";
+import { $, esc, num, mmss, ident, altText, store, phone, api, runwayList, since } from "./util.js";
 import { updateSky, sky } from "./sky.js";
 import { drawScope, loadMap } from "./scope.js";
 import { renderHero, tickHero, nextSlide, badges, recordsHtml, forgetHero, boardFlight } from "./hero.js";
@@ -78,6 +78,8 @@ function emergencies() {
 }
 
 // ---------- board ----------
+// Time until an aircraft is overhead, as the flight card counts it: from when its position was reported.
+const overheadIn = (a) => mmss(Math.max(0, a.cpa_s - since(state)));
 function boardHtml() {
   const R = state.tracking, heroHex = state.hero && state.hero.hex;
   const air = state.aircraft.filter((a) => !a.on_ground).sort((a, b) => {
@@ -97,7 +99,7 @@ function boardHtml() {
       <td class="num">${altText(a)} <small class="u">ft</small><span class="vs">${v > 300 ? '<span class="up">▲</span>' : v < -300 ? '<span class="down">▼</span>' : ""}</span></td>
       <td class="num">${num(a.gs)} <small class="u">kt</small></td>
       <td class="num">${a.dist.toFixed(1)} <small class="u">nm</small><span class="cmp">${a.compass}</span></td>
-      <td class="num ${soon ? "soon" : ""}">${soon ? mmss(a.cpa_s) : '<span class="dim">—</span>'}</td></tr>`;
+      <td class="num ${soon ? "soon" : ""}">${soon ? overheadIn(a) : '<span class="dim">—</span>'}</td></tr>`;
   });
   return `<table class="board"><thead><tr><th></th><th>Flight</th><th>Route</th><th>Type</th><th class="num">Altitude</th><th class="num">Speed</th><th class="num">Distance</th><th class="num">Overhead in</th></tr></thead>
     <tbody>${rows.join("") || '<tr><td colspan="8" class="empty">No airborne traffic within ' + R.radius_nm + " nm.</td></tr>"}</tbody>
@@ -124,7 +126,7 @@ function phoneBoardHtml(air, heroHex, R) {
       <i class="sw" style="background:${c ? c[0] : "var(--rule)"}"></i>
       <span class="pb-id">${esc(boardFlight(ident(a)))}</span>
       <span class="pb-rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}` : a.local ? `<span class="dim">${esc(a.local === "arriving" ? "Landing" : a.local === "departing" ? "Departing" : "Local")}</span>` : '<span class="dim">—</span>'}</span>
-      <span class="pb-when${soon ? " soon" : ""}">${soon ? mmss(a.cpa_s) : `${a.dist.toFixed(1)}<small> nm<span class="pb-cmp"> ${esc(a.compass)}</span></small>`}</span>
+      <span class="pb-when${soon ? " soon" : ""}">${soon ? overheadIn(a) : `${a.dist.toFixed(1)}<small> nm<span class="pb-cmp"> ${esc(a.compass)}</span></small>`}</span>
       <span class="pb-l2"><span class="pb-sub">${logo}${name ? `<span class="pb-name">${esc(name)}</span>` : ""}${a.type ? `<span class="pb-type">${esc(a.type)}</span>` : ""}</span>
       <span class="pb-data">${altText(a)}<small> ft</small>${vs(a.vrate || 0)}<span class="pb-gs">${num(a.gs)}<small> kt</small></span></span></span></button>`;
   };
@@ -155,7 +157,7 @@ function renderMiniBoard() {
     const soon = a.cpa_s > 0 && a.cpa_nm <= R.overhead_nm;
     return `<button class="mb-row ${a.hex === heroHex ? "hero" : ""}" data-hex="${esc(a.hex)}">
       <span class="mb-id">${esc(ident(a))}</span><span class="mb-rt">${r ? `${esc(r.origin.iata)}–${esc(r.dest.iata)}` : esc(a.type || "")}</span>
-      <span class="mb-alt">${altText(a)}${v > 300 ? " ▲" : v < -300 ? " ▼" : ""}</span><span class="mb-when ${soon ? "soon" : ""}">${soon ? mmss(a.cpa_s) : `${a.dist.toFixed(1)} nm`}</span></button>`;
+      <span class="mb-alt">${altText(a)}${v > 300 ? " ▲" : v < -300 ? " ▼" : ""}</span><span class="mb-when ${soon ? "soon" : ""}">${soon ? overheadIn(a) : `${a.dist.toFixed(1)} nm`}</span></button>`;
   }).join("") || '<p class="dim">No aircraft in range.</p>');
 }
 
@@ -412,7 +414,7 @@ function render() {
   const w = state.weather, f = state.flow;
   renderPlace();
   $("flow").hidden = !f;
-  if (f) $("flow").innerHTML = `${esc(state.airport.iata)} landing ${esc(f.dir)}, runways ${esc(f.runways.replace(" / ", " and "))}`;
+  if (f) $("flow").innerHTML = `${esc(state.airport.iata)} landing ${esc(f.dir)}, runways ${esc(runwayList(f.runways))}`;
   $("wx").hidden = !w;
   if (w) $("wx").innerHTML = `${Math.round((w.temp_c * 9) / 5 + 32)}°F, wind ${w.wind_kt ?? 0} kt <b class="cat-${esc(w.category)}">${esc(w.category || "")}</b>`;
   $("link").hidden = state.status.ok || !state.status.source;
@@ -440,6 +442,19 @@ function render() {
   }
   if (view === "board") $("board").innerHTML = boardHtml();
 }
+// When CloudWall itself stops answering (the server is down, the network gone), the last positions
+// are shown for a minute, as the server does with a silent feed, and then cleared: a flight card
+// and radar that can't be trusted are worse than an empty sky marked offline.
+const STALE_S = 60;
+let lastAnswer = Date.now();
+function dropStale() {
+  if (!state || document.hidden || Date.now() - lastAnswer < STALE_S * 1000) return;
+  if (!state.status.ok && !state.aircraft.length && !state.hero) return;      // already cleared
+  state = { ...state, aircraft: [], beyond: [], hero: null, next: null, pinned: null, overhead: null, emergency: [],
+    status: { ...state.status, ok: false, source: state.status.source || "CloudWall" } };
+  render();
+}
+
 let pollSeq = 0, shownSeq = 0;
 async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
@@ -454,8 +469,14 @@ async function poll() {
     if (seq < shownSeq || asked !== myPin) return;
     shownSeq = seq;
     state = s;
-    stateAt = state._at = Date.now();
-    stateAtPerf = performance.now();
+    lastAnswer = Date.now();
+    // Positions are as old as the server's last update from the feed, not as new as this answer
+    // (the feed is read every 5 s, this is asked every 2). Time is counted from when they were
+    // reported, so aircraft glide on from where they are instead of stepping back each time the
+    // same update is fetched again, and the countdowns don't jump.
+    const age = state.status && state.status.updated ? Math.min(STALE_S, Math.max(0, state.now - state.status.updated)) * 1000 : 0;
+    stateAt = state._at = Date.now() - age;
+    stateAtPerf = performance.now() - age;
     if (asked && state.pinned !== asked) pin(null);   // it left the area: back to what's overhead
     if (mapFor !== state.airport.icao) { mapFor = state.airport.icao; loadMap(mapFor).then(() => { scopeLabel = ""; }); }
     // the chime is for an aircraft coming overhead, whichever flight this screen follows, and not for a tap
@@ -505,9 +526,10 @@ $("btn-sound").addEventListener("click", () => { setSound(!soundOn()); renderTog
 $("btn-night").addEventListener("click", () => { const m = ["auto", "on", "off"]; store("night", m[(m.indexOf(store("night") || "auto") + 1) % 3]); render(); });
 
 setInterval(poll, 2000);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { lastAnswer = Date.now(); poll(); } });
 setInterval(() => {
   if (KIOSK && myPin && Date.now() - lastTouch > KIOSK_PIN_S * 1000) pin(null);
+  dropStale();
   if (!state || view !== "now") return;
   if (emergencies().length) { renderEmergency($("hero"), state, emergencies(), !KIOSK); return; }
   const elapsed = (Date.now() - stateAt) / 1000;

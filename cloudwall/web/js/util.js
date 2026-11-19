@@ -15,6 +15,14 @@ export function phone() {
 }
 
 export const ident = (a) => a.flight_no || a.callsign || a.reg || a.hex.toUpperCase();
+// Seconds since the positions in a state were reported (app.js stamps each state with _at): what
+// to take off a countdown worked out at that moment.
+export const since = (state) => (state && state._at ? Math.max(0, (Date.now() - state._at) / 1000) : 0);
+// The runways in use, in words: "28L / 28R" -> "28L and 28R"; "27C / 27L / 27R" -> "27C, 27L and 27R".
+export function runwayList(runways) {
+  const r = String(runways || "").split(/\s*\/\s*/).filter(Boolean);
+  return r.length > 1 ? `${r.slice(0, -1).join(", ")} and ${r[r.length - 1]}` : r.join("");
+}
 export const altText = (a) => (a.on_ground ? "GND" : a.alt == null ? "–" : num(a.alt));
 
 // Where the aircraft will be `dt` seconds from its last report, holding track and speed.

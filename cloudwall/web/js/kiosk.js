@@ -2,7 +2,7 @@
 // Only a few things, very large: who's overhead, where it's going, how high and fast,
 // and when it passes. When the sky is quiet, a slow rotation of large slides.
 // Sizes are in vh so the same design reads the same on 1024×600 and 1920×1080 panels.
-import { $, esc, num, mmss, ident, clamp, api } from "./util.js";
+import { $, esc, num, mmss, ident, api, since } from "./util.js";
 import { boardFlight, showLogo, localWords, heardGroups } from "./hero.js";
 import { typeInfo } from "./data.js";
 import { flap } from "./fx.js";
@@ -64,7 +64,7 @@ function showPlane(el, a, state) {
   const v = a.vrate || 0;
   $("k-alt").innerHTML = `${a.on_ground ? "0" : num(a.alt)}${v > 300 ? '<i class="up">▲</i>' : v < -300 ? '<i class="down">▼</i>' : ""}`;
   $("k-gs").textContent = num(a.gs);
-  updateWhen(a, 0);
+  updateWhen(a, since(state));
   cur.a = a;
 }
 
@@ -86,7 +86,7 @@ function nextSlideHtml(n, state) {
   const r = n.route && n.route.plausible ? n.route : null;
   return `<div class="k-card k-slide">
     <div class="k-kicker">Next overhead</div>
-    <div class="k-row"><div class="k-big">${esc(boardFlight(ident(n)))}</div><div class="k-count"><b id="k-next">${mmss(n.cpa_s)}</b><span>to go</span></div></div>
+    <div class="k-row"><div class="k-big">${esc(boardFlight(ident(n)))}</div><div class="k-count"><b id="k-next">${mmss(Math.max(0, n.cpa_s - since(state)))}</b><span>to go</span></div></div>
     <div class="k-mid">${r ? `${esc(r.origin.iata)} <i>to</i> ${esc(r.dest.iata)}` : esc(n.type_name || n.type || "")}</div>
     <div class="k-small">${esc([n.airline, r && n.type_name].filter(Boolean).join(", "))}</div>
   </div>`;
@@ -156,7 +156,7 @@ function showIdle(el, state) {
   slide %= slides.length;
   const kind = slides[slide], key = kind + (kind === "next" ? state.next.hex : "");
   if (key === shownKey) {
-    if (kind === "next" && $("k-next")) $("k-next").textContent = mmss(Math.max(0, state.next.cpa_s - (Date.now() - state._at) / 1000));
+    if (kind === "next" && $("k-next")) $("k-next").textContent = mmss(Math.max(0, state.next.cpa_s - since(state)));
     return;
   }
   shownKey = key;
