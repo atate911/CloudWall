@@ -25,6 +25,11 @@ airframe photos from [planespotters.net](https://www.planespotters.net), weather
   dimension line with its length. With no photo, the plate fills the frame.
 - **Sky view / radar** – beside the card, a dome view of the sky with the aircraft's
   path across it (centre is straight up), or a radar scope over a faint street map.
+  Each aircraft is drawn as its kind, about its size, as flight-tracking maps draw traffic: a light
+  aircraft, a turboprop, a business jet, a regional jet with its engines on the tail, an airliner,
+  a heavy with two or four engines, a helicopter or a fighter. The kind comes from the aircraft's
+  type, else what its transponder says it is (its ADS-B emitter category), else its wake category;
+  with none of those it is a plain aircraft. (The ATC style draws STARS's own targets instead.)
   Each aircraft on the radar shows its altitude in hundreds of feet, with an arrow when it is
   climbing or descending (`035↑`) and a line to where it will be in a minute. Only the selected
   aircraft (the one overhead, or one you tap) shows where it has been, so a busy sky stays

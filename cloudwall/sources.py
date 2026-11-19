@@ -180,6 +180,11 @@ DEMO_FLIGHTS = [
     ("ASA67", "AS67", "Alaska Airlines", "B38M", "Boeing 737 MAX 8", "N802AK", "SEA", "LAX", "over"),
     (None, None, None, "C172", "Cessna 172S Skyhawk", "N751SP", None, None, "ga"),
     ("LIFE3", None, "Life Flight Network", "EC35", "Eurocopter EC135", "N135LF", None, None, "heli"),
+    # one of each of the radar's other kinds: a regional jet, a four-engined heavy, a business jet and a turboprop
+    ("SKW3486", "DL3486", "Delta Connection", "CRJ9", "Bombardier CRJ900LR", "N914SK", "SEA", "PDX", "arr"),
+    ("GTI8315", "5Y8315", "Atlas Air", "B744", "Boeing 747-400F", "N415MC", "PDX", "ANC", "dep"),
+    ("EJA524", "EJA524", "NetJets", "C56X", "Cessna Citation Excel", "N524QS", "PDX", "LAX", "dep"),
+    (None, None, None, "B350", "Beechcraft King Air 350", "N350TW", None, None, "ga"),
 ]
 
 
@@ -219,8 +224,10 @@ class Demo:
             "heli": (self.rng.uniform(0, 360), 120, 1400, 0, "A7"),
         }[kind]
         track, gs, alt, vrate, cat = profile
-        if typ in ("A339", "A332", "B788", "MD11", "B77W"):
+        if typ in ("A339", "A332", "B788", "MD11", "B77W", "B744"):
             cat = "A5"
+        elif typ in ("C56X", "B350"):
+            cat = "A2"
         offset = self.rng.uniform(-2.5, 2.5)          # lateral miss distance, nm
         along = -max(14.0, radius_nm - 1) if along is None else along   # start near the edge of the range
         self.active.append({

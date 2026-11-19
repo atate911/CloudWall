@@ -61,3 +61,25 @@ export function typeInfo(a) {
   // the model names pick a variant that shares a type code (RV-7 or RV-7A, F-15E or F-15EX)
   return { type: a.type, shape, length, known: !!known, name: [a.model, a.type_name].filter(Boolean).join(" ") };
 }
+
+// The radar's icon for an aircraft (icons.js): one of a few kinds, told apart at a glance. From its
+// type when the table above has it; else its type or description when it's a helicopter; else what
+// its transponder says it is (the ADS-B emitter category); else its wake category. Null when nothing
+// says, and the radar draws its plain aircraft.
+const ICON_OF_SHAPE = { piston: "light", turboprop: "turboprop", bizjet: "bizjet", regional: "regional", narrow: "airliner",
+  wide: "heavy", quad: "quad", heli: "heli", fighter: "fighter" };
+const HELI_TYPES = new Set(("A109 A119 A129 A139 A149 A169 A189 AS32 AS3B AS50 AS55 AS65 B06 B06T B105 B212 B222 B230 B407 B412 " +
+  "B427 B429 B430 B47G B505 BK17 EC20 EC25 EC30 EC35 EC45 EC55 EC75 EN28 EN48 EXPL G2CA H160 H269 H47 H500 H53 H60 H64 " +
+  "KMAX MD52 MD60 MI8 NH90 R22 R44 R66 S61 S64 S76 S92 UH1").split(" "));
+const HELI_WORDS = /helicopter|copter|robinson|sikorsky|agusta|enstrom|schweizer|guimbal|kaman|\bbell [245]\d\d|\baw ?1\d\d\b|\b[acmhu]h-\d/i;
+// A1 light, A2 small, A3 large, A4 high vortex large (the 757), A5 heavy, A6 high performance,
+// A7 rotorcraft; B1 glider, B4 ultralight
+const ICON_OF_CATEGORY = { A1: "light", A2: "bizjet", A3: "airliner", A4: "airliner", A5: "heavy", A6: "fighter", A7: "heli", B1: "light", B4: "light" };
+// A super ... D heavy, E the 757, F and G large, H small over 15,500 lb, I small under it
+const ICON_OF_CWT = { A: "heavy", B: "heavy", C: "heavy", D: "heavy", E: "airliner", F: "airliner", G: "airliner", H: "bizjet", I: "light" };
+export function iconKind(a) {
+  const known = T[a.type];
+  if (known) return ICON_OF_SHAPE[known[0]] || null;
+  if (HELI_TYPES.has(a.type) || HELI_WORDS.test(a.desc || "")) return "heli";
+  return ICON_OF_CATEGORY[a.category] || ICON_OF_CWT[a.cwt] || null;
+}
