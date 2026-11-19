@@ -206,7 +206,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | `scope.js` | The radar (chart and ATC styles) and the sky dome: a static layer rebuilt on each update and one persistent SVG group per aircraft, moved every frame. |
 | `parts.js` | What several displays are made of: the logo tile, badges, a flight number as boards set it, "Landing at ...", records. |
 | `map.js` | The ground under the displays: map tiles around home, the hand-drawn map, runways. |
-| `routemap.js` | The flight card's route on a real map: world-layer tiles, the great-circle path, the aircraft on it. |
+| `routemap.js` | The flight card's route on a real map: world-layer tiles, borders and cities (`maps/world.json`), the great-circle path, the aircraft on it. |
 | `fresh.js` | One copy for the page of what changes slowly (weather, logbook, heatmap), fetched at most once a minute whoever asks. |
 | `plate.js`, `silhouette.js`, `profiles.js`, `profiles/*.js` | Aircraft side elevations drawn from measurements, the type plates and the fleet line-up. |
 | `icons.js` | The chart-style radar's top-down icons, one for each kind of traffic. Which kind an aircraft is comes on its record. |

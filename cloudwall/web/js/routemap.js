@@ -48,6 +48,75 @@ const known = (p) => p && p.lat != null && p.lon != null;
 // Can this route go on a map? Both airports need a position.
 export const mappable = (r) => !!(r && known(r.origin) && known(r.dest));
 
+// Borders and cities (maps/world.json, from Natural Earth), fetched the first time a route is drawn.
+let world = null, worldLoading = null;
+function loadWorld() {
+  if (!worldLoading) {
+    worldLoading = fetch("maps/world.json").then((res) => (res.ok ? res.json() : null)).catch(() => null).then((w) => {
+      world = w || { country: [], state: [], cities: [] };
+      return world;
+    });
+  }
+  return worldLoading;
+}
+
+// The country and state lines in view, as SVG path data in world units. The view may run past the
+// date line (x below 0 or above 256), so each line is drawn again a world to the left or right
+// where that copy is the one in view.
+function borderPaths(lines, vx, vy, vw, vh) {
+  let out = "";
+  for (const line of lines) {
+    const pts = [];
+    let lo = Infinity, hi = -Infinity, top = Infinity, bot = -Infinity, prev = null;
+    for (let i = 0; i < line.length; i += 2) {
+      let x = wx(line[i + 1]);
+      if (prev !== null) x += 256 * Math.round((prev - x) / 256);   // lines crossing ±180 stay whole
+      prev = x;
+      const y = wy(line[i]);
+      pts.push([x, y]);
+      lo = Math.min(lo, x); hi = Math.max(hi, x); top = Math.min(top, y); bot = Math.max(bot, y);
+    }
+    if (bot < vy || top > vy + vh) continue;
+    for (const shift of [-256, 0, 256]) {
+      if (hi + shift < vx || lo + shift > vx + vw) continue;
+      out += "M" + pts.map(([x, y]) => `${(x + shift).toFixed(2)},${y.toFixed(2)}`).join("L");
+    }
+  }
+  return out;
+}
+
+// A few cities to find your way by: the biggest, the capitals and those the flight passes over
+// count for most, none so near an airport that it says the same thing, and no two labels touching.
+// Positions in screen px from the view's top left; `taken` holds boxes already in use (the airport
+// codes) as [left, top, right, bottom].
+function pickCities(cities, toPx, path, W, H, taken) {
+  const MARGIN = 4, n = clamp(Math.round((W * H) / 22000), 2, 7);
+  const scored = [];
+  for (const [name, , lat, lon, pop, capital] of cities) {
+    const [x, y] = toPx(lat, lon);
+    if (x < MARGIN || x > W - MARGIN || y < 10 || y > H - 6) continue;
+    let near = Infinity;
+    for (let i = 0; i < path.length; i += 4) near = Math.min(near, Math.hypot(path[i][0] - x, path[i][1] - y));
+    const ends = Math.min(Math.hypot(path[0][0] - x, path[0][1] - y), Math.hypot(path[path.length - 1][0] - x, path[path.length - 1][1] - y));
+    if (ends < 26) continue;
+    const score = Math.sqrt(pop) * (capital ? 1.5 : 1) * (near < 30 ? 2.2 : near < 80 ? 1.4 : 1);
+    scored.push({ name, x, y, score });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  const picked = [];
+  const overlaps = (b) => taken.some((t) => b[0] < t[2] && b[2] > t[0] && b[1] < t[3] && b[3] > t[1])
+    || path.some(([x, y]) => x > b[0] - 3 && x < b[2] + 3 && y > b[1] - 3 && y < b[3] + 3);   // nor across the route
+  for (const c of scored) {
+    if (picked.length >= n) break;
+    const w = c.name.length * 5.6 + 4, right = c.x + 6 + w < W - MARGIN;
+    const box = right ? [c.x - 3, c.y - 8, c.x + 6 + w, c.y + 6] : [c.x - 6 - w, c.y - 8, c.x + 3, c.y + 6];
+    if (overlaps(box)) continue;
+    taken.push(box);
+    picked.push({ ...c, right });
+  }
+  return picked;
+}
+
 // Draw the map for route r into box (an element with a size), on tile layer `layer` (the server's
 // description of the "world" layer: {enabled, style, attribution}), or on plain paper without one.
 // `here` is the local airport's code, marked in chart blue.
@@ -89,8 +158,35 @@ export function drawRouteMap(box, r, layer, here) {
     return `<text class="rm-code ${cls}" x="${x + (right ? 7 : -7) * px}" y="${y + 3.5 * px}" text-anchor="${right ? "start" : "end"}" font-size="${11 * px}" stroke-width="${3 * px}">${esc(code)}</text>`;
   };
   const cls = (p) => (p.iata && p.iata === here ? "local" : "");
+
+  // borders and cities, once world.json is here (drawn again when it arrives)
+  let ground = "";
+  if (!world) loadWorld().then(() => { if (box.isConnected && box._rm && box._rm.r === r) drawRouteMap(box, r, layer, here); });
+  else {
+    const toPx = (lat, lon) => {
+      let x = wx(lon);
+      x += 256 * Math.round((cx - x) / 256);          // the copy of the city nearest the middle of the view
+      return [(x - vx) * s, (wy(lat) - vy) * s];
+    };
+    const pathPx = full.map(([x, y]) => [(x - vx) * s, (y - vy) * s]);
+    // the airport codes' boxes, so no city lands on them
+    const codeBox = (x, y, other, code) => {
+      const X = (x - vx) * s, Y = (y - vy) * s, w = code.length * 7.5 + 8;
+      return x >= other ? [X - 5, Y - 8, X + 8 + w, Y + 8] : [X - 8 - w, Y - 8, X + 5, Y + 8];
+    };
+    const taken = [codeBox(ox, oy, dx, r.origin.iata || ""), codeBox(dx, dy, ox, r.dest.iata || "")];
+    if (layer && layer.enabled) taken.push([W - layer.attribution.length * 4.3 - 12, H - 18, W, H]);   // the imagery credit
+    const cities = pickCities(world.cities, toPx, pathPx, W, H, taken).map((c) => {
+      const X = vx + c.x * px, Y = vy + c.y * px;
+      return `<circle class="rm-city" cx="${X}" cy="${Y}" r="${1.8 * px}"/><text class="rm-place" x="${X + (c.right ? 5 : -5) * px}" y="${Y + 3.2 * px}" text-anchor="${c.right ? "start" : "end"}" font-size="${9.5 * px}" stroke-width="${2.6 * px}">${esc(c.name)}</text>`;
+    }).join("");
+    ground = `<path class="rm-state" d="${borderPaths(world.state, vx, vy, vw, vh)}"/>
+      <path class="rm-border" d="${borderPaths(world.country, vx, vy, vw, vh)}"/>
+      <g class="rm-cities">${cities}</g>`;
+  }
   box.innerHTML = `<svg class="rm" viewBox="${vx} ${vy} ${vw} ${vh}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
       <g class="rm-tiles ${layer ? layer.style : ""}">${tiles}</g>
+      ${ground}
       <path class="rm-halo" d="${d(full)}"/>
       <path class="rm-todo" d="${d(full)}"/>
       <path class="rm-done" d=""/>

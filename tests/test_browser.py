@@ -141,6 +141,9 @@ class BrowserTest(unittest.TestCase):
         self.assertGreater(d["todo"], d["done"])
         self.assertTrue(d["craftInside"])                                    # the aircraft is on the map
         self.assertEqual((d["codes"], d["credit"]), (["HND", "PDX"], "Test imagery"))
+        self.assertGreater(d["borders"], 5)                                  # country lines in view
+        self.assertGreaterEqual(len(d["cities"]), 2)                         # a few places to find your way by
+        self.assertNotIn("Tokyo", d["cities"])                               # not one the airport code already names
 
     def test_the_wall_panel(self):
         k = self.scenario("kiosk")

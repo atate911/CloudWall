@@ -197,7 +197,7 @@ const SCENARIOS = {
     };
     const fake = (page) => page.route("**/tiles/world/**", (route) => { tiles.push(route.request().url()); return route.fulfill({ contentType: "image/png", body: PNG }); });
     const page = await open(browser, "desktop", "/", errors, pacific, fake), out = {};
-    await page.waitForSelector("#h-map svg.rm image", { state: "attached" });
+    await page.waitForSelector("#h-map svg.rm .rm-border", { state: "attached" });      // once the borders and cities are in
     out.tiles = tiles.length;
     out.zooms = [...new Set(tiles.map((u) => +u.split("/tiles/world/")[1].split("/")[0]))];
     out.drawn = await page.evaluate(() => {
@@ -205,7 +205,9 @@ const SCENARIOS = {
       const len = (s) => (document.querySelector(s).getAttribute("d") || "").split("L").length;
       return { height: Math.round(box.height), done: len("#h-map .rm-done"), todo: len("#h-map .rm-todo"),
         craftInside: dot.left >= box.left && dot.right <= box.right && dot.top >= box.top && dot.bottom <= box.bottom,
-        codes: [...document.querySelectorAll("#h-map .rm-code")].map((t) => t.textContent), credit: document.querySelector("#h-map .rm-credit").textContent };
+        codes: [...document.querySelectorAll("#h-map .rm-code")].map((t) => t.textContent),
+        borders: (document.querySelector("#h-map .rm-border").getAttribute("d") || "").split("M").length - 1,
+        cities: [...document.querySelectorAll("#h-map .rm-place")].map((t) => t.textContent), credit: document.querySelector("#h-map .rm-credit").textContent };
     });
     await page.close();
     return out;

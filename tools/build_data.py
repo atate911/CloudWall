@@ -6,6 +6,7 @@
     python3 tools/build_data.py cwt aircraft.json          # wake categories, from openScope's aircraft data
     python3 tools/build_data.py airspace [package.tgz]     # Class B, C and D airspace (FAA NASR, public domain)
     python3 tools/build_data.py navaids [package.tgz]      # VOR and TACAN stations (FAA NASR, public domain)
+    python3 tools/build_data.py borders [folder]           # borders and cities (Natural Earth, public domain)
 
 Without a file each downloads its source. Every output is limited to what CloudWall uses:
 
@@ -26,6 +27,11 @@ Without a file each downloads its source. Every output is limited to what CloudW
   ceiling of each area and a point inside it for its label. Drawn on the ATC-style radar.
 - navaids: the VOR, VOR/DME, VORTAC and TACAN stations in the FAA's NASR data, from the
   @squawk/navaid-data npm package (MIT); not NDBs, DMEs or VOR test facilities.
+- borders: for the flight card's route map (cloudwall/web/maps/world.json), Natural Earth's 1:50m
+  country borders on land and state and province lines (the US, Canada, Australia, Brazil and a
+  few more), simplified to about 2 km, and its populated places (the larger cities and the
+  national, state and provincial capitals). Takes a folder holding the three GeoJSON files, else
+  downloads them from Natural Earth's repository.
 """
 import csv
 import gzip
@@ -232,8 +238,47 @@ def cwt(arg):
            "Rebuild with: python3 tools/build_data.py cwt openscope-aircraft.json"], out)
 
 
+NE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/{}.geojson"
+NE_FILES = {"country": "ne_50m_admin_0_boundary_lines_land", "state": "ne_50m_admin_1_states_provinces_lines",
+            "cities": "ne_50m_populated_places_simple"}
+
+
+def borders(arg):
+    def load(key):
+        name = NE_FILES[key]
+        return json.loads(source(str(Path(arg) / f"{name}.geojson") if arg else None, NE.format(name)))
+
+    def lines(data):
+        out = []
+        for f in data["features"]:
+            g = f["geometry"]
+            for line in [g["coordinates"]] if g["type"] == "LineString" else g["coordinates"]:
+                pts = simplify([[lat, lon] for lon, lat in line], 0.02)
+                if len(pts) >= 2:
+                    out.append([v for lat, lon in pts for v in (round(lat, 2), round(lon, 2))])
+        return out
+
+    cities = []
+    for f in load("cities")["features"]:
+        p = f["properties"]
+        capital = p["featurecla"].startswith("Admin-0 capital")
+        lon, lat = f["geometry"]["coordinates"]
+        cities.append([" ".join((p["name"] or p["nameascii"]).split()), p["iso_a2"], round(lat, 3), round(lon, 3),
+                       max(1, round(p["pop_max"] / 1000)), 1 if capital else 0])
+    cities.sort(key=lambda c: -c[4])
+    out = Path(__file__).resolve().parent.parent / "cloudwall" / "web" / "maps" / "world.json"
+    data = {"about": ["Country borders on land, state and province lines and the larger cities, from Natural Earth",
+                      "(naturalearthdata.com, public domain), 1:50m, lines simplified to about 2 km.",
+                      "Lines: [lat, lon, lat, lon, ...]. Cities: [name, country, lat, lon, population in thousands,",
+                      "national capital 1 or 0], largest first. Rebuild with: python3 tools/build_data.py borders"],
+            "country": lines(load("country")), "state": lines(load("state")), "cities": cities}
+    out.write_text(json.dumps(data, separators=(",", ":")) + "\n")
+    print(f"{len(data['country'])} border lines, {len(data['state'])} state lines, {len(cities)} cities -> {out} "
+          f"({out.stat().st_size // 1024} KB)")
+
+
 if __name__ == "__main__":
-    jobs = {"runways": runways, "airline": airline, "zips": zips, "cwt": cwt, "airspace": airspace, "navaids": navaids}
+    jobs = {"borders": borders, "runways": runways, "airline": airline, "zips": zips, "cwt": cwt, "airspace": airspace, "navaids": navaids}
     if len(sys.argv) < 2 or sys.argv[1] not in jobs:
         raise SystemExit(__doc__)
     jobs[sys.argv[1]](sys.argv[2] if len(sys.argv) > 2 else None)

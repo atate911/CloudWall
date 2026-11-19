@@ -269,6 +269,10 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 .rm-halo { stroke: rgb(0 0 0 / .45); stroke-width: 5; }
 .rm-todo { stroke: #fff; stroke-width: 1.6; stroke-dasharray: 3 4; opacity: .9; }
 .rm-done { stroke: var(--magenta); stroke-width: 2.6; }
+.rm-state { stroke: rgb(255 255 255 / .38); stroke-width: .7; stroke-dasharray: 3 2.5; }
+.rm-border { stroke: rgb(255 240 200 / .7); stroke-width: 1.1; }
+.rm-city { fill: rgb(255 255 255 / .9); }
+.rm-place { font-family: var(--sans); fill: rgb(255 255 255 / .92); stroke: rgb(0 0 0 / .6); paint-order: stroke; }
 .rm-apt { fill: #fff; stroke: #0b1320; }
 .rm-apt.local { fill: var(--blue); }
 .rm-code { font-family: var(--mono); font-weight: 700; fill: #fff; stroke: rgb(0 0 0 / .65); paint-order: stroke; letter-spacing: .04em; }

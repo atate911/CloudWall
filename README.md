@@ -362,6 +362,9 @@ no requests (or, with `"log"`, only the slow position check).
 - The flight card draws the flight's route on a real map too: the great circle between its
   airports over Esri's satellite imagery, framed to fit the trip (a hop to Seattle, a coast to
   coast, or Tokyo across the date line), flown part in magenta and the aircraft where it is now.
+  Country borders, state and province lines and a few cities are drawn over it to find your way
+  by: the biggest, the capitals and those under the flight first, and never across the route.
+  They come from Natural Earth (public domain), bundled in `cloudwall/web/maps/world.json`.
   `[map] route` can be `light`, `dark`, `osm`, or `off` for the plain arc. Its tiles come from
   zoom 0 to 6 only, the one map CloudWall serves for the whole world, cached the same way.
 - The charts are the FAA Aeronautical Information Services' own tiled charts (public domain),

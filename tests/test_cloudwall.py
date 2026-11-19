@@ -811,6 +811,17 @@ class ChartsTest(unittest.TestCase):
             c.homes = [config.load()["home"], {"lat": 37.62, "lon": -122.38}]
             self.assertTrue(all(t.allowed(*sfo) for lid, t in c.layers.items() if lid not in ("map", "ifr-high", "world")))
 
+    def test_the_route_maps_borders_and_cities(self):
+        import json
+        w = json.loads((Path(__file__).resolve().parent.parent / "cloudwall/web/maps/world.json").read_text())
+        self.assertGreater(len(w["country"]), 300)
+        self.assertGreater(len(w["state"]), 300)
+        self.assertTrue(all(len(line) >= 4 and len(line) % 2 == 0 for line in w["country"] + w["state"]))
+        names = {c[0]: c for c in w["cities"]}
+        self.assertTrue({"Seattle", "Denver", "Chicago", "Tokyo", "London"} <= set(names))
+        self.assertEqual(names["Washington, D.C."][5], 1)                   # a capital
+        self.assertAlmostEqual(names["Denver"][2], 39.74, delta=0.1)
+
     def test_the_route_map_covers_the_whole_world_at_low_zooms_only(self):
         import tempfile
         with tempfile.TemporaryDirectory() as d:
