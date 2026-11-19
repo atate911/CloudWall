@@ -381,3 +381,5 @@ no requests (or, with `"log"`, only the slow position check).
   requests to add or remove places that come from another site's page.
 - Tests: `python3 -m unittest discover -s tests` (no network needed; they also run on every pull
   request). [ARCHITECTURE.md](ARCHITECTURE.md) maps the code.
+- CloudWall is released under the MIT licence ([LICENSE](LICENSE)). The bundled tables and the
+  typeface keep their own licences, beside them in `cloudwall/data/` and `cloudwall/web/fonts/`.
