@@ -1,5 +1,7 @@
 """HTTP server: JSON API plus the static touchscreen UI."""
+import hashlib
 import json
+import logging
 import mimetypes
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -8,13 +10,48 @@ from urllib.parse import parse_qs, urlsplit
 
 from . import airports
 
-WEB = Path(__file__).resolve().parent / "web"
+CODE = Path(__file__).resolve().parent
+WEB = CODE / "web"
+CODE_CHECK_S = 60
+log = logging.getLogger("cloudwall")
+
+
+def code_stamp():
+    """A fingerprint of CloudWall's Python code as it is on disk now."""
+    h = hashlib.sha1()
+    for f in sorted(CODE.glob("*.py")):
+        try:
+            h.update(f.name.encode() + b"\0" + f.read_bytes())
+        except OSError:
+            pass
+    return h.hexdigest()
+
+
+class CodeWatch:
+    """Has the code changed on disk since the server started? The pages are read from disk on
+    each request but the Python only when the server starts, so after an update (git pull)
+    without a restart, screens get the new pages from the old server, and whatever is new on
+    both sides answers "not found". Screens are told (restart in /api/state) so they can say so.
+    Checked at most once a minute, and only while a screen asks."""
+
+    def __init__(self):
+        self.started, self.checked, self.changed = code_stamp(), time.time(), False
+
+    def __call__(self):
+        if not self.changed and time.time() - self.checked >= CODE_CHECK_S:
+            self.checked = time.time()
+            if code_stamp() != self.started:
+                self.changed = True
+                log.warning("CloudWall's code has changed since it started: restart it to run the new version")
+        return self.changed
 
 
 def make_server(cfg, places, charts=None, logos=None):
     """places: a place.Places. Each screen says which place it shows with ?place=; without one,
     the kiosk (?kiosk=1) gets its configured place and any other screen the first. Screens can
     also set up places (POST /api/places) and remove the ones they set up (DELETE)."""
+
+    code_changed = CodeWatch()
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -56,7 +93,8 @@ def make_server(cfg, places, charts=None, logos=None):
                     pass
                 pin = q.get("pin", [None])[0]                            # the flight this screen follows
                 tracker.want_pin(pin)
-                return self._send(200, dict(tracker.snapshot(pin), place=place.id, places=places.summaries()))
+                return self._send(200, dict(tracker.snapshot(pin), place=place.id, places=places.summaries(),
+                                            restart=code_changed()))
             if path == "/api/weather":
                 return self._send(200, dict(tracker.weather_full or {}, contrails=tracker.contrails,
                                             tfrs=tracker.tfrs))

@@ -20,6 +20,7 @@
     <button class="chip em-chip" id="em-chip" hidden></button>
     <span class="chip" id="tfr-chip" hidden></span>
     <span class="chip warn" id="link" hidden>Flight data offline</span>
+    <span class="chip warn" id="restart" hidden title="CloudWall's code changed after it started (an update), so the server is still running the old version. Restart it to finish: make restart, or systemctl --user restart cloudwall">Updated: restart CloudWall</span>
   </div>
   <button class="icon-btn" id="btn-sound" title="Chime when an aircraft comes overhead"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M3.5 9.2h3.6L12 5.2v13.6l-4.9-4H3.5z"/><g id="snd-on"><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18 6.6a7.6 7.6 0 0 1 0 10.8"/></g><g id="snd-off"><path d="M16 9.5l5 5M21 9.5l-5 5"/></g></svg><span id="snd-text">Sound</span></button>
   <button class="icon-btn" id="btn-night" title="Night mode: auto follows the sun"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M19.5 14.6A7.8 7.8 0 1 1 9.4 4.5a6.2 6.2 0 0 0 10.1 10.1z"/></svg><span id="night-text">Auto</span></button>
@@ -39,11 +40,16 @@
           <button data-style="chart" title="Radar drawn as a chart">Chart</button>
           <button data-style="atc" title="Radar drawn like an air traffic control screen">ATC</button>
         </div>
-        <div class="seg"><button id="btn-tracks" aria-pressed="true" title="Trails behind aircraft (the selected one's whole track; history dots in the ATC style) and lines to where they will be in a minute">Tracks</button></div>
+        <div class="seg"><button id="btn-tracks" aria-pressed="true" title="The selected aircraft's track behind it (history dots in the ATC style) and lines to where aircraft will be in a minute">Tracks</button></div>
         <div class="seg" id="range-seg" role="group" aria-label="Radar range" title="How far out the radar shows"></div>
       </div>
       <svg id="radar" viewBox="-112 -112 224 224" role="img" aria-label="Nearby aircraft"></svg>
       <div class="attrib" id="scope-attrib"></div>
+    </div>
+    <div class="pane-split" id="pane-split" role="separator" aria-orientation="vertical" aria-controls="mini-board"
+      aria-valuemin="0" aria-valuemax="100" tabindex="0" title="Drag to give the radar more or less room. Double-click for the usual width.">
+      <button class="ps-toggle" id="ps-toggle" aria-controls="mini-board" aria-expanded="true">
+        <svg viewBox="0 0 10 16" aria-hidden="true"><path d="M3.5 3.5L7.5 8l-4 4.5"/></svg></button>
     </div>
     <div class="panel scroll" id="mini-board"></div>
   </section>
