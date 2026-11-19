@@ -1,7 +1,7 @@
 // Helicopters. Format: see ../profiles.js.
 // Outlines are `body` loops with D = 1, so every point is in metres: s aft from the nose tip,
 // z up from the lowest line of the cabin belly (skids and wheels hang below z = 0). L0 is the
-// fuselage length, nose tip to the aftmost point of the fin or tail rotor; data.js lengths are
+// fuselage length, nose tip to the aftmost point of the fin or tail rotor; types.csv lengths are
 // rotors-turning lengths, so `over` = that length - L0 (the rotor disc ahead of the nose).
 // The drawing faces right, so we see the starboard side: a tail rotor on the port side of the
 // fin (Robinson, Bell, Sikorsky S-76, Leonardo, MBB/Kawasaki) is on the far side and is drawn

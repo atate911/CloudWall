@@ -1,0 +1,41 @@
+# Runs the test suite on every pull request and on main. The tests use no network and no
+# packages beyond Python's own. Node is there for the tests of the page's drawing modules, and a
+# browser (Playwright's Chromium) for the smoke test that walks the page itself: CloudWall needs
+# neither to run.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: A browser, for the page's smoke test
+        run: |
+          npm install --no-save playwright@1
+          npx playwright install --with-deps chromium
+      - name: Tests
+        run: python -m unittest discover -s tests
+        env:
+          CLOUDWALL_BROWSER_TESTS: "1"      # the browser tests must run here, not be skipped
+      - name: Installs and starts as a package
+        run: |
+          pip install .
+          cd "$RUNNER_TEMP" && cloudwall --version

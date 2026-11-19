@@ -5,6 +5,7 @@ import random
 import time
 from urllib.parse import urlparse
 
+from .geo import haversine_nm
 from .http import get_json
 
 log = logging.getLogger("cloudwall.sources")
@@ -17,6 +18,7 @@ def normalise(a):
     if not isinstance(alt, (int, float)):
         alt = 0 if on_ground else None
     vrate = a.get("baro_rate", a.get("geom_rate"))
+    flags = a.get("dbFlags") if isinstance(a.get("dbFlags"), int) else 0
     return {
         "hex": (a.get("hex") or "").lstrip("~").lower(),
         "callsign": (a.get("flight") or "").strip() or None,
@@ -24,29 +26,29 @@ def normalise(a):
         "type": a.get("t"),
         "alt": alt,
         "on_ground": on_ground,
-        "gs": a.get("gs"),
-        "vrate": vrate,
-        "lat": a.get("lat"),
-        "lon": a.get("lon"),
+        "gs": _num(a.get("gs")),          # numbers or nothing: a feed's odd value mustn't reach the sums
+        "vrate": _num(vrate),
+        "lat": _num(a.get("lat")),
+        "lon": _num(a.get("lon")),
         "squawk": a.get("squawk"),
         # the transponder's own emergency status: general, lifeguard, minfuel, nordo, unlawful, downed
         "emergency_status": a.get("emergency") if a.get("emergency") not in (None, "none") else None,
         "category": a.get("category"),
-        "military": bool(a.get("dbFlags", 0) & 1),
+        "military": bool(flags & 1),
         # privacy programmes (LADD, PIA): the owner asked not to be identified
-        "private_owner": bool(a.get("dbFlags", 0) & 12),
+        "private_owner": bool(flags & 12),
         "desc": tidy_type(a.get("desc")),
         "year": _year(a.get("year")),
         "owner_op": a.get("ownOp"),
         "target_alt": _num(a.get("nav_altitude_mcp") or a.get("nav_altitude_fms")),
         "modes": [m for m in a.get("nav_modes") or [] if isinstance(m, str)],
         "alt_gps": _num(a.get("alt_geom")),
-        "track": a.get("track") if a.get("track") is not None else a.get("true_heading"),
+        "track": _num(a.get("track") if a.get("track") is not None else a.get("true_heading")),
     }
 
 
 def _num(v):
-    return v if isinstance(v, (int, float)) else None
+    return v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
 
 
 def _year(v):
@@ -117,36 +119,37 @@ class Feeds:
         raise last
 
 
-def military_heard(home, radius_nm, url="https://opendata.adsb.fi/api/v2/mil"):
-    """Military aircraft that receivers near home can hear but nobody can place.
+def military_unplaced(url="https://opendata.adsb.fi/api/v2/mil"):
+    """Military aircraft that receivers can hear but nobody can place, anywhere: the feed's own
+    records. One request serves every place (shared.py); heard_near picks out a place's.
 
     Many military jets carry a Mode S transponder that sends altitude but no position. The
     network still reports them, with the rough location of the receiver that heard them
     (rr_lat/rr_lon), so we can say "an F-16 is up nearby" even with no dot for the map.
     Aircraft with a position arrive through the normal feed instead."""
-    from .geo import haversine_nm
     data = get_json(url, timeout=10)
+    return [a for a in (data or {}).get("ac") or []
+            if a.get("lat") is None and a.get("rr_lat") is not None and a.get("rr_lon") is not None
+            and (a.get("seen") or 0) <= 90]
+
+
+def heard_near(unplaced, home, radius_nm):
+    """Those of military_unplaced's aircraft heard by a receiver within radius_nm of home."""
     out = []
-    for a in (data or {}).get("ac") or []:
-        if a.get("lat") is not None or a.get("rr_lat") is None:
-            continue
-        if (a.get("seen") or 0) > 90:
-            continue
+    for a in unplaced:
         d = haversine_nm(home["lat"], home["lon"], a["rr_lat"], a["rr_lon"])
-        if d > radius_nm:
-            continue
-        n = normalise(a)
-        n.update(rough_nm=round(d), lat=None, lon=None)
-        out.append(n)
+        if d <= radius_nm:
+            n = normalise(a)
+            n.update(rough_nm=round(d), lat=None, lon=None)
+            out.append(n)
     return out
 
 
 def demo_heard():
-    """A pair of fighters heard but not placed (demo mode)."""
-    base = {"callsign": None, "reg": None, "type": "F15", "desc": "Boeing F-15EX Eagle II",
-            "on_ground": False, "gs": None, "vrate": None, "lat": None, "lon": None, "squawk": None,
-            "category": None, "military": True, "rough_nm": 3, "owner_op": "United States Air Force"}
-    return [dict(base, hex="ae0412", alt=14000), dict(base, hex="ae0413", alt=14200)]
+    """A pair of fighters heard but not placed (demo mode), as heard_near gives them."""
+    heard = [{"hex": hexid, "t": "F15", "desc": "Boeing F-15EX Eagle II", "alt_baro": alt, "dbFlags": 1,
+              "ownOp": "United States Air Force"} for hexid, alt in (("ae0412", 14000), ("ae0413", 14200))]
+    return [dict(normalise(a), rough_nm=3) for a in heard]
 
 
 # --- Demo mode: plausible PDX traffic with no network needed -----------------
@@ -270,7 +273,7 @@ class Demo:
             out.append({
                 "desc": info[4], "year": 2008 + int(a["hex"][1:], 16) % 15, "owner_op": None, "private_owner": False,
                 "target_alt": alt_target, "modes": ["autopilot", "approach"] if a["kind"] == "arr" else ["autopilot", "lnav", "vnav"] if a["kind"] in ("dep", "over") else [],
-                "alt_gps": None,
+                "alt_gps": None, "emergency_status": None,
                 "hex": a["hex"], "callsign": a["callsign"], "reg": a["reg"], "type": a["type"],
                 "alt": int(alt / 25) * 25, "on_ground": False,
                 "gs": a["gs"] + self.rng.uniform(-2, 2), "track": a["track"],

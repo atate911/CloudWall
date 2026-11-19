@@ -9,6 +9,7 @@ from .http import get_json
 
 BASE = "https://aviationweather.gov/api/data"
 CEILING_COVERS = ("BKN", "OVC", "OVX", "VV")
+CATEGORIES = ("VFR", "MVFR", "IFR", "LIFR")
 COVER_WORDS = {"SKC": "Clear", "CLR": "Clear", "CAVOK": "Clear", "NCD": "Clear", "NSC": "No significant cloud",
                "FEW": "Few clouds", "SCT": "Scattered clouds", "BKN": "Broken clouds", "OVC": "Overcast",
                "OVX": "Sky obscured", "VV": "Sky obscured"}
@@ -22,20 +23,24 @@ WX_WORDS = {"RA": "rain", "DZ": "drizzle", "SN": "snow", "SG": "snow grains", "P
 
 
 def parse_vis(v):
-    """'10+' -> 10, '1 1/2' -> 1.5, '1/4' -> 0.25; statute miles."""
-    if v is None:
+    """'10+' -> 10, '1 1/2' -> 1.5, '1/4' -> 0.25, 'M1/4' (less than) -> 0.25; statute miles.
+    None for anything that isn't a visibility: one odd report mustn't cost the whole day's."""
+    if v is None or isinstance(v, bool):
         return None
     if isinstance(v, (int, float)):
         return float(v)
-    s = str(v).replace("+", "").replace("SM", "").strip()
-    total = 0.0
-    for part in s.split():
-        if "/" in part:
-            a, b = part.split("/", 1)
-            total += float(a) / float(b)
-        else:
-            total += float(part)
-    return total
+    parts = str(v).upper().replace("+", "").replace("SM", "").strip().lstrip("MP").split()
+    try:
+        total = 0.0
+        for part in parts:
+            if "/" in part:
+                a, b = part.split("/", 1)
+                total += float(a) / float(b)
+            else:
+                total += float(part)
+        return total if parts else None
+    except (ValueError, ZeroDivisionError):
+        return None
 
 
 def ceiling(clouds):
@@ -95,7 +100,7 @@ def decode_metar(m, elev_ft):
               for c in m.get("clouds") or []]
     vis = parse_vis(m.get("visib"))
     ceil = ceiling(clouds)
-    cat = m.get("fltCat") or category(ceil, vis)
+    cat = m.get("fltCat") if m.get("fltCat") in CATEGORIES else category(ceil, vis)     # the service's, if it is one
     t, td = m.get("temp"), m.get("dewp")
     altim = m.get("altim")
     return {
@@ -127,18 +132,6 @@ def decode_taf(t):
             "to": t.get("validTimeTo"), "periods": periods}
 
 
-def fetch_metar(icao):
-    """Latest METAR only (kept for compatibility)."""
-    data = get_json(f"{BASE}/metar?ids={icao}&format=json")
-    if not data:
-        return None
-    m = data[0]
-    return {"station": m.get("icaoId"), "raw": m.get("rawOb"), "category": m.get("fltCat"),
-            "temp_c": m.get("temp"), "wind_dir": m.get("wdir"), "wind_kt": m.get("wspd"),
-            "gust_kt": m.get("wgst"), "visibility": m.get("visib"), "cover": m.get("cover"),
-            "clouds": m.get("clouds")}
-
-
 def fetch_all(icao):
     """Latest METAR (short form for the header), 24 h of decoded history, and the TAF."""
     metars = get_json(f"{BASE}/metar?ids={icao}&format=json&hours=24") or []
@@ -147,7 +140,8 @@ def fetch_all(icao):
         return None, None
     latest = metars[-1]
     elev_ft = round((latest.get("elev") or 0) * 3.281)
-    short = {"station": latest.get("icaoId"), "raw": latest.get("rawOb"), "category": latest.get("fltCat"),
+    short = {"station": latest.get("icaoId"), "raw": latest.get("rawOb"),
+             "category": decode_metar(latest, elev_ft)["category"],
              "temp_c": latest.get("temp"), "wind_dir": latest.get("wdir"), "wind_kt": latest.get("wspd"),
              "gust_kt": latest.get("wgst"), "visibility": latest.get("visib"), "cover": latest.get("cover"),
              "clouds": latest.get("clouds")}

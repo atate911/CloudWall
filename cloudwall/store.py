@@ -3,6 +3,37 @@ import json
 import sqlite3
 import threading
 import time
+from pathlib import Path
+
+from .geo import haversine_nm
+
+SAME_PLACE_NM = 2      # a place set up again this close to where a logbook was kept is the same place
+
+
+def logbook_home(path):
+    """Where the logbook in a database file was kept: {"lat", "lon"}, or None for a file that
+    doesn't say (one from before this was recorded, or not a logbook at all)."""
+    try:
+        db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            row = db.execute("SELECT json FROM cache WHERE kind='place' AND key='home'").fetchone()
+        finally:
+            db.close()
+        home = json.loads(row[0]) if row else None
+        return home if isinstance(home, dict) and "lat" in home and "lon" in home else None
+    except (sqlite3.Error, ValueError, OSError):
+        return None
+
+
+def another_places(path, home):
+    """Is the logbook in this file, if there is one, another place's? A place removed from a
+    screen leaves its logbook on disk, under a name made from its id. A new place that would get
+    the same id (another cabin, somewhere else) mustn't carry on in it; the same place set up
+    again does. A logbook from before its place was noted could be anyone's, and isn't refused."""
+    if not Path(path).exists():
+        return False
+    was = logbook_home(path)
+    return bool(was) and haversine_nm(was["lat"], was["lon"], home["lat"], home["lon"]) > SAME_PLACE_NM
 
 
 class Store:
@@ -10,6 +41,7 @@ class Store:
         self.db = sqlite3.connect(path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.lock = threading.Lock()
+        self.ages = {}      # kind -> the longest a cached value of that kind has been asked for (prune)
         with self.lock, self.db:
             self.db.executescript("""
             CREATE TABLE IF NOT EXISTS cache(
@@ -32,9 +64,14 @@ class Store:
             if "photo_by" not in cols:   # the photo's credit and its page, for planespotters.net photos
                 self.db.execute("ALTER TABLE sightings ADD COLUMN photo_by TEXT")
                 self.db.execute("ALTER TABLE sightings ADD COLUMN photo_link TEXT")
+            if "lat" not in cols:        # where its closest point was, which way it was flying and how fast it was
+                for col in ("lat REAL", "lon REAL", "track REAL", "vrate REAL"):     # climbing: empty for older entries
+                    self.db.execute(f"ALTER TABLE sightings ADD COLUMN {col}")
 
     # -- cache ---------------------------------------------------------------
     def cache_get(self, kind, key, max_age):
+        if max_age > self.ages.get(kind, 0):
+            self.ages[kind] = max_age
         with self.lock:
             row = self.db.execute(
                 "SELECT json, ts FROM cache WHERE kind=? AND key=?", (kind, key)).fetchone()
@@ -46,6 +83,32 @@ class Store:
         with self.lock, self.db:
             self.db.execute("INSERT OR REPLACE INTO cache VALUES(?,?,?,?)",
                             (kind, key, json.dumps(value), time.time()))
+
+    def prune(self):
+        """Clear cached values nobody will read again: those older than the longest anyone has
+        asked for of their kind (a route after a week, a day's heatmap after two days). Kinds not
+        read since the start are left alone. Without this the cache only grows: a heatmap a day,
+        a row for every aircraft and callsign ever seen. Returns how many rows went."""
+        now, gone = time.time(), 0
+        with self.lock, self.db:
+            for kind, age in list(self.ages.items()):
+                if age != float("inf"):
+                    gone += self.db.execute("DELETE FROM cache WHERE kind=? AND ts<?", (kind, now - age)).rowcount
+        return gone
+
+    def forget(self, kinds):
+        """Clear every cached value of these kinds (e.g. the lookups each place's file held
+        before they were kept in one place for all)."""
+        with self.lock, self.db:
+            self.db.execute(f"DELETE FROM cache WHERE kind IN ({','.join('?' * len(kinds))})", tuple(kinds))
+
+    def claim(self, home):
+        """Note the place this logbook is kept at, so its file isn't later taken for another's."""
+        self.cache_put("place", "home", {"lat": home["lat"], "lon": home["lon"]})
+
+    def close(self):
+        with self.lock:
+            self.db.close()
 
     # -- logbook -------------------------------------------------------------
     def count(self, where, args=()):

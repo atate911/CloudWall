@@ -5,6 +5,7 @@ saturation (the Schmidt-Appleman criterion: cold enough for the pressure). It la
 spreads, only when the air is at or above saturation with respect to ice; otherwise it
 evaporates within seconds to a minute.
 """
+import calendar
 import math
 import time
 
@@ -64,7 +65,8 @@ def fetch(lat, lon, now=None):
     data = get_json(URL.format(lat=lat, lon=lon), timeout=20)
     h = data["hourly"]
     now = now or time.time()
-    stamps = [time.mktime(time.strptime(t, "%Y-%m-%dT%H:%M")) - time.timezone for t in h["time"]]
+    # the hours are UTC (timezone=UTC in the request), whatever the clock here is set to
+    stamps = [calendar.timegm(time.strptime(t, "%Y-%m-%dT%H:%M")) for t in h["time"]]
     i = min(range(len(stamps)), key=lambda k: abs(stamps[k] - now))
     levels = []
     for p in LEVELS:

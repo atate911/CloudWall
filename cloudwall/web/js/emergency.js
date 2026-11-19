@@ -2,7 +2,7 @@
 // who it is, where it is. On the desktop it can be hidden for that flight; the kiosk shows it
 // until the code is cleared.
 import { esc, num, mmss, ident } from "./util.js";
-import { boardFlight, localWords } from "./hero.js";
+import { boardFlight, localWords } from "./parts.js";
 
 export function renderEmergency(el, state, list, canHide) {
   const a = list[0], r = a.route && a.route.plausible ? a.route : null;

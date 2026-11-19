@@ -234,7 +234,8 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .route { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 1.2rem; }
 .apt { font-size: min(2.7rem, 8cqi); color: var(--ink); }
 .apt.unknown { font-size: .95rem; color: var(--slate); align-self: center; max-width: 8rem; line-height: 1.35; }
-.apt small { display: block; font: 400 .85rem var(--sans); color: var(--slate); margin-top: .45rem; max-width: 11rem;
+/* the city, over its airport's code */
+.apt small { display: block; font: 400 .85rem var(--sans); color: var(--slate); margin-bottom: .3rem; max-width: 11rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .apt.r { text-align: right; } .apt.r small { margin-left: auto; }
 .apt.local { color: var(--blue); }
@@ -742,9 +743,11 @@ html.kiosk body { grid-template-rows: auto 1fr; }
 body.night .k-who .logo-tile { height: 8.5vh; padding: .8vh 1.4vh; border-radius: 1vh; }
 .k-route { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3vh; }
 .k-apt b { display: block; font: 700 13vh/1 var(--mono); letter-spacing: -.02em; }
-.k-apt span { display: block; font-size: 3.4vh; color: var(--slate); margin-top: 1vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30vh; }
+.k-apt span { display: block; font-size: 3.4vh; color: var(--slate); margin-bottom: 1vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30vh; }
 .k-apt.r { text-align: right; } .k-apt.r span { margin-left: auto; }
 .k-apt.local b { color: var(--blue); }
+/* level with the codes, not with the cities over them */
+.k-arrow { padding-top: 5vh; }
 .k-arrow svg { width: 100%; height: 4vh; display: block; }
 .k-arrow line { stroke: var(--magenta); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .k-arrow polygon { fill: var(--magenta); }

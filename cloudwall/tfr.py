@@ -1,8 +1,8 @@
 """Temporary flight restrictions near home, from the FAA's public TFR service.
 
-Shapes come from the FAA's map service (one request for the whole country); each nearby
-restriction's details (name, times, altitudes, full notice) from its XML record, fetched
-once and kept until the FAA changes it.
+Shapes come from the FAA's map service: one request for the whole country, which serves every
+place CloudWall watches. Each nearby restriction's details (name, times, altitudes, full
+notice) come from its XML record, fetched once and kept until the FAA changes it.
 """
 import logging
 import math
@@ -29,7 +29,10 @@ KINDS = {
     "91.144": "Abnormally high air pressure",
     "91.145": "Air show or major sporting event",
     "99.7": "Security",
+    # 49 U.S.C. 44812 (2024): drones kept away from a large public gathering; other aircraft are not affected
+    "44812": "Drones kept clear of a public event",
 }
+DRONES_ONLY = {"44812"}
 REFS = {"HEI": "above ground", "ALT": "", "STD": ""}
 
 
@@ -52,11 +55,29 @@ def _dist_to_ring(home, ring):
 
 
 def _rings(geom):
-    if geom["type"] == "Polygon":
+    kind = (geom or {}).get("type")
+    if kind == "Polygon":
         return [geom["coordinates"][0]]
-    if geom["type"] == "MultiPolygon":
+    if kind == "MultiPolygon":
         return [p[0] for p in geom["coordinates"]]
     return []
+
+
+def _rule(code):
+    """'91.137(a)(1)' -> '91.137': the regulation without its paragraph, which is what says the kind."""
+    m = re.match(r"\d+(\.\d+)?", code or "")
+    return m.group(0) if m else code
+
+
+# What the FAA puts before a restriction's name: its date ("261121 "), or a reference of the
+# office that asked for it ("2026-44812-CSA-0138 ", "26-#127-ESA-").
+NAME_PREFIX = re.compile(r"^(\d{6}(-\d{6})?\s+|\d{4}-\d{5}-[A-Z]{2,4}-\d{2,5}\s+|\d{2}-#\d+-[A-Z]{2,4}-)")
+
+
+def title_place(title):
+    """'Key West, FL, Tuesday, May 6, 2025 Local' -> 'Key West, FL': where a restriction is, from
+    its title in the FAA's list, for the many whose record gives no name."""
+    return re.split(r",\s+(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day\b", title or "")[0].strip()
 
 
 def _thin(ring, n=72):
@@ -94,13 +115,13 @@ def parse_detail(xml):
         if hi: highs.append(hi)
     name = t(".//NotUid/txtLocalName") or ""
     # "261121 Grand Illumination Parade Norfolk, VA DHS - UAS Only" -> drop the date prefix
-    name = re.sub(r"^\d{6}(-\d{6})?\s+", "", name)
+    name = NAME_PREFIX.sub("", name)
     code = t(".//TfrNot/codeType")
     return {
         "name": name,
-        "kind": KINDS.get(code, "Flight restriction"),
+        "kind": KINDS.get(_rule(code), "Flight restriction"),
         "code": code,
-        "drones_only": "UAS ONLY" in name.upper() or "UAS-ONLY" in name.upper(),
+        "drones_only": "UAS ONLY" in name.upper() or "UAS-ONLY" in name.upper() or _rule(code) in DRONES_ONLY,
         "start": _when(t(".//dateEffective")),
         "end": _when(t(".//dateExpire")),
         "floor": min(lows, key=lambda a: a["ft"]) if lows else None,
@@ -110,23 +131,31 @@ def parse_detail(xml):
 
 
 class TFRs:
-    def __init__(self, home, radius_nm=30, fetch_json=get_json, fetch_text=get_text):
-        self.home, self.radius = home, radius_nm
+    """The FAA's restrictions. Its list is one for the whole country (fetch), from which each
+    place takes those near it (near). A restriction's details are read the first time any place
+    is near it and kept until the FAA changes it."""
+
+    def __init__(self, fetch_json=get_json, fetch_text=get_text):
         self.fetch_json, self.fetch_text = fetch_json, fetch_text
         self.details = {}          # NOTAM key -> (last modified, parsed detail)
 
-    def refresh(self, now=None):
+    def fetch(self):
+        """Every restriction's outline, as the FAA's map service lists them."""
+        return (self.fetch_json(SHAPES, timeout=30) or {}).get("features") or []
+
+    def near(self, features, home, radius_nm=30, now=None):
+        """The restrictions among fetch()'s within radius_nm of home, with their details: those
+        in force first, then nearest first."""
         now = now or time.time()
-        data = self.fetch_json(SHAPES, timeout=30) or {}
         found = {}
-        for f in data.get("features") or []:
+        for f in features:
             p = f.get("properties") or {}
             key = p.get("NOTAM_KEY") or ""
             rings = _rings(f.get("geometry") or {})
             if not key or not rings:
                 continue
-            d = min(_dist_to_ring(self.home, r) for r in rings)
-            if d > self.radius:
+            d = min(_dist_to_ring(home, r) for r in rings)
+            if d > radius_nm:
                 continue
             nid = key.split("-")[0]                      # "6/8034-1-FDC-F" -> "6/8034"
             t = found.setdefault(nid, {"id": nid, "dist_nm": d, "shapes": [], "title": p.get("TITLE"),
@@ -142,8 +171,10 @@ class TFRs:
                         self.fetch_text(DETAIL.format(id=nid.replace("/", "_")), timeout=20)))
                 except Exception as e:                       # shapes alone are still worth showing
                     log.warning("TFR %s details failed: %s", nid, e)
-                    cached = (None, {"name": t["title"], "kind": "Flight restriction"})
-            t.update(cached[1])
+                    cached = (None, {"name": title_place(t["title"]) or t["title"], "kind": "Flight restriction"})
+            t = dict(t, **cached[1])
+            if not t.get("name") or t["name"] == nid:      # many records are named only by their number
+                t["name"] = title_place(t["title"]) or t.get("name")
             if t.get("end") and t["end"] < now:
                 continue
             t["active"] = not t.get("start") or t["start"] <= now

@@ -58,8 +58,10 @@ airframe photos from [planespotters.net](https://www.planespotters.net), weather
   blip on the scope) to pin that aircraft to the flight card; tap the card to release.
   A pin belongs to the screen it was made on: following a flight on your phone leaves the
   wall panel and everyone else's screens showing what's overhead. It holds through a reload
-  of the page and lets go when the flight leaves the area. The chime still sounds for a new
-  aircraft overhead while you're following another.
+  of the page and lets go when the flight leaves the area. If the feed loses a followed flight
+  for a few seconds, as it does with low aircraft, CloudWall carries it on along its track for
+  up to half a minute rather than letting go. The chime still sounds for a new aircraft overhead
+  while you're following another.
 - **Weather** – aviation weather for the airport from aviationweather.gov: flight category,
   a plain-English summary, temperature and dew point, humidity, altimeter, density
   altitude and sunset; a windsock seen from above at the middle of a compass of the
@@ -94,6 +96,10 @@ Open `http://<server>:5050`. For real traffic:
 make config       # writes ~/.config/cloudwall/config.toml; set [home] lat/lon or zip
 make run
 ```
+
+CloudWall checks the file as it starts. A setting it can't use (text where a number belongs,
+say) stops it with a line naming the setting; a name it doesn't know, most often a typo, gets a
+warning in the log and is otherwise ignored.
 
 The install is editable, so changes to the Python or to `cloudwall/web/` take effect
 without reinstalling: restart for Python changes, just reload the browser for the
@@ -154,15 +160,19 @@ On the desktop, the airport code beside "CloudWall" in the header opens a menu o
 "Set a location…" there takes a ZIP code or coordinates, shows where that is and the airline
 airports near it, and keeps the closest major airport unless you choose another; the screen then
 shows the new place. Places set up this way are saved beside the logbook (`places.json`) and can
-be removed from the same menu; those in the config file stay. Each screen remembers its own
-place, so the kiosk can show home while a laptop shows the cabin.
+be removed from the same menu; those in the config file stay. A removed place's logbook stays on
+disk: set the same place up again and it carries on in it, while a different place given the
+same name starts one of its own. Each screen remembers its own place, so the kiosk can show home
+while a laptop shows the cabin.
 
 The kiosk has no menu: it shows `[kiosk] place` (a place's name, the first when empty), and
 `?place=` in the address picks one on any screen.
 
-Each place keeps its own logbook, weather, flight restrictions and contrail forecast, and its data
-is fetched only while a screen is showing it. A paid route provider is shared: every place's
-lookups count against the one budget, so two screens on two places can use it about twice as fast.
+Each place keeps its own logbook, and its data is fetched only while a screen is showing it. What
+isn't particular to a place is fetched once for all of them: a flight in range of two places is
+looked up once (and, with a paid route provider, paid for once, from the one budget), two places
+with the same airport share its weather, and the FAA's list of flight restrictions is downloaded
+once however many places there are. A second place costs a second position feed and little else.
 
 ## Seats on board
 
@@ -309,7 +319,9 @@ Lookups are billed, so CloudWall is frugal with them:
 - only airliners heading for the house (from about 10 minutes out), overhead, or pinned on a screen are
   looked up, early enough that the right route is on screen when they arrive;
 - `mode = "fallback"` saves lookups by asking only when the free route looks wrong;
-- each flight is looked up once and remembered for 45 minutes, airports for a year;
+- each flight is looked up once and remembered for 45 minutes, airports for a year; a lookup
+  that fails, or finds only the flight's previous leg (just after takeoff), is tried again
+  after five minutes, not on every update;
 - each day may use the budget that's left divided by the days left in the billing period, so
   busy days can borrow from quiet ones but the period's total never exceeds the budget; when
   it's reached, routes come from the free database until the plan renews. `daily_limit` adds
@@ -355,7 +367,7 @@ no requests (or, with `"log"`, only the slow position check).
   direction. A hand-drawn map can add rivers and town names: PDX has one
   (`cloudwall/web/maps/kpdx.json`, approximate), drawn when the real map is off and in the ATC
   style. For another airport, add a file named after its ICAO code.
-- Aircraft photos come from the free airframe database and load directly in the browser.
+- Aircraft photos come from planespotters.net and load directly in the browser.
 - The side elevations are drawn in the browser from measurements, not stored as pictures. Each
   family (`cloudwall/web/js/profiles/`) records its fuselage outline, flight-deck glazing, doors
   and windows, wing planform, nacelles, wingtip devices, fin and tailplane in metres, taken from
@@ -364,8 +376,9 @@ no requests (or, with `"log"`, only the slow position check).
   each family cites its source. Stretches of a family share one nose and tail, so a 737-900 is
   a longer 737-700, not a scaled one. `silhouette.js` turns a profile into the drawing: the
   wing is projected into side view from its sweep and dihedral, nacelles hang on pylons, and so
-  on. To add a type, map its ICAO code to a family in the right group file; to add a family,
-  measure it the same way. `tests/test_silhouettes.py` checks that every type in `data.js` has
+  on. To add a type, give it a line in `cloudwall/data/types.csv` (its shape and length) and map
+  its ICAO code to a family in the right group file; to add a family, measure it the same way.
+  `tests/test_silhouettes.py` checks that every type in the table has
   a profile and draws cleanly (it needs Node).
 - Airline logos are fetched by airline code from a public logo service (pics.avs.io) the
   first time each airline appears, cached on disk, and shown on a white tile. Logos are
@@ -378,4 +391,18 @@ no requests (or, with `"log"`, only the slow position check).
   the radar and sky view carry a compass bezel, and the clock shows UTC beside local time. Type is
   B612, the typeface Airbus designed for cockpit displays, bundled under the SIL Open Font
   License (see `cloudwall/web/fonts/`), so the board looks the same on every machine.
-- Tests: `python3 -m unittest discover -s tests`
+- Airlines are one table, `cloudwall/data/airlines.csv`: the code a callsign starts with, the code
+  its flights are sold under (which its logo and flight numbers go by), its name, whether it flies
+  freight only, and its livery's colours for the board. Add a line to teach CloudWall an airline.
+- CloudWall has no logins: it is meant for a home network, not the open internet. It refuses
+  requests to add or remove places that come from another site's page.
+- Anything else on your network can read what the screens read: [API.md](API.md) lists every
+  answer, key by key (a Home Assistant card or a widget needs only `/api/state`).
+- The logbook notes where each flyover's closest point was and which way it was flying, as well as
+  how near, high and fast.
+- Tests: `python3 -m unittest discover -s tests` (no network needed; they also run on every pull
+  request). The ones that walk the page in a browser need Playwright and are skipped without it:
+  `npm install --no-save playwright && npx playwright install chromium`.
+  [ARCHITECTURE.md](ARCHITECTURE.md) maps the code.
+- CloudWall is released under the MIT licence ([LICENSE](LICENSE)). The bundled tables and the
+  typeface keep their own licences, beside them in `cloudwall/data/` and `cloudwall/web/fonts/`.

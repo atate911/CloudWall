@@ -9,7 +9,9 @@ from .server import make_server
 from .logos import Logos
 from .place import AnyActivity, Place, Places
 from .charts import Charts
-from .store import Store
+from .enrich import KINDS, Enricher
+from .shared import Shared
+from .store import Store, another_places
 
 log = logging.getLogger("cloudwall")
 
@@ -32,7 +34,10 @@ def main():
         print(f"{'Wrote' if created else 'Already exists, left unchanged:'} {path}")
         return
 
-    cfg = config.load(args.config)
+    try:
+        cfg = config.load(args.config)
+    except ValueError as e:                # a mistake in the file (TOML's own errors are ValueErrors too)
+        raise SystemExit(f"cloudwall: {config.find(args.config)}: {e}")
     if args.host:
         cfg["server"]["host"] = args.host
     if args.port:
@@ -59,23 +64,26 @@ def main():
     tiles_dir = (Path(db).parent if db != ":memory:" else config.default_db_path().parent) / "tiles"
     charts = Charts(cfg, tiles_dir)   # the radar's map and the FAA charts
     logos = Logos(cfg, tiles_dir.parent / "logos")
-    # one paid provider and one budget for every place, counted in the first place's store
+    # What every place shares, kept in the first place's file: one paid provider with one budget,
+    # and one lookup of each route, airframe and photo, whichever places see the flight.
     providers = [Flightradar24(cfg, store0), FlightAware(cfg, store0)]
     fa = next((p for p in providers if p.enabled), None)    # first one with a key wins
+    shared = Shared(Enricher(store0, demo=sources.Demo() if args.demo else None, live=fa))
     named = len(place_cfgs) > 1 or not args.demo   # place names in the log, once there may be several
 
     def make_place(pc):
         pid = pc["place"]["id"]
         store = store0 if pid == first_id else Store(db_for(pid))
+        store.claim(pc["home"])            # this logbook is this place's
+        if store is not store0:
+            store.forget(KINDS)            # lookups from when each place kept its own
         source = sources.Demo() if args.demo else sources.Feeds(cfg["source"]["urls"])
-        place = Place(pc, store, source, live=fa, demo=args.demo, named=named)
-        place.tracker.basemap = charts.map.info()
-        place.tracker.charts = charts.info()
-        place.tracker.logos = logos.enabled
-        return place
+        return Place(pc, store, source, shared, demo=args.demo, named=named)
 
-    # places set up from a screen are kept beside the logbook (not in demo mode)
-    places = Places(cfg, make_place, None if db == ":memory:" else Path(db).with_name("places.json"))
+    # places set up from a screen are kept beside the logbook (not in demo mode); a new one never
+    # gets an id whose logbook file, left by a removed place, is somewhere else's
+    places = Places(cfg, make_place, None if db == ":memory:" else Path(db).with_name("places.json"),
+                    elsewhere=lambda pid, home: db != ":memory:" and another_places(db_for(pid), home))
     for pc in place_cfgs:
         places.add_config(pc)
     places.load_saved()
@@ -87,8 +95,8 @@ def main():
     for place in places:
         if not place.added:            # (saved ones started as they were added)
             place.start()
-    for p in providers:
-        p.activity = AnyActivity(places)   # e.g. Flightradar24's hourly usage check waits for a screen
+    if fa:
+        fa.start(AnyActivity(places))      # e.g. Flightradar24's hourly usage check, which waits for a screen
     server = make_server(cfg, places, charts, logos)
     log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"],
              places.first.source.name)

@@ -6,7 +6,7 @@
 // `fin` is drawn (the Super Hornet's 20-degree canted fins at their projected height); the
 // stabilators are the `stab`. Intakes, nozzles, LEX edges, conformal tanks, pods and stores are
 // drawn by the helpers below. A body outline does not stretch: every family's L0 + over equals
-// the data.js length of its types (F15 19.43 m, F15E 19.45 m, F18S 18.31 m).
+// the types.csv length of its types (F15 19.43 m, F15E 19.45 m, F18S 18.31 m).
 const F = {};
 
 // ---------- drawing helpers (kit: see silhouette.js above draw()) ----------

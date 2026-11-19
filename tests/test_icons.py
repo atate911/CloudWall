@@ -1,20 +1,19 @@
-"""The chart-style radar's aircraft icons: which kind each aircraft gets, and that the icons are
-sound drawings. Runs the browser modules under Node, so it is skipped where Node isn't installed."""
+"""The chart-style radar's aircraft icons: which kind each aircraft gets (the server's choice, sent
+on each record), and that the icons are sound drawings. The drawings are checked by running the
+browser's module under Node, so those tests are skipped where Node isn't installed."""
 import json
 import shutil
 import subprocess
 import unittest
 from pathlib import Path
 
+from cloudwall import aircraft
+
 WEB = Path(__file__).resolve().parent.parent / "cloudwall" / "web" / "js"
 
 SCRIPT = r"""
-const dir = process.argv[1], cases = JSON.parse(process.argv[2]);
-const { iconKind, typeInfo } = await import(dir + "/data.js");
+const dir = process.argv[1];
 const { ICONS } = await import(dir + "/icons.js");
-const src = (await import("node:fs")).readFileSync(dir + "/data.js", "utf8");
-const block = src.slice(src.indexOf("const T = {"), src.indexOf("};", src.indexOf("const T = {")));
-const types = [...block.matchAll(/(\w+): \["(\w+)"/g)].map((m) => m[1]);
 // each part of an icon: its signed area (positive: clockwise on screen, y running down)
 const areas = (d) => d.split("Z").filter((s) => s.trim()).map((s) => {
   const p = s.replace(/^M/, "").split("L").map((q) => q.split(",").map(Number));
@@ -22,8 +21,6 @@ const areas = (d) => d.split("Z").filter((s) => s.trim()).map((s) => {
 });
 console.log(JSON.stringify({
   kinds: Object.keys(ICONS),
-  table: Object.fromEntries(types.map((t) => [t, iconKind({ type: t })])),
-  cases: cases.map((c) => iconKind(c)),
   icons: Object.fromEntries(Object.entries(ICONS).map(([k, v]) => [k, { d: v.d, nose: v.nose, r: v.r, upright: v.upright, areas: k === "plain" ? [] : areas(v.d) }])),
 }));
 """
@@ -43,8 +40,8 @@ CASES = [
     # what the transponder says, then the wake category
     ({"type": "ZZZZ", "category": "A1"}, "light"), ({"type": "ZZZZ", "category": "A3"}, "airliner"),
     ({"type": "ZZZZ", "category": "A5"}, "heavy"), ({"type": "ZZZZ", "category": "A7"}, "heli"),
-    ({"type": "ZZZZ", "category": "A6"}, "fighter"), ({"type": "ZZZZ", "cwt": "B"}, "heavy"),
-    ({"type": "ZZZZ", "cwt": "I"}, "light"), ({"type": "B738", "category": "A7"}, "airliner"),   # the type wins
+    ({"type": "ZZZZ", "category": "A6"}, "fighter"), ({"type": "C5"}, "heavy"),                   # (types the table of
+    ({"type": "AA5"}, "light"), ({"type": "B738", "category": "A7"}, "airliner"),   # wake categories alone has); the type wins
     ({}, None),                                                                                     # nothing to go on
     # the other kinds of traffic: by ICAO's catch-all codes and other types, descriptions and categories
     ({"type": "BALL"}, "balloon"), ({"type": "ZZZZ", "category": "B2"}, "balloon"),
@@ -66,19 +63,18 @@ CASES = [
 class IconTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        out = subprocess.run(["node", "--input-type=module", "-e", SCRIPT, str(WEB), json.dumps([c for c, _ in CASES])],
+        out = subprocess.run(["node", "--input-type=module", "-e", SCRIPT, str(WEB)],
                              capture_output=True, text=True, timeout=60)
         if out.returncode:
             raise AssertionError(out.stderr)
         cls.r = json.loads(out.stdout)
 
     def test_every_type_in_the_table_has_an_icon(self):
-        missing = [t for t, k in self.r["table"].items() if k not in self.r["kinds"]]
+        # every type the server's table gives a shape or an icon of its own gets one the radar can draw
+        table = aircraft._table()
+        missing = [t for t, row in table.items() if (row["shape"] or row["icon"]) and aircraft.icon(t) not in self.r["kinds"]]
         self.assertEqual(missing, [])
-
-    def test_kinds_from_type_description_category_and_wake(self):
-        for (aircraft, want), got in zip(CASES, self.r["cases"]):
-            self.assertEqual(got, want, aircraft)
+        self.assertGreater(sum(1 for row in table.values() if row["shape"] or row["icon"]), 200)
 
     def test_icons_are_sized_by_kind(self):
         reach = {k: v["r"] for k, v in self.r["icons"].items()}
@@ -97,6 +93,31 @@ class IconTest(unittest.TestCase):
             self.assertTrue(icon["areas"] == [] or all(a > 0 for a in icon["areas"]), (kind, icon["areas"]))
             self.assertRegex(icon["d"], r"^[MLZ0-9.,\- ]+$")
             self.assertGreater(icon["nose"], 0)
+
+
+class IconKindTest(unittest.TestCase):
+    def test_kinds_from_type_description_category_and_wake(self):
+        for craft, want in CASES:
+            self.assertEqual(aircraft.icon(craft.get("type"), craft.get("desc"), craft.get("category")), want, craft)
+
+    def test_each_aircraft_on_the_radar_carries_its_icon(self):
+        from cloudwall import config
+        from cloudwall.store import Store
+        from cloudwall.tracker import Tracker
+
+        class NoLookups:
+            live = None
+            aircraft = photo = route = lambda self, *a, **k: None
+        home = config.DEFAULTS["home"]
+        craft = lambda hexid, typ, miles, **more: dict(
+            {"hex": hexid, "callsign": None, "reg": None, "type": typ, "alt": 3000, "on_ground": False, "gs": 100, "track": 90,
+             "vrate": 0, "lat": home["lat"] + miles / 60, "lon": home["lon"], "squawk": "1200", "category": None, "military": False}, **more)
+        t = Tracker(config.load(), Store(":memory:"), NoLookups())
+        # near and far alike: the radar draws aircraft past the tracking radius too, and none of them is looked up
+        t.update([craft("a1", "B738", 2), craft("a2", "ZZZZ", 5, desc="Cameron Balloons Z-105"), craft("a3", "H47", 25), craft("a4", "ZZZZ", 6)], "test")
+        s = t.snapshot()
+        self.assertEqual({a["hex"]: a.get("icon") for a in s["aircraft"] + s["beyond"]},
+                         {"a1": "airliner", "a2": "balloon", "a3": "tandem", "a4": None})
 
 
 if __name__ == "__main__":

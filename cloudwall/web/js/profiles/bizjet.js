@@ -502,7 +502,7 @@ F.sf50 = {
 // Global Express/6000/6500: the same nose and section; 30.30 m overall (Wikipedia, Bombardier
 // Global Express), 13 smaller windows at 0.77 m pitch (photo OE-IGS, Commons
 // 2010-07-08_BD700_Tyrolean_OE-IGS_EDDF_03.jpg, levelled), BR710 nacelles, smaller wing (28.65 m).
-// Global 5000: the same airframe 0.81 m shorter (data.js length), so one window fewer.
+// Global 5000: the same airframe 0.81 m shorter (types.csv length), so one window fewer.
 const GLOBAL_NOSE = {
   tip: 0.25,
   top: [[0.1, 0.36], [0.25, 0.46], [0.5, 0.6], [0.75, 0.752], [1.0, 0.891], [1.25, 0.975], [1.5, 1]],

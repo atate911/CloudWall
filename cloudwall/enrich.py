@@ -2,18 +2,22 @@
 cached and fetched off the poll thread."""
 import logging
 import queue
-import re
 import threading
 import time
 import urllib.parse
 
+from . import airlines
 from .http import get_json
+from .live import NotYet
 
 log = logging.getLogger("cloudwall.enrich")
-AIRLINE_CALLSIGN = re.compile(r"^[A-Z]{3}\d[0-9A-Z]{0,4}$")
 DAY = 86400
 LIVE_ROUTE_TTL = 45 * 60   # a callsign flies several legs a day; don't reuse a live route for long
+LIVE_RETRY = 5 * 60        # a paid lookup that failed or was refused: leave that flight alone this long
 PHOTO_TTL = DAY            # look again daily: photos there are added and taken down
+MEM_MAX = 5000             # lookups kept in memory; the rest are a database read away
+KINDS = ("route", "aircraft", "photo", "live_route")     # what it keeps in the store's cache
+PRUNE_EVERY = 6 * 3600     # how often cached lookups past their use are cleared from the database
 
 
 def _airport(a):
@@ -64,7 +68,9 @@ def fetch_photo(hexid, reg=None, icao_type=None):
 
 
 class Enricher:
-    """Non-blocking lookups: returns what is cached now, fetches the rest in the background."""
+    """Non-blocking lookups: returns what is cached now, fetches the rest in the background.
+    There is one for the whole process (shared.py): a route or an airframe is the same from
+    every place, so each is looked up, paid for and cached once however many places see it."""
 
     def __init__(self, store, demo=None, live=None):
         self.store, self.demo, self.live = store, demo, live
@@ -72,14 +78,23 @@ class Enricher:
         # photos wait in a line of their own, so a slow photo site never holds up a route
         self.q, self.photo_q = queue.Queue(), queue.Queue()
         self.lock = threading.Lock()
+        self.pruned = time.time() - PRUNE_EVERY + 600      # first ten minutes in, then every few hours
         if not demo:
-            threading.Thread(target=self._worker, args=(self.q,), daemon=True).start()
-            threading.Thread(target=self._worker, args=(self.photo_q,), daemon=True).start()
+            for q in (self.q, self.photo_q):
+                threading.Thread(target=self._worker, args=(q,), daemon=True).start()
+
+    def _keep(self, k, value, at=None):
+        """Remember a lookup in memory (called with the lock held). Past MEM_MAX the older half is
+        let go, or this would grow with every aircraft and callsign ever seen; the database has them."""
+        self.mem[k] = (value, time.time() if at is None else at)
+        if len(self.mem) > MEM_MAX:
+            for old in sorted(self.mem, key=lambda x: self.mem[x][1])[:MEM_MAX // 2]:
+                del self.mem[old]
 
     def route(self, callsign):
         if self.demo:
             return self.demo.routes.get(callsign)
-        if not callsign or not AIRLINE_CALLSIGN.match(callsign):
+        if not airlines.scheduled(callsign):
             return None
         return self._get("route", callsign, 7 * DAY)
 
@@ -103,7 +118,7 @@ class Enricher:
         p = self.live
         if self.demo or not p or not p.enabled or not callsign:
             return "n/a", None
-        if not p.general_aviation and not AIRLINE_CALLSIGN.match(callsign):
+        if not p.general_aviation and not airlines.scheduled(callsign):
             return "n/a", None
         k = ("live_route", f"{p.name}:{callsign}")
         with self.lock:
@@ -111,7 +126,7 @@ class Enricher:
                 return "done", self.mem[k][0]
             hit, value = self.store.cache_get(k[0], k[1], LIVE_ROUTE_TTL)
             if hit:
-                self.mem[k] = (value, time.time())
+                self._keep(k, value)
                 return "done", value
             if k in self.pending:
                 return "pending", None
@@ -128,7 +143,7 @@ class Enricher:
                 return self.mem[k][0]
             hit, value = self.store.cache_get(kind, key, max_age)
             if hit:
-                self.mem[k] = (value, time.time())
+                self._keep(k, value)
                 return value
             if fetch and k not in self.pending:
                 self.pending.add(k)
@@ -144,17 +159,39 @@ class Enricher:
             return fetch_photo(*key.split("|"))
         return fetch_aircraft(key)
 
+    def _later(self, k):
+        """A paid lookup didn't get an answer. Asking again on the next update, as free lookups
+        do, would spend the budget on a provider that is down: one flight overhead for a few
+        minutes is dozens of billed requests. Remembered as "nothing yet" (in memory only, so the
+        free route shows) and asked again after LIVE_RETRY."""
+        with self.lock:
+            self._keep(k, None, time.time() - LIVE_ROUTE_TTL + LIVE_RETRY)
+
     def _worker(self, q):
         while True:
             kind, key = k = q.get()
             try:
                 value = self._fetch(kind, key)
+                if kind == "live_route" and value is None and not self.live.available():
+                    # not asked, or turned away (key rejected, rate limited, budget used up while
+                    # this waited its turn): that isn't "no route" to keep for 45 minutes
+                    self._later(k)
+                    continue
                 self.store.cache_put(kind, key, value)   # None is cached too (unknown)
                 with self.lock:
-                    self.mem[k] = (value, time.time())
+                    self._keep(k, value)
+            except NotYet:          # the provider hasn't caught up with this flight: ask again in a while
+                self._later(k)
             except Exception as e:  # network trouble: retry on a later sighting
                 log.warning("lookup %s %s failed: %s", kind, key, e)
+                if kind == "live_route":
+                    self._later(k)
                 time.sleep(5)
             finally:
                 with self.lock:
                     self.pending.discard(k)
+                    prune = time.time() - self.pruned > PRUNE_EVERY
+                    if prune:
+                        self.pruned = time.time()
+                if prune:           # as good a moment as any: rows nobody will read again
+                    self.store.prune()

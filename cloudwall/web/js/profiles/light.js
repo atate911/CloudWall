@@ -4,7 +4,7 @@
 // of the body outline: a light aircraft's tail cone is shallower than the renderer's built-in
 // fin assumes, and the rudder of most of these hangs below the tail cone. Fixed gear, wheel
 // spats, struts, rudder hinge lines and door outlines are drawn by the helpers below.
-// A body outline does not stretch, so every family's L0 + over equals the data.js length of
+// A body outline does not stretch, so every family's L0 + over equals the types.csv length of
 // the types mapped to it.
 const F = {};
 
@@ -90,7 +90,7 @@ function scale(f, k, more = {}) {
 // ---------- Cessna 172 ----------
 // Reference: Cessna 172G Skyhawk "Principal Dimensions" 3-view (Wikimedia Commons,
 // File:Cessna_172G_Skyhawk_3-view_line_drawing.png, from the Wikipedia article Cessna 172),
-// side view measured and scaled to the 172S overall length 8.28 m (data.js 8.3). The 172G
+// side view measured and scaled to the 172S overall length 8.28 m (types.csv 8.3). The 172G
 // (1966) already has the swept fin with dorsal fin and the Omni-Vision rear window; the
 // later Skyhawks differ in details below display size. z = 0 is the belly at the firewall.
 F.c172 = {
@@ -132,7 +132,7 @@ F.c172 = {
 // ---------- Cessna 150 / 152 ----------
 // Reference: Cessna 150F "Principal Dimensions" 3-view (Wikimedia Commons,
 // File:Cessna_150F_3-view_line_drawing.png, Wikipedia article Cessna 150), side view drawn
-// with the bullet spinner (23 ft 9 in), scaled to 7.3 m (data.js; 152 7.34 m, 150M 7.29 m).
+// with the bullet spinner (23 ft 9 in), scaled to 7.3 m (types.csv; 152 7.34 m, 150M 7.29 m).
 // The 1966 150F introduced the swept fin; the Omni-Vision rear window came in 1964.
 F.c150 = {
   kind: "piston", L0: 7.3, over: 0, D: 1, W: 0.95,
@@ -170,7 +170,7 @@ F.c150 = {
 // ---------- Cessna 182 Skylane ----------
 // Reference: Cessna 182M Skylane "Principal Dimensions" 3-view (Wikimedia Commons,
 // File:Cessna_182M_Skylane_3-view_line_drawing.png, Wikipedia article Cessna 182 Skylane),
-// side view scaled from the 182M's 28 ft 0.5 in to the 182T's 8.84 m (data.js 8.8). Larger
+// side view scaled from the 182M's 28 ft 0.5 in to the 182T's 8.84 m (types.csv 8.8). Larger
 // and deeper than the 172, with the dorsal fin blending into the fin and a taller fin.
 F.c182 = {
   kind: "piston", L0: 8.8, over: 0, D: 1, W: 1.07,
@@ -210,7 +210,7 @@ F.c182 = {
 // Reference: Cessna TU206A Super Skywagon "Principal Dimensions" 3-view (Wikimedia Commons,
 // File:Cessna_TU206A_Super_Skywagon_3-view_line_drawing.png, Wikipedia article Cessna 206),
 // a right-side view showing the double cargo doors aft of the wing; scaled from 27 ft 9 in to
-// the T206H's 8.61 m (data.js 8.6). Long nose, no rear window, the big double door.
+// the T206H's 8.61 m (types.csv 8.6). Long nose, no rear window, the big double door.
 F.c206 = {
   kind: "piston", L0: 8.6, over: 0, D: 1, W: 1.1,
   body: [
@@ -248,7 +248,7 @@ F.c206 = {
 
 // ---------- Cessna 208 Caravan ----------
 // Reference: "Caravan three views" (Wikimedia Commons, File:Caravan_three_views.png, Wikipedia
-// article Cessna 208 Caravan): the 208 side view (11.46 m, data.js 11.5) for the airframe and
+// article Cessna 208 Caravan): the 208 side view (11.46 m, types.csv 11.5) for the airframe and
 // the 208B Super Cargomaster view for the belly cargo pod most Caravans carry (FedEx feeders).
 // Long PT6A cowl, high strut-braced wing, fixed gear on a fuselage sponson, airstair door aft.
 // The pod is part of the outline; a line marks where it meets the belly.
@@ -306,7 +306,7 @@ F.c208b.glass = [...F.c208b.glass, [[7.57, 1.04], [7.57, 1.4], [8.07, 1.4], [8.0
 // ---------- Piper PA-28 Cherokee / Warrior / Archer / Dakota ----------
 // Reference: Piper PA-28-181 Cherokee Archer II 3-view (Wikimedia Commons,
 // File:Piper_PA-28-181_Cherokee_Archer_II_3-view_line_drawing.png, Wikipedia article Piper
-// PA-28 Cherokee), side view 23 ft 9.6 in, scaled to 7.3 m (data.js P28A). Low tapered
+// PA-28 Cherokee), side view 23 ft 9.6 in, scaled to 7.3 m (types.csv P28A). Low tapered
 // "Warrior" wing with 7 degrees of dihedral (the tip rides well up the side view), long sloping
 // windscreen, curved dorsal fillet, all-moving stabilator low on the tail cone, one door on the
 // right over the wing, fixed gear with spats. P28B (Dakota / Turbo Dakota, 7.54 m) has the
@@ -348,7 +348,7 @@ F.pa28b = stretch(F.pa28, 0.9, 0.2);
 // ---------- Piper PA-46 Malibu / Mirage / M350, Meridian / M500 / M600 ----------
 // Reference: Piper PA-46-310P Malibu 3-view (Wikimedia Commons,
 // File:Piper_PA-46-310P_Malibu_3-view_line_drawing.png, Wikipedia article Piper PA-46), side
-// view 28.4 ft (8.66 m) measured, drawn scaled to the M350's 8.81 m (data.js 8.8). Pressurised
+// view 28.4 ft (8.66 m) measured, drawn scaled to the M350's 8.81 m (types.csv 8.8). Pressurised
 // cabin with small separate windows, the triangular pilot's window behind the windscreen,
 // straight-topped fuselage running into a big curved fin fillet, the rear airstair door (on the
 // left side; shown), low wing, retractable gear (drawn retracted). P46T (Meridian, M500, M600)
@@ -389,7 +389,7 @@ F.p46t.parts = { ...F.p46t.parts, draw: [(k) => k.sk.ellipse("inlet", 1.05, 0.5,
 // ---------- Beechcraft A36 / G36 Bonanza ----------
 // Reference: Beechcraft A36 Bonanza 3-view (Wikimedia Commons,
 // File:Beechcraft_A36_Bonanza_3-view_line_drawing.png, Wikipedia article Beechcraft Bonanza),
-// side view 26 ft 8 in measured; the 1984-on A36 and G36 are 27 ft 6 in (data.js 8.4), the
+// side view 26 ft 8 in measured; the 1984-on A36 and G36 are 27 ft 6 in (types.csv 8.4), the
 // extra length drawn in the cowl. The straight conventional fin of the 33/36 (not the V-tail
 // 35), right-side front door and double "club" doors aft, low wing with 6.5 degrees dihedral,
 // retractable gear (drawn retracted).
@@ -427,7 +427,7 @@ F.be36 = stretch(BE36, 1.2, 0.27);
 // ---------- Beechcraft Baron 58 ----------
 // Reference: Beechcraft D55 Baron 3-view (Wikimedia Commons,
 // File:Beechcraft_D55_Baron_3-view_line_drawing.png, Wikipedia article Beechcraft Baron),
-// side view 28.98 ft (8.83 m) measured. The Baron 58 (9.09 m, data.js 9.1) is the 55 with the
+// side view 28.98 ft (8.83 m) measured. The Baron 58 (9.09 m, types.csv 9.1) is the 55 with the
 // cabin lengthened 10 in by moving the windscreen, panel and front seats forward, and the
 // double "club" doors aft on the right: drawn as the 55 with a 0.26 m plug ahead of the wing
 // and the 58's window and door layout. Pointed baggage nose, wing-mounted IO-550 nacelles
@@ -469,7 +469,7 @@ F.be58.wing = { ...F.be58.wing, le: BE55.wing.le + 0.26 };
 // ---------- Mooney M20 ----------
 // Reference: Mooney M20G Statesman 3-view (Wikimedia Commons,
 // File:Mooney_M20G_Statesman_3-view_line_drawing.png, Wikipedia article Mooney M20), side
-// view 24 ft (7.32 m) measured; the M20J (data.js M20P 7.5) has 0.2 m more cowl and spinner.
+// view 24 ft (7.32 m) measured; the M20J (types.csv M20P 7.5) has 0.2 m more cowl and spinner.
 // The Mooney signature: the fin's leading edge stands straight up while the rudder's
 // trailing edge and hinge lean aft at the bottom, so the tail looks swept forward. Low wing,
 // short cabin with three side windows, door on the right, retractable gear (drawn retracted).
@@ -505,7 +505,7 @@ F.m20 = stretch(M20, 0.9, 0.18);
 // ---------- Boeing-Stearman Model 75 (PT-17 / N2S Kaydet) ----------
 // Reference: U.S. Navy N2S-3 general arrangement diagram (Wikimedia Commons,
 // File:Boeing_N2S-3_3-view_line_drawing.png, Wikipedia article Boeing-Stearman Model 75),
-// side view 25 ft (data.js 7.6) drawn level. Biplane: the lower wing is the renderer's wing,
+// side view 25 ft (types.csv 7.6) drawn level. Biplane: the lower wing is the renderer's wing,
 // the upper wing (staggered 0.69 m forward, 3 degrees incidence), cabane and N interplane
 // struts are drawn last; uncowled radial engine with exposed cylinder heads; tandem open
 // cockpits; rounded fin and rudder with braced tailplane; tailwheel undercarriage.
@@ -555,7 +555,7 @@ F.st75 = {
 // ---------- Diamond DA42 Twin Star ----------
 // Reference: Diamond DA-42 three-view silhouette (Wikimedia Commons,
 // File:Diamond_DA-42_three-view_silhouette.png, Wikipedia article Diamond DA42), side view
-// scaled to 8.6 m (data.js; 8.56 m published), details checked against the side-on photo
+// scaled to 8.6 m (types.csv; 8.56 m published), details checked against the side-on photo
 // File:Diamond_da42_twin_star_hb-sdm_riat_2010_arp.jpg. Lower confidence than the line
 // drawings (a small filled silhouette). Composite pod with a big bubble canopy, slim tail
 // boom, swept fin with a ventral extension and the T-tail on top, diesel nacelles slung
@@ -585,7 +585,7 @@ F.da42 = {
 };
 
 // ---------- Diamond DA40 Diamond Star ----------
-// Published dimensions only (no usable side view reachable): 8.1 m (DA40 NG, data.js),
+// Published dimensions only (no usable side view reachable): 8.1 m (DA40 NG, types.csv),
 // height 1.97 m, span 11.6-11.9 m. The DA40 is the single-engine origin of the DA42 airframe:
 // the same canopy, slender tail boom, ventral fin and T-tail, drawn here from the DA42
 // outline with its 0.5 m longer twin's nose replaced by a short cowl and three-blade prop,
@@ -618,7 +618,7 @@ F.da42 = {
 // ---------- Cirrus SR20 / SR22 ----------
 // No three-view reachable: measured from the near-side-on photo File:Cirrus_SR22_G3_Turbo_
 // Private_N918SE,_LUX_Luxembourg_(Findel),_Luxembourg_PP1373043529.jpg (Wikimedia Commons,
-// Wikipedia article Cirrus SR22), scaled to 7.9 m (data.js; 7.92 m published). Lower
+// Wikipedia article Cirrus SR22), scaled to 7.9 m (types.csv; 7.92 m published). Lower
 // confidence (photo perspective). Composite fuselage with a long cowl and big windscreen,
 // gull-wing doors with large windows and the big fixed rear cabin window, the tall curved fin,
 // low wing, fixed gear with long spats and the canted nose leg. SR20 has the same airframe.
@@ -657,7 +657,7 @@ F.sr22 = {
 // ---------- Pilatus PC-12 ----------
 // No three-view reachable: measured from the side-on photo File:Pilatus_PC-12-45,_Jetfly_
 // Aviation_JP532772.jpg (Wikimedia Commons, Wikipedia article Pilatus PC-12; left side,
-// mirrored), scaled to 14.4 m (data.js). Lower confidence (photo). Single PT6A with the
+// mirrored), scaled to 14.4 m (types.csv). Lower confidence (photo). Single PT6A with the
 // exhaust stack low on the cowl and a four-blade prop, low wing with winglets, T-tail on a
 // swept fin with a long dorsal, ventral strakes under the tail cone, round cabin windows,
 // the airstair door behind the cockpit and the big cargo door aft (both on the left side;
@@ -693,7 +693,7 @@ F.pc12 = {
 // ---------- Daher TBM 900 series ----------
 // No three-view reachable: proportions from the three-quarter photo File:N893MA_2015_SOCATA-
 // TBM_900_s-n_1065_(23427100365).jpg (Wikimedia Commons, Wikipedia article Daher TBM) fitted
-// to the published 10.74 m length (data.js 10.7), 12.83 m span and 4.35 m height. Lowest
+// to the published 10.74 m length (types.csv 10.7), 12.83 m span and 4.35 m height. Lowest
 // confidence of this group (perspective). Long PT6A cowl with the side exhaust stack and
 // five-blade prop, pressurised cabin with four square windows, low wing with winglets,
 // conventional swept fin with dorsal and ventral fins, low tailplane, retractable gear.
@@ -727,7 +727,7 @@ F.tbm9 = {
 // ---------- American Champion / Bellanca Citabria ----------
 // No three-view reachable: measured from the side-on, tail-up photo File:Bellanca_7GCBC_
 // (N68576).jpg (Wikimedia Commons, Wikipedia article American Champion Citabria), scaled to
-// 6.9 m (data.js; 7GCBC 6.91 m). Lower confidence (photo). High strut-braced wing with V struts,
+// 6.9 m (types.csv; 7GCBC 6.91 m). Lower confidence (photo). High strut-braced wing with V struts,
 // tandem cabin with the long side glazing, round cowl, spring-steel main gear with spats,
 // steerable tailwheel (taildragger), tall square-topped fin.
 F.ch7b = {
@@ -765,7 +765,7 @@ F.ch7b = {
 // RV4wb, RV6wb, RV6Awb, RV7wb, RV7Awb, RV8wb, RV8Awb, RV9wb, RV9Awb, RV10wb, RV12wb, RV14wb and RV14Awb PDFs):
 // side views of each model, scaled by the datum-to-leading-edge dimension where that is drawn to scale, else
 // by the published length, and cross-checked against the wing chord (area / span) and the overall length on
-// each model's page at vansaircraft.com (the data.js lengths agree with those pages). z = 0 is the belly
+// each model's page at vansaircraft.com (the types.csv lengths agree with those pages). z = 0 is the belly
 // at the wing root leading edge. Every RV is a low, constant-chord wing with about 3.5 degrees of dihedral,
 // Van's rounded fin with the raked rudder trailing edge and the counterbalance horn at its top, and fixed
 // gear with wheel pants: spring-steel legs and a tailwheel on a spring, or (the "A" models) a swept nose
@@ -801,7 +801,7 @@ const withGear = (f, gear) => ({ ...f, parts: { ...f.parts, gear } });
 
 // RV-3: single seat, sliding bubble canopy, the shortest RV. No weight-and-balance drawing: measured from
 // Van's side silhouette (vansaircraft.com/rv-3/, wp-content/uploads/2019/01/rv-3.png) scaled to the 19 ft
-// (5.79 m, data.js) spinner-to-rudder length; wing from the published 19 ft 11 in span and 90 sq ft area.
+// (5.79 m, types.csv) spinner-to-rudder length; wing from the published 19 ft 11 in span and 90 sq ft area.
 // Lower confidence (silhouette).
 const RV3_BODY = [
   [0, 0.47, "c"], [0.09, 0.565], [0.2, 0.615], [0.45, 0.689], [0.78, 0.749], [1.2, 0.8], [1.62, 0.84], [1.67, 0.86, "c"],
@@ -855,7 +855,7 @@ F.rv4 = rv({
 });
 
 // RV-6 / RV-6A: the first side-by-side RV, sliding canopy, short (23 ft) wing and the smaller fin. RV6wb side
-// view, scaled to the 20 ft 2 in (6.15 m, data.js) spinner-to-tailwheel length: the wing chord then measures
+// view, scaled to the 20 ft 2 in (6.15 m, types.csv) spinner-to-tailwheel length: the wing chord then measures
 // 57.5 in (110 sq ft / 23 ft = 57.4 in) and the rudder ends at 5.97 m. RV-6A gear from RV6Awb.
 const RV6_BODY = [
   [0, 0.39, "c"], [0.12, 0.488], [0.22, 0.525], [0.31, 0.545], [0.36, 0.568], [0.6, 0.615], [1.0, 0.68], [1.4, 0.725],

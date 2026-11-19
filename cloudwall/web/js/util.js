@@ -15,6 +15,17 @@ export function phone() {
 }
 
 export const ident = (a) => a.flight_no || a.callsign || a.reg || a.hex.toUpperCase();
+// Seconds since the positions in a state were reported (app.js stamps each state with _at): what
+// to take off a countdown worked out at that moment.
+export const since = (state) => (state && state._at ? Math.max(0, (Date.now() - state._at) / 1000) : 0);
+// The runways in use, in words: "28L / 28R" -> "28L and 28R"; "27C / 27L / 27R" -> "27C, 27L and 27R".
+export function runwayList(runways) {
+  const r = String(runways || "").split(/\s*\/\s*/).filter(Boolean);
+  return r.length > 1 ? `${r.slice(0, -1).join(", ")} and ${r[r.length - 1]}` : r.join("");
+}
+// A temperature for show: "54°F", or "–" when the report has none (a failed sensor does that),
+// which must not come out as 32°F.
+export const degF = (c) => (c == null ? "–" : `${Math.round((c * 9) / 5 + 32)}°F`);
 export const altText = (a) => (a.on_ground ? "GND" : a.alt == null ? "–" : num(a.alt));
 
 // Where the aircraft will be `dt` seconds from its last report, holding track and speed.
@@ -34,11 +45,6 @@ export function azEl(home, p, alt) {
     el: Math.atan2((alt || 0) - (home.elevation_ft || 0), Math.max(dist, 0.01) * 6076.12) / RAD,
   };
 }
-export function angularSeparation(a, b) {
-  const c = Math.sin(a.el * RAD) * Math.sin(b.el * RAD) + Math.cos(a.el * RAD) * Math.cos(b.el * RAD) * Math.cos((a.az - b.az) * RAD);
-  return Math.acos(clamp(c, -1, 1)) / RAD;
-}
-
 // Sun azimuth/elevation (degrees). Low-precision almanac formula, good to a fraction of a degree.
 export function sunPosition(date, lat, lon) {
   const d = date / 86400000 + 2440587.5 - 2451545;
@@ -52,11 +58,6 @@ export function sunPosition(date, lat, lon) {
   return { el: el / RAD, az: (az / RAD + 360) % 360 };
 }
 
-export function mix(c1, c2, t) { // "#rrggbb" colours
-  const p = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
-  const a = p(c1), b = p(c2);
-  return "#" + a.map((v, i) => Math.round(v + (b[i] - v) * clamp(t, 0, 1)).toString(16).padStart(2, "0")).join("");
-}
 export function store(key, value) {
   try {
     if (value === undefined) return localStorage.getItem("cloudwall." + key);

@@ -13,6 +13,10 @@ from . import airports
 CODE = Path(__file__).resolve().parent
 WEB = CODE / "web"
 CODE_CHECK_S = 60
+MAX_BODY = 16 * 1024        # bytes: a place to set up is a few dozen
+# The shape of what the API answers, as API.md sets it out. Raised when a key is taken away or
+# comes to mean something else, so that anything else reading it can tell; adding a key doesn't.
+API = 1
 log = logging.getLogger("cloudwall")
 
 
@@ -47,11 +51,15 @@ class CodeWatch:
 
 
 def make_server(cfg, places, charts=None, logos=None):
-    """places: a place.Places. Each screen says which place it shows with ?place=; without one,
+    """places: a place.Places; all the server asks of a place is its state, weather report,
+    heatmap and logbook. Each screen says which place it shows with ?place=; without one,
     the kiosk (?kiosk=1) gets its configured place and any other screen the first. Screens can
     also set up places (POST /api/places) and remove the ones they set up (DELETE)."""
 
     code_changed = CodeWatch()
+    # what the displays may draw with, the same for every place: the radar's map, the chart layers, logos
+    display = {"basemap": charts.map.info() if charts else None, "charts": charts.info() if charts else None,
+               "logos": bool(logos and logos.enabled)}
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -71,11 +79,28 @@ def make_server(cfg, places, charts=None, logos=None):
             return places.get((q.get("place") or [""])[0]) or (places.kiosk() if q.get("kiosk") else places.first)
 
         def _body(self):
+            """The request's JSON object; None if it isn't one, or is longer than any real one."""
             try:
-                body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0)) or 0) or b"{}")
+                n = int(self.headers.get("Content-Length") or 0)
+                if not 0 <= n <= MAX_BODY:
+                    return None
+                body = json.loads(self.rfile.read(n) or b"{}")
                 return body if isinstance(body, dict) else {}
             except ValueError:
                 return None
+
+        def _foreign(self):
+            """Was this request made by a page from somewhere else? CloudWall has no logins, so
+            without this any web page open in a browser on the home network could add or remove
+            places here. A browser names the page's site in Origin on such requests; a page of
+            CloudWall's own names this server, and a script or curl names none."""
+            if self.headers.get("Sec-Fetch-Site") == "cross-site":
+                return True
+            origin = self.headers.get("Origin")
+            if not origin:
+                return False
+            ours = {self.headers.get("Host"), self.headers.get("X-Forwarded-Host")}     # behind a proxy, the address it is known by
+            return urlsplit(origin).netloc not in ours
 
         def do_GET(self):
             path = self.path.split("?")[0]
@@ -83,25 +108,20 @@ def make_server(cfg, places, charts=None, logos=None):
             if path == "/api/locate":
                 return self._locate((q.get("q") or [""])[0])
             place = self._place(q)
-            tracker = place.tracker
-            if path in ("/api/state", "/api/weather"):
-                place.activity.touch()                # a screen is showing this place
             if path == "/api/state":
                 try:
-                    tracker.want_range(int(q.get("range", ["0"])[0]), q.get("square") == ["1"])   # the radar's range on this screen
+                    nm = int(q.get("range", ["0"])[0])                   # the radar's range on this screen
                 except ValueError:
-                    pass
+                    nm = 0
                 pin = q.get("pin", [None])[0]                            # the flight this screen follows
-                tracker.want_pin(pin)
-                return self._send(200, dict(tracker.snapshot(pin), place=place.id, places=places.summaries(),
-                                            restart=code_changed()))
+                return self._send(200, dict(place.state(pin, nm, q.get("square") == ["1"]), **display, api=API,
+                                            places=places.summaries(), restart=code_changed()))
             if path == "/api/weather":
-                return self._send(200, dict(tracker.weather_full or {}, contrails=tracker.contrails,
-                                            tfrs=tracker.tfrs))
+                return self._send(200, place.weather_report())
             if path == "/api/heat":
-                return self._send(200, tracker.heatmap())
+                return self._send(200, place.heatmap())
             if path == "/api/logbook":
-                return self._send(200, place.store.logbook(time.strftime("%Y-%m-%d")))
+                return self._send(200, place.logbook())
             if path.startswith("/tiles/"):
                 return self._tile(path)
             if path.startswith("/logos/"):
@@ -153,6 +173,8 @@ def make_server(cfg, places, charts=None, logos=None):
             path = self.path.split("?")[0]
             if path != "/api/places":
                 return self._send(404, {"error": "not found"})
+            if self._foreign():
+                return self._send(403, {"error": "Places can only be changed from CloudWall's own page"})
             body = self._body()
             if body is None:
                 return self._send(400, {"error": "bad json"})
@@ -170,6 +192,8 @@ def make_server(cfg, places, charts=None, logos=None):
             q = parse_qs(urlsplit(self.path).query)
             if self.path.split("?")[0] != "/api/places":
                 return self._send(404, {"error": "not found"})
+            if self._foreign():
+                return self._send(403, {"error": "Places can only be changed from CloudWall's own page"})
             try:
                 places.remove((q.get("id") or [""])[0])
             except ValueError as e:
