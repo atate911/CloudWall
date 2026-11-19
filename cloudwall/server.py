@@ -91,7 +91,9 @@ def make_server(cfg, places, charts=None, logos=None):
                     tracker.want_range(int(q.get("range", ["0"])[0]), q.get("square") == ["1"])   # the radar's range on this screen
                 except ValueError:
                     pass
-                return self._send(200, dict(tracker.snapshot(), place=place.id, places=places.summaries(),
+                pin = q.get("pin", [None])[0]                            # the flight this screen follows
+                tracker.want_pin(pin)
+                return self._send(200, dict(tracker.snapshot(pin), place=place.id, places=places.summaries(),
                                             restart=code_changed()))
             if path == "/api/weather":
                 return self._send(200, dict(tracker.weather_full or {}, contrails=tracker.contrails,
@@ -149,25 +151,20 @@ def make_server(cfg, places, charts=None, logos=None):
 
         def do_POST(self):
             path = self.path.split("?")[0]
-            if path not in ("/api/pin", "/api/places"):
+            if path != "/api/places":
                 return self._send(404, {"error": "not found"})
             body = self._body()
             if body is None:
                 return self._send(400, {"error": "bad json"})
-            if path == "/api/places":
-                loc = airports.locate(body.get("q") or "")
-                if not loc:
-                    return self._send(400, {"error": "Type a US ZIP code (98683) or coordinates (45.63, -122.66)"})
-                try:
-                    place = places.add({"name": str(body.get("name") or "").strip()[:40], **loc,
-                                        "airport": str(body.get("airport") or "auto").strip()})
-                except ValueError as e:
-                    return self._send(400, {"error": str(e)})
-                return self._send(200, {"place": place.summary()})
-            hexid = body.get("hex")
-            tracker = self._place(parse_qs(urlsplit(self.path).query)).tracker
-            tracker.pin(hexid if isinstance(hexid, str) else None)
-            self._send(200, {"pinned": tracker.pinned})
+            loc = airports.locate(body.get("q") or "")
+            if not loc:
+                return self._send(400, {"error": "Type a US ZIP code (98683) or coordinates (45.63, -122.66)"})
+            try:
+                place = places.add({"name": str(body.get("name") or "").strip()[:40], **loc,
+                                    "airport": str(body.get("airport") or "auto").strip()})
+            except ValueError as e:
+                return self._send(400, {"error": str(e)})
+            return self._send(200, {"place": place.summary()})
 
         def do_DELETE(self):
             q = parse_qs(urlsplit(self.path).query)

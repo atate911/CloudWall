@@ -669,18 +669,18 @@ html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
 #mini-board, .pane-split { display: none; }
 /* wide enough for a third panel: the Nearby list, behind a divider that hides it or, dragged,
    gives the radar more or less room (divider.js sets the radar's and the list's columns; the
-   card's stays put) */
+   card's stays put). Not on the phone layout, which a short, wide window also takes. */
 @media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
-  html.desk #view-now { column-gap: 0;
+  html.desk:not(.phone) #view-now { column-gap: 0;
     grid-template-columns: minmax(0, 1.45fr) 1.4rem minmax(0, var(--scope-w, 1fr)) 1.4rem minmax(0, var(--mb-w, .72fr)); }
-  html.desk #view-now.animate { transition: grid-template-columns .22s ease-out; }
-  html.desk #hero { grid-column: 1; }
-  html.desk #scope { grid-column: 3; }
-  html.desk .pane-split { grid-column: 4; display: flex; }
-  html.desk #mini-board { grid-column: 5; display: block; padding: 1rem 1.1rem; overflow-x: hidden; }
+  html.desk:not(.phone) #view-now.animate { transition: grid-template-columns .22s ease-out; }
+  html.desk:not(.phone) #hero { grid-column: 1; }
+  html.desk:not(.phone) #scope { grid-column: 3; }
+  html.desk:not(.phone) .pane-split { grid-column: 4; display: flex; }
+  html.desk:not(.phone) #mini-board { grid-column: 5; display: block; padding: 1rem 1.1rem; overflow-x: hidden; }
   /* while its column opens or closes, the list slides out from under the divider rather than re-wrapping */
-  html.desk #mini-board > * { min-width: 10.5rem; }
-  html.desk #view-now.nearby-closed #mini-board { display: none; }
+  html.desk:not(.phone) #mini-board > * { min-width: 10.5rem; }
+  html.desk:not(.phone) #view-now.nearby-closed #mini-board { display: none; }
 }
 /* the divider: a hairline down the gutter, darker when it can be taken hold of, with a tab on it
    whose arrow points the way the list will go */
@@ -954,3 +954,253 @@ body.emergency #tfr-chip { color: var(--ink-2); }
 .kiosk #scope.atc #radar :is(.ssa, .heard-note) { font-size: 5.4px; }
 .kiosk #scope.atc #radar .bearing { font-size: 4.4px; }
 .kiosk #scope.atc #radar :is(.airspace-label, .navaid-label, .field-label) { font-size: 4.2px; }
+
+/* ===================== phone ===================== */
+/* The desktop page held in the hand (app.js sets html.phone on small screens, and .land when the
+   phone is turned sideways). Upright, the sheets stack at their natural height and the page scrolls,
+   with the status line held at the top and the sheet names along the foot, clear of the notch and the
+   home bar. Sideways, the card and the radar sit side by side as on the desktop. Type is set for a
+   screen held close, and every control is the width of a thumb. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html.phone { font-size: 15px; }
+html.phone.land { font-size: 13px; }
+/* most phones upright: the clock keeps local time only, leaving the place its room (UTC is still on
+   the STARS display's status area). The narrowest: the place takes the wordmark's room too, and the
+   board drops the compass point. */
+@media (max-width: 409px) { html.phone:not(.land) .clock small { display: none; } }
+@media (max-width: 370px) {
+  html.phone { font-size: 14px; }
+  .pb-cmp { display: none; }
+  html.phone:not(.land) .brand { font-size: 0; }
+  html.phone:not(.land) .brand .station { margin-left: 0; padding-left: 0; border-left: 0; }
+  .pb-row { grid-template-columns: .3rem 4.7rem minmax(0, 1fr) auto; column-gap: .55rem; }
+}
+html.phone :is(.label, .facts dt, th, .wx-read dt, .sm-sun dt, .htitle, h2) { font-size: .7rem; }
+html.phone th { position: static; }
+
+/* the status line: brand, sound, night and the clock; alerts drop to a line of their own beneath */
+html.phone header { flex-wrap: wrap; gap: .25rem .4rem;
+  padding: max(.45rem, env(safe-area-inset-top)) max(.75rem, env(safe-area-inset-right)) .4rem max(.75rem, env(safe-area-inset-left)); }
+html.phone .brand { flex: 1; min-width: 0; white-space: nowrap; font-size: .76rem; }
+/* the place: its name cut short if it must, keeping the arrow that opens the menu of places. With
+   several places it takes the wordmark's room (the page's title still says CloudWall). */
+html.phone .brand .station { display: inline-flex; align-items: baseline; min-width: 0; font-size: .76rem; padding-top: .5rem; padding-bottom: .5rem; }
+html.phone .brand .station > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+html.phone .brand:has(.station.many) { font-size: 0; }
+html.phone .brand .station.many { margin-left: 0; padding-left: 0; border-left: 0; }
+html.phone .place-menu { max-width: calc(100vw - 1.5rem); }
+html.phone .place-menu button { padding-top: .75rem; padding-bottom: .75rem; }
+html.phone .place-menu .pm-remove { width: 3rem; }
+/* 16 px type in the location form: below that, an iPhone zooms the page into a field it's typing in */
+html.phone .loc-field input { font-size: 16px; }
+html.phone .icon-btn { width: 2.6rem; height: 2.6rem; justify-content: center; padding: 0; }
+html.phone .icon-btn svg { width: 1.2rem; height: 1.2rem; }
+html.phone .icon-btn span { display: none; }
+html.phone .clock { font-size: 1.1rem; gap: .4rem; margin-left: .2rem; }
+html.phone .chips { order: 1; flex: 1 0 100%; flex-wrap: wrap; gap: .3rem 1rem; }
+/* the runway flow and the weather are a tab away; what's left calls for attention */
+html.phone :is(#flow, #wx) { display: none; }
+html.phone .chips:not(:has(> .chip:not([hidden], #flow, #wx))) { display: none; }
+html.phone .chips > .chip:not([hidden]) ~ .chip:not([hidden]):not(.em-chip) { padding-left: 0; margin-left: 0; border-left: 0; }
+html.phone .chip { font-size: .82rem; }
+html.phone .em-chip { padding: .35rem .7rem; }
+
+/* sheet names along the foot, each a quarter of the width */
+html.phone nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0;
+  padding: 0 max(.25rem, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(.25rem, env(safe-area-inset-left)); }
+html.phone nav button { padding: .95rem .1rem 1rem; font-size: .66rem; letter-spacing: .08em; white-space: nowrap; }
+html.phone nav button span { margin-left: .3rem; }
+
+/* upright: one column that scrolls, the strip and the tabs staying put */
+html.phone:not(.land) body { display: block; height: auto; min-height: 100vh; min-height: 100dvh; overflow-x: hidden; overflow-y: visible; }
+html.phone:not(.land) header { position: sticky; top: 0; z-index: 20; background-color: inherit; box-shadow: 0 1px 0 var(--rule); margin-bottom: .75rem; }
+html.phone:not(.land) nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background-color: inherit; box-shadow: 0 -1px 0 var(--rule); }
+html.phone:not(.land) main { padding: 0 max(.75rem, env(safe-area-inset-right)) calc(4.6rem + env(safe-area-inset-bottom)) max(.75rem, env(safe-area-inset-left)); }
+html.phone:not(.land) .view { height: auto; }
+html.phone:not(.land) .view.active { display: flex; flex-direction: column; gap: .75rem; }
+html.phone:not(.land) .panel { flex: none; }
+html.phone:not(.land) .scroll { padding: 1rem; }
+html.phone:not(.land) #hero { scroll-margin-top: 4.5rem; }
+/* the card's rows take their own height: on the desktop they share out a fixed one */
+html.phone:not(.land) :is(.hero-card, .idle) > * { flex: none; }
+
+/* sideways: the desktop's two columns in a short screen; the card scrolls within its sheet */
+html.phone.land body { height: 100vh; height: 100dvh; }
+html.phone.land header { padding-top: max(.3rem, env(safe-area-inset-top)); padding-bottom: .3rem; }
+html.phone.land main { padding: 0 max(.75rem, env(safe-area-inset-right)) 0 max(.75rem, env(safe-area-inset-left)); }
+html.phone.land #view-now { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: .75rem; }
+html.phone.land #hero { overflow-y: auto; scrollbar-width: none; }
+html.phone.land .hero-card > * { flex: none; }
+html.phone.land nav { grid-template-columns: repeat(4, minmax(0, 9rem)); justify-content: center; }
+html.phone.land nav button { padding: .5rem .1rem .6rem; }
+/* height is short: the alerts stay on the status line, between the brand and the buttons */
+html.phone.land .brand { flex: none; }
+html.phone.land .chips { order: 0; flex: 1 1 0; flex-wrap: nowrap; }
+html.phone.land .icon-btn { height: 2.3rem; }
+
+/* ---- flight card ---- */
+html.phone .hero-card { padding: 1rem 1rem 1.1rem; gap: .8rem; }
+html.phone .h-top { gap: .9rem; }
+html.phone .flight { font-size: min(3rem, 11cqi); }
+html.phone .airline { font-size: 1.05rem; padding-top: .15rem; }
+html.phone .airline small { font-size: .78rem; column-gap: .8rem; }
+html.phone .route { gap: .6rem; }
+html.phone .apt { font-size: min(2.4rem, 9cqi); }
+html.phone .apt small { font-size: .78rem; max-width: 7.5rem; }
+html.phone .apt-when { margin-top: .5rem; }
+html.phone .apt-when b { font-size: 1rem; }
+html.phone .arc-note { font-size: .72rem; }
+html.phone .noroute { font-size: 1.5rem; }
+html.phone .noroute small { font-size: .85rem; }
+html.phone .metric { padding: .6rem 0 .65rem .9rem; }
+html.phone .metric .v { font-size: min(1.75rem, 8.5cqi); }
+html.phone .metric .s { font-size: .74rem; }
+html.phone .facts { font-size: .9rem; row-gap: .5rem; }
+/* upright: readouts two by two, the photo over the facts */
+html.phone:not(.land) .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html.phone:not(.land) .metric:nth-child(odd) { padding-left: 0; border-left: 0; }
+html.phone:not(.land) .metric:nth-child(n + 3) { border-top: 1px solid var(--rule); }
+html.phone:not(.land) .h-bottom { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+html.phone.land .metric .v { font-size: min(1.5rem, 5.4cqi); }
+/* a small phone turned sideways leaves the card narrow: the photo goes over the facts there too */
+@container (max-width: 400px) { html.phone.land .h-bottom { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- quiet-sky slides ---- */
+html.phone .idle-card { padding: 1.1rem 1rem 2.4rem; }
+/* upright, a slide holds its height as the slides change, so the radar below doesn't jump */
+html.phone:not(.land) #hero.idle-card { min-height: 27rem; display: flex; flex-direction: column; justify-content: center; }
+html.phone:not(.land) .idle { height: auto; }
+html.phone .idle h1 { font-size: 1.9rem; }
+/* a slide taller than its sheet runs off the foot, where the sheet scrolls, not off the top */
+html.phone .idle { justify-content: safe center; }
+html.phone .idle.heat { align-items: safe center; }
+html.phone .fleet-head h1 { font-size: 1.7rem; }
+html.phone .idle .next, html.phone .nu-look { font-size: 1rem; }
+html.phone .nu-row { gap: 1rem; }
+html.phone .nu-flight { font-size: 2.6rem; }
+html.phone .nu-sub { font-size: 1rem; }
+html.phone .countdown.big { width: 5.2rem; height: 5.2rem; }
+html.phone .countdown.big b { font-size: 1.3rem; }
+html.phone .nu-route { font-size: 1.6rem; }
+html.phone .nu-plate { height: 4rem; }
+html.phone .heat-text { font-size: .92rem; }
+html.phone:not(.land) :is(.idle.heat, .idle.last) { flex-direction: column; align-items: stretch; gap: 1rem; }
+html.phone:not(.land) .idle.heat canvas { align-self: center; }
+html.phone:not(.land) .idle.last :is(.photo, .last-plate) { width: 100%; }
+html.phone:not(.land) .fleet-box { height: 15rem; }
+/* the weather slide keeps the windsock and the forecast; its summary already names the cloud */
+html.phone:not(.land) .wx-slide .fig-clouds { display: none; }
+
+/* ---- radar and sky view: the switches in rows above and below a square scope ---- */
+html.phone #scope { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "mode attrib" "radar radar" "tools tools"; align-items: center; gap: .55rem; padding: 0; }
+html.phone #scope.atc { padding: .55rem; }
+html.phone #scope-seg { position: static; grid-area: mode; justify-self: start; }
+html.phone #scope-attrib { position: static; grid-area: attrib; max-width: none; font-size: .56rem; }
+html.phone .scope-tools { position: static; grid-area: tools; flex-wrap: wrap; row-gap: .4rem; }
+html.phone #radar { grid-area: radar; justify-self: center; }
+html.phone:not(.land) #radar { width: 100%; height: auto; aspect-ratio: 1; }
+html.phone.land #radar { width: 100%; height: 100%; min-height: 0; }
+/* sideways the scope is short, so its switches stand in a column beside it rather than rows above and below */
+html.phone.land #scope { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "radar mode" "radar tools"; align-items: start; column-gap: .4rem; }
+html.phone.land .scope-tools { flex-direction: column; align-items: stretch; align-self: end; }
+html.phone.land .seg { flex-direction: column; }
+html.phone.land :is(.seg button + button, .seg .seg-unit) { border-left: 0; border-top: 1px solid var(--rule); }
+html.phone.land .seg button { padding: .5rem .55rem; }
+html.phone.land .seg .seg-unit { display: none; }
+html.phone.land #scope-attrib { position: absolute; left: 0; top: auto; bottom: 0; max-width: 32%; text-align: left; font-size: .5rem; }
+html.phone .seg button { font-size: .66rem; padding: .72rem .78rem; }
+html.phone .seg .seg-unit { font-size: .66rem; padding: .72rem .5rem; }
+/* lettering on the scope, set for a scope a few inches across; the key is left off, as on the kiosk */
+html.phone #radar .tag { font-size: 6.6px; stroke-width: 1.9px; }
+html.phone #radar .tag-sub { font-size: 5.6px; stroke-width: 1.7px; }
+html.phone #radar .compass { font-size: 7px; }
+html.phone #radar :is(.ring-label, .place) { font-size: 5px; }
+html.phone #radar .bearing { font-size: 4.3px; }
+html.phone #radar :is(.apt-label, .field-label, .tfr-label, .peak-label) { font-size: 5.4px; }
+html.phone #radar .heard-note { font-size: 5.8px; }
+html.phone #radar :is(.legend, .status) { display: none; }
+/* the STARS display: data blocks, position symbols, the status area (whose size scope.js's ssa()
+   allows for) and the map's labels, between the desktop's and the kiosk's */
+html.phone #scope.atc #radar :is(.tag, .tag-sub, .tag-top) { font-size: 6px; stroke-width: 1px; }
+html.phone #scope.atc #radar .pos { font-size: 5px; }
+html.phone #scope.atc #radar :is(.ssa, .heard-note) { font-size: 4.8px; }
+html.phone #scope.atc #radar .bearing { font-size: 3.9px; }
+html.phone #scope.atc #radar :is(.airspace-label, .navaid-label, .field-label) { font-size: 3.7px; }
+html.phone #scope.atc #radar .tfr-label { font-size: 4.4px; }
+/* the photographer's credit, readable at arm's length */
+html.phone .photo .credit { font-size: .62rem; padding: .15rem 0 0 .4rem; }
+
+/* ---- board: two lines a flight (see phoneBoardHtml in app.js) ---- */
+.pboard { display: flex; flex-direction: column; }
+.pb-row { display: grid; grid-template-columns: .3rem 5.4rem minmax(0, 1fr) auto; grid-template-areas: "sw id rt when" "sw l2 l2 l2";
+  column-gap: .7rem; row-gap: .25rem; align-items: baseline; width: 100%; text-align: left; padding: .7rem .4rem .7rem 0; border-top: 1px solid var(--rule); }
+.pboard > .pb-row:first-child { border-top: 0; }
+.pb-row .sw { grid-area: sw; align-self: stretch; width: .3rem; height: auto; margin: 0; border-radius: 99px; opacity: .8; }
+.pb-row.heard .sw { background: var(--rule); }
+.pb-id { grid-area: id; font: 700 1.05rem var(--mono); white-space: nowrap; }
+.pb-rt { grid-area: rt; font: 700 .95rem var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pb-rt .dim { font: 400 .78rem var(--sans); }
+.pb-when { grid-area: when; text-align: right; font: 700 1rem var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pb-when.soon { color: var(--magenta); }
+.pb-when small, .pb-data small { font: 400 .7rem var(--sans); color: var(--slate); }
+/* the second line is a row of its own, so the figures at its end don't widen the column above them */
+.pb-l2 { grid-area: l2; display: flex; align-items: center; justify-content: space-between; gap: .7rem; min-width: 0; }
+.pb-sub { flex: 1; display: flex; align-items: center; gap: .55rem; min-width: 0; font-size: .8rem; color: var(--slate); }
+.pb-sub .logo-tile.tiny, body.night .pb-sub .logo-tile.tiny { height: 1.25rem; }
+body.night .pb-sub .logo-tile.tiny { padding: .1rem .3rem; border-radius: .25rem; }
+.pb-sub .logo-tile img { max-width: 4.6rem; }
+.pb-sub .logo-tile + .pb-name { display: none; }
+.pb-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.pb-type { font: 700 .74rem var(--mono); color: var(--ink-2); flex: none; }
+.pb-data { flex: none; text-align: right; font-size: .88rem; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink-2); }
+.pb-gs { margin-left: .6rem; }
+.pb-row.hero { background: color-mix(in srgb, var(--magenta) 7%, transparent); }
+.pb-row.hero .pb-id { color: var(--magenta); }
+.pboard .empty { text-align: center; color: var(--slate); padding: 2rem 0; }
+html.phone #board h2 { margin-top: 1.3rem; }
+
+/* ---- weather ---- */
+html.phone #wx-tab { padding: 1rem; }
+html.phone .wx-head { align-items: flex-start; gap: .8rem; }
+html.phone .cat-badge b { font-size: 1.7rem; }
+html.phone .wx-head h1 { font-size: 1.25rem; }
+html.phone .wx-head .sum { font-size: .92rem; }
+html.phone .wx-read dd { font-size: 1.15rem; }
+html.phone .wx-read dd.s { font-size: .7rem; }
+html.phone .wx-grid { grid-template-columns: minmax(0, 1fr); gap: 1.4rem; }
+html.phone.land .wx-read { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+html.phone:not(.land) .wx-read { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+html.phone:not(.land) .wx-read > div:nth-child(odd) { padding-left: 0; border-left: 0; }
+html.phone:not(.land) .wx-read > div:nth-child(n + 3) { border-top: 1px solid var(--rule); }
+html.phone:not(.land) .wx-figs { grid-template-columns: minmax(0, 1fr); gap: 1.4rem; }
+html.phone:not(.land) .wx-more { grid-template-columns: minmax(0, 1fr); gap: 1.4rem; }
+html.phone.land .wx-more { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.4rem; }
+html.phone.land .wx-more .panel-airspace { grid-column: 1 / -1; }
+html.phone .taf-list li { grid-template-columns: minmax(0, 1fr) auto; row-gap: .15rem; }
+html.phone .taf-list li > span:last-child { grid-column: 1 / -1; }
+html.phone .sm-sun { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: .6rem; }
+
+/* ---- logbook ---- */
+html.phone:not(.land) .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; grid-auto-flow: row; }
+html.phone:not(.land) .stat { padding: .3rem 0 .8rem .9rem; border-left: 1px solid var(--rule); }
+html.phone:not(.land) .stat:nth-child(odd) { padding-left: 0; border-left: 0; }
+html.phone .stat .v { font-size: 1.9rem; }
+html.phone .cols { grid-template-columns: minmax(0, 1fr); gap: 0; }
+html.phone .collection { grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
+html.phone .rec { flex-wrap: wrap; row-gap: .15rem; }
+html.phone .rec .badge { display: inline-block; white-space: nowrap; margin: .2rem .35rem 0 0; }
+
+/* ---- emergency takeover ---- */
+html.phone .em-card { padding: 1.2rem 1rem; gap: .9rem; }
+html.phone .em-top { font-size: .9rem; flex-wrap: wrap; }
+html.phone .em-code b { font-size: 1.8rem; }
+html.phone .em-title { font-size: 2.6rem; }
+html.phone .em-meaning { font-size: 1.02rem; }
+html.phone .em-id b { font-size: 1.8rem; }
+html.phone :is(.em-id span, .em-where) { font-size: 1rem; }
+html.phone .em-read b { font-size: 1.6rem; }
+html.phone .em-read > div + div { padding-left: .8rem; }
+html.phone .em-read span { font-size: .8rem; }
+html.phone .em-hide { padding: .7rem 1rem; }

@@ -273,8 +273,8 @@ function ssa(state) {
   s += `<text class="ssa" x="${x}" y="${y}">` + rows.map(([t, cls, id], i) =>
     `<tspan x="${x}"${i ? ' dy="1.3em"' : ""}${cls ? ` class="${cls}"` : ""}${id ? ` id="${id}"` : ""}>${esc(t)}</tspan>`).join("") + `</text>`;
   // aircraft data blocks and the map's labels keep clear of it: monospaced at 4 px (the kiosk's
-  // 5.4), 0.6 em a character, 1.3 em a line
-  const fs = document.documentElement.classList.contains("kiosk") ? 5.4 : 4;
+  // 5.4, a phone's 4.8), 0.6 em a character, 1.3 em a line
+  const cl = document.documentElement.classList, fs = cl.contains("kiosk") ? 5.4 : cl.contains("phone") ? 4.8 : 4;
   placeBoxes.push({ x0: x - 1, x1: x + 1 + Math.max(...rows.map((r) => r[0].length)) * fs * 0.6,
     y0: y - 12, y1: y + (rows.length - 1) * fs * 1.3 + fs * 0.4 });
   return s;

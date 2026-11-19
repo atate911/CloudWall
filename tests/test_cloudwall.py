@@ -165,9 +165,29 @@ class TrackerTest(unittest.TestCase):
         self.assertEqual(self.t.snapshot()["hero"]["hex"], "a1")
         self.t.update([plane("a1", "ASA1", 1.0), plane("a2", "ASA2", -0.9)], "test")
         self.assertEqual(self.t.snapshot()["hero"]["hex"], "a1")     # slightly better: no flip
-        self.t.pin("a2")
+        self.t.want_pin("a2")                                         # one screen taps a2
         self.t.update([plane("a1", "ASA1", 1.0), plane("a2", "ASA2", -3.0)], "test")
-        self.assertEqual(self.t.snapshot()["hero"]["hex"], "a2")
+        s = self.t.snapshot("a2")
+        self.assertEqual((s["hero"]["hex"], s["pinned"], s["overhead"]), ("a2", "a2", "a1"))
+        s = self.t.snapshot()                                         # every other screen: what's overhead
+        self.assertEqual((s["hero"]["hex"], s["pinned"], s["overhead"]), ("a1", None, "a1"))
+
+    def test_screens_follow_flights_of_their_own(self):
+        # twelve aircraft in range; a screen follows the farthest, past the ten that are looked up anyway
+        planes = lambda: [plane(f"b{i}", f"ASA{i}", 2.0 + i) for i in range(12)]
+        self.t.update(planes(), "test")
+        self.assertNotIn("seats", self.t.snapshot()["aircraft"][-1])  # not looked up
+        self.t.want_pin("b11")
+        self.t.update(planes(), "test")
+        s = self.t.snapshot("b11")
+        self.assertEqual(s["hero"]["hex"], "b11")
+        self.assertIn("seats", s["hero"])                             # now it is: its card is complete
+        self.t.pins["b11"] -= 60                                      # the screen stopped asking
+        self.t.update(planes(), "test")
+        self.assertEqual(self.t.pins, {})
+        self.assertIsNone(self.t.snapshot("gone")["pinned"])          # a flight that left: no card
+        self.t.want_pin("<script>")                                   # not an aircraft address: ignored
+        self.assertEqual(self.t.pins, {})
 
     def test_route_backfill_and_implausible_route(self):
         apt = lambda code, ll: {"iata": code, "city": code, "name": code, "lat": ll[0], "lon": ll[1]}
@@ -475,10 +495,8 @@ class RadarRangeTest(unittest.TestCase):
         t = Tracker(config.load(), Store(":memory:"), StubEnricher())
         t.want_range(30)
         t.update([plane("a1", "ASA1", 2.0), plane("f1", "FAR1", 25.0)], "test")
-        t.pin("f1")                                                   # tapped on a 30 nm radar
-        self.assertIsNone(t.pinned)
-        t.pin("a1")
-        self.assertEqual(t.snapshot()["hero"]["hex"], "a1")
+        self.assertIsNone(t.snapshot("f1")["pinned"])                 # tapped on a 30 nm radar
+        self.assertEqual(t.snapshot("a1")["hero"]["hex"], "a1")
         t.update([plane("f1", "FAR1", 24.0)], "test")                 # only far traffic left
         t.status["updated"] -= 120                                    # then the feed goes quiet
         self.assertEqual(t.snapshot()["beyond"], [])
@@ -779,6 +797,13 @@ class LiveFirstTest(unittest.TestCase):
         self.t.update([plane("a2", "ASA1363", 9.0, track=90)], "test")   # passing by to the north
         time.sleep(0.1)
         self.assertEqual(self.calls, [])
+
+    def test_lookup_for_a_flight_a_screen_follows(self):
+        self.gate.set()
+        self.t.want_pin("a2")                                         # someone taps it on their phone
+        self.t.update([plane("a2", "ASA1363", 9.0, track=90)], "test")
+        self.wait_calls(1)
+        self.assertEqual(self.calls, ["ASA1363"])
 
 
 class LogosTest(unittest.TestCase):
@@ -1163,9 +1188,10 @@ class ServerTest(unittest.TestCase):
         # the cabin sits at Redmond's elevation (3,070 ft) unless told otherwise: fly well above it
         self.assertEqual(cabin.cfg["home"]["elevation_ft"], 3070)
         cabin.tracker.update([plane("c1", "ASA9", 0.5, alt=8000, home=cabin.cfg["home"])], "test")
-        req = urllib.request.Request(base + "/api/pin?place=cabin", data=b'{"hex": "c1"}', method="POST")
-        self.assertEqual(json.loads(urllib.request.urlopen(req, timeout=5).read())["pinned"], "c1")
-        self.assertIsNone(home.tracker.pinned)                      # pinned at the cabin only
+        s = json.loads(self.get(base + "/api/state?place=cabin&pin=c1"))   # a screen at the cabin taps c1
+        self.assertEqual((s["pinned"], s["hero"]["hex"]), ("c1", "c1"))
+        self.assertEqual(set(cabin.tracker.pins), {"c1"})
+        self.assertEqual(home.tracker.pins, {})                      # wanted at the cabin only
         self.assertEqual(json.loads(self.get(base + "/api/logbook?place=cabin"))["today"], 1)   # logged there
         self.assertEqual(json.loads(self.get(base + "/api/logbook"))["today"], 0)
 
@@ -1251,8 +1277,7 @@ class PathTest(unittest.TestCase):
         t = Tracker(config.load(), Store(":memory:"), StubEnricher())
         for i in range(40):                                           # 40 updates, 0.05 nm apart
             t.update([plane("a1", "ASA1", 10 - i * 0.05, alt=8000 - i * 50)], "test")
-        t.pin("a1")                                                   # tapped on the radar
-        s = t.snapshot()
+        s = t.snapshot("a1")                                          # tapped on the radar
         a = s["aircraft"][0]
         self.assertNotIn("path", a)                                   # only the selected aircraft sends its track
         self.assertNotIn("trail", a)
@@ -1263,10 +1288,9 @@ class PathTest(unittest.TestCase):
         self.assertTrue(8 <= len(path) <= 14)                         # a point every 0.15 nm or 300 ft
         self.assertIn(path[-1][2], range(60, 63))                     # it followed the descent to about 6,050 ft
         t.update([plane("a1", "ASA1", 8.0, alt=None)], "test")        # no altitude: the last one carries on
-        self.assertEqual(t.snapshot()["hero"]["path"][-1][2], path[-1][2])
+        self.assertEqual(t.snapshot("a1")["hero"]["path"][-1][2], path[-1][2])
         t.update([plane("a1", "ASA1", 7.5), plane("b1", "ASA2", 9.0)], "test")
-        t.pin("b1")                                                   # tapped: its whole path, from when it appeared
-        s = t.snapshot()
+        s = t.snapshot("b1")                                          # tapped: its whole path, from when it appeared
         self.assertEqual(len(s["hero"]["path"]), 1)
         self.assertEqual(len(s["hero"]["trail"]), 1)
         self.assertEqual([a.get("trail") for a in s["aircraft"]], [None, None])   # no aircraft but the selected one carries a trail

@@ -38,6 +38,7 @@ PATH_CLIMB_FT = 300         # or climbed or descended this much,
 PATH_POINTS = 1500          # up to this many (hours of circling); the radar draws the selected one's
 RADAR_RANGES = (20, 30)     # longer ranges a screen can set its radar to, in nm, beyond the tracking radius
 RANGE_HOLD_S = 90           # keep fetching a longer range this long after a screen last asked for it
+PIN_HOLD_S = 15             # a flight a screen follows counts as wanted this long after it last asked
 HEAT_GRID = 96
 
 
@@ -58,8 +59,9 @@ class Tracker:
         self.range_wanted = {}    # range (nm) -> when a screen last asked for it
         self.updated_at = None
         self.trail_s = None       # seconds between trail samples, smoothed (STARS spaces history 4.5 s apart)
-        self.hero_hex = None
-        self.pinned = None
+        self.hero_hex = None      # the aircraft overhead, shared by every screen
+        self.pins = {}            # hex -> when a screen last asked to follow it: each screen picks its own
+        self.pinned_now = set()   # the flights screens follow, as of the last update
         self.active = {}          # hex -> {"id", "min", "ts", "badges"}
         self.flow = None
         self.weather = None
@@ -263,7 +265,7 @@ class Tracker:
         if not fa or not fa.enabled:
             return "n/a", None
         t = self.cfg["tracking"]
-        near = (self._overhead(a) or a["hex"] == self.pinned
+        near = (self._overhead(a) or a["hex"] in self.pinned_now
                 or (0 < a["cpa_s"] <= LOOKAHEAD_S and a["cpa_nm"] <= t["overhead_nm"]))
         needed = fa.mode == "always" or not (free_route and free_route["plausible"])
         state, live = self.enricher.live_route(a.get("callsign"), fetch=near and needed and not a["on_ground"] and not self.idle)
@@ -279,9 +281,6 @@ class Tracker:
                 and a["alt"] <= t["max_overhead_alt_ft"] and (a["elev"] or 0) >= 2)
 
     def _pick_hero(self, by_hex):
-        if self.pinned in by_hex:
-            return self.pinned
-        self.pinned = None
         cands = [a for a in by_hex.values() if self._overhead(a)]
         if not cands:
             return None
@@ -462,12 +461,27 @@ class Tracker:
         recent = [nm for nm, at in list(self.range_wanted.items()) if now - at < RANGE_HOLD_S]
         return max([self.cfg["tracking"]["radius_nm"], *recent])
 
+    # -- flights a screen follows ---------------------------------------------------
+    # A tap on a screen picks a flight for that screen alone: it asks for it with each update and
+    # gets its card back, while every other screen goes on showing what's overhead. A flight any
+    # screen is following is looked up like one overhead.
+    def want_pin(self, hexid):
+        """A screen following this aircraft asked for data."""
+        if isinstance(hexid, str) and re.fullmatch(r"[~0-9a-z]{1,10}", hexid):
+            self.pins[hexid] = time.time()
+
+    def _pins_wanted(self, now):
+        # a copy: the server's threads add to pins while this runs on the poller's
+        return {h for h, at in list(self.pins.items()) if now - at < PIN_HOLD_S}
+
     def update(self, raw, source):
         now = time.time()
         if self.updated_at is not None and 0 < now - self.updated_at < 120:
             gap = now - self.updated_at
             self.trail_s = gap if self.trail_s is None else self.trail_s * 0.8 + gap * 0.2
         self.updated_at = now
+        self.pinned_now = self._pins_wanted(now)
+        self.pins = {h: at for h, at in list(self.pins.items()) if h in self.pinned_now}   # forget the rest
         for a in raw:
             self._derive(a)
         raw.sort(key=lambda a: a["dist"])
@@ -475,12 +489,16 @@ class Tracker:
         beyond = [a for a in raw if a["dist"] > r and not a["on_ground"]]
         raw = [a for a in raw if a["dist"] <= r]
         airborne = [a for a in raw if not a["on_ground"]]
-        # look up the nearest aircraft, plus anything heading for the house soon
+        # look up the nearest aircraft, anything heading for the house soon, and any a screen follows
         t = self.cfg["tracking"]
         soon = [a for a in airborne[10:] if 0 < a["cpa_s"] <= LOOKAHEAD_S and a["cpa_nm"] <= t["overhead_nm"]]
         emergency = self._emergencies(raw, now)
-        for a in airborne[:10] + soon + [a for a in emergency if a not in airborne[:10] + soon]:
-            self._enrich(a)
+        followed = [a for a in raw if a["hex"] in self.pinned_now]
+        done = set()
+        for a in airborne[:10] + soon + emergency + followed:
+            if a["hex"] not in done:
+                done.add(a["hex"])
+                self._enrich(a)
         for a in airborne:
             a["contrail"] = contrail_mod.for_altitude(self.contrails, a["alt"])
         by_hex = {a["hex"]: a for a in raw}
@@ -519,22 +537,18 @@ class Tracker:
             if time.time() - self.status["updated"] > 30:
                 self.status["ok"] = False
 
-    def pin(self, hexid):
-        with self.lock:
-            # only aircraft within the tracking radius have a flight card: a target tapped on a
-            # longer-range radar isn't one of them
-            if hexid and not any(a["hex"] == hexid for a in self.aircraft):
-                return
-            self.pinned = hexid
-            if hexid:
-                self.hero_hex = hexid
-
-    def snapshot(self):
+    def snapshot(self, pin=None):
+        """Everything a screen shows. `pin` is the flight that screen follows: while it's within the
+        tracking radius it takes the flight card, for that screen only. (A target past the radius, on
+        a longer-range radar, has no card.) "pinned" says whether it held; "overhead" is the shared
+        choice, so a screen following another flight still hears a new one come overhead."""
         with self.lock:
             if (self.aircraft or self.beyond) and time.time() - self.status["updated"] > STALE_SECONDS:
                 self.aircraft, self.beyond, self.hero_hex = [], [], None   # don't show positions we can't trust
-            hero = next((a for a in self.aircraft if a["hex"] == self.hero_hex), None)
-            if hero:      # the selected aircraft (overhead, or tapped) carries its track: no other does
+            overhead = next((a for a in self.aircraft if a["hex"] == self.hero_hex), None)
+            chosen = next((a for a in self.aircraft if a["hex"] == pin), None) if pin else None
+            hero = chosen or overhead
+            if hero:      # the selected aircraft (this screen's choice, or overhead) carries its track: no other does
                 hero = dict(hero, path=list(self.paths.get(hero["hex"], ())), trail=list(self.trails.get(hero["hex"], ())))
             nxt = None
             if not hero:
@@ -543,7 +557,8 @@ class Tracker:
                 nxt = min(inbound, key=lambda a: a["cpa_s"], default=None)
             return {
                 "now": time.time(), "home": self.home, "airport": self.cfg["airport"],
-                "tracking": self.cfg["tracking"], "hero": hero, "pinned": self.pinned,
+                "tracking": self.cfg["tracking"], "hero": hero, "pinned": chosen and chosen["hex"],
+                "overhead": overhead and overhead["hex"],
                 "next": nxt, "aircraft": self.aircraft, "flow": self.flow,
                 "beyond": self.beyond, "ranges": self.ranges(), "kiosk": self.cfg["kiosk"],
                 "weather": self.weather, "status": self.status, "basemap": self.basemap, "charts": self.charts, "logos": self.logos,

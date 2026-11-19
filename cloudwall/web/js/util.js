@@ -7,6 +7,13 @@ export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const RAD = Math.PI / 180;
 export const POINTS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
 
+// The phone layout (app.js sets it from the screen's size): "stack" upright, where the panels take
+// their natural height and the page scrolls; "side" turned sideways, card and radar side by side.
+export function phone() {
+  const c = document.documentElement.classList;
+  return c.contains("phone") ? (c.contains("land") ? "side" : "stack") : null;
+}
+
 export const ident = (a) => a.flight_no || a.callsign || a.reg || a.hex.toUpperCase();
 export const altText = (a) => (a.on_ground ? "GND" : a.alt == null ? "–" : num(a.alt));
 
