@@ -43,7 +43,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `airport` | always | Its airport: `icao`, `iata`, `name`, `city`, `lat`, `lon`, `elevation_ft`; `runways` (each `name`, `ends` as two `[lat, lon]`, `length_ft`); `others`, the small fields nearby (`code`, `icao`, `name`, `city`, `lat`, `lon`, `elevation_ft`, `runways`); `airspace` (Class B, C and its own D: `id`, `class`, `floor`, `ceiling`, `label`, `rings`); `navaids` (`ident`, `name`, `type`, `lat`, `lon`). |
 | `tracking` | always | The `[tracking]` settings in force: `radius_nm`, `overhead_nm`, `max_overhead_alt_ft`, `poll_seconds`, `when_idle`, `idle_after_seconds`. |
 | `ranges` | always | The ranges a radar can ask for, in nm: the tracking radius, then the longer ones. |
-| `kiosk` | always | The `[kiosk]` settings: `place`, `view` (`radar` or `map`), `radar`, `tracks`, `range_nm`. |
+| `kiosk` | always | The `[kiosk]` settings: `place`, `view` (`radar` or `map`), `radar`, `tracks`, `range_nm`, `density` (`simple` or `detailed`). |
 | `aircraft` | always | Every aircraft within the tracking radius, nearest first: [aircraft](#an-aircraft). |
 | `beyond` | always | Aircraft in the air past the tracking radius, there only while a longer `range` is asked for. They are for the radar alone: never looked up, never on the card. |
 | `hero` | always | The aircraft on the flight card: the one this screen follows, else the one overhead; else null. An [aircraft](#an-aircraft) with its track. |
@@ -115,6 +115,9 @@ One record for each aircraft, built up in three steps. Every record has the firs
 | `icon` | when its kind is known | Which kind of traffic the radar draws it as: "light", "twin", "turboprop", "bizjet", "regional", "airliner", "heavy", "quad", "fighter", "heli", "tandem", "tiltrotor", "gyro", "glider", "seaplane", "ultralight", "drone", "airship" or "balloon". |
 | `colors` | for an airline CloudWall has colours for | Its livery: `[main, accent]`, each "#rrggbb". |
 | `contrail` | in the air, within the tracking radius | "persistent" or "short" if it is likely leaving a contrail, else null. |
+| `activity` | in the air | What it is doing: "arr" (arriving at the place's airport), "dep" (departing it), "loc" (flying locally: no flight plan, or to and from a small field nearby) or "pass" (passing over). Every screen colours it by this. |
+| `notable` | when it is worth a look | Why: "emergency", "military", "rare" (a rare type) or "unusual" (a balloon, airship, glider, gyrocopter or twin-rotor helicopter). |
+| `tail` | in the air | Its last two minutes as reported, `[lat, lon]` oldest first, at most 16 points: the radar's short track behind it. |
 | `coasting` | while the feed has lost it | A followed flight the feed left out is carried on along its track for up to 30 s: since when. Its position is then an estimate. |
 
 #### Looked up, for the aircraft that matter
@@ -132,7 +135,7 @@ appears a few seconds after the aircraft does.
 | `airline_iata` | always | The code its airline's logo is served under (`/logos/AS`), or null. |
 | `seats` | always | Seats on board, estimated: `n`, `lo`, `hi` and `basis` ("airline", "type" or "cargo"); or null. |
 | `flight_no` | always | Its flight number as a departure board shows it ("AS512"), or null. |
-| `local` | always | "arriving" at or "departing" the place's airport or a small field nearby, "local" (low over a small field), or null. |
+| `local` | always | "arriving" at or "departing" the place's airport or a small field nearby, "local" (low over a small field), or null. An aircraft that isn't looked up gets it too, from how it is flying near the airport. |
 | `local_inferred` | when `local` isn't from its route | True if `local` was made out from how it is flying; false if there was nothing to go on. |
 | `local_field` | at a small field | The field: `code`, `name`, `city`. |
 | `landing_est` | arriving with no believable route | When it should land. |
@@ -158,6 +161,10 @@ appears a few seconds after the aircraft does.
 | `emergency_title` | in `emergency` | "Emergency", "Radio failure" or "Hijack code". |
 | `emergency_meaning` | in `emergency` | A sentence on what the code means. |
 | `emergency_since` | in `emergency` | When it was first seen showing the code. |
+| `seq` | arriving at the place's airport | Its place in the landing order, from 1. |
+| `rwy` | with `seq` | The runway it is lining up for: one in use when the flow is known, else the one whose approach suits it best. |
+| `lands_s` | with `seq` | Seconds until it lands, about: along the final approach when it is on it, else by way of joining it 6 nm out. |
+| `gap_s` | with `seq` | Seconds after the one ahead of it lands; null for the first. |
 | `path` | on `hero` | Where it has been since it came in range: `[lat, lon, altitude in hundreds of feet]`, a point each time it moved 0.15 nm or 300 ft. |
 | `trail` | on `hero` | Its last positions as reported, `[lat, lon]`, `trail_s` apart. |
 

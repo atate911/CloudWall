@@ -200,8 +200,17 @@ def _airport(code):
     return {"iata": code, "city": city, "name": name, "lat": lat, "lon": lon}
 
 
+# PDX's runways 28L and 28R as the demo flies them, from the default home along its 299° corridor
+# (nm past the point abeam home; nm to the right of the track, so negative is left): the line of
+# each runway's extended centreline, and the along-track distance of its threshold and far end.
+DEMO_RUNWAYS = ((-2.23, 3.2, 4.81), (-2.74, 3.76, 5.56))
+GLIDE_FT_PER_NM = 318
+
+
 class Demo:
-    """Simulated traffic along the PDX east/west corridor, passing near home."""
+    """Simulated traffic along the PDX east/west corridor, passing near home. The airport lands
+    west: arrivals come down the 3° approach to 28L or 28R from the east, departures climb out west
+    from their far ends; overflights, light aircraft and the odd balloon go anywhere."""
     name = "demo"
 
     def __init__(self, seed=7):
@@ -227,7 +236,7 @@ class Demo:
         hexid = f"a{idx:05x}"
         cs, _, _, typ, _, reg, _, _, kind = DEMO_FLIGHTS[idx]
         profile = {
-            "arr": (299, 165, 2600, -700, "A3"), "dep": (119, 230, 5200, 2200, "A3"),
+            "arr": (299, 150, 2600, -800, "A3"), "dep": (299, 200, 5200, 2200, "A3"),
             "over": (self.rng.choice([165, 345]), 455, 36000, 0, "A5"),
             "ga": (self.rng.uniform(0, 360), 105, 2800, 0, "A1"),
             "heli": (self.rng.uniform(0, 360), 120, 1400, 0, "A7"),
@@ -241,10 +250,16 @@ class Demo:
             cat = "A2"
         offset = self.rng.uniform(-2.5, 2.5)          # lateral miss distance, nm
         along = -max(14.0, radius_nm - 1) if along is None else along   # start near the edge of the range
+        rwy = self.rng.choice(DEMO_RUNWAYS)
+        if kind in ("arr", "dep"):
+            # on a runway's extended centreline: arrivals from the edge of the range, departures from the runway's end
+            offset = rwy[0] + self.rng.uniform(-0.04, 0.04)
+            if kind == "dep":
+                along = rwy[2] + max(0.0, along + 11) * 0.6
         self.active.append({
             "hex": hexid, "callsign": cs or reg, "reg": reg, "type": typ, "category": cat,
             "track": track, "gs": gs, "alt0": alt, "vrate": vrate, "squawk": "1200" if kind == "ga" else "".join(self.rng.choice("01234567") for _ in range(4)),
-            "along": along, "offset": offset, "kind": kind,
+            "along": along, "offset": offset, "kind": kind, "rwy": rwy,
         })
 
     def fetch(self, lat, lon, radius_nm):
@@ -265,8 +280,16 @@ class Demo:
             # along-track unit vector (east, north) and its right-hand normal
             e = a["along"] * math.sin(t) + a["offset"] * math.cos(t)
             n = a["along"] * math.cos(t) - a["offset"] * math.sin(t)
-            # altitude profile is pinned to the abeam point so passes look realistic
-            alt = a["alt0"] + a["vrate"] * (a["along"] / a["gs"] * 60)
+            # altitude profile is pinned to the abeam point so passes look realistic; arrivals come
+            # down the 3° approach to their runway's threshold, departures climb from its far end
+            vrate = a["vrate"]
+            if a["kind"] == "arr":
+                alt = 30 + GLIDE_FT_PER_NM * (a["rwy"][1] - a["along"])
+                vrate = -round(a["gs"] * GLIDE_FT_PER_NM / 60)
+            elif a["kind"] == "dep":
+                alt = 400 + a["vrate"] * ((a["along"] - a["rwy"][2]) / a["gs"] * 60)
+            else:
+                alt = a["alt0"] + a["vrate"] * (a["along"] / a["gs"] * 60)
             alt = max(300, min(41000, alt))
             info = DEMO_FLIGHTS[int(a["hex"][1:], 16)]
             alt_target = (3000 if a["kind"] == "arr" else 15000 if a["kind"] == "dep" else None)
@@ -277,9 +300,10 @@ class Demo:
                 "hex": a["hex"], "callsign": a["callsign"], "reg": a["reg"], "type": a["type"],
                 "alt": int(alt / 25) * 25, "on_ground": False,
                 "gs": a["gs"] + self.rng.uniform(-2, 2), "track": a["track"],
-                "vrate": a["vrate"], "lat": lat + n / 60,
+                "vrate": vrate, "lat": lat + n / 60,
                 "lon": lon + e / (60 * math.cos(math.radians(lat))),
                 "squawk": a["squawk"], "category": a["category"], "military": False,
             })
-        self.active = [a for a in self.active if abs(a["along"]) <= radius_nm]
+        # gone past the range, or landed
+        self.active = [a for a in self.active if abs(a["along"]) <= radius_nm and not (a["kind"] == "arr" and a["along"] > a["rwy"][1])]
         return out

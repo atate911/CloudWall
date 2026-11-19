@@ -299,6 +299,39 @@ class TrackerTest(unittest.TestCase):
         self.assertEqual(s["flow"]["dir"], "west")
         self.assertEqual(s["aircraft"][0]["emergency"], "EMERGENCY 7700")
 
+    def test_traffic_picture(self):
+        """Every aircraft is marked arriving, departing, flying locally or passing over, and the
+        arrivals are put in landing order on the runways in use, with the gap to the one ahead."""
+        ap = self.t.cfg["airport"]                                       # PDX, landing west on 28L / 28R
+        def east_of_pdx(p, nm, north=0.0):
+            p["lat"], p["lon"] = ap["lat"] + north / 60, ap["lon"] + nm / (60 * math.cos(math.radians(ap["lat"])))
+            return p
+        near = east_of_pdx(plane("a1", "ASA1", 0, alt=1500, track=280, vrate=-700, gs=150), 4)
+        far = east_of_pdx(plane("a2", "ASA2", 0, alt=3500, track=280, vrate=-700, gs=170), 10)
+        dep = east_of_pdx(plane("a3", "ASA3", 0, alt=2500, track=280, vrate=2000), -4)
+        high = east_of_pdx(plane("a4", "ASA4", 0, alt=36000, track=165, vrate=0, gs=450), 3, north=6)
+        cub = east_of_pdx(plane("a5", "N123", 0, alt=1800, typ="C172", category="A1", squawk="1200",
+                                track=40, vrate=0, gs=90), 2, north=8)
+        balloon = east_of_pdx(plane("a6", "N9B", 0, alt=1200, typ="BALL", category="B2", squawk="1200",
+                                    track=60, vrate=0, gs=6), 12, north=1)
+        self.t.update([far, near, dep, high, cub, balloon], "test")
+        self.assertEqual(self.t.flow["runways"], "28L / 28R")
+        ac = {a["hex"]: a for a in self.t.snapshot()["aircraft"]}
+        self.assertEqual({h: a["activity"] for h, a in ac.items()},
+                         {"a1": "arr", "a2": "arr", "a3": "dep", "a4": "pass", "a5": "loc", "a6": "loc"})
+        self.assertEqual((ac["a1"]["seq"], ac["a2"]["seq"]), (1, 2))
+        self.assertIn(ac["a1"]["rwy"], ("28L", "28R"))
+        self.assertIsNone(ac["a1"]["gap_s"])
+        self.assertEqual(ac["a2"]["gap_s"], ac["a2"]["lands_s"] - ac["a1"]["lands_s"])
+        self.assertTrue(60 < ac["a1"]["lands_s"] < 150, ac["a1"]["lands_s"])      # 4 nm at about 130 kt
+        self.assertEqual(ac["a6"].get("notable"), "unusual")
+        self.assertNotIn("notable", ac["a1"])
+        # every aircraft carries a short track, the newest point where it is now
+        self.t.update([dict(far, lat=far["lat"] + 0.001), dict(near), dep, high, cub, balloon], "test")
+        tail = {a["hex"]: a for a in self.t.snapshot()["aircraft"]}["a2"]["tail"]
+        self.assertEqual(len(tail), 2)
+        self.assertAlmostEqual(tail[-1][0], round(far["lat"] + 0.001, 4))
+
     def test_ordinal(self):
         self.assertEqual([ordinal(n) for n in (1, 2, 3, 4, 11, 12, 21)],
                          ["1st", "2nd", "3rd", "4th", "11th", "12th", "21st"])
@@ -1252,7 +1285,8 @@ class ServerTest(unittest.TestCase):
             s = json.loads(self.get(base + "/api/state" + q))
             self.assertEqual(t.fetch_radius(), 15)
         self.assertEqual(s["ranges"], [15, 20, 30])
-        self.assertEqual(s["kiosk"], {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0})
+        self.assertEqual(s["kiosk"], {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0,
+                                      "density": "simple"})
         self.get(base + "/api/state?range=30")
         self.assertEqual(t.fetch_radius(), 30)
         self.get(base + "/api/state?range=30&square=1")             # the ATC style's square screen

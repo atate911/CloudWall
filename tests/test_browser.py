@@ -103,6 +103,10 @@ class BrowserTest(unittest.TestCase):
         self.assertRegex(d["card"], "hero-card|idle-card")                  # a flight overhead, or the quiet-sky slides
         self.assertGreaterEqual(d["onScope"], 1)
         self.assertGreaterEqual(d["nearby"], 1)                              # the list beside the radar, on a wide screen
+        self.assertRegex(d["strip"], r"aircraft within|Nothing in the air")  # the situation, across the top
+        self.assertGreaterEqual(d["groups"], 1)                              # the list, grouped by what each is doing
+        self.assertEqual(d["profile"], 1)                                    # and the side view under it
+        self.assertTrue(d["simple"]["side"] and d["simple"]["radar"])        # Simple: the side panel, the simpler radar
         self.assertGreaterEqual(d["boardRows"], 1)
         self.assertGreaterEqual(d["heardRows"], 2)                           # the heading and the demo's fighters
         wx = d["weather"]
@@ -157,7 +161,7 @@ class BrowserTest(unittest.TestCase):
     def test_the_wall_panel(self):
         k = self.scenario("kiosk")
         self.assertIn("kiosk", k["layout"])
-        self.assertEqual((k["card"], k["tabsShown"]), (1, False))
+        self.assertEqual((k["simple"], k["side"], k["card"], k["tabsShown"]), (True, 1, 1, False))
         self.assertNotIn("map", k["scope"])                                  # the radar unless [kiosk] view says map
         self.assertGreaterEqual(k["onScope"], 1)
 
@@ -169,6 +173,7 @@ class BrowserTest(unittest.TestCase):
         self.assertIn("phone", p["layout"])
         self.assertGreaterEqual(p["boardRows"], 1)
         self.assertEqual(p["view"], "now")                                   # a tapped flight brings its card up
+        self.assertGreaterEqual(p["queue"], 1)
 
     def test_the_quiet_sky_slides(self):
         q = self.scenario("quiet")

@@ -56,8 +56,10 @@ DEFAULTS = {
     # The kiosk has no buttons: its place and radar are set here. place: a place's name (empty for
     # the first); view: "radar", or "map" for the flights on an everyday map; radar: "chart" or
     # "atc" (drawn like an air traffic control screen); tracks: the
-    # selected aircraft's track and one-minute lines; range_nm: 0 for the tracking radius, or 20 or 30 to see further.
-    "kiosk": {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0},
+    # selected aircraft's track and one-minute lines; range_nm: 0 for the tracking radius, or 20 or 30 to see further;
+    # density: "simple" (the landing queue and the next aircraft over the house, read across the room)
+    # or "detailed" (the flight card and every aircraft labelled).
+    "kiosk": {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0, "density": "simple"},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }

@@ -13,6 +13,7 @@ import { boardHtml, renderMiniBoard } from "./board.js";
 import { loadLog } from "./logbook.js";
 import { renderPlace, placeMenu } from "./places.js";
 import { refresh } from "./fresh.js";
+import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture } from "./situation.js";
 
 // Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
 const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
@@ -105,6 +106,20 @@ function radarPrefs() {
   const range = +(pick("range", KIOSK ? k.range_nm : store("range"), (v) => v != null && ranges.includes(+v)) || ranges[0]);
   return { style, tracks, range };
 }
+// How much a screen draws: "simple" (what's happening now: the next aircraft over the house, the
+// landing queue, what's worth a look) or "detailed" (every aircraft labelled and grouped, the flight
+// card, the side view). The desktop starts detailed, a phone and the wall panel simple; the switch
+// sets it for each screen, a phone apart from a desktop. The kiosk takes [kiosk] density.
+const densKey = () => (phone() ? "densityPhone" : "density");
+function density() {
+  const ok = (v) => v === "simple" || v === "detailed", k = (KIOSK && state && state.kiosk) || {};
+  return [qs.get("density"), KIOSK ? k.density : store(densKey())].find(ok) || (KIOSK || phone() ? "simple" : "detailed");
+}
+const simple = () => density() === "simple";
+// Simple shows the flight card's quiet-sky slides (the weather, the day so far) when there is nothing
+// to say about the traffic: nothing overhead or on its way, nothing landing.
+const quietSky = () => !!state && !state.hero && !state.next && !picture(state).groups.arr.length;
+const cardShown = () => !simple() || quietSky();
 let scopeLabel = "";
 function drawScopeNow(now = performance.now()) {
   if (!state || view !== "now") return;
@@ -113,7 +128,8 @@ function drawScopeNow(now = performance.now()) {
   const charts = state.charts || { map: state.basemap }, layers = charts.layers || {};
   const bm = mode === "map" ? layers[ms] : atc ? charts.atc : charts.map;
   const credit = bm && bm.enabled ? bm.attribution : "";
-  const label = [pref, mode, ms, credit, style, tracks, range, state.ranges].join("|");
+  const dens = density();
+  const label = [pref, mode, ms, credit, style, tracks, range, state.ranges, dens].join("|");
   if (label !== scopeLabel) {
     scopeLabel = label;
     document.querySelectorAll("#scope-seg button").forEach((b) => b.classList.toggle("on", b.dataset.mode === pref));
@@ -127,7 +143,7 @@ function drawScopeNow(now = performance.now()) {
     $("scope").classList.toggle("map", mode === "map");     // the radar's own options give way to the map's
     $("scope-attrib").textContent = credit;
   }
-  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range, mapStyle: ms });
+  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range, mapStyle: ms, simple: dens === "simple" });
 }
 
 // Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi. On a phone
@@ -172,10 +188,32 @@ function renderToggles() {
   $("night-text").textContent = n === "auto" ? "Night auto" : n === "on" ? "Night on" : "Night off";
   $("btn-night").classList.toggle("on", sky.night);
 }
+// The traffic picture around the radar: the strip across the top, and in Simple the side panel
+// (the next aircraft over the house, the landing queue, what's worth a look) in place of the card.
+// A phone splits the side around the radar and keeps the full list behind a button.
+let allOpen = false;
+function renderPicture(dens) {
+  const easy = dens === "simple", ph = phone();
+  if (!KIOSK) renderInto($("strip"), stripHtml(state, { text: !(ph && easy) }) + (ph ? densSeg(dens) : ""));
+  if (easy && KIOSK) renderInto($("side"), `<section class="k-sit">${stripHtml(state, { text: false })}</section>` + sideHtml(state, { queue: 3, notes: 2 }));
+  else if (easy && ph) { renderInto($("side"), sideHtml(state, { compact: true, notes: 0 })); renderInto($("notes"), notesHtml(state)); }
+  else if (easy) renderInto($("side"), sideHtml(state));
+  const n = picture(state).air.length;
+  $("show-all").innerHTML = `${allOpen ? "Hide the list" : `Show all ${n} aircraft, grouped`}<span aria-hidden="true">${allOpen ? "⌃" : "⌄"}</span>`;
+  $("show-all").setAttribute("aria-expanded", String(allOpen));
+  $("view-now").classList.toggle("all-open", allOpen);
+}
+const densSeg = (dens) => `<div class="seg dens mini" role="group" aria-label="How much to show">${["simple", "detailed"].map((d) =>
+  `<button data-dens="${d}" class="${d === dens ? "on" : ""}" aria-pressed="${d === dens}">${d === "simple" ? "Simple" : "Detailed"}</button>`).join("")}</div>`;
 function render() {
   if (!state) return;
   updateSky(state);
   renderToggles();
+  const dens = density();
+  document.body.classList.toggle("d-simple", dens === "simple");
+  document.body.classList.toggle("d-detailed", dens !== "simple");
+  document.body.classList.toggle("sky-quiet", quietSky());
+  document.querySelectorAll("#dens-seg button").forEach((b) => { b.classList.toggle("on", b.dataset.dens === dens); b.setAttribute("aria-pressed", String(b.dataset.dens === dens)); });
   paintTheme();
   const w = state.weather, f = state.flow;
   renderPlace(state, KIOSK);
@@ -203,7 +241,8 @@ function render() {
   if (view === "now") {
     keepPlace(() => {
       if (em.length) renderEmergency($("hero"), state, em, !KIOSK);
-      else (KIOSK ? renderKiosk : renderHero)($("hero"), state);
+      else if (cardShown()) (KIOSK ? renderKiosk : renderHero)($("hero"), state);
+      renderPicture(dens);
     });
     drawScopeNow(); if (!KIOSK) renderMiniBoard(state);
   }
@@ -265,7 +304,20 @@ document.addEventListener("error", (e) => {
   const t = e.target;
   if (t instanceof HTMLImageElement && t.classList.contains("logo") && !t.id) t.closest(".logo-tile").remove();
 }, true);
-document.addEventListener("click", (e) => { const b = e.target.closest(".mb-row"); if (b) pin(b.dataset.hex); });
+// a flight in a list, the landing queue or "worth a look": follow it on this screen
+document.addEventListener("click", (e) => {
+  const b = e.target.closest(".mb-row, .tr[data-hex], .q-row[data-hex], .n-row[data-hex]");
+  if (b && !b.closest("#board")) { pin(b.dataset.hex); return; }
+  const d = e.target.closest("button[data-dens]");
+  if (d) {      // Simple or Detailed, for this screen; a button wins over the address
+    qs.delete("density"); store(densKey(), d.dataset.dens);
+    forgetHero(); forgetKiosk(); scopeLabel = ""; allOpen = false;
+    render();
+  }
+});
+// the next aircraft over the house, in Simple: a tap on the one this screen follows lets it go
+$("side").addEventListener("click", (e) => { if (state && state.pinned && e.target.closest(".ss-over")) pin(null); });
+$("show-all").addEventListener("click", () => { allOpen = !allOpen; render(); });
 
 document.addEventListener("pointerdown", () => { lastTouch = Date.now(); });
 document.querySelector("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setView(b.dataset.view); });
@@ -276,7 +328,7 @@ $("radar").addEventListener("click", (e) => {
   if (g && state && state.aircraft.some((a) => a.hex === g.dataset.hex)) {
     pin(g.dataset.hex);
     // on a phone the card is above the radar, out of sight: bring it up to show what was tapped
-    if (phone() === "stack") $("hero").scrollIntoView({ behavior: "smooth", block: "start" });
+    if (phone() === "stack") $(simple() ? "side" : "hero").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 });
 $("hero").addEventListener("click", (e) => {
@@ -302,10 +354,13 @@ setInterval(() => {
   dropStale();
   if (!state || view !== "now") return;
   if (emergencies().length) { renderEmergency($("hero"), state, emergencies(), !KIOSK); return; }
+  tickCounts($("view-now"), state);
+  if (!cardShown()) return;
   const elapsed = (Date.now() - stateAt) / 1000;
   if (KIOSK) tickKiosk(elapsed, state.hero ? null : state);
   else if (state.hero) tickHero(elapsed); else keepPlace(() => renderHero($("hero"), state));
 }, 1000);
+setInterval(() => { if (state && view === "board" && !document.hidden) tickCounts($("board"), state); }, 1000);
 setInterval(() => { if (view === "log") loadLog(state).catch(() => {}); }, 30000);
 // Local time, with coordinated universal time beside it as aviation writes it ("0324Z").
 setInterval(() => {

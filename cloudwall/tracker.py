@@ -10,7 +10,7 @@ import re
 import threading
 import time
 
-from . import aircraft, airlines, config, contrails as contrail_mod, geo
+from . import aircraft, airlines, config, contrails as contrail_mod, geo, situation
 from .details import Details
 from .logbook import Logbook
 from .tracks import Tracks
@@ -266,6 +266,12 @@ class Tracker:
                     self._left_out("the details", a, e)
         for a in airborne:
             a["contrail"] = contrail_mod.for_altitude(contrails, a["alt"])
+            if a["hex"] not in done and "local" not in a:
+                # not looked up: how it flies near the airport still says if it's landing or leaving
+                try:
+                    a["local"] = self.details.infer_local(a)
+                except Exception as e:
+                    self._left_out("the activity", a, e)
         by_hex = {a["hex"]: a for a in raw}
         with self.lock:
             self.hero_hex = self._pick_hero(by_hex)
@@ -275,10 +281,25 @@ class Tracker:
             self.logbook.tidy(now)
             self.tracks.remember(airborne, now, beyond)
             self._update_flow(raw, now)
+            self._describe(raw, beyond)
             self.aircraft = raw
             self.beyond = beyond
             self.emergency = emergency
             self.status = {"source": source, "ok": True, "updated": now, "error": None}
+
+    def _describe(self, raw, beyond):
+        """What each aircraft is doing and the arrivals' landing order (situation.py), and the
+        last two minutes of every one's track, for the radar to draw behind it."""
+        try:
+            situation.describe(raw, self.cfg["airport"], self.flow)
+            iata = self.cfg["airport"].get("iata")
+            for a in beyond:
+                a["activity"] = situation.activity(a, iata)
+        except Exception as e:
+            self._left_out("the traffic picture", {"hex": "-"}, e)
+        for a in raw + beyond:
+            if not a["on_ground"]:
+                a["tail"] = situation.tail(self.tracks.trails.get(a["hex"], ()), self.trail_s)
 
     def _emergencies(self, raw, now):
         """Aircraft squawking 7700, 7600 or 7500, confirmed over more than one update."""

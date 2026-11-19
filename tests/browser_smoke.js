@@ -53,7 +53,18 @@ const SCENARIOS = {
     out.clock = await text(page, "#clock");
     out.card = await page.evaluate(() => document.getElementById("hero").className);
     out.onScope = await count(page, "#s-craft g.craft");
-    out.nearby = await count(page, "#mini-board .mb-row");
+    out.nearby = await count(page, "#mini-board .tr[data-hex]");
+    out.strip = await text(page, "#strip h1");
+    out.groups = await count(page, "#mini-board .gh");
+    out.profile = await count(page, "#mini-board svg.profile");
+    // the switch to Simple: the side panel in the card's place, numbers for the landing order on the radar
+    await page.click('#dens-seg button[data-dens="simple"]');
+    await page.waitForFunction(() => document.body.classList.contains("d-simple"));
+    await page.waitForTimeout(2500);
+    out.simple = { side: await page.evaluate(() => getComputedStyle(document.getElementById("side")).display !== "none" || document.body.classList.contains("sky-quiet")),
+      card: await page.evaluate(() => getComputedStyle(document.getElementById("hero")).display !== "none"),
+      radar: await page.evaluate(() => document.getElementById("radar").classList.contains("simple")) };
+    await page.click('#dens-seg button[data-dens="detailed"]');
     await tab(page, "board");
     await page.waitForSelector("table.board tbody tr[data-hex]");
     out.boardRows = await count(page, "table.board tbody tr[data-hex]");
@@ -137,12 +148,19 @@ const SCENARIOS = {
 
   // the wall panel
   async kiosk(browser, errors) {
-    const page = await open(browser, "kiosk", "/kiosk", errors), out = {};
+    // simple, as it starts: the counts, the landing queue and the next aircraft over the house beside the radar
+    let page = await open(browser, "kiosk", "/kiosk", errors);
+    const out = {};
     out.layout = await page.evaluate(() => document.documentElement.className);
     out.scope = await page.evaluate(() => document.getElementById("scope").className);
-    out.card = await count(page, "#hero .k-card");
+    out.simple = await page.evaluate(() => document.body.classList.contains("d-simple"));
+    out.side = await count(page, "#side .k-sit h1");
     out.onScope = await count(page, "#s-craft g.craft");
     out.tabsShown = await page.evaluate(() => getComputedStyle(document.querySelector("nav")).display !== "none");
+    await page.close();
+    // detailed: the flight card
+    page = await open(browser, "kiosk", "/kiosk?density=detailed", errors);
+    out.card = await count(page, "#hero .k-card");
     await page.close();
     return out;
   },
@@ -164,8 +182,10 @@ const SCENARIOS = {
     await page.waitForSelector(".pboard .pb-row[data-hex]");
     out.boardRows = await count(page, ".pboard .pb-row[data-hex]");
     await clickFirst(page, ".pboard .pb-row[data-hex]");
-    await page.waitForFunction(() => document.getElementById("h-pin") && !document.getElementById("h-pin").hidden, null, { timeout: 8000 });
+    // a phone starts simple: the side panel above the radar takes the flight that was tapped
+    await page.waitForFunction(() => /Selected/.test((document.querySelector("#side .so-head") || {}).textContent || ""), null, { timeout: 8000 });
     out.view = await page.evaluate(() => document.querySelector("nav button.active").dataset.view);
+    out.queue = await count(page, "#side .q-row, #side .ss-over");
     await page.close();
     return out;
   },
@@ -174,7 +194,7 @@ const SCENARIOS = {
   async quiet(browser, errors) {
     const empty = (state) => { state.hero = null; state.overhead = null; state.pinned = null; };
     const out = {};
-    for (const [size, path] of [["desktop", "/"], ["kiosk", "/kiosk"]]) {
+    for (const [size, path] of [["desktop", "/?density=detailed"], ["kiosk", "/kiosk?density=detailed"]]) {
       const page = await open(browser, size, path, errors, empty), seen = new Set();
       await page.waitForTimeout(2500);                  // the weather and the logbook arrive
       for (let i = 0; i < 10; i++) {

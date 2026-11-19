@@ -12,19 +12,19 @@
 
 :root {
   /* day chart */
-  --paper: #e8ebe5;     /* the wall: cool chart paper */
-  --sheet: #f4f5f1;     /* the flight card */
-  --disc: #eef1ec;      /* the radar's disc */
-  --ink: #1c2b3a;       /* text */
-  --ink-2: #3c4b5a;
-  --slate: #6b7884;     /* secondary text */
-  --rule: #cdd3cb;      /* hairlines */
-  --blue: #2e5e9e;      /* traffic, data */
-  --magenta: #b23271;   /* the aircraft overhead, and nothing else */
-  --red: #b8322a;       /* emergencies only */
-  --green: #2f7a4d;     /* climbing */
-  --water: #b9cbd8;
-  --halo: #f4f5f1;      /* behind labels on the radar */
+  --paper: #e1e5dc;     /* the wall: cool chart paper */
+  --sheet: #fafaf6;     /* the flight card */
+  --disc: #edf0e6;      /* the radar's disc */
+  --ink: #17273a;       /* text */
+  --ink-2: #334456;
+  --slate: #526070;     /* secondary text */
+  --rule: #c9d0c5;      /* hairlines */
+  --blue: #2b5c9c;      /* traffic, data */
+  --magenta: #b0306e;   /* the aircraft overhead, and nothing else */
+  --red: #b3261e;       /* emergencies only */
+  --green: #2c7449;     /* climbing */
+  --water: #b6ccdc;
+  --halo: #fafaf6;      /* behind labels on the radar */
   --sans: "B612", "DejaVu Sans", Arial, sans-serif;
   --mono: "B612 Mono", "DejaVu Sans Mono", Menlo, monospace;
   --corner: 2px;        /* controls are cut nearly square; sheets are square */
@@ -35,26 +35,26 @@
    they would keep the day colours. */
 body {
   --tick: color-mix(in srgb, var(--ink) 55%, transparent);
-  --frame: color-mix(in srgb, var(--ink) 16%, transparent);
+  --frame: color-mix(in srgb, var(--ink) 20%, transparent);
   --grid: color-mix(in srgb, var(--blue) 8%, transparent);
   --grid-major: color-mix(in srgb, var(--blue) 15%, transparent);
 }
 .fig { font-family: var(--sans); font-variant-numeric: tabular-nums; }
 body.night {
   /* night chart: the same drawing on deep navy, dim enough for a dark room */
-  --paper: #0e1722;
-  --sheet: #142030;
-  --disc: #112031;
-  --ink: #d5dde5;
-  --ink-2: #aab6c2;
-  --slate: #7a8a9a;
-  --rule: #24364a;
-  --blue: #7ea4d6;
-  --magenta: #d87aa8;
-  --red: #e0675e;
-  --green: #79b98f;
-  --water: #1f3a55;
-  --halo: #142030;
+  --paper: #0d1520;
+  --sheet: #131e2d;
+  --disc: #102033;
+  --ink: #dce3ea;
+  --ink-2: #aebac6;
+  --slate: #8696a6;
+  --rule: #26384c;
+  --blue: #84a9da;
+  --magenta: #de80ae;
+  --red: #e36a60;
+  --green: #7fbf94;
+  --water: #10263c;
+  --halo: #131e2d;
   --grid: color-mix(in srgb, var(--blue) 7%, transparent);
   --grid-major: color-mix(in srgb, var(--blue) 13%, transparent);
 }
@@ -711,12 +711,12 @@ body.night .sock-band.o { fill: #d0611f; } body.night .sock-band.w { fill: #d3d6
 html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
 @media (max-aspect-ratio: 1/1) { html.desk { font-size: clamp(12px, 2.1vw, 18px); } }
 #mini-board, .pane-split { display: none; }
-/* wide enough for a third panel: the Nearby list, behind a divider that hides it or, dragged,
+/* wide enough for a third panel: the traffic list, behind a divider that hides it or, dragged,
    gives the radar more or less room (divider.js sets the radar's and the list's columns; the
    card's stays put). Not on the phone layout, which a short, wide window also takes. */
 @media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
   html.desk:not(.phone) #view-now { column-gap: 0;
-    grid-template-columns: minmax(0, 1.45fr) 1.4rem minmax(0, var(--scope-w, 1fr)) 1.4rem minmax(0, var(--mb-w, .72fr)); }
+    grid-template-columns: minmax(0, 1.3fr) 1.4rem minmax(0, var(--scope-w, 1fr)) 1.4rem minmax(0, var(--mb-w, .85fr)); }
   html.desk:not(.phone) #view-now.animate { transition: grid-template-columns .22s ease-out; }
   html.desk:not(.phone) #hero { grid-column: 1; }
   html.desk:not(.phone) #scope { grid-column: 3; }
@@ -1248,3 +1248,264 @@ html.phone .em-read b { font-size: 1.6rem; }
 html.phone .em-read > div + div { padding-left: .8rem; }
 html.phone .em-read span { font-size: .8rem; }
 html.phone .em-hide { padding: .7rem 1rem; }
+
+/* ===================== the traffic picture ===================== */
+/* What each aircraft is doing, in four colours used on every screen: arriving, departing, flying
+   locally, passing over. Checked for colour-blind separation against each other on both themes;
+   orange and teal fall short of 3:1 on the paper, so they always come with a label or a key.
+   Magenta stays for the selected aircraft alone, as a ring, outside the four. */
+:root { --c-arr: #2a78d6; --c-dep: #1baf7a; --c-loc: #eb6834; --c-pass: #526070; --land: #edf0e6; --advisory: #865709; }
+body.night { --c-arr: #3987e5; --c-dep: #199e70; --c-loc: #d95926; --c-pass: #8696a6; --land: #172636; --advisory: #d6a04a; }
+.ci { flex: none; }
+.ci path { fill: var(--c-pass); }
+.ci.c-arr path { fill: var(--c-arr); } .ci.c-dep path { fill: var(--c-dep); } .ci.c-loc path { fill: var(--c-loc); }
+.ci.heard path { fill: var(--slate); }
+/* the place in the landing order, in a ring of the arrivals' colour */
+.seq { display: inline-grid; place-items: center; flex: none; width: 1.25rem; height: 1.25rem; border-radius: 99px; border: 1.5px solid var(--c-arr);
+  font: 700 .68rem var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ---- the strip across the top: the headline, the situation in a sentence, the key ---- */
+.strip { display: none; align-items: center; gap: 2rem; min-width: 0; }
+.sit { flex: 1; min-width: 0; }
+.sit h1 { font-size: 1.3rem; letter-spacing: -.01em; line-height: 1.2; }
+.sit p { font-size: .95rem; line-height: 1.45; color: var(--ink-2); margin-top: .2rem; max-width: 62em; }
+.keys { display: flex; flex-wrap: wrap; gap: .35rem 1.1rem; justify-content: flex-end; max-width: 30rem; }
+.key { display: inline-flex; align-items: center; gap: .4rem; font-size: .85rem; color: var(--ink-2); white-space: nowrap; }
+.key b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.d-simple .sit h1 { font-size: 1.55rem; }
+.d-simple .sit p { font-size: 1.05rem; }
+.seg.dens { position: static; flex: none; }
+.seg.dens button { padding: .45rem .7rem; }
+.board-strip { display: flex; margin-bottom: .6rem; padding-bottom: .7rem; border-bottom: 1px solid var(--rule); }
+
+/* ---- the side panel, in Simple: the next aircraft over the house, the landing queue, worth a look ---- */
+#side, #notes, .show-all { display: none; }
+.ss { --mark: .8rem; --mw: 2px; border: 1px solid var(--frame); padding: 1.3rem 1.5rem; flex-direction: column; gap: 1.3rem; overflow: hidden;
+  background:
+    linear-gradient(var(--tick) 0 0) left top / var(--mark) var(--mw), linear-gradient(var(--tick) 0 0) left top / var(--mw) var(--mark),
+    linear-gradient(var(--tick) 0 0) right top / var(--mark) var(--mw), linear-gradient(var(--tick) 0 0) right top / var(--mw) var(--mark),
+    linear-gradient(var(--tick) 0 0) left bottom / var(--mark) var(--mw), linear-gradient(var(--tick) 0 0) left bottom / var(--mw) var(--mark),
+    linear-gradient(var(--tick) 0 0) right bottom / var(--mark) var(--mw), linear-gradient(var(--tick) 0 0) right bottom / var(--mw) var(--mark), var(--sheet);
+  background-repeat: no-repeat; }
+.ss section { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+.ss section + section { padding-top: 1.1rem; border-top: 1px solid var(--rule); }
+.so-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.so-hint { font-size: .75rem; color: var(--slate); }
+.so-id { display: flex; align-items: center; gap: 1.1rem; min-width: 0; }
+.so-flight { font-size: 3.4rem; letter-spacing: -.02em; }
+.ss .logo-tile { height: 2.3rem; }
+.so-what { font-size: 1.15rem; color: var(--ink-2); line-height: 1.35; }
+.so-sub { font-size: .95rem; color: var(--slate); line-height: 1.4; }
+.so-row { display: flex; align-items: center; gap: 1.6rem; min-width: 0; }
+.so-plate { flex: 1 1 0; min-width: 0; height: 6.5rem; padding: 0; justify-content: flex-start; }
+.so-nums { display: flex; gap: 1.6rem; flex: none; }
+.so-nums > div { display: flex; flex-direction: column; }
+.so-nums > div + div { padding-left: 1.4rem; border-left: 1px solid var(--rule); }
+.so-nums b { font: 700 2.3rem/1.05 var(--sans); font-variant-numeric: tabular-nums; } .so-nums b small { font: 400 .8rem var(--mono); color: var(--slate); }
+.so-nums span { font-size: .85rem; color: var(--slate); }
+.q-row { display: grid; grid-template-columns: 1.8rem auto minmax(0, 1fr) auto; align-items: center; gap: .8rem; width: 100%; text-align: left;
+  padding: .45rem 0; border-top: 1px solid var(--rule); font-size: 1.05rem; }
+.q-row .seq { width: 1.5rem; height: 1.5rem; font-size: .78rem; }
+.q-fl { font-weight: 700; white-space: nowrap; } .q-from { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-t { font-variant-numeric: tabular-nums; }
+.q-row.sel, .n-row.sel { box-shadow: inset 3px 0 0 var(--magenta); padding-left: .6rem; background: color-mix(in srgb, var(--magenta) 6%, transparent); }
+.q-more { font-size: .85rem; color: var(--slate); padding-top: .2rem; }
+.n-row { display: grid; grid-template-columns: 1.8rem minmax(0, 1fr); align-items: start; gap: .8rem; width: 100%; text-align: left; padding: .45rem 0; border-top: 1px solid var(--rule); }
+.n-row .ci { margin-top: .2rem; justify-self: center; } .n-row b { font-size: 1.02rem; }
+.n-row small { display: block; font-size: .85rem; color: var(--slate); margin-top: .1rem; line-height: 1.35; }
+:is(.q-row, .n-row, .tr)[data-hex]:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+.show-all { justify-content: space-between; align-items: center; padding: .9rem 1rem; border: 1px solid var(--frame); background: var(--sheet); color: var(--blue); font-size: .95rem; }
+
+/* ---- Detailed: every aircraft, grouped by what it is doing; the side view under it ---- */
+.tlist { display: flex; flex-direction: column; }
+.gh { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-top: .55rem; padding-bottom: .2rem; }
+.gh:first-child { margin-top: 0; }
+.gl { display: inline-flex; align-items: center; gap: .45rem; font: 700 max(11px, .66rem) var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+.gl b { color: var(--slate); font-weight: 400; margin-left: .15rem; }
+.gn { font-size: .74rem; color: var(--slate); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gh.heard .gl { color: var(--advisory); }
+.tr { display: grid; grid-template-columns: 1.4rem 4.6rem minmax(0, 1fr) 4rem 3.2rem; align-items: center; column-gap: .5rem; width: 100%; text-align: left;
+  padding: .26rem .25rem; border-top: 1px solid var(--rule); font-size: .82rem; }
+.tr .lead { display: grid; place-items: center; }
+.tr .fl { font: 700 .88rem var(--mono); white-space: nowrap; }
+.tr .det { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tr .ty { font: .72rem var(--mono); color: var(--slate); margin-left: .45rem; }
+.tr .rwy { font: 700 .74rem var(--mono); color: var(--ink-2); margin-right: .45rem; }
+.tr .alt { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tr .alt i { font-style: normal; font-size: .7em; margin-left: .15rem; }
+.tr .when { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.05; }
+.tr .when b { font-variant-numeric: tabular-nums; }
+.tr .when.soon b { color: var(--magenta); }
+.tr .when small { font-size: .62rem; color: var(--slate); }
+.tr.sel { background: color-mix(in srgb, var(--magenta) 8%, transparent); box-shadow: inset 2px 0 0 var(--magenta); }
+.t-empty { color: var(--slate); padding: 1rem 0; }
+.sheet-title { font: max(11px, .64rem) var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); }
+.mb-prof { flex: none; display: flex; flex-direction: column; gap: .2rem; height: clamp(11rem, 32%, 16rem); padding-top: .6rem; border-top: 1px solid var(--rule); }
+.prof-box { flex: 1; min-height: 0; }
+.profile { display: block; overflow: visible; }
+.el-grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 3; }
+.el-tick, .el-cloud-l, .el-gs-l { font: 10px var(--sans); fill: var(--slate); font-variant-numeric: tabular-nums; }
+.el-cloud-l { font-family: var(--mono); letter-spacing: .04em; }
+.el-ground { stroke: var(--ink-2); stroke-width: 1.3; }
+.el-hatch { stroke: var(--slate); stroke-width: .8; opacity: .55; }
+.el-rwy { stroke: var(--ink); stroke-width: 3.2; }
+.el-apt { font: 700 10px var(--mono); fill: var(--ink); }
+.el-home { fill: var(--sheet); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; }
+.el-home-l { font: 10px var(--sans); fill: var(--ink); }
+.el-gs { fill: none; stroke: var(--c-arr); stroke-width: 1; stroke-dasharray: 4 3; opacity: .8; }
+.el-gs-l { fill: var(--c-arr); }
+.el-cloud { fill: var(--sheet); stroke: color-mix(in srgb, var(--ink) 20%, transparent); stroke-width: .9; }
+body.night .el-cloud { fill: #2a3b50; stroke: #43586f; }
+.el-glyph { fill: none; stroke: var(--c-loc); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
+.pf-craft .sil { --sil-line: color-mix(in srgb, var(--c-pass) 90%, var(--ink)); --sil-body: color-mix(in srgb, var(--c-pass) 8%, var(--sheet)); --sil-wing: color-mix(in srgb, var(--c-pass) 22%, var(--sheet)); }
+.pf-craft.c-arr .sil { --sil-line: var(--c-arr); --sil-body: color-mix(in srgb, var(--c-arr) 10%, var(--sheet)); --sil-wing: color-mix(in srgb, var(--c-arr) 28%, var(--sheet)); }
+.pf-craft.c-dep .sil { --sil-line: color-mix(in srgb, var(--c-dep) 80%, var(--ink)); --sil-body: color-mix(in srgb, var(--c-dep) 10%, var(--sheet)); --sil-wing: color-mix(in srgb, var(--c-dep) 28%, var(--sheet)); }
+.pf-craft.c-loc .sil { --sil-line: color-mix(in srgb, var(--c-loc) 85%, var(--ink)); --sil-body: color-mix(in srgb, var(--c-loc) 10%, var(--sheet)); --sil-wing: color-mix(in srgb, var(--c-loc) 28%, var(--sheet)); }
+.pf-sel { fill: color-mix(in srgb, var(--magenta) 9%, transparent); stroke: var(--magenta); stroke-width: 1.2; }
+.pf-lab { font: 700 10px var(--mono); fill: var(--ink); paint-order: stroke; stroke: var(--sheet); stroke-width: 3px; stroke-linejoin: round; }
+.pf-seq circle { fill: var(--sheet); stroke: var(--c-arr); stroke-width: 1.3; }
+.pf-seq text { font: 700 8.5px var(--mono); fill: var(--ink); }
+
+/* ---- the radar, coloured by what each aircraft is doing (the chart style; the Map view and the
+   ATC style keep their own colours) ---- */
+#scope:not(.map, .atc) #radar .scope-bg { fill: var(--land); }
+#scope:not(.map, .atc) #radar .basemap:is(.dark, .carto-dark) { filter: url(#chart-tint) blur(.25px); mix-blend-mode: normal; opacity: .95 !important; }
+body.night #scope:not(.map, .atc) #radar .basemap:is(.dark, .carto-dark) { filter: url(#chart-tint-night) blur(.25px); mix-blend-mode: normal; }
+#scope:not(.map, .atc) #radar .ring { stroke: color-mix(in srgb, var(--ink) 20%, transparent); }
+#scope:not(.map, .atc) #radar :is(.tag, .tag-sub) { stroke: var(--land); }
+#scope:not(.map, .atc) #radar .craft .blip { fill: var(--c-pass); }
+#scope:not(.map, .atc) #radar .craft.c-arr .blip { fill: var(--c-arr); }
+#scope:not(.map, .atc) #radar .craft.c-dep .blip { fill: var(--c-dep); }
+#scope:not(.map, .atc) #radar .craft.c-loc .blip { fill: var(--c-loc); }
+#scope:not(.map, .atc) #radar .craft .vec { stroke: var(--c-pass); opacity: .8; }
+#scope:not(.map, .atc) #radar .craft.c-arr .vec { stroke: var(--c-arr); }
+#scope:not(.map, .atc) #radar .craft.c-dep .vec { stroke: var(--c-dep); }
+#scope:not(.map, .atc) #radar .craft.c-loc .vec { stroke: var(--c-loc); }
+#scope:not(.map, .atc) #radar .craft.hero .tag { fill: var(--ink); }
+#radar .sel-ring { fill: color-mix(in srgb, var(--magenta) 10%, transparent); stroke: var(--magenta); stroke-width: .9; }
+#radar .tl line { stroke: var(--c-pass); stroke-width: .9; stroke-linecap: round; }
+#radar .tl.c-arr line { stroke: var(--c-arr); } #radar .tl.c-dep line { stroke: var(--c-dep); } #radar .tl.c-loc line { stroke: var(--c-loc); }
+#radar .tl > line { opacity: .6; }
+#radar .final-tick { fill: none; stroke: var(--ink-2); stroke-width: .35; opacity: .7; }
+#radar .final-label { font: 700 4.2px var(--mono); fill: var(--ink-2); paint-order: stroke; stroke: var(--land); stroke-width: 1.2px; stroke-linejoin: round; }
+#radar .heard-note { fill: var(--advisory); }
+#radar .seqring { fill: var(--land); stroke: var(--c-arr); stroke-width: .7; }
+#radar .tag.seqtag { font: 700 4.4px var(--mono); stroke-width: 0; }
+/* Simple: no bearings, airfields, ticks or other tracks; the landing order as numbers, words for the rest that matter */
+#radar.simple :is(.bearing, .field-mark, .field-label, .heard-note, .spoke, .final-tick, .approach-tick) { display: none; }
+#radar.simple .craft:not(.hero) .vec { display: none; }
+#radar.simple .tag:not(.seqtag) { font-size: 5.6px; }
+#radar.simple .tag-sub { font-family: var(--sans); font-size: 4.6px; }
+#radar.simple .ring-label { opacity: .8; }
+
+/* ---- the desktop ---- */
+html.desk:not(.phone) #view-now { grid-template-rows: auto minmax(0, 1fr); row-gap: .9rem; }
+html.desk:not(.phone) #strip { display: flex; grid-column: 1 / -1; }
+html.desk:not(.phone) #view-now > :not(#strip) { grid-row: 2; }
+html.desk:not(.phone) body.d-detailed #mini-board { flex-direction: column; overflow: hidden; padding: .8rem 1rem .5rem; }
+html.desk:not(.phone) body.d-detailed #mini-board > * { min-width: 18rem; }
+html.desk:not(.phone) body.d-detailed .mb-list { flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+@media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
+  html.desk:not(.phone) body.d-detailed #mini-board { display: flex; }
+  html.desk:not(.phone) body.d-detailed #view-now.nearby-closed #mini-board { display: none; }
+}
+/* Simple: the side panel takes the flight card's place, beside the radar */
+html.desk:not(.phone) body.d-simple #view-now { grid-template-columns: minmax(0, .95fr) minmax(0, 1.2fr); column-gap: 1.6rem; }
+html.desk:not(.phone) body.d-simple :is(#hero, #mini-board, .pane-split) { display: none; }
+html.desk:not(.phone) body.d-simple #side { display: flex; grid-column: 1; }
+html.desk:not(.phone) body.d-simple #scope { grid-column: 2; }
+html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #hero { display: block; grid-column: 1; }
+html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #side { display: none; }
+@media (max-aspect-ratio: 1/1) {
+  html.desk:not(.phone) body.d-simple #view-now { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); }
+  html.desk:not(.phone) body.d-simple #side { grid-column: 1; grid-row: 2; }
+  html.desk:not(.phone) body.d-simple #scope { grid-column: 1; grid-row: 3; }
+  html.desk:not(.phone) #view-now > #scope { grid-row: 3; }
+}
+
+/* ---- the wall panel: Simple puts the counts, the queue and the next aircraft over the house beside the radar ---- */
+.kiosk body.d-simple #view-now { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+.kiosk body.d-simple #hero { display: none; }
+.kiosk body.d-simple:is(.emergency, .sky-quiet) #hero { display: block; }
+.kiosk body.d-simple:is(.emergency, .sky-quiet) #side { display: none; }
+.kiosk body.d-simple #side { display: flex; --mark: 2.4vh; padding: 2.8vh 3.4vh; gap: 2vh; }
+.kiosk .ss section { gap: .8vh; }
+.kiosk .ss section + section { padding-top: 1.8vh; border-top-width: 2px; }
+.kiosk .ss .label { font-size: 2vh; }
+.kiosk .k-sit .strip, .kiosk .k-sit { display: flex; flex-direction: column; align-items: stretch; gap: 1.4vh; }
+.kiosk .k-sit h1 { font-size: 5vh; line-height: 1.05; letter-spacing: -.02em; }
+.kiosk .k-sit .keys { display: grid; grid-template-columns: 1fr 1fr; gap: .8vh 3vh; justify-content: stretch; max-width: none; }
+.kiosk .k-sit .key { font-size: 2.7vh; gap: 1.2vh; } .kiosk .k-sit .key b { font-size: 3.4vh; margin-left: auto; }
+.kiosk .k-sit .ci { width: 3.2vh; height: 3.2vh; }
+.kiosk .so-flight { font-size: 7vh; }
+.kiosk .ss .logo-tile { height: 4.4vh; }
+.kiosk .so-what { font-size: 2.6vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kiosk .so-plate { height: 8vh; }
+.kiosk .so-nums b { font-size: 5.2vh; } .kiosk .so-nums b small { font-size: 1.9vh; } .kiosk .so-nums span { font-size: 2vh; }
+.kiosk .q-row { font-size: 2.9vh; padding: .8vh 0; gap: 2vh; grid-template-columns: 4.2vh auto minmax(0, 1fr) auto; border-top-width: 2px; }
+.kiosk .q-row .seq { width: 3.8vh; height: 3.8vh; font-size: 2vh; border-width: 2px; }
+.kiosk .q-t { font-weight: 700; }
+.kiosk .q-more, .kiosk .so-sub { font-size: 2vh; }
+.kiosk .n-row { grid-template-columns: 4.2vh minmax(0, 1fr); gap: 2vh; padding: .8vh 0; border-top-width: 2px; }
+.kiosk .n-row b { font-size: 2.7vh; } .kiosk .n-row small { display: none; } .kiosk .n-row .ci { width: 3.2vh; height: 3.2vh; margin-top: 0; }
+/* if it still doesn't fit, the last of what's worth a look gives way first */
+.kiosk .ss-note { flex: 0 1 auto; min-height: 0; overflow: hidden; }
+.kiosk #radar.simple .tag:not(.seqtag) { font-size: 8.4px; stroke-width: 2.2px; }
+.kiosk #radar.simple .tag.seqtag { font-size: 6.4px; }
+.kiosk #radar.simple .tag-sub { font-size: 6.6px; }
+.kiosk #radar .final-label { font-size: 5.4px; }
+
+/* ---- the phone ---- */
+html.phone #strip { display: flex; flex-direction: column; align-items: stretch; gap: .55rem; }
+html.phone .keys { justify-content: flex-start; max-width: none; }
+html.phone header .seg.dens { display: none; }
+html.phone .seg.dens.mini { align-self: flex-start; }
+html.phone .seg.dens.mini button { padding: .5rem .8rem; }
+html.phone .sit h1 { font-size: 1.3rem; }
+html.phone .ss { padding: 1rem; gap: 1rem; }
+html.phone .so-flight { font-size: 2.4rem; }
+html.phone .so-what { font-size: 1rem; }
+html.phone .so-nums b { font-size: 1.8rem; }
+html.phone .q-row { font-size: .95rem; }
+html.phone .gn { display: none; }
+html.phone body.d-detailed #mini-board { display: block; }
+html.phone:not(.land) #view-now > #strip { order: 0; } html.phone:not(.land) #view-now > #hero { order: 1; }
+html.phone:not(.land) #view-now > #side { order: 1; } html.phone:not(.land) #view-now > #scope { order: 2; }
+html.phone:not(.land) #view-now > #notes { order: 3; } html.phone:not(.land) #view-now > .show-all { order: 4; }
+html.phone:not(.land) #view-now > #mini-board { order: 5; }
+html.phone body.d-simple #hero { display: none; }
+html.phone body.d-simple #side { display: flex; }
+html.phone:not(.land) body.d-simple #notes:not(:empty) { display: flex; }
+html.phone:not(.land) body.d-simple .show-all { display: flex; }
+html.phone body.d-simple #mini-board { display: none; }
+html.phone:not(.land) body.d-simple #view-now.all-open #mini-board { display: block; }
+html.phone body.d-simple:is(.emergency, .sky-quiet) #hero { display: block; }
+html.phone body.d-simple:is(.emergency, .sky-quiet) #side { display: none; }
+html.phone.land #view-now { grid-template-rows: auto minmax(0, 1fr); }
+html.phone.land #strip { grid-column: 1 / -1; flex-direction: row; align-items: center; }
+html.phone.land #strip .sit h1 { font-size: 1.05rem; }
+html.phone.land #view-now > :not(#strip) { grid-row: 2; }
+html.phone.land body.d-simple #side { overflow-y: auto; }
+html.phone.land body.d-detailed #mini-board { display: none; }
+html.phone.land .seg.dens.mini { flex-direction: row; }
+html.phone.land .seg.dens.mini button + button { border-top: 0; border-left: 1px solid var(--rule); }
+/* the phone's Board: two lines a flight under each group's heading, the landing number or the group's icon first */
+.pb-row { grid-template-columns: 1.4rem 5.4rem minmax(0, 1fr) auto; grid-template-areas: "k id rt when" "k l2 l2 l2"; }
+.pb-k { grid-area: k; align-self: center; display: grid; place-items: center; }
+.pb-h { margin-top: 1rem; } .pb-h b { color: var(--ink); }
+.pb-h .ci { margin-right: -.3rem; }
+
+/* ---- the Board, grouped ---- */
+table.grouped td.b-k { width: 2rem; padding-right: 0; }
+table.grouped tr.gsec th { position: static; padding: 1.1rem .7rem .45rem; background: transparent; border-bottom: 1px solid var(--rule); text-transform: none; letter-spacing: 0; }
+table.grouped tr.gsec th .gl { margin-right: 1rem; }
+table.grouped tr.gsec th .gn { font: .8rem var(--sans); }
+table.grouped tbody tr.gsec + tr td { border-top: 0; }
+table.grouped tr.sel td { background: color-mix(in srgb, var(--magenta) 7%, transparent); }
+table.grouped tr.sel td:first-child { box-shadow: inset 2px 0 0 var(--magenta); }
+table.grouped tr[data-hex] { cursor: pointer; }
+table.grouped td.rt b { font-weight: 700; } table.grouped .b-to { font: 400 .78rem var(--sans); color: var(--slate); }
+.bs { display: flex; flex-direction: column; font-size: .92rem; white-space: nowrap; }
+.bs1 { display: block; } .bs1 .seq { margin-right: .45rem; vertical-align: -.15rem; }
+.bs small { font-size: .74rem; color: var(--slate); margin-top: .1rem; max-width: none; }
+.bs b { font-variant-numeric: tabular-nums; }
