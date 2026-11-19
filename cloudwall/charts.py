@@ -10,12 +10,16 @@ The FAA charts are the Aeronautical Information Services' own tiled charts on Ar
     sectional  VFR Sectional
     terminal   VFR Terminal Area, where there is one (Portland has one); the Sectional elsewhere
 
+One more layer covers the whole world instead of the area around home:
+
+    world      the flight card's route map, [map] route ("satellite" unless set), zooms 0 to 6
+
 A display asks for a layer by name, so a new use of a chart is a new layer here and a line in
 the display, nothing else. [map] style picks the chart-style radar's map (a street map unless
 set, or one of these charts) and [map] atc the ATC-style radar's chart (none unless set: a real
 controller's screen has only its video map).
 """
-from .tiles import Tiles
+from .tiles import STYLES, Tiles
 
 FAA = ("https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/"
        "{service}/MapServer/tile/{{z}}/{{y}}/{{x}}")
@@ -53,6 +57,11 @@ class Charts:
         self.layers["map"] = self.map
         atc = str(m.get("atc") or "off").lower()
         self.atc = self.layers.get(atc) if atc in FAA_LAYERS else None
+        route = str(m.get("route") or "satellite").lower()
+        if route in STYLES:
+            url, credit = STYLES[route]
+            self.layers["world"] = Tiles(cfg, cache_dir, layer={"id": route, "url": url, "attribution": credit,
+                                                                "zooms": (0, 6), "anywhere": True})
 
     @property
     def homes(self):

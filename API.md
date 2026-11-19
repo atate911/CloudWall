@@ -60,7 +60,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `contrails` | always | The contrail forecast in short, or null: `summary`, `persistent` and `short` (each `[from_ft, to_ft]` or null), `at`, `source`. |
 | `live_routes` | always | The paid route provider's state, or null without one: `name`, `label`, `enabled`, `mode`, `unit`, `margin`, `used_today`, `daily_limit`, `period_used`, `period_budget`, `monthly_limit`, `resets`, `reported`, `problem`. |
 | `basemap` | always | The radar's map: `enabled`, `style`, `attribution`, `opacity`, `zooms`. |
-| `charts` | always | The chart layers the server can serve as tiles: `map`, `atc` (or null) and `layers` by name. |
+| `charts` | always | The chart layers the server can serve as tiles: `map`, `atc` (or null) and `layers` by name, among them `world`, the flight card's route map, served everywhere at zooms 0 to 6 (absent when `[map] route` is off). |
 | `logos` | always | Whether airline logos are served at `/logos/<IATA>`. |
 | `restart` | always | True when the server's code has changed on disk since it started: it wants restarting. |
 

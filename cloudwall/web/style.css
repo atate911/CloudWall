@@ -253,6 +253,32 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .apt-when b { font: 700 1.15rem var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
 .apt-when b i { font-style: normal; font-weight: 400; font-size: .75em; color: var(--slate); }
 .route.unsure .apt, .route.unsure .arc { opacity: .35; }
+/* the route on a real map: airports either side of the distance and flight time, the map below */
+.h-route:has(.mapped) { justify-content: stretch; flex: 1.5; }
+.route.mapped { row-gap: .9rem; flex: 1; min-height: 0; grid-template-rows: auto minmax(7rem, 15rem); align-content: center; }
+.route.mapped > .arc-note { align-self: center; margin-top: 0; font-size: .8rem; }
+.rmap { grid-column: 1 / -1; align-self: stretch; position: relative; min-height: 0; overflow: hidden;
+  border: 1px solid var(--rule); background: var(--disc); }
+.route.unsure .rmap { opacity: .4; }
+.rm { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.rm-tiles.satellite { filter: saturate(.8) brightness(.95); }
+.rm-tiles.dark { filter: brightness(1.15); }
+body.night .rm-tiles.satellite, body.night .rm-tiles.osm { filter: saturate(.65) brightness(.62); }
+body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8); }
+.rm path { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+.rm-halo { stroke: rgb(0 0 0 / .45); stroke-width: 5; }
+.rm-todo { stroke: #fff; stroke-width: 1.6; stroke-dasharray: 3 4; opacity: .9; }
+.rm-done { stroke: var(--magenta); stroke-width: 2.6; }
+.rm-apt { fill: #fff; stroke: #0b1320; }
+.rm-apt.local { fill: var(--blue); }
+.rm-code { font-family: var(--mono); font-weight: 700; fill: #fff; stroke: rgb(0 0 0 / .65); paint-order: stroke; letter-spacing: .04em; }
+.rm-code.local { fill: color-mix(in srgb, var(--blue) 55%, #fff); }
+.rm-craft { fill: var(--magenta); stroke: #fff; }
+.rm-ring { fill: none; stroke: var(--magenta); opacity: .8; transform-box: fill-box; transform-origin: center; animation: rm-ping 2.4s ease-out infinite; }
+@keyframes rm-ping { from { transform: scale(.5); opacity: .9; } to { transform: scale(1.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rm-ring { animation: none; } }
+.rm-credit { position: absolute; right: .3rem; bottom: .2rem; font-size: .5rem; color: rgb(255 255 255 / .75);
+  text-shadow: 0 0 3px #000; max-width: 70%; text-align: right; pointer-events: none; }
 
 .route.inferred .arc-note { color: var(--ink-2); }
 .route.inferred .arc-note .why { color: var(--slate); font-size: .68rem; }

@@ -770,7 +770,7 @@ class ChartsTest(unittest.TestCase):
             info = self.charts(d, atc="ifr-low").info()
             self.assertEqual((info["atc"]["layer"], info["atc"]["name"]), ("ifr-low", "IFR Enroute Low"))
             self.assertIn("FAA", info["atc"]["attribution"])
-            self.assertEqual(set(info["layers"]), {"ifr-low", "ifr-high", "sectional", "terminal"})
+            self.assertEqual(set(info["layers"]), {"ifr-low", "ifr-high", "sectional", "terminal", "world"})
             self.assertEqual(list(info["layers"]["ifr-low"]["zooms"]), [7, 11])
             self.assertIn("IFR_AreaLow/MapServer/tile/{z}/{y}/{x}", self.charts(d).layers["ifr-low"].url)
             c = self.charts(d, style="Sectional", atc="off")            # any case
@@ -809,7 +809,22 @@ class ChartsTest(unittest.TestCase):
             sfo = (11, 327, 791)
             self.assertFalse(c.layers["ifr-low"].allowed(*sfo))
             c.homes = [config.load()["home"], {"lat": 37.62, "lon": -122.38}]
-            self.assertTrue(all(t.allowed(*sfo) for lid, t in c.layers.items() if lid not in ("map", "ifr-high")))
+            self.assertTrue(all(t.allowed(*sfo) for lid, t in c.layers.items() if lid not in ("map", "ifr-high", "world")))
+
+    def test_the_route_map_covers_the_whole_world_at_low_zooms_only(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            c = self.charts(d)
+            w = c.layers["world"]
+            self.assertIn("World_Imagery", w.url)                      # satellite unless set
+            self.assertEqual(c.info()["layers"]["world"]["style"], "satellite")
+            self.assertTrue(w.allowed(0, 0, 0))
+            self.assertTrue(w.allowed(6, 56, 25))                       # Tokyo, half a world from home
+            self.assertFalse(w.allowed(7, 112, 50))                     # but no closer than zoom 6
+            self.assertFalse(w.allowed(6, 64, 0))                       # and only real tiles
+            self.assertIn("Light_Gray", self.charts(d, route="light").layers["world"].url)
+            self.assertNotIn("world", self.charts(d, route="off").layers)
+            self.assertNotIn("world", self.charts(d, route="nonsense").layers)
 
 
 class WakeTest(unittest.TestCase):

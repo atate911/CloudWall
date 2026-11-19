@@ -64,6 +64,9 @@ class Tiles:
             self.opacity = float(m.get("opacity", 0.32))
         self.zooms = tuple((layer or {}).get("zooms", (6, 17)))
         self.is_layer = bool(layer)
+        # a layer for the whole world (the flight card's route map) is served anywhere, but only at
+        # its low zooms: zoom 6 and out is at most 5,461 tiles for the entire planet
+        self.anywhere = bool((layer or {}).get("anywhere"))
         self.fallback = None
         self.enabled = self.style != "off" and bool(self.url)
         self.homes = [cfg["home"]]      # every place watched (set by the caller when there are several)
@@ -87,6 +90,8 @@ class Tiles:
     def allowed(self, z, x, y):
         if not (self.zooms[0] <= z <= self.zooms[1] and 0 <= x < 2 ** z and 0 <= y < 2 ** z):
             return False
+        if self.anywhere:
+            return True
         # any tile with part of it in reach: a square display's corners at the longest range
         # take tiles whose centres are well beyond it
         return any(haversine_nm(h["lat"], h["lon"], *tile_nearest(z, x, y, h["lat"], h["lon"])) <= self.reach_nm

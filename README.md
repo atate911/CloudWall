@@ -359,6 +359,11 @@ no requests (or, with `"log"`, only the slow position check).
   screen). CloudWall downloads each tile once, caches it for a
   month next to the logbook, and serves it to the display itself, so the map provider sees
   only your server and an API key never reaches the browser.
+- The flight card draws the flight's route on a real map too: the great circle between its
+  airports over Esri's satellite imagery, framed to fit the trip (a hop to Seattle, a coast to
+  coast, or Tokyo across the date line), flown part in magenta and the aircraft where it is now.
+  `[map] route` can be `light`, `dark`, `osm`, or `off` for the plain arc. Its tiles come from
+  zoom 0 to 6 only, the one map CloudWall serves for the whole world, cached the same way.
 - The charts are the FAA Aeronautical Information Services' own tiled charts (public domain),
   current to the 56-day chart cycle within a month. `cloudwall/charts.py` keeps every map and
   chart in one place and serves each at `/tiles/<layer>/z/x/y`, so a new use for a chart is a

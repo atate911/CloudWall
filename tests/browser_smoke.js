@@ -16,8 +16,9 @@ const BASE = process.argv[2];
 const SIZES = { desktop: { viewport: { width: 1600, height: 950 } }, kiosk: { viewport: { width: 1024, height: 600 } },
   phone: { ...devices["iPhone 13"] } };
 
-async function open(browser, size, path, errors, tamper) {
+async function open(browser, size, path, errors, tamper, before) {
   const page = await (await browser.newContext(SIZES[size])).newPage();
+  if (before) await before(page);
   page.on("console", (m) => { if (m.type() === "error") errors.push(`console: ${m.text()}`); });
   page.on("pageerror", (e) => errors.push(`page error: ${e.message}`));
   page.on("response", (r) => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url().replace(BASE, "")}`); });
@@ -177,6 +178,35 @@ const SCENARIOS = {
     await page.click("#em-hide");
     await page.waitForFunction(() => !document.body.classList.contains("emergency"));
     out.hidden = true;
+    await page.close();
+    return out;
+  },
+
+  // the flight card's route on a real map: switched on, with a flight across the Pacific (over the
+  // date line) and stand-in tiles, so that nothing is fetched from the map provider
+  async routeMap(browser, errors) {
+    const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkqP9fDwAEhAGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+    const tiles = [];
+    const pacific = (state) => {
+      state.charts.layers.world = { enabled: true, style: "satellite", attribution: "Test imagery", zooms: [0, 6], layer: "world" };
+      const a = state.hero || state.aircraft.find((x) => !x.on_ground) || state.aircraft[0];
+      Object.assign(a, { local: null, local_inferred: false, route_pending: false, route: { flight: "NH6", airline: "ANA", plausible: true, progress: 0.9,
+        origin: { iata: "HND", city: "Tokyo", lat: 35.55, lon: 139.78 }, dest: { iata: "PDX", city: "Portland", lat: 45.59, lon: -122.6 },
+        flown_nm: 3900, left_nm: 430 } });
+      state.hero = a;
+    };
+    const fake = (page) => page.route("**/tiles/world/**", (route) => { tiles.push(route.request().url()); return route.fulfill({ contentType: "image/png", body: PNG }); });
+    const page = await open(browser, "desktop", "/", errors, pacific, fake), out = {};
+    await page.waitForSelector("#h-map svg.rm image", { state: "attached" });
+    out.tiles = tiles.length;
+    out.zooms = [...new Set(tiles.map((u) => +u.split("/tiles/world/")[1].split("/")[0]))];
+    out.drawn = await page.evaluate(() => {
+      const box = document.getElementById("h-map").getBoundingClientRect(), dot = document.querySelector("#h-map .rm-craft").getBoundingClientRect();
+      const len = (s) => (document.querySelector(s).getAttribute("d") || "").split("L").length;
+      return { height: Math.round(box.height), done: len("#h-map .rm-done"), todo: len("#h-map .rm-todo"),
+        craftInside: dot.left >= box.left && dot.right <= box.right && dot.top >= box.top && dot.bottom <= box.bottom,
+        codes: [...document.querySelectorAll("#h-map .rm-code")].map((t) => t.textContent), credit: document.querySelector("#h-map .rm-credit").textContent };
+    });
     await page.close();
     return out;
   },

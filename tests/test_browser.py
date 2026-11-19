@@ -50,7 +50,7 @@ class BrowserTest(unittest.TestCase):
         cls.folder = tempfile.TemporaryDirectory()
         cls.addClassCleanup(cls.folder.cleanup)
         folder = Path(cls.folder.name)
-        (folder / "config.toml").write_text('[map]\nstyle = "off"\n[logos]\nenabled = false\n')     # nothing to fetch
+        (folder / "config.toml").write_text('[map]\nstyle = "off"\nroute = "off"\n[logos]\nenabled = false\n')     # nothing to fetch
         with socket.socket() as s:
             s.bind(("127.0.0.1", 0))
             port = s.getsockname()[1]
@@ -130,6 +130,17 @@ class BrowserTest(unittest.TestCase):
         self.assertGreaterEqual(c["places"], 1)
         self.assertIn("98683", c["located"]["where"])
         self.assertGreaterEqual(c["located"]["airports"], 2)                 # the closest major airport, and others
+
+    def test_the_route_on_a_map(self):
+        m = self.scenario("routeMap")
+        self.assertGreaterEqual(m["tiles"], 2)
+        self.assertTrue(all(0 <= z <= 6 for z in m["zooms"]))                # the world layer's zooms only
+        d = m["drawn"]
+        self.assertGreaterEqual(d["height"], 100)
+        self.assertGreater(d["done"], 10)                                    # most of the way flown
+        self.assertGreater(d["todo"], d["done"])
+        self.assertTrue(d["craftInside"])                                    # the aircraft is on the map
+        self.assertEqual((d["codes"], d["credit"]), (["HND", "PDX"], "Test imagery"))
 
     def test_the_wall_panel(self):
         k = self.scenario("kiosk")

@@ -68,7 +68,7 @@ It is layered, each layer using only those below it:
 | `airlines.py`, `aircraft.py` | The two reference tables everything asks: airlines (`data/airlines.csv`: code, name, freight-only, colours) and aircraft types (`data/types.csv`: shape, length, rarity, radar icon; `data/cwt.csv`: wake category). `aircraft.icon()` also decides which kind of traffic an aircraft is drawn as on the radar. |
 | `airports.py`, `seats.py`, `geo.py` | The other bundled tables (airports, runways, ZIP codes, airspace, navaids, seats) and the geometry helpers. `tools/build_data.py` rebuilds the generated ones. |
 | `store.py` | SQLite: the `sightings` table (the logbook and its queries) and a `cache` table of JSON values by kind and key. One connection, one lock. `prune()` clears cached values past their use; each logbook notes the place it is kept at (`claim`, `another_places`). |
-| `tiles.py`, `charts.py`, `logos.py` | Disk-cached proxies: map and chart tiles (only around the watched places), and airline logos. |
+| `tiles.py`, `charts.py`, `logos.py` | Disk-cached proxies: map and chart tiles (only around the watched places, except the route map's world layer at zoom 6 and out), and airline logos. |
 | `config.py` | Defaults overlaid with the TOML file; turns `[home]`, `[airport]` and `[[places]]` into one complete config per place. The file's settings are checked as it is read (`check`): a wrong kind of value is refused by name, an unknown name warned about. |
 | `activity.py`, `http.py` | `Activity`: when a screen last asked for data; everything that costs a request checks it. `get_json` / `get_text` with CloudWall's User-Agent. |
 
@@ -206,6 +206,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | `scope.js` | The radar (chart and ATC styles) and the sky dome: a static layer rebuilt on each update and one persistent SVG group per aircraft, moved every frame. |
 | `parts.js` | What several displays are made of: the logo tile, badges, a flight number as boards set it, "Landing at ...", records. |
 | `map.js` | The ground under the displays: map tiles around home, the hand-drawn map, runways. |
+| `routemap.js` | The flight card's route on a real map: world-layer tiles, the great-circle path, the aircraft on it. |
 | `fresh.js` | One copy for the page of what changes slowly (weather, logbook, heatmap), fetched at most once a minute whoever asks. |
 | `plate.js`, `silhouette.js`, `profiles.js`, `profiles/*.js` | Aircraft side elevations drawn from measurements, the type plates and the fleet line-up. |
 | `icons.js` | The chart-style radar's top-down icons, one for each kind of traffic. Which kind an aircraft is comes on its record. |
