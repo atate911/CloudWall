@@ -17,9 +17,9 @@ function routeBlock(a, state) {
   if (a.route_pending && !r) return `<div class="k-note">Looking up route…</div>`;
   if (r && r.plausible) {
     return `<div class="k-route">
-      <div class="k-apt ${r.origin.iata === here.iata ? "local" : ""}"><b>${esc(r.origin.iata)}</b><span>${esc(r.origin.city || "")}</span></div>
+      <div class="k-apt ${r.origin.iata === here.iata ? "local" : ""}"><span>${esc(r.origin.city || "")}</span><b>${esc(r.origin.iata)}</b></div>
       <div class="k-arrow" aria-hidden="true"><svg viewBox="0 0 100 20" preserveAspectRatio="none"><line x1="2" y1="10" x2="92" y2="10"/><polygon points="98,10 88,4 88,16"/></svg></div>
-      <div class="k-apt r ${r.dest.iata === here.iata ? "local" : ""}"><b>${esc(r.dest.iata)}</b><span>${esc(r.dest.city || "")}</span></div>
+      <div class="k-apt r ${r.dest.iata === here.iata ? "local" : ""}"><span>${esc(r.dest.city || "")}</span><b>${esc(r.dest.iata)}</b></div>
     </div>`;
   }
   if (a.local) return `<div class="k-note big">${esc(localWords(a, state))}</div>`;

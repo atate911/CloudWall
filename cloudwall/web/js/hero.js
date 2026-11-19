@@ -52,10 +52,10 @@ function routeHtml(a, state) {
     const arriving = a.local === "arriving";
     const why = r ? `Its listed route (${esc(r.origin.iata)} to ${esc(r.dest.iata)}) is out of date` : "No route on file for this flight";
     return `<div class="route inferred">
-      ${arriving ? `<div class="apt unknown"><span>Origin not known</span></div>` : `<div class="apt local"><div class="flaps" id="h-orig"></div><small>${esc(ap.city || ap.iata)}</small></div>`}
+      ${arriving ? `<div class="apt unknown"><span>Origin not known</span></div>` : `<div class="apt local"><small>${esc(ap.city || ap.iata)}</small><div class="flaps" id="h-orig"></div></div>`}
       <div><svg class="arc" viewBox="0 0 200 40"><path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--rule)" stroke-width="1" stroke-dasharray="2 3"/></svg>
         <div class="arc-note">${esc(localWords(a, state))}<br><span class="why">${a.local_field ? "Light aircraft, low over the field" : why}</span></div></div>
-      ${arriving ? `<div class="apt r local"><div class="flaps" id="h-dest"></div><small>${esc(ap.city || ap.iata)}</small></div>` : `<div class="apt r unknown"><span>Destination not known</span></div>`}
+      ${arriving ? `<div class="apt r local"><small>${esc(ap.city || ap.iata)}</small><div class="flaps" id="h-dest"></div></div>` : `<div class="apt r unknown"><span>Destination not known</span></div>`}
     </div>`;
   }
   if (!r) {
@@ -65,13 +65,13 @@ function routeHtml(a, state) {
   }
   const iata = state.airport.iata;
   return `<div class="route ${r.plausible ? "" : "unsure"}">
-    <div class="apt ${r.origin.iata === iata ? "local" : ""}"><div class="flaps" id="h-orig"></div><small>${esc(r.origin.city || r.origin.name || "")}</small><div class="apt-when" id="h-dep"></div></div>
+    <div class="apt ${r.origin.iata === iata ? "local" : ""}"><small>${esc(r.origin.city || r.origin.name || "")}</small><div class="flaps" id="h-orig"></div><div class="apt-when" id="h-dep"></div></div>
     <div><svg class="arc" viewBox="0 0 200 40">
       <path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--rule)" stroke-width="1"/>
       <path id="h-arc" d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--magenta)" stroke-width="1.4" stroke-linecap="round" pathLength="1"/>
       <circle id="h-arc-dot" r="2.4" fill="var(--magenta)"/></svg>
       <div class="arc-note"><div id="h-note"></div><div class="arc-time" id="h-dur"></div></div></div>
-    <div class="apt r ${r.dest.iata === iata ? "local" : ""}"><div class="flaps" id="h-dest"></div><small>${esc(r.dest.city || r.dest.name || "")}</small><div class="apt-when" id="h-arr"></div></div>
+    <div class="apt r ${r.dest.iata === iata ? "local" : ""}"><small>${esc(r.dest.city || r.dest.name || "")}</small><div class="flaps" id="h-dest"></div><div class="apt-when" id="h-arr"></div></div>
   </div>`;
 }
 
