@@ -64,6 +64,9 @@ class Store:
             if "photo_by" not in cols:   # the photo's credit and its page, for planespotters.net photos
                 self.db.execute("ALTER TABLE sightings ADD COLUMN photo_by TEXT")
                 self.db.execute("ALTER TABLE sightings ADD COLUMN photo_link TEXT")
+            if "lat" not in cols:        # where its closest point was, which way it was flying and how fast it was
+                for col in ("lat REAL", "lon REAL", "track REAL", "vrate REAL"):     # climbing: empty for older entries
+                    self.db.execute(f"ALTER TABLE sightings ADD COLUMN {col}")
 
     # -- cache ---------------------------------------------------------------
     def cache_get(self, kind, key, max_age):

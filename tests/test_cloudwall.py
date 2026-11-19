@@ -157,6 +157,36 @@ class TrackerTest(unittest.TestCase):
         self.t.update([plane("a1", "ASA777", 1.0)], "test")
         self.assertEqual(self.t.snapshot()["hero"]["badges"], ["2nd VISIT"])
 
+    def test_a_flyover_is_logged_where_it_was_closest(self):
+        home = config.DEFAULTS["home"]
+        self.t.update([plane("a1", "ASA512", 1.0)], "test")            # a mile north, heading 280 and descending
+        self.t.update([plane("a1", "ASA512", 0.4, track=275, vrate=-900, gs=165)], "test")      # its closest
+        self.t.update([plane("a1", "ASA512", 0.9, track=260, vrate=-600)], "test")              # and going away
+        [row] = self.store.query("SELECT min_dist_nm, lat, lon, track, vrate, gs FROM sightings")
+        self.assertEqual((row["min_dist_nm"], row["track"], row["vrate"], row["gs"]), (0.4, 275, -900, 165))
+        self.assertAlmostEqual(row["lat"], home["lat"] + 0.4 / 60, places=4)
+        self.assertAlmostEqual(row["lon"], home["lon"], places=4)
+        # and the Logbook tab's rows carry it, for whatever is drawn from it one day
+        self.assertEqual(self.store.logbook(time.strftime("%Y-%m-%d"))["recent"][0]["track"], 275)
+
+    def test_an_older_logbook_gains_the_new_columns(self):
+        import sqlite3
+        import tempfile
+        path = str(Path(tempfile.mkdtemp()) / "old.db")
+        db = sqlite3.connect(path)                                      # as the first release made it
+        db.executescript("""CREATE TABLE sightings(id INTEGER PRIMARY KEY, ts REAL, day TEXT, hex TEXT, callsign TEXT,
+            flight TEXT, reg TEXT, type TEXT, type_name TEXT, airline_icao TEXT, airline TEXT, origin TEXT, dest TEXT,
+            origin_nm REAL, min_dist_nm REAL, alt_ft INTEGER, gs REAL, badges TEXT);
+            INSERT INTO sightings(ts, day, hex, min_dist_nm, alt_ft, badges) VALUES(1, '2026-01-01', 'a1', 0.5, 3000, '[]');""")
+        db.commit()
+        db.close()
+        store = Store(path)
+        self.addCleanup(store.close)
+        [old] = store.query("SELECT * FROM sightings")
+        self.assertEqual((old["min_dist_nm"], old["lat"], old["track"], old["photo_by"]), (0.5, None, None, None))
+        Tracker(config.load(), store, StubEnricher()).update([plane("a2", "ASA512", 1.0)], "test")
+        self.assertEqual(store.query("SELECT track FROM sightings WHERE hex='a2'")[0]["track"], 280)
+
     def test_restart_does_not_double_count(self):
         self.t.update([plane("a1", "ASA512", 1.0)], "test")
         restarted = Tracker(config.load(), self.store, self.enricher)     # same logbook, fresh memory

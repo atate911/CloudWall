@@ -1,8 +1,10 @@
 """Which flyovers go in the logbook, and what is noted of each.
 
 An aircraft that comes overhead gets one entry for the pass, however many updates it is
-overhead for, with its closest point; lookups that arrive a few seconds later (its name, its
-route, its photo) are filled in as they come. Its badges (a new type, a rare one, a repeat
+overhead for, with its closest point: how near, how high and fast, where it was and which way it
+was flying. (What isn't written down as it happens can't be recovered later, so the entry holds
+enough to map a pass or count them by direction, whether or not anything shows that yet.) Lookups
+that arrive a few seconds later (its name, its route, its photo) are filled in as they come. Its badges (a new type, a rare one, a repeat
 visitor) are worked out as the entry starts, from what the logbook already holds. The rows
 themselves, and the Logbook tab's totals, are store.py's.
 """
@@ -17,6 +19,12 @@ RESIGHT_SECONDS = 30 * 60      # overhead again after this long is a new flyover
 def ordinal(n):
     suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suffix}"
+
+
+def closest(a):
+    """An aircraft's place and motion, for its entry when this is the nearest it has been."""
+    return {"min_dist_nm": round(a["dist"], 2), "alt_ft": a["alt"], "gs": a.get("gs"), "lat": round(a["lat"], 5),
+            "lon": round(a["lon"], 5), "track": a.get("track"), "vrate": a.get("vrate")}
 
 
 class Logbook:
@@ -70,15 +78,14 @@ class Logbook:
             sid = self.store.add_sighting(
                 ts=now, day=time.strftime("%Y-%m-%d", time.localtime(now)), hex=a["hex"],
                 callsign=a.get("callsign"), reg=a.get("reg"), type=a.get("type"),
-                airline_icao=airline_icao, min_dist_nm=round(a["dist"], 2), alt_ft=a["alt"],
-                gs=a.get("gs"), badges=badges, seats=(a.get("seats") or {}).get("n"))
+                airline_icao=airline_icao, badges=badges, seats=(a.get("seats") or {}).get("n"), **closest(a))
             s = self.active[a["hex"]] = {"id": sid, "min": a["dist"], "badges": badges,
                                          "seats": (a.get("seats") or {}).get("n")}
         s["ts"] = now
         upd = {}
         if a["dist"] < s["min"]:
             s["min"] = a["dist"]
-            upd.update(min_dist_nm=round(a["dist"], 2), alt_ft=a["alt"], gs=a.get("gs"))
+            upd.update(closest(a))
         # Lookups arrive a few seconds after first sight (and the paid provider may later
         # correct the free route), so back-fill the entry whenever they change.
         r = a.get("route")
