@@ -1,11 +1,13 @@
 // Kiosk mode: a glanceable board for a 7–13" screen across the room.
 // Only a few things, very large: who's overhead, where it's going, how high and fast,
-// and when it passes. When the sky is quiet, a slow rotation of large slides.
+// and when it passes. When the sky is quiet, a slow rotation of large slides. In Detailed, the
+// landing queue under them, numbered as on the radar beside it.
 // Sizes are in vh so the same design reads the same on 1024×600 and 1920×1080 panels.
 import { $, esc, num, mmss, ident, since, degF } from "./util.js";
 import { boardFlight, showLogo, localWords, heardGroups } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
 import { flap } from "./fx.js";
+import { queueHtml, renderInto } from "./situation.js";
 import { windRose, runwayHeadings, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
 
 const SLIDE_SECONDS = 12;
@@ -162,13 +164,26 @@ function showIdle(el, state) {
   el.firstElementChild.classList.add("k-enter");
 }
 
-export function renderKiosk(el, state) {
-  if (state.hero) showPlane(el, state.hero, state);
-  else { cur.a = null; showIdle(el, state); }
+// The card has two parts: the plane or the slides ("k-body"), and under them, in Detailed, the
+// landing queue ("k-q"). Something else drawn in the card (the emergency) is replaced by them again.
+function parts(el) {
+  let body = el.querySelector(":scope > .k-body");
+  if (!body) {
+    el.innerHTML = `<div class="k-body"></div><div class="k-q"></div>`;
+    body = el.firstElementChild;
+    forgetKiosk();
+  }
+  return { body, q: el.querySelector(":scope > .k-q") };
+}
+export function renderKiosk(el, state, { queue = false } = {}) {
+  const { body, q } = parts(el);
+  renderInto(q, queue ? queueHtml(state, 3) : "");
+  if (state.hero) showPlane(body, state.hero, state);
+  else { cur.a = null; showIdle(body, state); }
 }
 export function tickKiosk(elapsed, state) {
   if (cur.a && $("k-when")) updateWhen(cur.a, elapsed);
-  else if (state) showIdle($("hero"), state);
+  else if (state) showIdle(parts($("hero")).body, state);
 }
 export function kioskNext() { slide++; slideAt = Date.now(); shownKey = null; }
 

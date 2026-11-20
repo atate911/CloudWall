@@ -10,12 +10,14 @@ airframe photos from [planespotters.net](https://www.planespotters.net), weather
 
 ## Screens
 
-Every screen reads the traffic the same way. Across the top, a headline and one sentence say what
-is going on ("Three coming in from the east to land on 28L and 28R, about 2 minutes apart. One
-climbing out to the west-northwest."), with a key: each aircraft is coloured by what it is doing,
+Every screen reads the traffic the same way. Each aircraft is coloured by what it is doing,
 **arriving** (blue), **departing** (green), **flying locally** (orange: no flight plan, or to and
-from a small field) or **passing over** (slate), and arrivals are numbered in landing order. The
-selected aircraft wears a magenta ring.
+from a small field) or **passing over** (slate), arrivals are numbered in landing order, and the
+selected aircraft wears a magenta ring. Across the top, a headline ("12 aircraft within 15 nm") and
+a phrase for each group, led by its icon and count, say what is going on and are the key to the
+colours at once: "3 coming in from the east to land on 28L and 28R, about 2 minutes apart",
+"2 climbing out to the northwest", "2 F-15s heard, with no position". Simple says them short
+("3 landing at PDX", "2 departing") and leaves the rest to the panel beside it.
 
 **Simple or Detailed.** A switch in the header (on a phone, under the headline) sets how much each
 screen draws. *Simple* shows what someone in the house wants to know right now: the next aircraft
@@ -27,7 +29,8 @@ enthusiast reads the situation from: the flight card, every aircraft labelled wi
 and its runway or destination, a short fading track behind each, the final approach courses ticked
 every mile, a list of every aircraft grouped by what it is doing (arrivals with their runway, time
 to touchdown and gap to the one ahead), and a side view along the runways showing who is stacked
-over whom on the 3° approach. The desktop starts Detailed, a phone and the wall panel Simple; each
+over whom on the 3° approach; on the wall panel, the big flight card with the landing queue under
+it. The desktop starts Detailed, a phone and the wall panel Simple; each
 screen remembers its own choice, `?density=simple` or `detailed` sets it in the address, and
 `[kiosk] density` sets the wall panel's.
 
@@ -244,9 +247,9 @@ board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk 
 
 | Address | For | What it shows |
 |---|---|---|
-| `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, sound and night buttons. On screens 1500 px wide and up, Detailed adds a live list of every aircraft grouped by what it is doing, with the side view along the runways under it; click a flight to follow it. The arrow on the divider between the radar and the list hides or shows the list, and dragging the divider gives the radar more or less room (double-click it for the usual width); the flight card keeps its size, and each screen remembers its setting. |
+| `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, sound and night buttons. On screens 1200 px wide and up, Detailed adds a live list of every aircraft grouped by what it is doing, with the side view along the runways under it; click a flight to follow it. The arrow on the divider between the radar and the list hides or shows the list, and dragging the divider gives the radar more or less room (double-click it for the usual width); the flight card keeps its size, and each screen remembers its setting. |
 | `http://<server>:5050/` on a phone | A phone in the hand | The same tabs and switches, laid out for a phone. Upright, the page scrolls: the flight card at full width, then a square radar with its switches above and below it, the tabs along the foot and the status line held at the top. The Board becomes a two-line list (flight, route and when it's overhead; airline, type, altitude and speed), and Weather and Logbook stack into one column. Turned sideways, the card and radar sit side by side. Tapping a blip on the radar brings its flight card into view. |
-| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Built to read from across the room. Simple (the default): the headline and counts, the next aircraft over the house, the landing queue and what's worth a look beside the radar. Detailed: one big card (flight number, airline logo, route, altitude, speed and time until overhead) beside the radar (or the Map view, `[kiosk] view = "map"`). No tabs, buttons or small print. When the sky is empty it rotates every 12 seconds between the next flight, the weather with a windsock, and today's count. Tap the card to skip ahead. Tap a blip to show that flight; it goes back to what's overhead after 90 seconds untouched, or when the card is tapped. |
+| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Built to read from across the room. Simple (the default): the headline and counts, the next aircraft over the house, the landing queue and what's worth a look beside the radar. Detailed: one big card (flight number, airline logo, route, altitude, speed and time until overhead) with the landing queue under it, beside the radar with every aircraft labelled and the headline over it (or the Map view, `[kiosk] view = "map"`). No tabs, buttons or small print. When the sky is empty it rotates every 12 seconds between the next flight, the weather with a windsock, and today's count. Tap the card to skip ahead. Tap a blip to show that flight; it goes back to what's overhead after 90 seconds untouched, or when the card is tapped. |
 
 The phone layout is chosen by screen size (up to 700 px wide, or 500 px tall when turned sideways),
 so it follows the phone as it turns and also suits a narrow desktop window. `?mode=phone` forces it and
@@ -263,7 +266,7 @@ radar = "atc"      # "chart" (the default) or "atc"
 tracks = true      # the selected aircraft's track, and one-minute lines
 range_nm = 30      # 0 for the tracking radius, or 20 or 30
 density = "simple" # "simple": the counts, landing queue and next aircraft over the house beside the
-                   # radar; "detailed": the big flight card, and every aircraft labelled
+                   # radar; "detailed": the big flight card and the landing queue, every aircraft labelled
 ```
 
 The address can override these on any screen: `/kiosk?radar=atc&tracks=off&range=20&density=detailed`.

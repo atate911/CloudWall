@@ -1,7 +1,7 @@
 // The traffic picture: what every aircraft in the area is doing, drawn the same way on every
 // screen. The server marks each one arriving, departing, flying locally or passing over
-// (situation.py), and puts the arrivals in landing order; this turns that into words, a key, a
-// grouped list, the landing queue, the next aircraft over the house and what's worth a look.
+// (situation.py), and puts the arrivals in landing order; this turns that into words that double as
+// the key, a grouped list, the landing queue, the next aircraft over the house and what's worth a look.
 //
 // Two densities share it. Simple shows what someone in the house wants to know right now; Detailed
 // adds what an enthusiast reads the situation from. Both use the same four colours and the same
@@ -43,7 +43,9 @@ function spacing(arr) {
   if (!gaps.length) return "";
   const lo = Math.min(...gaps), hi = Math.max(...gaps);
   if (hi - lo < 30 || gapWords(lo) === gapWords(hi)) return `about ${gapWords(gaps.reduce((s, g) => s + g, 0) / gaps.length)} apart`;
-  return `${gapWords(lo)} to ${gapWords(hi)} apart`;
+  // "2 to 3½ minutes apart", or "45 seconds to 2 minutes apart"
+  const [l, h] = [gapWords(lo), gapWords(hi)], unit = (w) => w.replace(/^\S+ /, "");
+  return `${unit(l).startsWith("minute") && unit(h).startsWith("minute") ? l.split(" ")[0] : l} to ${h} apart`;
 }
 // Due over the house soon enough to count down to: within ten minutes, and moving (not a drifting balloon)
 export const overheadSoon = (a, state) => a.cpa_s > 0 && a.cpa_s < 600 && a.cpa_nm <= state.tracking.overhead_nm && (a.gs || 0) > 40;
@@ -119,51 +121,58 @@ export function where(a, state, { town = false } = {}) {
 const trend = (a) => ((a.vrate || 0) > 300 ? "climbing" : (a.vrate || 0) < -300 ? "descending" : "level");
 const arrow = (a) => ((a.vrate || 0) > 300 ? "↑" : (a.vrate || 0) < -300 ? "↓" : "");
 
-// ---- the situation in a sentence ----
-// "14 aircraft within 15 nm" and "Four coming in from the east to land on 28L and 28R, about 1.5
-// minutes apart. Two climbing out to the west. One passing high over at 36,000 ft. Three flying
-// locally: an Army Chinook, a hot-air balloon and a small plane."
-export function situation(state) {
-  const p = picture(state), g = p.groups, n = p.air.length, R = state.tracking.radius_nm, parts = [];
+// ---- the situation: a headline, and a phrase for each group led by its icon ----
+// Each phrase's icon is the key to the radar's colours, and its number the count, so the words and
+// the key are one thing, said once. Detailed says each group in full ("3 coming in from the east to
+// land on 28L and 28R, 1½ to 4½ minutes apart", "1 flying locally: an Army Chinook"); Simple says
+// it short ("3 landing at PDX", "2 departing", "1 flying locally"), leaving the rest to the landing
+// queue and to what's worth a look beside it. Aircraft heard with no position are left to "Worth a
+// look" where that is shown beside the strip ("notes").
+export function situation(state, { short = false, notes = short } = {}) {
+  const p = picture(state), g = p.groups, n = p.air.length, R = state.tracking.radius_nm, out = [];
+  const add = (cat, count, text) => out.push({ cat, n: count, text });
   if (g.arr.length) {
     const from = state.flow && FROM[state.flow.dir] ? ` from the ${FROM[state.flow.dir]}` : "";
     const gap = spacing(g.arr);
-    parts.push(`${cap(n2w(g.arr.length))} coming in${from} to land ${landOn(p, state)}${gap ? `, ${gap}` : ""}.`);
+    add("arr", g.arr.length, short ? `landing at ${state.airport.iata}` : `coming in${from} to land ${landOn(p, state)}${gap ? `, ${gap}` : ""}`);
   }
-  if (g.dep.length) parts.push(`${cap(n2w(g.dep.length))} climbing out to the ${depDir(g.dep)}.`);
+  if (g.dep.length) add("dep", g.dep.length, short ? "departing" : `climbing out to the ${depDir(g.dep)}`);
   if (g.pass.length) {
     const high = g.pass.every((a) => (a.alt || 0) >= 18000) ? "high " : "";
-    parts.push(g.pass.length === 1 ? `One passing ${high}over at ${num(g.pass[0].alt)} ft.` : `${cap(n2w(g.pass.length))} passing ${high}over.`);
+    add("pass", g.pass.length, `passing ${high}over${!short && g.pass.length === 1 ? ` at ${num(g.pass[0].alt)} ft` : ""}`);
   }
   if (g.loc.length) {
     const by = new Map();
     for (const a of g.loc) by.set(kind(a), (by.get(kind(a)) || 0) + 1);
     const list = [...by].map(([k, c]) => (c > 1 ? `${n2w(c)} ${k.endsWith("s") ? k : k + "s"}` : withArticle(k)));
-    parts.push(`${cap(n2w(g.loc.length))} flying locally: ${words(list.length > 4 ? [...list.slice(0, 3), `${n2w(list.length - 3)} more`] : list)}.`);
+    add("loc", g.loc.length, short ? "flying locally" : `flying locally: ${words(list.length > 4 ? [...list.slice(0, 3), `${n2w(list.length - 3)} more`] : list)}`);
+  }
+  const hg = heardGroups(state.heard || []), heard = hg.reduce((s, h) => s + h.n, 0);
+  if (heard && !(notes && notables(state).some((x) => x.heard))) {
+    add("heard", heard, hg.length === 1 ? `${hg[0].type}${heard > 1 ? "s" : ""} heard${short ? "" : ", with no position"}`
+      : short ? "military aircraft heard" : `heard, with no position: ${words(hg.map((h) => (h.n > 1 ? `${n2w(h.n)} ${h.type}s` : withArticle(h.type))))}`);
   }
   // an emergency leads, in the takeover's own words
   const em = (state.emergency || [])[0];
   const head = em ? `${flightName(em)} is squawking ${em.emergency_code}: ${String(em.emergency_title || "emergency").toLowerCase()}`
     : n === 0 ? `Nothing on the radar within ${R} nm` : n <= 4 ? `A quiet spell: ${n2w(n)} aircraft within ${R} nm` : `${n} aircraft within ${R} nm`;
-  return { head, text: parts.join(" ") };
+  return { head, phrases: out };
 }
 
-// ---- the key: each group's icon and colour, and how many ----
+// ---- the icons: each group's in its colour, and one for aircraft heard with no position ----
 export function catIcon(cat, a = null, size = 16) {
   const kindOf = a ? a.icon : cat === "loc" ? "light" : "airliner", ic = iconFor(kindOf), k = (size * 0.44) / ic.r;
   const rot = a ? (ic.upright ? 0 : a.track || 0) : { arr: 299, dep: 119, pass: 165, loc: 60 }[cat] || 0;
   return `<svg class="ci c-${cat}" width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" aria-hidden="true"><path d="${ic.d}" transform="rotate(${rot}) scale(${k.toFixed(3)})"/></svg>`;
 }
 const heardIcon = (size = 16) => `<svg class="ci heard" width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" aria-hidden="true"><path d="${iconFor("fighter").d}" transform="scale(${((size * 0.44) / iconFor("fighter").r).toFixed(3)})"/></svg>`;
-export function keysHtml(state, size = 16) {
-  const p = picture(state), heard = (state.heard || []).length;
-  return GROUPS.filter(([k]) => p.groups[k].length).map(([k, label]) => `<span class="key">${catIcon(k, null, size)}<span>${label}</span><b>${p.groups[k].length}</b></span>`).join("") +
-    (heard ? `<span class="key heard">${heardIcon(size)}<span>Heard, no position</span><b>${heard}</b></span>` : "");
-}
-// The strip across the top: the headline, the sentence (left out in short), and the key.
-export function stripHtml(state, { text = true } = {}) {
-  const s = situation(state);
-  return `<div class="sit"><h1>${esc(s.head)}</h1>${text && s.text ? `<p>${esc(s.text)}</p>` : ""}</div><div class="keys" aria-label="Key">${keysHtml(state)}</div>`;
+// The strip across the top: the headline, and the phrases under it (short, in Simple).
+export function stripHtml(state, opts = {}) {
+  const s = situation(state, opts);
+  // the icon, the count and the first word keep together when a line wraps
+  const ph = s.phrases.map((x) => { const [w, ...rest] = x.text.split(" ");
+    return `<span class="ph"><span class="ph-k">${x.cat === "heard" ? heardIcon() : catIcon(x.cat)}<b>${x.n}</b> ${esc(w)}</span> ${esc(rest.join(" "))}</span>`; });
+  return `<div class="sit"><h1>${esc(s.head)}</h1>${ph.length ? `<p class="pic${opts.short ? " short" : ""}">${ph.join(" ")}</p>` : ""}</div>`;
 }
 
 // ---- Detailed: every aircraft, grouped by what it is doing ----
@@ -235,8 +244,9 @@ function overHtml(state, { compact = false } = {}) {
     <div class="so-row">${compact || !a.known ? "" : `<div class="so-plate sil-box">${plate(typeInfo(a), { share: 0.98, dim: false })}</div>`}
       <div class="so-nums">${first}<div><b>${a.alt == null ? "–" : num(a.alt)}<small> ft</small></b><span>${trend(a)}</span></div></div></div></section>`;
 }
-function queueHtml(state, max = 4) {
-  const p = picture(state), arr = p.groups.arr.filter((a) => a.seq), heroHex = state.hero && state.hero.hex, t = since(state);
+export function queueHtml(state, max = 4) {
+  const p = picture(state), arr = p.groups.arr.filter((a) => a.seq), t = since(state);
+  const heroHex = (state.hero || state.next || {}).hex;        // the one over the house, in the card above
   if (!arr.length) return "";
   return `<section class="ss-queue"><div class="label">Landing next ${esc(landOn(p, state))}</div>
     ${arr.slice(0, max).map((a) => `<button class="q-row${a.hex === heroHex ? " sel" : ""}" data-hex="${esc(a.hex)}"><span class="seq">${a.seq}</span><b class="q-fl">${esc(flightName(a))}</b>` +
@@ -273,13 +283,24 @@ export function sideHtml(state, { compact = false, queue = 4, notes = 3 } = {}) 
   return overHtml(state, { compact }) + queueHtml(state, queue) + (notes ? notesHtml(state, notes) : "");
 }
 
+// Redraw part of the page without losing the keyboard's place: a flight's row (or a button) that
+// had the focus has it again afterwards, when it is still there.
+export function keepFocus(el, draw) {
+  const f = document.activeElement, mine = f && f !== el && el.contains(f);
+  const key = mine && ["hex", "dens", "let", "range"].find((k) => k in f.dataset);
+  draw();
+  if (!key) return;
+  const sel = `${f.tagName.toLowerCase()}${f.classList[0] ? "." + f.classList[0] : ""}[data-${key}="${CSS.escape(f.dataset[key])}"]`;
+  const again = el.querySelector(sel);
+  if (again && again !== document.activeElement) again.focus({ preventScroll: true });
+}
 // Put HTML in place only when it changed, keeping the flight's flap display (and any animation it
 // is in the middle of) when the flight is the same; a new flight flips in.
 export function renderInto(el, html) {
   if (el._html === html) return;
   el._html = html;
   const old = el.querySelector(".so-flight");
-  el.innerHTML = html;
+  keepFocus(el, () => { el.innerHTML = html; });
   const ph = el.querySelector(".so-flight");
   if (!ph) return;
   if (old && old.dataset.hex === ph.dataset.hex && old.dataset.text === ph.dataset.flight) ph.replaceWith(old);

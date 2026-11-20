@@ -57,6 +57,16 @@ const SCENARIOS = {
     out.strip = await text(page, "#strip h1");
     out.groups = await count(page, "#mini-board .gh");
     out.profile = await count(page, "#mini-board svg.profile");
+    out.phrases = await count(page, "#strip .pic .ph");
+    // the keyboard's place: a row of the list with the focus keeps it through the list's redraws
+    out.focus = await page.evaluate(async () => {
+      const row = document.querySelector("#mini-board .tr[data-hex]");
+      if (!row) return null;
+      row.focus();
+      await new Promise((r) => setTimeout(r, 4500));         // two updates from the server
+      const f = document.activeElement;
+      return { same: !!f && f.matches(".tr") && f.dataset.hex === row.dataset.hex, redrawn: f !== row };
+    });
     // the switch to Simple: the side panel in the card's place, numbers for the landing order on the radar
     await page.click('#dens-seg button[data-dens="simple"]');
     await page.waitForFunction(() => document.body.classList.contains("d-simple"));
@@ -158,9 +168,12 @@ const SCENARIOS = {
     out.onScope = await count(page, "#s-craft g.craft");
     out.tabsShown = await page.evaluate(() => getComputedStyle(document.querySelector("nav")).display !== "none");
     await page.close();
-    // detailed: the flight card
+    // detailed: the flight card, the landing queue under it, and the situation over the radar
     page = await open(browser, "kiosk", "/kiosk?density=detailed", errors);
     out.card = await count(page, "#hero .k-card");
+    await page.waitForSelector("#hero .k-q .q-row", { timeout: 8000 }).catch(() => {});
+    out.queue = await count(page, "#hero .k-q .q-row");
+    out.strip = await page.evaluate(() => getComputedStyle(document.getElementById("strip")).display !== "none" && !!document.querySelector("#strip h1"));
     await page.close();
     return out;
   },

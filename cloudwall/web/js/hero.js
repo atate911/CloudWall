@@ -1,6 +1,6 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
 import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, since, runwayList } from "./util.js";
-import { plate, renderLineup, drawn, typeInfo } from "./plate.js";
+import { plate, kindPlate, renderLineup, drawn, typeInfo } from "./plate.js";
 import { flap, roll } from "./fx.js";
 import { map, tileLayout } from "./map.js";
 import { weatherSlide } from "./weather.js";
@@ -184,10 +184,10 @@ function showHero(el, a, state) {
   const sil = $("h-sil");
   // the type plate: the side elevation with its length, under the photo once one arrives
   const isNew = (a.badges || []).includes("NEW TYPE");
-  const silKey = `${info.type}|${info.shape}|${info.length}|${info.name}|${isNew}`;
+  const silKey = `${info.type}|${info.shape}|${info.length}|${info.name}|${isNew}|${a.icon}`;
   if (sil && sil.dataset.shape !== silKey) {
     sil.dataset.shape = silKey;
-    sil.innerHTML = plate(info, { note: isNew ? "New to your collection" : "" });
+    sil.innerHTML = plate(info, { note: isNew ? "New to your collection" : "" }) || kindPlate(a.icon);
     // the type designator in the sheet's corner, for types drawn from their own measurements
     if (drawn(info)) sil.dataset.code = info.type; else delete sil.dataset.code;
   }
@@ -237,7 +237,10 @@ function renderFacts(a, state, elapsed = 0) {
   const r = a.route && a.route.plausible ? a.route : null, rows = [];
   if (!r && a.landing_est) rows.push(["Lands", `about ${clock(a.landing_est)}`]);
   const left = a.cpa_s - elapsed;
-  rows.push(["Overhead", left > 5 ? `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away` : a.dist < 1.5 ? "now" : "passed, heading away"]);
+  // a drifting balloon or a glider circling has no time worth counting down to (as the lists say)
+  const slow = (a.gs || 0) <= 40 || left > 1800;
+  rows.push(["Overhead", left > 5 ? (slow ? `not for a while; ${a.cpa_nm.toFixed(1)} nm away at the closest` : `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away`)
+    : a.dist < 1.5 ? "now" : "passed, heading away"]);
   const type = a.type_name || a.type;
   if (type && (r || a.local_inferred || a.route_pending)) rows.push(["Aircraft", type]);
   if (a.contrail) rows.push(["Contrail", a.contrail === "persistent" ? "Likely, long-lasting" : "Likely, short-lived"]);

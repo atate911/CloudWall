@@ -657,7 +657,7 @@ function placeLabels(heroHex) {
   labelled.sort((a, b) => (b.hex === heroHex) - (a.hex === heroHex) || a.pri - b.pri);
   const edge = opt.atc ? SQ - 9.5 : opt.map ? MX - 1.5 : 112;          // the ATC style keeps data blocks inside the compass
   const edgeY = opt.map ? MY - 1.5 : edge;
-  for (const c of labelled) {
+  const pick = (c) => {
     const score = (i) => {
       const b = labelBox(c, i);
       let s = placed.reduce((n, p) => n + overlap(b, p), 0) + blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
@@ -666,17 +666,29 @@ function placeLabels(heroHex) {
       return s - (i === c.slot ? 6 : 0);                                    // stickiness
     };
     let best = 0, bestScore = Infinity;
-    const prev = c.slot;
     for (let i = 0; i < slotCount(); i++) { const s = score(i); if (s < bestScore) { bestScore = s; best = i; } }
     c.slot = best;
+    return labelBox(c, best);
+  };
+  for (const c of labelled) {
     // the chart style leaves off a label that would touch another label or a name on the map, cover
     // an aircraft by more than a quarter of itself, or run off the edge: the aircraft still shows in
     // its colour, and a tap names it. Labels go in order of importance, so the ones left off matter least.
-    const b = labelBox(c, best), area = (b.x1 - b.x0) * (b.y1 - b.y0);
+    let b = pick(c);
+    const area = (b.x1 - b.x0) * (b.y1 - b.y0);
     const textHit = placed.reduce((n, p) => n + overlap(b, p), 0), iconHit = blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
     const off = Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0) + (square() ? Math.max(0, b.y1 - edgeY) + Math.max(0, -edgeY - b.y0) : 0);
     const key = c.act === "arr" || c.act === "dep";          // arrivals and departures may sit over an icon
     c.hide = !opt.atc && !opt.map && c.hex !== heroHex && !c.seqtag && (textHit > 0.03 * area || (!key && iconHit > 0.25 * area) || off > 1.5);
+    // an arrival keeps its landing number, in its ring as Simple draws it, so the landing queue and
+    // the list still find it on the radar (until the next update puts its whole label back)
+    if (c.hide && c.seqNum) {
+      c.seqtag = true; c.tag.classList.add("seqtag");
+      c.text = c.tag.textContent = String(c.seqNum); c.subs = [""]; c.sub.textContent = "";
+      measure(c);
+      b = pick(c);
+      c.hide = false;
+    }
     if (!c.hide) placed.push(b);
   }
 }
@@ -859,6 +871,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     c.ring.style.display = ringed ? "" : "none";
     if (ringed) c.ring.setAttribute("r", ((c.reach || 4) + 2.2).toFixed(2));
     let text, line0 = "", seqtag = false;
+    c.seqNum = !opt.atc && !opt.map && act === "arr" ? a.seq || null : null;
     if (opt.atc) {
       const b = starsBlock(a, isHero);
       c.g.classList.toggle("ldb", b.subs.length === 1 && !b.subs[0]);

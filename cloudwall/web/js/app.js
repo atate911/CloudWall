@@ -13,7 +13,7 @@ import { boardHtml, renderMiniBoard } from "./board.js";
 import { loadLog } from "./logbook.js";
 import { renderPlace, placeMenu } from "./places.js";
 import { refresh } from "./fresh.js";
-import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture, notables } from "./situation.js";
+import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture, notables, keepFocus } from "./situation.js";
 
 // Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
 const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
@@ -194,8 +194,9 @@ function renderToggles() {
 let allOpen = false;
 function renderPicture(dens) {
   const easy = dens === "simple", ph = phone();
-  if (!KIOSK) renderInto($("strip"), stripHtml(state, { text: !(ph && easy) }) + (ph ? densSeg(dens) : ""));
-  if (easy && KIOSK) { renderInto($("side"), `<section class="k-sit">${stripHtml(state, { text: false })}</section>` + sideHtml(state, { queue: 3, notes: 2 })); fitSide($("side")); }
+  if (!KIOSK) renderInto($("strip"), stripHtml(state, { short: easy }) + (ph ? densSeg(dens) : ""));
+  else if (!easy) renderInto($("strip"), stripHtml(state, { short: true, notes: false }));     // over the radar
+  if (easy && KIOSK) { renderInto($("side"), `<section class="k-sit">${stripHtml(state, { short: true })}</section>` + sideHtml(state, { queue: 3, notes: 2 })); fitSide($("side")); }
   else if (easy && ph === "side") renderInto($("side"), sideHtml(state, { compact: true }));      // sideways: all in one column beside the radar
   else if (easy && ph) { renderInto($("side"), sideHtml(state, { compact: true, notes: 0 })); renderInto($("notes"), notesHtml(state)); }
   else if (easy) renderInto($("side"), sideHtml(state));
@@ -250,12 +251,13 @@ function render() {
   if (view === "now") {
     keepPlace(() => {
       if (em.length) renderEmergency($("hero"), state, em, !KIOSK);
-      else if (cardShown()) (KIOSK ? renderKiosk : renderHero)($("hero"), state);
+      else if (KIOSK && cardShown()) renderKiosk($("hero"), state, { queue: !simple() });
+      else if (cardShown()) renderHero($("hero"), state);
       renderPicture(dens);
     });
     drawScopeNow(); if (!KIOSK) renderMiniBoard(state);
   }
-  if (view === "board") $("board").innerHTML = boardHtml(state);
+  if (view === "board") keepFocus($("board"), () => { $("board").innerHTML = boardHtml(state); });
 }
 // When CloudWall itself stops answering (the server is down, the network gone), the last positions
 // are shown for a minute, as the server does with a silent feed, and then cleared: a flight card
@@ -341,7 +343,7 @@ $("radar").addEventListener("click", (e) => {
   }
 });
 $("hero").addEventListener("click", (e) => {
-  if (!state) return;
+  if (!state || e.target.closest(".q-row")) return;          // the landing queue, on the wall panel: pinned above
   if (e.target.closest("#em-hide")) { emergencies().forEach((a) => hidden.add(emKey(a))); render(); return; }
   if (emergencies().length) return;
   if (KIOSK) { if (myPin) pin(null); else if (!state.hero) { kioskNext(); render(); } return; }

@@ -326,6 +326,9 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
    so a plate is a share of its width, or as wide as its height allows. */
 .sil-box { container-type: size; position: relative; display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; padding: 6% 7%; min-height: 0; }
 .sil-box[hidden] { display: none; }
+.plate.kindplate { width: auto; align-items: center; }
+.kindplate svg { width: min(60cqw, 70cqh); height: min(60cqw, 70cqh); }
+.kindplate path { fill: var(--slate); opacity: .35; }
 .plate { margin: 0; display: flex; flex-direction: column; gap: .3rem; flex: none;
   width: min(calc(var(--w) * 100cqw), calc((100cqh - 1.3rem) * var(--ar))); }
 .plate.nodim { width: min(calc(var(--w) * 100cqw), calc(100cqh * var(--ar))); }
@@ -875,6 +878,8 @@ body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
 .field-rwy { stroke: var(--ink-2); stroke-width: 1; stroke-linecap: butt; }
 .field-label { font: 4.6px var(--mono); fill: var(--slate); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
 #radar .heard-note { font: 700 5px var(--sans); fill: var(--red); }
+/* the chart style leaves it to the words beside it (the strip, or what's worth a look); the ATC screen keeps its own */
+#scope:not(.atc) #radar .heard-note { display: none; }
 .kiosk #radar .heard-note { font-size: 6.5px; }
 /* red on the red takeover would vanish: use its light ink instead */
 body.emergency #scope:not(.atc) #radar :is(.heard-note, .tfr-label) { fill: var(--ink-2); }
@@ -1264,16 +1269,22 @@ body.night { --c-arr: #3987e5; --c-dep: #199e70; --c-loc: #d95926; --c-pass: #86
 .seq { display: inline-grid; place-items: center; flex: none; width: 1.25rem; height: 1.25rem; border-radius: 99px; border: 1.5px solid var(--c-arr);
   font: 700 .68rem var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
 
-/* ---- the strip across the top: the headline, the situation in a sentence, the key ---- */
+/* ---- the strip across the top: the headline, and a phrase for each group, led by its icon and
+   count, that is the key to the colours as well ---- */
 .strip { display: none; align-items: center; gap: 2rem; min-width: 0; }
 .sit { flex: 1; min-width: 0; }
 .sit h1 { font-size: 1.3rem; letter-spacing: -.01em; line-height: 1.2; }
-.sit p { font-size: .95rem; line-height: 1.45; color: var(--ink-2); margin-top: .2rem; max-width: 62em; }
-.keys { display: flex; flex-wrap: wrap; gap: .35rem 1.1rem; justify-content: flex-end; max-width: 30rem; }
-.key { display: inline-flex; align-items: center; gap: .4rem; font-size: .85rem; color: var(--ink-2); white-space: nowrap; }
-.key b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.pic { font-size: .95rem; line-height: 1.5; color: var(--ink-2); margin-top: .25rem; }
+.ph { margin-right: 1.5em; }
+.ph:last-child { margin-right: 0; }
+.ph-k { white-space: nowrap; }
+.ph-k .ci { vertical-align: -.16em; margin-right: .35em; }
+.ph-k b { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* short phrases keep together, each starting a line of its own when they wrap */
+.pic.short { display: flex; flex-wrap: wrap; column-gap: 1.5em; }
+.pic.short .ph { margin-right: 0; }
 .d-simple .sit h1 { font-size: 1.55rem; }
-.d-simple .sit p { font-size: 1.05rem; }
+.d-simple .pic { font-size: 1.05rem; }
 .seg.dens { position: static; flex: none; }
 .seg.dens button { padding: .45rem .7rem; }
 .board-strip { display: flex; margin-bottom: .6rem; padding-bottom: .7rem; border-bottom: 1px solid var(--rule); }
@@ -1454,9 +1465,9 @@ html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #side { display: 
 .kiosk .ss .label { font-size: 2vh; }
 .kiosk .k-sit .strip, .kiosk .k-sit { display: flex; flex-direction: column; align-items: stretch; gap: 1.4vh; }
 .kiosk .k-sit h1 { font-size: 5vh; line-height: 1.05; letter-spacing: -.02em; }
-.kiosk .k-sit .keys { display: grid; grid-template-columns: 1fr 1fr; gap: .8vh 3vh; justify-content: stretch; max-width: none; }
-.kiosk .k-sit .key { font-size: 2.7vh; gap: 1.2vh; } .kiosk .k-sit .key b { font-size: 3.4vh; margin-left: auto; }
-.kiosk .k-sit .ci { width: 3.2vh; height: 3.2vh; }
+.kiosk .k-sit .pic { font-size: 2.9vh; line-height: 1.45; margin: 0; display: grid; grid-template-columns: 1fr 1fr; column-gap: 3vh; }
+.kiosk .k-sit .ph-k b { font-size: 3.3vh; }
+.kiosk .k-sit .ci { width: 3vh; height: 3vh; }
 .kiosk .so-flight { font-size: 7vh; }
 .kiosk .ss .logo-tile { height: 4.4vh; }
 .kiosk .so-what { font-size: 2.6vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1471,15 +1482,30 @@ html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #side { display: 
 /* if it still doesn't fit, the last of what's worth a look gives way, a whole row at a time (fitSide in app.js) */
 .kiosk .ss-note { flex: none; }
 .kiosk #radar.simple .tag:not(.seqtag) { font-size: 8.4px; stroke-width: 2.2px; }
-.kiosk #radar.simple .tag.seqtag { font-size: 6.4px; }
+.kiosk #radar .tag.seqtag { font-size: 6.4px; }
 .kiosk #radar.simple .tag-sub { font-size: 6.6px; }
 .kiosk #radar .final-label { font-size: 5.4px; }
+/* Detailed, on the wall panel: the strip over the radar, and the landing queue in the card, under
+   the plane or the slides */
+.kiosk body.d-detailed #view-now { grid-template-rows: auto minmax(0, 1fr); }
+.kiosk body.d-detailed #hero { grid-column: 1; grid-row: 1 / span 2; }
+.kiosk body.d-detailed #scope { grid-column: 2; grid-row: 2; }
+.kiosk body.d-detailed:not(.emergency) #strip { display: flex; grid-column: 2; grid-row: 1; }
+.kiosk #strip h1 { font-size: 4vh; line-height: 1.1; letter-spacing: -.015em; }
+.kiosk #strip .pic { font-size: 2.6vh; line-height: 1.4; margin-top: .6vh; }
+.kiosk #strip .ph-k b { font-size: 2.9vh; }
+.kiosk #strip .ci { width: 2.7vh; height: 2.7vh; }
+.kiosk #hero:has(> .k-body) { display: flex; flex-direction: column; gap: 2.6vh; }
+.kiosk .k-body { flex: 1; min-height: 0; }
+.kiosk .k-q:empty { display: none; }
+.kiosk .k-q .ss-queue { display: flex; flex-direction: column; gap: .6vh; padding-top: 2vh; border-top: 2px solid var(--rule); }
+.kiosk .k-q .label { font-size: 2vh; }
+.kiosk .k-q .q-row:first-of-type { border-top: 0; }
 
 /* ---- the phone ---- */
 html.phone :is(#strip, .board-strip) { display: flex; flex-direction: column; align-items: stretch; gap: .55rem; }
 /* magenta is the selected aircraft's alone: a countdown to overhead is bold ink */
 .pb-when.soon { color: var(--ink); }
-html.phone .keys { justify-content: flex-start; max-width: none; }
 html.phone header .seg.dens { display: none; }
 html.phone .seg.dens.mini { align-self: flex-start; }
 html.phone .seg.dens.mini button { padding: .5rem .8rem; }
@@ -1505,7 +1531,9 @@ html.phone body.d-simple:is(.emergency, .sky-quiet) #hero { display: block; }
 html.phone body.d-simple:is(.emergency, .sky-quiet) #side { display: none; }
 html.phone.land #view-now { grid-template-rows: auto minmax(0, 1fr); }
 html.phone.land #strip { grid-column: 1 / -1; flex-direction: row; align-items: center; }
+html.phone.land #strip .sit { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 1.2rem; }
 html.phone.land #strip .sit h1 { font-size: 1.05rem; }
+html.phone.land #strip .pic { font-size: .9rem; margin: 0; }
 html.phone.land #view-now > :not(#strip) { grid-row: 2; }
 html.phone.land body.d-simple #side { overflow-y: auto; }
 html.phone.land body.d-detailed #mini-board { display: none; }

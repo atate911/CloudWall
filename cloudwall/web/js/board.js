@@ -3,7 +3,7 @@
 // next for each; a two-line version of it for a phone; and the grouped traffic list beside the radar.
 import { $, esc, num, mmss, ident, altText, phone, since } from "./util.js";
 import { boardFlight, shortType, heardGroups } from "./parts.js";
-import { picture, stripHtml, listHtml, catIcon, kind, where, dir8, until, flightName, overheadSoon } from "./situation.js";
+import { picture, stripHtml, listHtml, catIcon, kind, where, dir8, until, flightName, overheadSoon, keepFocus } from "./situation.js";
 import { profileHtml } from "./profile.js";
 
 const plausible = (a) => (a.route && a.route.plausible ? a.route : null);
@@ -30,7 +30,7 @@ function routeHtml(a, state) {
 }
 
 export function boardHtml(state) {
-  if (phone()) return `<div class="strip board-strip">${stripHtml(state, { text: false })}</div>` + phoneBoardHtml(state);
+  if (phone()) return `<div class="strip board-strip">${stripHtml(state, { short: true })}</div>` + phoneBoardHtml(state);
   const p = picture(state), g = p.groups, heroHex = state.hero && state.hero.hex, here = esc(state.airport.iata);
   const row = (a) => `<tr data-hex="${esc(a.hex)}" class="${a.hex === heroHex ? "sel" : ""}">
       <td class="b-k">${catIcon(a.activity || "pass", a, 22)}</td>
@@ -95,14 +95,14 @@ function phoneBoardHtml(state) {
 export function renderMiniBoard(state) {
   const box = $("mini-board");
   if (!box || getComputedStyle(box).display === "none") return;
-  if (phone()) { box.innerHTML = listHtml(state); return; }
+  if (phone()) { keepFocus(box, () => { box.innerHTML = listHtml(state); }); return; }
   let list = box.querySelector(".mb-list"), prof = box.querySelector(".mb-prof");
   if (!list) {
     box.innerHTML = `<div class="mb-list"></div><div class="mb-prof"><div class="sheet-title">Side view along the runways</div><div class="prof-box"></div></div>`;
     list = box.querySelector(".mb-list"); prof = box.querySelector(".mb-prof");
   }
   const top = list.scrollTop;
-  list.innerHTML = listHtml(state);
+  keepFocus(list, () => { list.innerHTML = listHtml(state); });
   list.scrollTop = top;
   const pb = prof.querySelector(".prof-box"), r = pb.getBoundingClientRect();
   pb.innerHTML = r.width > 50 && r.height > 50 ? profileHtml(state, Math.round(r.width), Math.round(r.height)) : "";

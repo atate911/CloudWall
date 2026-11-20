@@ -106,6 +106,8 @@ class BrowserTest(unittest.TestCase):
         self.assertRegex(d["strip"], r"aircraft within|Nothing in the air")  # the situation, across the top
         self.assertGreaterEqual(d["groups"], 1)                              # the list, grouped by what each is doing
         self.assertEqual(d["profile"], 1)                                    # and the side view under it
+        self.assertGreaterEqual(d["phrases"], 1)                             # each group in a phrase that is the key too
+        self.assertEqual(d["focus"], {"same": True, "redrawn": True})        # the keyboard keeps its place in the list
         self.assertTrue(d["simple"]["side"] and d["simple"]["radar"])        # Simple: the side panel, the simpler radar
         self.assertGreaterEqual(d["boardRows"], 1)
         self.assertGreaterEqual(d["heardRows"], 2)                           # the heading and the demo's fighters
@@ -162,6 +164,8 @@ class BrowserTest(unittest.TestCase):
         k = self.scenario("kiosk")
         self.assertIn("kiosk", k["layout"])
         self.assertEqual((k["simple"], k["side"], k["card"], k["tabsShown"]), (True, 1, 1, False))
+        self.assertTrue(k["strip"])                                          # Detailed: the situation over the radar
+        self.assertGreaterEqual(k["queue"], 1)                               # and the demo's arrivals under the card
         self.assertNotIn("map", k["scope"])                                  # the radar unless [kiosk] view says map
         self.assertGreaterEqual(k["onScope"], 1)
 

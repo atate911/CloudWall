@@ -203,7 +203,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | `kiosk.js` | The wall panel's large card and slides. |
 | `emergency.js` | The red takeover for 7500/7600/7700. |
 | `board.js` | The Board grouped by what each aircraft is doing, its two-line form for a phone, and the traffic list and side view beside the radar. |
-| `situation.js` | The traffic picture in words and parts every screen shares: the strip's headline, sentence and key, the grouped list, and Simple's side panel (the next aircraft over the house, the landing queue, what's worth a look). |
+| `situation.js` | The traffic picture in words and parts every screen shares: the strip's headline and a phrase for each group that doubles as the key (short in Simple), the grouped list, Simple's side panel (the next aircraft over the house, the landing queue, what's worth a look), and `renderInto`/`keepFocus`, which redraw a part of the page without losing the flap display or the keyboard's place. |
 | `profile.js` | The side view along the runways: height against distance along the approach, the arrivals numbered down the 3° glide path. |
 | `logbook.js` | The Logbook tab. |
 | `places.js` | The place in the header and the desktop's menu of places. |
