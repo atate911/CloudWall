@@ -1,0 +1,36 @@
+name = "Honda HA-420 HondaJet"
+types = ["HDJT"]
+production = [2015]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Honda_HA-420_HondaJet",
+  "https://en.wikipedia.org/wiki/Honda_Aircraft_Company",
+  "https://en.wikipedia.org/wiki/GE_Honda_HF120",
+  "https://en.wikipedia.org/wiki/VFW-Fokker_614",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Its engines sit on pylons above the wings rather than on the rear fuselage. The VFW-Fokker 614
+airliner had tried that in the 1970s, and interference between engine and wing held its speed down.
+Honda's designer, Michimasa Fujino, used computer analysis and wind tunnels to find a place, at 75%
+of the wing's chord, where the flow around the nacelle and the flow over the wing combine to give
+less wave drag at high speed than engines on the fuselage would, and with no engine mounts in the
+tail the cabin runs further back. The nose and wing are shaped for natural laminar flow, the nose
+inspired, by Fujino's account, by Salvatore Ferragamo shoes. The fuselage is carbon composite, the
+wing aluminium.
+
+The engines are Honda's too: the GE Honda HF120, developed with GE from Honda's own HF118 and
+test-flown on a Cessna Citation CJ1. Honda's aircraft research began as a secret project in 1986;
+the HondaJet first flew in December 2003 at Greensboro, North Carolina, where it is built, but Honda
+decided to sell it only after showing it at Oshkosh in 2005, and certification came ten years later.
+By the first half of 2017 it was the best-selling twin-engined light jet, and over 250 had been
+delivered by 2024.
+"""
+
+[facts]
+"First flight" = "December 2003"
+"Engines" = "2 × GE Honda HF120, 2,050 lb thrust"
+"Cruise" = "422 kt (Elite II)"
+"Range" = "1,547 nm (2,865 km), Elite II"
+"Built" = "over 250"

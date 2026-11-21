@@ -1,0 +1,34 @@
+name = "Cessna Citation Latitude"
+types = ["C68A"]
+production = [2015]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_Citation_Latitude",
+  "https://en.wikipedia.org/wiki/Cessna_Citation_Sovereign",
+  "https://www.flightglobal.com/news/articles/cessna-gets-attitude-with-latitude-362864/",
+  "https://aviationweek.com/bca/citation-latitude-bargain-priced-super-midsize-wins-customer-loyalty",
+  "https://www.ainonline.com/aviation-news/business-aviation/2018-05-28/citation-latitude-clocks-5000-hours-netjets-europe",
+  "https://aviationweek.com/shownews/ebace/textron-latitudelongitude-get-new-avionics-400th-latitude-rolls-out",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+The Latitude kept the Sovereign's swept wing, its Pratt & Whitney Canada PW306D engines and its
+cruciform tail, and put them under a wider, round, all-metal fuselage with a flat floor: the cabin
+is six feet tall and 77 inches wide, against the 66 inches of the Sovereign's, which came from the
+Excel. Cessna announced it in 2011, priced between the XLS+ and the Sovereign, and it first flew in
+February 2014.
+
+Its typical trip is two to three hours. A company that owns one usually flies it 200 to 300 hours a
+year, but NetJets, its largest operator, ordered 25 with options on 125 more in 2012 and flies each
+of its Latitudes more than 1,000. The 400th rolled out in May 2024, and the Longitude that followed
+kept its fuselage cross-section. From the ground it is a portly mid-size jet with a swept wing and
+its tailplane set partway up the fin, where the Longitude has a T-tail.
+"""
+
+[facts]
+"First flight" = "February 2014"
+"Range" = "2,700 nm (5,000 km)"
+"Max takeoff weight" = "30,800 lb (13,971 kg)"
+"Engines" = "2 × Pratt & Whitney Canada PW306D1, 5,907 lb thrust"
+"Built" = "over 400"

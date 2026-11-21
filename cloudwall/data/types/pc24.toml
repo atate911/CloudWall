@@ -1,0 +1,36 @@
+name = "Pilatus PC-24"
+types = ["PC24"]
+production = [2018]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Pilatus_PC-24",
+  "https://en.wikipedia.org/wiki/Pilatus_Aircraft",
+  "https://www.easa.europa.eu/en/downloads/44366/en",
+  "https://www.aopa.org/news-and-media/all-news/2020/february/13/pilatus-pc24-completes-rough-field-certification",
+  "https://airinsight.com/pilatus-pc-24-creates-its-own-business-jet-category/",
+  "https://www.flightglobal.com/news/articles/ebace-pc-24-orderbook-to-re-open-by-nbaa-2018-437514/",
+  "https://www.flightglobal.com/news/articles/pilatus-hands-initial-pc-24-to-royal-flying-doctor-s-453930/",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Pilatus built its first jet for the owners of its PC-12 turboprop, who wanted more speed and range
+without giving up the short, rough strips the PC-12 could use. The PC-24 is certified to operate
+from gravel, dirt, grass, wet earth and snow. Its long-stroke trailing-link gear has two wheels on
+each main leg, on tyres at only 70 psi so they don't sink in, the engines sit high on the rear
+fuselage, and the flaps that shield them from flying debris have a replaceable, abradable surface.
+At the back on the left is a cargo door big enough for a pallet, the first, Pilatus says, fitted as
+standard to a business jet.
+
+It was unveiled in Geneva in 2013, rolled out on Switzerland's national day in 2014 and first flew
+in May 2015 from Buochs, near the Pilatus works at Stans. When orders opened in 2014, a year before
+it flew, the first production run of 84 sold out in 36 hours. Australia's Royal Flying Doctor
+Service took the first of five in 2018, fitted out as air ambulances with three beds, to fly
+alongside its PC-12s, and the same jet is cleared for the steep approach into London City.
+"""
+
+[facts]
+"First flight" = "May 2015"
+"Engines" = "2 × Williams FJ44-4A"
+"Cruise" = "440 kt"
+"Range" = "2,000 nm (3,704 km) with six passengers"

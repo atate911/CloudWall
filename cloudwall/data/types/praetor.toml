@@ -1,0 +1,41 @@
+name = "Embraer Legacy 450/500 and Praetor 500/600"
+types = ["E545", "E550"]
+production = [2014]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Embraer_Legacy_450/500_and_Praetor_500/600",
+  "https://www.flightglobal.com/news/articles/embraer-delivers-first-us-assembled-legacy-450-432438/",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Embraer launched the Legacy 500 in 2008 as the first jet of its size with full fly-by-wire controls
+and a flat-floored cabin passengers can stand up in. The pilots fly it with sidesticks, as in an
+Airbus, and two Honeywell HTF7500E turbofans hang on the rear fuselage. The Legacy 450 is the same
+aircraft 4 ft shorter, with 95% of its systems in common. Fuselages come from Botucatu in Brazil and
+wings from Évora in Portugal, and since 2016 some have been assembled in Melbourne, Florida, beside
+the Phenoms.
+
+In 2018 the pair became the Praetor 500 and 600, with larger winglets and more range, 3,340 nm for
+the 500 and 4,018 nm for the 600, and a Legacy 450 can be brought up to Praetor 500 standard. The
+Praetors have outsold the Legacy 450 and 500 they replaced; as of 2026 more than 300 have been
+delivered, the 500 and 600 in nearly equal numbers.
+"""
+
+[facts]
+"First flight" = "November 2012 (Legacy 500)"
+"Engines" = "2 × Honeywell HTF7500E"
+
+[variants.E545]
+name = "Embraer Legacy 450 / Praetor 500"
+production = [2015]
+[variants.E545.facts]
+"First flight" = "December 2013 (Legacy 450)"
+"Range" = "3,340 nm (6,186 km), Praetor 500"
+"Built" = "over 200"
+
+[variants.E550]
+name = "Embraer Legacy 500 / Praetor 600"
+[variants.E550.facts]
+"Range" = "4,018 nm (7,441 km), Praetor 600"
+"Built" = "over 250"

@@ -1,0 +1,30 @@
+name = "Cessna Citation Sovereign"
+types = ["C680"]
+production = [2004, 2021]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_Citation_Sovereign",
+  "https://en.wikipedia.org/wiki/Cessna_Citation_Latitude",
+  "https://www.ainonline.com/aviation-news/business-aviation/2013-12-23/cessna-starts-deliveries-new-m2-and-sovereign",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+The Sovereign is an Excel grown up: Cessna stretched its fuselage for a cabin 6.6 ft longer and set
+it on a much bigger new wing, swept at 16.3° for an efficient cruise of about 445 knots but with
+large trailing-edge flaps, so that a jet with nearly coast-to-coast range could still use the short
+runways of a light jet. Its Pratt & Whitney Canada PW306C engines are derated versions of those on
+the Gulfstream G200 and the Dornier 328JET. Deliveries began in 2004, and the Sovereign+ of 2013
+added winglets, PW306D engines with autothrottles and a Garmin G5000 cockpit.
+
+The Latitude kept its wing, engines and cruciform tail, and once that and the bigger Longitude were
+selling, Cessna stopped building the Sovereign in 2021, after 349 of the original and 94 Sovereign+.
+NetJets was its largest operator, with 44 in 2013, and Japan's Air Self-Defense Force has three, as
+the U-680A, to check airport navigation aids. Its slimmer fuselage, the Excel's, is the way to tell
+it from a Latitude.
+"""
+
+[facts]
+"First flight" = "February 2002"
+"Built" = "443 (349 Sovereign, 94 Sovereign+)"
+"Engines" = "2 × Pratt & Whitney Canada PW306C; PW306D on the Sovereign+"
