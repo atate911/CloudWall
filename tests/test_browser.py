@@ -213,6 +213,7 @@ class BrowserTest(unittest.TestCase):
         o = self.scenario("offline")
         self.assertFalse(o["chipBefore"])
         self.assertIn("offline", o["chipAfter"])
+        self.assertTrue(o["chipStays"])
 
     def test_the_server_had_nothing_to_complain_of(self):
         log = self.server_log()

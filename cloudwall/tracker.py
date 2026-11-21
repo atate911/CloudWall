@@ -57,6 +57,7 @@ class Tracker:
         self.updated_at = None
         self.trail_s = None       # seconds between trail samples, smoothed (STARS spaces history 4.5 s apart)
         self.hero_hex = None      # the aircraft overhead, shared by every screen
+        self.said = {}            # the hospitals medical helicopters were last said to be going to (medical.py)
         self.pins = {}            # hex -> when a screen last asked to follow it: each screen picks its own
         self.pinned_now = set()   # the flights screens follow, as of the last update
         self.flow = None
@@ -275,13 +276,13 @@ class Tracker:
         by_hex = {a["hex"]: a for a in raw}
         with self.lock:
             self.hero_hex = self._pick_hero(by_hex)
+            self.tracks.remember(airborne, now, beyond)
+            self._update_flow(raw, now)
+            self._describe(raw, beyond)       # before the logbook: its MEDICAL badge is worked out here
             for a in airborne:
                 if self._overhead(a) and not a.get("coasting"):     # the logbook takes reported positions only
                     self.logbook.record(a, now)
             self.logbook.tidy(now)
-            self.tracks.remember(airborne, now, beyond)
-            self._update_flow(raw, now)
-            self._describe(raw, beyond)
             self.aircraft = raw
             self.beyond = beyond
             self.emergency = emergency
@@ -291,7 +292,7 @@ class Tracker:
         """What each aircraft is doing and the arrivals' landing order (situation.py), and the
         last two minutes of every one's track, for the radar to draw behind it."""
         try:
-            situation.describe(raw, self.cfg["airport"], self.flow)
+            situation.describe(raw, self.cfg["airport"], self.flow, self.said)
             iata = self.cfg["airport"].get("iata")
             for a in beyond:
                 a["activity"] = situation.activity(a, iata)

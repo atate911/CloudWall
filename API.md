@@ -117,7 +117,7 @@ One record for each aircraft, built up in three steps. Every record has the firs
 | `contrail` | in the air, within the tracking radius | "persistent" or "short" if it is likely leaving a contrail, else null. |
 | `activity` | in the air | What it is doing: "arr" (arriving at the place's airport), "dep" (departing it), "loc" (flying locally: no flight plan, or to and from a small field nearby) or "pass" (passing over). Every screen colours it by this. |
 | `notable` | when it is worth a look | Why: "emergency", "medical", "military", "rare" (a rare type) or "unusual" (a balloon, airship, glider, gyrocopter or twin-rotor helicopter). |
-| `medical` | for a medical flight | True: its transponder's lifeguard status, an air ambulance's operator or callsign, or a helicopter landing at or lifting off from a hospital's helipad. |
+| `medical` | for a medical flight | True: its transponder's lifeguard status, an air ambulance's operator or callsign, or a helicopter landing at or lifting off from a hospital's helipad (one with nothing medical in its name must be seen right at the helipad on two updates running). |
 | `hospital` | when a helicopter's hospital is clear | The helipad it is landing at, has just lifted off from or (a medical one) is heading for: `code`, `name`, `short`, `city`, `lat`, `lon`, `state` ("landing", "left" or "heading"), `dist_nm`, and `eta_s` (seconds to get there, from `now`) unless it has left. |
 | `tail` | in the air | Its last two minutes as reported, `[lat, lon]` oldest first, at most 16 points: the radar's short track behind it. |
 | `coasting` | while the feed has lost it | A followed flight the feed left out is carried on along its track for up to 30 s: since when. Its position is then an estimate. |

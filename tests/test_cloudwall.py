@@ -2084,16 +2084,78 @@ class MedicalTest(unittest.TestCase):
         self.assertIsNone(self.m.hospital(a, [self.EMANUEL, self.OHSU], medical=True))
 
     def test_landing_and_lifting_off_make_it_medical(self):
-        landing = self.heli(self.EMANUEL, 1.0, 90, alt=700, vrate=-700)
+        landing = self.heli(self.EMANUEL, 0.8, 90, alt=600, vrate=-700)
         left = dict(self.heli(self.EMANUEL, 0.8, 270, alt=650, vrate=800), hex="h2", track=270)      # climbing away west
         plain = dict(self.heli(self.EMANUEL, 9, 0, alt=1500), hex="h3", track=90)                    # nowhere near
-        self.m.mark([landing, left, plain], [self.EMANUEL, self.OHSU])
+        said = {}
+        self.m.mark([landing, left, plain], [self.EMANUEL, self.OHSU], said)
+        self.assertNotIn("medical", landing)                    # nothing medical in its name: once could be chance
+        self.assertNotIn("hospital", landing)
+        self.m.mark([landing, left, plain], [self.EMANUEL, self.OHSU], said)
+        self.assertEqual(self.m._said, {})                      # the claims are the caller's own
         self.assertEqual((landing["hospital"]["state"], landing.get("medical")), ("landing", True))
+        self.assertNotIn("seen", landing["hospital"])
         self.assertEqual((left["hospital"]["state"], left.get("medical")), ("left", True))
         self.assertNotIn("hospital", plain)
         self.assertNotIn("medical", plain)
         from cloudwall import situation
         self.assertEqual(situation.notable(landing), "medical")
+
+    def test_a_helicopter_descending_past_a_hospital_is_not_medical(self):
+        # a news helicopter coming down 2 nm out, roughly pointed at the hospital, on its way elsewhere
+        news = self.heli(self.EMANUEL, 2.0, 90, alt=1100, vrate=-500, track=250)
+        life = dict(news, hex="h2", callsign="LIFE3")           # an air ambulance doing the same is landing there
+        said = {}
+        for _ in range(3):
+            self.m.mark([news, life], [self.EMANUEL], said)
+        self.assertNotIn("medical", news)
+        self.assertNotIn("hospital", news)
+        self.assertEqual((life["medical"], life["hospital"]["state"]), (True, "landing"))
+
+    def test_an_estimated_position_has_no_hospital(self):
+        """A followed helicopter the feed leaves out is carried on from its last report: it stays
+        medical, but the hospital and its countdown aren't repeated."""
+        a = self.heli(self.EMANUEL, 0.8, 90, alt=600, vrate=-600)
+        said = {}
+        for _ in range(2):
+            self.m.mark([a], [self.EMANUEL], said)
+        self.assertEqual(a["hospital"]["state"], "landing")
+        coasted = dict(a, coasting=time.time(), notable="medical", seq=2, lands_s=40)
+        from cloudwall import situation
+        situation.describe([coasted], {"iata": "PDX", "helipads": [self.EMANUEL]}, None, said)
+        self.assertNotIn("hospital", coasted)
+        self.assertNotIn("seq", coasted)
+        self.assertEqual((coasted["medical"], coasted["notable"]), (True, "medical"))
+        gone = dict(a, medical=True, hospital=a["hospital"], vrate=0, alt=3000)     # reported again, flying on: no longer either
+        self.m.mark([gone], [self.EMANUEL], said)
+        self.assertNotIn("medical", gone)
+        self.assertNotIn("hospital", gone)
+
+    def test_one_odd_record_leaves_the_rest_marked(self):
+        odd = dict(self.heli(self.EMANUEL, 1, 90), hex="h2", track="north")
+        life = dict(self.heli(self.EMANUEL, 6, 90), callsign="LIFE3")
+        with self.assertLogs("cloudwall.medical", "WARNING"):
+            self.m.mark([odd, life], [self.EMANUEL], {})
+        self.assertTrue(life["medical"])
+
+    def test_the_logbook_gets_the_medical_badge(self):
+        """An air ambulance overhead is logged MEDICAL, and one known to be medical only after its
+        entry was started has the badge added."""
+        store = Store(":memory:")
+        t = Tracker(config.load(), store, Enricher(store, demo=sources.Demo()))
+        home = config.DEFAULTS["home"]
+        over = {"hex": "ab1", "callsign": "LIFE3", "lat": home["lat"] + 0.004, "lon": home["lon"], "alt": 1500, "gs": 110,
+                "track": 90, "vrate": 0, "category": "A7", "type": "EC35", "on_ground": False}
+        late = dict(over, hex="ab2", callsign="N123AB", lon=home["lon"] + 0.004)
+        t.update([dict(over), dict(late)], "test")
+        by = {a["hex"]: a for a in t.snapshot()["aircraft"]}
+        self.assertIn("MEDICAL", by["ab1"]["badges"])
+        self.assertNotIn("MEDICAL", by["ab2"]["badges"])
+        t.update([dict(over), dict(late, emergency_status="lifeguard")], "test")
+        by = {a["hex"]: a for a in t.snapshot()["aircraft"]}
+        self.assertIn("MEDICAL", by["ab2"]["badges"])
+        rows = {r["hex"]: json.loads(r["badges"]) for r in store.query("SELECT hex, badges FROM sightings")}
+        self.assertTrue("MEDICAL" in rows["ab1"] and "MEDICAL" in rows["ab2"], rows)
 
     def test_not_landing_on_a_helipad_up_a_hill(self):
         # low over the river, descending, 2 nm short of OHSU on its hill (621 ft): not landing there
@@ -2135,6 +2197,12 @@ class MedicalTest(unittest.TestCase):
 
 
 class KioskQuietTest(unittest.TestCase):
+    def test_density_is_checked(self):
+        self.assertTrue(config.check("kiosk", {"density": "detailed"}))
+        for bad in ("Detailed", "detail"):
+            with self.assertRaises(ValueError):
+                config.check("kiosk", {"density": bad})
+
     def test_quiet_hours_are_checked(self):
         for ok in ("", "23:00-06:30", "0:00 - 7:15", "22:30-23:45"):
             self.assertTrue(config.check("kiosk", {"quiet": ok}), ok)

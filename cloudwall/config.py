@@ -120,6 +120,8 @@ def check(section, values):
             raise ValueError(f"[{section}] {key} must be more than 0, not {v!r}")
     if section == "tracking" and str(values.get("when_idle", "pause")).lower() not in ("pause", "log"):
         raise ValueError(f'[tracking] when_idle must be "pause" or "log", not {values["when_idle"]!r}')
+    if section == "kiosk" and values.get("density", "simple") not in ("simple", "detailed"):
+        raise ValueError(f'[kiosk] density must be "simple" or "detailed", not {values["density"]!r}')
     if section == "kiosk" and not re.fullmatch(r"\s*|\s*([01]?\d|2[0-3]):[0-5]\d\s*-\s*([01]?\d|2[0-3]):[0-5]\d\s*", str(values.get("quiet", ""))):
         raise ValueError(f'[kiosk] quiet must be a span of hours like "23:00-06:30", or "" for none, not {values["quiet"]!r}')
     if section == "server" and "port" in values and not (isinstance(values["port"], int) and 0 < values["port"] < 65536):
