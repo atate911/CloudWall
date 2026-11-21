@@ -1423,6 +1423,14 @@ html.phone .so-nums { gap: 1rem; } html.phone .so-nums > div + div { padding-lef
 .el-over { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 1 4; stroke-linecap: round; opacity: .7; }
 .pf-stem { stroke: var(--magenta); stroke-width: 1; opacity: .45; }
 .pf-craft { cursor: pointer; }
+.pf-hit { fill: transparent; stroke: none; }
+/* the same aircraft, pointed at in any view: ringed on the radar and the side view, its row tinted */
+.pf-craft.pointed { opacity: 1; }
+.pf-craft.pointed .pf-hit { stroke: var(--ink); stroke-width: 1.2; vector-effect: non-scaling-stroke; fill: color-mix(in srgb, var(--ink) 6%, transparent); }
+.pf-lab.off { display: none; } .pf-lab.off.pointed { display: inline; }
+#radar .craft.pointed > circle:first-child { stroke: var(--ink); stroke-width: .7; fill: color-mix(in srgb, var(--ink) 7%, transparent); }
+#scope:is(.map, .atc) #radar .craft.pointed > circle:first-child { stroke: #fff; }
+.tr.pointed, .tl-e.pointed { background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .el-ground { stroke: var(--ink-2); stroke-width: 1.3; }
 .el-hatch { stroke: var(--slate); stroke-width: .8; opacity: .55; }
 .el-rwy { stroke: var(--ink); stroke-width: 3.2; }

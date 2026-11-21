@@ -50,7 +50,10 @@ to touchdown and gap to the one ahead), and a side view along the runways showin
 over whom, with the 3° approach drawn while the selected aircraft is an arrival: heights to scale up to 6,000 ft, with the rest of the sky pressed
 together above a double line (so a flight passing at 36,000 ft sits above one at 14,000), each
 aircraft tipped the way it is climbing or descending, the cloud layers at their heights, a dotted
-line standing over home, and the selected aircraft on a line to the ground under it; on the wall panel, the big flight card with the landing queue under
+line standing over home, and the selected aircraft on a line to the ground under it. To find an
+aircraft from one view in another, point at it: on the radar, in the list, on the side view or on
+the timeline, it is ringed on the radar and the side view (and named there) and its row is tinted;
+a click on it in the side view selects it, as on the radar. On the wall panel, the big flight card with the landing queue under
 it. The desktop starts Detailed, a phone and the wall panel Simple; each
 screen remembers its own choice, `?density=simple` or `detailed` sets it in the address, and
 `[kiosk] density` sets the wall panel's.

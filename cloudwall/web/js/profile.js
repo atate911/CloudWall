@@ -124,7 +124,7 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
     const fixed = a.icon !== "heli" && a.icon !== "tandem" && a.icon !== "balloon" && (a.gs || 0) > 40;
     const tip = fixed ? clamp((Math.atan2(a.vrate || 0, a.gs * 101.27) / RAD) * 2, -14, 14) : 0;
     // the drawings face right, out along the approach: an arrival is turned round to face the runway
-    crafts += `<g class="pf-craft c-${a.activity || "pass"}${sel ? " sel" : ""}${off ? " off" : ""}" data-hex="${esc(a.hex)}" transform="translate(${f1(x)} ${f1(y)}) scale(${fwd ? 1 : -1},1) rotate(${(-tip).toFixed(1)})">${sv.html}</g>`;
+    crafts += `<g class="pf-craft c-${a.activity || "pass"}${sel ? " sel" : ""}${off ? " off" : ""}" data-hex="${esc(a.hex)}" transform="translate(${f1(x)} ${f1(y)}) scale(${fwd ? 1 : -1},1) rotate(${(-tip).toFixed(1)})"><circle class="pf-hit" cy="${f1(-sv.up * 0.2)}" r="${f1(w * 0.62)}"/>${sv.html}</g>`;
     boxes.push({ x0: x - w / 2, x1: x + w / 2, y0: y - sv.up, y1: y + sv.h * 0.4 });
     return { a, x, y, w, sv, sel, off };
   });
@@ -141,10 +141,12 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
       break;
     }
   }
-  // labels: the selected aircraft by its flight, then the arrivals by their place in the queue
-  // alone (the list beside names them), then departures by their flight
-  const rank = (p) => (p.sel ? 0 : p.a.seq ? p.a.seq : p.a.activity === "dep" ? 50 : 99);
-  for (const p of placed.filter((p) => !p.off && (p.sel || p.a.seq || p.a.activity === "dep")).sort((q, r) => rank(q) - rank(r))) {
+  // labels, as the radar names them, so an aircraft here can be found there: the selected aircraft
+  // by its flight, then the arrivals by their place in the queue (the number the radar and the list
+  // give them), then departures, then everyone else along the runways' line, by their flight, where
+  // there is room. The faint ones off the line are named when pointed at (the label is there, hidden).
+  const rank = (p) => (p.sel ? 0 : p.a.seq ? p.a.seq : p.off ? 200 : p.a.activity === "dep" ? 50 : 99);
+  for (const p of placed.slice().sort((q, r) => rank(q) - rank(r))) {
     const { a, x, y, w, sv } = p, id = p.sel || !a.seq ? boardFlight(ident(a)) : "", seqW = a.seq ? 14 * fs : 0;
     const tw = seqW + id.length * 6.3 * fs + 6, th = 12 * fs;
     const tries = [[x - tw / 2, y - sv.up - 4 * fs], [x + w / 2 + 3, y - 2], [x - w / 2 - 3 - tw, y - 2], [x - tw / 2, y + sv.h * 0.5 + th]];
@@ -156,9 +158,9 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
       at = b; break;
     }
     if (!at) continue;
-    boxes.push(at);
+    if (!p.off) boxes.push(at);
     if (a.seq) labels += `<g class="pf-seq" transform="translate(${f1(at.x0 + 5 * fs)} ${f1(at.y1 - 6 * fs)})"><circle r="${6 * fs}"/><text y="${3.4 * fs}" text-anchor="middle">${a.seq}</text></g>`;
-    if (id) labels += `<text class="pf-lab${p.sel ? " sel" : ""}" x="${f1(at.x0 + seqW)}" y="${f1(at.y1 - 2)}">${esc(id)}</text>`;
+    if (id) labels += `<text class="pf-lab${p.sel ? " sel" : ""}${p.off ? " off" : ""}" data-hex="${esc(a.hex)}" x="${f1(at.x0 + seqW)}" y="${f1(at.y1 - 2)}">${esc(id)}</text>`;
   }
   return `<svg class="profile" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Aircraft by height along the runways">${s}${crafts}${labels}</svg>`;
 }
