@@ -1,0 +1,23 @@
+name = "Cessna 208 Caravan"
+types = ["C208"]
+production = [1985]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_208_Caravan",
+]
+
+text = """
+A big single-engine utility aircraft built around a PT6 turboprop, with a high strut-braced wing,
+fixed gear tough enough for gravel and grass, and a cargo pod slung under the belly. FedEx was its
+launch customer and still flies hundreds as feeders, carrying packages between the cities its jets
+serve and the towns they don't, and it works on floats and skis, as a skydiving jump ship and as a
+small airliner on short hops.
+
+More than 3,000 have been built since 1985. From the ground it looks like an oversized Cessna
+single, with a long nose for the turbine, an exhaust stack on its right side and, on most, that pod
+underneath.
+"""
+
+[facts]
+"First flight" = "December 1982"
+"Engine" = "Pratt & Whitney Canada PT6A"

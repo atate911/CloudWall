@@ -1,0 +1,23 @@
+name = "McDonnell Douglas MD-11"
+types = ["MD11"]
+production = [1990, 2001]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/McDonnell_Douglas_MD-11",
+]
+
+text = """
+The last of the big trijets, a stretched DC-10 with winglets, a glass cockpit for two pilots and a
+third engine set into the base of the tail fin. It fell short of its promised range when it entered
+service in 1990, airlines that had ordered it for passengers took 777s and A340s instead, and only
+200 were built. Nearly all ended up flying cargo.
+
+To save fuel, McDonnell Douglas gave it a tailplane about a third smaller than the DC-10's, with a
+fuel tank inside, and let computers make up for the stability that cost. It lands fast, at around
+160 knots, and earned a name among pilots as demanding in the flare. In November 2025 a UPS MD-11
+lost its left engine as it took off from Louisville and crashed, and the FAA grounded the type.
+"""
+
+[facts]
+"Built" = "200"
+"Engines" = "3 × GE CF6-80C2 or Pratt & Whitney PW4000"

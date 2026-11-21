@@ -1,0 +1,24 @@
+name = "Pilatus PC-12"
+types = ["PC12"]
+production = [1994]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Pilatus_PC-12",
+]
+
+text = """
+A single Pratt & Whitney Canada PT6 turboprop of about 1,200 shp, a pressurised cabin for up to nine
+passengers, and a cargo door big enough for a pallet: the PC-12 is a business aircraft, an airliner
+for small towns and an air ambulance all at once. It cruises at around 280 knots and flies about
+1,800 nm, from runways a business jet couldn't use. Australia's Royal Flying Doctor Service flies a
+large fleet of them, and the US Air Force flies it as the U-28 Draco.
+
+Its trust in one engine rests on the PT6's record, which is why Europe has let single-engine
+turboprops like it carry paying passengers in cloud since 2017. You can know it by its T-tail, its
+long, high-aspect wing with upturned winglets, and the size of it: for a single, it is big.
+"""
+
+[facts]
+"First flight" = "May 1991"
+"Engine" = "Pratt & Whitney Canada PT6A-67 or PT6E-67XP"
+"Built" = "over 2,000"

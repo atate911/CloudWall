@@ -1,0 +1,24 @@
+name = "Boeing KC-135 Stratotanker"
+types = ["K35R"]
+production = [1957, 1965]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_KC-135_Stratotanker",
+]
+
+text = """
+Every KC-135 was built between 1956 and 1965, and more than 350 of them still refuel US and allied
+aircraft, older than most of the crews who fly them. It grew from the same Boeing prototype as the
+707 but with a narrower fuselage. From 1984 most were re-engined with CFM56s, the engine family of
+the 737 Classic and the A320, which made them quieter, gave them more thrust and let them offload far
+more fuel; those are the KC-135R.
+
+Fuel goes through a flying boom under the tail, steered into the receiving aircraft by a boom
+operator lying on their front at a window in the tail. From the ground it looks like an early
+four-engined airliner with very large engines, in grey, with the boom folded up beneath the fin.
+"""
+
+[facts]
+"First flight" = "August 1956"
+"Built" = "803"
+"Engines" = "4 × CFM International F108 (CFM56)"

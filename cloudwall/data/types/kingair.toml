@@ -1,0 +1,33 @@
+name = "Beechcraft King Air"
+types = ["BE9L", "BE20", "B350"]
+production = [1964]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Beechcraft_King_Air",
+  "https://en.wikipedia.org/wiki/Beechcraft_Super_King_Air",
+]
+
+text = """
+The best-selling business turboprop there is, built continuously since 1964, with more than 7,000
+delivered across the family. Two Pratt & Whitney Canada PT6s and a pressurised cabin let it fly
+higher and faster than piston twins while using strips too short for most jets, and it serves
+everyone from charter firms to air ambulances. The US Army and Air Force fly the 200 and 350 as the
+C-12 Huron and the MC-12 surveillance aircraft.
+
+The small 90 has a conventional tail; the 200 and the stretched 350 have a T-tail, which tells them
+apart at a glance. All have the same long engine nacelles with their exhaust stacks pointing back
+over the wing.
+"""
+
+[facts]
+"First flight" = "January 1964"
+"Engines" = "2 × Pratt & Whitney Canada PT6A"
+
+[variants.BE9L]
+name = "Beechcraft King Air 90"
+
+[variants.BE20]
+name = "Beechcraft King Air 200"
+
+[variants.B350]
+name = "Beechcraft King Air 350"

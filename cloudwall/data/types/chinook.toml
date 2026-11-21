@@ -1,0 +1,24 @@
+name = "Boeing CH-47 Chinook"
+types = ["H47"]
+production = [1962]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_CH-47_Chinook",
+  "https://en.wikipedia.org/wiki/Columbia_Helicopters",
+]
+
+text = """
+Two big rotors turning in opposite directions, one at each end, cancel each other's torque, so the
+Chinook needs no tail rotor and can put all its power into lift. It first flew in 1961 and is still
+built, as the CH-47F, for the US Army and many others, and it carries loads under its belly that
+would bury a single-rotor helicopter of its size.
+
+The civil version, the Boeing 234, and the smaller Vertol 107 live on with Columbia Helicopters of
+Aurora, Oregon, which owns their type certificates and flies them for logging, construction and
+firefighting. You'll hear one before you see it: the two rotors give it a deep, double beat unlike
+any other helicopter.
+"""
+
+[facts]
+"First flight" = "September 1961"
+"Engines" = "2 × Honeywell T55"

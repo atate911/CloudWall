@@ -1,0 +1,39 @@
+name = "Airbus A330"
+types = ["A332", "A333", "A338", "A339"]
+production = [1993]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_A330",
+  "https://en.wikipedia.org/wiki/Airbus_A330neo",
+]
+
+text = """
+Airbus designed the A330 and the four-engined A340 together, on one wing, one fuselage and one
+cockpit, and made the twin first a regional widebody and then, as engines and rules allowed, an
+ocean-crosser. Its flight deck is the A320's, enlarged, so pilots move between the two on a short
+course. Seats run eight abreast in economy, two, four and two, so a couple by the window never
+has a stranger beside them.
+
+The A330neo, from 2018, has Rolls-Royce Trent 7000 engines, its only option, and a new wing nearly 4
+m longer with curved sharklets in place of the older ones' angled winglets. The A330 MRTT tanker
+flies for many air forces. Tell an A330 from a 777 by its main gear, four wheels on each leg instead
+of six, and from a 767 by its wider, longer body and the winglets every one carries.
+"""
+
+[facts]
+"First flight" = "November 1992"
+"Engines" = "2 × GE CF6, Pratt & Whitney PW4000 or Rolls-Royce Trent 700; Trent 7000 on the neo"
+
+[variants.A332]
+name = "Airbus A330-200"
+
+[variants.A333]
+name = "Airbus A330-300"
+
+[variants.A338]
+name = "Airbus A330-800"
+production = [2020]
+
+[variants.A339]
+name = "Airbus A330-900"
+production = [2018]

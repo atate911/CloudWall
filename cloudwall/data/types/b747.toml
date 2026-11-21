@@ -1,0 +1,40 @@
+name = "Boeing 747"
+types = ["B741", "B742", "B743", "B744", "B748"]
+production = [1969, 2023]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_747",
+]
+
+text = """
+Pan Am asked for an airliner twice the size of the 707, and Boeing, expecting supersonic airliners
+to take over passenger flying, designed the 747 to end its days as a freighter. It put the cockpit
+up on a short upper deck so the whole nose could swing up for loading, and the hump that made it
+famous is the fairing behind that cockpit. It first flew in February 1969, from a factory in Everett
+built for it that is still the largest building in the world by volume.
+
+The 747 was the only widebody for years and flew more people further than any airliner before it.
+1,574 were built before the line closed in 2023, and today nearly all of those still flying carry
+cargo. Its four engines and hump make it unmistakable; the -400 added winglets and a longer upper
+deck, and the -8 a still longer body, raked wingtips and saw-tooth engine nacelles.
+"""
+
+[facts]
+"First flight" = "February 1969"
+"Built" = "1,574"
+
+[variants.B741]
+name = "Boeing 747-100"
+
+[variants.B742]
+name = "Boeing 747-200"
+
+[variants.B743]
+name = "Boeing 747-300"
+
+[variants.B744]
+name = "Boeing 747-400"
+
+[variants.B748]
+name = "Boeing 747-8"
+production = [2011, 2023]

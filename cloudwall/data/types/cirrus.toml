@@ -1,0 +1,33 @@
+name = "Cirrus SR20 and SR22"
+types = ["SR20", "SR22", "SR2T"]
+production = [1999]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cirrus_SR22",
+  "https://en.wikipedia.org/wiki/Cirrus_Airframe_Parachute_System",
+]
+
+text = """
+Every Cirrus carries a parachute for the whole aircraft. Pull a red handle in the cabin ceiling and a
+rocket fires the canopy out of a hatch behind the cabin, and the aircraft comes down under it. The
+system has been credited with saving well over 200 lives. That, a composite airframe built in
+Duluth, Minnesota, and a glass cockpit made the SR22 the best-selling piston aircraft in the world
+for two decades.
+
+The SR22 has a 310 hp Continental and cruises at about 180 knots; the turbocharged SR22T goes higher
+and faster still. Pilots fly it with a side yoke instead of a control wheel. It is a sleek low-wing
+single with fixed gear in fairings and a three-bladed propeller, and the parachute's hatch shows as a
+panel just behind the rear window.
+"""
+
+[facts]
+"Engine" = "Continental IO-550-N, 310 hp (SR22)"
+
+[variants.SR20]
+name = "Cirrus SR20"
+
+[variants.SR22]
+name = "Cirrus SR22"
+
+[variants.SR2T]
+name = "Cirrus SR22T"

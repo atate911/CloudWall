@@ -1,0 +1,24 @@
+name = "Boeing C-17 Globemaster III"
+types = ["C17"]
+production = [1993, 2015]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_C-17_Globemaster_III",
+]
+
+text = """
+A strategic airlifter that can fly a 77-tonne load across an ocean and then land it on a short,
+rough strip near the front. Its four Pratt & Whitney F117s are military versions of the 757's
+PW2000, and their exhaust blows over large flaps to make extra lift at low speed. On the ground it
+can reverse its engines and back itself up a slope fully loaded.
+
+279 were built before the line closed in 2015, most for the US Air Force, the rest for the RAF,
+Australia, Canada, India, Qatar, the UAE, Kuwait and a NATO unit in Hungary. It is unmistakable from
+below: a high wing with winglets, four engines, a T-tail and a fat grey fuselage with bulges along
+its sides for the landing gear.
+"""
+
+[facts]
+"First flight" = "September 1991"
+"Built" = "279"
+"Engines" = "4 × Pratt & Whitney F117-PW-100"

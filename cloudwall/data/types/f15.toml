@@ -1,0 +1,36 @@
+name = "McDonnell Douglas F-15 Eagle"
+types = ["F15", "F15E"]
+production = [1974]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/McDonnell_Douglas_F-15_Eagle",
+]
+
+text = """
+Designed after Vietnam showed American fighters losing the close-in fight, the F-15 was built around
+a simple idea: more thrust than weight. Its two Pratt & Whitney F100s let it accelerate going
+straight up, and in 1975 a stripped F-15, the Streak Eagle, climbed from a standing start to 30,000 m
+in under three and a half minutes. In air-to-air combat, flown by the US, Israel and Saudi Arabia, it
+has more than 100 victories and no losses.
+
+Its wide body and big wing make so much lift that in 1983 an Israeli F-15D landed after losing most
+of its right wing in a mid-air collision. You can tell it by its twin upright fins, square intakes
+either side of the cockpit and a wing that looks too big for the jet. The Air National Guard keeps
+F-15s on 24-hour alert at several US airports, ready to launch within minutes to meet an aircraft
+that won't answer.
+"""
+
+[facts]
+"First flight" = "July 1972"
+"Top speed" = "Mach 2.5"
+"Engines" = "2 × Pratt & Whitney F100"
+
+[variants.F15]
+name = "F-15 Eagle"
+
+[variants.F15E]
+name = "F-15E Strike Eagle"
+more = """
+The F-15E Strike Eagle is the two-seat ground-attack version, with a weapons officer behind the
+pilot and conformal fuel tanks fitted flat along the sides of its intakes.
+"""

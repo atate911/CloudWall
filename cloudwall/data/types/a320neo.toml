@@ -1,0 +1,39 @@
+name = "Airbus A320neo family"
+types = ["A19N", "A20N", "A21N"]
+production = [2016]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_A320neo_family",
+]
+
+text = """
+"Neo" stands for new engine option, and the engines are most of the story: Pratt & Whitney's geared
+PW1100G or CFM's LEAP-1A, with fans of about 2 m against the older A320's 1.7 m, pushing eleven or
+twelve times as much air around the core as through it. With the sharklets, the tall curved winglets
+the family now carries, they cut fuel burn by around 15% at first, and more as the engines matured.
+The Pratt engine puts a gearbox between fan and turbine so each can turn at its best speed; in 2023 a
+flaw in the powdered metal of its turbine discs forced hundreds of neos out of service for
+inspection.
+
+From below, the engines fill noticeably more of the space under the wing than an older A320's, and
+the neo doesn't whistle on approach as the early ones did. Together with the original family it has
+outsold every other airliner, the 737 included.
+"""
+
+[facts]
+"Entered service" = "January 2016"
+"Engines" = "2 × Pratt & Whitney PW1100G or CFM LEAP-1A"
+
+[variants.A19N]
+name = "Airbus A319neo"
+
+[variants.A20N]
+name = "Airbus A320neo"
+
+[variants.A21N]
+name = "Airbus A321neo"
+more = """
+The A321neo is the family's best seller, and its long-range versions have put single-aisle jets on
+routes across the Atlantic. The XLR carries an extra fuel tank built into the fuselage and reaches
+about 8,700 km.
+"""

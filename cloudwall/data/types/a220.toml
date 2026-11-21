@@ -1,0 +1,33 @@
+name = "Airbus A220"
+types = ["BCS1", "BCS3"]
+production = [2016]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_A220",
+]
+
+text = """
+Bombardier designed it from a clean sheet as the CSeries, its first step beyond regional jets: wings
+of carbon composite built in Belfast, a fuselage of aluminium-lithium, fly-by-wire with sidesticks,
+and Pratt & Whitney's PW1500G geared turbofan, whose gearbox lets the big fan turn about a third as
+fast as the turbine driving it. That makes it one of the quietest jets of its size. Seats run five
+abreast, two on one side and three on the other, so most rows have one middle seat instead of two,
+and they are wider than in any other narrowbody's economy cabin.
+
+In 2017 Boeing objected to Delta's order, and the US Commerce Department proposed duties of nearly
+300% on the aircraft. Before the International Trade Commission threw the case out in January 2018,
+Bombardier had already handed control of the programme to Airbus for a token sum. Airbus renamed it
+the A220 and opened a second assembly line in Mobile, Alabama, where many of the A220s flying in the
+US are built. From the ground, look for engines that seem too big for the aircraft, slung well
+forward under a plain wing with no winglet.
+"""
+
+[facts]
+"Entered service" = "July 2016"
+"Engines" = "2 × Pratt & Whitney PW1500G"
+
+[variants.BCS1]
+name = "Airbus A220-100"
+
+[variants.BCS3]
+name = "Airbus A220-300"

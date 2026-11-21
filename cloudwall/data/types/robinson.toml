@@ -1,0 +1,36 @@
+name = "Robinson helicopters"
+types = ["R22", "R44", "R66"]
+production = [1979]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Robinson_R22",
+  "https://en.wikipedia.org/wiki/Robinson_R44",
+  "https://en.wikipedia.org/wiki/Robinson_R66",
+]
+
+text = """
+Frank Robinson set out to build a helicopter cheap enough for people to learn on and own, and the
+two-seat R22, from 1979, and four-seat R44 became the most common civil helicopters in the world.
+They have a two-bladed teetering rotor, a light airframe and a T-shaped cyclic that swings between
+the two front seats, so either pilot can fly. The rotor's design makes low-g manoeuvres dangerous,
+and every Robinson pilot in the US must have special training before flying one.
+
+The R66 adds a Rolls-Royce turbine and a fifth seat. From the ground they are small and light, with a
+bubble cabin, a thin tail boom and the slap of a two-bladed rotor.
+"""
+
+[facts]
+"Built at" = "Torrance, California"
+
+[variants.R22]
+name = "Robinson R22"
+
+[variants.R44]
+name = "Robinson R44"
+production = [1993]
+
+[variants.R66]
+name = "Robinson R66"
+production = [2011]
+[variants.R66.facts]
+"Engine" = "Rolls-Royce RR300"

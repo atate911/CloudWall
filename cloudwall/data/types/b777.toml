@@ -1,0 +1,45 @@
+name = "Boeing 777"
+types = ["B772", "B77L", "B773", "B77W"]
+production = [1995]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_777",
+]
+
+text = """
+The 777 was Boeing's first fly-by-wire airliner and the first designed entirely on computer, with
+eight airlines in the room as it was drawn. It was also the first airliner cleared at entry into
+service to fly 180 minutes from the nearest diversion airport, which put a twinjet on almost any
+ocean route. Its engines are among the largest ever built: the GE90-115B of the 777-300ER is the
+most powerful jet engine in service, its fan 3.25 m across.
+
+Look for its main landing gear, six wheels on each leg in three pairs, which no other twinjet has,
+and for the tail cone, which ends in a flat, upright blade instead of a point. The engines are so
+large that from below they seem to fill the space under the wing, and the wingtips are raked back
+with no winglet.
+"""
+
+[facts]
+"First flight" = "June 1994"
+"Engines" = "2 × GE90, Pratt & Whitney PW4000 or Rolls-Royce Trent 800"
+
+[variants.B772]
+name = "Boeing 777-200"
+
+[variants.B77L]
+name = "Boeing 777-200LR or 777F"
+more = """
+The long-range -200LR flew 21,602 km nonstop from Hong Kong to London, the long way round over the
+Pacific and the Atlantic, in 2005, a record for an airliner at the time. The 777F freighter shares
+its wing and engines.
+"""
+
+[variants.B773]
+name = "Boeing 777-300"
+
+[variants.B77W]
+name = "Boeing 777-300ER"
+more = """
+The -300ER, at 73.9 m one of the longest airliners flying, is the most common 777, and its two
+GE90-115Bs, each rated at 115,300 lb of thrust, are the only engines it was offered with.
+"""

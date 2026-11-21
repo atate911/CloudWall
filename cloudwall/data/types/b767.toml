@@ -1,0 +1,33 @@
+name = "Boeing 767"
+types = ["B762", "B763", "B764"]
+production = [1982]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_767",
+]
+
+text = """
+The 767 opened the oceans to twin-engined jets. In 1985 it became the first airliner approved to fly
+up to 120 minutes from the nearest diversion airport, enough to cross the North Atlantic on two
+engines, and within a few years more 767s crossed it than any other type. Its cabin seats seven
+abreast, two, three and two, so only one seat in seven is a middle seat. Its two-pilot cockpit is
+shared with the 757, and many of the later ones carry tall blended winglets fitted after delivery.
+
+The passenger 767 has largely given way to the 787, but the freighter is still built, for FedEx, UPS
+and Amazon among others, and the US Air Force's KC-46 Pegasus tanker is a 767 too. Tell it from an
+A330 by its narrower, shorter fuselage and stubbier look, and from a 757, which it shares a nose
+with, by its wider body and the second aisle inside.
+"""
+
+[facts]
+"First flight" = "September 1981"
+"Engines" = "2 × GE CF6, Pratt & Whitney JT9D or PW4000, or Rolls-Royce RB211"
+
+[variants.B762]
+name = "Boeing 767-200"
+
+[variants.B763]
+name = "Boeing 767-300"
+
+[variants.B764]
+name = "Boeing 767-400ER"

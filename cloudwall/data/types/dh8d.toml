@@ -1,0 +1,22 @@
+name = "De Havilland Canada Dash 8-400"
+types = ["DH8D"]
+production = [2000]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/De_Havilland_Canada_Dash_8",
+]
+
+text = """
+The fastest turboprop airliner flying, cruising at around 360 knots on two Pratt & Whitney Canada
+PW150s of 5,000 shp each, so on short routes it keeps pace with regional jets while burning far less
+fuel. The "Q" it was marketed under stood for quiet: microphones and speakers in the cabin cancel the
+propeller's drone. It seats up to 90.
+
+From the ground it is long and slender, with a high wing, a T-tail, six-bladed propellers and long
+engine nacelles the main gear folds into. In 2007 SAS grounded and then retired its fleet after
+three landing-gear collapses in two months.
+"""
+
+[facts]
+"First flight" = "January 1998"
+"Engines" = "2 × Pratt & Whitney Canada PW150A"

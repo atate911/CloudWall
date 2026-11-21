@@ -1,0 +1,42 @@
+name = "Boeing 737 Next Generation"
+types = ["B736", "B737", "B738", "B739"]
+production = [1997, 2020]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_737_Next_Generation",
+]
+
+text = """
+The 737 Next Generation is the jet most of today's 737 fleets grew up on: launched in 1993, flown in
+1997, and built until the MAX took over, with more than 7,000 delivered. Boeing kept the 1960s
+fuselage cross-section and the cockpit's layout, but gave it a new wing a quarter larger in area and
+holding about 30% more fuel, which lets it cruise at Mach 0.79 and climb to 41,000 ft. Its CFM56-7B
+engines sit in nacelles flattened along the bottom, the squashed oval Boeing first used on the 737
+Classic to fit a bigger fan under such a low wing.
+
+Telling one from a MAX is harder than it used to be. Many NGs, Alaska's and United's among them, have
+been refitted with split scimitar winglets that look much like the MAX's, so look at the engines
+instead: an NG's nacelles end in a plain edge and its tail in a short, blunt cone, where a MAX has
+saw-tooth nacelles and a longer, slimmer tail. The Navy's P-8 Poseidon submarine hunter is an NG too.
+"""
+
+[facts]
+"First flight" = "February 1997"
+"Engines" = "2 × CFM56-7B"
+"Ceiling" = "41,000 ft"
+
+[variants.B736]
+name = "Boeing 737-600"
+
+[variants.B737]
+name = "Boeing 737-700"
+
+[variants.B738]
+name = "Boeing 737-800"
+
+[variants.B739]
+name = "Boeing 737-900"
+more = """
+The -900ER is the longest NG, with an extra pair of emergency exits behind the wing and a flat rear
+pressure bulkhead in place of the domed one, changes that let it seat up to 220.
+"""
