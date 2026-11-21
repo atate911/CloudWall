@@ -1,8 +1,9 @@
 // Kiosk mode: the wall panel, a 7–13" screen read from across the room, made to sit in a room
 // like a piece of furniture. One aircraft at a time, very large: the one over the house, its
 // airline, its type, where it's going (its own side elevation riding the route line, at its place
-// along the way), how high and fast it is, and when it passes. Beside it the radar, and over the
-// radar how many aircraft are about. When the sky is quiet, a slow rotation of large slides.
+// along the way), how high and fast it is, and when it passes. Under it how many aircraft are
+// about. The card has the whole screen unless [kiosk] view puts the radar or the map beside it.
+// When the sky is quiet, a slow rotation of large slides.
 // Sizes are in vh, with nothing under 4vh but the map's credit, so the same design reads the same
 // on 1024×600 and 1920×1080 panels and every word of it reads from the sofa.
 import { $, esc, num, mmss, ident, since, degF } from "./util.js";
@@ -33,6 +34,16 @@ function whereWords(a, state) {
   const s = [w, head].filter(Boolean).join(", ");
   return s ? s[0].toUpperCase() + s.slice(1) : "";
 }
+// Under the route, when the card has the whole screen: when it left, how far it has come and has to
+// go, and when it gets in (the provider's time, or CloudWall's estimate, which says "about")
+const clockAt = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+function routeFoot(r) {
+  const arrives = r.landed || r.eta || r.eta_est;
+  const dist = r.flown_nm != null && r.left_nm != null ? `${num(r.flown_nm)} nm flown, ${num(r.left_nm)} to go`
+    : r.left_nm != null ? `${num(r.left_nm)} nm to go` : "";
+  return `<div class="k-foot"><span>${r.departed ? `Left ${esc(clockAt(r.departed))}` : ""}</span><span>${esc(dist)}</span>` +
+    `<span>${arrives ? `${r.landed ? "Landed" : "Arrives"} ${!r.landed && !r.eta ? "about " : ""}${esc(clockAt(arrives))}` : ""}</span></div>`;
+}
 // How far along its route it is, 0 to 1, or null when the route doesn't say
 function progressOf(r) {
   if (r.progress != null) return Math.max(0, Math.min(1, r.progress));
@@ -51,6 +62,7 @@ function routeBlock(a, state) {
       <div class="k-apt ${r.origin.iata === here.iata ? "local" : ""}"><span>${esc(r.origin.city || "")}</span><b>${esc(r.origin.iata)}</b></div>
       <div class="k-line${p == null ? " nop" : ""}" style="--p:${(p ?? 0.5).toFixed(3)}" aria-hidden="true"><i class="k-flown"></i><i class="k-togo"></i>${drawn()}</div>
       <div class="k-apt r ${r.dest.iata === here.iata ? "local" : ""}"><span>${esc(r.dest.city || "")}</span><b>${esc(r.dest.iata)}</b></div>
+      ${routeFoot(r)}
     </div>`;
   }
   if (a.medical) {         // a medical flight: the hospital it's going to, or has just left
@@ -93,7 +105,8 @@ function showPlane(el, a, state) {
   $("k-type").textContent = typeWords(a);
   const h = a.hospital;
   const p = a.route && progressOf(a.route);
-  const key = JSON.stringify([a.route && [a.route.origin.iata, a.route.dest.iata, a.route.plausible, p == null ? null : Math.round(p * 200)], a.local, a.route_pending, a.type_name, a.type, !!a.medical,
+  const key = JSON.stringify([a.route && [a.route.origin.iata, a.route.dest.iata, a.route.plausible, p == null ? null : Math.round(p * 200),
+    a.route.flown_nm, a.route.eta || a.route.eta_est, a.route.departed], a.local, a.route_pending, a.type_name, a.type, !!a.medical,
     h && [h.code, h.state, h.eta_s == null ? null : Math.round((h.eta_s - since(state)) / 60)],
     !(a.route && a.route.plausible) && !a.local && !a.medical ? whereWords(a, state) : null]);
   if (key !== cur.routeKey) { cur.routeKey = key; $("k-route").innerHTML = routeBlock(a, state); }

@@ -54,14 +54,14 @@ DEFAULTS = {
     "extras": {"military": True, "military_radius_nm": 40, "military_url": "https://opendata.adsb.fi/api/v2/mil",
                "tfr": True, "tfr_radius_nm": 30, "contrails": True},
     # The kiosk has no buttons: its place and radar are set here. place: a place's name (empty for
-    # the first); view: "radar", or "map" for the flights on an everyday map; radar: "chart" or
+    # the first); view: "card" (the aircraft overhead across the whole screen), or "radar" or "map"
+    # to put the radar, or the flights on an everyday map, beside it; radar: "chart" or
     # "atc" (drawn like an air traffic control screen); tracks: the
     # selected aircraft's track and one-minute lines; range_nm: 0 for the tracking radius, or 20 or 30 to see further;
-    # density: "simple" (the landing queue and the next aircraft over the house, read across the room)
-    # or "detailed" (the flight card with the landing queue under it, and every aircraft labelled);
+    # density: the radar's labels, "simple" (the aircraft that matter) or "detailed" (every one);
     # quiet: hours when the panel shows only a dim clock and what's next ("23:00-06:30"; "" for none),
     # waking for something coming over the house, something new worth a look, an emergency or a tap.
-    "kiosk": {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0, "density": "simple", "quiet": ""},
+    "kiosk": {"place": "", "view": "card", "radar": "chart", "tracks": True, "range_nm": 0, "density": "simple", "quiet": ""},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }

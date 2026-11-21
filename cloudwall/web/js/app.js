@@ -88,10 +88,13 @@ if (!KIOSK) nearbyDivider(() => { if (state && view === "now") renderMiniBoard(s
 placeMenu(() => state);
 
 // ---------- scope: the radar, or the Map view (the flights on a plain satellite or street map) ----------
-// The desktop's buttons choose for each screen; the kiosk takes [kiosk] view. An emergency always
-// shows on the radar, where the controllers' codes and the restrictions are.
+// The desktop's buttons choose for each screen; the kiosk takes [kiosk] view (or ?view= in its
+// address), where "card" leaves the scope off and gives the card the whole screen. An emergency
+// always shows on the radar, where the controllers' codes and the restrictions are.
+const kioskView = () => { const v = qs.get("view") || (state && state.kiosk && state.kiosk.view); return v === "radar" || v === "map" ? v : "card"; };
+const cardOnly = () => KIOSK && kioskView() === "card";
 function scopePref() {
-  const v = KIOSK ? state && state.kiosk && state.kiosk.view : store("scope");
+  const v = KIOSK ? kioskView() : store("scope");
   return v === "map" ? "map" : "radar";
 }
 const scopeMode = () => (emergencies().length ? "radar" : scopePref());
@@ -125,7 +128,7 @@ const quietSky = () => !!state && !state.hero && !state.next && !picture(state).
 const cardShown = () => KIOSK || !simple() || quietSky();     // the wall panel always shows its card
 let scopeLabel = "";
 function drawScopeNow(now = performance.now()) {
-  if (!state || view !== "now") return;
+  if (!state || view !== "now" || cardOnly()) return;
   const mode = scopeMode(), pref = scopePref(), ms = mapStyle(), { style, tracks, range } = radarPrefs();
   const atc = mode === "radar" && style === "atc";
   const charts = state.charts || { map: state.basemap }, layers = charts.layers || {};
@@ -228,6 +231,7 @@ function render() {
   document.body.classList.toggle("d-simple", dens === "simple");
   document.body.classList.toggle("d-detailed", dens !== "simple");
   document.body.classList.toggle("sky-quiet", quietSky());
+  document.body.classList.toggle("card-only", cardOnly());
   document.querySelectorAll("#dens-seg button").forEach((b) => { b.classList.toggle("on", b.dataset.dens === dens); b.setAttribute("aria-pressed", String(b.dataset.dens === dens)); });
   paintTheme();
   const w = state.weather, f = state.flow;

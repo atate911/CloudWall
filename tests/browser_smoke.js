@@ -31,7 +31,9 @@ async function open(browser, size, path, errors, tamper, before) {
     });
   }
   await page.goto(BASE + path);
-  await page.waitForSelector("#s-craft g.craft", { state: "attached", timeout: 15000 });      // the first aircraft is on the scope
+  // the first aircraft is on the scope, or (the wall panel showing its card alone) the card is drawn
+  await page.waitForFunction(() => document.querySelector("#s-craft g.craft")
+    || (document.body.classList.contains("card-only") && document.querySelector("#hero > .k-body > *, #hero.em-card")), null, { timeout: 15000 });
   return page;
 }
 // a stand-in map tile, so that the views drawn over real maps fetch nothing from the map provider
@@ -181,26 +183,30 @@ const SCENARIOS = {
         if (f < out.html) { out.html = f; out.where = `${e.className || e.tagName}: ${e.textContent.trim().slice(0, 30)}`; }
       }
       const svg = document.getElementById("radar"), k = Math.min(svg.clientWidth, svg.clientHeight) / 224;
+      if (!k) return out;                             // the card alone: no radar
       for (const t of svg.querySelectorAll("#s-craft :is(.tag, .tag-sub), .compass, .apt-label")) {
         if (!t.textContent || t.style.display === "none" || getComputedStyle(t).display === "none") continue;
         out.radar = Math.min(out.radar, (parseFloat(getComputedStyle(t).fontSize) * k) / H);
       }
       return out;
     });
-    // simple, as it starts: the card, the radar and over it how many aircraft are about
+    // as it starts: the card across the whole screen and, under it, how many aircraft are about
     let page = await open(browser, "kiosk", "/kiosk", errors);
     const out = {};
     out.layout = await page.evaluate(() => document.documentElement.className);
-    out.scope = await page.evaluate(() => document.getElementById("scope").className);
     out.simple = await page.evaluate(() => document.body.classList.contains("d-simple"));
     out.card = await count(page, "#hero .k-card");
-    out.onScope = await count(page, "#s-craft g.craft");
+    out.scopeShown = await page.evaluate(() => getComputedStyle(document.getElementById("scope")).display !== "none");
+    out.radarDrawn = await count(page, "#s-craft g.craft");                // not drawn while it's off
     out.tabsShown = await page.evaluate(() => getComputedStyle(document.querySelector("nav")).display !== "none");
     out.caption = await page.evaluate(() => [...document.querySelectorAll("#k-cap > *")].map((e) => e.textContent));
     out.smallest = await smallest(page);
     await page.close();
-    // detailed: the same card, every aircraft labelled on the radar, and the same floor
-    page = await open(browser, "kiosk", "/kiosk?density=detailed", errors);
+    // [kiosk] view = "radar", Detailed: the same card, the radar beside it with every aircraft labelled,
+    // and the same floor
+    page = await open(browser, "kiosk", "/kiosk?density=detailed&view=radar", errors);
+    out.scope = await page.evaluate(() => document.getElementById("scope").className);
+    out.onScope = await count(page, "#s-craft g.craft");
     out.detailedCard = await count(page, "#hero .k-card");
     out.queue = await count(page, "#hero .q-row");
     out.detailedSmallest = await smallest(page);

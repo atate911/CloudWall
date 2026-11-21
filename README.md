@@ -43,8 +43,8 @@ enthusiast reads the situation from: the flight card, every aircraft labelled wi
 and its runway or destination, a short fading track behind each, the final approach courses ticked
 every mile, a list of every aircraft grouped by what it is doing (arrivals with their runway, time
 to touchdown and gap to the one ahead), and a side view along the runways showing who is stacked
-over whom on the 3° approach. On the wall panel the two differ only on the radar: Simple names
-the aircraft that matter, Detailed labels every one. The desktop starts Detailed, a phone and the
+over whom on the 3° approach. On the wall panel the two differ only on its radar, when it shows
+one: Simple names the aircraft that matter, Detailed labels every one. The desktop starts Detailed, a phone and the
 wall panel Simple; each screen remembers its own choice, `?density=simple` or `detailed` sets it
 in the address, and `[kiosk] density` sets the wall panel's.
 
@@ -288,7 +288,7 @@ board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk 
 |---|---|---|
 | `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, and the settings menu (sound and night mode). On screens 1200 px wide and up, Detailed adds a live list of every aircraft grouped by what it is doing, with the side view along the runways under it; click a flight to follow it. The arrow on the divider between the radar and the list hides or shows the list, and dragging the divider gives the radar more or less room (double-click it for the usual width); the flight card keeps its size, and each screen remembers its setting. On a wide, short window the radar's column keeps to the width of its disc and the card and the list share the rest; when the card is short, its route map moves beside the facts or takes the drawing's room (whichever shows the route bigger), then gives way, then the aircraft drawing does (the facts go into columns), so nothing runs into anything else. Simple on a wide window puts what's worth a look in a third column, past the radar. |
 | `http://<server>:5050/` on a phone | A phone in the hand | The same tabs and switches, laid out for a phone. Upright, the page scrolls: the flight card at full width, then a square radar with its switches above and below it, the tabs along the foot and the status line held at the top. The Board becomes a two-line list (flight, route and when it's overhead; airline, type, altitude and speed), and Weather and Logbook stack into one column. Turned sideways, the card and radar sit side by side. Tapping a blip on the radar brings its flight card into view. |
-| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Made to hang in a room and read from the sofa: one sheet of chart paper with corner marks at the screen's corners, and nothing on it smaller than 4% of the screen's height (about 7 mm on a 13.3" panel), so every word reads from three or four metres away. Across the top, the place, the next thing to happen after the aircraft on the card ("0:45 AS 67 overhead", "1:40 AS 2162 lands") and the clock. On the left, the aircraft over the house, set large: its flight number and airline logo, its type, where it's going, with its own side elevation riding the line between the airports at its place along the way (or, with no route, the aircraft drawn larger and where it is and which way it's heading), and how high, how fast and how soon it passes overhead (once past, how far away and which way to look). On the right, the radar with only what reads from across the room (the aircraft and their labels, the runways and the compass points; no bearings, ring distances, town names or small airfields), and under it how many aircraft are about and any heard with no position (or the Map view, `[kiosk] view = "map"`). When nothing is about, the card turns to slides: the next aircraft over the house, the weather with a wind rose, the day so far, a flight restriction, fighters heard. An emergency squawk turns the screen red until it is cleared. |
+| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Made to hang in a room and read from the sofa: one sheet of chart paper with corner marks at the screen's corners, and nothing on it smaller than 4% of the screen's height (about 7 mm on a 13.3" panel), so every word reads from three or four metres away. Across the top, the place, the next thing to happen after the aircraft on the card ("0:45 AS 67 overhead", "1:40 AS 2162 lands") and the clock. Then the aircraft over the house across the whole screen: its flight number beside its airline logo and type; where it's going, its own side elevation riding the line between the airports at its place along the way, with when it left, how far it has come and has to go, and when it gets in (with no route, the aircraft drawn beside where it is and which way it's heading); and how high, how fast and how soon it passes overhead (once past, how far away and which way to look). Along the foot, how many aircraft are about and any heard with no position. `[kiosk] view = "radar"` puts the radar beside the card, with only what reads from across the room (the aircraft and their labels, the runways and the compass points), and `"map"` the Map view. When nothing is about, the card turns to slides: the next aircraft over the house, the weather with a wind rose, the day so far, a flight restriction, fighters heard. An emergency squawk turns the screen red until it is cleared. |
 
 The phone layout is chosen by screen size (up to 700 px wide, or 500 px tall when turned sideways),
 so it follows the phone as it turns and also suits a narrow desktop window. `?mode=phone` forces it and
@@ -297,17 +297,19 @@ so it follows the phone as it turns and also suits a narrow desktop window. `?mo
 `?mode=kiosk` on any address does the same as `/kiosk`. The kiosk sizes everything from
 the screen's height, so the 1024×600 and 1920×1080 panels look the same.
 
-The kiosk has no buttons, so its radar is set in the config file:
+The kiosk has no buttons, so what it shows is set in the config file:
 
 ```toml
 [kiosk]
-radar = "atc"      # "chart" (the default) or "atc"
+view = "card"      # "card" (the default): the aircraft overhead across the whole screen;
+                   # "radar" puts the radar beside it, "map" the Map view
+radar = "atc"      # with the radar: "chart" (the default) or "atc"
 tracks = true      # the selected aircraft's track, and one-minute lines
 range_nm = 30      # 0 for the tracking radius, or 20 or 30
 density = "simple" # the radar's labels: "simple" names the aircraft that matter, "detailed" every one
 ```
 
-The address can override these on any screen: `/kiosk?radar=atc&tracks=off&range=20&density=detailed`.
+The address can override these on any screen: `/kiosk?view=radar&radar=atc&tracks=off&range=20&density=detailed`.
 
 ## The ATC radar
 
