@@ -78,15 +78,27 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
   let s = `<defs><pattern id="pf-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="el-hatch" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>`;
   // the sky above the true scale, tinted, and the double line where the scale changes
   s += `<rect class="el-upper" x="${padL}" y="${padT}" width="${W - padL - padR}" height="${f1(band)}"><title>Above ${num(TOP)} ft the heights are pressed together</title></rect>`;
-  for (const alt of [2000, 4000, 10000, 20000, 40000]) {
-    s += `<line class="el-grid" x1="${padL}" x2="${W - padR}" y1="${f1(ys(alt))}" y2="${f1(ys(alt))}"/><text class="el-tick" x="${padL - 6}" y="${f1(ys(alt) + 3.5)}" text-anchor="end">${num(alt)}</text>`;
+  // the heights down the side, each only where it has room (a short sheet keeps the ones that say most)
+  const said = [top0];
+  for (const alt of [40000, 2000, 4000, 10000, 20000]) {
+    const y = ys(alt);
+    if (said.some((o) => Math.abs(o - y) < 11.5 * fs)) continue;
+    said.push(y);
+    s += `<line class="el-grid" x1="${padL}" x2="${W - padR}" y1="${f1(y)}" y2="${f1(y)}"/><text class="el-tick" x="${padL - 6}" y="${f1(y + 3.5)}" text-anchor="end">${num(alt)}</text>`;
   }
   s += `<path class="el-break" d="M${padL},${f1(top0)}H${W - padR}M${padL},${f1(top0 - 2.5)}H${W - padR}"/><text class="el-tick" x="${padL - 6}" y="${f1(top0 + 3.5)}" text-anchor="end">${num(TOP)} ft</text>`;
   s += `<rect x="${padL}" y="${g0}" width="${W - padL - padR}" height="${6 * fs}" fill="url(#pf-hatch)"/><line class="el-ground" x1="${padL}" x2="${W - padR}" y1="${g0}" y2="${g0}"/>`;
   // miles along the ground, left out where the airport's and home's names sit
-  const apX = ax.along(state.airport), busy = [0, apX], side = (nm) => (nm > 0 ? ax.out : ax.back);
-  for (const nm of [-15, -10, -5, 5, 10, 15].filter((n) => Math.abs(n) <= range && busy.every((b) => Math.abs(n - b) > 2.2))) {
-    s += `<line class="el-mile" x1="${f1(xs(nm))}" x2="${f1(xs(nm))}" y1="${g0}" y2="${f1(g0 + 5 * fs)}"/><text class="el-tick" x="${f1(xs(nm))}" y="${f1(g0 + 16 * fs)}" text-anchor="middle">${Math.abs(nm)}${Math.abs(nm) === range ? ` nm ${side(nm)}` : ""}</text>`;
+  // (every five miles has its tick; a number only where it is clear of the names and of the others,
+  // the ends of the scale first)
+  const apX = ax.along(state.airport), side = (nm) => (nm > 0 ? ax.out : ax.back);
+  const half = (text) => (text.length * 5.6 * fs) / 2 + 3 * fs, taken = [[xs(0), half("Home")], [xs(apX), half(state.airport.iata || "")]];
+  for (const nm of [-15, 15, -10, 10, -5, 5].filter((n) => Math.abs(n) <= range)) {
+    const x = xs(nm), text = `${Math.abs(nm)}${Math.abs(nm) === range ? ` nm ${side(nm)}` : ""}`;
+    s += `<line class="el-mile" x1="${f1(x)}" x2="${f1(x)}" y1="${g0}" y2="${f1(g0 + 5 * fs)}"/>`;
+    if (taken.some(([o, h]) => Math.abs(o - x) < h + half(text))) continue;
+    taken.push([x, half(text)]);
+    s += `<text class="el-tick" x="${f1(x)}" y="${f1(g0 + 16 * fs)}" text-anchor="middle">${text}</text>`;
   }
   // the cloud layers, a row of small clouds as thick as the cover, and their base at the right
   const frac = { FEW: 0.25, SCT: 0.45, BKN: 0.75, OVC: 1 };
@@ -124,7 +136,7 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
     const fixed = a.icon !== "heli" && a.icon !== "tandem" && a.icon !== "balloon" && (a.gs || 0) > 40;
     const tip = fixed ? clamp((Math.atan2(a.vrate || 0, a.gs * 101.27) / RAD) * 2, -14, 14) : 0;
     // the drawings face right, out along the approach: an arrival is turned round to face the runway
-    crafts += `<g class="pf-craft c-${a.activity || "pass"}${sel ? " sel" : ""}${off ? " off" : ""}" data-hex="${esc(a.hex)}" transform="translate(${f1(x)} ${f1(y)}) scale(${fwd ? 1 : -1},1) rotate(${(-tip).toFixed(1)})"><circle class="pf-hit" cy="${f1(-sv.up * 0.2)}" r="${f1(w * 0.62)}"/>${sv.html}</g>`;
+    crafts += `<g class="pf-craft c-${a.activity || "pass"}${sel ? " sel" : ""}${off ? " off" : ""}" data-hex="${esc(a.hex)}" transform="translate(${f1(x)} ${f1(y)}) scale(${fwd ? 1 : -1},1) rotate(${(-tip).toFixed(1)})"><circle class="pf-hit" cy="${f1(-sv.up * 0.2)}" r="${f1(Math.max(w * 0.62, 15 * fs))}"/>${sv.html}</g>`;
     boxes.push({ x0: x - w / 2, x1: x + w / 2, y0: y - sv.up, y1: y + sv.h * 0.4 });
     return { a, x, y, w, sv, sel, off };
   });

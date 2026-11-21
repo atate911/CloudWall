@@ -53,7 +53,12 @@ aircraft tipped the way it is climbing or descending, the cloud layers at their 
 line standing over home, and the selected aircraft on a line to the ground under it. To find an
 aircraft from one view in another, point at it: on the radar, in the list, on the side view or on
 the timeline, it is ringed on the radar and the side view (and named there) and its row is tinted;
-a click on it in the side view selects it, as on the radar. On the wall panel, the big flight card with the landing queue under
+a click on it in the side view selects it, as on the radar. The wall panel's Detailed shows the
+side view too, enlarged to read from the room: under the flight card, in the landing queue's place
+(the header says the next landings), or, on a panel much wider than tall such as 1280×400, in a
+third column past the radar with the queue kept. There a tap does the finding: tap an aircraft on
+the radar or the side view and it is selected, ringed in magenta on both, with its flight card
+beside them; tap the card to go back to what's overhead. On the wall panel, the big flight card with the landing queue under
 it. The desktop starts Detailed, a phone and the wall panel Simple; each
 screen remembers its own choice, `?density=simple` or `detailed` sets it in the address, and
 `[kiosk] density` sets the wall panel's.

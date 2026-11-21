@@ -185,7 +185,9 @@ class BrowserTest(unittest.TestCase):
         self.assertTrue(k["heardSaid"] and k["sideFits"])                     # heard aircraft said, however the side is trimmed
         self.assertTrue(k["strip"])                                          # Detailed: the situation over the radar
         self.assertEqual(k["labelsInside"], [])                              # every radar label placed, and inside the radar
-        self.assertGreaterEqual(k["queue"], 1)                               # and the demo's arrivals under the card
+        self.assertEqual((k["sideView"], k["cardFits"]), (1, True))          # the side view under the card, which keeps to its frame
+        self.assertGreaterEqual(k["queue"], 1)                               # a wide panel: the demo's arrivals under the card,
+        self.assertEqual((k["wideSide"], k["tapped"]), (1, True))            # the side view past the radar, and a tap there selects
         self.assertNotIn("map", k["scope"])                                  # the radar unless [kiosk] view says map
         self.assertGreaterEqual(k["onScope"], 1)
 

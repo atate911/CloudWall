@@ -160,7 +160,7 @@ main { min-height: 0; padding: 0 1.4rem; }
 .panel { min-height: 0; min-width: 0; position: relative; overflow: hidden; }
 /* each panel is a drawing sheet: a hairline frame with heavier marks at its corners. The marks are
    background layers on the frame itself, so they stay put while a sheet's contents scroll. */
-#hero, #board, #log, #wx-tab, #mini-board, .media, .coll, #scope.atc {
+#hero, #board, #log, #wx-tab, #mini-board, #k-prof, .media, .coll, #scope.atc {
   --mark: .8rem; --mw: 2px;
   border: 1px solid var(--frame); border-radius: 0;
   background:
@@ -732,6 +732,7 @@ body.night .sock-band.o { fill: #d0611f; } body.night .sock-band.w { fill: #d3d6
 /* sized for arm's length: a 1920-wide monitor shows more, not bigger */
 html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
 @media (max-aspect-ratio: 1/1) { html.desk { font-size: clamp(12px, 2.1vw, 18px); } }
+#k-prof { display: none; }
 #mini-board, .pane-split { display: none; }
 /* wide enough for a third panel: the traffic list, behind a divider that hides it or, dragged,
    gives the radar more or less room (divider.js sets the radar's and the list's columns; the
@@ -1574,6 +1575,32 @@ html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #side { display: 
 .kiosk body.d-detailed #hero { grid-column: 1; grid-row: 1 / span 2; }
 .kiosk body.d-detailed #scope { grid-column: 2; grid-row: 2; }
 .kiosk body.d-detailed:not(.emergency) #strip { display: flex; grid-column: 2; grid-row: 1; }
+/* the side view on the wall panel: under the flight card, in the landing queue's place (the header
+   says the next landings, and the side view numbers them as the radar does), the card's lettering a
+   size smaller to make the room; on a panel much wider than tall, a third column past the radar, and
+   the card and its queue stay as they are (app.js, PANEL_WIDE) */
+.kiosk #k-prof { flex-direction: column; gap: .6vh; padding: 1.8vh 2.4vh 1vh; --mark: 2.4vh; --mw: 2px; min-height: 0; }
+.kiosk #k-prof .prof-box { flex: 1; min-height: 0; }
+.kiosk #k-prof .profile { width: 100%; height: 100%; display: block; }
+.kiosk #k-prof .gl { font-size: 2vh; } .kiosk #k-prof .gn { font-size: 2.1vh; }
+@media not (min-aspect-ratio: 24/10) {
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #view-now { grid-template-rows: auto minmax(0, 1fr) 37vh; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #scope { grid-row: 2 / span 2; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #k-prof { display: flex; grid-column: 1; grid-row: 3; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #hero { padding: 2.2vh 3.4vh; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #hero .k-card { gap: 1.2vh; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #hero .k-flight { font-size: 11.5vh; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #hero .k-apt b { font-size: 9.5vh; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #hero .k-apt span { margin-bottom: .4vh; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #hero .k-note.big { font-size: 6vh; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #hero .k-read { padding-top: 1.2vh; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #hero .k-read b { font-size: 8vh; }
+  .kiosk body.d-detailed:not(.emergency, .sky-quiet) #hero .k-read b.word { font-size: 5.4vh; line-height: 8.4vh; }
+}
+@media (min-aspect-ratio: 24/10) {
+  .kiosk body.d-detailed:not(.emergency) #view-now { grid-template-columns: minmax(0, 1.25fr) minmax(0, .9fr) minmax(0, 1fr); }
+  .kiosk body.d-detailed:not(.emergency) #k-prof { display: flex; grid-column: 3; grid-row: 1 / span 2; padding: 2.4vh 2.4vh 1.4vh; }
+}
 .kiosk #strip h1 { font-size: 4vh; line-height: 1.1; letter-spacing: -.015em; }
 .kiosk #strip .pic { font-size: 2.6vh; line-height: 1.4; margin-top: .6vh; }
 .kiosk #strip .ph-k b { font-size: 2.9vh; }

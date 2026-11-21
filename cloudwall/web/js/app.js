@@ -10,6 +10,7 @@ import { renderWeatherTab } from "./weather.js";
 import { renderKiosk, tickKiosk, kioskNext, forgetKiosk } from "./kiosk.js";
 import { nearbyDivider } from "./divider.js";
 import { boardHtml, renderMiniBoard } from "./board.js";
+import { profileHtml, profileFrom } from "./profile.js";
 import { loadLog } from "./logbook.js";
 import { renderPlace, placeMenu } from "./places.js";
 import { refresh } from "./fresh.js";
@@ -30,6 +31,9 @@ let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastOverhead = nu
 const KIOSK_PIN_S = 90;
 // a desktop wide for its height: Simple puts what's worth a look in a third column, past the radar
 const WIDE = matchMedia("(min-width: 1500px) and (min-aspect-ratio: 19/10)");
+// A wall panel much wider than tall (1280×400) has room for the side view as a third column, past the
+// radar; any other has it under the flight card, in the landing queue's place (style.css agrees).
+const PANEL_WIDE = matchMedia("(min-aspect-ratio: 24/10)");
 let myPin = null;
 try { myPin = sessionStorage.getItem("cloudwall.pin"); } catch (e) { /* no storage: just this visit */ }
 function pin(hex) {
@@ -298,17 +302,31 @@ function render() {
   if (view === "now") {
     keepPlace(() => {
       if (em.length) renderEmergency($("hero"), state, em, !KIOSK);
-      else if (KIOSK && cardShown()) renderKiosk($("hero"), state, { queue: !simple() });
+      else if (KIOSK && cardShown()) renderKiosk($("hero"), state, { queue: !simple() && (PANEL_WIDE.matches || quietSky()) });
       else if (cardShown()) renderHero($("hero"), state);
       renderPicture(dens);
     });
-    drawScopeNow(); if (!KIOSK) renderMiniBoard(state);
+    drawScopeNow(); if (!KIOSK) renderMiniBoard(state); else renderPanelSide();
   }
   if (view === "board") keepFocus($("board"), () => { $("board").innerHTML = boardHtml(state); });
   noticeNew();
   applyFresh();
   markStale();
   if (KIOSK) hush();
+}
+
+// The wall panel's side view, in Detailed: the same drawing as the desktop's, enlarged with the panel's
+// height so it reads from the room. A tap on an aircraft in it selects it, as on the radar, and the
+// magenta ring then marks it in both: that is how one is found from one view in the other by touch.
+function renderPanelSide() {
+  const box = $("k-prof");
+  if (getComputedStyle(box).display === "none") { box._key = null; return; }
+  if (!box.firstChild) box.innerHTML = `<div class="gh pf-head"><span class="gl">Side view</span><span class="gn"></span></div><div class="prof-box"></div>`;
+  const from = profileFrom(state), note = from ? `along the runways, from the ${from}` : "along the runways";
+  if (box.querySelector(".gn").textContent !== note) box.querySelector(".gn").textContent = note;
+  const pb = box.querySelector(".prof-box"), r = pb.getBoundingClientRect();
+  const z = Math.max(1, Math.min(innerHeight / 330, r.height / 135));
+  pb.innerHTML = r.width > 50 && r.height > 50 ? profileHtml(state, Math.round(r.width / z), Math.round(r.height / z)) : "";
 }
 
 // Positions more than 20 s old (the feed has stopped, or CloudWall isn't answering): aircraft fade,
