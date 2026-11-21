@@ -821,6 +821,15 @@ body.hush::after { display: none; }
 .kiosk body.card-only #view-now { grid-template-columns: minmax(0, 1fr); row-gap: 2.4vh; }
 .kiosk body.card-only #scope { display: none; }
 .kiosk body.card-only #hero { grid-row: 1; }
+/* the quiet sky's radar slide: the radar comes in beside the card, which says what is on it */
+.kiosk body.card-only.radar-slide #view-now { grid-template-columns: minmax(0, 1fr) min(82vh, 50vw); column-gap: 7vh; }
+.kiosk body.card-only.radar-slide #scope { display: flex; grid-column: 2; grid-row: 1 / -1; }
+.kiosk body.card-only.radar-slide #hero { grid-row: 1 / -1; }
+.kiosk body.card-only.radar-slide #k-cap { display: none; }
+.kiosk .k-onradar .sit { flex: none; display: flex; flex-direction: column; gap: 3.4vh; }
+.kiosk .k-onradar .sit h1 { font: 700 7vh/1.1 var(--sans); letter-spacing: -.02em; color: var(--ink); }
+.k-onradar .pic.short { display: flex; flex-direction: column; gap: 1.8vh; margin: 0; font-size: 5vh; line-height: 1.2; color: var(--ink-2); }
+.k-onradar .ph-k .ci { width: 1em; height: 1em; margin-right: .5em; vertical-align: -.14em; }
 .kiosk body.card-only #k-cap { grid-column: 1; grid-row: 2; flex-direction: row; align-items: baseline; gap: 3vh; border-top: 2px solid var(--rule); padding-top: 1.8vh; }
 .kiosk #hero { background: none; border: 0; padding: 0; container-type: inline-size; overflow: visible; }
 .kiosk #scope { flex-direction: column; gap: 1.6vh; padding: 0; background: none; border: 0; }

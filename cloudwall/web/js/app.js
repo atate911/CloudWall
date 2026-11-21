@@ -128,7 +128,8 @@ const quietSky = () => !!state && !state.hero && !state.next && !picture(state).
 const cardShown = () => KIOSK || !simple() || quietSky();     // the wall panel always shows its card
 let scopeLabel = "";
 function drawScopeNow(now = performance.now()) {
-  if (!state || view !== "now" || cardOnly()) return;
+  // the card alone draws no radar, except while the radar is the quiet sky's slide
+  if (!state || view !== "now" || (cardOnly() && !document.body.classList.contains("radar-slide"))) return;
   const mode = scopeMode(), pref = scopePref(), ms = mapStyle(), { style, tracks, range } = radarPrefs();
   const atc = mode === "radar" && style === "atc";
   const charts = state.charts || { map: state.basemap }, layers = charts.layers || {};
@@ -260,7 +261,7 @@ function render() {
   if (view === "now") {
     keepPlace(() => {
       if (em.length) renderEmergency($("hero"), state, em, !KIOSK);
-      else if (KIOSK) renderKiosk($("hero"), state);
+      else if (KIOSK) renderKiosk($("hero"), state, { radar: cardOnly() });
       else if (cardShown()) renderHero($("hero"), state);
       renderPicture(dens);
     });

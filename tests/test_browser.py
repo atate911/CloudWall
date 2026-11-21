@@ -231,6 +231,10 @@ class BrowserTest(unittest.TestCase):
         # the next flight or a quiet sky, the fighters heard, the restriction and the weather, at least
         self.assertGreaterEqual(len(q["desktop"]), 4, q["desktop"])
         self.assertGreaterEqual(len(q["kiosk"]), 4, q["kiosk"])
+        r = q["radarSlide"]                                                  # the wall panel's card alone: the radar takes a turn
+        self.assertTrue(r["seen"] and r["shown"] and r["drawn"] >= 1, r)
+        self.assertRegex(r["words"], r"aircraft within \d+ nm|quiet spell")
+        self.assertTrue(r["hiddenAfter"])
 
     def test_an_emergency_takes_the_screen(self):
         e = self.scenario("emergency")

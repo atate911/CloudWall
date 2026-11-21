@@ -357,6 +357,23 @@ const SCENARIOS = {
       out[size] = [...seen];
       await page.close();
     }
+    // the wall panel's card alone: the radar is one of the slides, beside the slide that says what is on
+    // it, and is drawn then and only then
+    const page = await open(browser, "kiosk", "/kiosk", errors, empty);
+    await page.waitForTimeout(1500);
+    out.radarSlide = { seen: false, drawn: 0, hiddenAfter: null };
+    for (let i = 0; i < 10 && !out.radarSlide.seen; i++) {
+      if (await page.evaluate(() => document.body.classList.contains("radar-slide"))) {
+        await page.waitForTimeout(400);
+        out.radarSlide = { seen: true, shown: await page.evaluate(() => getComputedStyle(document.getElementById("scope")).display !== "none"),
+          drawn: await count(page, "#s-craft g.craft"), words: await page.evaluate(() => (document.querySelector("#hero .k-onradar h1") || {}).textContent || "") };
+        await page.click("#hero"); await page.waitForTimeout(400);
+        out.radarSlide.hiddenAfter = await page.evaluate(() => getComputedStyle(document.getElementById("scope")).display === "none");
+        break;
+      }
+      await page.click("#hero"); await page.waitForTimeout(350);
+    }
+    await page.close();
     return out;
   },
 

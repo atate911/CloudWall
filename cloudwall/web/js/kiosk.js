@@ -10,13 +10,13 @@ import { $, esc, num, mmss, ident, since, degF } from "./util.js";
 import { boardFlight, showLogo, localWords, heardGroups, shortType } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
 import { flap } from "./fx.js";
-import { medIcon, hospitalWords, arrival, situation, dir8, where } from "./situation.js";
+import { medIcon, hospitalWords, arrival, situation, dir8, where, stripHtml, picture } from "./situation.js";
 import { windRose, runwayHeadings, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
 import { drawing } from "./silhouette.js";
 import { typeInfo, kindPlate } from "./plate.js";
 
 const SLIDE_SECONDS = 12;
-let cur = { hex: null }, slide = 0, slideAt = Date.now(), shownKey = null;
+let cur = { hex: null }, slide = 0, slideAt = Date.now(), shownKey = null, radarSlide = false;
 
 // ---------- a plane overhead ----------
 // The aircraft's own side elevation, facing right as the route reads: null for a kind of aircraft
@@ -193,6 +193,14 @@ function airspaceHtml(state) {
   </div>`;
 }
 
+// The radar among the quiet-sky slides, when the card has the screen to itself: the page shows the
+// radar beside this card (body.radar-slide), which says in words what is on it, each phrase led by
+// its colour on the radar
+function radarSlideHtml(state) {
+  return `<div class="k-card k-slide k-onradar"><div class="k-kicker">On the radar</div>${stripHtml(state, { short: true, notes: 0 })}</div>`;
+}
+const onRadar = (on) => document.body.classList.toggle("radar-slide", on);
+
 function quietHtml(state) {
   const n = state.aircraft.filter((a) => !a.on_ground).length;
   return `<div class="k-card k-slide">
@@ -207,18 +215,23 @@ function showIdle(el, state) {
   const wx = latest("api/weather"), log = latest("api/logbook");
   const slides = [state.next ? "next" : "quiet"];
   if ((state.heard || []).length) slides.unshift("military");
+  if (radarSlide && picture(state).air.length) slides.splice(1, 0, "radar");      // something to see on it
   if ((state.tfrs || []).some((t) => t.active && !t.drones_only)) slides.push("airspace");
   if (wx && wx.now) slides.push("weather");
   if (log && log.today > 0) slides.push("today");
   if (Date.now() - slideAt > SLIDE_SECONDS * 1000) { slide++; slideAt = Date.now(); }
   slide %= slides.length;
-  const kind = slides[slide], key = kind + (kind === "next" ? state.next.hex : "");
+  const kind = slides[slide], words = kind === "radar" ? radarSlideHtml(state) : "";
+  const key = kind + (kind === "next" ? state.next.hex : words);         // the radar's words redrawn as they change
+  onRadar(kind === "radar");
   if (key === shownKey) {
     if (kind === "next" && $("k-next")) $("k-next").textContent = mmss(Math.max(0, state.next.cpa_s - since(state)));
     return;
   }
+  const again = shownKey && shownKey.startsWith("radar") && kind === "radar";     // the same slide, its words updated
   shownKey = key;
-  if (kind === "next") el.innerHTML = nextSlideHtml(state.next, state);
+  if (kind === "radar") { el.innerHTML = words; if (again) return; }
+  else if (kind === "next") el.innerHTML = nextSlideHtml(state.next, state);
   else if (kind === "quiet") el.innerHTML = quietHtml(state);
   else if (kind === "today") el.innerHTML = todaySlideHtml(log, state);
   else if (kind === "military") el.innerHTML = militaryHtml(state);
@@ -242,8 +255,10 @@ function body(el) {
   }
   return b;
 }
-export function renderKiosk(el, state) {
-  if (state.hero) showPlane(body(el), state.hero, state);
+// radar: whether the radar can be one of the quiet-sky slides (the card has the screen to itself)
+export function renderKiosk(el, state, { radar = false } = {}) {
+  radarSlide = radar;
+  if (state.hero) { onRadar(false); showPlane(body(el), state.hero, state); }
   else { cur.a = null; showIdle(body(el), state); }
 }
 export function tickKiosk(elapsed, state) {
@@ -253,4 +268,4 @@ export function tickKiosk(elapsed, state) {
 export function kioskNext() { slide++; slideAt = Date.now(); shownKey = null; }
 
 // Something else drew in the card (the emergency takeover): rebuild from scratch next time.
-export function forgetKiosk() { cur = { hex: undefined }; shownKey = null; }
+export function forgetKiosk() { cur = { hex: undefined }; shownKey = null; onRadar(false); }
