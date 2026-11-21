@@ -19,11 +19,10 @@ engines, and within a few years more 767s crossed it than any other type. Its ca
 abreast, two, three and two, so only one seat in seven is a middle seat. Its two-pilot cockpit is
 shared with the 757, and many of the later ones carry tall blended winglets fitted after delivery.
 
-The passenger 767 has largely given way to the 787, and the freighter, built mostly for FedEx and
-UPS, is due to end production in 2027, but the US Air Force's KC-46 Pegasus tanker is a 767 too and
-keeps the line open. Tell it from an A330 by its narrower fuselage and, apart from the stretched
--400ER, its shorter, stubbier look, and from a 757, which has the same cockpit windows, by its wider
-body and the second aisle inside.
+The passenger 767 has largely given way to the 787. The freighter, built mostly for FedEx and UPS,
+is due to go out of production in 2027, but the US Air Force's KC-46 Pegasus tanker is a 767 too and
+keeps the line open. Tell it from an A330 by its narrower fuselage, and from a 757, which has the
+same cockpit windows, by its wider body and the second aisle inside.
 """
 
 [facts]
@@ -43,4 +42,5 @@ name = "Boeing 767-300"
 [variants.B764]
 name = "Boeing 767-400ER"
 [variants.B764.facts]
+"Engines" = "2 × GE CF6-80C2 or Pratt & Whitney PW4000"
 "Max takeoff weight" = "up to 204,100 kg"

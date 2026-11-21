@@ -42,7 +42,8 @@ Pacific and the Atlantic, in 2005, a record for an airliner at the time. The 777
 its wing and engines.
 """
 [variants.B77L.facts]
-"Range" = "up to 8,500 nm (15,740 km), 777-200LR"
+"Engines" = "2 × GE90-110B or GE90-115B"
+"Range" = "up to 8,500 nm (15,740 km) for the -200LR"
 "Max takeoff weight" = "up to 347,800 kg"
 
 [variants.B773]
@@ -57,5 +58,6 @@ The -300ER, at 73.9 m one of the longest airliners flying, is the most common 77
 GE90-115Bs, each rated at 115,300 lb of thrust, are the only engines it was offered with.
 """
 [variants.B77W.facts]
+"Engines" = "2 × GE90-115B"
 "Range" = "up to 7,500 nm (13,890 km)"
 "Max takeoff weight" = "up to 351,500 kg"
