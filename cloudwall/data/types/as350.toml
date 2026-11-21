@@ -13,19 +13,18 @@ sources = [
 text = """
 Aérospatiale designed the Écureuil (squirrel) in the early 1970s to be cheap to build and to run,
 with a fuselage of rolled sheet, a technique taken from the car industry, and a new three-bladed
-Starflex rotor head. It first flew in June 1974 and is still built as the H125, sold in North
-America as the AStar, and more than 7,000 of the Écureuil family, which counts the twin AS355 and
-the EC130, have been delivered. A single turbine drives it, a Safran Arriel on most, and it does
-nearly every job a light helicopter can: news, police patrols, tours, air ambulance, utility work
-and firefighting with a bucket slung beneath it. At one point Eurocopter was selling about one
-every business day.
+Starflex rotor head. It first flew in June 1974 and is still built, as the H125, and sold in North
+America as the AStar, where at one point Eurocopter was selling about one every business day. A
+single turbine drives it, a Safran Arriel on most, and it does nearly every job a light helicopter
+can: news, police patrols, tours, air ambulance, utility work and firefighting with a bucket slung
+beneath it. More than 7,000 of the Écureuil family, which also counts the twin AS355 and the EC130,
+have been delivered.
 
-What it is famous for is altitude. On 14 May 2005 Eurocopter's test pilot Didier Delsalle touched
-an AS350 B3 down on the summit of Everest, 8,848 m, with a skid on the snow for 3 minutes 50
-seconds, a record the FAI confirmed; he had taken out the seats and anything else he didn't need to
-save 120 kg, and he did it again the next day to show the first had not been luck. AS350s have
-since flown rescues as high as 7,800 m on Everest. Its open tail rotor tells it from the EC130,
-which has a Fenestron and a wider cabin.
+On 14 May 2005 Eurocopter's test pilot Didier Delsalle touched an AS350 B3 down on the summit of
+Everest, 8,848 m, with a skid on the snow for 3 minutes 50 seconds, a record the FAI confirmed; he
+had taken out the seats and anything else he didn't need to save 120 kg, and he did it again the
+next day to show the first had not been luck. AS350s have since flown rescues as high as 7,800 m on
+Everest. Its open tail rotor tells it from the EC130, which has a Fenestron and a wider cabin.
 """
 
 [variants.AS50]
@@ -38,9 +37,9 @@ production = [1978]
 [variants.AS55]
 name = "Eurocopter AS355 Écureuil 2 (TwinStar)"
 more = """
-The AS355 Écureuil 2, the TwinStar in North America, first flew in September 1979 and was built at
-first with two Allison 250 turbines, for operators who wanted a second engine, police forces among
-them. The last version, the AS355 NP of 2007, has two Turbomeca Arrius and the AS350 B3's gearbox,
+The AS355 Écureuil 2, the TwinStar in North America, is the same helicopter with two engines, at
+first a pair of Allison 250s. It first flew in September 1979, and police forces were among its
+buyers. The last version, the AS355 NP of 2007, has two Turbomeca Arrius and the AS350 B3's gearbox,
 and production ended in 2016.
 """
 [variants.AS55.facts]

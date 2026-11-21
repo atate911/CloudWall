@@ -1,0 +1,33 @@
+name = "Boeing P-8 Poseidon"
+types = ["P8"]
+production = [2012]
+checked = "2026-11"
+sources = [
+  "https://www.boeing.com/defense/patrol-early-warning-and-battle-management/p-8-poseidon",
+  "https://en.wikipedia.org/wiki/Boeing_P-8_Poseidon",
+]
+
+text = """
+A submarine hunter built from a 737-800 on the airliner line at Renton, with the stronger wing of the
+737-900 and a fuselage that Spirit AeroSystems reinforces for flying low and manoeuvring hard, with a
+short bomb bay behind the wing for torpedoes. Each CFM56 drives a 180 kVA generator, twice the size
+of an airliner's, to power the sensors, which meant redesigning the nacelles and their mountings.
+Five operator stations line the left side of a cabin with almost no windows, and it carries 129
+sonobuoys to drop into the sea and listen. Unlike the P-3 Orion it replaced it has no magnetic
+anomaly detector, except on India's P-8I, but a hydrocarbon sensor sniffs the air for the exhaust of
+diesel submarines.
+
+Raked wingtips, swept back like a 767-400ER's where most 737s have winglets, are the quickest way to
+tell one from an airliner overhead, and a refuelling receptacle on top of the forward fuselage lets
+it take fuel from Air Force tankers. The flight controls allow steeper banks than an airliner's and
+the low-altitude warnings are silenced. First delivered to the US Navy in 2012, as of 2026 it also
+flies with India, Australia, the UK, Norway, New Zealand, South Korea and Germany, with Canada next.
+"""
+
+[facts]
+"First flight" = "April 2009"
+"Built" = "over 180"
+"Range" = "over 1,200 nm with 4 hours on station"
+"Sonobuoys" = "129"
+"Max takeoff weight" = "189,200 lb (85,820 kg)"
+"Engines" = "2 × CFM International CFM56-7BE, 27,300 lb thrust"

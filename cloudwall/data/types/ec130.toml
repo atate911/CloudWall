@@ -10,19 +10,19 @@ sources = [
 
 text = """
 Eurocopter developed the EC130 with tour operators and for them, and Blue Hawaiian Helicopters put
-the first into service in 2001, flying sightseers over Hawaii and the Grand Canyon. Underneath it
-is an AS350 Écureuil, with the same three-bladed Starflex rotor and a Safran Arriel 2 turbine, but
-its cabin is far wider, with room for up to seven passengers and a clear view out. The pilot flies
-from the left seat, where front-seat passengers are less likely to get in the way of the controls.
-By 2008 it had overtaken the Bell 206 as the best-selling single-engined helicopter on the market.
+the first into service in 2001, flying sightseers over Hawaii and the Grand Canyon. Underneath it is
+an AS350 Écureuil, with the same three-bladed Starflex rotor and a Safran Arriel 2 turbine, but its
+cabin is far wider, with room for up to seven passengers and a clear view out. The pilot flies from
+the left seat, where front-seat passengers are less likely to get in the way of the controls. By
+2008 it had overtaken the Bell 206 as the best-selling single-engined helicopter on the market.
 
 The tail is the giveaway: in place of the AS350's open tail rotor it has a Fenestron, a fan of
 unevenly spaced blades turning in a duct in the fin. The uneven spacing spreads the noise over
-several frequencies instead of one tone, its flyover noise is 8.5 dB under the FAA's Stage 2
-limit, and the duct keeps the blades away from anyone walking round it on the ground, which with
-the big cabin made it a favourite of air ambulance services. The EC130 T2 of 2012, now sold as the
-H130, has the stronger Arriel 2D and an active vibration control system from the EC225 Super Puma,
-four actuators working against the rotor's vibration.
+several frequencies instead of one tone, its flyover noise is 8.5 dB under the FAA's Stage 2 limit,
+and the duct keeps the blades away from anyone walking round it on the ground, which with the big
+cabin made it a favourite of air ambulance services. The EC130 T2 of 2012, now sold as the H130, has
+the stronger Arriel 2D and an active vibration control system from the EC225 Super Puma, four
+actuators working against the rotor's vibration.
 """
 
 [facts]

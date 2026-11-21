@@ -40,7 +40,7 @@ the world.
 [variants.BN2T]
 name = "Britten-Norman BN-2T Turbine Islander"
 more = """
-The Turbine Islander, in service from 1981, swaps the pistons for a pair of Allison 250
+The Turbine Islander, in service from 1981, replaces the piston engines with a pair of Allison 250
 turboprops. The British Army flew it for reconnaissance and photography over Northern Ireland.
 """
 [variants.BN2T.facts]
@@ -50,8 +50,8 @@ turboprops. The British Army flew it for reconnaissance and photography over Nor
 name = "Britten-Norman Trislander"
 production = [1971, 1982]
 more = """
-The Trislander stretches the Islander to 18 seats and puts a third engine high on its fin, on the
-centreline. The prototype first flew on 11 September 1970 and was at the Farnborough show the same
+The Trislander stretches the Islander to 18 seats and puts a third engine on the centreline, high
+on a lengthened fin. The prototype first flew on 11 September 1970 and was at the Farnborough show the same
 day. About 80 were built, until 1982, and Aurigny flew them between the Channel Islands for more
 than 40 years, until 2017; one of its fleet is now at the Imperial War Museum, Duxford.
 """

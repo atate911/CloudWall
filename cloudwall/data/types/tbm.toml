@@ -1,0 +1,58 @@
+name = "Daher TBM"
+types = ["TBM7", "TBM8", "TBM9"]
+production = [1990]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/SOCATA_TBM",
+  "https://en.wikipedia.org/wiki/Daher",
+  "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_Canada_PT6",
+  "https://en.wikipedia.org/wiki/Autoland",
+  "https://en.wikipedia.org/wiki/Pilatus_PC-12",
+  "https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/types.json",
+]
+
+text = """
+A TBM 900 cruises at up to 330 knots on a single 850 shp Pratt & Whitney Canada PT6A, and Aviation
+Week found it faster than a Cessna Citation Mustang jet over a 600 nm trip, on 26% less fuel. Its
+name records where it began: TB for Tarbes, the town in south-west France where Socata built it, and
+M for Mooney, whose six-seat pressurised piston prototype, the Mooney 301, was its starting point.
+Mooney left the venture in 1991, and Daher, which bought Socata in 2009, builds it now, still in
+Tarbes.
+
+Its engines are flat-rated, held to a power they can go on delivering high up. The PT6A-64 of the
+first TBM 700 was limited to 700 shp, which it could keep up to 25,000 ft on a typical day, and the
+TBM 850's 850 shp PT6A-66D was held to 700 for takeoff. Fowler flaps along 80% of the trailing edge
+keep the landing speed down. Tell it from the Pilatus PC-12, the other fast single-engine turboprop,
+by its smaller size and its conventional tail, where the Pilatus has a T-tail; some TBMs also have a
+small pilot's door on the left, ahead of the wing.
+"""
+
+[facts]
+"First flight" = "July 1988"
+"Built" = "over 1,150"
+
+[variants.TBM7]
+name = "Socata TBM 700"
+production = [1990, 2005]
+[variants.TBM7.facts]
+"Engine" = "Pratt & Whitney Canada PT6A-64, 700 shp"
+
+[variants.TBM8]
+name = "Socata TBM 850"
+production = [2006, 2013]
+[variants.TBM8.facts]
+"Engine" = "Pratt & Whitney Canada PT6A-66D, 850 shp (700 for takeoff)"
+
+[variants.TBM9]
+name = "Daher TBM 900, 910, 930, 940 or 960"
+production = [2014]
+more = """
+The TBM 900 of 2014 freed the full 850 shp for takeoff and added a 40% larger air intake, a
+five-blade propeller and winglets, which together made it about 14 knots faster than the 850. The
+TBM 960 of 2022 has a PT6E with digital control of both engine and propeller, a first for the TBM,
+and Garmin's emergency autoland, which can fly it to an airport and land it if the pilot can't.
+"""
+[variants.TBM9.facts]
+"Engine" = "Pratt & Whitney Canada PT6A-66D, 850 shp; PT6E-66XT on the TBM 960"
+"Cruise" = "330 kt (TBM 900)"
+"Range" = "1,730 nm (TBM 900)"

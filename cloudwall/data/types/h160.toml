@@ -8,13 +8,13 @@ sources = [
 ]
 
 text = """
-Airbus's successor to the Dauphin first flew in June 2015, and the first delivery, in December
-2021, went to All Nippon Helicopter for news gathering in Japan. Its five Blue Edge main rotor blades
-sweep forward and then back towards the tips, which weakens the vortex each blade meets as it passes
-through the wake of the one ahead, cutting the noise by 3 to 4 dB and adding about 100 kg of
-payload. The Fenestron is canted at 12°, the first on a civil helicopter, and with a biplane
-tailplane it gives about 80 kg of extra lift, while the rotor mast leans 4° forward and 2° to the
-right. The double-swept blade tips and the tilted ring in the tail make it easy to pick out.
+Airbus's successor to the Dauphin first flew in June 2015, and the first delivery, in December 2021,
+went to All Nippon Helicopter for news gathering in Japan. Its five Blue Edge main rotor blades are
+double-swept towards the tips, which weakens the vortex each blade meets as it passes through the
+wake of the one ahead, cutting the noise by 3 to 4 dB and adding about 100 kg of payload against a
+scaled-up Dauphin rotor. The Fenestron is canted at 12°, the first on a civil helicopter, and with a
+biplane tailplane it gives about 80 kg of extra lift, while the rotor mast leans 4° forward and 2°
+to the right. The double-swept blade tips and the tilted ring in the tail make it easy to pick out.
 
 The airframe is composite throughout, and it is the first helicopter to have electric landing gear
 and brakes instead of hydraulic ones, saving weight. France chose it in 2017 as the H160M Guépard to

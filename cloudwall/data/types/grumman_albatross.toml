@@ -1,0 +1,35 @@
+name = "Grumman HU-16 Albatross"
+types = ["U16"]
+production = [1949, 1961]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Grumman_HU-16_Albatross",
+  "https://skybrary.aero/aircraft-model/g-111-albatross",
+  "https://skybrary.aero/aircraft-model/hu-16-albatross",
+]
+
+text = """
+The largest of Grumman's amphibians, built to rescue people from the sea. A deep V-shaped hull and
+a long keel let it land on the open ocean: it was designed for waves of about 4 ft and could put
+down in worse, though in seas of 8 to 10 ft it needed booster rockets to get off again. On the
+water its main wheel wells flood, and most of the water is forced out through a hole in the rear
+bulkhead as it accelerates for takeoff. The US Air Force flew it on combat rescue in Korea and
+Vietnam, and the Navy and Coast Guard on search and rescue off their coasts, until the Coast
+Guard's last flight in March 1983.
+
+In July 1973 the last Albatross the Air Force flew went to its museum at Dayton, after climbing to
+a record 32,883 ft earlier that month. In the early 1980s Chalk's had 13 rebuilt to an airline
+standard as G-111s, with titanium wing-spar caps and extra doors, but flew them only a few years
+before putting them into storage in Arizona. Many other surplus Albatrosses went to private owners,
+and in 1997 one of them flew around the world in 73 days.
+"""
+
+[facts]
+"First flight" = "October 1947"
+"Built" = "466"
+"Engines" = "2 × Wright R-1820 Cyclone, 1,425 hp"
+"Max takeoff weight" = "37,500 lb (17,010 kg) (HU-16B)"
+"Range" = "2,480 nm (4,590 km) (HU-16B)"
+
+[variants.U16]
+name = "Grumman HU-16 or G-111 Albatross"

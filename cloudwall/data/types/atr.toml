@@ -1,0 +1,96 @@
+name = "ATR 42 and ATR 72"
+types = ["AT43", "AT44", "AT45", "AT46", "AT72", "AT73", "AT75", "AT76"]
+production = [1985]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/ATR_42",
+  "https://en.wikipedia.org/wiki/ATR_72",
+  "https://en.wikipedia.org/wiki/American_Eagle_Flight_4184",
+  "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_Canada_PW100",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://skybrary.aero/aircraft/at44",
+]
+
+text = """
+ATRs are built for short hops, where a turboprop's economy counts for more than a jet's speed.
+Aérospatiale and Aeritalia set out in 1981 to burn about half the fuel of the Fokker F27 and
+HS 748 on a 200 nm sector, and gave the result a long, straight high wing: the ATR 72's spans twelve
+times its average chord, and about 30% of it by weight is carbon fibre, which made it a fifth
+lighter. There is no auxiliary power unit. At the gate the right-hand engine can run with a brake
+holding its propeller still, supplying electricity and air. The main wheels retract into fairings on
+the fuselage sides, and passengers usually board through a door at the back, with the front one
+kept for cargo.
+
+The ATR 42, named for its original 42 seats, entered service in 1985, and the 72, 4.5 m longer and
+with more powerful engines, in 1989. Both come off one line in Toulouse and share most of their
+parts, and that has kept the smaller one in production: by 2015 it was the only 50-seat regional
+airliner still built. Later models have six-bladed propellers where the first ATRs have four. In
+1994 an American Eagle ATR 72 crashed near Roselawn, Indiana, after freezing precipitation built a
+ridge of ice behind its de-icing boots and its ailerons snapped over; the boots on both types were
+then extended back to 12.5% of the wing's chord, from 5% on the 42 and 7% on the 72.
+"""
+
+[facts]
+"First flight" = "August 1984 (ATR 42)"
+"Entered service" = "December 1985 (ATR 42)"
+"Engines" = "2 × Pratt & Whitney Canada PW100 series"
+
+[variants.AT43]
+name = "ATR 42-300/320"
+production = [1985, 1996]
+[variants.AT43.facts]
+"First flight" = "August 1984"
+"Entered service" = "December 1985"
+"Engines" = "2 × Pratt & Whitney Canada PW120 or PW121"
+
+[variants.AT44]
+name = "ATR 42-400"
+more = """
+The -400 put six-bladed propellers on the -320's PW121 engines and small winglets on its wingtips.
+It sold in tiny numbers: three Surveyor patrol aircraft for the Italian government, and the only two
+civil ones to CSA Czech Airlines in 1995 and 1996.
+"""
+[variants.AT44.facts]
+"Engines" = "2 × Pratt & Whitney Canada PW121"
+
+[variants.AT45]
+name = "ATR 42-500"
+[variants.AT45.facts]
+"Engines" = "2 × Pratt & Whitney Canada PW127E"
+"Max takeoff weight" = "18,600 kg (41,000 lb)"
+
+[variants.AT46]
+name = "ATR 42-600"
+production = [2012]
+[variants.AT46.facts]
+"Engines" = "2 × Pratt & Whitney Canada PW127M or PW127XT"
+"Max takeoff weight" = "18,600 kg (41,000 lb)"
+
+[variants.AT72]
+name = "ATR 72-100/200"
+[variants.AT72.facts]
+"First flight" = "October 1988"
+"Entered service" = "October 1989"
+"Engines" = "2 × Pratt & Whitney Canada PW124B, 2,400 shp"
+
+[variants.AT73]
+name = "ATR 72-210"
+[variants.AT73.facts]
+"First flight" = "October 1988 (ATR 72)"
+"Entered service" = "October 1989 (ATR 72)"
+"Engines" = "2 × Pratt & Whitney Canada PW127, 2,750 shp"
+
+[variants.AT75]
+name = "ATR 72-500"
+[variants.AT75.facts]
+"First flight" = "October 1988 (ATR 72)"
+"Entered service" = "October 1989 (ATR 72)"
+"Engines" = "2 × Pratt & Whitney Canada PW127F or PW127M"
+
+[variants.AT76]
+name = "ATR 72-600"
+[variants.AT76.facts]
+"First flight" = "October 1988 (ATR 72)"
+"Entered service" = "October 1989 (ATR 72)"
+"Engines" = "2 × Pratt & Whitney Canada PW127M or PW127XT"
+"Max takeoff weight" = "23,000 kg (50,700 lb)"

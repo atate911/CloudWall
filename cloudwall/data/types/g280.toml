@@ -12,20 +12,21 @@ sources = [
 ]
 
 text = """
-All four were built by Israel Aerospace Industries at its Tel Aviv plant, and the line began as an
+All four were built by Israel Aerospace Industries in Israel, and the line began as an
 American design: the Aero Commander Jet Commander of 1963. When North American Rockwell bought Aero
 Commander, antitrust law would not let it keep the Jet Commander in production alongside its own
 Sabreliner, so in 1968 it sold the design to IAI, which developed it into the Westwind and then, in
 1984, the Astra. In 2001 Gulfstream bought Galaxy Aerospace, the IAI company holding the Astra and
-the larger Galaxy, and renamed them the G100 and G200; the G150 and G280 that followed are still
-built in Israel and flown to Dallas for their interiors and paint.
+the larger Galaxy, and renamed them the G100 and G200. The G150 and G280 that followed were assembled
+in Israel and finished at Gulfstream's plant in Dallas.
 
 The Galaxy began as a partnership with Russia's Yakovlev design bureau, which designed and built its
 forward fuselage and tail until the deal broke down in 1995. It put a new fuselage, wide enough for
 three-abreast seating, on a strengthened Astra wing, and first flew on Christmas Day 1997. The G280
 keeps that fuselage but has a new Gulfstream-designed wing with the G550's airfoil and a third more
-area, a new T-tail and Honeywell HTF7250G engines, and climbs straight to 43,000 ft. Gulfstream had
-called it the G250 until 2011, when it noticed that in Mandarin slang 250 means an idiot.
+area, a new T-tail and Honeywell HTF7250G engines, and climbs straight to 43,000 ft. It was the G250 until 2011,
+when Gulfstream found G280 "a more amenable number sequence in certain cultures": in Mandarin, 250
+is slang for an idiot.
 """
 
 [facts]
@@ -53,8 +54,8 @@ name = "Gulfstream G150"
 production = [2006, 2017]
 more = """
 The G150 of 2005 is an Astra with a cabin 12 in wider and a new, more streamlined nose, and its
-oval windows replaced the Astra's rectangular ones. Gulfstream called it its first true midsize jet,
-and ended production in 2017 as sales slowed.
+oval windows replaced the Astra's rectangular ones. It was the first true midsize Gulfstream, and
+production ended in 2017 as sales slowed.
 """
 [variants.G150.facts]
 "First flight" = "May 2005"
@@ -65,9 +66,9 @@ and ended production in 2017 as sales slowed.
 name = "IAI Astra or Gulfstream G100"
 production = [1986, 2006]
 more = """
-The Astra put a new swept, supercritical wing on the Westwind's fuselage. The US Air Force flew it
-as the C-38A Courier, and two now serve the US Navy at Patuxent River as chase planes and radar
-targets for test flying.
+The Astra's supercritical wing is swept at 34° inboard and 25° further out. The US Air Force flew
+it as the C-38A Courier, and in 2015 the US Navy took two on at Patuxent River as chase planes and
+radar targets for its test pilots.
 """
 [variants.ASTR.facts]
 "First flight" = "March 1984"

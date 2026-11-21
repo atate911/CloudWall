@@ -10,19 +10,20 @@ sources = [
 
 text = """
 The Colibri (hummingbird) was built by three countries: Eurocopter took 61% of the programme,
-China's CATIC 24% and Singapore Aerospace 15%, so the cabin came from China, the tail boom and
-doors from Singapore, and the rotor, transmission and final assembly from France. It first flew in
-June 1995 and was delivered from 1998, a pilot and four passengers behind a three-bladed Spheriflex
-rotor and a single Turbomeca Arrius, with an eight-bladed Fenestron in the tail. It was designed
-around surviving a crash, with an energy-absorbing structure, energy-absorbing seats for everyone
-aboard and a crash-resistant fuel system. Harbin has built it in China as the HC120 since 2004.
+China's CATIC 24% and Singapore Aerospace 15%, so the cabin came from China, the tail boom and doors
+from Singapore, and the rotor, transmission and final assembly from France. It first flew in June
+1995 and was delivered from 1998, a five-seat single with a three-bladed Spheriflex rotor, a
+Turbomeca Arrius turbine and an eight-bladed Fenestron in the tail. It was designed around surviving
+a crash, with an energy-absorbing structure, energy-absorbing seats for everyone aboard and a
+crash-resistant fuel system. Harbin has built it in China as the HC120 since 2004.
 
 Police forces, border patrols and air forces used it for patrol and training, among them US Customs
-and Border Protection, the French Army for its basic training and the Spanish Air Force, which formed
-the Patrulla ASPA display team around five of them in 2003. In 2015 one flew as a research
+and Border Protection, the French Army for its basic training and the Spanish Air Force, which
+formed the Patrulla ASPA display team around five of them in 2003. In 2015 one flew as a research
 demonstrator with a 4.6-litre V8 diesel running on jet fuel in place of its turbine, using 42% less
 fuel. Airbus ended the programme in 2017, having delivered only five the year before against 63 of
-Robinson's R66. Next to the EC130, which also has a Fenestron, it is clearly the smaller machine.
+Robinson's R66. From the ground it looks like a smaller EC130, which also has a Fenestron, and it
+weighs about two-thirds as much.
 """
 
 [facts]

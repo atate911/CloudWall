@@ -1,0 +1,32 @@
+name = "Leonardo AW169"
+types = ["A169"]
+production = [2015]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/AgustaWestland_AW169",
+  "https://en.wikipedia.org/wiki/2018_Leicester_helicopter_crash",
+]
+
+text = """
+When it was launched in 2010 the AW169 was the first all-new helicopter in its weight class for more
+than 30 years: a twin of about 4.5 tonnes, now 4.8, pitched between the AW109 and the AW139 and
+sharing much of the bigger helicopter's cockpit. Its Pratt & Whitney Canada PW210A engines turn the
+rotor at variable speed, to cut noise and work more efficiently. Its landing gear is worked by electric motors
+instead of hydraulics, a first for a production helicopter of its class, and instead of an
+auxiliary power unit a clutch lets the left engine run with the rotors stopped, powering the
+avionics and electrics on the ground. Ten seats, or two stretchers, have made it a common air ambulance,
+in Britain from Kent to Cornwall and in Canada across British Columbia, and Austria's air force is
+replacing its Alouette IIIs with it.
+
+In October 2018 one crashed in the car park of Leicester City's stadium moments after taking off
+from the pitch, killing the club's owner, Vichai Srivaddhanaprabha, and four others. The shaft that
+sets the pitch of the tail rotor blades is meant to stay still while the rotor turns around it, on a
+bearing. The bearing had seized, so the shaft spun with the rotor; the friction welded the nut
+holding the pedal linkage to its carrier, sheared its locking pin and unscrewed it, and the pilot's
+pedals no longer reached the tail rotor.
+"""
+
+[facts]
+"First flight" = "May 2012"
+"Engines" = "2 × Pratt & Whitney Canada PW210A"
+"Max takeoff weight" = "4,800 kg (10,580 lb)"

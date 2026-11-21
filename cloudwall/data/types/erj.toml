@@ -1,0 +1,84 @@
+name = "Embraer ERJ"
+types = ["E135", "E145", "E45X", "E35L"]
+production = [1996, 2020]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Embraer_ERJ_family",
+  "https://en.wikipedia.org/wiki/Embraer_Legacy_600",
+  "https://en.wikipedia.org/wiki/Gol_Transportes_A%C3%A9reos_Flight_1907",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://www.embraer.com/erjs/en/",
+  "https://www.embraer.com/erjs/erj135/en/",
+  "https://www.embraer.com/erjs/erj140/en/",
+  "https://www.embraer.com/erjs/erj145/en/",
+  "https://www.embraer.com/erjs/erj145xr/en/",
+  "https://www.aerotelegraph.com/en/end-production-embraers-last-erj-has-been-delivered-to-germany",
+]
+
+text = """
+The ERJ began in 1989 as a jet-powered stretch of Embraer's EMB 120 Brasilia turboprop, and it kept
+the Brasilia's narrow fuselage, three abreast with one seat on one side of the aisle and two on the
+other. The engines moved from above the wing to beneath it before the design settled, late in 1991,
+on two Rolls-Royce AE 3007 turbofans (Allison engines at the time) at the back, under a T-tail. That
+gave a 50-seat airliner almost 30 m long on a wing barely 20 m across, and more seats would have
+needed a wider fuselage, a bigger wing and more thrust. Next to a CRJ, the other tail-engined
+regional jet, it is slimmer and three abreast rather than four, and except on the 145XR its wingtips
+carry no winglets.
+
+The ERJ 145 entered service with Continental Express in April 1997, and Embraer then shrank it
+rather than stretching it. The 37-seat ERJ 135 is 3.54 m shorter and the 44-seat ERJ 140 1.42 m
+shorter; both share 95–96% of their parts with the 145, and pilots fly all three on one type
+rating. The ERJ 140 existed because pilot contracts at major US airlines limited how many 50-seaters
+their regional partners could fly, and American Eagle took most of them. The shorter models fly
+further: a full ERJ 135LR about 1,750 nm, an ERJ 145LR 1,550. Production ended in 2020, and as of
+2026 no ERJ airliner has been in an accident that killed anyone aboard.
+"""
+
+[facts]
+"First flight" = "August 1995 (ERJ 145)"
+"Engines" = "2 × Rolls-Royce (Allison) AE 3007"
+
+[variants.E135]
+name = "Embraer ERJ 135 / ERJ 140"
+[variants.E135.facts]
+"Range" = "1,750 nm (ERJ 135LR)"
+
+[variants.E145]
+name = "Embraer ERJ 145"
+[variants.E145.facts]
+"First flight" = "August 1995"
+"Entered service" = "April 1997"
+"Range" = "1,550 nm (ERJ 145LR)"
+
+[variants.E45X]
+name = "Embraer ERJ 145XR"
+more = """
+The XR, for extra-long range, added winglets, strakes and a fuel tank in the rear fuselage, with
+AE 3007A1E engines of 8,917 lb thrust, and cruises at Mach 0.80 where the others manage 0.78.
+ExpressJet, the airline that had launched the ERJ 145 as Continental Express, launched it too.
+"""
+[variants.E45X.facts]
+"Range" = "2,000 nm (3,700 km)"
+"Engines" = "2 × Rolls-Royce AE 3007A1E"
+
+[variants.E35L]
+name = "Embraer Legacy 600 / 650"
+production = [2002, 2020]
+text = """
+The Legacy 600 is an ERJ 135 made into a business jet, with extra fuel tanks in the tail and ahead
+of the wing, winglets and other drag reductions, and certification to 41,000 ft against the
+airliner's 37,000. It carries 13 passengers in three cabin sections for up to 3,050 nm, and the
+Legacy 650 of 2011 goes further still. Its rival, the Bombardier Challenger, went the other way: a
+business jet that grew into the CRJ airliner.
+
+In September 2006 a new Legacy 600 on its delivery flight met a Gol Boeing 737 almost head-on at
+37,000 ft over Mato Grosso, Brazil. Its left winglet sliced off about half of the 737's left wing,
+and the airliner crashed, killing all 154 aboard, while the damaged Legacy landed at the air force
+base at Cachimbo. In August 2023 another, carrying the Wagner Group's leader Yevgeny Prigozhin,
+crashed in Russia, killing all ten aboard, after what US intelligence said was a deliberate
+explosion.
+"""
+[variants.E35L.facts]
+"Built" = "289"
+"Range" = "3,050 nm with 13 passengers (Legacy 600)"
+"Ceiling" = "41,000 ft"

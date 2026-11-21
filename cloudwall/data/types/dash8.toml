@@ -1,0 +1,52 @@
+name = "De Havilland Canada Dash 8"
+types = ["DH8A", "DH8B", "DH8C"]
+production = [1984, 2009]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/De_Havilland_Canada_Dash_8",
+  "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_Canada_PW100",
+  "https://en.wikipedia.org/wiki/De_Havilland_Canada_E-9_Widget",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+De Havilland Canada built the Dash 8 by taking the layout of its four-engined Dash 7 and giving it
+two engines instead, trading the Dash 7's short-field performance for speed and cheaper running.
+Pratt & Whitney Canada developed the PW100 for it, with more than twice the power of its PT6, and
+the same engine family went on to power the ATR, the Fokker 50 and the Embraer Brasilia. The Dash 8
+has a long, slender high wing, a tall T-tail that keeps the tailplane out of the propellers' wash on
+takeoff, a pointed nose and long engine nacelles that the main wheels fold back into. It needs about
+3,000 ft of runway, where a fully laden Dash 7 managed with 2,200.
+
+The -100 entered service in 1984 with 37 to 39 seats, the -200 of 1995 put more powerful PW123
+engines in the same airframe, and the -300 of 1989 is 3.43 m longer, with 50 to 56 seats and a
+wider span. Boeing owned de Havilland Canada from 1986 until it sold it to Bombardier in 1992, and
+from 1996 Bombardier fitted active noise and vibration suppression and sold them as the Q200 and
+Q300. Production ended in 2009, and the -300's design life has since been extended from 80,000
+flights to 120,000. The US Air Force flies two -100s as the E-9A Widget, searching its missile
+ranges over the Gulf of Mexico for stray boats and aircraft before live firings.
+"""
+
+[facts]
+"First flight" = "June 1983"
+
+[variants.DH8A]
+name = "De Havilland Canada Dash 8-100"
+production = [1984, 2005]
+[variants.DH8A.facts]
+"Built" = "299"
+"Engines" = "2 × Pratt & Whitney Canada PW120 or PW121, 1,800 shp"
+
+[variants.DH8B]
+name = "De Havilland Canada Dash 8-200"
+production = [1995, 2009]
+[variants.DH8B.facts]
+"Built" = "105"
+"Engines" = "2 × Pratt & Whitney Canada PW123, 2,150 shp"
+
+[variants.DH8C]
+name = "De Havilland Canada Dash 8-300"
+production = [1989, 2009]
+[variants.DH8C.facts]
+"Built" = "267"
+"Engines" = "2 × Pratt & Whitney Canada PW123, 2,380–2,500 shp"

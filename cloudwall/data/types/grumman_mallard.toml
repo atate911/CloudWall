@@ -1,0 +1,39 @@
+name = "Grumman G-73 Mallard"
+types = ["G73", "G73T"]
+production = [1946, 1951]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Grumman_G-73_Mallard",
+  "https://www.ntsb.gov/investigations/Pages/DCA06MA010.aspx",
+  "https://www.faa.gov/lessons_learned/transport_airplane/accidents/grumman-turbo-mallard-g-73t",
+  "https://skybrary.aero/aircraft-model/g-73t-turbo-mallard",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-G.htm",
+]
+
+text = """
+Grumman's postwar airliner for harbour-to-harbour hops along the East Coast, with two pilots and ten
+passengers. It kept the Goose's high wing, radial engines and big straight tail, but brought a
+stressed-skin structure, a two-step hull, tricycle landing gear and fuel in tanks at the wingtips.
+It first flew on 30 April 1946, but cheap war-surplus aircraft and the spread of small airports
+left few airlines wanting it, and most of the 59 built went to companies and the rich: Fruehauf Trailer
+flew customers from Detroit to its fishing lodge on Georgian Bay, the Aga Khan bought one, and one
+was reportedly King Farouk's favourite aircraft.
+
+In the 1970s Frakes Aviation re-engined some with Pratt & Whitney Canada PT6A turboprops and room
+for 17 passengers as Turbo Mallards, and Chalk's flew them between Florida and the Bahamas. On 19
+December 2005 the right wing of one, built in 1947, came off just after it took off from Miami for
+Bimini, and all 20 aboard were killed; the NTSB found fatigue cracks that the airline's maintenance
+had failed to find and repair. In northern Australia, Paspaley Pearling has rebuilt its Mallards
+with turboprops to support its pearling.
+"""
+
+[facts]
+"First flight" = "April 1946"
+"Built" = "59"
+"Engines" = "2 × Pratt & Whitney R-1340 Wasp, 600 hp"
+"Max takeoff weight" = "12,750 lb (5,783 kg) (G-73)"
+
+[variants.G73T]
+name = "Grumman G-73T Turbo Mallard"
+[variants.G73T.facts]
+"Engines" = "2 × Pratt & Whitney Canada PT6A turboprops"

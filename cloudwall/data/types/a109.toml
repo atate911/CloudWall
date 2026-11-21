@@ -12,10 +12,10 @@ text = """
 The first all-Italian helicopter to be built in quantity, and still built more than half a century
 after it first flew in 1971. Agusta drew it as a single and made it a twin before it flew, with a
 four-bladed rotor and wheels that fold away in flight, and from 1976 it sold against the Bell 206
-on more seats, a second engine and a higher top speed. Speed has kept it in demand with executives,
-air ambulances and police ever since, and in 2008 a standard AW109S Grand set a round-the-world speed
-record for helicopters of 11 days and 7 hours. Successive models have swapped the first Allison 250s
-for Turbomeca Arriels and Arriuses and Pratt & Whitney Canada PW206s and PW207s.
+on more seats, a second engine and a higher top speed. Half of all AW109 Powers were sold to carry
+executives, and in 2008 a standard AW109S Grand set a round-the-world speed record for helicopters
+of 11 days and 7 hours. Successive models have swapped the first Allison 250s for Turbomeca
+Arriels and Arriuses and Pratt & Whitney Canada PW206s and PW207s.
 
 Argentina's army took three to the Falklands in 1982. A Harrier destroyed one on the ground, and the
 British captured the other two and flew them in support of the SAS until 2009. Belgium's order for
@@ -33,15 +33,15 @@ the bigger AW139 has five blades, and the single-engined AW119 sits on skids.
 name = "Agusta / Leonardo AW119 Koala"
 production = [2000]
 text = """
-The A109 with one engine and skids, as the A109 was first conceived, for operators who would rather
-have a single's running costs than a twin's redundancy. It keeps the A109's cockpit and cabin for
+The A109 with one engine, as the A109 was first conceived, and skids instead of wheels, for
+operators who would rather have a single's running costs than a twin's redundancy. It keeps the A109's cockpit and cabin for
 about half the price, and the cabin is wide: three abreast in the back, or two stretchers where most
 helicopters its size take one. Its Pratt & Whitney Canada PT6B-37A sits where the A109's two engines
 do, and its main gearbox can run for 30 minutes without oil.
 
 It flew in 1995 but reached customers only in 2000, after Agusta swapped its Turbomeca Arriel for the
 PT6B. Final assembly later moved to Philadelphia, and in 2020 the US Navy chose it to replace the
-TH-57, a Bell 206, as its basic helicopter trainer: the TH-73A Thrasher, first delivered in 2021,
+TH-57, a Bell 206, as its training helicopter: the TH-73A Thrasher, first delivered in 2021,
 with up to 130 planned. Tell it from the A109 by the skids, though the twin-engined AW109 Trekker
 has them too.
 """

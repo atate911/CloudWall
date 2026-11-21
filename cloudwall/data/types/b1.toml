@@ -1,0 +1,37 @@
+name = "Rockwell B-1 Lancer"
+types = ["B1"]
+production = [1985, 1988]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Rockwell_B-1_Lancer",
+  "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104500/b-1b-lancer/",
+  "https://www.militarytimes.com/news/your-military/2024/04/26/b-1-bomber-rises-from-the-boneyard-to-rejoin-the-air-forces-fleet/",
+  "https://www.af.mil/News/Article-Display/Article/2506903/afgsc-begins-retirement-of-b-1-aircraft-paving-way-for-b-21/",
+]
+
+text = """
+It was meant to cross the Soviet Union's air defences low and fast, and the B-1A prototypes reached
+Mach 2.2. President Carter cancelled it in 1977 in favour of missiles and cruise-missile-armed B-52s,
+and it was revived in 1981 as the B-1B, rebuilt for speed close to the ground instead: Mach 0.92 at
+low level, 1.25 at altitude. Fixed intakes feeding S-shaped ducts that screen the engine faces cost
+it the higher top speed but helped cut its radar return to about a fiftieth of a B-52's. All 100 were
+delivered by 1988. It gave up its nuclear role in the 1990s and has flown as a conventional bomber
+since; crews call it the Bone, from B-One.
+
+The wings sweep from 15 degrees, spread for takeoff, landing and economical cruise, to 67.5 degrees,
+folded back for high-speed flight, pivoting from a body that blends smoothly into the wing roots. A
+long fuselage flying low through turbulence flexes, so a pair of small triangular vanes either side
+of the nose, worked with the lower rudder by a structural mode control system, damp the motion and
+smooth the ride. Each of its four General Electric F101s gives 30,780 lb of thrust in afterburner,
+and the F101's core went on to become the heart of the CFM56 airliner engine. As of 2026 fewer than
+50 remain in service, and the B-21 Raider is to replace them.
+"""
+
+[facts]
+"First flight" = "December 1974 (B-1A)"
+"Built" = "104 (4 B-1A, 100 B-1B)"
+"Wing sweep" = "15° to 67.5°"
+"Top speed" = "Mach 1.25"
+"Weapons load" = "75,000 lb (34,000 kg), internal"
+"Max takeoff weight" = "477,000 lb (216,400 kg)"
+"Engines" = "4 × General Electric F101, 30,780 lb thrust with afterburner"

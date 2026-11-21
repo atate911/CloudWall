@@ -1,0 +1,31 @@
+name = "Agusta A129 Mangusta"
+types = ["A129"]
+production = [1990]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Agusta_A129_Mangusta",
+  "https://en.wikipedia.org/wiki/TAI/AgustaWestland_T129_ATAK",
+  "https://en.wikipedia.org/wiki/AgustaWestland_AW109",
+]
+
+text = """
+The first attack helicopter designed and built entirely in Europe. Italy's army wanted one in the
+1970s to meet the armour of the Warsaw Pact; a joint project with Germany's MBB fell apart, and
+Agusta went on alone, joining the rear fuselage of its A109 to a new, narrow, angular and armoured
+front, with the pilot and gunner one behind the other. It flew in September 1983 and entered service
+in 1990, the first helicopter whose flight and weapon systems were run by an integrated computer
+system, on composite blades built to survive hits from 23 mm cannon shells. Italy bought 60 and flew
+them in Somalia, Iraq and Afghanistan, and is replacing them with Leonardo's larger AW249.
+
+Turkey builds its own version, the T129 ATAK, which shares the A129's type designator: the Italian
+airframe with more powerful LHTEC CTS800 engines, a new transmission and blades, and Turkish
+sensors, avionics and weapons. Turkish Aerospace has delivered it since 2014 to the Turkish army,
+gendarmerie and police, and has exported it to the Philippines and Nigeria. Because the engines are
+American, the US can veto its sales abroad, and Turkey has developed an engine of its own, the TEI
+TS1400, to get round that.
+"""
+
+[facts]
+"First flight" = "September 1983"
+"Built" = "60 A129s; 100 T129s by 2023"
+"Engines" = "2 × Rolls-Royce Gem (A129); LHTEC CTS800-4N (T129)"
