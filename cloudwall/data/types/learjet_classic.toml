@@ -1,0 +1,96 @@
+name = "Classic Learjets"
+types = ["LJ23", "LJ24", "LJ25", "LJ28", "LJ31", "LJ35", "LJ55", "LJ60"]
+production = [1964, 2013]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Learjet",
+  "https://en.wikipedia.org/wiki/Bill_Lear",
+  "https://en.wikipedia.org/wiki/FFA_P-16",
+  "https://en.wikipedia.org/wiki/Learjet_23",
+  "https://en.wikipedia.org/wiki/Learjet_24",
+  "https://en.wikipedia.org/wiki/Learjet_25",
+  "https://en.wikipedia.org/wiki/Learjet_28",
+  "https://en.wikipedia.org/wiki/Learjet_31",
+  "https://en.wikipedia.org/wiki/Learjet_35",
+  "https://en.wikipedia.org/wiki/Learjet_55",
+  "https://en.wikipedia.org/wiki/Learjet_60",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Bill Lear, who had made his name with the car radio and aircraft autopilots, set out in 1960 to build
+a small, fast business jet in Switzerland, with engineers who had worked on the abandoned FFA P-16
+ground-attack fighter. How much the Learjet owes that fighter is still argued over, Lear's own son
+calling the close resemblance a story. The work moved to Wichita, Kansas, and the Learjet 23 flew
+there on 7 October 1963: six seats, two GE turbojets, a climb of nearly 7,000 ft a minute, and a
+price about $400,000 below its rivals'. It made "Learjet" a byword for a private jet. The stretched
+25 followed in 1966, and in 1967 Lear sold his share to the Gates Rubber Company.
+
+The airframe kept growing for four decades. The 35 and 36 of 1973 swapped the turbojets for Garrett
+turbofans, became the best-selling Learjets and serve the US Air Force as the C-21A, and in 1996
+astronaut Pete Conrad and three others flew a 35A round the world in 49 hours 21 minutes. The 28 of
+1977 was the first production jet with winglets, which replaced the tip tanks on the 31, 55 and 60;
+the 60, built until 2013, was still certified under the Learjet 24's type certificate of 1966. The
+early ones are easy to spot: a sharp nose, a T-tail, and a fuel tank on the tip of each wing.
+"""
+
+[facts]
+"First flight" = "October 1963, Learjet 23"
+
+[variants.LJ23]
+name = "Learjet 23"
+production = [1964, 1966]
+[variants.LJ23.facts]
+"Built" = "101"
+"Engines" = "2 × GE CJ610 turbojets"
+
+[variants.LJ24]
+name = "Learjet 24"
+production = [1966, 1977]
+[variants.LJ24.facts]
+"Built" = "259"
+"Engines" = "2 × GE CJ610 turbojets"
+
+[variants.LJ25]
+name = "Learjet 25"
+production = [1967, 1982]
+[variants.LJ25.facts]
+"Built" = "369"
+"Engines" = "2 × GE CJ610 turbojets"
+
+[variants.LJ28]
+name = "Learjet 28 or 29 Longhorn"
+production = [1979, 1982]
+more = """
+Only nine were built, but Neil Armstrong set five records in the first production 28.
+"""
+[variants.LJ28.facts]
+"Built" = "9"
+"Engines" = "2 × GE CJ610 turbojets"
+
+[variants.LJ31]
+name = "Learjet 31"
+production = [1988, 2003]
+[variants.LJ31.facts]
+"Built" = "246"
+"Engines" = "2 × Honeywell TFE731-2"
+
+[variants.LJ35]
+name = "Learjet 35 or 36"
+[variants.LJ35.facts]
+"Built" = "738"
+"Engines" = "2 × Garrett (later Honeywell) TFE731-2, 3,500 lbf"
+
+[variants.LJ55]
+name = "Learjet 55"
+[variants.LJ55.facts]
+"First flight" = "April 1979"
+"Built" = "147"
+"Engines" = "2 × Garrett TFE731"
+
+[variants.LJ60]
+name = "Learjet 60"
+production = [1993, 2013]
+[variants.LJ60.facts]
+"First flight" = "October 1990"
+"Engines" = "2 × Pratt & Whitney Canada PW305A, 4,600 lbf"

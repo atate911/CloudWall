@@ -45,6 +45,7 @@ production = [2004, 2013]
 name = "Learjet 45"
 production = [1998, 2012]
 [variants.LJ45.facts]
+"First flight" = "October 1995"
 "Engines" = "2 × Honeywell TFE731-20"
 
 [variants.LJ70]
