@@ -41,7 +41,23 @@ more = """A paragraph added after the family's text."""
 ```
 
 Seats are left out: they come from `data/seats.csv`, by airline, and the panel adds them, with the
-wake category from `data/cwt.csv`. The panel also works out, for the airframe tapped, where its
+wake category from `data/cwt.csv`.
+
+The facts are short and alike from type to type, so that one panel reads like the next:
+
+- **Labels** from this set where one fits: First flight, Entered service, Built, Engines (Engine for
+  a single), Range, Max takeoff weight, Max payload, Cruise, Top speed, Ceiling. Another label is
+  fine for a fact that belongs to the type alone ("Sling load", "Max transfer fuel").
+- **Both units**, the one the type's makers use first: ranges in nautical miles, "3,300 nm
+  (6,110 km)"; weights in kilograms for airliners, "88,300 kg (194,700 lb)", and in pounds for
+  light, American military and historic aircraft, "68,000 lb (30,800 kg)"; speeds in knots, "290 kt",
+  or Mach; heights in feet. Round converted figures as the source rounds its own.
+- **"up to"** before a weight or range only when the type is offered at several, and the figure is
+  the greatest. A figure for one model of a family names it in brackets: "640 nm (172S)".
+- **Engines** as "2 × CFM LEAP-1B", with power or thrust where it says something: "PT6A-67P,
+  1,200 shp".
+- **Dates** as month and year, "June 2003"; counts as "1,050", or "over 2,000" for a figure still
+  growing. The panel also works out, for the airframe tapped, where its
 build year falls in `production`, and how often the type and that airframe have come over.
 
 ## How they are written

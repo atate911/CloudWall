@@ -3,6 +3,7 @@ types = ["EC35"]
 production = [1996]
 checked = "2026-11"
 sources = [
+  "https://dspace-erf.nlr.nl/items/2f538dcd-daf2-45df-b45a-00a85cb79496/full",
   "https://en.wikipedia.org/wiki/Eurocopter_EC135",
   "https://en.wikipedia.org/wiki/Fenestron",
   "https://www.airbus.com/en/newsroom/press-releases/2026-06-airbus-delivers-first-h135-for-canadas-future-aircrew-training-program",
@@ -15,9 +16,11 @@ sources = [
 
 text = """
 The twin-engined light helicopter of air ambulances and police forces, first flown as the Eurocopter
-EC135 and built since 1996, with more than 1,600 delivered as of 2026. Its tail rotor is a Fenestron,
-a many-bladed fan set in a duct in the tail fin, which is safer for people on the ground and quieter
-than an open rotor. Clamshell doors at the back of the cabin let a stretcher slide straight in.
+EC135 and built since 1996, with more than 1,600 delivered as of 2026. Its tail rotor is a
+Fenestron, a many-bladed fan set in a duct in the tail fin, which is safer for people on the ground
+and quieter than an open rotor, and its four-bladed main rotor has no hinges or bearings at the hub:
+each blade flaps, leads, lags and twists in a flexible composite root. Clamshell doors at the back
+of the cabin let a stretcher slide straight in.
 
 You can know it by the ring in its tail, the twin engine exhausts on top and the rounded nose. Its
 two engines, Turbomeca Arrius or Pratt & Whitney Canada PW206s, and its Category A certification

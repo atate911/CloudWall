@@ -3,6 +3,7 @@ types = ["C208"]
 production = [1985]
 checked = "2026-11"
 sources = [
+  "https://en.wikipedia.org/wiki/Cessna_408_SkyCourier",
   "https://en.wikipedia.org/wiki/Cessna_208_Caravan",
   "https://media.txtav.com/194531-cessna-marks-30th-anniversary-of-caravan-utility-aircraft/",
   "https://media.txtav.com/221919-textron-aviation-delivers-3-000th-cessna-caravan-family-aircraft-grand-caravan-ex-joins-azul-conecta-airline-fleet-in-brazil",
@@ -18,10 +19,11 @@ text = """
 A big single-engine utility aircraft built around a PT6 turboprop, with a high strut-braced wing,
 fixed gear tough enough for gravel and grass, and a cargo pod slung under the belly. FedEx was its
 launch customer and in 2025 still flew more than 200 as feeders, carrying packages between the
-cities its jets serve and the towns they don't, and it works on floats and skis, as a skydiving
-jump ship and as a small airliner on short hops.
+cities its jets serve and the towns they don't, and it works on floats and skis, as a skydiving jump
+ship and as a small airliner on short hops.
 
-More than 3,000 have been delivered since 1985. From the ground it looks like an oversized Cessna
+More than 3,000 have been delivered since 1985, and FedEx is replacing its own with the twin-engined
+SkyCourier, another Cessna built to its order. From the ground it looks like an oversized Cessna
 single, with a long nose for the turbine, an exhaust stack on its right side and, on most, that pod
 underneath.
 """

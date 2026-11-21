@@ -3,6 +3,7 @@ types = ["A332", "A333", "A338", "A339"]
 production = [1993]
 checked = "2026-11"
 sources = [
+  "https://en.wikipedia.org/wiki/Air_Transat_Flight_236",
   "https://en.wikipedia.org/wiki/Airbus_A330",
   "https://en.wikipedia.org/wiki/Airbus_A330neo",
   "https://en.wikipedia.org/wiki/Airbus_A330_MRTT",
@@ -23,6 +24,10 @@ place of the older ones' angled winglets, which widen its span by 3.7 m to 64 m.
 tanker flies for many air forces. Tell an A330 from a 777 by its main gear, four wheels on each leg
 instead of six, and from a 767 by its wider body and bigger wing, which on every A330 ends in a
 winglet.
+
+In 2001 an Air Transat A330 lost all its fuel through a leak in one engine's fuel line over the
+Atlantic, and glided with both engines stopped for about 19 minutes and 120 km to a landing in the
+Azores. All 306 aboard survived.
 """
 
 [facts]

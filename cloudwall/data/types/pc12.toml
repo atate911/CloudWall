@@ -17,10 +17,11 @@ sources = [
 
 text = """
 A single Pratt & Whitney Canada PT6 turboprop of about 1,200 shp, a pressurised cabin for up to nine
-passengers, and a cargo door big enough for a pallet: the PC-12 is a business aircraft, an airliner
-for small towns and an air ambulance all at once. It cruises at up to 290 knots and flies about
-1,800 nm, from rough strips a business jet couldn't use. Australia's Royal Flying Doctor Service
-flies a large fleet of them, and the US Air Force flies it as the U-28 Draco.
+passengers, and a cargo door big enough for a pallet: the PC-12, built by Pilatus at Stans in
+Switzerland, is a business aircraft, an airliner for small towns and an air ambulance all at once.
+It cruises at up to 290 knots and flies about 1,800 nm, from rough strips a business jet couldn't
+use. Australia's Royal Flying Doctor Service flies a large fleet of them, and the US Air Force flies
+it as the U-28 Draco.
 
 Its trust in one engine rests on the PT6's record, and since 2017 European rules have let
 single-engine turboprops like it carry paying passengers at night and in cloud. You can know it by

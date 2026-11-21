@@ -3,6 +3,7 @@ types = ["BE9L", "BE9T", "BE10", "BE20", "BE30", "B350"]
 production = [1964]
 checked = "2026-11"
 sources = [
+  "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_Canada_PT6",
   "https://skybrary.aero/aircraft/be10",
   "https://www.faa.gov/air_traffic/publications/atpubs/CNT/5-2-B.htm",
   "https://en.wikipedia.org/wiki/Beechcraft_King_Air",
@@ -30,8 +31,9 @@ everyone from charter firms to air ambulances. The US military flies the 200 and
 Huron, and until 2025 flew the 350 as the MC-12 surveillance aircraft.
 
 The 90 and the 100 have a conventional tail; the F90, the 200, the 300 and the stretched 350 have a
-T-tail, which tells them apart at a glance. All have long engine nacelles with their exhaust stacks
-near the front, pointing back over the wing.
+T-tail, which tells them apart at a glance. All have the PT6's stubby exhaust stacks just behind the
+propellers, because the engine runs backwards: air is ducted round to the rear of the engine, flows
+forward through the compressor and turbines, and leaves near the front.
 """
 
 [facts]

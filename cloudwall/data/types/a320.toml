@@ -3,6 +3,7 @@ types = ["A318", "A319", "A320", "A321"]
 production = [1988, 2021]
 checked = "2026-11"
 sources = [
+  "https://en.wikipedia.org/wiki/US_Airways_Flight_1549",
   "https://en.wikipedia.org/wiki/Airbus_A320_family",
   "https://www.aircraft.airbus.com/en/aircraft/a320-family",
   "https://www.aircraft.airbus.com/en/aircraft/a320-family/a320neo",
@@ -24,6 +25,9 @@ ground. Older ones whistle on approach: the opening for a fuel-tank over-pressur
 wing sings like a blown bottle, a sound Airbus has since quietened with a small vortex generator
 fitted ahead of it. Most have small triangular fences above and below each wingtip; many later ones
 have sharklets, the tall curved winglets of the neo.
+
+In January 2009 a US Airways A320 lost both engines to a flock of Canada geese climbing out of
+LaGuardia, and its crew ditched it in the Hudson River. All 155 aboard survived.
 """
 
 [facts]

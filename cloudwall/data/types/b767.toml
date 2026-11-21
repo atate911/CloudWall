@@ -3,6 +3,7 @@ types = ["B762", "B763", "B764"]
 production = [1982]
 checked = "2026-11"
 sources = [
+  "https://en.wikipedia.org/wiki/Gimli_Glider",
   "https://en.wikipedia.org/wiki/Boeing_767",
   "https://www.boeing.com/commercial/767",
   "https://www.boeing.com/content/dam/boeing/v2/airports/acaps/767_REV_K.pdf",
@@ -23,6 +24,10 @@ The passenger 767 has largely given way to the 787. The freighter, built mostly 
 is due to go out of production in 2027, but the US Air Force's KC-46 Pegasus tanker is a 767 too and
 keeps the line open. Tell it from an A330 by its narrower fuselage, and from a 757, which has the
 same cockpit windows, by its wider body and the second aisle inside.
+
+In 1983 an Air Canada 767, fuelled by a calculation done in pounds instead of kilograms, ran dry at
+41,000 ft and glided to a landing at Gimli, Manitoba, on a disused air force runway then used as a
+drag strip. All 69 aboard survived, and the "Gimli Glider" flew on until 2008.
 """
 
 [facts]
