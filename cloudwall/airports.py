@@ -184,8 +184,10 @@ def locate(text):
 # -- airspace and navaids (FAA NASR), for the ATC-style radar's video map ----------
 _AIRSPACE = Path(__file__).resolve().parent / "data" / "airspace.json"
 _NAVAIDS = Path(__file__).resolve().parent / "data" / "navaids.csv"
+_HELIPADS = Path(__file__).resolve().parent / "data" / "helipads.csv"
 _airspace = None
 _navaids = None
+_helipads = None
 VIDEO_MAP_NM = 45         # out to the corners of the ATC radar's square at its longest range
 
 
@@ -225,4 +227,18 @@ def navaids_near(lat, lon, reach_nm=VIDEO_MAP_NM):
         if _navaids is None:
             _navaids = [dict(r, lat=float(r["lat"]), lon=float(r["lon"])) for r in _rows(_NAVAIDS)]
     near = [(haversine_nm(lat, lon, r["lat"], r["lon"]), r) for r in _navaids]
+    return [dict(r) for d, r in sorted(near, key=lambda x: x[0]) if d <= reach_nm]
+
+
+def helipads_near(lat, lon, reach_nm):
+    """The hospital helipads (data/helipads.csv, the US only) within reach_nm of a point, nearest
+    first: {code, name, short, city, lat, lon, elevation_ft}."""
+    global _helipads
+    from .geo import haversine_nm
+    with _lock:
+        if _helipads is None:
+            _helipads = [{"code": r["code"], "name": r["name"], "short": r["short"] or r["name"], "city": r["city"],
+                          "lat": float(r["lat"]), "lon": float(r["lon"]),
+                          "elevation_ft": int(r["elevation_ft"]) if r["elevation_ft"] else 0} for r in _rows(_HELIPADS)]
+    near = [(haversine_nm(lat, lon, r["lat"], r["lon"]), r) for r in _helipads]
     return [dict(r) for d, r in sorted(near, key=lambda x: x[0]) if d <= reach_nm]

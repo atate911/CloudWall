@@ -1,7 +1,7 @@
 // Parts that more than one of the displays is made of: the flight card, the wall panel's card,
 // the emergency takeover, the board and the logbook all say a flight number, an airline or a
 // landing the same way.
-import { esc, num } from "./util.js";
+import { esc, num, ident } from "./util.js";
 
 // Show an airline's logo on its white tile; if there isn't one, show the name instead.
 export function showLogo(tile, img, state, code, nameEl) {
@@ -14,6 +14,7 @@ export function showLogo(tile, img, state, code, nameEl) {
 }
 
 function badgeClass(b) {
+  if (b === "MEDICAL") return "med";
   if (/EMERGENCY|HIJACK|RADIO|MILITARY/.test(b)) return "hot";
   if (/^NEW/.test(b)) return "new";
   if (/RARE/.test(b)) return "rare";
@@ -38,10 +39,11 @@ export function localWords(a, state) {
     : a.local === "local" ? `Flying near ${p.name}` : "";
 }
 
-// "Boeing 737-800" stays; the database's long variants ("737NG 890/W") are trimmed to the model
+// "Boeing 737-800" and "Beechcraft King Air 350" stay; the database's long variants ("737NG 890/W")
+// are trimmed to the model
 export function shortType(name) {
   if (!name) return "";
-  return name.length > 22 ? name.split(/[\s/]/).slice(0, 2).join(" ") : name;
+  return name.length > 24 ? name.split(/[\s/]/).slice(0, 3).join(" ") : name;
 }
 
 const REC = [["highest", "Highest", (v) => num(v) + " ft"], ["lowest", "Lowest", (v) => num(v) + " ft"], ["fastest", "Fastest", (v) => num(v) + " kt"],
@@ -63,4 +65,19 @@ export function heardGroups(heard) {
     g.n++; if (a.alt != null) g.alts.push(a.alt); by.set(k, g);
   }
   return [...by.values()];
+}
+
+// An aircraft in plain words, as anyone would say it: "Delta Air Lines" and flight DL178 make
+// "Delta 178"; without an airline, what kind of aircraft it is.
+const KIND_WORDS = { light: "Small plane", twin: "Small plane", ultralight: "Small plane", seaplane: "Seaplane", glider: "Glider",
+  turboprop: "Propeller plane", bizjet: "Private jet", heli: "Helicopter", gyro: "Gyrocopter", fighter: "Military jet",
+  tandem: "Military helicopter", tiltrotor: "Military aircraft", balloon: "Balloon", airship: "Airship", drone: "Drone" };
+export function plainName(a) {
+  if (a.medical) return a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance";
+  if (a.airline) {
+    const short = a.airline.replace(/\s+(Air ?Lines|Airlines|Airways|Air|Aviation)$/i, "");
+    const num = /^[A-Z0-9]{2,3}?(\d{1,4}[A-Z]?)$/.exec((a.flight || ident(a) || "").replace(/\s/g, ""));
+    return num ? `${short} ${num[1]}` : short;
+  }
+  return KIND_WORDS[a.icon] || (a.type_name ? a.type_name.replace(/\s+\(.*\)$/, "") : "Plane");
 }

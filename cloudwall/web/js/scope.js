@@ -7,15 +7,18 @@
 // persistent elements, one per aircraft, moved every animation frame: positions are
 // dead-reckoned from the last report and eased toward each new one, so aircraft glide
 // instead of hopping between updates.
-import { esc, ident, projected, offset, clamp } from "./util.js";
+import { esc, num, ident, projected, offset, clamp } from "./util.js";
 import { map, tileLayout, runwaysFor } from "./map.js";
 import { iconFor } from "./icons.js";
+import { plainName, boardFlight } from "./parts.js";
+import { kind, MED_CROSS, hospitalShort } from "./situation.js";
 
 // Drawing options from the page: atc draws the radar like an air traffic control screen;
-// tracks shows the selected aircraft's past track (all of it; its history dots in the ATC style;
-// no other aircraft has one) and the one-minute lines; range is how far out the radar shows, in nm
-// (the tracking radius, or longer).
-let opt = { atc: false, map: false, tracks: true, range: 15, mapStyle: "sat" };
+// tracks shows the selected aircraft's past track (all of it; its history dots in the ATC style),
+// the others' last two minutes and the one-minute lines; range is how far out the radar shows, in nm
+// (the tracking radius, or longer); simple draws only what someone in the house wants to know: the
+// landing order as numbers, the selected aircraft and anything worth a look by name, no other labels.
+let opt = { atc: false, map: false, tracks: true, range: 15, mapStyle: "sat", simple: false };
 const RAD = Math.PI / 180;
 
 // ---- the ATC style: a STARS display, the FAA's terminal radar, drawn to its conventions ----
@@ -56,6 +59,12 @@ const CHAR_W = 3.35;                          // estimated label width per chara
 // aircraft is still more than a speck. Labels and lines make room for them.
 const ICON_UNIT_PX = 2.5, ICON_BOOST_MAX = 1.5;
 let placeBoxes = [];        // where the place names sit, so aircraft labels can avoid them
+const MOVE_ON_S = 30;       // how long aircraft are moved on from their last reports
+// The chart style's fixed names (range rings, the airport, airfields, towns, flight restrictions,
+// the approach course, a hospital) give way to traffic: while an aircraft or its label is over one, it fades
+// out. Measured as drawn.
+const YIELDING = ".ring-label, .apt-label, .field-label, .place, .tfr-label, .final-label, .helipad-label, .helipad:not(.dest)";
+let yielders = [];
 
 // The selected aircraft's whole track is drawn in its colour, strongest near the ground and fading
 // with height: these are the bands' lower edges in feet (0-2, 2-5, 5-10, 10-18, 18-28, 28+ thousand).
@@ -113,7 +122,7 @@ function mapLayer(home, k, hasBasemap, charted = false) {
     if (Math.hypot(o.x, o.y) * k < 7) continue;   // the town you're in: the home reticle already marks it
     s += `<text class="place" x="${o.x * k}" y="${-o.y * k}" text-anchor="middle">${esc(p.name)}</text>`;
     const w = p.name.length * 3.1;
-    placeBoxes.push({ x0: o.x * k - w / 2, x1: o.x * k + w / 2, y0: -o.y * k - 4.5, y1: -o.y * k + 1 });
+    placeBoxes.push({ x0: o.x * k - w / 2, x1: o.x * k + w / 2, y0: -o.y * k - 4.5, y1: -o.y * k + 1, soft: true });
   }
   return s;
 }
@@ -144,8 +153,42 @@ function runwayLayer(state, k) {
     }
   }
   if (ticks) s += `<path class="approach-tick" d="${ticks}"/>`;
+  if (!opt.atc) s += finalCourses(state, k);
   for (const r of rws) s += `<line class="runway" x1="${r.a.x * k}" y1="${-r.a.y * k}" x2="${r.b.x * k}" y2="${-r.b.y * k}"/>`;
   return s;
+}
+
+// The chart style's final approach courses for the runways in use: ticked every mile out to the
+// edge (longer every five), as a controller's video map marks them, and named once at the far end
+// ("28L/R"). Simple keeps the line and the name and leaves out the ticks.
+function finalCourses(state, k) {
+  const names = String((state.flow && state.flow.runways) || "").split("/").map((n) => n.trim()).filter(Boolean);
+  const home = state.home, ends = [];
+  for (const n of names) {
+    const r = runwaysFor(state).find((x) => x.name && x.name.split("/").includes(n));
+    if (!r) continue;
+    const i = r.name.split("/").indexOf(n), [t, f] = [r.ends[i], r.ends[1 - i]].map(([lat, lon]) => offset(home, { lat, lon }));
+    const len = Math.hypot(t.x - f.x, t.y - f.y) || 1;
+    ends.push({ n, t, ux: (t.x - f.x) / len, uy: (t.y - f.y) / len });
+  }
+  if (!ends.length) return "";
+  let d = "", far = null;
+  for (const e of ends) {
+    const x0 = e.t.x * k, y0 = -e.t.y * k, ux = e.ux, uy = -e.uy;
+    // out to the disc's edge, at most 16 nm
+    const b = x0 * ux + y0 * uy, L = Math.min(16 * k, -b + Math.sqrt(Math.max(0, b * b - (x0 * x0 + y0 * y0 - 99 * 99))));
+    for (let m = 1; m * k <= L; m++) {
+      const h = m % 5 ? 1 : 2, cx = x0 + ux * m * k, cy = y0 + uy * m * k;
+      d += `M${(cx - uy * h).toFixed(2)},${(cy + ux * h).toFixed(2)}L${(cx + uy * h).toFixed(2)},${(cy - ux * h).toFixed(2)}`;
+    }
+    // the name sits just inside the edge, beside the course: on its upper side, clear of the bezel
+    const flip = -ux > 0 ? -1 : 1, nx = uy * flip, ny = -ux * flip;          // the normal pointing up the screen
+    far = { x: x0 + ux * (L - 8) + nx * 4.5, y: y0 + uy * (L - 8) + ny * 4.5 };
+  }
+  const same = ends.length > 1 && ends.every((e) => e.n.slice(0, -1) === ends[0].n.slice(0, -1));
+  const label = same ? `${ends[0].n.slice(0, -1)}${ends.map((e) => e.n.slice(-1)).join("/")}` : ends.map((e) => e.n).join(" ");
+  placeBoxes.push({ x0: far.x - 8, x1: far.x + 8, y0: far.y - 3, y1: far.y + 3 });
+  return `<path class="final-tick" d="${d}"/><text class="final-label" x="${far.x.toFixed(2)}" y="${(far.y + 1.5).toFixed(2)}" text-anchor="middle">${esc(label)}</text>`;
 }
 
 // Ring labels sit on the north-east diagonal, clear of the N/E letters and of most traffic.
@@ -198,27 +241,36 @@ function place(state, a, t) {
 }
 
 // ---- the Map view's words: who it is, where it's going and how high, for anyone ----
-// "Delta Air Lines" and flight DL178 make "Delta 178"; without an airline, what kind of aircraft it is.
-const KIND_WORDS = { light: "Small plane", twin: "Small plane", ultralight: "Small plane", seaplane: "Seaplane", glider: "Glider",
-  turboprop: "Propeller plane", bizjet: "Private jet", heli: "Helicopter", gyro: "Gyrocopter", fighter: "Military jet",
-  tandem: "Military helicopter", tiltrotor: "Military aircraft", balloon: "Balloon", airship: "Airship", drone: "Drone" };
-export function plainName(a) {
-  if (a.airline) {
-    const short = a.airline.replace(/\s+(Air ?Lines|Airlines|Airways|Air|Aviation)$/i, "");
-    const num = /^[A-Z0-9]{2,3}?(\d{1,4}[A-Z]?)$/.exec((a.flight || ident(a) || "").replace(/\s/g, ""));
-    return num ? `${short} ${num[1]}` : short;
-  }
-  return KIND_WORDS[a.icon] || (a.type_name ? a.type_name.replace(/\s+\(.*\)$/, "") : "Plane");
-}
 const city = (p) => (p && (p.city || p.name || p.iata)) || "";
 function plainLine(a, state) {
   const r = a.route && a.route.plausible ? a.route : null, here = state.airport.iata;
   let where = "";
   if (r) where = r.dest.iata === here || a.local === "arriving" ? `from ${city(r.origin)}` : `to ${city(r.dest)}`;
+  else if (a.hospital) where = hospitalShort(a.hospital);
   else if (a.local === "arriving") where = "landing";
   else if (a.local === "departing") where = "just took off";
   const alt = a.alt == null ? "" : `${Math.round(a.alt / 100) * 100 >= 1000 ? (Math.round(a.alt / 100) * 100).toLocaleString("en-US") : Math.max(0, Math.round(a.alt / 50) * 50)} ft`;
   return [where, alt].filter(Boolean).join(" · ");
+}
+
+// Simple's labels: the selected aircraft by its flight and height, an arrival by its place in the landing
+// order (drawn in a ring), anything worth a look by what it is; everything else has none.
+function simpleLabel(a, isHero) {
+  const v = a.vrate || 0, trend = v > 300 ? " ↑" : v < -300 ? " ↓" : "";
+  if (isHero || a.notable === "emergency") return { text: boardFlight(ident(a)), sub: a.alt == null ? "" : `${num(a.alt)} ft${trend}` };
+  if (a.activity === "arr" && a.seq) return { text: String(a.seq), sub: "", seq: true };
+  if (a.notable) { const k = kind(a); return { text: k[0].toUpperCase() + k.slice(1), sub: a.hospital ? hospitalShort(a.hospital) : "" }; }
+  return { text: "", sub: "" };
+}
+// A short track as segments, fading with age: the oldest faint, the newest strongest.
+function tailSegs(home, pts, k) {
+  const xy = pts.map(([lat, lon]) => { const o = offset(home, { lat, lon }); return [(o.x * k).toFixed(1), (-o.y * k).toFixed(1)]; });
+  let s = "";
+  for (let i = 1; i < xy.length; i++) {
+    const op = (0.1 + 0.5 * (i / xy.length) ** 1.5).toFixed(2);
+    s += `<line x1="${xy[i - 1][0]}" y1="${xy[i - 1][1]}" x2="${xy[i][0]}" y2="${xy[i][1]}" opacity="${op}"/>`;
+  }
+  return s;
 }
 
 // ---- the ATC style's fixed parts ----
@@ -329,21 +381,30 @@ function radarStatic(state) {
   for (let r = step; r < R - 0.01; r += step) rings.push(r);
   rings.push(R);
   const bm = (state.charts && state.charts.map) || state.basemap, based = !!(bm && bm.enabled);
-  let s = `<g clip-path="url(#scope-clip)">${mapLayer(home, k, based, based && CHART_STYLES.has(bm.style))}${runwayLayer(state, k)}${tfrLayer(state, k)}${fieldsLayer(state, k)}</g>`;
+  let s = `<g clip-path="url(#scope-clip)">${mapLayer(home, k, based, based && CHART_STYLES.has(bm.style))}${runwayLayer(state, k)}${tfrLayer(state, k)}${fieldsLayer(state, k)}${helipadLayer(state, k)}</g>`;
   s += SPOKES(rings[0] * k);
-  for (const r of rings) s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + " nm")}`;
+  for (const r of rings) {
+    s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + " nm")}`;
+    const d = r * k * Math.SQRT1_2;
+    placeBoxes.push({ x0: d + 1, x1: d + 13, y0: -d - 5.5, y1: -d - 0.5, soft: true });          // aircraft labels steer around it
+  }
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
   // the key, in the drawing's lower left corner, with the selected aircraft's track shades along its foot
-  const keyed = opt.tracks && state.hero && state.hero.path && state.hero.path.length > 1;
-  s += note("legend", -111, keyed ? 105.25 : 110.5, "start", [`${R} nm around home`, "035↑ 3,500 ft, climbing", opt.tracks ? "Line: 1 minute ahead" : ""].filter(Boolean));
+  const keyed = opt.tracks && !opt.simple && state.hero && state.hero.path && state.hero.path.length > 1;
+  s += note("legend", -111, keyed ? 105.25 : 110.5, "start", opt.simple ? [`${R} nm around home`]
+    : [`${R} nm around home`, "035↑ 3,500 ft, climbing", opt.tracks ? "Line: 1 minute ahead" : ""].filter(Boolean));
   if (keyed) s += pathKey(-111, 110.5);
   const ap = offset(home, state.airport);
-  if (Math.hypot(ap.x, ap.y) < R) s += `<text class="apt-label" x="${ap.x * k}" y="${-ap.y * k + 9}" text-anchor="middle">${esc(state.airport.iata)}</text>${runwaysFor(state).length ? "" : `<rect class="apt-mark" x="${ap.x * k - 2.5}" y="${-ap.y * k - 2.5}" width="5" height="5"/>`}`;
+  if (Math.hypot(ap.x, ap.y) < R) {
+    s += `<text class="apt-label" x="${ap.x * k}" y="${-ap.y * k + 9}" text-anchor="middle">${esc(state.airport.iata)}</text>${runwaysFor(state).length ? "" : `<rect class="apt-mark" x="${ap.x * k - 2.5}" y="${-ap.y * k - 2.5}" width="5" height="5"/>`}`;
+    placeBoxes.push({ x0: ap.x * k - 6, x1: ap.x * k + 6, y0: -ap.y * k + 4.5, y1: -ap.y * k + 10, soft: true });     // labels steer around the airport's name
+  }
   for (const a of state.aircraft) {
     if (!a.on_ground) continue;
     const o = offset(home, a);
     if (Math.hypot(o.x, o.y) < R) s += `<circle class="blip gnd" cx="${o.x * k}" cy="${-o.y * k}" r="1.1"/>`;
   }
+  placeBoxes.push({ x0: -5.5, x1: 5.5, y0: -5.5, y1: 5.5 });          // home's reticle
   return s + HOME + heardNote(state);
 }
 
@@ -360,6 +421,14 @@ function mapStatic(state) {
       `<path d="M0,-1.8L.45,-.5L1.9,.3V.8L.45,.35V1.1L.9,1.5V1.8L0,1.55L-.9,1.8V1.5L-.45,1.1V.35L-1.9,.8V.3L-.45,-.5Z"/></g>` +
       `<text class="map-label" x="${(ax + 4).toFixed(1)}" y="${(ay + 1.7).toFixed(1)}">${esc(name)}</text>`;
     placeBoxes.push({ x0: ax - 3, x1: ax + 5 + name.length * 3, y0: ay - 4, y1: ay + 4 });
+  }
+  // the hospital a medical helicopter is going to, or has just left
+  for (const h of hospitalsInUse(state).values()) {
+    const o = offset(home, h), hx = o.x * k, hy = -o.y * k;
+    if (!inView(hx, hy)) continue;
+    s += `<g class="map-hosp" transform="translate(${hx.toFixed(1)},${hy.toFixed(1)})"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" rx="1.1"/><path d="${H_MARK}"/></g>` +
+      `<text class="map-label" x="${(hx + 4).toFixed(1)}" y="${(hy + 1.7).toFixed(1)}">${esc(h.name)}</text>`;
+    placeBoxes.push({ x0: hx - 3, x1: hx + 5 + h.name.length * 3, y0: hy - 4, y1: hy + 4 });
   }
   // the note sits just above the buttons along the foot of the panel
   const note = `Live flights within ${miles} miles of home`, foot = UI.reduce((y, b) => (b.y1 >= MY - 0.5 ? Math.min(y, b.y0) : y), MY);
@@ -384,7 +453,7 @@ function tfrLayer(state, k) {
       const y = spots.find(free) ?? spots[0];
       if (Math.hypot(cx, y) < 96) {
         s += `<text class="tfr-label" x="${cx.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle">TFR</text>`;
-        placeBoxes.push({ x0: cx - 5, x1: cx + 5, y0: y - 4.5, y1: y + 1 });
+        placeBoxes.push({ x0: cx - 5, x1: cx + 5, y0: y - 4.5, y1: y + 1, soft: true });
       }
     }
   }
@@ -407,7 +476,32 @@ function fieldsLayer(state, k) {
     }
     s += `</g><text class="field-label" x="${x.toFixed(1)}" y="${(y + 7.9).toFixed(1)}" text-anchor="middle">${esc(f.code)}</text>`;
     // aircraft labels steer around the airfield and its code, as they do around place names
-    placeBoxes.push({ x0: o.x * k - 5, x1: o.x * k + 5, y0: -o.y * k - 2.5, y1: -o.y * k + 8.5 });
+    placeBoxes.push({ x0: o.x * k - 5, x1: o.x * k + 5, y0: -o.y * k - 2.5, y1: -o.y * k + 8.5, soft: true });
+  }
+  return s;
+}
+
+// The hospital helipads nearby, as charts mark heliports: an H in a circle (Detailed). One a medical
+// helicopter is heading for, landing at or has just left is drawn in the medical blue with its name,
+// in Simple too, so you can see where it's going.
+function hospitalsInUse(state) {
+  const out = new Map();
+  for (const a of state.aircraft) if (a.hospital && !a.on_ground) out.set(a.hospital.code, a.hospital);
+  return out;
+}
+const H_MARK = "M-.85,-1.1V1.1M.85,-1.1V1.1M-.85,0H.85";
+function helipadLayer(state, k) {
+  let s = "";
+  const used = hospitalsInUse(state);
+  for (const p of state.airport.helipads || []) {
+    const o = offset(state.home, p), x = o.x * k, y = -o.y * k, dest = used.has(p.code);
+    if (Math.hypot(x, y) > 96) continue;
+    s += `<g class="helipad${dest ? " dest" : ""}" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><circle r="2.1"/><path d="${H_MARK}"/></g>`;
+    placeBoxes.push({ x0: x - 2.5, x1: x + 2.5, y0: y - 2.5, y1: y + 2.5, soft: true });
+    if (dest) {
+      s += `<text class="helipad-label" x="${x.toFixed(1)}" y="${(y + 7.4).toFixed(1)}" text-anchor="middle">${esc(p.short)}</text>`;
+      placeBoxes.push({ x0: x - p.short.length * 1.6, x1: x + p.short.length * 1.6, y0: y + 3, y1: y + 8.5, soft: true });
+    }
   }
   return s;
 }
@@ -463,6 +557,14 @@ function el(name, attrs, parent) {
   return e;
 }
 
+// A filter mapping a map tile's greys onto three colours: the darkest (water) to `water`, the middle
+// greys (land) to `land`, the lightest (roads, labels) to `road`.
+function chartTint(id, water, land, road) {
+  const ch = (i) => [water[i], water[i], (water[i] + land[i]) / 2, land[i], (land[i] + road[i]) / 2, ...Array(6).fill(road[i])].map((v) => (v / 255).toFixed(3)).join(" ");
+  return `<filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0"/><feComponentTransfer>` +
+    `<feFuncR type="table" tableValues="${ch(0)}"/><feFuncG type="table" tableValues="${ch(1)}"/><feFuncB type="table" tableValues="${ch(2)}"/></feComponentTransfer></filter>`;
+}
+
 function ensureLayers(svg) {
   if (svg.querySelector("#s-static")) return;
   svg.innerHTML = "";
@@ -471,6 +573,10 @@ function ensureLayers(svg) {
   // diagonal hatching for active flight restrictions
   const hatch = el("pattern", { id: "tfr-hatch", width: 3, height: 3, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
   el("line", { x1: 0, y1: 0, x2: 0, y2: 3, class: "tfr-hatch-line" }, hatch);
+  // The chart style's dark grey street map, recoloured as a chart: its dark water blue, its land
+  // pale, its roads paler still (by day); deep navy water and slate land by night.
+  defs.insertAdjacentHTML("beforeend", chartTint("chart-tint", [182, 204, 220], [237, 240, 230], [252, 252, 248]) +
+    chartTint("chart-tint-night", [14, 34, 54], [24, 38, 54], [46, 62, 80]));
   el("g", { id: "s-bg" }, svg);
   el("g", { id: "s-base", "clip-path": "url(#scope-clip)" }, svg);
   for (const id of ["s-static", "s-trails", "s-craft"]) el("g", { id }, svg);
@@ -489,29 +595,53 @@ function craftFor(svg, hex) {
   if (c) return c;
   const g = el("g", { "data-hex": hex, class: "craft entering" }, svg.querySelector("#s-craft"));
   el("circle", { r: 10, fill: "transparent" }, g);                    // generous touch target
+  const ring = el("circle", { class: "sel-ring", style: "display:none" }, g);      // chart style: the selected aircraft
   const vec = el("line", { class: "vec" }, g);                         // where it will be in a minute
   const leader = el("line", { class: "leader" }, g);                   // ATC style: target to data block
   // the chart style's icon is set for its kind of aircraft as it's placed; a change of style rebuilds every craft
+  const glow = el("circle", { class: "glow" }, g);                     // a soft ring, once, for something new
   const icon = el("path", { class: "blip", d: opt.atc ? OCTAGON : "" }, g);
+  // a medical flight's mark: a white cross on a blue square, upright at the icon's upper left (chart style and Map view)
+  const med = el("g", { class: "med", style: "display:none" }, g);
+  el("rect", { x: -2.6, y: -2.6, width: 5.2, height: 5.2, rx: 1.1 }, med);
+  el("path", { d: MED_CROSS }, med);
   // ATC style: the position symbol on the target, a letter, or a drawn * or +
   const pos = el("text", { class: "pos", "text-anchor": "middle", dy: "0.36em" }, g), sym = el("path", { class: "sym" }, g);
   const hist = el("g", { class: "hist" }, svg.querySelector("#s-trails"));
   // hidden until placed: a dot without a position would sit on home
   for (let i = 0; i < HISTORY; i++) el("circle", { r: 1.05, class: `h${i}`, style: "display:none" }, hist);
-  const l0 = el("text", { class: "tag-top" }, g), tag = el("text", { class: "tag" }, g), sub = el("text", { class: "tag-sub" }, g);
+  const l0 = el("text", { class: "tag-top" }, g), seqring = el("circle", { class: "seqring", style: "display:none" }, g);
+  // the label stays hidden until it's first placed, on the next update
+  const tag = el("text", { class: "tag", style: "display:none" }, g), sub = el("text", { class: "tag-sub", style: "display:none" }, g);
+  // the chart style's short track behind every other aircraft: its last two minutes, fading with age
+  const tl = el("g", { class: "tl" }, svg.querySelector("#s-trails")), tlSegs = el("g", {}, tl), tlEnd = el("line", {}, tl);
   // the chart style's track, while it is the selected aircraft: runs of one altitude band,
   // rebuilt on each update, and the stretch from its last point to the aircraft, moved every frame
   const trk = el("g", { class: "trk" }, svg.querySelector("#s-trails")), segs = el("g", {}, trk), tail = el("line", {}, trk);
-  c = { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""] };
+  c = { g, glow, icon, med, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, ring, seqring, tl, tlSegs, tlEnd, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""], act: null, pri: 9, hide: false };
   live.set(hex, c);
   requestAnimationFrame(() => g.classList.remove("entering"));
   return c;
+}
+
+// Something new: a ring round the aircraft swells and fades twice, then it's still (the page's own glow
+// for its rows runs alongside).
+export function flashCraft(hex) {
+  const c = live.get(hex);
+  if (!c) return;
+  c.glow.setAttribute("r", ((c.reach || 4.5) + 2.5).toFixed(2));
+  c.g.classList.remove("fresh");
+  void c.g.getBBox();
+  c.g.classList.add("fresh");
+  clearTimeout(c.freshTimer);
+  c.freshTimer = setTimeout(() => c.g.classList.remove("fresh"), 3200);
 }
 
 function dropCraft(hex) {
   const c = live.get(hex);
   c.g.remove();
   c.trk.remove();
+  c.tl.remove();
   c.hist.remove();
   live.delete(hex);
 }
@@ -519,19 +649,23 @@ function dropCraft(hex) {
 // Where a label can go. Chart style: a corner beside the aircraft (right-above, right-below,
 // left-above, left-below). ATC style: the end of a leader line in any of the eight directions,
 // as a controller sets them, the text 4 px from the line's end.
-const CHART_CORNERS = [[7, -2.5, "start"], [7, 7.5, "start"], [-7, -2.5, "end"], [-7, 7.5, "end"]];
+const CHART_CORNERS = [[7, -2.5, "start"], [7, 7.5, "start"], [-7, -2.5, "end"], [-7, 7.5, "end"], [7, 2.5, "start"], [-7, 2.5, "end"]];
 const slotCount = () => (opt.atc ? DIRS.length : CHART_CORNERS.length);
 function slot(c, i) {
   if (!opt.atc) {             // further out beside a large icon (a heavy, the selected aircraft)
     const [tx, ty, anchor] = CHART_CORNERS[i], out = Math.max(0, (c.reach || 0) - 6.5);
+    // a landing number's ring sits close in, just off the icon
+    if (c.seqtag) return { tx: Math.sign(tx) * Math.max(3.4, (c.reach || 4) * 0.8), ty: ty === -2.5 ? -1.4 : ty === 7.5 ? 7.6 : 3.2, anchor };
     return { tx: tx + Math.sign(tx) * out, ty, anchor };
   }
   const d = DIRS[i], ex = d.ux * c.lead, ey = d.uy * c.lead;
   return { d, ex, ey, tx: ex + (d.right ? -c.gap : c.gap), ty: ey, anchor: d.right ? "end" : "start" };
 }
 
-// The size of a label, measured: the kiosk sets labels larger.
+// The size of a label, measured: the kiosk sets labels larger. A label hidden last time (or not yet
+// placed) is shown for the measuring, as hidden text measures nothing; applyLabel sets it after.
 function measure(c) {
+  if (c.tag.style.display === "none") c.tag.style.display = c.sub.style.display = "";
   const fs = (e, d) => parseFloat(getComputedStyle(e).fontSize) || d;
   if (opt.atc) {
     // monospaced, so a block is as wide as its longest line; a leader is about one and a half
@@ -554,7 +688,11 @@ function measure(c) {
   } catch (e) { /* not laid out yet */ }
   c.w = (w || c.text.length * CHAR_W) + 1;
   c.up = 3.2 + fs(c.tag, 5) * 0.75;         // cap height above the callsign's baseline
-  c.down = 3.3 + fs(c.sub, 4.2) * 0.25;     // descent below the second line's baseline
+  c.down = c.subs[0] ? 3.3 + fs(c.sub, 4.2) * 0.25 : fs(c.tag, 5) * 0.25 - 3.2;     // descent below the last line's baseline
+  if (c.seqtag) {           // a landing number in its ring, the ring's centre level with the first line's middle
+    c.ringR = fs(c.tag, 4.4) * 0.62 + 0.9;
+    c.w = 2 * c.ringR; c.up = 3.2 + c.ringR; c.down = c.ringR - 3.2;
+  }
 }
 function labelBox(c, i) {
   const s = slot(c, i), x0 = s.anchor === "start" ? c.x + s.tx : c.x + s.tx - c.w;
@@ -570,16 +708,19 @@ function placeLabels(heroHex) {
     { x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
   const all = [...live.values()].filter((c) => c.x != null), r = (c) => (opt.atc ? 3 : Math.max(3.5, c.reach || 4.5));
   const blips = all.map((c) => ({ x0: c.x - r(c), x1: c.x + r(c), y0: c.y - r(c), y1: c.y + r(c), c }));
+  for (const c of all) if (c.medOn) blips.push({ x0: c.x + c.medX - c.medR, x1: c.x + c.medX + c.medR, y0: c.y + c.medY - c.medR, y1: c.y + c.medY + c.medR, c: null });
   for (const c of all) for (const f of [0.4, 0.7, 1]) {
     const x = c.x + c.vx * f, y = c.y + c.vy * f;
     if (Math.hypot(c.vx, c.vy) * f > 5) blips.push({ x0: x - 2, x1: x + 2, y0: y - 2, y1: y + 2, c: null });   // its own line too
   }
   const labelled = all.filter((c) => c.text);
+  for (const c of labelled) if (c.fallback) { c.fallback = false; showFull(c); }
   labelled.forEach(measure);
-  labelled.sort((a, b) => (b.hex === heroHex) - (a.hex === heroHex));
+  // the selected aircraft first, then the arrivals in landing order, departures, overflights and the rest by distance
+  labelled.sort((a, b) => (b.hex === heroHex) - (a.hex === heroHex) || a.pri - b.pri);
   const edge = opt.atc ? SQ - 9.5 : opt.map ? MX - 1.5 : 112;          // the ATC style keeps data blocks inside the compass
   const edgeY = opt.map ? MY - 1.5 : edge;
-  for (const c of labelled) {
+  const pick = (c) => {
     const score = (i) => {
       const b = labelBox(c, i);
       let s = placed.reduce((n, p) => n + overlap(b, p), 0) + blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
@@ -590,14 +731,54 @@ function placeLabels(heroHex) {
     let best = 0, bestScore = Infinity;
     for (let i = 0; i < slotCount(); i++) { const s = score(i); if (s < bestScore) { bestScore = s; best = i; } }
     c.slot = best;
-    placed.push(labelBox(c, best));
+    return labelBox(c, best);
+  };
+  for (const c of labelled) {
+    // the chart style leaves off a label that would touch another label or the compass, cover an
+    // aircraft by more than a quarter of itself, or run off the edge: the aircraft still shows in its
+    // colour, and a tap names it. Labels go in order of importance, so the ones left off matter least.
+    // A fixed name (a town, a range ring, the airport) only steers a label: if there's no better
+    // place, the name fades while the label is over it (giveWay).
+    let b = pick(c);
+    const area = (b.x1 - b.x0) * (b.y1 - b.y0);
+    const textHit = placed.reduce((n, p) => n + (p.soft ? 0 : overlap(b, p)), 0), iconHit = blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
+    const off = Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0) + (square() ? Math.max(0, b.y1 - edgeY) + Math.max(0, -edgeY - b.y0) : 0);
+    const key = c.act === "arr" || c.act === "dep";          // arrivals and departures may sit over an icon
+    c.hide = !opt.atc && !opt.map && c.hex !== heroHex && !c.seqtag && (textHit > 0.03 * area || (!key && iconHit > 0.25 * area) || off > 1.5);
+    // an arrival keeps its landing number, in its ring as Simple draws it, so the landing queue and
+    // the list still find it on the radar (until the next update puts its whole label back)
+    if (c.hide && c.seqNum && c.full) {
+      c.fallback = c.seqtag = true; c.tag.classList.add("seqtag");
+      c.text = c.tag.textContent = String(c.seqNum); c.subs = [""]; c.sub.textContent = "";
+      measure(c);
+      b = pick(c);
+      c.hide = false;
+    }
+    // with a margin round it that only steers the labels after it, so two labels side by side
+    // don't read as one block (the chart style)
+    if (!c.hide) placed.push(b, ...(opt.atc || opt.map ? [] : [{ x0: b.x0 - 1.5, x1: b.x1 + 1.5, y0: b.y0 - 1.5, y1: b.y1 + 1.5, soft: true }]));
   }
 }
 
+// Back from a landing number to the whole label, to see whether it fits now.
+function showFull(c) {
+  c.seqtag = false; c.tag.classList.remove("seqtag");
+  c.text = c.tag.textContent = c.full.text; c.subs = [c.full.sub]; c.sub.textContent = c.full.sub;
+}
+
 function applyLabel(c) {
-  if (!c.text) return;
+  const shown = !!c.text && !c.hide;
+  c.tag.style.display = c.sub.style.display = shown ? "" : "none";
+  c.seqring.style.display = shown && c.seqtag ? "" : "none";
+  if (!shown) return;
   const s = slot(c, c.slot);
   const put = (e, y) => { e.setAttribute("x", s.tx.toFixed(2)); e.setAttribute("y", y.toFixed(2)); e.setAttribute("text-anchor", s.anchor); };
+  if (c.seqtag) {
+    const R = c.ringR, cx = s.anchor === "start" ? s.tx + R : s.tx - R, cy = s.ty - 3.2;
+    c.seqring.setAttribute("cx", cx.toFixed(2)); c.seqring.setAttribute("cy", cy.toFixed(2)); c.seqring.setAttribute("r", R.toFixed(2));
+    c.tag.setAttribute("x", cx.toFixed(2)); c.tag.setAttribute("y", (cy + R * 0.42).toFixed(2)); c.tag.setAttribute("text-anchor", "middle");
+    return;
+  }
   if (!opt.atc) { put(c.tag, s.ty - 3.2); put(c.sub, s.ty + 3.3); return; }
   // the leader ends level with the block's first line (an LDB's altitude), and lines step down
   // a character height at a time; it starts at the target's edge
@@ -673,10 +854,13 @@ function mapShape(svg) {
 // ---- entry point: called every animation frame ----
 export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   ensureLayers(svg);
-  const dt = (now - stateAt) / 1000, frameDt = lastFrame ? Math.min(1, (now - lastFrame) / 1000) : 1;
+  // aircraft glide on from their last reports, but not for ever: past half a minute with nothing new
+  // they stop where they are (and fade: the page marks the data old) rather than fly on confidently
+  const dt = Math.min(MOVE_ON_S, (now - stateAt) / 1000), frameDt = lastFrame ? Math.min(1, (now - lastFrame) / 1000) : 1;
   lastFrame = now;
   opt = { atc: !!options.atc && mode === "radar", map: mode === "map", tracks: options.tracks !== false,
-    range: options.range || state.tracking.radius_nm, mapStyle: options.mapStyle || "sat" };
+    range: options.range || state.tracking.radius_nm, mapStyle: options.mapStyle || "sat", simple: !!options.simple };
+  svg.classList.toggle("simple", opt.simple && !opt.atc && !opt.map);
   if (!opt.map && svg.getAttribute("viewBox") !== SQUARE_BOX) { svg.setAttribute("viewBox", SQUARE_BOX); MX = MY = SQ; UI = []; }
   const shape = opt.map ? mapShape(svg) : "";
   const layer = mode + (opt.atc ? ":atc" : "") + shape;
@@ -688,12 +872,13 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     svg.classList.remove("fade-in"); void svg.getBBox(); svg.classList.add("fade-in");
   }
   drawBase(svg, state, mode);
-  const key = `${layer}|${stateAt}|${map ? 1 : 0}|${opt.tracks}|${opt.range}`;
+  const key = `${layer}|${stateAt}|${map ? 1 : 0}|${opt.tracks}|${opt.range}|${opt.simple}`;
   const fresh = key !== staticKey;
   if (fresh) {
     staticKey = key;
     svg.querySelector("#s-static").innerHTML = opt.map ? mapStatic(state) : radarStatic(state);
     if (opt.map) fitMapNote(svg);
+    else if (!opt.atc) measureYielders(svg);
     layoutPathKey(svg);
   }
   const wall = Date.now(), phase = clockPhase(wall);
@@ -704,6 +889,8 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   }
 
   const heroHex = state.hero && state.hero.hex, seen = new Set(), ease = 1 - Math.exp(-frameDt / 0.6), k = K();
+  // with nothing overhead, Simple names the next aircraft over the house, as its side panel does
+  const nextHex = !heroHex && state.next ? state.next.hex : null;
   const box = svg.getBoundingClientRect(), unitPx = Math.min(box.width, box.height) / 224;
   const boost = unitPx ? clamp(ICON_UNIT_PX / unitPx, 1, ICON_BOOST_MAX) : 1;
   // past the tracking radius, aircraft are fetched only for a radar set to a longer range
@@ -734,6 +921,13 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       // a balloon stays upright whichever way it drifts
       c.icon.setAttribute("transform", `rotate(${c.ic.upright ? 0 : c.rot.toFixed(1)}) scale(${size})`);
     }
+    const medOn = !opt.atc && !!a.medical;
+    if (medOn !== !!c.medOn) { c.medOn = medOn; c.med.style.display = medOn ? "" : "none"; }
+    if (medOn) {             // off the icon's upper left corner, as large as the icon is boosted; never turned
+      const s = 0.95 * boost, d = (c.reach || 4.5) * 0.62 + 1.1;
+      c.medX = -d; c.medY = -d; c.medR = 2.6 * s;
+      c.med.setAttribute("transform", `translate(${(-d).toFixed(2)},${(-d).toFixed(2)}) scale(${s.toFixed(2)})`);
+    }
     // the lead line: one minute ahead at its ground speed, from the nose (the ATC style's
     // predicted track line, from the target), on the radar only
     const lead = opt.tracks && !opt.map && a.gs && a.track != null ? (a.gs / 60) * k : 0;
@@ -745,9 +939,24 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       c.vec.style.display = "";
     } else c.vec.style.display = "none";
     c.g.classList.toggle("hero", isHero);
+    c.g.classList.toggle("coasting", !!a.coasting);      // a followed flight the feed left out: where it should be, faded
     c.trk.classList.toggle("hero", isHero);
     c.hist.classList.toggle("hero", isHero);
-    let text, line0 = "";
+    // what it is doing, which colours it, and how much its label matters when room is short
+    const act = a.activity || "pass";
+    if (act !== c.act) {
+      if (c.act) c.g.classList.remove("c-" + c.act);
+      c.g.classList.add("c-" + act); c.act = act;
+    }
+    const tlClass = `tl c-${act}${isHero ? " hero" : ""}`;
+    if (c.tl.getAttribute("class") !== tlClass) c.tl.setAttribute("class", tlClass);
+    c.pri = isHero || a.hex === nextHex ? 0 : act === "arr" ? 1 + (a.seq || 50) / 100 : act === "dep" ? 2 : act === "pass" ? 2.5 : 3 + a.dist / 100;
+    const ringed = isHero && !opt.atc && !opt.map;
+    c.ring.style.display = ringed ? "" : "none";
+    if (ringed) c.ring.setAttribute("r", ((c.reach || 4) + 2.2).toFixed(2));
+    let text, line0 = "", seqtag = false;
+    c.full = null;              // Detailed's whole label, while an arrival shows only its landing number
+    c.seqNum = !opt.atc && !opt.map && act === "arr" ? a.seq || null : null;
     if (opt.atc) {
       const b = starsBlock(a, isHero);
       c.g.classList.toggle("ldb", b.subs.length === 1 && !b.subs[0]);
@@ -758,11 +967,23 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
         c.sym.setAttribute("d", b.sym === "*" ? STAR_SYM : b.sym === "+" ? PLUS_SYM : "");
       }
       text = b.l1; line0 = b.l0; c.subs = b.subs;
+    } else if (opt.map) {
+      text = plainName(a); c.subs = [p.sub];               // the Map view's label, in words
+    } else if (opt.simple) {
+      ({ text, sub: c.subs[0], seq: seqtag } = simpleLabel(a, isHero || a.hex === nextHex)); c.subs.length = 1;
     } else {
-      // the chart style's label: the flight, then the altitude and its trend; the Map view's in words
-      text = opt.map ? plainName(a) : ident(a);
-      c.subs = [p.sub];
+      // the chart style's label: the flight, then the altitude and its trend, and an arrival's
+      // runway or a departure's destination
+      const r = a.route && a.route.plausible ? a.route : null;
+      text = ident(a);
+      c.subs = [p.sub + (a.activity === "arr" && a.rwy ? ` ${a.rwy}${a.seq ? ` #${a.seq}` : ""}` : a.activity === "dep" && r && r.dest.iata ? ` ${r.dest.iata}`
+        : a.hospital ? ` ${a.hospital.state === "left" ? "from" : "to"} ${a.hospital.short}` : "")];
+      c.full = { text, sub: c.subs[0] };
+      // an arrival whose whole label found no room keeps its landing number until the next update
+      if (c.fallback && c.seqNum) { text = String(c.seqNum); c.subs = [""]; seqtag = true; }
     }
+    if (!c.full || !seqtag) c.fallback = false;
+    if (!!seqtag !== !!c.seqtag) { c.seqtag = !!seqtag; c.tag.classList.toggle("seqtag", c.seqtag); }
     if (text !== c.text) { c.text = text; c.tag.textContent = text; }
     if (c.l0.textContent !== line0) c.l0.textContent = line0;
     // the data block's timeshared field: phase 1 shows the first text, phases 2 and 3 the second
@@ -774,7 +995,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     const dots = opt.atc && opt.tracks && isHero;
     if (dots && (fresh || arrived)) historyDots(c, state.hero.trail, k, state.home, state.trail_s);
     c.hist.style.display = dots ? "" : "none";
-    const path = !opt.atc && (opt.tracks || opt.map) && isHero && state.hero.path && state.hero.path.length ? state.hero.path : null;
+    const path = !opt.atc && !opt.simple && (opt.tracks || opt.map) && isHero && state.hero.path && state.hero.path.length ? state.hero.path : null;
     if (path && (fresh || !c.drawn)) {
       c.segs.innerHTML = pathRuns(state.home, path, k);
       const [lat, lon] = path[path.length - 1], o = offset(state.home, { lat, lon });
@@ -784,7 +1005,62 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     } else if (!path && c.drawn) { c.segs.innerHTML = ""; c.drawn = false; }
     c.trk.style.display = path ? "" : "none";
     if (path) { c.tail.setAttribute("x2", c.x.toFixed(1)); c.tail.setAttribute("y2", c.y.toFixed(1)); }
+    // the chart style's short track behind each other aircraft, in Detailed with tracks on; Simple
+    // draws it for the selected aircraft alone, in place of its whole path
+    const tl = !opt.atc && !opt.map && opt.tracks && (!opt.simple || isHero) && !path && a.tail && a.tail.length > 1 ? a.tail : null;
+    if (tl && (fresh || !c.tlDrawn)) {
+      c.tlSegs.innerHTML = tailSegs(state.home, tl, k);
+      const [lat, lon] = tl[tl.length - 1], o = offset(state.home, { lat, lon });
+      c.tlEnd.setAttribute("x1", (o.x * k).toFixed(1)); c.tlEnd.setAttribute("y1", (-o.y * k).toFixed(1));
+      c.tlDrawn = true;
+    } else if (!tl && c.tlDrawn) { c.tlSegs.innerHTML = ""; c.tlDrawn = false; }
+    c.tl.style.display = tl ? "" : "none";
+    if (tl) { c.tlEnd.setAttribute("x2", c.x.toFixed(1)); c.tlEnd.setAttribute("y2", c.y.toFixed(1)); }
   }
   for (const hex of [...live.keys()]) if (!seen.has(hex)) dropCraft(hex);
   if (fresh) { placeLabels(heroHex); for (const c of live.values()) applyLabel(c); }
+  if (!opt.atc && !opt.map) giveWay();
+}
+
+// Each fixed name's box as drawn (the kiosk and a phone draw them larger than the estimates the
+// labels steer by), added to the boxes aircraft labels keep clear of.
+// The layer is rebuilt on each update: a name that had faded starts out faded, before it is first
+// laid out, so it doesn't flash back.
+function measureYielders(svg) {
+  const was = new Set(yielders.filter((y) => y.off).map((y) => y.key)), els = [...svg.querySelectorAll(`#s-static :is(${YIELDING})`)];
+  yielders = [];
+  for (const e of els) {
+    const key = `${e.getAttribute("class")}|${e.textContent}|${e.getAttribute("x")}|${e.getAttribute("y")}|${e.getAttribute("transform")}`, off = was.has(key);
+    if (off) e.classList.add("yield");
+    yielders.push({ e, key, off });
+  }
+  for (const y of yielders) {
+    let b;
+    try { b = y.e.getBBox(); } catch (err) { b = null; }       // not laid out yet
+    // a mark placed by its transform (a helipad) measures in its own space: move it to where it's drawn
+    const t = y.e.transform && y.e.transform.baseVal.numberOfItems ? y.e.transform.baseVal.consolidate().matrix : { e: 0, f: 0 };
+    y.box = b && b.width ? { x0: b.x + t.e - 0.5, x1: b.x + t.e + b.width + 0.5, y0: b.y + t.f, y1: b.y + t.f + b.height, soft: true } : null;
+    if (y.box) placeBoxes.push(y.box);
+  }
+  yielders = yielders.filter((y) => y.box);
+}
+
+// Fade out a fixed name while an aircraft, or a label shown, covers it; back once it's clear by
+// a margin, so a name at an icon's edge doesn't flicker.
+function giveWay() {
+  if (!yielders.length) return;
+  const over = [];
+  for (const c of live.values()) {
+    if (c.x == null) continue;
+    const r = Math.max(3, c.reach || 4.5);
+    over.push({ x0: c.x - r, x1: c.x + r, y0: c.y - r, y1: c.y + r });
+    // a label's box is its letters' cap height and descent: allow for the rest of the line above
+    if (c.text && !c.hide && c.w) { const l = labelBox(c, c.slot); over.push({ x0: l.x0 - 0.5, x1: l.x1 + 0.5, y0: l.y0 - 1.2, y1: l.y1 + 0.5 }); }
+  }
+  for (const y of yielders) {
+    const m = y.off ? 1.2 : 0, b = { x0: y.box.x0 - m, x1: y.box.x1 + m, y0: y.box.y0 - m, y1: y.box.y1 + m };
+    const area = (y.box.x1 - y.box.x0) * (y.box.y1 - y.box.y0);
+    const off = over.some((o) => overlap(b, o) > (y.off ? 0 : Math.max(0.5, 0.04 * area)));
+    if (off !== y.off) { y.off = off; y.e.classList.toggle("yield", off); }
+  }
 }

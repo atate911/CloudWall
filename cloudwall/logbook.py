@@ -51,6 +51,8 @@ class Logbook:
             b.append(a["emergency"])
         if a.get("military"):
             b.append("MILITARY")
+        if a.get("medical"):
+            b.append("MEDICAL")
         if aircraft.rare(a.get("type")):
             b.append("RARE TYPE")
         if a.get("category") == "A5":
@@ -108,6 +110,12 @@ class Logbook:
                 s["route"] = key
                 upd.update(flight=r["flight"], airline=r.get("airline"), origin=key[1], dest=key[2],
                            origin_nm=round(r["flown_nm"]) if r.get("flown_nm") is not None else None)
+        # a helicopter is known to be medical only once it's seen landing at a hospital, which can
+        # be after its entry was started
+        if a.get("medical") and "MEDICAL" not in s["badges"]:
+            first = sum(1 for b in s["badges"] if b == "MILITARY" or b == a.get("emergency"))
+            s["badges"] = s["badges"][:first] + ["MEDICAL"] + s["badges"][first:]
+            upd.update(badges=s["badges"])
         if upd:
             self.store.update_sighting(s["id"], **upd)
         a["badges"] = s["badges"]

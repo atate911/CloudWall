@@ -17,7 +17,12 @@ export function phone() {
 export const ident = (a) => a.flight_no || a.callsign || a.reg || a.hex.toUpperCase();
 // Seconds since the positions in a state were reported (app.js stamps each state with _at): what
 // to take off a countdown worked out at that moment.
-export const since = (state) => (state && state._at ? Math.max(0, (Date.now() - state._at) / 1000) : 0);
+// How old the state's positions are, in seconds: from when the feed reported them.
+export const dataAge = (state) => (state && state._at ? Math.max(0, (Date.now() - state._at) / 1000) : 0);
+// The same for the countdowns, which stop once the data is 20 s old rather than run on with nothing
+// new (the page marks it old): the server's times hold still between updates, so each redraw agrees.
+export const COUNT_STOP_S = 20;
+export const since = (state) => Math.min(COUNT_STOP_S, dataAge(state));
 // The runways in use, in words: "28L / 28R" -> "28L and 28R"; "27C / 27L / 27R" -> "27C, 27L and 27R".
 export function runwayList(runways) {
   const r = String(runways || "").split(/\s*\/\s*/).filter(Boolean);

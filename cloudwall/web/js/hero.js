@@ -1,12 +1,13 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, since, runwayList } from "./util.js";
-import { plate, renderLineup, drawn, typeInfo } from "./plate.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, since, dataAge, runwayList } from "./util.js";
+import { plate, kindPlate, renderLineup, drawn, typeInfo } from "./plate.js";
 import { flap, roll } from "./fx.js";
 import { map, tileLayout } from "./map.js";
 import { weatherSlide } from "./weather.js";
 import { showLogo, badges, boardFlight, localPlace, localWords, recordsHtml, heardGroups } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
 import { mappable, drawRouteMap, moveRouteMap } from "./routemap.js";
+import { medIcon, hospitalLine } from "./situation.js";
 
 // Play the entrance animation once for freshly inserted content.
 function enter(el) {
@@ -24,7 +25,7 @@ const SKELETON = `
     <div class="flaps flight" id="h-flight"></div>
     <div class="airline"><div class="logo-tile" id="h-logo" hidden><img class="logo" id="h-logo-img" alt=""></div><span id="h-airline"></span><small id="h-sub"></small></div>
   </div>
-  <div class="tags"><div class="badges" id="h-badges"></div><div class="pin-chip" id="h-pin" hidden>Pinned: tap the card to release</div></div>
+  <div class="tags"><div class="badges" id="h-badges"></div><div class="pin-chip" id="h-pin" hidden>Pinned: tap the card to release</div><div class="est-chip" id="h-est" hidden></div></div>
   <div class="h-route" id="h-route"></div>
   <div class="metrics">
     <div class="metric"><div class="label">Altitude</div><div class="v"><span id="h-alt"></span> <small>ft</small> <span id="h-arrow"></span></div><div class="s" id="h-vrate"></div></div>
@@ -44,6 +45,11 @@ function routeHtml(a, state) {
   if (a.route_pending && !r) {
     const prov = (state.live_routes && state.live_routes.label) || "the flight data service";
     return `<div class="noroute pending">Looking up route…<small>Asking ${esc(prov)} where this flight is going</small></div>`;
+  }
+  if (a.medical && (!r || !r.plausible)) {
+    // a medical flight: the hospital it's going to, or has just left, when that's known
+    return `<div class="noroute med">${medIcon(22)}<span>${esc(a.hospital ? hospitalLine(a.hospital, state) : `${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}, no flight plan filed`)}` +
+      `<small>${esc([a.hospital ? (a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance") : "", a.type_name || a.type || ""].filter(Boolean).join(", "))}</small></span></div>`;
   }
   if (a.local === "local") {
     return `<div class="noroute">${esc(localWords(a, state))}<small>${esc(a.type_name || a.type || "Light aircraft")}, low over the field: training or sightseeing, most likely</small></div>`;
@@ -124,18 +130,25 @@ function showHero(el, a, state) {
     slideShown = -1;
     showLogo($("h-logo"), $("h-logo-img"), state, a.airline_iata, $("h-airline"));
   }
-  const r = a.route, pr = r && r.plausible ? r : null;
+  const r = a.route;
   const id = ident(a), info = typeInfo(a);
   flap($("h-flight"), boardFlight(id));
   const ga = info.shape === "piston" || info.shape === "heli" || /^N\d/.test(a.callsign || "");
-  $("h-airline").textContent = (pr && pr.airline) || (r && r.airline) || a.airline || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
+  // the server's airline agrees with the logo and the flight number (a partner's flight under the airline you'd book)
+  $("h-airline").textContent = a.airline || (r && r.airline) || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
   $("h-sub").innerHTML = [a.operated_by ? `Operated by ${a.operated_by}` : null, a.callsign !== id ? a.callsign : null].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("");
-  const bh = badges(a.badges);
+  const bh = badges(a.medical ? ["MEDICAL", ...(a.badges || []).filter((b) => b !== "MEDICAL")] : a.badges);
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
   $("h-pin").hidden = !state.pinned;
+  // a followed flight the feed has left out for a moment: its position is CloudWall's estimate
+  // (by the server's clock, plus the time since it answered: this screen's clock may not agree with it)
+  const est = a.coasting ? Math.round((state.status.updated || state.now) - a.coasting + dataAge(state)) : null;
+  $("h-est").hidden = est == null;
+  if (est != null) $("h-est").textContent = `Position estimated: last report ${Math.max(1, est)} s ago`;
 
   const inferred = a.local_inferred && a.local !== "local" && (!r || !r.plausible);
-  const key = (a.route_pending && !r ? "pending|" : "") + (inferred ? "inferred:" + a.local + "|" : "") + (r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || ""));
+  const h = a.hospital, med = a.medical ? `med:${h ? [h.code, h.state, h.eta_s == null ? "" : Math.round((h.eta_s - since(state)) / 60)].join(":") : ""}|` : "";
+  const key = med + (a.route_pending && !r ? "pending|" : "") + (inferred ? "inferred:" + a.local + "|" : "") + (r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || ""));
   if (key !== cur.routeKey) {
     cur.routeKey = key;
     $("h-route").innerHTML = routeHtml(a, state);
@@ -184,10 +197,10 @@ function showHero(el, a, state) {
   const sil = $("h-sil");
   // the type plate: the side elevation with its length, under the photo once one arrives
   const isNew = (a.badges || []).includes("NEW TYPE");
-  const silKey = `${info.type}|${info.shape}|${info.length}|${info.name}|${isNew}`;
+  const silKey = `${info.type}|${info.shape}|${info.length}|${info.name}|${isNew}|${a.icon}`;
   if (sil && sil.dataset.shape !== silKey) {
     sil.dataset.shape = silKey;
-    sil.innerHTML = plate(info, { note: isNew ? "New to your collection" : "" });
+    sil.innerHTML = plate(info, { note: isNew ? "New to your collection" : "" }) || kindPlate(a.icon);
     // the type designator in the sheet's corner, for types drawn from their own measurements
     if (drawn(info)) sil.dataset.code = info.type; else delete sil.dataset.code;
   }
@@ -237,7 +250,10 @@ function renderFacts(a, state, elapsed = 0) {
   const r = a.route && a.route.plausible ? a.route : null, rows = [];
   if (!r && a.landing_est) rows.push(["Lands", `about ${clock(a.landing_est)}`]);
   const left = a.cpa_s - elapsed;
-  rows.push(["Overhead", left > 5 ? `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away` : a.dist < 1.5 ? "now" : "passed, heading away"]);
+  // a drifting balloon or a glider circling has no time worth counting down to (as the lists say)
+  const slow = (a.gs || 0) <= 40 || left > 1800;
+  rows.push(["Overhead", left > 5 ? (slow ? `not for a while; ${a.cpa_nm.toFixed(1)} nm away at the closest` : `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away`)
+    : a.dist < 1.5 ? "now" : "passed, heading away"]);
   const type = a.type_name || a.type;
   if (type && (r || a.local_inferred || a.route_pending)) rows.push(["Aircraft", type]);
   if (a.contrail) rows.push(["Contrail", a.contrail === "persistent" ? "Likely, long-lasting" : "Likely, short-lived"]);

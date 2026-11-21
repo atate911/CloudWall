@@ -103,6 +103,16 @@ class BrowserTest(unittest.TestCase):
         self.assertRegex(d["card"], "hero-card|idle-card")                  # a flight overhead, or the quiet-sky slides
         self.assertGreaterEqual(d["onScope"], 1)
         self.assertGreaterEqual(d["nearby"], 1)                              # the list beside the radar, on a wide screen
+        self.assertRegex(d["strip"], r"aircraft within|Nothing in the air")  # the situation, across the top
+        self.assertGreaterEqual(d["groups"], 1)                              # the list, grouped by what each is doing
+        self.assertEqual(d["profile"], 1)                                    # and the side view under it
+        self.assertGreaterEqual(d["phrases"], 1)                             # each group in a phrase that is the key too
+        med = d["medical"]                                                   # the demo's air ambulance, on its way to a hospital
+        self.assertEqual((med["badges"], len(med["named"]), med["listed"]), (1, 1, 1))
+        self.assertGreaterEqual(med["helipads"], 3)                          # the hospital helipads around home
+        self.assertTrue(d["medicalNote"] and d["medicalNote"][0].startswith("A medical helicopter heading for"))
+        self.assertEqual(d["focus"], {"same": True, "redrawn": True})        # the keyboard keeps its place in the list
+        self.assertTrue(d["simple"]["side"] and d["simple"]["radar"])        # Simple: the side panel, the simpler radar
         self.assertGreaterEqual(d["boardRows"], 1)
         self.assertGreaterEqual(d["heardRows"], 2)                           # the heading and the demo's fighters
         wx = d["weather"]
@@ -157,9 +167,25 @@ class BrowserTest(unittest.TestCase):
     def test_the_wall_panel(self):
         k = self.scenario("kiosk")
         self.assertIn("kiosk", k["layout"])
-        self.assertEqual((k["card"], k["tabsShown"]), (1, False))
+        self.assertEqual((k["simple"], k["side"], k["card"], k["tabsShown"]), (True, 1, 1, False))
+        self.assertTrue(k["heardSaid"] and k["sideFits"])                     # heard aircraft said, however the side is trimmed
+        self.assertTrue(k["strip"])                                          # Detailed: the situation over the radar
+        self.assertEqual(k["labelsInside"], [])                              # every radar label placed, and inside the radar
+        self.assertGreaterEqual(k["queue"], 1)                               # and the demo's arrivals under the card
         self.assertNotIn("map", k["scope"])                                  # the radar unless [kiosk] view says map
         self.assertGreaterEqual(k["onScope"], 1)
+
+    def test_the_next_minutes_old_data_and_quiet_hours(self):
+        g = self.scenario("glance")
+        self.assertGreaterEqual(g["axis"]["marks"], 1)                       # the demo's arrivals, along the ten-minute axis
+        self.assertTrue(g["axis"]["inside"])
+        self.assertTrue(1 <= len(g["line"]) <= 3 and all(any(w in e for w in ("lands", "over the house", " at ")) for e in g["line"]))
+        self.assertGreaterEqual(g["kioskLine"], 1)                           # across the wall panel's header
+        self.assertEqual((g["old"]["stale"], g["old"]["stopped"]), (True, True))
+        self.assertRegex(g["old"]["note"], r"Not updating: positions \d+ s old")
+        self.assertRegex(g["estimated"]["chip"], r"Position estimated: last report \d+ s ago")
+        self.assertTrue(g["estimated"]["faded"])
+        self.assertEqual((g["hushed"], g["woken"]), (True, True))
 
     def test_the_wall_panel_on_the_map(self):
         self.assertGreaterEqual(self.scenario("kioskMap")["onMap"], 1)
@@ -169,6 +195,7 @@ class BrowserTest(unittest.TestCase):
         self.assertIn("phone", p["layout"])
         self.assertGreaterEqual(p["boardRows"], 1)
         self.assertEqual(p["view"], "now")                                   # a tapped flight brings its card up
+        self.assertGreaterEqual(p["queue"], 1)
 
     def test_the_quiet_sky_slides(self):
         q = self.scenario("quiet")
@@ -186,6 +213,7 @@ class BrowserTest(unittest.TestCase):
         o = self.scenario("offline")
         self.assertFalse(o["chipBefore"])
         self.assertIn("offline", o["chipAfter"])
+        self.assertTrue(o["chipStays"])
 
     def test_the_server_had_nothing_to_complain_of(self):
         log = self.server_log()

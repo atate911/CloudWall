@@ -87,6 +87,12 @@ view = "radar"         # "radar", or "map" for the flights on an everyday satell
 radar = "chart"        # "chart", or "atc" to draw the radar like an air traffic control screen
 tracks = true          # the selected aircraft's track and lines to where aircraft will be in a minute
 range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see further
+density = "simple"     # "simple": the landing queue and the next aircraft over the house, big enough to
+                       # read across the room; "detailed": the flight card with the landing queue
+                       # under it, and every aircraft labelled
+quiet = ""             # quiet hours, e.g. "23:00-06:30": only a dim clock and what's next, waking for
+                       # something coming over the house, something new worth a look, an emergency
+                       # or a tap; "" for none
 
 [map]                  # the maps under the radar, cached on disk by CloudWall
 style = "dark"         # the Chart-style radar's map: "dark" or "light" grey street map, "satellite",

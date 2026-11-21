@@ -19,6 +19,9 @@ SCHEDULED = re.compile(r"^[A-Z]{3}\d[0-9A-Z]{0,4}$")       # and nothing but: on
 NUMBER = re.compile(r"^([A-Z]{3})0*(\d{1,4}[A-Z]?)$")
 IATA = re.compile(r"^[A-Z0-9]{2}$")
 SAME_AS = {"QX": "AS"}      # brands that fly under another airline's name and have no logo of their own
+# airlines that only ever fly as another, by ICAO code: their flights are sold, numbered and
+# painted as that airline's (a regional partner flying for several, like SkyWest, isn't one)
+FLIES_AS = {"QXE": "ASA"}
 
 
 def _table():
@@ -45,6 +48,11 @@ def scheduled(callsign):
 def name(icao):
     """'ASA' -> 'Alaska Airlines', or None for an airline the table has no name for."""
     return (_table().get(icao) or {}).get("name") or None
+
+
+def flies_as(icao):
+    """'QXE' -> 'ASA': the airline this one's flights are sold and painted as, or None."""
+    return FLIES_AS.get(icao or "")
 
 
 def cargo(icao):

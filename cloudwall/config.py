@@ -56,8 +56,12 @@ DEFAULTS = {
     # The kiosk has no buttons: its place and radar are set here. place: a place's name (empty for
     # the first); view: "radar", or "map" for the flights on an everyday map; radar: "chart" or
     # "atc" (drawn like an air traffic control screen); tracks: the
-    # selected aircraft's track and one-minute lines; range_nm: 0 for the tracking radius, or 20 or 30 to see further.
-    "kiosk": {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0},
+    # selected aircraft's track and one-minute lines; range_nm: 0 for the tracking radius, or 20 or 30 to see further;
+    # density: "simple" (the landing queue and the next aircraft over the house, read across the room)
+    # or "detailed" (the flight card with the landing queue under it, and every aircraft labelled);
+    # quiet: hours when the panel shows only a dim clock and what's next ("23:00-06:30"; "" for none),
+    # waking for something coming over the house, something new worth a look, an emergency or a tap.
+    "kiosk": {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0, "density": "simple", "quiet": ""},
     "server": {"host": "0.0.0.0", "port": 5050},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }
@@ -116,6 +120,10 @@ def check(section, values):
             raise ValueError(f"[{section}] {key} must be more than 0, not {v!r}")
     if section == "tracking" and str(values.get("when_idle", "pause")).lower() not in ("pause", "log"):
         raise ValueError(f'[tracking] when_idle must be "pause" or "log", not {values["when_idle"]!r}')
+    if section == "kiosk" and values.get("density", "simple") not in ("simple", "detailed"):
+        raise ValueError(f'[kiosk] density must be "simple" or "detailed", not {values["density"]!r}')
+    if section == "kiosk" and not re.fullmatch(r"\s*|\s*([01]?\d|2[0-3]):[0-5]\d\s*-\s*([01]?\d|2[0-3]):[0-5]\d\s*", str(values.get("quiet", ""))):
+        raise ValueError(f'[kiosk] quiet must be a span of hours like "23:00-06:30", or "" for none, not {values["quiet"]!r}')
     if section == "server" and "port" in values and not (isinstance(values["port"], int) and 0 < values["port"] < 65536):
         raise ValueError(f"[server] port must be a whole number from 1 to 65535, not {values['port']!r}")
     if section == "source" and "urls" in values and not (values["urls"] and all(isinstance(u, str) for u in values["urls"])):
@@ -242,6 +250,9 @@ def complete_airport(ap, home, radius_nm):
         ap["airspace"] = airports.airspace_near(home["lat"], home["lon"], own=ap["iata"])
     if "navaids" not in ap:
         ap["navaids"] = airports.navaids_near(home["lat"], home["lon"])
+    # hospital helipads: where medical helicopters are going, out past the radar's longest range
+    if "helipads" not in ap:
+        ap["helipads"] = airports.helipads_near(home["lat"], home["lon"], max(30, radius_nm + 15))
     return ap
 
 

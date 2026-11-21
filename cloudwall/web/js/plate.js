@@ -3,15 +3,19 @@
 import { drawing, silhouetteScale } from "./silhouette.js";
 import { hasProfile } from "./profiles.js";
 import { esc, num } from "./util.js";
+import { iconFor } from "./icons.js";
 
 export const feet = (m) => Math.round(m * 3.28084);
 
 // What a drawing needs of an aircraft, or of a type or flyover from the logbook: its type code,
 // its broad shape and length (the server sends these on each record, from its table of types) and
 // its model names, which pick a variant that shares a type code (RV-7 or RV-7A, F-15E or F-15EX).
-// A record without them, one the server hasn't looked up yet, gets a single-aisle stand-in.
+// A record without them, one the server hasn't looked up yet, gets a single-aisle stand-in; a kind
+// of aircraft no stand-in looks like (a glider, a balloon) gets no drawing rather than an airliner's.
+const NO_STANDIN = new Set(["glider", "balloon", "airship", "ultralight", "drone", "gyro"]);
 export function typeInfo(a) {
-  return { type: a.type, shape: a.shape || "narrow", length: a.length || 36, known: !!a.known,
+  const none = !a.known && NO_STANDIN.has(a.icon);
+  return { type: a.type, shape: none ? null : a.shape || "narrow", length: a.length || 36, known: !!a.known,
     name: [a.model, a.type_name || a.name].filter(Boolean).join(" ") };
 }
 
@@ -22,6 +26,7 @@ export function typeInfo(a) {
 // Options: share (default: the flight card's size-compressed scale), dim (show the length),
 // note (a short line under the length).
 export function plate(info, { share = silhouetteScale(info.length), dim = true, note = "" } = {}) {
+  if (!info.shape) return "";
   const d = drawing(info.type, info.shape, info.length, info.name);
   if (!d.svg) return "";
   const known = info.known !== false && hasProfile(info.type), showDim = dim && known;
@@ -70,6 +75,13 @@ export function scaleBar(k, px = 110) {
 
 // Whether a type gets its own drawing (rather than a stand-in) in plates and lineups.
 export const drawn = (info) => info.known !== false && hasProfile(info.type);
+
+// For a kind of aircraft with no side elevation (a glider, a balloon of a type not in the table):
+// its outline from the radar, large and faint on the sheet, nose to the right like the drawings.
+export function kindPlate(kind) {
+  const ic = iconFor(kind), r = ic.r * 1.08;
+  return `<figure class="plate kindplate"><svg viewBox="${-r} ${-r} ${2 * r} ${2 * r}" aria-hidden="true"><path d="${ic.d}"${ic.upright ? "" : ' transform="rotate(90)"'}/></svg></figure>`;
+}
 
 // The fleet lineup: every type seen today, side by side at true relative size, on ground lines.
 // types: [{ info, n }] already filtered with drawn(). box: the element to fill.

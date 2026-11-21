@@ -53,7 +53,36 @@ const SCENARIOS = {
     out.clock = await text(page, "#clock");
     out.card = await page.evaluate(() => document.getElementById("hero").className);
     out.onScope = await count(page, "#s-craft g.craft");
-    out.nearby = await count(page, "#mini-board .mb-row");
+    out.nearby = await count(page, "#mini-board .tr[data-hex]");
+    out.strip = await text(page, "#strip h1");
+    out.groups = await count(page, "#mini-board .gh");
+    out.profile = await count(page, "#mini-board svg.profile");
+    out.phrases = await count(page, "#strip .pic .ph");
+    // the demo's air ambulance: its cross on the radar, the hospital helipads, the one it's heading for named
+    out.medical = await page.evaluate(() => ({
+      badges: [...document.querySelectorAll("#s-craft g.craft .med")].filter((g) => g.style.display !== "none").length,
+      helipads: document.querySelectorAll("#s-static .helipad").length,
+      named: [...document.querySelectorAll("#s-static .helipad-label")].map((t) => t.textContent),
+      listed: document.querySelectorAll("#mini-board .tr .ci.med").length,
+    }));
+    // the keyboard's place: a row of the list with the focus keeps it through the list's redraws
+    out.focus = await page.evaluate(async () => {
+      const row = document.querySelector("#mini-board .tr[data-hex]");
+      if (!row) return null;
+      row.focus();
+      await new Promise((r) => setTimeout(r, 4500));         // two updates from the server
+      const f = document.activeElement;
+      return { same: !!f && f.matches(".tr") && f.dataset.hex === row.dataset.hex, redrawn: f !== row };
+    });
+    // the switch to Simple: the side panel in the card's place, numbers for the landing order on the radar
+    await page.click('#dens-seg button[data-dens="simple"]');
+    await page.waitForFunction(() => document.body.classList.contains("d-simple"));
+    await page.waitForTimeout(2500);
+    out.medicalNote = await page.evaluate(() => [...document.querySelectorAll("#side .ss-note .n-row")].filter((r) => r.querySelector(".ci.med")).map((r) => r.querySelector("b").textContent));
+    out.simple = { side: await page.evaluate(() => getComputedStyle(document.getElementById("side")).display !== "none" || document.body.classList.contains("sky-quiet")),
+      card: await page.evaluate(() => getComputedStyle(document.getElementById("hero")).display !== "none"),
+      radar: await page.evaluate(() => document.getElementById("radar").classList.contains("simple")) };
+    await page.click('#dens-seg button[data-dens="detailed"]');
     await tab(page, "board");
     await page.waitForSelector("table.board tbody tr[data-hex]");
     out.boardRows = await count(page, "table.board tbody tr[data-hex]");
@@ -137,12 +166,37 @@ const SCENARIOS = {
 
   // the wall panel
   async kiosk(browser, errors) {
-    const page = await open(browser, "kiosk", "/kiosk", errors), out = {};
+    // simple, as it starts: the counts, the landing queue and the next aircraft over the house beside the radar
+    let page = await open(browser, "kiosk", "/kiosk", errors);
+    const out = {};
     out.layout = await page.evaluate(() => document.documentElement.className);
     out.scope = await page.evaluate(() => document.getElementById("scope").className);
-    out.card = await count(page, "#hero .k-card");
+    out.simple = await page.evaluate(() => document.body.classList.contains("d-simple"));
+    out.side = await count(page, "#side .k-sit h1");
     out.onScope = await count(page, "#s-craft g.craft");
     out.tabsShown = await page.evaluate(() => getComputedStyle(document.querySelector("nav")).display !== "none");
+    // the demo's fighters heard with no position are said, in the line at the top or worth a look,
+    // whatever the side had to leave out to fit; and the side fits
+    out.heardSaid = await page.evaluate(() => [...document.querySelectorAll("#side .k-sit .ph")].some((p) => !p.hidden && p.querySelector(".ci.heard"))
+      || !!document.querySelector("#side .ss-note .n-row.heard"));
+    out.sideFits = await page.evaluate(() => { const s = document.getElementById("side"); return s.scrollHeight <= s.clientHeight + 1; });
+    await page.close();
+    // detailed: the flight card, the landing queue under it, and the situation over the radar
+    page = await open(browser, "kiosk", "/kiosk?density=detailed", errors);
+    out.card = await count(page, "#hero .k-card");
+    await page.waitForSelector("#hero .k-q .q-row", { timeout: 8000 }).catch(() => {});
+    out.queue = await count(page, "#hero .k-q .q-row");
+    out.strip = await page.evaluate(() => getComputedStyle(document.getElementById("strip")).display !== "none" && !!document.querySelector("#strip h1"));
+    // every label shown on the radar has been placed, and inside it (the wall panel's type is large)
+    out.labelsInside = await page.evaluate(() => {
+      const svg = document.getElementById("radar"), r = svg.getBoundingClientRect(), bad = [];
+      for (const t of svg.querySelectorAll("#s-craft :is(.tag, .tag-sub)")) {
+        if (t.style.display === "none" || !t.textContent) continue;
+        const q = t.getBoundingClientRect();
+        if (t.getAttribute("x") == null || q.left < r.left - 2 || q.right > r.right + 2 || q.top < r.top - 2 || q.bottom > r.bottom + 2) bad.push(t.textContent);
+      }
+      return bad;
+    });
     await page.close();
     return out;
   },
@@ -156,6 +210,56 @@ const SCENARIOS = {
     return out;
   },
 
+  // the next few minutes, old data, an estimated position, and the wall panel's quiet hours
+  async glance(browser, errors) {
+    const out = {};
+    // Detailed: the ten-minute axis beside the headline; Simple: the next three in words
+    let page = await open(browser, "desktop", "/?density=detailed", errors);
+    await page.waitForTimeout(1500);
+    out.axis = await page.evaluate(() => ({ marks: document.querySelectorAll("#strip .tl.axis .tl-ev").length,
+      inside: [...document.querySelectorAll("#strip .tl.axis .tl-ev")].every((e) => { const t = e.closest(".tl-track").getBoundingClientRect(), r = e.getBoundingClientRect(); return r.left >= t.left - 1 && r.left <= t.right + 1; }) }));
+    await page.close();
+    page = await open(browser, "desktop", "/?density=simple", errors);
+    out.line = await page.evaluate(() => [...document.querySelectorAll("#strip .tl.line .tl-e")].map((e) => e.textContent.trim()));
+    await page.close();
+    page = await open(browser, "kiosk", "/kiosk", errors);
+    out.kioskLine = await count(page, "#next-line .tl-e");
+    await page.close();
+    // the feed stalls: the server answers with the same positions, 25 s old and getting older; the
+    // traffic fades, a note says how old, and the countdowns stop (each redraw agreeing)
+    let frozen = null, frozenAt = 0;
+    page = await open(browser, "desktop", "/", errors, (state) => {
+      if (!frozen) { frozen = JSON.stringify(Object.assign(state, { status: { ...state.status, updated: state.now - 25 } })); frozenAt = Date.now(); }
+      const again = JSON.parse(frozen);
+      for (const k of Object.keys(state)) delete state[k];
+      Object.assign(state, again, { now: again.now + (Date.now() - frozenAt) / 1000 });
+    });
+    await page.waitForTimeout(1200);
+    out.old = await page.evaluate(async () => {
+      const t = document.querySelector("#mini-board [data-until]"), was = t && t.textContent;
+      await new Promise((r) => setTimeout(r, 4300));         // two more answers from the server
+      return { stale: document.body.classList.contains("stale"), note: document.getElementById("link").textContent,
+        stopped: !t || t.textContent === was };
+    });
+    await page.close();
+    // a followed flight the feed left out for a moment: faded on the radar, "position estimated" on its card
+    page = await open(browser, "desktop", "/", errors, (state) => { if (state.hero) state.hero.coasting = state.now - 12; const a = state.hero && state.aircraft.find((x) => x.hex === state.hero.hex); if (a) a.coasting = state.now - 12; });
+    await page.waitForTimeout(1200);
+    out.estimated = await page.evaluate(() => ({ chip: document.getElementById("h-est") && !document.getElementById("h-est").hidden ? document.getElementById("h-est").textContent : "",
+      faded: !!document.querySelector("#s-craft g.craft.hero.coasting") }));
+    await page.close();
+    // quiet hours with nothing near: the dim clock; a tap wakes it
+    page = await open(browser, "kiosk", "/kiosk?quiet=00:00-23:59", errors, (state) => {
+      state.aircraft = state.aircraft.filter((a) => a.dist > 3 && !(a.cpa_s > 0 && a.cpa_s < 90 && a.cpa_nm <= state.tracking.overhead_nm)); });
+    await page.waitForTimeout(1500);
+    out.hushed = await page.evaluate(() => document.body.classList.contains("hush"));
+    await page.mouse.click(500, 300);
+    await page.waitForTimeout(500);
+    out.woken = await page.evaluate(() => !document.body.classList.contains("hush"));
+    await page.close();
+    return out;
+  },
+
   // a phone: the page stacked, the board as two lines a flight
   async phone(browser, errors) {
     const page = await open(browser, "phone", "/", errors), out = {};
@@ -164,8 +268,10 @@ const SCENARIOS = {
     await page.waitForSelector(".pboard .pb-row[data-hex]");
     out.boardRows = await count(page, ".pboard .pb-row[data-hex]");
     await clickFirst(page, ".pboard .pb-row[data-hex]");
-    await page.waitForFunction(() => document.getElementById("h-pin") && !document.getElementById("h-pin").hidden, null, { timeout: 8000 });
+    // a phone starts simple: the side panel above the radar takes the flight that was tapped
+    await page.waitForFunction(() => /Selected/.test((document.querySelector("#side .so-head") || {}).textContent || ""), null, { timeout: 8000 });
     out.view = await page.evaluate(() => document.querySelector("nav button.active").dataset.view);
+    out.queue = await count(page, "#side .q-row, #side .ss-over");
     await page.close();
     return out;
   },
@@ -174,7 +280,7 @@ const SCENARIOS = {
   async quiet(browser, errors) {
     const empty = (state) => { state.hero = null; state.overhead = null; state.pinned = null; };
     const out = {};
-    for (const [size, path] of [["desktop", "/"], ["kiosk", "/kiosk"]]) {
+    for (const [size, path] of [["desktop", "/?density=detailed"], ["kiosk", "/kiosk?density=detailed"]]) {
       const page = await open(browser, size, path, errors, empty), seen = new Set();
       await page.waitForTimeout(2500);                  // the weather and the logbook arrive
       for (let i = 0; i < 10; i++) {
@@ -247,6 +353,14 @@ const SCENARIOS = {
     await page.route("**/api/**", (route) => route.abort());
     await page.waitForFunction(() => !document.getElementById("link").hidden, null, { timeout: 8000 });
     out.chipAfter = await text(page, "#link");
+    // and goes on saying so: the once-a-second tick mustn't take the chip away between requests
+    out.chipStays = await page.evaluate(async () => {
+      for (let i = 0; i < 60; i++) {
+        if (document.getElementById("link").hidden) return false;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      return true;
+    });
     await page.close();
     // requests that fail are the point of this one: only anything else counts against it
     errors.push(...mine.filter((e) => !/Failed to load resource|ERR_FAILED/.test(e)));

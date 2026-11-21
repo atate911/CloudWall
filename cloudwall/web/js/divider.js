@@ -1,11 +1,11 @@
-// The divider between the radar and the Nearby list, on the desktop's widest layout (1500 px
+// The divider between the radar and the traffic list, on the desktop's widest layout (1500 px
 // and up). Its arrow hides or shows the list; dragging it gives the radar more or less room.
 // The flight card keeps its width either way: whatever the list gives up goes to the radar.
 // Each screen remembers its own setting.
 import { $, clamp, store } from "./util.js";
 
-const PAIR = 1.72;            // the radar's and the list's columns together, in the grid's fr (the card has 1.45)
-const DEFAULT = 0.72;         // the list's share of them, to begin with
+const PAIR = 1.85;            // the radar's and the list's columns together, in the grid's fr (the card has 1.3)
+const DEFAULT = 0.85;         // the list's share of them, to begin with
 const MIN_LIST = 13;          // the list's narrowest, in rem; dragged to half that, it closes
 const MIN_RADAR = 18;         // and the radar's narrowest
 const STEP = 2;               // rem per arrow key
@@ -28,10 +28,10 @@ export function nearbyDivider(shown) {
     if (open || !animate) grid.classList.toggle("nearby-closed", !open);
     else hideTimer = setTimeout(() => grid.classList.add("nearby-closed"), ANIMATE_MS);
     btn.setAttribute("aria-expanded", String(open));
-    btn.title = open ? "Hide nearby flights" : "Show nearby flights";
+    btn.title = open ? "Hide the traffic list" : "Show the traffic list";
     btn.setAttribute("aria-label", btn.title);
     bar.setAttribute("aria-valuenow", String(Math.round((m / PAIR) * 100)));
-    bar.setAttribute("aria-valuetext", open ? `Nearby flights, ${Math.round((m / PAIR) * 100)}% of the room beside the card` : "Nearby flights hidden");
+    bar.setAttribute("aria-valuetext", open ? `Traffic list, ${Math.round((m / PAIR) * 100)}% of the room beside the card` : "Traffic list hidden");
     if (open && !drawn) shown();            // fill it in now rather than at the next update
     drawn = open;
   }

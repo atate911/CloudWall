@@ -148,6 +148,9 @@ class ShapeTest(unittest.TestCase):
         forecast = contrails.demo()
         at_field = dict(plane("a3", "N733NV", 0, gs=90, vrate=-500, category="A1", alt=field["elevation_ft"] + 800),
                         lat=field["lat"] + 0.005, lon=field["lon"], type="C172")
+        pad = cfg["airport"]["helipads"][0]                     # a hospital's helipad near home
+        to_hospital = dict(plane("a8", "LIFE7", 0, gs=80, vrate=-600, track=180, category="A7", type="EC35",
+                                 alt=pad["elevation_ft"] + 600), lat=pad["lat"] + 0.012, lon=pad["lon"])
         traffic = [
             plane("a1", "SKW3400", 1.0, year=2015),             # overhead: a regional partner on a paid route, with a photo
             plane("a2", "UAL99", 6.0),                          # its paid route is still being looked up
@@ -156,6 +159,7 @@ class ShapeTest(unittest.TestCase):
             plane("a5", "DAL178", 7.0),                         # a paid route from the other provider; followed, then lost
             plane("a6", "DAL99", 8.0),                          # the free database's route only
             plane("a7", "FDX12", 28.0),                         # past the tracking radius
+            to_hospital,                                        # an air ambulance landing at the hospital
         ]
         t.want_range(30)
         t.want_pin("a5")
@@ -170,7 +174,9 @@ class ShapeTest(unittest.TestCase):
     def test_an_aircraft(self):
         s = self.snapshot
         near, far, hero = s["aircraft"], s["beyond"], s["hero"]
-        self.assertEqual(([a["hex"] for a in far], hero["hex"], len(near)), (["a7"], "a5", 6))
+        self.assertEqual(([a["hex"] for a in far], hero["hex"], len(near)), (["a7"], "a5", 7))
+        life = next(a for a in near if a["hex"] == "a8")
+        self.assertEqual((life["medical"], life["hospital"]["state"]), (True, "landing"))
         feed, derived, details, other = (shape("aircraft." + part) for part in ("feed", "derived", "details", "other"))
         documented = set(feed) | set(derived) | set(details) | set(other)
         seen = set()

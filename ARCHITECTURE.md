@@ -61,6 +61,8 @@ It is layered, each layer using only those below it:
 | `details.py` | What is known of an aircraft beyond its position: airframe, photo, airline, seats, its route checked against where it actually is, the paid route when there is one, and whether it is arriving at or leaving the airport. |
 | `logbook.py` | Which flyovers are logged: one entry a pass, its badges, back-filling what is learned later. (The rows and the Logbook tab's totals are `store.py`'s.) |
 | `tracks.py` | Each aircraft's recent positions and whole path, and the day's heatmap. |
+| `situation.py` | The traffic picture: each aircraft arriving, departing, flying locally or passing over; the arrivals' landing order, runway, time to touchdown and gap to the one ahead; what's worth a look; every aircraft's last two minutes of track. |
+| `medical.py` | Medical flights: by transponder (lifeguard), operator or callsign, or a helicopter landing at or leaving a hospital's helipad (`data/helipads.csv`); and the helipad a helicopter is landing at, has left or (a medical one) is heading for, said only when no other helipad is on its line, and kept while it stays on course. Run by `situation.describe` for every airborne aircraft. |
 | `enrich.py` | `Enricher`: non-blocking lookups, one for the process. Returns what is cached now and fetches the rest on two worker threads: routes and airframes (adsbdb), photos (planespotters), the paid provider's route. What it holds in memory is bounded. |
 | `live.py`, `flightradar24.py`, `flightaware.py` | The optional paid route providers. `LiveProvider` holds the key, the credit budget (monthly allowance spread over the days left) and the back-off; the two subclasses know each API. |
 | `sources.py` | Position feeds: `Feeds` (readsb-style JSON with failover), `normalise()` into CloudWall's aircraft shape, the military "heard, no position" feed, and `Demo` (simulated traffic). |
@@ -105,7 +107,9 @@ both see is looked up, and paid for, once.
    route replaces the free one when there is one.
 4. Under the tracker's lock: pick the aircraft overhead (highest elevation angle, with
    hysteresis), `Logbook.record` those overhead, `Tracks.remember` where everything is, guess the
-   runway flow, and swap in the new lists.
+   runway flow, mark what each aircraft is doing and put the arrivals in landing order on the
+   runways in use (`situation.describe`), give each its last two minutes of track, and swap in the
+   new lists.
 5. A screen's `GET /api/state` calls `Place.state(pin, range, square)`: the tracker's snapshot
    with that screen's own choice of flight (its pin), plus the place's weather, restrictions,
    military heard and the provider's budget. The server adds the map and chart settings and the
@@ -199,18 +203,21 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | `hero.js` | The flight card for the aircraft overhead, and the desktop's quiet-sky slides. |
 | `kiosk.js` | The wall panel's large card and slides. |
 | `emergency.js` | The red takeover for 7500/7600/7700. |
-| `board.js` | The Board, its two-line form for a phone, and the Nearby list beside the radar. |
+| `board.js` | The Board grouped by what each aircraft is doing, its two-line form for a phone, and the traffic list and side view beside the radar. |
+| `situation.js` | The traffic picture in words and parts every screen shares: the strip's headline and a phrase for each group that doubles as the key (short in Simple), the grouped list, Simple's side panel (the next aircraft over the house, the landing queue, what's worth a look), and `renderInto`/`keepFocus`, which redraw a part of the page without losing the flap display or the keyboard's place. |
+| `profile.js` | The side view along the runways: height against distance along the approach, the arrivals numbered down the 3° glide path. |
 | `logbook.js` | The Logbook tab. |
 | `places.js` | The place in the header and the desktop's menu of places. |
 | `weather.js` | The Weather tab and the weather slide. |
-| `scope.js` | The radar (chart and ATC styles) and the Map view (the flights on a satellite or street map, in words): a static layer rebuilt on each update and one persistent SVG group per aircraft, moved every frame. |
+| `timeline.js` | The next few minutes: who comes over the house, who lands, a medical helicopter reaching its hospital, as Simple's line of the next three and Detailed's ten-minute axis (`tickTimeline` moves it every second and keeps its labels apart). |
+| `scope.js` | The radar (chart and ATC styles) and the Map view (the flights on a satellite or street map, in words): a static layer rebuilt on each update and one persistent SVG group per aircraft, moved every frame. Labels are placed on each update (`placeLabels`); every frame, the map's fixed names fade where traffic covers them (`giveWay`). |
 | `parts.js` | What several displays are made of: the logo tile, badges, a flight number as boards set it, "Landing at ...", records. |
 | `map.js` | The ground under the displays: map tiles around home, the hand-drawn map, runways. |
 | `routemap.js` | The flight card's route on a real map: world-layer tiles, borders and cities (`maps/world.json`), the great-circle path, the aircraft on it. |
 | `fresh.js` | One copy for the page of what changes slowly (weather, logbook, heatmap), fetched at most once a minute whoever asks. |
 | `plate.js`, `silhouette.js`, `profiles.js`, `profiles/*.js` | Aircraft side elevations drawn from measurements, the type plates and the fleet line-up. |
 | `icons.js` | The chart-style radar's top-down icons, one for each kind of traffic. Which kind an aircraft is comes on its record. |
-| `astro.js`, `sky.js`, `fx.js`, `divider.js`, `util.js` | Sun and moon; day and night; split-flap and rolling-number effects and chimes; the Nearby list's divider; DOM, formatting and geometry helpers. |
+| `astro.js`, `sky.js`, `fx.js`, `divider.js`, `util.js` | Sun and moon; day and night; split-flap and rolling-number effects and chimes; the traffic list's divider; DOM, formatting and geometry helpers. |
 
 Between updates the page moves aircraft itself: each position is dead-reckoned from the time
 the feed reported it (the server's `status.updated`, not the time the page fetched it) and eased

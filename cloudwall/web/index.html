@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#e8ebe5">
+<meta name="theme-color" content="#e1e5dc">
 <title>CloudWall</title>
 <link rel="preload" href="fonts/b612.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/b612-mono-bold.woff2" as="font" type="font/woff2" crossorigin>
@@ -22,13 +22,21 @@
     <span class="chip warn" id="link" hidden>Flight data offline</span>
     <span class="chip warn" id="restart" hidden title="CloudWall's code changed after it started (an update), so the server is still running the old version. Restart it to finish: make restart, or systemctl --user restart cloudwall">Updated: restart CloudWall</span>
   </div>
+  <div class="next-line" id="next-line" aria-live="off"></div>
+  <div class="seg dens" id="dens-seg" role="group" aria-label="How much to show">
+    <button data-dens="simple" title="What's happening now: the next aircraft over the house, the landing queue, and anything worth a look">Simple</button>
+    <button data-dens="detailed" title="Every aircraft labelled, grouped by what it is doing, with the flight card and the side view">Detailed</button>
+  </div>
   <button class="icon-btn" id="btn-sound" title="Chime when an aircraft comes overhead"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M3.5 9.2h3.6L12 5.2v13.6l-4.9-4H3.5z"/><g id="snd-on"><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18 6.6a7.6 7.6 0 0 1 0 10.8"/></g><g id="snd-off"><path d="M16 9.5l5 5M21 9.5l-5 5"/></g></svg><span id="snd-text">Sound</span></button>
   <button class="icon-btn" id="btn-night" title="Night mode: auto follows the sun"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M19.5 14.6A7.8 7.8 0 1 1 9.4 4.5a6.2 6.2 0 0 0 10.1 10.1z"/></svg><span id="night-text">Auto</span></button>
+  <span class="stale-note" id="stale-note" role="status" hidden></span>
   <div class="clock" id="clock"></div>
 </header>
 <main>
   <section id="view-now" class="view active">
+    <div class="strip" id="strip"></div>
     <div class="panel" id="hero"></div>
+    <div class="panel ss" id="side"></div>
     <div class="panel scope" id="scope">
       <div class="seg" id="scope-seg" role="group" aria-label="Map view">
         <button data-mode="radar" title="The flights on a radar scope, as pilots and controllers see them">Radar</button>
@@ -54,7 +62,9 @@
       <button class="ps-toggle" id="ps-toggle" aria-controls="mini-board" aria-expanded="true">
         <svg viewBox="0 0 10 16" aria-hidden="true"><path d="M3.5 3.5L7.5 8l-4 4.5"/></svg></button>
     </div>
+    <div class="panel ss" id="notes"></div>
     <div class="panel scroll" id="mini-board"></div>
+    <button class="show-all" id="show-all" aria-controls="mini-board" aria-expanded="false"></button>
   </section>
   <section id="view-board" class="view"><div class="panel scroll" id="board"></div></section>
   <section id="view-wx" class="view"><div class="panel scroll" id="wx-tab"></div></section>
