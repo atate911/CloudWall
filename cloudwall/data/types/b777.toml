@@ -1,5 +1,5 @@
 name = "Boeing 777"
-types = ["B772", "B77L", "B773", "B77W"]
+types = ["B772", "B77L", "B773", "B77W", "B778", "B779"]
 production = [1995]
 checked = "2026-11"
 sources = [
@@ -10,6 +10,9 @@ sources = [
   "https://en.wikipedia.org/wiki/General_Electric_GE90",
   "https://en.wikipedia.org/wiki/General_Electric_GE9X",
   "https://en.wikipedia.org/wiki/Airbus_A350",
+  "https://en.wikipedia.org/wiki/Boeing_777X",
+  "https://www.boeing.com/commercial/777x",
+  "https://www.boeing.com/commercial/777x/by-design",
 ]
 
 text = """
@@ -61,3 +64,46 @@ GE90-115Bs, each rated at 115,300 lb of thrust, are the only engines it was offe
 "Engines" = "2 × GE90-115B"
 "Range" = "up to 7,500 nm (13,890 km)"
 "Max takeoff weight" = "up to 351,500 kg"
+
+[variants.B778]
+name = "Boeing 777-8"
+text = """
+The 777-8 is the shorter, longer-ranged member of the 777X family: 70.9 m long, 5.8 m shorter than
+the 777-9, with a higher maximum takeoff weight and a range of up to 9,500 nm. It shares the -9's
+new carbon-fibre wing, the first composite wing Boeing has built itself, whose outer 3.5 m folds up
+on the ground, from a control in the cockpit, so that its 71.8 m span fits the gates today's 777s
+use. It shares the GE9X engines too, with a fan case 3.4 m across, larger than the GE90's.
+
+Boeing put the passenger -8 behind the -9 in 2019, and the freighter version, launched in 2022 by
+Qatar Airways to replace its 777Fs and able to carry 118 tonnes, has come first. As of 2026 no 777-8
+has flown, and the first freighters are due in 2028. The designator covers both.
+"""
+[variants.B778.facts]
+"First flight" = "not yet, as of 2026"
+"Engines" = "2 × GE9X"
+"Range" = "up to 9,500 nm (17,590 km)"
+"Max takeoff weight" = "365,140 kg (805,000 lb)"
+"Max payload" = "118,000 kg (260,000 lb), freighter"
+
+[variants.B779]
+name = "Boeing 777-9"
+text = """
+The 777-9 keeps the 777's fuselage and name but little else that shows. Its wing is new, carbon
+fibre and the first composite wing Boeing has built itself, with a span of 71.8 m, too wide for the
+gates today's 777s use, so the outer 3.5 m of each wing folds up on the ground, from a control in the
+cockpit, to bring it down to 64.8 m. Its GE9X engines have a fan case 3.4 m across with 16 composite
+blades, where the GE90 has 22, and one made a record 134,300 lb of thrust on a test stand in 2017.
+Thinner cabin walls add 10 cm of width for ten-abreast seating, and from the 787 it takes larger
+windows and a cabin pressurised to 6,000 ft. At 76.7 m it will be the longest airliner flying.
+
+It first flew in January 2020, but engine problems, a fuselage that burst open in a 2019 ground load
+test, a tougher FAA after the 737 MAX crashes and cracked engine-mount links found in 2024 have held
+it back. As of 2026 it is still in certification testing and has not entered service; Boeing expects
+to deliver the first, to Lufthansa, in 2027, seven years later than first planned. On the ground the
+folded wingtips, standing up at the end of each wing, give it away.
+"""
+[variants.B779.facts]
+"First flight" = "January 2020"
+"Engines" = "2 × GE9X"
+"Range" = "up to 8,000 nm (14,820 km)"
+"Max takeoff weight" = "351,530 kg (775,000 lb)"

@@ -35,7 +35,7 @@ name = "Fairchild Swearingen Metro / Merlin IV"
 "First flight" = "August 1969"
 "Built" = "703, with the Merlin IV, Expediter and C-26"
 "Cabin height" = "4 ft 9 in (1.45 m)"
-"Max takeoff weight" = "16,500 lb (Metro 23)"
+"Max takeoff weight" = "16,500 lb (7,484 kg), Metro 23"
 "Engines" = "2 × Garrett (now Honeywell) TPE331"
 
 [variants.SW3]
@@ -56,5 +56,5 @@ built with winglets as the Merlin 300. The short-fuselage line closed in 1983 af
 [variants.SW3.facts]
 "Built" = "158"
 "Engines" = "2 × Garrett TPE331-10U, 900 shp (Merlin IIIC)"
-"Max takeoff weight" = "13,230 lb (Merlin IIIC)"
+"Max takeoff weight" = "13,230 lb (6,000 kg), Merlin IIIC"
 "Cruise" = "300 kt (Merlin IIIC)"

@@ -41,14 +41,14 @@ airliner has been in an accident that killed anyone aboard.
 [variants.E135]
 name = "Embraer ERJ 135 / ERJ 140"
 [variants.E135.facts]
-"Range" = "1,750 nm (ERJ 135LR)"
+"Range" = "1,750 nm (3,243 km), ERJ 135LR"
 
 [variants.E145]
 name = "Embraer ERJ 145"
 [variants.E145.facts]
 "First flight" = "August 1995"
 "Entered service" = "April 1997"
-"Range" = "1,550 nm (ERJ 145LR)"
+"Range" = "1,550 nm (2,873 km), ERJ 145LR"
 
 [variants.E45X]
 name = "Embraer ERJ 145XR"
@@ -80,5 +80,5 @@ explosion.
 """
 [variants.E35L.facts]
 "Built" = "289"
-"Range" = "3,050 nm with 13 passengers (Legacy 600)"
+"Range" = "3,050 nm (5,650 km) with 13 passengers, Legacy 600"
 "Ceiling" = "41,000 ft"

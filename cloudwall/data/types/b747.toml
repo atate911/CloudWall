@@ -1,5 +1,5 @@
 name = "Boeing 747"
-types = ["B741", "B742", "B743", "B744", "B748"]
+types = ["B741", "B742", "B743", "B744", "B748", "BLCF"]
 production = [1969, 2023]
 checked = "2026-11"
 sources = [
@@ -10,6 +10,7 @@ sources = [
   "https://www.historylink.org/file/21243",
   "https://www.boeing.com/resources/boeingdotcom/company/about_bca/startup/pdf/historical/747-8I_-_passenger.pdf",
   "https://www.flightglobal.com/airframers/from-freighters-to-air-force-one-how-the-current-747-fleet-is-deployed/151866.article",
+  "https://en.wikipedia.org/wiki/Boeing_Dreamlifter",
 ]
 
 text = """
@@ -49,3 +50,20 @@ name = "Boeing 747-8"
 production = [2011, 2023]
 [variants.B748.facts]
 "Max takeoff weight" = "987,000 lb (447,700 kg)"
+
+[variants.BLCF]
+name = "Boeing 747 Dreamlifter"
+more = """
+The Dreamlifter is one of four used 747-400s that Boeing had rebuilt in Taiwan from 2006 to fly 787
+parts, wings from Japan and fuselage sections from Italy among them, to final assembly in the United
+States, cutting the wings' journey from about 30 days to just over eight hours. The sections were
+too big for any freighter flying, so behind the cockpit the fuselage swells into an unpressurised
+hold of 65,000 cu ft, three times a 747-400F's, and the whole tail swings open for loading. Boeing's
+commercial airplanes chief jokingly apologised to Joe Sutter, the 747's designer: "sorry for what we
+did to your plane."
+"""
+[variants.BLCF.facts]
+"First flight" = "September 2006"
+"Built" = "4, converted from 747-400s"
+"Max payload" = "113,400 kg (250,000 lb)"
+"Cargo volume" = "65,000 cu ft (1,840 m³)"
