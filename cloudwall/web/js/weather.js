@@ -15,6 +15,13 @@ const hourLabel = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "nume
 const compass = (d) => POINTS[Math.round(d / 22.5) % 16];
 
 // ---------- words ----------
+
+// A raw report, its kind in bold. Reports usually start with their kind ("METAR KPDX ..."), so that word becomes the label.
+function rawLine(kind, raw) {
+  const m = /^(METAR|SPECI|TAF(?: AMD| COR)?)\s+/.exec(raw || "");
+  return `<p><b>${m ? m[1] : kind}</b> ${esc(m ? raw.slice(m[0].length) : raw || "")}</p>`;
+}
+
 export function windWords(w) {
   if (!w || !w.speed) return "Calm wind";
   const from = w.variable ? "Variable" : `From ${String(w.dir).padStart(3, "0")}° (${compass(w.dir)})`;
@@ -101,26 +108,50 @@ export function windRose(size, w, runways) {
 // it's fully out at 15 kt (each of its five bands is about 3 kt), so its length shows the
 // strength and it points the way the wind is going. Gusts make it swing; calm leaves only
 // the ring of the limp sock around its pole.
+// The windsock seen from above, on its mast at the middle of the rose, streaming downwind. As an
+// ICAO sock is made, it has five bands, orange at both ends, and stands straight out at 15 knots,
+// each band about 3 knots: lighter wind, a shorter sock. Drawn along +x and turned to the wind:
+// cloth that tapers from the hoop at its mouth, ripples a little and is open at its tail (its
+// inside shows there), seams that curve round it, matte shading for its roundness, the hoop on an
+// arm from the mast, and its shadow on the ground.
+let socks = 0;
 function planSock(cx, cy, R, w) {
   const speed = (w && w.speed) || 0;
   let s = "";
   if (!speed || w.variable || w.dir == null) {
-    s += `<circle class="sock-ring" cx="${cx}" cy="${cy}" r="8"/>`;
+    // limp, hanging down the mast: from above, only its hoop shows round the mast's cap
+    s += `<circle class="sock-hoop calm" cx="${cx}" cy="${cy}" r="7.5"/>`;
     s += `<text class="rose-calm" x="${cx}" y="${cy + 30}" text-anchor="middle">${speed ? `Variable, ${speed} kt` : "Calm"}</text>`;
   } else {
-    const e = Math.min(1, speed / 15), L = R * 0.86 * (0.28 + 0.72 * e);
-    const t = ((w.dir + 180) % 360) * RAD, ux = Math.sin(t), uy = -Math.cos(t), nx = -uy, ny = ux;
-    let body = "";
+    const n = ++socks, e = Math.min(1, speed / 15), L = R * 0.86 * (0.3 + 0.7 * e);
+    const deg = (w.dir + 90) % 360;                 // +x turned to point downwind (from w.dir, toward w.dir + 180)
+    const m = 5, r0 = 8.6, r1 = r0 * (0.6 - 0.12 * e), tail = m + L;     // the hoop, the radii; fuller wind, slimmer tail
+    const f = (v) => v.toFixed(2);
+    // the cloth's edge: the taper, a slight belly, and a ripple that runs down it, more in a light wind
+    const half = (t) => r0 + (r1 - r0) * t + 0.6 * Math.sin(Math.PI * t) + (0.25 + 0.35 * (1 - e)) * Math.sin(Math.PI * 5 * t) * t;
+    const edge = (sgn) => Array.from({ length: 25 }, (_, k) => { const t = k / 24; return `${f(m + L * t)},${f(sgn * half(t))}`; });
+    const out = `M${edge(-1).join(" L")} L${edge(1).reverse().join(" L")}Z`;
+    const rt = half(1), ex = Math.max(1.2, rt * 0.32);                   // the open tail, seen a little from the side
+    // the bands, their seams bowed toward the tail as they run round the cloth
+    let bands = "";
     for (let i = 0; i < 5; i++) {
-      const d0 = 4 + (L / 5) * i, d1 = 4 + (L / 5) * (i + 1), r0 = 9 - i * 1.15, r1 = 9 - (i + 1) * 1.15;
-      const p = (d, r, sgn) => `${(cx + ux * d + nx * r * sgn).toFixed(1)},${(cy + uy * d + ny * r * sgn).toFixed(1)}`;
-      body += `<polygon class="sock-band ${i % 2 ? "w" : "o"}" points="${p(d0, r0, 1)} ${p(d1, r1, 1)} ${p(d1, r1, -1)} ${p(d0, r0, -1)}"/>`;
+      const a = m + (L / 5) * i, b = m + (L / 5) * (i + 1) + (i < 4 ? 0.2 : ex + 1), bow = i ? 1.4 : 0, bow2 = i < 4 ? 1.4 : 0;
+      bands += `<path class="sock-band ${i % 2 ? "w" : "o"}" d="M${f(a)},${-r0 - 2} Q${f(a + bow * 2)},0 ${f(a)},${r0 + 2} L${f(b)},${r0 + 2} Q${f(b + bow2 * 2)},0 ${f(b)},${-r0 - 2}Z"/>`;
     }
     const gusty = w.gust && w.gust - speed >= 5;
-    s += `<g class="sock-body ${gusty ? "gusty" : "breezy"}" style="transform-origin:${cx}px ${cy}px">${body}</g>`;
+    s += `<defs><clipPath id="sock-${n}"><path d="${out}"/></clipPath>
+      <linearGradient id="sock-g${n}" x1="0" y1="0" x2="0" y2="1"><stop class="sock-sh" offset="0"/><stop class="sock-mid" offset=".3"/><stop class="sock-hi" offset=".5"/><stop class="sock-mid" offset=".7"/><stop class="sock-sh" offset="1"/></linearGradient></defs>`;
+    s += `<path class="sock-shadow" d="${out}" transform="translate(${f(cx + 2.2)} ${f(cy + 3)}) rotate(${deg})"/>`;
+    s += `<g class="sock-body ${gusty ? "gusty" : "breezy"}" style="transform-origin:${cx}px ${cy}px"><g transform="translate(${cx} ${cy}) rotate(${deg})">
+      <line class="sock-arm" x1="0" y1="0" x2="${m}" y2="0"/>
+      <g clip-path="url(#sock-${n})">${bands}<rect x="${m - 1}" y="${-r0 - 2}" width="${f(L + 6)}" height="${2 * r0 + 4}" fill="url(#sock-g${n})"/></g>
+      <path class="sock-edge" d="${out}"/>
+      <ellipse class="sock-mouth" cx="${f(tail)}" cy="0" rx="${f(ex)}" ry="${f(rt - 0.15)}"/>
+      <ellipse class="sock-hoop" cx="${m}" cy="0" rx="1.3" ry="${f(r0 + 0.5)}"/></g></g>`;
+    const t = ((w.dir + 180) % 360) * RAD, ux = Math.sin(t), uy = -Math.cos(t);
     s += `<text class="rose-speed" x="${cx - ux * 26}" y="${cy - uy * 26 + 5}" text-anchor="middle">${speed}${w.gust ? `G${w.gust}` : ""}</text>`;
   }
-  return s + `<circle class="sock-pole-top" cx="${cx}" cy="${cy}" r="3.5"/>`;
+  return s + `<circle class="sock-mast" cx="${cx}" cy="${cy}" r="3"/>`;
 }
 
 function windCaption(w, runways, flow) {
@@ -208,7 +239,7 @@ function histCharts(width, hist) {
   const CAP = 10000, h3 = 76, y3 = scale(0, CAP, h3);
   const cBody = `<path class="ln ceil step" d="${stepPath(hist.map((o) => [x(o.time), y3(Math.min(o.ceiling ?? CAP, CAP))]))}"/>
     <text class="dlabel" x="${width - padR + 8}" y="${y3(Math.min(tLast.ceiling ?? CAP, CAP)) + 4}">${tLast.ceiling == null ? "none" : num(tLast.ceiling)}</text>`;
-  charts.push(frame(h3, cBody, "Ceiling, feet (top line: no ceiling or above 10,000)", ticks([0, 5000, CAP], y3, (v) => (v ? num(v / 1000) + "k" : "0")), ""));
+  charts.push(frame(h3, cBody, "Ceiling, feet", ticks([0, 5000, CAP], y3, (v) => (v ? num(v / 1000) + "k" : "0")), `<span class="lg">Top line: no ceiling below ${num(CAP)}</span>`));
 
   // visibility (mi)
   const h4 = 64, y4 = scale(0, 10, h4);
@@ -278,7 +309,7 @@ export function renderWeatherTab(el, W, state) {
       <div class="hreadout" id="wx-readout">Touch or hover over the charts to read a report</div>
       <h2>Forecast</h2>
       <div id="wx-taf"></div>
-      <div class="raw"><p><b>METAR</b> ${esc(n.raw || "")}</p>${W.taf && W.taf.raw ? `<p><b>TAF</b> ${esc(W.taf.raw)}</p>` : ""}</div>
+      <div class="raw">${rawLine("METAR", n.raw)}${W.taf && W.taf.raw ? rawLine("TAF", W.taf.raw) : ""}</div>
     </section>
     <section class="wx-more">
       <div class="panel-sky">${sunMoonPanel(skyToday(home.lat, home.lon))}</div>

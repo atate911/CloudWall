@@ -1301,7 +1301,7 @@ class ServerTest(unittest.TestCase):
             s = json.loads(self.get(base + "/api/state" + q))
             self.assertEqual(t.fetch_radius(), 15)
         self.assertEqual(s["ranges"], [15, 20, 30])
-        self.assertEqual(s["kiosk"], {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0,
+        self.assertEqual(s["kiosk"], {"place": "", "view": "card", "radar": "chart", "tracks": True, "range_nm": 0,
                                       "density": "simple", "quiet": ""})
         self.get(base + "/api/state?range=30")
         self.assertEqual(t.fetch_radius(), 30)

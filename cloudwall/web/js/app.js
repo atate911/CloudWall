@@ -1,20 +1,19 @@
 "use strict";
 import { $, esc, store, phone, api, runwayList, degF, since, dataAge, COUNT_STOP_S } from "./util.js";
-import { updateSky, sky } from "./sky.js";
+import { updateSky } from "./sky.js";
 import { drawScope, mapReach, flashCraft } from "./scope.js";
 import { loadMap } from "./map.js";
 import { renderHero, tickHero, nextSlide, forgetHero } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
 import { chime, soundOn, setSound } from "./fx.js";
 import { renderWeatherTab } from "./weather.js";
-import { renderKiosk, tickKiosk, kioskNext, forgetKiosk } from "./kiosk.js";
+import { renderKiosk, tickKiosk, kioskNext, forgetKiosk, kioskCaption } from "./kiosk.js";
 import { nearbyDivider } from "./divider.js";
 import { boardHtml, renderMiniBoard } from "./board.js";
-import { profileHtml, profileFrom } from "./profile.js";
 import { loadLog } from "./logbook.js";
 import { renderPlace, placeMenu } from "./places.js";
 import { refresh } from "./fresh.js";
-import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture, notables, keepFocus, queueMore } from "./situation.js";
+import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture, notables, keepFocus } from "./situation.js";
 import { lineHtml, axisHtml, tickTimeline } from "./timeline.js";
 
 // Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
@@ -31,9 +30,6 @@ let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastOverhead = nu
 const KIOSK_PIN_S = 90;
 // a desktop wide for its height: Simple puts what's worth a look in a third column, past the radar
 const WIDE = matchMedia("(min-width: 1500px) and (min-aspect-ratio: 19/10)");
-// A wall panel much wider than tall (1280×400) has room for the side view as a third column, past the
-// radar; any other has it under the flight card, in the landing queue's place (style.css agrees).
-const PANEL_WIDE = matchMedia("(min-aspect-ratio: 24/10)");
 let myPin = null;
 try { myPin = sessionStorage.getItem("cloudwall.pin"); } catch (e) { /* no storage: just this visit */ }
 function pin(hex) {
@@ -92,10 +88,13 @@ if (!KIOSK) nearbyDivider(() => { if (state && view === "now") renderMiniBoard(s
 placeMenu(() => state);
 
 // ---------- scope: the radar, or the Map view (the flights on a plain satellite or street map) ----------
-// The desktop's buttons choose for each screen; the kiosk takes [kiosk] view. An emergency always
-// shows on the radar, where the controllers' codes and the restrictions are.
+// The desktop's buttons choose for each screen; the kiosk takes [kiosk] view (or ?view= in its
+// address), where "card" leaves the scope off and gives the card the whole screen. An emergency
+// always shows on the radar, where the controllers' codes and the restrictions are.
+const kioskView = () => { const v = qs.get("view") || (state && state.kiosk && state.kiosk.view); return v === "radar" || v === "map" ? v : "card"; };
+const cardOnly = () => KIOSK && kioskView() === "card";
 function scopePref() {
-  const v = KIOSK ? state && state.kiosk && state.kiosk.view : store("scope");
+  const v = KIOSK ? kioskView() : store("scope");
   return v === "map" ? "map" : "radar";
 }
 const scopeMode = () => (emergencies().length ? "radar" : scopePref());
@@ -126,10 +125,11 @@ const simple = () => density() === "simple";
 // Simple shows the flight card's quiet-sky slides (the weather, the day so far) when there is nothing
 // to say about the traffic: nothing overhead or on its way, nothing landing.
 const quietSky = () => !!state && !state.hero && !state.next && !picture(state).groups.arr.length && !notables(state).some((n) => n.a);
-const cardShown = () => !simple() || quietSky();
+const cardShown = () => KIOSK || !simple() || quietSky();     // the wall panel always shows its card
 let scopeLabel = "";
 function drawScopeNow(now = performance.now()) {
-  if (!state || view !== "now") return;
+  // the card alone draws no radar, except while the radar is the quiet sky's slide
+  if (!state || view !== "now" || (cardOnly() && !document.body.classList.contains("radar-slide"))) return;
   const mode = scopeMode(), pref = scopePref(), ms = mapStyle(), { style, tracks, range } = radarPrefs();
   const atc = mode === "radar" && style === "atc";
   const charts = state.charts || { map: state.basemap }, layers = charts.layers || {};
@@ -150,7 +150,7 @@ function drawScopeNow(now = performance.now()) {
     $("scope").classList.toggle("map", mode === "map");     // the radar's own options give way to the map's
     $("scope-attrib").textContent = credit;
   }
-  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range, mapStyle: ms, simple: dens === "simple" });
+  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range, mapStyle: ms, simple: dens === "simple", wall: KIOSK });
 }
 
 // Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi. On a phone
@@ -185,15 +185,18 @@ function setView(v) {
   if (phone() === "stack") scrollTo(0, 0);        // each tab starts at its top
   render();
 }
+// Sound and night mode live in one small menu behind the settings button in the header.
 function renderToggles() {
-  const on = soundOn();
-  $("btn-sound").classList.toggle("on", on);
-  $("snd-on").style.display = on ? "" : "none";
-  $("snd-off").style.display = on ? "none" : "";
-  $("snd-text").textContent = on ? "Sound on" : "Sound off";
-  const n = store("night") || "auto";
-  $("night-text").textContent = n === "auto" ? "Night auto" : n === "on" ? "Night on" : "Night off";
-  $("btn-night").classList.toggle("on", sky.night);
+  const on = soundOn(), night = store("night") || "auto";
+  for (const b of $("settings-menu").querySelectorAll("button")) {
+    const set = b.dataset.sound ? (b.dataset.sound === "on") === on : b.dataset.night === night;
+    b.classList.toggle("on", set);
+    b.setAttribute("aria-pressed", String(set));
+  }
+}
+function showSettings(open) {
+  $("settings-menu").hidden = !open;
+  $("btn-settings").setAttribute("aria-expanded", String(open));
 }
 // The traffic picture around the radar: the strip across the top, and in Simple the side panel
 // (the next aircraft over the house, the landing queue, what's worth a look) in place of the card.
@@ -202,13 +205,15 @@ let allOpen = false;
 function renderPicture(dens) {
   const easy = dens === "simple", ph = phone();
   // the next few minutes beside the headline: in words in Simple, along a ten-minute axis in Detailed
-  if (!KIOSK) { renderInto($("strip"), stripHtml(state, { short: easy, after: easy ? lineHtml(state) : axisHtml(state) }) + (ph ? densSeg(dens) : "")); tickTimeline($("strip"), state); }
-  else {
-    renderInto($("next-line"), lineHtml(state, 3));                   // the wall panel: across its header, read from the room
-    if (!easy) renderInto($("strip"), stripHtml(state, { short: true, notes: false }));      // over the radar
+  if (KIOSK) {
+    // the wall panel: what's next after the aircraft on its card across the header, and over the
+    // radar how many aircraft are about; the card is the rest
+    renderInto($("next-line"), lineHtml(state, 2, { skip: state.hero && state.hero.hex, short: true }));
+    renderInto($("k-cap"), kioskCaption(state));
+    return;
   }
-  if (easy && KIOSK) { renderInto($("side"), `<section class="k-sit">${stripHtml(state, { short: true, notes: 2 })}</section>` + sideHtml(state, { queue: 3, notes: 2 })); fitSide($("side")); refitSide($("side")); }
-  else if (easy && ph === "side") renderInto($("side"), sideHtml(state, { compact: true }));      // sideways: all in one column beside the radar
+  renderInto($("strip"), stripHtml(state, { short: easy, after: easy ? lineHtml(state) : axisHtml(state) }) + (ph ? densSeg(dens) : "")); tickTimeline($("strip"), state);
+  if (easy && ph === "side") renderInto($("side"), sideHtml(state, { compact: true }));      // sideways: all in one column beside the radar
   else if (easy && ph) { renderInto($("side"), sideHtml(state, { compact: true, notes: 0 })); renderInto($("notes"), notesHtml(state)); }
   else if (easy && WIDE.matches) { renderInto($("side"), sideHtml(state, { notes: 0 })); renderInto($("notes"), notesHtml(state)); }   // a wide screen: worth a look on the radar's far side
   else if (easy) { renderInto($("side"), sideHtml(state)); renderInto($("notes"), ""); }
@@ -216,53 +221,6 @@ function renderPicture(dens) {
   $("show-all").innerHTML = `${allOpen ? "Hide the list" : `Show all ${n} aircraft, grouped`}<span aria-hidden="true">${allOpen ? "⌃" : "⌄"}</span>`;
   $("show-all").setAttribute("aria-expanded", String(allOpen));
   $("view-now").classList.toggle("all-open", allOpen);
-}
-// The wall panel's side column has a fixed height: what's worth a look gives way, a whole row at a
-// time, when the rest leaves no room for it.
-// The wall panel's Simple side, fitted to its height. What gives way first: the landing queue past its
-// second row (the radar numbers every arrival), then all but the first thing worth a look, then the
-// queue's second row, then that last note. Aircraft heard with no position whose note goes are said
-// in the line at the top instead, so they're never left out.
-function fitSide(el) {
-  const over = () => el.scrollHeight > el.clientHeight + 1;
-  const drop = (sel, keep) => {
-    const rows = el.querySelectorAll(sel);
-    if (rows.length <= keep) return false;
-    const row = rows[rows.length - 1];
-    if (row.classList.contains("heard")) el.querySelectorAll(".ph.covered").forEach((p) => { p.hidden = false; });
-    row.remove();
-    return true;
-  };
-  const trim = () => {
-    for (const [sel, keep] of [[".ss-queue .q-row", 2], [".ss-note .n-row", 1], [".ss-queue .q-row", 1], [".ss-note .n-row", 0]]) {
-      while (over() && drop(sel, keep)) { /* one row at a time */ }
-    }
-  };
-  // the queue says how many more are behind the rows it kept
-  const behind = () => {
-    const q = el.querySelector(".ss-queue[data-n]"), n = q ? +q.dataset.n - q.querySelectorAll(".q-row").length : 0;
-    let more = q && q.querySelector(".q-more");
-    if (n > 0 && !more) { more = document.createElement("div"); more.className = "q-more"; q.append(more); }
-    if (more) more.textContent = queueMore(n);
-  };
-  trim(); behind();
-  trim(); behind();         // again, in case that line took the last of the room
-  const note = el.querySelector(".ss-note");
-  if (note && !note.querySelector(".n-row")) note.remove();
-}
-// The side is fitted as it's drawn, and again whenever it or anything in it changes size before the
-// next update: the header taking a second line when a notice arrives a moment after the page, or a
-// flight number flapping into place, which grows its row after the fitting. Fitted before it's
-// painted, so it never runs off its foot meanwhile.
-function refitSide(el) {
-  if (!el._refit) {
-    el._refit = new ResizeObserver(() => {
-      if (KIOSK && document.body.classList.contains("d-simple") && el.scrollHeight > el.clientHeight + 1) fitSide(el);
-    });
-  }
-  el._refit.disconnect();
-  el._refit.observe(el);
-  for (const part of el.children) el._refit.observe(part);
 }
 const densSeg = (dens) => `<div class="seg dens mini" role="group" aria-label="How much to show">${["simple", "detailed"].map((d) =>
   `<button data-dens="${d}" class="${d === dens ? "on" : ""}" aria-pressed="${d === dens}">${d === "simple" ? "Simple" : "Detailed"}</button>`).join("")}</div>`;
@@ -274,6 +232,7 @@ function render() {
   document.body.classList.toggle("d-simple", dens === "simple");
   document.body.classList.toggle("d-detailed", dens !== "simple");
   document.body.classList.toggle("sky-quiet", quietSky());
+  document.body.classList.toggle("card-only", cardOnly());
   document.querySelectorAll("#dens-seg button").forEach((b) => { b.classList.toggle("on", b.dataset.dens === dens); b.setAttribute("aria-pressed", String(b.dataset.dens === dens)); });
   paintTheme();
   const w = state.weather, f = state.flow;
@@ -302,31 +261,17 @@ function render() {
   if (view === "now") {
     keepPlace(() => {
       if (em.length) renderEmergency($("hero"), state, em, !KIOSK);
-      else if (KIOSK && cardShown()) renderKiosk($("hero"), state, { queue: !simple() && (PANEL_WIDE.matches || quietSky()) });
+      else if (KIOSK) renderKiosk($("hero"), state, { radar: cardOnly() });
       else if (cardShown()) renderHero($("hero"), state);
       renderPicture(dens);
     });
-    drawScopeNow(); if (!KIOSK) renderMiniBoard(state); else renderPanelSide();
+    drawScopeNow(); if (!KIOSK) renderMiniBoard(state);
   }
   if (view === "board") keepFocus($("board"), () => { $("board").innerHTML = boardHtml(state); });
   noticeNew();
   applyFresh();
   markStale();
   if (KIOSK) hush();
-}
-
-// The wall panel's side view, in Detailed: the same drawing as the desktop's, enlarged with the panel's
-// height so it reads from the room. A tap on an aircraft in it selects it, as on the radar, and the
-// magenta ring then marks it in both: that is how one is found from one view in the other by touch.
-function renderPanelSide() {
-  const box = $("k-prof");
-  if (getComputedStyle(box).display === "none") { box._key = null; return; }
-  if (!box.firstChild) box.innerHTML = `<div class="gh pf-head"><span class="gl">Side view</span><span class="gn"></span></div><div class="prof-box"></div>`;
-  const from = profileFrom(state), note = from ? `along the runways, from the ${from}` : "along the runways";
-  if (box.querySelector(".gn").textContent !== note) box.querySelector(".gn").textContent = note;
-  const pb = box.querySelector(".prof-box"), r = pb.getBoundingClientRect();
-  const z = Math.max(1, Math.min(innerHeight / 330, r.height / 135));
-  pb.innerHTML = r.width > 50 && r.height > 50 ? profileHtml(state, Math.round(r.width / z), Math.round(r.height / z)) : "";
 }
 
 // Positions more than 20 s old (the feed has stopped, or CloudWall isn't answering): aircraft fade,
@@ -501,7 +446,8 @@ $("radar").addEventListener("click", (e) => {
   }
 });
 $("hero").addEventListener("click", (e) => {
-  if (!state || e.target.closest(".q-row")) return;          // the landing queue, on the wall panel: pinned above
+  // an aircraft in the wall panel's side view: a tap selects it (the click handler above)
+  if (!state || e.target.closest(".q-row, .pf-craft")) return;
   if (e.target.closest("#em-hide")) { emergencies().forEach((a) => hidden.add(emKey(a))); render(); return; }
   if (emergencies().length) return;
   if (KIOSK) { if (myPin) pin(null); else if (!state.hero) { kioskNext(); render(); } return; }
@@ -513,8 +459,16 @@ $("mapstyle-seg").addEventListener("click", (e) => { const b = e.target.closest(
 $("style-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { qs.delete("radar"); store("radarStyle", b.dataset.style); scopeLabel = ""; } });
 $("btn-tracks").addEventListener("click", () => { const on = radarPrefs().tracks; qs.delete("tracks"); store("tracks", on ? "off" : "on"); scopeLabel = ""; });
 $("range-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { qs.delete("range"); store("range", b.dataset.range); scopeLabel = ""; poll(); } });
-$("btn-sound").addEventListener("click", () => { setSound(!soundOn()); renderToggles(); });
-$("btn-night").addEventListener("click", () => { const m = ["auto", "on", "off"]; store("night", m[(m.indexOf(store("night") || "auto") + 1) % 3]); render(); });
+$("btn-settings").addEventListener("click", () => showSettings($("settings-menu").hidden));
+$("settings-menu").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (b && b.dataset.sound) { setSound(b.dataset.sound === "on"); renderToggles(); }
+  if (b && b.dataset.night) { store("night", b.dataset.night); render(); }
+});
+document.addEventListener("pointerdown", (e) => { if (!e.target.closest(".settings")) showSettings(false); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !$("settings-menu").hidden) { showSettings(false); $("btn-settings").focus(); }
+});
 
 setInterval(poll, 2000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { lastAnswer = Date.now(); poll(); } });

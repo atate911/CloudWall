@@ -31,7 +31,9 @@ async function open(browser, size, path, errors, tamper, before) {
     });
   }
   await page.goto(BASE + path);
-  await page.waitForSelector("#s-craft g.craft", { state: "attached", timeout: 15000 });      // the first aircraft is on the scope
+  // the first aircraft is on the scope, or (the wall panel showing its card alone) the card is drawn
+  await page.waitForFunction(() => document.querySelector("#s-craft g.craft")
+    || (document.body.classList.contains("card-only") && document.querySelector("#hero > .k-body > *, #hero.em-card")), null, { timeout: 15000 });
   return page;
 }
 // a stand-in map tile, so that the views drawn over real maps fetch nothing from the map provider
@@ -150,8 +152,12 @@ const SCENARIOS = {
     out.backToRadar = true;
     const night = () => page.evaluate(() => document.body.classList.contains("night"));
     const before = await night(), seen = new Set([before]);
-    for (let i = 0; i < 3; i++) { await page.click("#btn-night"); seen.add(await night()); }      // auto, on, off
+    await page.click("#btn-settings");
+    for (const m of ["on", "off", "auto"]) { await page.click(`#settings-menu [data-night="${m}"]`); seen.add(await night()); }
     out.nightChanges = seen.size === 2;
+    out.nightPressed = await page.evaluate(() => [...document.querySelectorAll("#settings-menu [aria-pressed=true]")].map((b) => b.dataset.night || "sound-" + b.dataset.sound));
+    await page.keyboard.press("Escape");
+    out.settingsCloses = await page.evaluate(() => document.getElementById("settings-menu").hidden && document.activeElement.id === "btn-settings");
     await page.click("#station");
     out.places = await count(page, "#place-menu .pm-row");
     await page.click("#pm-add");
@@ -166,43 +172,44 @@ const SCENARIOS = {
 
   // the wall panel
   async kiosk(browser, errors) {
-    // simple, as it starts: the counts, the landing queue and the next aircraft over the house beside the radar
+    // the smallest lettering on the screen, as a share of its height: the page's own text (the map's
+    // credit apart, and a landing number in its ring, which the radar repeats), and the radar's labels
+    const smallest = (page) => page.evaluate(() => {
+      const H = innerHeight, out = { html: 1, radar: 1, where: "" };
+      for (const e of document.querySelectorAll("body *")) {
+        if (e.closest("svg, .attrib, .seq") || !e.offsetParent) continue;
+        if (![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+        const f = parseFloat(getComputedStyle(e).fontSize) / H;
+        if (f < out.html) { out.html = f; out.where = `${e.className || e.tagName}: ${e.textContent.trim().slice(0, 30)}`; }
+      }
+      const svg = document.getElementById("radar"), k = Math.min(svg.clientWidth, svg.clientHeight) / 224;
+      if (!k) return out;                             // the card alone: no radar
+      for (const t of svg.querySelectorAll("#s-craft :is(.tag, .tag-sub), .compass, .apt-label")) {
+        if (!t.textContent || t.style.display === "none" || getComputedStyle(t).display === "none") continue;
+        out.radar = Math.min(out.radar, (parseFloat(getComputedStyle(t).fontSize) * k) / H);
+      }
+      return out;
+    });
+    // as it starts: the card across the whole screen and, under it, how many aircraft are about
     let page = await open(browser, "kiosk", "/kiosk", errors);
     const out = {};
     out.layout = await page.evaluate(() => document.documentElement.className);
-    out.scope = await page.evaluate(() => document.getElementById("scope").className);
     out.simple = await page.evaluate(() => document.body.classList.contains("d-simple"));
-    out.side = await count(page, "#side .k-sit h1");
-    out.onScope = await count(page, "#s-craft g.craft");
-    out.tabsShown = await page.evaluate(() => getComputedStyle(document.querySelector("nav")).display !== "none");
-    // the demo's fighters heard with no position are said, in the line at the top or worth a look,
-    // whatever the side had to leave out to fit; and the side fits
-    out.heardSaid = await page.evaluate(() => [...document.querySelectorAll("#side .k-sit .ph")].some((p) => !p.hidden && p.querySelector(".ci.heard"))
-      || !!document.querySelector("#side .ss-note .n-row.heard"));
-    out.sideFits = await page.evaluate(() => { const s = document.getElementById("side"); return s.scrollHeight <= s.clientHeight + 1; });
-    await page.close();
-    // detailed, on a panel much wider than tall: the flight card with the landing queue under it, the
-    // radar, and the side view past it; a tap on an aircraft in the side view selects it in both
-    page = await open(browser, "panel", "/kiosk?density=detailed", errors);
-    await page.waitForSelector("#hero .k-q .q-row", { timeout: 8000 }).catch(() => {});
-    out.queue = await count(page, "#hero .k-q .q-row");
-    await page.waitForSelector("#k-prof .pf-craft:not(.sel)", { timeout: 8000 }).catch(() => {});
-    out.wideSide = await count(page, "#k-prof svg.profile");
-    const tap = await page.evaluate(() => { const e = document.querySelector("#k-prof .pf-craft:not(.sel) .pf-hit"); if (!e) return null;
-      const r = e.getBoundingClientRect(); return { hex: e.parentNode.dataset.hex, x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
-    if (tap) {
-      await page.touchscreen.tap(tap.x, tap.y);
-      await page.waitForSelector(`#k-prof .pf-craft.sel[data-hex="${tap.hex}"]`, { timeout: 8000 }).catch(() => {});
-      out.tapped = await page.evaluate((hex) => !!document.querySelector(`#k-prof .pf-craft.sel[data-hex="${hex}"]`) && !!document.querySelector(`#radar .craft.hero[data-hex="${hex}"]`), tap.hex);
-    }
-    await page.close();
-    // detailed, on any other panel: the flight card, the side view under it in the queue's place, and the situation over the radar
-    page = await open(browser, "kiosk", "/kiosk?density=detailed", errors);
     out.card = await count(page, "#hero .k-card");
-    await page.waitForSelector("#k-prof svg.profile", { timeout: 8000 }).catch(() => {});
-    out.sideView = await count(page, "#k-prof svg.profile");
-    out.cardFits = await page.evaluate(() => { const h = document.getElementById("hero"); return h.scrollHeight <= h.clientHeight + 1; });
-    out.strip = await page.evaluate(() => getComputedStyle(document.getElementById("strip")).display !== "none" && !!document.querySelector("#strip h1"));
+    out.scopeShown = await page.evaluate(() => getComputedStyle(document.getElementById("scope")).display !== "none");
+    out.radarDrawn = await count(page, "#s-craft g.craft");                // not drawn while it's off
+    out.tabsShown = await page.evaluate(() => getComputedStyle(document.querySelector("nav")).display !== "none");
+    out.caption = await page.evaluate(() => [...document.querySelectorAll("#k-cap > *")].map((e) => e.textContent));
+    out.smallest = await smallest(page);
+    await page.close();
+    // [kiosk] view = "radar", Detailed: the same card, the radar beside it with every aircraft labelled,
+    // and the same floor
+    page = await open(browser, "kiosk", "/kiosk?density=detailed&view=radar", errors);
+    out.scope = await page.evaluate(() => document.getElementById("scope").className);
+    out.onScope = await count(page, "#s-craft g.craft");
+    out.detailedCard = await count(page, "#hero .k-card");
+    out.queue = await count(page, "#hero .q-row");
+    out.detailedSmallest = await smallest(page);
     // every label shown on the radar has been placed, and inside it (the wall panel's type is large)
     out.labelsInside = await page.evaluate(() => {
       const svg = document.getElementById("radar"), r = svg.getBoundingClientRect(), bad = [];
@@ -212,6 +219,18 @@ const SCENARIOS = {
         if (t.getAttribute("x") == null || q.left < r.left - 2 || q.right > r.right + 2 || q.top < r.top - 2 || q.bottom > r.bottom + 2) bad.push(t.textContent);
       }
       return bad;
+    });
+    await page.close();
+    // an airliner with a route: its own side elevation rides the line between the airports
+    page = await open(browser, "kiosk", "/kiosk", errors, (state) => {
+      const a = state.aircraft.find((x) => x.route && x.route.plausible && x.known && !x.on_ground);
+      if (a) { state.hero = a; state.emergency = []; }
+    });
+    out.routeCraft = await page.evaluate(() => {
+      const line = document.querySelector("#hero .k-line"), c = line && line.querySelector(".k-craft svg");
+      if (!c) return null;
+      const l = line.getBoundingClientRect(), r = c.getBoundingClientRect();
+      return { inside: r.left >= l.left - 1 && r.right <= l.right + 1, share: r.width / l.width };
     });
     await page.close();
     return out;
@@ -338,6 +357,44 @@ const SCENARIOS = {
       out[size] = [...seen];
       await page.close();
     }
+    // the wall panel's card alone: the radar is one of the slides, beside the slide that says what is on
+    // it, and is drawn then and only then
+    const page = await open(browser, "kiosk", "/kiosk", errors, empty);
+    await page.waitForTimeout(1500);
+    out.radarSlide = { seen: false, drawn: 0, hiddenAfter: null };
+    for (let i = 0; i < 10 && !out.radarSlide.seen; i++) {
+      if (await page.evaluate(() => document.body.classList.contains("radar-slide"))) {
+        await page.waitForTimeout(400);
+        out.radarSlide = { seen: true, shown: await page.evaluate(() => getComputedStyle(document.getElementById("scope")).display !== "none"),
+          drawn: await count(page, "#s-craft g.craft"), words: await page.evaluate(() => (document.querySelector("#hero .k-onradar h1") || {}).textContent || "") };
+        await page.click("#hero"); await page.waitForTimeout(400);
+        out.radarSlide.hiddenAfter = await page.evaluate(() => getComputedStyle(document.getElementById("scope")).display === "none");
+        break;
+      }
+      await page.click("#hero"); await page.waitForTimeout(350);
+    }
+    await page.close();
+    // the side view along the runways is a slide too, on a touchscreen panel much wider than tall: a
+    // tap on an aircraft in it brings up that aircraft's card
+    // (the sky kept quiet until the panel follows a flight: then the server's answer is left as it is)
+    const panel = await open(browser, "panel", "/kiosk", errors, (state) => { if (!state.pinned) empty(state); });
+    await panel.waitForTimeout(1500);
+    out.sideSlide = { seen: false };
+    for (let i = 0; i < 10 && !out.sideSlide.seen; i++) {
+      if (await count(panel, "#hero .k-side svg.profile")) {
+        const tap = await panel.evaluate(() => { const e = document.querySelector("#hero .k-side .pf-craft .pf-hit"); if (!e) return null;
+          const r = e.getBoundingClientRect(); return { hex: e.parentNode.dataset.hex, x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+        out.sideSlide = { seen: true, craft: !!tap, fits: await panel.evaluate(() => { const h = document.getElementById("hero"); return h.scrollHeight <= h.clientHeight + 1; }) };
+        if (tap) {
+          await panel.touchscreen.tap(tap.x, tap.y);
+          await panel.waitForSelector("#hero .k-plane", { timeout: 8000 }).catch(() => {});
+          out.sideSlide.tapped = await panel.evaluate((hex) => sessionStorage.getItem("cloudwall.pin") === hex && !!document.querySelector("#hero .k-plane"), tap.hex);
+        }
+        break;
+      }
+      await panel.click("#hero"); await panel.waitForTimeout(350);
+    }
+    await panel.close();
     return out;
   },
 

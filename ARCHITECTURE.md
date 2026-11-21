@@ -188,7 +188,9 @@ site's page (`Origin`, `Sec-Fetch-Site`), and a request body over 16 KB isn't re
 ## The page (`cloudwall/web/`)
 
 One `index.html`, one `style.css`, ES modules in `js/`. The layout (desktop, phone, kiosk) is
-chosen by class names on `<html>`; the modules are the same for all three. They are layered too:
+chosen by class names on `<html>`; the modules are the same for all three. Type is B612 for words
+and B612 Mono for codes (callsigns, airports, type designators, runways, raw reports), all in
+sentence case; the rule is stated at the top of `style.css`. The modules are layered too:
 
 ```
  app                                         polling, the views, the radar's options, the wiring
@@ -199,9 +201,9 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 
 | Module | What it owns |
 |---|---|
-| `app.js` | The conductor: polls `/api/state`, holds the current `state`, switches views, keeps the radar's options, and wires up every button. It draws nothing itself. |
+| `app.js` | The conductor: polls `/api/state`, holds the current `state`, switches views, keeps the radar's options, and wires up every button, the settings menu (sound, night mode) included. It draws nothing itself. |
 | `hero.js` | The flight card for the aircraft overhead, and the desktop's quiet-sky slides. On the desktop the card is as tall as its row: one picture (the route map, else the aircraft's drawing) takes the room the words leave. `fitCard` tries the map in its three places (across under the airports, across and taking the drawing's room, or beside the facts in the drawing's place) and keeps the one that draws the route biggest, by `routeScale`, preferring those that keep the drawing; then lets the spacing, the map and the drawing go when the row is short. On a phone the map is as tall as its route needs (`routeHeight`). |
-| `kiosk.js` | The wall panel's large card and slides. |
+| `kiosk.js` | The wall panel's card (the aircraft overhead with its side elevation on the route line, or the quiet-sky slides) and the count under it. The card has the whole screen unless `[kiosk] view` puts the radar or the Map view beside it; with the card alone the radar comes in only as one of the quiet-sky slides (`body.radar-slide`), and isn't drawn otherwise. The side view along the runways (`profile.js`) is a quiet-sky slide too, drawn in the card, and nothing is under 4% of the screen's height; `test_the_wall_panel` checks that floor. |
 | `emergency.js` | The red takeover for 7500/7600/7700. |
 | `board.js` | The Board grouped by what each aircraft is doing, its two-line form for a phone, and the traffic list and side view beside the radar. |
 | `situation.js` | The traffic picture in words and parts every screen shares: the strip's headline and a phrase for each group that doubles as the key (short in Simple), the grouped list, Simple's side panel (the next aircraft over the house, the landing queue, what's worth a look), and `renderInto`/`keepFocus`, which redraw a part of the page without losing the flap display or the keyboard's place. |
@@ -211,7 +213,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | `weather.js` | The Weather tab and the weather slide. |
 | `timeline.js` | The next few minutes: who comes over the house, who lands, a medical helicopter reaching its hospital, as Simple's line of the next three and Detailed's ten-minute axis (`tickTimeline` moves it every second and keeps its labels apart). |
 | `scope.js` | The radar (chart and ATC styles) and the Map view (the flights on a satellite or street map, in words): a static layer rebuilt on each update and one persistent SVG group per aircraft, moved every frame. Labels are placed on each update (`placeLabels`); every frame, the map's fixed names fade where traffic covers them (`giveWay`). |
-| `parts.js` | What several displays are made of: the logo tile, badges, a flight number as boards set it, "Landing at ...", records. |
+| `parts.js` | What several displays are made of: the logo tile, badges (kept in capitals by the server, shown in sentence case), a flight number as boards set it, "Landing at ...", records. |
 | `map.js` | The ground under the displays: map tiles around home, the hand-drawn map, runways. |
 | `routemap.js` | The flight card's route on a real map: world-layer tiles, borders and places (`maps/world.json`), the great-circle path, the aircraft on it. `frame` fits the path to the box with room for the airport codes; `pickCities` names places by Natural Earth's rank for the map's zoom, those along the route first and spaced along it, each on the side away from the route. |
 | `fresh.js` | One copy for the page of what changes slowly (weather, logbook, heatmap), fetched at most once a minute whoever asks. |
