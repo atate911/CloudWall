@@ -47,7 +47,7 @@ enthusiast reads the situation from: the flight card, every aircraft labelled wi
 and its runway or destination, a short fading track behind each, the final approach courses ticked
 every mile, a list of every aircraft grouped by what it is doing (arrivals with their runway, time
 to touchdown and gap to the one ahead), and a side view along the runways showing who is stacked
-over whom on the 3° approach: heights to scale up to 6,000 ft, with the rest of the sky pressed
+over whom, with the 3° approach drawn while the selected aircraft is an arrival: heights to scale up to 6,000 ft, with the rest of the sky pressed
 together above a double line (so a flight passing at 36,000 ft sits above one at 14,000), each
 aircraft tipped the way it is climbing or descending, the cloud layers at their heights, a dotted
 line standing over home, and the selected aircraft on a line to the ground under it; on the wall panel, the big flight card with the landing queue under

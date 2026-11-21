@@ -1,5 +1,5 @@
 // The side view along the runways: each aircraft at its height over the ground along the airport's
-// main runway direction, the arrivals numbered in landing order down the 3° approach, the cloud
+// main runway direction, the arrivals numbered in landing order, the 3° approach drawn while the selected aircraft is an arrival, the cloud
 // layers from the airport's weather report, home and the airport on the ground line. Beside the
 // radar's view from above, it shows who is stacked over whom. Heights are to scale up to 6,000 ft,
 // where the approach and nearly all the traffic near an airport are, so the approach is a straight
@@ -72,6 +72,9 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
   const ys = (alt) => (alt > TOP ? top0 - band * Math.min(1, Math.log(alt / TOP) / Math.log(CEIL / TOP)) : top0 + (H - top0 - padB) * (1 - clamp(alt, 0, TOP) / TOP));
   const xs = (nm) => padL + ((W - padL - padR) * (nm + range)) / (2 * range);
   const g0 = ys(0), heroHex = state.hero && state.hero.hex;
+  // the 3° approach is the selected aircraft's guide when it is arriving: with a departure or anything
+  // else selected, a path to the runway would be drawn for an aircraft that isn't flying one
+  const approach = ax.landing && !!state.hero && state.hero.activity === "arr";
   let s = `<defs><pattern id="pf-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="el-hatch" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>`;
   // the sky above the true scale, tinted, and the double line where the scale changes
   s += `<rect class="el-upper" x="${padL}" y="${padT}" width="${W - padL - padR}" height="${f1(band)}"><title>Above ${num(TOP)} ft the heights are pressed together</title></rect>`;
@@ -101,7 +104,7 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
   // the runway on the ground, the 3° approach down to it, and home
   s += `<line class="el-rwy" x1="${f1(xs(Math.min(ax.thr, ax.far)))}" x2="${f1(xs(Math.max(ax.thr, ax.far)))}" y1="${f1(g0 - 1.5)}" y2="${f1(g0 - 1.5)}"/>`;
   s += `<text class="el-apt" x="${f1(xs(apX))}" y="${f1(g0 + 16 * fs)}" text-anchor="middle">${esc(state.airport.iata)}</text>`;
-  if (ax.landing) {
+  if (approach) {
     let d = "";
     for (let x = ax.thr; x <= range && (x - ax.thr) * GLIDE_FT_PER_NM <= TOP; x += 0.25) d += `${d ? "L" : "M"}${f1(xs(x))},${f1(ys((x - ax.thr) * GLIDE_FT_PER_NM))}`;
     s += `<path class="el-gs" d="${d}"/>`;
@@ -127,7 +130,7 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
   });
   // the approach's name along it, under the line, where no aircraft is and clear of the names on the ground
   boxes.push({ x0: padL, x1: W - padR, y0: g0 - 3, y1: H });
-  if (ax.landing) {
+  if (approach) {
     const text = "3° approach", len = text.length * 5.2 * fs;
     for (const from of [1.2, 4.5, 8]) {
       const p1 = [xs(ax.thr + from), ys(from * GLIDE_FT_PER_NM)], p2 = [xs(ax.thr + from + 2), ys((from + 2) * GLIDE_FT_PER_NM)];
