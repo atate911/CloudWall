@@ -4,6 +4,12 @@ production = [1995]
 checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/Boeing_777",
+  "https://www.boeing.com/commercial/777",
+  "https://www.boeing.com/content/dam/boeing/v2/airports/acaps/777-200-200ER-300_Rev_E.pdf",
+  "https://www.boeing.com/content/dam/boeing/v2/airports/acaps/777-200LR-300ER-F_Rev_G.pdf",
+  "https://en.wikipedia.org/wiki/General_Electric_GE90",
+  "https://en.wikipedia.org/wiki/General_Electric_GE9X",
+  "https://en.wikipedia.org/wiki/Airbus_A350",
 ]
 
 text = """
@@ -13,10 +19,10 @@ service to fly 180 minutes from the nearest diversion airport, which put a twinj
 ocean route. Its engines are among the largest ever built: the GE90-115B of the 777-300ER is the
 most powerful jet engine in service, its fan 3.25 m across.
 
-Look for its main landing gear, six wheels on each leg in three pairs, which no other twinjet has,
-and for the tail cone, which ends in a flat, upright blade instead of a point. The engines are so
-large that from below they seem to fill the space under the wing, and the wingtips are raked back
-with no winglet.
+Look for its main landing gear, six wheels on each leg in three pairs, which among other twinjets
+only the Airbus A350-1000 has, and for the tail cone, which ends in a flat, upright blade instead of
+a point. The engines are so large that from below they seem to fill the space under the wing, and
+the wingtips have no winglet; on the later long-range models they are raked back.
 """
 
 [facts]
@@ -25,6 +31,8 @@ with no winglet.
 
 [variants.B772]
 name = "Boeing 777-200"
+[variants.B772.facts]
+"Max takeoff weight" = "up to 297,600 kg"
 
 [variants.B77L]
 name = "Boeing 777-200LR or 777F"
@@ -33,9 +41,14 @@ The long-range -200LR flew 21,602 km nonstop from Hong Kong to London, the long 
 Pacific and the Atlantic, in 2005, a record for an airliner at the time. The 777F freighter shares
 its wing and engines.
 """
+[variants.B77L.facts]
+"Range" = "up to 8,500 nm (15,740 km), 777-200LR"
+"Max takeoff weight" = "up to 347,800 kg"
 
 [variants.B773]
 name = "Boeing 777-300"
+[variants.B773.facts]
+"Max takeoff weight" = "up to 299,400 kg"
 
 [variants.B77W]
 name = "Boeing 777-300ER"
@@ -43,3 +56,6 @@ more = """
 The -300ER, at 73.9 m one of the longest airliners flying, is the most common 777, and its two
 GE90-115Bs, each rated at 115,300 lb of thrust, are the only engines it was offered with.
 """
+[variants.B77W.facts]
+"Range" = "up to 7,500 nm (13,890 km)"
+"Max takeoff weight" = "up to 351,500 kg"
