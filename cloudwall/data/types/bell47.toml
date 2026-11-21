@@ -14,13 +14,13 @@ sources = [
 ]
 
 text = """
-Arthur Young spent twelve years alone on his father's farm in Pennsylvania working out how to make a
-helicopter stable, then took his models to Bell in 1941, and the 47 grew from the prototypes he
-built there. In March 1946 it became the first helicopter certified for civil use, and the weighted
-stabilizer bar Young patented, set across the mast below the rotor to hold it level against gusts,
-lived on in Bell's two-bladed rotors through to the Huey. As the Army's H-13 Sioux in Korea it flew
-the wounded from the front in panniers on its skids, earning the name Angel of Mercy, and the film
-and television series M*A*S*H made it the helicopter people picture when they think of that war.
+Arthur Young spent twelve solitary years on his father's Pennsylvania farm experimenting with model
+helicopters, then took his models to Bell in 1941, and the 47 grew from the prototypes he built
+there. In March 1946 it became the first helicopter certified for civil use. The weighted stabilizer
+bar Young patented, set across the mast below the rotor to hold it level against gusts, lived on in
+Bell's two-bladed rotors through to the Huey. As the Army's H-13 Sioux in Korea it flew the wounded
+from the front in panniers on its skids, earning the name Angel of Mercy, and the film and
+television series M*A*S*H made it the helicopter people picture when they think of that war.
 
 The 47G of 1953, the most common model, is the familiar shape: a "soap bubble" canopy, as Young
 called it, an open welded-tube tail boom, two saddle fuel tanks and skids, with a piston engine
@@ -32,7 +32,7 @@ and Britain as well.
 
 [facts]
 "First flight" = "December 1945"
-"Certified" = "March 1946, the first helicopter to be"
+"Certified" = "March 1946, a first for a helicopter"
 "Built" = "over 5,600"
 "Engine" = "Franklin or Lycoming piston, 175–305 hp"
 

@@ -7,6 +7,8 @@ sources = [
   "https://en.wikipedia.org/wiki/Bell_430",
   "https://en.wikipedia.org/wiki/Airwolf",
   "https://en.wikipedia.org/wiki/Bell_Textron",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+  "https://skybrary.aero/aircraft/b230",
 ]
 
 text = """

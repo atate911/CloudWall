@@ -7,6 +7,7 @@ sources = [
   "https://en.wikipedia.org/wiki/Bell_429_GlobalRanger",
   "https://en.wikipedia.org/wiki/Bell_400_TwinRanger",
   "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_Canada_PW200",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
 ]
 
 text = """

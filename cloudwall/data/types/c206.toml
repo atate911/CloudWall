@@ -28,10 +28,6 @@ went in behind the wing, which left the tail further behind the main wheels and 
 landing easier. The 207 was popular with air-taxi operators, and few have been privately owned.
 """
 
-[facts]
-"Cargo doors" = "double, 42 in (107 cm), on the right"
-"Max takeoff weight" = "3,600 lb (1,633 kg), 206H"
-
 [variants.C205]
 name = "Cessna 205"
 production = [1962, 1964]
@@ -44,7 +40,7 @@ name = "Cessna 206 Stationair"
 production = [1964, 2013]
 [variants.C206.facts]
 "Cargo doors" = "double, 42 in (107 cm), on the right"
-"Max takeoff weight" = "3,600 lb (1,633 kg) (206H)"
+"Max takeoff weight" = "3,600 lb (1,633 kg), 206H"
 "Engine" = "Continental IO-520, 285–300 hp; Lycoming IO-540, 300 hp, from 1998"
 
 [variants.T206]
