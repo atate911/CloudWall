@@ -235,6 +235,8 @@ class BrowserTest(unittest.TestCase):
         self.assertTrue(r["seen"] and r["shown"] and r["drawn"] >= 1, r)
         self.assertRegex(r["words"], r"aircraft within \d+ nm|quiet spell")
         self.assertTrue(r["hiddenAfter"])
+        s = q["sideSlide"]                                                   # and the side view, where a tap brings up a card
+        self.assertTrue(s["seen"] and s["craft"] and s["fits"] and s.get("tapped"), s)
 
     def test_an_emergency_takes_the_screen(self):
         e = self.scenario("emergency")

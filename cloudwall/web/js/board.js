@@ -4,7 +4,7 @@
 import { $, esc, num, mmss, ident, altText, phone, since } from "./util.js";
 import { boardFlight, shortType, heardGroups } from "./parts.js";
 import { picture, stripHtml, listHtml, catIcon, kind, where, dir8, until, flightName, overheadSoon, keepFocus, medIcon, hospitalShort } from "./situation.js";
-import { profileHtml } from "./profile.js";
+import { profileHtml, profileFrom } from "./profile.js";
 
 const plausible = (a) => (a.route && a.route.plausible ? a.route : null);
 const city = (p) => (p && (p.city || p.name || p.iata)) || "";
@@ -107,7 +107,7 @@ export function renderMiniBoard(state) {
   if (phone()) { keepFocus(box, () => { box.innerHTML = listHtml(state); }); return; }
   let list = box.querySelector(".mb-list"), prof = box.querySelector(".mb-prof");
   if (!list) {
-    box.innerHTML = `<div class="mb-list"></div><div class="mb-prof"><div class="sheet-title">Side view along the runways</div><div class="prof-box"></div></div>`;
+    box.innerHTML = `<div class="mb-list"></div><div class="mb-prof"><div class="gh pf-head"><span class="gl">Side view</span><span class="gn"></span></div><div class="prof-box"></div></div>`;
     list = box.querySelector(".mb-list"); prof = box.querySelector(".mb-prof");
   }
   const top = list.scrollTop;
@@ -115,6 +115,8 @@ export function renderMiniBoard(state) {
   list.scrollTop = top;
   if (!list._more) { list._more = () => list.classList.toggle("more", list.scrollTop + list.clientHeight < list.scrollHeight - 4); list.addEventListener("scroll", list._more, { passive: true }); }
   list._more();
+  const from = profileFrom(state), note = from ? `along the runways, seen from the ${from}` : "along the runways";
+  if (prof.querySelector(".gn").textContent !== note) prof.querySelector(".gn").textContent = note;
   const pb = prof.querySelector(".prof-box"), r = pb.getBoundingClientRect();
   pb.innerHTML = r.width > 50 && r.height > 50 ? profileHtml(state, Math.round(r.width), Math.round(r.height)) : "";
 }

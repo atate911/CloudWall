@@ -14,6 +14,7 @@ import { medIcon, hospitalWords, arrival, situation, dir8, where, stripHtml, pic
 import { windRose, runwayHeadings, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
 import { drawing } from "./silhouette.js";
 import { typeInfo, kindPlate } from "./plate.js";
+import { profileHtml, profileFrom } from "./profile.js";
 
 const SLIDE_SECONDS = 12;
 let cur = { hex: null }, slide = 0, slideAt = Date.now(), shownKey = null, radarSlide = false;
@@ -201,6 +202,21 @@ function radarSlideHtml(state) {
 }
 const onRadar = (on) => document.body.classList.toggle("radar-slide", on);
 
+// The side view along the runways among the quiet-sky slides, while anything is landing or taking
+// off: the desktop's drawing, its lettering enlarged with the panel's height to read from the room.
+// A tap on an aircraft in it brings up its card (app.js).
+function sideSlideHtml(state) {
+  const from = profileFrom(state);
+  return `<div class="k-card k-slide k-side"><div class="k-kicker">Side view along the runways${from ? `, from the ${esc(from)}` : ""}</div><div class="prof-box" id="k-side"></div></div>`;
+}
+function drawSide(state) {
+  const box = $("k-side"), r = box && box.getBoundingClientRect();
+  if (!r || r.width < 50 || r.height < 50) return;
+  const z = Math.max(1, Math.min(innerHeight / 300, r.height / 135));
+  box.innerHTML = profileHtml(state, Math.round(r.width / z), Math.round(r.height / z));
+}
+const sideWorth = (state) => { const g = picture(state).groups; return g.arr.length + g.dep.length > 0; };
+
 function quietHtml(state) {
   const n = state.aircraft.filter((a) => !a.on_ground).length;
   return `<div class="k-card k-slide">
@@ -216,6 +232,7 @@ function showIdle(el, state) {
   const slides = [state.next ? "next" : "quiet"];
   if ((state.heard || []).length) slides.unshift("military");
   if (radarSlide && picture(state).air.length) slides.splice(1, 0, "radar");      // something to see on it
+  if (sideWorth(state)) slides.splice(radarSlide && picture(state).air.length ? 2 : 1, 0, "side");
   if ((state.tfrs || []).some((t) => t.active && !t.drones_only)) slides.push("airspace");
   if (wx && wx.now) slides.push("weather");
   if (log && log.today > 0) slides.push("today");
@@ -226,6 +243,7 @@ function showIdle(el, state) {
   onRadar(kind === "radar");
   if (key === shownKey) {
     if (kind === "next" && $("k-next")) $("k-next").textContent = mmss(Math.max(0, state.next.cpa_s - since(state)));
+    if (kind === "side") drawSide(state);          // the aircraft move along it
     return;
   }
   const again = shownKey && shownKey.startsWith("radar") && kind === "radar";     // the same slide, its words updated
@@ -236,6 +254,7 @@ function showIdle(el, state) {
   else if (kind === "today") el.innerHTML = todaySlideHtml(log, state);
   else if (kind === "military") el.innerHTML = militaryHtml(state);
   else if (kind === "airspace") el.innerHTML = airspaceHtml(state);
+  else if (kind === "side") { el.innerHTML = sideSlideHtml(state); drawSide(state); }
   else {
     el.innerHTML = weatherSlideHtml(wx, state);
     // drawn at a fixed size and scaled to its box, so its lettering grows with it

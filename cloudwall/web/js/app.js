@@ -329,7 +329,21 @@ function noticeNew() {
   }
   seenNotable = notable; lastNext = next;
 }
+// The same aircraft, wherever it is drawn: pointing at one on the radar, in the list, on the side
+// view or on the timeline rings it on the others too, so each view can be read against the rest.
+// The lists and the side view are redrawn with every answer, so the mark is put back after each.
+let pointed = null;
+function applyPointed() {
+  for (const e of document.querySelectorAll(":is(main, header) .pointed")) if (e.dataset.hex !== pointed) e.classList.remove("pointed");
+  if (pointed) for (const e of document.querySelectorAll(`:is(main, header) [data-hex="${CSS.escape(pointed)}"]`)) e.classList.add("pointed");
+}
+function point(hex) { if (hex !== pointed) { pointed = hex; applyPointed(); } }
+if (!KIOSK) {
+  document.addEventListener("pointerover", (e) => { if (e.pointerType !== "touch") point(e.target.closest?.(":is(main, header) [data-hex]")?.dataset.hex || null); });
+  document.documentElement.addEventListener("pointerleave", () => point(null));
+}
 function applyFresh() {
+  applyPointed();
   const now = Date.now();
   for (const e of document.querySelectorAll(":is(main, header) .fresh[data-hex]:not(.craft)")) {
     if (!fresh.has(e.dataset.hex)) { e.classList.remove("fresh"); e.style.animationDelay = ""; }
@@ -406,7 +420,7 @@ document.addEventListener("error", (e) => {
 // a tap on the hushed wall panel wakes it, and does nothing else
 document.addEventListener("click", (e) => { if (document.body.classList.contains("hush")) { e.stopImmediatePropagation(); e.preventDefault(); wake(); } }, true);
 document.addEventListener("click", (e) => {
-  const b = e.target.closest(".mb-row, .tr[data-hex], .q-row[data-hex], .n-row[data-hex]");
+  const b = e.target.closest(".mb-row, .tr[data-hex], .q-row[data-hex], .n-row[data-hex], .pf-craft[data-hex]");
   if (b && !b.closest("#board")) { pin(b.dataset.hex); return; }
   const d = e.target.closest("button[data-dens]");
   if (d) {      // Simple or Detailed, for this screen; a button wins over the address
@@ -432,7 +446,8 @@ $("radar").addEventListener("click", (e) => {
   }
 });
 $("hero").addEventListener("click", (e) => {
-  if (!state || e.target.closest(".q-row")) return;          // the landing queue, on the wall panel: pinned above
+  // an aircraft in the wall panel's side view: a tap selects it (the click handler above)
+  if (!state || e.target.closest(".q-row, .pf-craft")) return;
   if (e.target.closest("#em-hide")) { emergencies().forEach((a) => hidden.add(emKey(a))); render(); return; }
   if (emergencies().length) return;
   if (KIOSK) { if (myPin) pin(null); else if (!state.hero) { kioskNext(); render(); } return; }

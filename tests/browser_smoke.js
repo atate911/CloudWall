@@ -13,7 +13,7 @@
 const { chromium, devices } = require("playwright");
 
 const BASE = process.argv[2];
-const SIZES = { desktop: { viewport: { width: 1600, height: 950 } }, kiosk: { viewport: { width: 1024, height: 600 } },
+const SIZES = { desktop: { viewport: { width: 1600, height: 950 } }, kiosk: { viewport: { width: 1024, height: 600 } }, panel: { viewport: { width: 1280, height: 400 }, hasTouch: true },
   wide: { viewport: { width: 2000, height: 730 } }, phone: { ...devices["iPhone 13"] } };
 
 async function open(browser, size, path, errors, tamper, before) {
@@ -374,6 +374,27 @@ const SCENARIOS = {
       await page.click("#hero"); await page.waitForTimeout(350);
     }
     await page.close();
+    // the side view along the runways is a slide too, on a touchscreen panel much wider than tall: a
+    // tap on an aircraft in it brings up that aircraft's card
+    // (the sky kept quiet until the panel follows a flight: then the server's answer is left as it is)
+    const panel = await open(browser, "panel", "/kiosk", errors, (state) => { if (!state.pinned) empty(state); });
+    await panel.waitForTimeout(1500);
+    out.sideSlide = { seen: false };
+    for (let i = 0; i < 10 && !out.sideSlide.seen; i++) {
+      if (await count(panel, "#hero .k-side svg.profile")) {
+        const tap = await panel.evaluate(() => { const e = document.querySelector("#hero .k-side .pf-craft .pf-hit"); if (!e) return null;
+          const r = e.getBoundingClientRect(); return { hex: e.parentNode.dataset.hex, x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+        out.sideSlide = { seen: true, craft: !!tap, fits: await panel.evaluate(() => { const h = document.getElementById("hero"); return h.scrollHeight <= h.clientHeight + 1; }) };
+        if (tap) {
+          await panel.touchscreen.tap(tap.x, tap.y);
+          await panel.waitForSelector("#hero .k-plane", { timeout: 8000 }).catch(() => {});
+          out.sideSlide.tapped = await panel.evaluate((hex) => sessionStorage.getItem("cloudwall.pin") === hex && !!document.querySelector("#hero .k-plane"), tap.hex);
+        }
+        break;
+      }
+      await panel.click("#hero"); await panel.waitForTimeout(350);
+    }
+    await panel.close();
     return out;
   },
 

@@ -142,7 +142,11 @@ function mapLayer(home, k, hasBasemap, charted = false) {
 }
 
 // Runways, and extended centrelines 12 nm out for the main direction (the longest runway and
-// its parallels), so a crosswind runway doesn't draw approach lines across the scope.
+// its parallels), so a crosswind runway doesn't draw approach lines across the scope. The chart
+// style draws them on the approach side only, for the runways in use, when it knows which way the
+// airport is landing (finalCourses): a line off the departure end would promise arrivals from a
+// side they aren't coming from. With the direction unknown, and in the ATC style, whose video map
+// shows both finals whichever is in use, they run out from both ends.
 function runwayLayer(state, k) {
   const home = state.home, rws = runwaysFor(state).map((r) => {
     const [a, b] = r.ends.map(([lat, lon]) => offset(home, { lat, lon }));
@@ -151,12 +155,13 @@ function runwayLayer(state, k) {
   });
   if (!rws.length) return "";
   const main = rws.reduce((m, r) => (r.len > m.len ? r : m)), far = 12;
+  const finals = opt.atc ? "" : finalCourses(state, k);
   let s = "", ticks = "";
   // the ATC style's video map marks each final approach course every mile (every 5 when that's
   // too close together to read), as terminal video maps do
   const every = k >= 4 ? 1 : 5;
   for (const r of rws) {
-    if (Math.abs(r.ux * main.ux + r.uy * main.uy) <= 0.985) continue;   // not within about 10° of the main direction
+    if (finals || Math.abs(r.ux * main.ux + r.uy * main.uy) <= 0.985) continue;   // not within about 10° of the main direction
     s += `<line class="approach" x1="${(r.a.x - r.ux * far) * k}" y1="${-(r.a.y - r.uy * far) * k}" x2="${(r.b.x + r.ux * far) * k}" y2="${-(r.b.y + r.uy * far) * k}"/>`;
     if (!opt.atc) continue;
     for (let d = every; d <= 10; d += every) {
@@ -167,7 +172,7 @@ function runwayLayer(state, k) {
     }
   }
   if (ticks) s += `<path class="approach-tick" d="${ticks}"/>`;
-  if (!opt.atc) s += finalCourses(state, k);
+  s += finals;
   for (const r of rws) s += `<line class="runway" x1="${r.a.x * k}" y1="${-r.a.y * k}" x2="${r.b.x * k}" y2="${-r.b.y * k}"/>`;
   return s;
 }
@@ -186,11 +191,12 @@ function finalCourses(state, k) {
     ends.push({ n, t, ux: (t.x - f.x) / len, uy: (t.y - f.y) / len });
   }
   if (!ends.length) return "";
-  let d = "", far = null;
+  let d = "", far = null, lines = "";
   for (const e of ends) {
     const x0 = e.t.x * k, y0 = -e.t.y * k, ux = e.ux, uy = -e.uy;
     // out to the disc's edge, at most 16 nm
     const b = x0 * ux + y0 * uy, L = Math.min(16 * k, -b + Math.sqrt(Math.max(0, b * b - (x0 * x0 + y0 * y0 - 99 * 99))));
+    lines += `<line class="approach" x1="${x0.toFixed(2)}" y1="${y0.toFixed(2)}" x2="${(x0 + ux * L).toFixed(2)}" y2="${(y0 + uy * L).toFixed(2)}"/>`;
     for (let m = 1; m * k <= L; m++) {
       const h = m % 5 ? 1 : 2, cx = x0 + ux * m * k, cy = y0 + uy * m * k;
       d += `M${(cx - uy * h).toFixed(2)},${(cy + ux * h).toFixed(2)}L${(cx + uy * h).toFixed(2)},${(cy - ux * h).toFixed(2)}`;
@@ -202,7 +208,7 @@ function finalCourses(state, k) {
   const same = ends.length > 1 && ends.every((e) => e.n.slice(0, -1) === ends[0].n.slice(0, -1));
   const label = same ? `${ends[0].n.slice(0, -1)}${ends.map((e) => e.n.slice(-1)).join("/")}` : ends.map((e) => e.n).join(" ");
   placeBoxes.push({ x0: far.x - 8, x1: far.x + 8, y0: far.y - 3, y1: far.y + 3 });
-  return `<path class="final-tick" d="${d}"/><text class="final-label" x="${far.x.toFixed(2)}" y="${(far.y + 1.5).toFixed(2)}" text-anchor="middle">${esc(label)}</text>`;
+  return `${lines}<path class="final-tick" d="${d}"/><text class="final-label" x="${far.x.toFixed(2)}" y="${(far.y + 1.5).toFixed(2)}" text-anchor="middle">${esc(label)}</text>`;
 }
 
 // Ring labels sit on the north-east diagonal, clear of the N/E letters and of most traffic.

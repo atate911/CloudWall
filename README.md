@@ -36,15 +36,27 @@ is carried on along its track, faded, its card marked "Position estimated".
 screen draws. *Simple* shows what someone in the house wants to know right now: the next aircraft
 over the house, the landing queue with a countdown for each, and what's worth a look (a medical
 flight and the hospital it's going to, military traffic, a rare type, a balloon or glider, jets heard
-with no position). Its radar numbers the
+with no position). Beside the countdown, a small picture says where to look: the
+house, the sky from the horizon to straight up, and a line of sight to the aircraft at the angle to
+raise your eyes by, with which way to face in words ("look northwest, low"). Each row of the landing queue has a line along its foot
+that runs down with its countdown, ten minutes across, so landings bunched together or far apart
+show at a glance. Its radar numbers the
 arrivals, names the selected aircraft and anything worth a look, and leaves the rest unlabelled;
 when the sky is empty it shows the flight card's quiet-sky slides. *Detailed* adds everything an
 enthusiast reads the situation from: the flight card, every aircraft labelled with its altitude
 and its runway or destination, a short fading track behind each, the final approach courses ticked
 every mile, a list of every aircraft grouped by what it is doing (arrivals with their runway, time
 to touchdown and gap to the one ahead), and a side view along the runways showing who is stacked
-over whom on the 3° approach. On the wall panel the two differ only on its radar, when it shows
-one: Simple names the aircraft that matter, Detailed labels every one. The desktop starts Detailed, a phone and the
+over whom, with the 3° approach drawn while the selected aircraft is an arrival: heights to scale
+up to 6,000 ft, with the rest of the sky pressed together above a double line (so a flight passing at 36,000 ft sits above one at 14,000), each
+aircraft tipped the way it is climbing or descending, the cloud layers at their heights, a dotted
+line standing over home, and the selected aircraft on a line to the ground under it. To find an
+aircraft from one view in another, point at it: on the radar, in the list, on the side view or on
+the timeline, it is ringed on the radar and the side view (and named there) and its row is tinted;
+a click on it in the side view selects it, as on the radar. On the wall panel the side view is one
+of the quiet-sky slides, enlarged to read from the room, and a tap on an aircraft in it brings up
+its card. There Simple and Detailed differ only on the radar, when it shows one: Simple names the
+aircraft that matter, Detailed labels every one. The desktop starts Detailed, a phone and the
 wall panel Simple; each screen remembers its own choice, `?density=simple` or `detailed` sets it
 in the address, and `[kiosk] density` sets the wall panel's.
 
@@ -52,7 +64,8 @@ in the address, and `[kiosk] density` sets the wall panel's.
   departure board shows it (with "operated by" for regional partners), the airline's logo,
   the route with distance flown and to go, the departure and arrival times under the airports
   and the flight time between them, altitude and climb or descent rate (with the
-  altitude the autopilot is heading for, when it reports one), speed, distance and heading,
+  altitude the autopilot is heading for, when it reports one), speed, distance and how high up
+  to look ("2.3 mi NW, 13° up"), heading,
   and a photo of the airframe beside when it passes the house, the aircraft type,
   registration and build year, and what the autopilot is doing. The departure time comes from
   a paid route provider (see below); without one, the card shows an estimated arrival only.
@@ -288,7 +301,7 @@ board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk 
 |---|---|---|
 | `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, and the settings menu (sound and night mode). On screens 1200 px wide and up, Detailed adds a live list of every aircraft grouped by what it is doing, with the side view along the runways under it; click a flight to follow it. The arrow on the divider between the radar and the list hides or shows the list, and dragging the divider gives the radar more or less room (double-click it for the usual width); the flight card keeps its size, and each screen remembers its setting. On a wide, short window the radar's column keeps to the width of its disc and the card and the list share the rest; when the card is short, its route map moves beside the facts or takes the drawing's room (whichever shows the route bigger), then gives way, then the aircraft drawing does (the facts go into columns), so nothing runs into anything else. Simple on a wide window puts what's worth a look in a third column, past the radar. |
 | `http://<server>:5050/` on a phone | A phone in the hand | The same tabs and switches, laid out for a phone. Upright, the page scrolls: the flight card at full width, then a square radar with its switches above and below it, the tabs along the foot and the status line held at the top. The Board becomes a two-line list (flight, route and when it's overhead; airline, type, altitude and speed), and Weather and Logbook stack into one column. Turned sideways, the card and radar sit side by side. Tapping a blip on the radar brings its flight card into view. |
-| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Made to hang in a room and read from the sofa: one sheet of chart paper with corner marks at the screen's corners, and nothing on it smaller than 4% of the screen's height (about 7 mm on a 13.3" panel), so every word reads from three or four metres away. Across the top, the place, the next thing to happen after the aircraft on the card ("0:45 AS 67 overhead", "1:40 AS 2162 lands") and the clock. Then the aircraft over the house across the whole screen: its flight number beside its airline logo and type; where it's going, its own side elevation riding the line between the airports at its place along the way, with when it left, how far it has come and has to go, and when it gets in (with no route, the aircraft drawn beside where it is and which way it's heading); and how high, how fast and how soon it passes overhead (once past, how far away and which way to look). Along the foot, how many aircraft are about and any heard with no position. `[kiosk] view = "radar"` puts the radar beside the card, with only what reads from across the room (the aircraft and their labels, the runways and the compass points), and `"map"` the Map view. When nothing is overhead, the card turns to slides: the next aircraft over the house, the radar (with the card alone, and anything on it) beside what is on it in words, the weather with a wind rose, the day so far, a flight restriction, fighters heard. An emergency squawk turns the screen red until it is cleared. |
+| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Made to hang in a room and read from the sofa: one sheet of chart paper with corner marks at the screen's corners, and nothing on it smaller than 4% of the screen's height (about 7 mm on a 13.3" panel), so every word reads from three or four metres away. Across the top, the place, the next thing to happen after the aircraft on the card ("0:45 AS 67 overhead", "1:40 AS 2162 lands") and the clock. Then the aircraft over the house across the whole screen: its flight number beside its airline logo and type; where it's going, its own side elevation riding the line between the airports at its place along the way, with when it left, how far it has come and has to go, and when it gets in (with no route, the aircraft drawn beside where it is and which way it's heading); and how high, how fast and how soon it passes overhead (once past, how far away and which way to look). Along the foot, how many aircraft are about and any heard with no position. `[kiosk] view = "radar"` puts the radar beside the card, with only what reads from across the room (the aircraft and their labels, the runways and the compass points), and `"map"` the Map view. When nothing is overhead, the card turns to slides: the next aircraft over the house, the radar (with the card alone, and anything on it) beside what is on it in words, the side view along the runways while anything is landing or taking off (tap an aircraft in it for its card), the weather with a wind rose, the day so far, a flight restriction, fighters heard. An emergency squawk turns the screen red until it is cleared. |
 
 The phone layout is chosen by screen size (up to 700 px wide, or 500 px tall when turned sideways),
 so it follows the phone as it turns and also suits a narrow desktop window. `?mode=phone` forces it and

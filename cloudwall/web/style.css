@@ -838,6 +838,10 @@ body.hush::after { display: none; }
 .kiosk body.card-only.radar-slide #scope { display: flex; grid-column: 2; grid-row: 1 / -1; }
 .kiosk body.card-only.radar-slide #hero { grid-row: 1 / -1; }
 .kiosk body.card-only.radar-slide #k-cap { display: none; }
+/* the quiet sky's side view along the runways: the desktop's drawing, enlarged to fill the card */
+.k-side { justify-content: flex-start; }
+.k-side .prof-box { flex: 1; min-height: 0; }
+.k-side .profile { width: 100%; height: 100%; display: block; }
 .kiosk .k-onradar .sit { flex: none; display: flex; flex-direction: column; gap: 3.4vh; }
 .kiosk .k-onradar .sit h1 { font: 700 7vh/1.1 var(--sans); letter-spacing: -.02em; color: var(--ink); }
 .k-onradar .pic.short { display: flex; flex-direction: column; gap: 1.8vh; margin: 0; font-size: 5vh; line-height: 1.2; color: var(--ink-2); }
@@ -1492,6 +1496,22 @@ html.phone #radar .helipad-label { font-size: 5.4px; }
 .so-nums span { font-size: .85rem; color: var(--slate); }
 .q-row { display: grid; grid-template-columns: 1.8rem auto minmax(0, 1fr) auto; align-items: center; gap: .8rem; width: 100%; text-align: left;
   padding: .45rem 0; border-top: 1px solid var(--rule); font-size: 1.05rem; }
+/* how soon it lands, as a line along the foot of its row that runs down with the countdown: the
+   rows' lines step down the queue, so landings bunched together or far apart show at a glance */
+.q-row { position: relative; }
+.q-row::after { content: ""; position: absolute; left: 0; bottom: -1px; height: 2px; width: var(--left, 0%); background: var(--c-arr); opacity: .7;
+  transition: width 1s linear; pointer-events: none; }
+/* where to look: the angle up from the horizon, from the house (situation.js, skyLook) */
+.sky { display: block; overflow: visible; }
+.sky .sk-arc { fill: none; stroke: var(--slate); stroke-width: .7; stroke-dasharray: 1 1.6; }
+.sky .sk-gnd { fill: none; stroke: var(--ink-2); stroke-width: .9; }
+.sky .sk-sight { fill: none; stroke: var(--ink-2); stroke-width: .9; stroke-linecap: round; }
+.sky .sk-house { fill: var(--sheet); stroke: var(--ink); stroke-width: .9; stroke-linejoin: round; }
+.sky .sk-dot { fill: var(--magenta); stroke: var(--sheet); stroke-width: .6; }
+.so-look .sky { height: 2.42rem; width: 2.84rem; }
+.so-look .sl-b, html.phone .so-look .sl-w { display: none; }
+html.phone .so-look .sl-b { display: inline; }
+html.phone .so-nums { gap: 1rem; } html.phone .so-nums > div + div { padding-left: .9rem; }
 .q-row .seq { width: 1.5rem; height: 1.5rem; font-size: .78rem; }
 .q-fl { font-weight: 700; white-space: nowrap; } .q-from { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .q-t { font-variant-numeric: tabular-nums; }
@@ -1534,6 +1554,20 @@ html.phone #radar .helipad-label { font-size: 5.4px; }
 .el-grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 3; }
 .el-tick, .el-cloud-l, .el-gs-l { font: 10px var(--sans); fill: var(--slate); font-variant-numeric: tabular-nums; }
 .el-cloud-l { font-family: var(--sans); font-variant-numeric: tabular-nums; }
+.el-upper { fill: color-mix(in srgb, var(--blue) 6%, transparent); }
+.el-break { fill: none; stroke: var(--slate); stroke-width: .8; opacity: .7; }
+.el-mile { stroke: var(--slate); stroke-width: 1; }
+.el-over { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 1 4; stroke-linecap: round; opacity: .7; }
+.pf-stem { stroke: var(--magenta); stroke-width: 1; opacity: .45; }
+.pf-craft { cursor: pointer; }
+.pf-hit { fill: transparent; stroke: none; }
+/* the same aircraft, pointed at in any view: ringed on the radar and the side view, its row tinted */
+.pf-craft.pointed { opacity: 1; }
+.pf-craft.pointed .pf-hit { stroke: var(--ink); stroke-width: 1.2; vector-effect: non-scaling-stroke; fill: color-mix(in srgb, var(--ink) 6%, transparent); }
+.pf-lab.off { display: none; } .pf-lab.off.pointed { display: inline; }
+#radar .craft.pointed > circle:first-child { stroke: var(--ink); stroke-width: .7; fill: color-mix(in srgb, var(--ink) 7%, transparent); }
+#scope:is(.map, .atc) #radar .craft.pointed > circle:first-child { stroke: #fff; }
+.tr.pointed, .tl-e.pointed { background: color-mix(in srgb, var(--ink) 8%, transparent); }
 .el-ground { stroke: var(--ink-2); stroke-width: 1.3; }
 .el-hatch { stroke: var(--slate); stroke-width: .8; opacity: .55; }
 .el-rwy { stroke: var(--ink); stroke-width: 3.2; }
@@ -1639,6 +1673,7 @@ html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #side { display: 
   html.desk:not(.phone) #view-now > #scope { grid-row: 3; }
 }
 
+
 /* ---- the phone ---- */
 html.phone :is(#strip, .board-strip) { display: flex; flex-direction: column; align-items: stretch; gap: .55rem; }
 /* magenta is the selected aircraft's alone: a countdown to overhead is bold ink */
@@ -1651,6 +1686,7 @@ html.phone .ss { padding: 1rem; gap: 1rem; }
 html.phone .so-flight { font-size: 2.4rem; }
 html.phone .so-what { font-size: 1rem; }
 html.phone .so-nums b { font-size: 1.8rem; }
+html.phone .so-look .sky { height: 1.9rem; width: 2.2rem; }
 html.phone .q-row { font-size: .95rem; }
 html.phone .gn { display: none; }
 html.phone body.d-detailed #mini-board { display: block; }
