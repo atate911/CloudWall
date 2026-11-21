@@ -34,7 +34,7 @@ const SKELETON = `
     <div class="metric"><div class="label">Altitude</div><div class="v"><span id="h-alt"></span> <small>ft</small> <span id="h-arrow"></span></div><div class="s" id="h-vrate"></div></div>
     <div class="metric"><div class="label">Speed</div><div class="v"><span id="h-gs"></span> <small>kt</small></div><div class="s" id="h-mph"></div></div>
     <div class="metric"><div class="label">Distance</div><div class="v"><span id="h-dist"></span> <small>nm</small></div><div class="s" id="h-dist2"></div></div>
-    <div class="metric m-look"><div class="label">Heading</div><div class="v" id="h-hdg"></div><div class="s" id="h-phase"></div><div class="m-sky" id="h-sky"></div></div>
+    <div class="metric"><div class="label">Heading</div><div class="v" id="h-hdg"></div><div class="s" id="h-phase"></div></div>
   </div>
   <div class="h-bottom">
     <div class="media" id="h-media"><div class="sil-box" id="h-sil"></div></div>
@@ -203,10 +203,9 @@ function showHero(el, a, state) {
   roll($("h-gs"), a.gs);
   $("h-mph").textContent = num((a.gs || 0) * 1.15078) + " mph";
   roll($("h-dist"), a.dist, (x) => x.toFixed(1));
-  // where it is in the sky: how high up to look, beside how far away, and the dial beside its heading
-  const look = skyLook(a, state), sky = look ? look.svg : "";
+  // how high up to look, beside how far away
+  const look = skyLook(a, state);
   $("h-dist2").textContent = `${(a.dist * 1.15078).toFixed(1)} mi ${a.compass}${look ? `, ${Math.round(look.el)}° up` : ""}`;
-  if ($("h-sky")._html !== sky) $("h-sky").innerHTML = $("h-sky")._html = sky;
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
   $("h-phase").textContent = a.local ? localWords(a, state)
     : a.track == null ? "" : `Toward the ${POINTS[Math.round(a.track / 22.5) % 16]}`;

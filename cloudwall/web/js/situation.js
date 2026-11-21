@@ -122,32 +122,22 @@ export function where(a, state, { town = false } = {}) {
 const trend = (a) => ((a.vrate || 0) > 300 ? "climbing" : (a.vrate || 0) < -300 ? "descending" : "level");
 const arrow = (a) => ((a.vrate || 0) > 300 ? "↑" : (a.vrate || 0) < -300 ? "↓" : "");
 
-// ---- where to look: the sky over the house as a small dial ----
-// The rim is the horizon and the middle straight up, north at the top as on the radar. The dot is
-// the aircraft now, in the selected aircraft's magenta; the line is its way across the sky, faint
-// where it has been. One near the rim is low and far off; one crossing the middle goes right overhead.
-const LOOK_S = 300, SKY_R = 10;        // how far along its track the line is drawn, each way
+// ---- where to look: how far up from the horizon, drawn from the side ----
+// The house on the ground, the sky a quarter circle from the horizon to straight up, and a line of
+// sight from the house to the aircraft, a dot in the selected aircraft's magenta: the angle to raise
+// your eyes by. The words beside it say which way to face ("look northwest, low").
 export function skyLook(a, state) {
   if (!a || a.lat == null || a.alt == null || a.on_ground || !state.home) return null;
-  const at = (dt) => {
-    const p = azEl(state.home, projected(a, dt), Math.max(0, a.alt + ((a.vrate || 0) * dt) / 60));
-    const el = clamp(p.el, 0, 90), r = SKY_R * (1 - el / 90);
-    return { az: p.az, el, x: r * Math.sin(p.az * RAD), y: -r * Math.cos(p.az * RAD) };
-  };
-  const t = since(state), now = at(t), pts = (from, to) => {
-    const out = [];
-    for (let dt = from; dt <= to; dt += 10) out.push(at(t + dt));
-    return out.map((q) => `${q.x.toFixed(2)},${q.y.toFixed(2)}`).join(" ");
-  };
-  const moving = (a.gs || 0) > 40;
-  const high = now.el >= 75 ? "straight up" : now.el >= 55 ? "high up" : now.el >= 30 ? "halfway up" : now.el >= 10 ? "low" : "very low";
-  const words = now.el >= 75 ? "look straight up" : `look ${dir8(now.az)}, ${high}`;
-  const brief = now.el >= 75 ? "straight up" : `${short8(now.az)}, ${high}`;        // for a phone's width
-  const svg = `<svg class="sky" viewBox="-12.5 -12.5 25 25" role="img" aria-label="${esc(words)}"><title>Where it is in the sky: the rim is the horizon, the middle straight up, north at the top</title>` +
-    `<circle class="sk-h" r="${SKY_R}"/><circle class="sk-m" r="${SKY_R / 2}"/><path class="sk-n" d="M0,${-SKY_R}V${-SKY_R - 2.2}"/><path class="sk-z" d="M-1.2,0H1.2M0,-1.2V1.2"/>` +
-    (moving ? `<polyline class="sk-past" points="${pts(-LOOK_S, 0)}"/><polyline class="sk-next" points="${pts(0, LOOK_S)}"/>` : "") +
-    `<circle class="sk-dot" cx="${now.x.toFixed(2)}" cy="${now.y.toFixed(2)}" r="1.7"/></svg>`;
-  return { svg, words, brief, el: now.el, az: now.az };
+  const t = since(state), p = azEl(state.home, projected(a, t), Math.max(0, a.alt + ((a.vrate || 0) * t) / 60));
+  const el = clamp(p.el, 0, 90), R = 17, e = Math.max(el, 3) * RAD, x = R * Math.cos(e), y = -R * Math.sin(e);
+  const high = el >= 75 ? "straight up" : el >= 55 ? "high up" : el >= 30 ? "halfway up" : el >= 10 ? "low" : "very low";
+  const words = el >= 75 ? "look straight up" : `look ${dir8(p.az)}, ${high}`;
+  const brief = el >= 75 ? "straight up" : `${short8(p.az)}, ${high}`;        // for a phone's width
+  const svg = `<svg class="sky" viewBox="-5 -20 27 23" role="img" aria-label="${esc(words)}"><title>How far up to look: ${Math.round(el)}° above the horizon</title>` +
+    `<path class="sk-arc" d="M${R},0A${R},${R} 0 0 0 0,${-R}"/><path class="sk-gnd" d="M-5,0H22"/>` +
+    `<path class="sk-sight" d="M0,-2.5L${x.toFixed(2)},${y.toFixed(2)}"/><path class="sk-house" d="M-2.6,0V-3L0,-5.4L2.6,-3V0Z"/>` +
+    `<circle class="sk-dot" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="1.9"/></svg>`;
+  return { svg, words, brief, el, az: p.az };
 }
 
 // ---- the situation: a headline, and a phrase for each group led by its icon ----
