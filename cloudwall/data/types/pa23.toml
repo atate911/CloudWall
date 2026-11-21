@@ -18,17 +18,17 @@ text = """
 Piper's first twin began as the Twin Stinson, a design that came with the Stinson division of
 Consolidated Vultee when Piper bought it. The prototype, with twin fins and two 125 hp Lycomings,
 first flew in March 1952 and performed poorly, so Piper gave it a single fin, an all-metal rear
-fuselage and 150 hp engines. That became the Apache, built from 1954 and priced well below the
-Cessna 310 and Beech's Travel Air. It is a stubby, rounded aircraft with an upright, round-topped
-fin. The Aztec that followed in 1959 has 250 hp six-cylinder engines, a swept, square-cut fin and,
-from its second model, a longer nose; the Apache 235 of 1962 borrowed the Aztec's engines and tail,
-and flight plans file it as an Aztec.
+fuselage and 150 hp engines. That became the Apache, built from 1954, and by 1958 it cost well under
+the Cessna 310 and Beech's new Travel Air. It is a stubby, rounded aircraft with an upright,
+round-topped fin. The Aztec that followed in 1959 has 250 hp six-cylinder engines, a swept,
+square-cut fin and, from its second model, a longer nose; the Apache 235 of 1962 borrowed the
+Aztec's engines and tail, and is filed in flight plans as an Aztec.
 
-Max Conrad flew an Aztec westward around the world in 1961, landing back in Miami nine days after
-he left it, for a speed record, and the US Navy bought 20 as the UO-1, later the U-11A. Later
-Aztecs seat six, many of them turbocharged, and Piper built them until 1981. The racing driver
-Graham Hill was flying a Turbo Aztec when it hit trees on a golf course near Elstree in fog in
-1975, killing him and the five members of his Embassy Hill team on board.
+Max Conrad flew an Aztec westward around the world in 1961, landing back in Miami nine days after he
+left it, for a speed record, and the US Navy bought 20 as the UO-1, later the U-11A. Later Aztecs
+seat six, many of them turbocharged, and Piper built them until 1981. The racing driver Graham Hill
+was flying a Turbo Aztec when it hit trees on a golf course near Elstree in fog in 1975, killing him
+and the five members of his Embassy Hill team on board.
 """
 
 [facts]
@@ -46,5 +46,5 @@ name = "Piper PA-23-250 Aztec or Apache 235"
 production = [1959, 1981]
 [variants.PA27.facts]
 "Built" = "4,811 Aztecs"
-"Engines" = "2 × Lycoming O-540 or IO-540, 250 hp (235 hp on the Apache 235)"
+"Engines" = "2 × Lycoming O-540, IO-540 or turbocharged TIO-540, 250 hp (235 hp on the Apache 235)"
 "Max takeoff weight" = "5,200 lb (Aztec F)"

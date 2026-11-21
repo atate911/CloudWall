@@ -14,18 +14,18 @@ sources = [
 text = """
 Piper's single-engined Comanche with a 160 hp four-cylinder Lycoming on each wing, an idea first
 tried by Ed Swearingen, who converted a Comanche in San Antonio in 1961. It was light and slippery
-for a twin: 320 hp in all gave it a top speed of 178 knots, and with tip tanks it carried 120 US
-gallons. In December 1964 Max Conrad flew one nonstop from Cape Town to St Petersburg, Florida,
-6,846 nm, for a distance record, and Prince William of Gloucester flew his own to diplomatic posts
-in Nigeria and Japan.
+for a twin, and 320 hp in all gave it a top speed of 178 knots. In December 1964 Max Conrad flew one
+nonstop from Cape Town to St Petersburg, Florida, 6,846 nm, for a distance record, and Prince
+William of Gloucester flew his own to diplomatic posts in Nigeria and Japan.
 
 In the 1960s it had a run of crashes in which pilots lost control at low speed after an engine
-failed or was throttled back in training. FAA flight tests and NASA wind-tunnel tests found nothing
-unusual in the aircraft, and the crashes fell away once the FAA changed how multi-engine flying was
-taught, but Piper's answer was the PA-39 Twin Comanche C/R, certified at the end of 1969: the first
-Piper twin with engines turning in opposite directions, so that neither is a "critical engine"
-whose loss is the harder to control. Production ended in 1972, when the Susquehanna, swollen by
-Hurricane Agnes, flooded the Lock Haven factory and Piper chose not to rebuild the tooling.
+failed or was throttled back in training. Piper's answer, certified at the end of 1969, was the
+PA-39 Twin Comanche C/R, the first Piper twin with engines turning in opposite directions, so that
+neither is a "critical engine" whose loss is the harder to control. FAA flight tests and NASA
+wind-tunnel tests found nothing unusual in the aircraft itself, and the crashes fell away in the
+1970s once the FAA changed how multi-engine flying was taught. Production ended in 1972, when the
+Susquehanna, swollen by Hurricane Agnes, flooded the Lock Haven factory and Piper chose not to
+rebuild the tooling.
 """
 
 [facts]

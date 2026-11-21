@@ -48,8 +48,8 @@ The US Army trained instrument pilots on 65 Baron 55s it called the T-42A Cochis
 name = "Beechcraft Baron 56TC"
 production = [1967, 1971]
 more = """
-The 56TC is a strengthened Baron 55 with the turbocharged 380 hp Lycomings of Beech's pressurised
-Duke.
+The 56TC is a strengthened Baron 55 with turbocharged 380 hp Lycoming TIO-541s, the engine of
+Beech's pressurised Duke.
 """
 [variants.BE56.facts]
 "Built" = "94"
