@@ -61,6 +61,11 @@ screen remembers its own choice, `?density=simple` or `detailed` sets it in the 
   photographer in its bottom right corner, with a link to the photo's page there.
   Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
   dimension line with its length. With no photo, the plate fills the frame.
+  Its first line says why it shows this flight ("Overhead now", "Over the house next",
+  "Selected"), and the route's codes are joined by a line of how far it has come. On the desktop
+  the card fills its column: the route map takes the room the words leave, or, for a flight with
+  no route to draw (a light aircraft, a helicopter), the aircraft's drawing does, across the card
+  with the facts in a row under it. On a short screen the map gives way first, then the drawing.
 - **Radar / Map** – beside the card, a radar scope over a street map, or the Map view: the
   same flights on an everyday map for anyone, satellite photos with roads and place names (or a
   street map), filling the panel, every aircraft labelled in words ("Delta 178", "to Denver ·

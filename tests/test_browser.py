@@ -189,7 +189,8 @@ class BrowserTest(unittest.TestCase):
 
     def test_a_wide_short_window(self):
         w = self.scenario("wide")
-        self.assertEqual(w["card"], {"overlaps": [], "inside": True})        # the card's parts give way rather than collide
+        self.assertEqual((w["card"]["overlaps"], w["card"]["inside"]), ([], True))   # the card's parts give way rather than collide
+        self.assertLessEqual(w["card"]["slack"], 4)                          # and leave no empty band at its foot
         self.assertLess(w["radar"], 80)                                       # the radar's column hugs its disc
         self.assertTrue(w["simple"]["notes"] and w["simple"]["rows"] >= 1)  # Simple: worth a look past the radar
 

@@ -274,8 +274,9 @@ const SCENARIOS = {
         const a = parts[i - 1].getBoundingClientRect(), b = parts[i].getBoundingClientRect();
         if (a.bottom > b.top + 1) overlaps.push(`${parts[i - 1].className} over ${parts[i].className}`);
       }
-      const last = parts[parts.length - 1].getBoundingClientRect();
-      return { overlaps, inside: last.bottom <= card.bottom + 1 };
+      const last = parts[parts.length - 1].getBoundingClientRect(), pad = parseFloat(getComputedStyle(document.getElementById("hero")).paddingBottom);
+      // and no empty band at its foot: the last part reaches the card's padding
+      return { overlaps, inside: last.bottom <= card.bottom + 1, slack: Math.round(card.bottom - pad - last.bottom) };
     });
     out.radar = await page.evaluate(() => { const s = document.getElementById("scope"), r = document.getElementById("radar");
       const pad = parseFloat(getComputedStyle(s).paddingTop) + parseFloat(getComputedStyle(s).paddingBottom);

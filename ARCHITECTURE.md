@@ -200,7 +200,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | Module | What it owns |
 |---|---|
 | `app.js` | The conductor: polls `/api/state`, holds the current `state`, switches views, keeps the radar's options, and wires up every button. It draws nothing itself. |
-| `hero.js` | The flight card for the aircraft overhead, and the desktop's quiet-sky slides. |
+| `hero.js` | The flight card for the aircraft overhead, and the desktop's quiet-sky slides. On the desktop the card is as tall as its row: one picture (the route map, else the aircraft's drawing) takes the room the words leave, and `fitCard` lets the spacing, the map and then the drawing go when the row is short. |
 | `kiosk.js` | The wall panel's large card and slides. |
 | `emergency.js` | The red takeover for 7500/7600/7700. |
 | `board.js` | The Board grouped by what each aircraft is doing, its two-line form for a phone, and the traffic list and side view beside the radar. |

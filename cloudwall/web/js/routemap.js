@@ -123,6 +123,13 @@ function pickCities(cities, toPx, path, W, H, taken) {
 export function drawRouteMap(box, r, layer, here) {
   const W = box.clientWidth, H = box.clientHeight;
   box._rm = { r, layer, here, W, H, progress: box._rm ? box._rm.progress : null };
+  if (!box._ro) {      // drawn again when the card changes size (or first gives it one)
+    box._ro = new ResizeObserver(() => {
+      const m = box._rm;
+      if (m && (box.clientWidth !== m.W || box.clientHeight !== m.H)) drawRouteMap(box, m.r, m.layer, m.here);
+    });
+    box._ro.observe(box);
+  }
   if (!W || !H) return;
   const at = greatCircle(r.origin, r.dest), full = pathPoints(at, 0, 1, 128);
   // fit the whole path, with room around it for the airport labels
@@ -198,13 +205,6 @@ export function drawRouteMap(box, r, layer, here) {
     </svg>${layer && layer.enabled ? `<div class="rm-credit">${esc(layer.attribution)}</div>` : ""}`;
   box._rm.at = at;
   moveRouteMap(box, box._rm.progress);
-  if (!box._ro) {      // drawn again when the card changes size
-    box._ro = new ResizeObserver(() => {
-      const m = box._rm;
-      if (m && (box.clientWidth !== m.W || box.clientHeight !== m.H)) drawRouteMap(box, m.r, m.layer, m.here);
-    });
-    box._ro.observe(box);
-  }
 }
 
 // Move the aircraft to `progress` (0 at the origin, 1 at the destination; null when not known,
