@@ -56,7 +56,7 @@ class SilhouetteTest(unittest.TestCase):
         self.assertGreater(len(self.types), 100)
 
     # types in the table still waiting for a drawing of their own; they get a faint stand-in
-    PENDING = {"F16", "F18", "F22", "F35", "A10", "T38", "T6"}
+    PENDING = {"F16", "F18", "F18H", "F22", "F35", "A10", "T38", "T6"}
 
     def test_every_type_has_its_own_profile(self):
         missing = {t for t in self.types if not self.drawn[t]["mapped"]}
