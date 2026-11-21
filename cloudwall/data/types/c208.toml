@@ -4,20 +4,28 @@ production = [1985]
 checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/Cessna_208_Caravan",
+  "https://media.txtav.com/194531-cessna-marks-30th-anniversary-of-caravan-utility-aircraft/",
+  "https://media.txtav.com/221919-textron-aviation-delivers-3-000th-cessna-caravan-family-aircraft-grand-caravan-ex-joins-azul-conecta-airline-fleet-in-brazil",
+  "https://avweb.com/ownership/cessna-and-fedex-renew-their-vows/",
+  "https://www.sec.gov/Archives/edgar/data/1048911/000104891125000011/fdx-20250531.htm",
+  "https://cessna.txtav.com/en/turboprop/caravan",
+  "https://cessna.txtav.com/en/turboprop/grand-caravan-ex",
+  "https://www.easa.europa.eu/en/downloads/7230/en",
+  "https://www.aircraftrecognitionguide.com/cessna-208-caravan",
 ]
 
 text = """
 A big single-engine utility aircraft built around a PT6 turboprop, with a high strut-braced wing,
 fixed gear tough enough for gravel and grass, and a cargo pod slung under the belly. FedEx was its
-launch customer and still flies hundreds as feeders, carrying packages between the cities its jets
-serve and the towns they don't, and it works on floats and skis, as a skydiving jump ship and as a
-small airliner on short hops.
+launch customer and in 2025 still flew more than 200 as feeders, carrying packages between the
+cities its jets serve and the towns they don't, and it works on floats and skis, as a skydiving
+jump ship and as a small airliner on short hops.
 
-More than 3,000 have been built since 1985. From the ground it looks like an oversized Cessna
+More than 3,000 have been delivered since 1985. From the ground it looks like an oversized Cessna
 single, with a long nose for the turbine, an exhaust stack on its right side and, on most, that pod
 underneath.
 """
 
 [facts]
 "First flight" = "December 1982"
-"Engine" = "Pratt & Whitney Canada PT6A"
+"Engine" = "Pratt & Whitney Canada PT6A-114A, 675 shp; PT6A-140, 867 shp (Grand Caravan EX)"

@@ -1,33 +1,68 @@
 name = "Beechcraft King Air"
-types = ["BE9L", "BE20", "B350"]
+types = ["BE9L", "BE9T", "BE10", "BE20", "BE30", "B350"]
 production = [1964]
 checked = "2026-11"
 sources = [
+  "https://skybrary.aero/aircraft/be10",
+  "https://www.faa.gov/air_traffic/publications/atpubs/CNT/5-2-B.htm",
   "https://en.wikipedia.org/wiki/Beechcraft_King_Air",
   "https://en.wikipedia.org/wiki/Beechcraft_Super_King_Air",
+  "https://en.wikipedia.org/wiki/Beechcraft_C-12_Huron",
+  "https://en.wikipedia.org/wiki/EMARSS",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://cfapps.icao.int/doc8643/reports/Part3-By%20Model%20Number_Name.pdf",
+  "https://media.txtav.com/231060-beechcraft-king-air-360-reaches-100th-delivery-continuing-the-legacy-of-the-world-s-most-popular-business-turboprop/",
+  "https://www.aopa.org/news-and-media/all-news/2021/march/10/textron-ends-c90gtx-sovereign-lines",
+  "https://www.aopa.org/go-fly/aircraft-and-ownership/aircraft-guide/aircraft/beechcraft-king-air-c90gtx",
+  "https://beechcraft.txtav.com/en/king-air-260",
+  "https://beechcraft.txtav.com/en/king-air-360",
+  "https://kingairmagazine.com/issue/Aug23/files/basic-html/page28.html",
+  "https://kingairmagazine.com/issue/July20/files/basic-html/page16.html",
+  "https://www.twz.com/air/last-special-operations-mc-12w-tuirboprop-surveillance-planes-retired",
+  "https://www.army.mil/article/289532/army_completes_a_isr_turboprop_fleet_divestment",
 ]
 
 text = """
-The best-selling business turboprop there is, built continuously since 1964, with more than 7,000
+The best-selling business turboprop there is, built continuously since 1964, with more than 7,500
 delivered across the family. Two Pratt & Whitney Canada PT6s and a pressurised cabin let it fly
 higher and faster than piston twins while using strips too short for most jets, and it serves
-everyone from charter firms to air ambulances. The US Army and Air Force fly the 200 and 350 as the
-C-12 Huron and the MC-12 surveillance aircraft.
+everyone from charter firms to air ambulances. The US military flies the 200 and 350 as the C-12
+Huron, and until 2025 flew the 350 as the MC-12 surveillance aircraft.
 
-The small 90 has a conventional tail; the 200 and the stretched 350 have a T-tail, which tells them
-apart at a glance. All have the same long engine nacelles with their exhaust stacks pointing back
-over the wing.
+The 90 and the 100 have a conventional tail; the F90, the 200, the 300 and the stretched 350 have a
+T-tail, which tells them apart at a glance. All have long engine nacelles with their exhaust stacks
+near the front, pointing back over the wing.
 """
 
 [facts]
-"First flight" = "January 1964"
+"First flight" = "January 1964 (King Air 90)"
 "Engines" = "2 × Pratt & Whitney Canada PT6A"
 
 [variants.BE9L]
 name = "Beechcraft King Air 90"
+production = [1964, 2021]
+[variants.BE9L.facts]
+"Engines" = "2 × Pratt & Whitney Canada PT6A-135A, 550 shp (C90GTx)"
+
+[variants.BE9T]
+name = "Beechcraft King Air F90"
+
+[variants.BE10]
+name = "Beechcraft King Air 100"
 
 [variants.BE20]
 name = "Beechcraft King Air 200"
+production = [1974]
+[variants.BE20.facts]
+"First flight" = "October 1972"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-52, 850 shp (King Air 260)"
+
+[variants.BE30]
+name = "Beechcraft King Air 300"
 
 [variants.B350]
 name = "Beechcraft King Air 350"
+production = [1990]
+[variants.B350.facts]
+"First flight" = "September 1988"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-60A, 1,050 shp (King Air 360)"
