@@ -728,11 +728,23 @@ figcaption p { margin: 0; } figcaption .cap-main { font-weight: 700; color: var(
 @media (max-height: 720px) { .wx-slide .taf-list { display: none; } }
 
 /* windsock seen from above: the one literal-coloured thing on the page, because windsocks are orange */
-.sock-band { stroke: var(--ink-2); stroke-width: .8; stroke-linejoin: round; }
-.sock-band.o { fill: #e66a1f; } .sock-band.w { fill: #fbf8f2; }
-body.night .sock-band.o { fill: #d0611f; } body.night .sock-band.w { fill: #d3d6da; }
-.sock-ring { fill: none; stroke: #e66a1f; stroke-width: 3; }
-.sock-pole-top { fill: var(--ink); stroke: var(--disc); stroke-width: 1.5; }
+/* the windsock: aviation orange and white fabric, a little shading for its roundness, a hairline
+   edge, a steel hoop and mast, and a soft shadow on the ground */
+.sock-band { stroke: none; }
+.sock-band.o { fill: #e8641c; } .sock-band.w { fill: #fbf9f4; }
+body.night .sock-band.o { fill: #c95a1d; } body.night .sock-band.w { fill: #cfd3d8; }
+.sock-sh { stop-color: #1b2733; stop-opacity: .24; }
+.sock-mid { stop-color: #1b2733; stop-opacity: 0; }
+.sock-hi { stop-color: #fff; stop-opacity: .16; }
+body.night .sock-hi { stop-opacity: .07; }
+.sock-mouth { fill: #a8461a; stroke: color-mix(in srgb, var(--ink) 55%, transparent); stroke-width: .7; }
+body.night .sock-mouth { fill: #7d3615; }
+.sock-edge { fill: none; stroke: color-mix(in srgb, var(--ink) 55%, transparent); stroke-width: .7; stroke-linejoin: round; }
+.sock-shadow { fill: var(--ink); opacity: .13; }
+.sock-hoop { fill: none; stroke: var(--ink-2); stroke-width: 1.6; }
+.sock-hoop.calm { stroke: #e8641c; stroke-width: 2.4; }
+.sock-arm { stroke: var(--ink-2); stroke-width: 1.4; stroke-linecap: round; }
+.sock-mast { fill: var(--ink); stroke: var(--disc); stroke-width: 1.2; }
 .rose-speed { font: 700 13px var(--sans); fill: var(--ink); paint-order: stroke; stroke: var(--disc); stroke-width: 4px; stroke-linejoin: round; font-variant-numeric: tabular-nums; }
 .sock-body.breezy { animation: sway 2.4s ease-in-out infinite; }
 .sock-body.gusty { animation: sway-gust 1.3s ease-in-out infinite; }
