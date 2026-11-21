@@ -4,28 +4,44 @@ production = [1961]
 checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/Piper_PA-28_Cherokee",
+  "https://en.wikipedia.org/wiki/Piper_PA-28R_Arrow",
+  "https://www.aopa.org/news-and-media/all-news/2011/august/pilot/the-cherokee-turns-50",
+  "https://planeandpilotmag.com/piper-pa-28s/",
+  "https://www.aopa.org/news-and-media/all-news/2025/november/10/training-and-safety-tip-mind-the-blind-spots",
+  "https://cfapps.icao.int/doc8643/8643_List3.cfm?mfc=PIPER",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-P.htm",
+  "https://www.piper.com/model/archer-lx/",
+  "https://www.piper.com/resources/archer-lx-specifications",
 ]
 
 text = """
 Piper's answer to the Cessna 172, and the other aircraft generations of pilots learned on: a low-wing
 four-seater, in production since 1961, with more than 32,000 built as the Cherokee, Warrior, Archer,
 Dakota and the retractable-gear Arrow. The early ones have a constant-chord "Hershey bar" wing; from
-the 1970s most have a longer, tapered wing that is easier to land smoothly.
+the Warrior of 1974, Piper moved them to a longer, semi-tapered wing, meant to improve their
+handling at the stall.
 
-With the wing below, a Piper hides less of the sky from its pilot when turning than a high-wing
-Cessna, and the trade-off is a single door on the right side, over the wing. You can tell a PA-28
-from a Cessna 172 at once by where the wing is.
+With the wing below, a Piper pilot can see the traffic above that a high-wing Cessna's wing hides,
+but not the traffic below, and gets in by stepping up onto the wing to a single door on the right
+side. You can tell a PA-28 from a Cessna 172 at once by where the wing is.
 """
 
 [facts]
 "First flight" = "January 1960"
-"Engine" = "Lycoming, 140 to 235 hp"
+"Engine" = "140 to 235 hp, mostly Lycoming"
 
 [variants.P28A]
 name = "Piper PA-28 Cherokee, Warrior or Archer"
+[variants.P28A.facts]
+"Engine" = "140 to 180 hp"
+"Range" = "522 nm (Archer LX)"
 
 [variants.P28B]
-name = "Piper PA-28 Dakota"
+name = "Piper PA-28 Cherokee 235 or Dakota"
+[variants.P28B.facts]
+"Engine" = "Lycoming O-540, 235 hp (Turbo Dakota: 200 hp Continental)"
 
 [variants.P28R]
 name = "Piper PA-28R Arrow"
+[variants.P28R.facts]
+"Engine" = "200 hp (180 hp on early Arrows)"
