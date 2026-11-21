@@ -842,7 +842,8 @@ html.kiosk body { --cap-ink: var(--ink); --cap-slate: var(--slate); }
 .k-id { display: flex; align-items: center; gap: 3.4vh; min-width: 0; }
 /* the flight number as large as the card's width allows beside the logo (--n: its length) */
 .k-flight { font-size: min(17vh, calc(104cqi / var(--n, 6))); letter-spacing: -.02em; flex: none; }
-.k-who { display: flex; flex-direction: column; gap: 1vh; min-width: 0; font-size: 5vh; font-weight: 700; color: var(--ink-2); }
+.k-who { display: flex; flex-direction: column; align-items: flex-start; gap: 1vh; min-width: 0; font-size: 5vh; font-weight: 700; color: var(--ink-2); }
+.k-who > span { max-width: 100%; }
 .k-who > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .k-who > [hidden] { display: none; }
 .k-who .logo-tile { height: min(8vh, 9cqi); }
