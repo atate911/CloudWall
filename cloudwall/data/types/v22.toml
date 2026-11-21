@@ -5,8 +5,6 @@ checked = "2026-11"
 sources = [
   "https://www.boeing.com/defense/military-rotorcraft/v-22-osprey",
   "https://en.wikipedia.org/wiki/Bell_Boeing_V-22_Osprey",
-  "https://en.wikipedia.org/wiki/2000_Marana_V-22_crash",
-  "https://en.wikipedia.org/wiki/2023_Yakushima_Bell_Boeing_V-22_Osprey_crash",
 ]
 
 text = """
@@ -24,8 +22,8 @@ The failed attempt to rescue the American hostages in Iran in 1980 showed the ne
 that could land like a helicopter and travel like an aeroplane, and Bell and Boeing answered with an
 enlarged version of Bell's XV-15. It first flew in 1989, outlasted Defense Secretary Dick Cheney's
 efforts to cancel it because Congress kept funding it, and was grounded after two crashes in 2000
-that killed 23 Marines. It entered Marine Corps service in 2007, then with the Air Force, Japan and
-the Navy; a fatal Air Force crash off Japan in November 2023 grounded it again until March 2024. In
+that killed 23 Marines. It entered Marine Corps service in 2007, and the Air Force, the Navy and
+Japan have followed; a fatal Air Force crash off Japan in November 2023 grounded it again until March 2024. In
 aeroplane mode it looks like a stubby turboprop with propellers far too big for it.
 """
 

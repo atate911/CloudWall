@@ -6,15 +6,14 @@ sources = [
   "https://en.wikipedia.org/wiki/Boeing_E-6_Mercury",
   "https://en.wikipedia.org/wiki/TACAMO",
   "https://en.wikipedia.org/wiki/Communication_with_submarines",
-  "https://en.wikipedia.org/wiki/Lockheed_Martin_E-130J",
 ]
 
 text = """
 The last new aircraft built on the Boeing 707 airframe, and one of the least seen: sixteen were
 delivered to the US Navy between 1988 and 1992 to pass orders from the national command authority
-to ballistic-missile submarines at sea, a mission called TACAMO, for Take Charge And Move Out. A
-submerged submarine can pick up only very low frequency radio, which needs an enormous antenna, so
-the E-6 reels out a long trailing wire and, by a technique the Navy calls stalling the wire, flies so
+to ballistic-missile submarines at sea, a mission called TACAMO, for Take Charge And Move Out.
+Submarines under water listen on very low frequencies, which need an enormous transmitting antenna,
+so the E-6 reels out a long trailing wire and, by a technique the Navy calls stalling the wire, flies so
 that it hangs nearly vertical. For almost three decades, until 1991, a TACAMO aircraft was kept in
 the air around the clock. Upgraded to the E-6B from the late 1990s, it also took over the Air Force's
 Looking Glass role as an airborne command post, able to take control of nuclear forces, and even to

@@ -10,9 +10,9 @@ sources = [
 ]
 
 text = """
-Mikhail Mil's bureau flew the first prototype in 1961, with one engine; the second engine, wanted
-for safety, came the next year, and a later prototype traded the four-bladed rotor for five blades
-to cut vibration, as every Mi-8 since has had. The cabin takes 24 troops or 12 stretchers and
+Mikhail Mil's bureau flew the first prototype in 1961, and in 1963 a later one traded its
+four-bladed rotor for five blades to cut vibration; every Mi-8 since has had five. Its two
+turboshafts sit above the cabin, which takes 24 troops or 12 stretchers and
 opens at the back through clamshell doors, on some later models a ramp. It has been built at Kazan
 and Ulan-Ude, and under licence in China, and flown by armed forces and civil operators in dozens
 of countries; its maker calls the Mi-8 and Mi-17 the most widely operated helicopter in history.
@@ -27,11 +27,12 @@ exhausts where the Mi-8's are round.
 
 [facts]
 "Engines" = "2 × Klimov TV2-117 (Mi-8); TV3-117 or VK-2500 (Mi-17)"
-"Max takeoff weight" = "13,000 kg (28,660 lb), Mi-17"
-"Max payload" = "4,000 kg (8,800 lb) in the cabin"
 
 [variants.MI8]
 name = "Mil Mi-8 or Mi-17"
+[variants.MI8.facts]
+"Max takeoff weight" = "13,000 kg (28,660 lb), Mi-17"
+"Max payload" = "4,000 kg (8,800 lb) in the cabin"
 
 [variants.MI14]
 name = "Mil Mi-14"

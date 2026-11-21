@@ -5,14 +5,10 @@ checked = "2026-11"
 sources = [
   "https://www.boeing.com/defense/tankers-and-transports/kc-46-pegasus",
   "https://en.wikipedia.org/wiki/Boeing_KC-46_Pegasus",
-  "https://en.wikipedia.org/wiki/KC-X",
-  "https://boeing.mediaroom.com/2019-01-10-U-S-Air-Force-Accepts-First-Boeing-KC-46A-Pegasus-Tanker-Aircraft",
-  "https://www.airandspaceforces.com/kc-46-boom-operators-learn-to-live-with-rvs-pending-2-0-upgrade/",
-  "https://www.thedrive.com/the-war-zone/27268/this-is-what-the-remote-boom-operators-station-on-a-kc-46-tanker-really-looks-like",
 ]
 
 text = """
-It took a decade of scandal and protest to arrive. A plan to lease 767 tankers was frozen in 2003,
+It took a decade of scandal and protest to arrive. A deal to lease and buy 767 tankers was frozen in 2003,
 and later cancelled, in a corruption case that jailed a former Air Force procurement official who had
 sought a job at Boeing. In 2008 the Air Force chose an Airbus A330-based tanker from Northrop Grumman
 and EADS instead, reopened the contest after Boeing's protest was upheld, and picked Boeing in 2011.
@@ -24,7 +20,7 @@ door and floor of the 767-300 freighter, the flaps of the 767-400ER, and a cockp
 Where the KC-135's boom operator lies at a window in the tail, the KC-46's sits behind the flight
 deck and flies the boom by camera, watching a 3D display through stereoscopic glasses that works
 even with both aircraft blacked out at night. That Remote Vision System became the programme's most
-notorious problem, its picture distorting depth and motion, and a redesign with new cameras and a
+controversial feature, its picture distorting depth and motion, and a redesign with new cameras and a
 colour high-definition display is meant to cure it. Besides the boom it has hose-and-drogue units
 under each wing and the fuselage, so it can refuel both kinds of receiver on one sortie, and it can
 take on fuel itself. From below it is a grey 767 with a boom under its tail and pods under its wings.

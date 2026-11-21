@@ -4,7 +4,6 @@ production = [1998]
 checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/Northrop_Grumman_RQ-4_Global_Hawk",
-  "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104516/rq-4-global-hawk/",
   "https://www.airandspaceforces.com/weapons/rq-4",
   "https://en.wikipedia.org/wiki/Rolls-Royce_AE_3007",
   "https://en.wikipedia.org/wiki/Boeing_737_Next_Generation",
@@ -20,8 +19,8 @@ the size of Iceland.
 
 In April 2001 one flew nonstop from Edwards Air Force Base in California to RAAF Base Edinburgh in
 Australia in 22 hours, the first pilotless aircraft to cross the Pacific, and in 2008 another stayed
-up for 33.1 hours. It has flown over Afghanistan, Iraq and Libya, and from Sicily along the coasts of
-Crimea and Ukraine; NASA has used two of the first ones to study hurricanes, and NATO's RQ-4D Phoenix
+up for 33.1 hours. It has flown over Afghanistan, Iraq and Libya, and from Sicily off Crimea and over
+Ukraine; NASA has used two of the first ones to study hurricanes, and NATO's RQ-4D Phoenix
 and the US Navy's MQ-4C Triton grew from it. The Air Force had planned to retire its Global Hawks in
 2027, but as of 2026 Congress has pushed that back to 2030 at the earliest.
 """

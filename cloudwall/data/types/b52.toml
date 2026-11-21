@@ -6,28 +6,26 @@ sources = [
   "https://en.wikipedia.org/wiki/Boeing_B-52_Stratofortress",
   "https://www.boeing.com/defense/fighters-and-bombers/b-52",
   "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104465/b-52h-stratofortress/",
-  "https://www.gao.gov/assets/gao-26-109272.pdf",
-  "https://en.wikipedia.org/wiki/The_Hotel_Van_Cleve",
-  "https://www.businessinsider.com/b52-was-designed-in-dayton-ohio-hotel-room-in-1948-2022-9",
+  "https://www.airandspaceforces.com/weapons/b-52/",
   "https://en.wikipedia.org/wiki/Rolls-Royce_BR700",
-  "https://www.airandspaceforces.com/re-engined-b-52-b-52j/",
   "https://www.defensenews.com/air/2026/05/06/b-52-engine-replacement-clears-critical-design-review-first-modifications-to-begin-this-year/",
 ]
 
 text = """
 Its layout was settled over a weekend in October 1948, in a room at the Hotel Van Cleve in Dayton,
-Ohio. The Air Force's bomber chief had turned down Boeing's turboprop design, and a handful of its
-engineers redrew it there as a swept-wing bomber with eight jets, handing over a bound proposal and
-a model built from hobby-shop balsa on the Monday. 744 were built before the line closed in 1962,
+Ohio. The Air Force's chief of bomber development had asked Boeing's team for jets in place of
+turboprops, and a handful of its engineers redrew the design there as a swept-wing bomber with eight
+of them, handing over a bound proposal and a model made with supplies from a hobby shop on the
+Monday. 744 were built before the line closed in 1962,
 and as of 2026 the US Air Force still flies 76 of the last model, the B-52H, and expects to keep
 them into the 2050s.
 
-On the static-test airframe Boeing's test pilot Tex Johnston watched a wingtip travel 32 ft between
-a pushover and a 4 g pull. The main wheels sit in tandem under the fuselage, bicycle-fashion, with
+On Boeing's static-test airframe, the test pilot Tex Johnston watched a wingtip move 32 ft between
+the loads of minus 1 g and plus 4 g. The main wheels sit in tandem under the fuselage, bicycle-fashion, with
 small outriggers near the wingtips, and the main gear can swivel 20 degrees either way, so in a
 strong crosswind the bomber lands crabbed, its nose pointing off the runway while the wheels roll
 straight down it. The eight Pratt & Whitney TF33s it has flown with since 1961 hang in pairs in four
-pods. As of 2026 the first aircraft are being converted to take eight Rolls-Royce F130s, the
+pods. As of 2026 the first two are lined up for conversion to eight Rolls-Royce F130s, the
 military version of the Gulfstream G650's engine; four bigger engines would have meant a new rudder
 and systems. With a new radar, the converted bombers become B-52Js.
 """

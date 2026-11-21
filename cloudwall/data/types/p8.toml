@@ -8,14 +8,14 @@ sources = [
 ]
 
 text = """
-A submarine hunter built from a 737-800 on the airliner line at Renton, with the stronger wing of the
-737-900 and a fuselage that Spirit AeroSystems reinforces for flying low and manoeuvring hard, with a
+A submarine hunter built from a 737-800, sharing 86 percent of its parts with the airliner and
+assembled at Boeing's 737 factory in Renton, with the stronger wing of the 737-900 and a fuselage that Spirit AeroSystems reinforces for flying low and manoeuvring hard, with a
 short bomb bay behind the wing for torpedoes. Each CFM56 drives a 180 kVA generator, twice the size
 of an airliner's, to power the sensors, which meant redesigning the nacelles and their mountings.
 Five operator stations line the left side of a cabin with almost no windows, and it carries 129
 sonobuoys to drop into the sea and listen. Unlike the P-3 Orion it replaced it has no magnetic
-anomaly detector, except on India's P-8I, but a hydrocarbon sensor sniffs the air for the exhaust of
-diesel submarines.
+anomaly detector, except on India's P-8I, but a hydrocarbon sensor sniffs the air for the fuel
+vapours of diesel submarines.
 
 Raked wingtips, swept back like a 767-400ER's where most 737s have winglets, are the quickest way to
 tell one from an airliner overhead, and a refuelling receptacle on top of the forward fuselage lets

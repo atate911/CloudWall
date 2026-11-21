@@ -4,9 +4,6 @@ production = [1985, 1988]
 checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/Rockwell_B-1_Lancer",
-  "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104500/b-1b-lancer/",
-  "https://www.militarytimes.com/news/your-military/2024/04/26/b-1-bomber-rises-from-the-boneyard-to-rejoin-the-air-forces-fleet/",
-  "https://www.af.mil/News/Article-Display/Article/2506903/afgsc-begins-retirement-of-b-1-aircraft-paving-way-for-b-21/",
 ]
 
 text = """

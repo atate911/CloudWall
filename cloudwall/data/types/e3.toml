@@ -4,7 +4,6 @@ production = [1977, 1992]
 checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/Boeing_E-3_Sentry",
-  "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104504/e-3-sentry-awacs/",
   "https://en.wikipedia.org/wiki/Boeing_707",
   "https://skybrary.aero/aircraft/e3cf",
   "https://skybrary.aero/aircraft/e3tf",
@@ -27,7 +26,7 @@ registered in Luxembourg, so its aircraft carry LX- registrations. Britain retir
 """
 
 [facts]
-"First flight" = "May 1976; EC-137D prototype February 1972"
+"First flight" = "February 1972 (EC-137D prototype)"
 "Built" = "68"
 "Rotodome" = "30 ft across, 6 ft thick"
 

@@ -6,7 +6,6 @@ sources = [
   "https://en.wikipedia.org/wiki/Boeing_B-29_Superfortress",
   "https://en.wikipedia.org/wiki/FIFI_(aircraft)",
   "https://en.wikipedia.org/wiki/Doc_(aircraft)",
-  "https://en.wikipedia.org/wiki/Tupolev_Tu-4",
 ]
 
 text = """

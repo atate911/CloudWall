@@ -4,7 +4,6 @@ production = [1995, 2015]
 checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/General_Atomics_MQ-1_Predator",
-  "https://www.acc.af.mil/About-Us/Fact-Sheets/Display/Article/199130/rq-1mq-1-predator-unmanned-aerial-vehicle/",
   "https://en.wikipedia.org/wiki/V-tail",
   "https://en.wikipedia.org/wiki/Rotax_914",
 ]
