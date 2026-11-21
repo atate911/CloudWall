@@ -37,7 +37,7 @@ Canada, Finland, Spain, Switzerland and others still fly them.
 "First flight" = "November 1978"
 "Built" = "1,480"
 "Top speed" = "Mach 1.8"
-"Max takeoff weight" = "51,900 lb (F/A-18C/D)"
+"Max takeoff weight" = "51,900 lb (23,500 kg), F/A-18C/D"
 "Engines" = "2 × GE F404"
 
 [variants.F18]
@@ -45,7 +45,7 @@ Canada, Finland, Spain, Switzerland and others still fly them.
 "First flight" = "November 1978"
 "Built" = "1,480"
 "Top speed" = "Mach 1.8"
-"Max takeoff weight" = "51,900 lb (F/A-18C/D)"
+"Max takeoff weight" = "51,900 lb (23,500 kg), F/A-18C/D"
 "Engines" = "2 × GE F404"
 
 [variants.F18S]
@@ -61,5 +61,5 @@ gear in the space where the gun was and receiver pods in place of the wingtip mi
 """
 [variants.F18S.facts]
 "First flight" = "November 1995"
-"Max takeoff weight" = "66,000 lb"
+"Max takeoff weight" = "66,000 lb (29,900 kg)"
 "Engines" = "2 × GE F414"

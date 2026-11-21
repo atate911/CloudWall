@@ -32,13 +32,13 @@ PA-32s were built in 2007 and the last Saratogas in 2009.
 name = "Piper PA-32 Cherokee Six, Saratoga or 6X"
 production = [1965, 2007]
 [variants.PA32.facts]
-"Max takeoff weight" = "3,400 lb (Cherokee Six 300)"
+"Max takeoff weight" = "3,400 lb (1,540 kg), Cherokee Six 300"
 
 [variants.P32R]
 name = "Piper PA-32R Lance or Saratoga"
 production = [1975, 2009]
 [variants.P32R.facts]
-"Max takeoff weight" = "3,600 lb (Lance)"
+"Max takeoff weight" = "3,600 lb (1,630 kg), Lance"
 "Range" = "875 nm (Lance)"
 
 [variants.P32T]

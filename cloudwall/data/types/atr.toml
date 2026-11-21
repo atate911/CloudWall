@@ -68,6 +68,7 @@ production = [2012]
 
 [variants.AT72]
 name = "ATR 72-100/200"
+production = [1989]
 [variants.AT72.facts]
 "First flight" = "October 1988"
 "Entered service" = "October 1989"
@@ -75,6 +76,7 @@ name = "ATR 72-100/200"
 
 [variants.AT73]
 name = "ATR 72-210"
+production = [1989]
 [variants.AT73.facts]
 "First flight" = "October 1988 (ATR 72)"
 "Entered service" = "October 1989 (ATR 72)"
@@ -82,6 +84,7 @@ name = "ATR 72-210"
 
 [variants.AT75]
 name = "ATR 72-500"
+production = [1997]
 [variants.AT75.facts]
 "First flight" = "October 1988 (ATR 72)"
 "Entered service" = "October 1989 (ATR 72)"
@@ -89,6 +92,7 @@ name = "ATR 72-500"
 
 [variants.AT76]
 name = "ATR 72-600"
+production = [2011]
 [variants.AT76.facts]
 "First flight" = "October 1988 (ATR 72)"
 "Entered service" = "October 1989 (ATR 72)"
