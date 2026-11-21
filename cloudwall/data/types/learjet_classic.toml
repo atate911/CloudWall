@@ -20,14 +20,14 @@ sources = [
 text = """
 Bill Lear, who had made his name with the car radio and aircraft autopilots, set out in 1960 to build
 a small, fast business jet in Switzerland, with engineers who had worked on the abandoned FFA P-16
-ground-attack fighter. How much the Learjet owes that fighter is still argued over, Lear's own son
-calling the close resemblance a story. The work moved to Wichita, Kansas, and the Learjet 23 flew
-there on 7 October 1963: six seats, two GE turbojets, a climb of nearly 7,000 ft a minute, and a
+ground-attack fighter. How much the Learjet owes that fighter is still argued over; Lear's own son
+dismissed talk of a close likeness as "stories" and "fantasy". The work moved to Wichita, Kansas, and the Learjet 23 flew
+there on 7 October 1963: six passengers, two GE turbojets, a climb of nearly 7,000 ft a minute, and a
 price about $400,000 below its rivals'. It made "Learjet" a byword for a private jet. The stretched
 25 followed in 1966, and in 1967 Lear sold his share to the Gates Rubber Company.
 
 The airframe kept growing for four decades. The 35 and 36 of 1973 swapped the turbojets for Garrett
-turbofans, became the best-selling Learjets and serve the US Air Force as the C-21A, and in 1996
+turbofans, became the best-selling Learjets and were flown by the US Air Force as the C-21A, and in 1996
 astronaut Pete Conrad and three others flew a 35A round the world in 49 hours 21 minutes. The 28 of
 1977 was the first production jet with winglets, which replaced the tip tanks on the 31, 55 and 60;
 the 60, built until 2013, was still certified under the Learjet 24's type certificate of 1966. The
@@ -62,15 +62,15 @@ production = [1967, 1982]
 name = "Learjet 28 or 29 Longhorn"
 production = [1979, 1982]
 more = """
-Only nine were built, but Neil Armstrong set five records in the first production 28.
+The 28 was meant only to test the new wing for the 55, until the prototypes climbed so well and flew
+so high, to 51,000 ft, that Learjet put it into production. Only nine were built, but Neil Armstrong
+set five records in the first production 28.
 """
 [variants.LJ28.facts]
 "Built" = "9"
-"Engines" = "2 × GE CJ610 turbojets"
 
 [variants.LJ31]
 name = "Learjet 31"
-production = [1988, 2003]
 [variants.LJ31.facts]
 "Built" = "246"
 "Engines" = "2 × Honeywell TFE731-2"

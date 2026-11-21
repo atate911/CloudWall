@@ -7,6 +7,7 @@ sources = [
   "https://en.wikipedia.org/wiki/Fenestron",
   "https://en.wikipedia.org/wiki/Airbus_Helicopters_VSR700",
   "https://en.wikipedia.org/wiki/Robinson_R22",
+  "https://en.wikipedia.org/wiki/Ground_resonance",
 ]
 
 text = """
@@ -16,8 +17,8 @@ piston helicopters lacked: a Fenestron, the shrouded tail fan of the bigger Euro
 makes it quieter than its rivals; a composite monocoque fuselage; three composite rotor blades with
 no fixed life; and a crash-resistant fuel system, which makes it the only piston helicopter to meet
 the FAA's full standard for one. Its Lycoming O-360 is derated from 180 hp to 145 hp continuous,
-and its skids sit on elastomeric mounts, which damp the ground resonance that can shake a
-helicopter apart on landing.
+and its skids sit on elastomeric mounts to damp ground resonance, a rocking between an articulated
+rotor and the landing gear that can tear a helicopter apart on the ground.
 
 Eurocopter backed it, and the first prototype flew in April 1992. Guimbal left in 2000 to set up his
 own company at Aix-en-Provence and see it through certification, which EASA granted in December
