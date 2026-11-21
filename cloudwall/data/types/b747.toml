@@ -43,7 +43,7 @@ name = "Boeing 747-300"
 [variants.B744]
 name = "Boeing 747-400"
 [variants.B744.facts]
-"Max takeoff weight" = "875,000 lb (396,900 kg); 910,000 lb on the -400ER"
+"Max takeoff weight" = "875,000 lb (396,900 kg); 910,000 lb (412,800 kg) on the -400ER"
 
 [variants.B748]
 name = "Boeing 747-8"

@@ -35,7 +35,7 @@ the wingtips have no winglet; on the later long-range models they are raked back
 [variants.B772]
 name = "Boeing 777-200"
 [variants.B772.facts]
-"Max takeoff weight" = "up to 297,600 kg"
+"Max takeoff weight" = "up to 297,600 kg (656,000 lb)"
 
 [variants.B77L]
 name = "Boeing 777-200LR or 777F"
@@ -46,13 +46,13 @@ its wing and engines.
 """
 [variants.B77L.facts]
 "Engines" = "2 × GE90-110B or GE90-115B"
-"Range" = "up to 8,500 nm (15,740 km) for the -200LR"
-"Max takeoff weight" = "up to 347,800 kg"
+"Range" = "up to 8,500 nm (15,740 km), -200LR"
+"Max takeoff weight" = "up to 347,800 kg (767,000 lb)"
 
 [variants.B773]
 name = "Boeing 777-300"
 [variants.B773.facts]
-"Max takeoff weight" = "up to 299,400 kg"
+"Max takeoff weight" = "up to 299,400 kg (660,000 lb)"
 
 [variants.B77W]
 name = "Boeing 777-300ER"
@@ -63,7 +63,7 @@ GE90-115Bs, each rated at 115,300 lb of thrust, are the only engines it was offe
 [variants.B77W.facts]
 "Engines" = "2 × GE90-115B"
 "Range" = "up to 7,500 nm (13,890 km)"
-"Max takeoff weight" = "up to 351,500 kg"
+"Max takeoff weight" = "up to 351,500 kg (775,000 lb)"
 
 [variants.B778]
 name = "Boeing 777-8"

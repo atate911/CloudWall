@@ -902,6 +902,18 @@ class AboutTest(unittest.TestCase):
         self.assertEqual(about.problems(), [])
         self.assertGreater(len(about.covered()), 0)
 
+    def test_every_type_cloudwall_knows_is_written_up(self):
+        """Every type CloudWall draws or counts the seats of (data/types.csv, data/seats.csv) opens a
+        written page, not just its drawing: a type added to either needs its write-up too."""
+        import csv
+        from cloudwall import about
+
+        def codes(name):
+            with open(Path(about.__file__).parent / "data" / name, encoding="utf-8") as f:
+                return {r["type"] for r in csv.DictReader(line for line in f if not line.startswith("#"))}
+        self.assertEqual(sorted((codes("types.csv") | codes("seats.csv")) - set(about.covered())), [],
+                         "types with no write-up in cloudwall/data/types/")
+
     def test_a_variant_adds_to_its_family(self):
         from cloudwall import about
         nine, eight = about.entry("b39m"), about.entry("B38M")

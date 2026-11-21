@@ -237,7 +237,8 @@ toward each new report. Countdowns use the same clock (`since(state)` in `util.j
 - **Any key in an answer:** a row in [API.md](API.md), or `tests/test_api.py` fails. Removing one,
   or changing what it means, also raises `API` in `server.py`.
 - **An airline:** a line in `data/airlines.csv`.
-- **An aircraft type:** a line in `data/types.csv` and its family in the right `profiles/` file;
+- **An aircraft type:** a line in `data/types.csv`, its write-up in `data/types/` (a test checks every
+  type has one) and its family in the right `profiles/` file;
   `tests/test_silhouettes.py` checks the two agree. Its `icon` column names its radar icon where
   its shape doesn't (a light twin, a seaplane); a new kind of icon is drawn in `icons.js`.
 - **A type's write-up:** a file in `data/types/`, as its README says, every fact checked against a

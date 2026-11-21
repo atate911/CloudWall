@@ -6,8 +6,9 @@ facts chosen for that type, and the years it was delivered. One TOML file per fa
 every file to this format. `python3 tools/type_notes.py` lists which types have a write-up and which
 still need one, the ones seen most over the house first.
 
-A type with no file still opens the panel: its drawing, its usual seats and wake category, and what
-the logbook knows of it. A file makes it worth opening. The files are read as CloudWall starts, so
+Every type in `data/types.csv` and `data/seats.csv` has a write-up, and a test keeps it so. A type
+from outside them (the feed can send any ICAO designator) still opens the panel: its drawing, its
+usual seats and wake category, and what the logbook knows of it. A file makes it worth opening. The files are read as CloudWall starts, so
 restart it to see a change.
 
 ## The file
