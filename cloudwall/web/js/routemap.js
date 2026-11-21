@@ -122,7 +122,7 @@ function pickCities(cities, toPx, path, W, H, taken, z, fs) {
       if (d < near) { near = d; k = i; }
     }
     const on = near <= corridor;
-    if (!on && r > z + 0.3) continue;            // away from the route, only what a map this size names anyway
+    if (!on && r > z + 1.5) continue;            // away from the route, only what a map this size names (or nearly)
     cands.push({ name, x, y, r, pop, on, at: along[k], away: near < 4 ? 0 : x >= path[k][0] ? 1 : -1 });
   }
   // the route's own places count for more, by a step of zoom
@@ -148,7 +148,7 @@ function pickCities(cities, toPx, path, W, H, taken, z, fs) {
     if (picked.some((q) => Math.hypot(q.x - c.x, q.y - c.y) < fs * 4.5)) return false;
     const p = place(c);
     if (!p) return false;
-    taken.push(p.box); picked.push({ ...c, ...p });
+    taken.push(p.box); picked.push({ ...c, ...p }); c.named = true;
     return true;
   };
   // the places that matter at this scale, most important first: along the route spaced out like the
@@ -159,13 +159,18 @@ function pickCities(cities, toPx, path, W, H, taken, z, fs) {
   let around = 0;
   for (const c of cands) {
     if (picked.length >= n) break;
-    if (c.on ? c.r > z + 1 || stops.some((at) => Math.abs(at - c.at) < gap) : around >= aroundMax) continue;
+    if (c.on ? c.r > z + 1 || stops.some((at) => Math.abs(at - c.at) < gap) : around >= aroundMax || c.r > z + 0.3) continue;
     if (pick(c)) c.on ? stops.push(c.at) : around++;
   }
   for (const c of cands) {
     if (picked.length >= n) break;
     if (!c.on || c.r <= z + 1 || [...stops, 0, L].some((at) => Math.abs(at - c.at) < gap * 1.25)) continue;
     if (pick(c)) stops.push(c.at);
+  }
+  // a map with next to nothing named (an ocean crossing) takes a couple of lesser places around it
+  for (const c of cands) {
+    if (picked.length >= 2) break;
+    if (!c.on && !c.named) pick(c);
   }
   return picked;
 }
