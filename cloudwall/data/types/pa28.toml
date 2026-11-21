@@ -12,6 +12,10 @@ sources = [
   "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-P.htm",
   "https://www.piper.com/model/archer-lx/",
   "https://www.piper.com/resources/archer-lx-specifications",
+  "https://www.aopa.org/go-fly/aircraft-and-ownership/aircraft-guide/aircraft/piper-cherokee-235",
+  "https://www.aviationconsumer.com/?p=6526",
+  "https://gama.aero/wp-content/uploads/2018ShipmentReport02202019.pdf",
+  "https://bizavnews.ru/images/bizavweek/GAMA_2019_Year_end_Report.pdf",
 ]
 
 text = """
@@ -21,9 +25,8 @@ Dakota and the retractable-gear Arrow. The early ones have a constant-chord "Her
 the Warrior of 1974, Piper moved them to a longer, semi-tapered wing, meant to improve their
 handling at the stall.
 
-With the wing below, a Piper pilot can see the traffic above that a high-wing Cessna's wing hides,
-but not the traffic below, and gets in by stepping up onto the wing to a single door on the right
-side. You can tell a PA-28 from a Cessna 172 at once by where the wing is.
+With the wing below, its pilot can see the traffic above that a Cessna's wing would hide, but less
+of what is below. There is one door, on the right, reached by stepping up onto the wing. You can tell a PA-28 from a Cessna 172 at once by where the wing is.
 """
 
 [facts]
@@ -38,10 +41,12 @@ name = "Piper PA-28 Cherokee, Warrior or Archer"
 
 [variants.P28B]
 name = "Piper PA-28 Cherokee 235 or Dakota"
+production = [1964, 1994]
 [variants.P28B.facts]
 "Engine" = "Lycoming O-540, 235 hp (Turbo Dakota: 200 hp Continental)"
 
 [variants.P28R]
 name = "Piper PA-28R Arrow"
+production = [1967, 2018]
 [variants.P28R.facts]
 "Engine" = "200 hp (180 hp on early Arrows)"
