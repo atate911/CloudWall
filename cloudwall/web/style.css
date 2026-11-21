@@ -1,8 +1,9 @@
 /* CloudWall: an aeronautical chart for the living room, laid out like a set of engineering drawings.
    Cool chart paper, navy ink, chart blue for traffic, and chart magenta reserved for
    the one aircraft that matters right now. After dusk the same chart turns to night.
-   Each panel is a drawing sheet (hairline frame, corner marks), labels are lettered in small
-   spaced capitals, and the type plates are drawn on a drafting grid. */
+   Each panel is a drawing sheet (hairline frame, corner marks) and the type plates are drawn on a
+   drafting grid. Words are set in B612 in sentence case; B612 Mono is kept for codes, the things a
+   pilot reads character by character: callsigns, airports, type designators, runways, reports. */
 
 /* ---------- fonts: B612, designed by Airbus for cockpit displays (SIL OFL, see fonts/) ---------- */
 @font-face { font-family: "B612"; src: url("fonts/b612.woff2") format("woff2"); font-weight: 400; font-display: swap; }
@@ -67,16 +68,16 @@ body { overflow-x: hidden; background: var(--paper); color: var(--ink); font-fam
   cursor: default; -webkit-font-smoothing: antialiased; transition: background-color 1.5s, color 1.5s; }
 button { font: inherit; color: inherit; cursor: pointer; background: none; border: 0; }
 button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
-/* annotation lettering, as on a drawing: small upright capitals, spaced. The words stay plain English. */
-.label, .facts dt, th, .wx-read dt, .sm-sun dt, .htitle, h2 {
-  font-family: var(--mono); font-weight: 400; font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; color: var(--slate); }
+/* labels: small, in the text face, in sentence case. A label that heads a block is bold; one that names a value is not. */
+.label, .htitle, h2 { font: 700 .8rem var(--sans); color: var(--slate); }
+.facts dt, th, .wx-read dt, .sm-sun dt { font: 400 .8rem var(--sans); color: var(--slate); }
 .dim { color: var(--slate); }
 .up { color: var(--green); } .down { color: var(--blue); }
 
 /* ---------- header: a status line, like the strip across the top of a display ---------- */
 header { display: flex; align-items: center; gap: 1.4rem; padding: .7rem 1.4rem .5rem; }
-.brand { font: 700 .82rem var(--mono); letter-spacing: .16em; text-transform: uppercase; display: flex; align-items: baseline; position: relative; }
-.brand .station { font: inherit; font-weight: 400; letter-spacing: inherit; text-transform: inherit; color: var(--slate);
+.brand { font: 700 .95rem var(--sans); display: flex; align-items: baseline; position: relative; }
+.brand .station { font: 400 .82rem var(--mono); color: var(--slate);
   margin-left: .6rem; padding: 0 0 0 .6rem; border-left: 1px solid var(--rule); cursor: default; }
 .brand .station:empty { display: none; }
 /* with several places the station opens a menu of them */
@@ -88,12 +89,12 @@ header { display: flex; align-items: center; gap: 1.4rem; padding: .7rem 1.4rem 
   background: var(--sheet); border: 1px solid var(--frame); box-shadow: 0 .4rem 1.2rem color-mix(in srgb, var(--ink) 18%, transparent); }
 .place-menu[hidden] { display: none; }
 .place-menu button { display: flex; flex-direction: column; align-items: flex-start; gap: .15rem; padding: .6rem .8rem; text-align: left;
-  border-top: 1px solid var(--rule); letter-spacing: 0; text-transform: none; }
+  border-top: 1px solid var(--rule); }
 .place-menu button:first-child { border-top: 0; }
 .place-menu button:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
 .place-menu button[aria-checked="true"] { box-shadow: inset 2px 0 0 var(--magenta); }
 .place-menu b { font: 700 .9rem var(--sans); color: var(--ink); }
-.place-menu span { font: .62rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); }
+.place-menu span { font: .72rem var(--sans); color: var(--slate); }
 .place-menu .pm-row { display: flex; border-top: 1px solid var(--rule); }
 .place-menu .pm-row:first-child { border-top: 0; }
 .place-menu .pm-row > button[data-place] { flex: 1; border-top: 0; }
@@ -103,7 +104,7 @@ header { display: flex; align-items: center; gap: 1.4rem; padding: .7rem 1.4rem 
   border-top: 1.5px solid var(--slate); transform: translate(-50%, -50%) rotate(45deg); }
 .place-menu .pm-remove::after { transform: translate(-50%, -50%) rotate(-45deg); }
 .place-menu .pm-remove:hover::before, .place-menu .pm-remove:hover::after { border-color: var(--red); }
-.place-menu .pm-add { font: .66rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--blue); }
+.place-menu .pm-add { font: .8rem var(--sans); color: var(--blue); }
 
 /* setting a location: a sheet over the board */
 .loc-dialog { margin: auto;      /* the page's margin reset would pin it to the corner */
@@ -125,11 +126,11 @@ header { display: flex; align-items: center; gap: 1.4rem; padding: .7rem 1.4rem 
 .loc-opt input { accent-color: var(--magenta); flex: none; }
 .loc-opt span { display: flex; flex-direction: column; gap: .1rem; min-width: 0; }
 .loc-opt b { font: 700 .85rem var(--sans); }
-.loc-opt small { font: .62rem var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--slate); }
+.loc-opt small { font: .72rem var(--sans); color: var(--slate); }
 .loc-error { color: var(--red); font-size: .8rem; }
 .loc-error:empty { display: none; }
 .loc-actions { display: flex; justify-content: flex-end; gap: .6rem; margin-top: .2rem; }
-.loc-btn { font: .68rem var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: .6rem .9rem;
+.loc-btn { font: .8rem var(--sans); padding: .6rem .9rem;
   border: 1px solid var(--frame); border-radius: var(--corner); color: var(--ink-2); }
 .loc-btn.primary { background: var(--ink); color: var(--sheet); border-color: var(--ink); font-weight: 700; }
 .loc-btn:disabled { opacity: .45; cursor: default; }
@@ -143,11 +144,23 @@ header { display: flex; align-items: center; gap: 1.4rem; padding: .7rem 1.4rem 
 .chip.warn { color: var(--red); font-weight: 700; flex: none; }     /* a warning reads in full; the other chips shorten */
 .cat-VFR { color: var(--green); } .cat-MVFR { color: var(--blue); } .cat-IFR { color: var(--red); } .cat-LIFR { color: var(--magenta); }
 .icon-btn { display: inline-flex; align-items: center; gap: .4rem; height: 2rem; padding: 0 .55rem; border-radius: var(--corner);
-  border: 1px solid transparent; color: var(--slate); font: .62rem var(--mono); letter-spacing: .1em; text-transform: uppercase;
+  border: 1px solid transparent; color: var(--slate); font: .76rem var(--sans);
   transition: color .2s, background-color .2s, border-color .2s; }
 .icon-btn svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .icon-btn svg .fill { fill: currentColor; stroke: none; }
-.icon-btn.on { color: var(--ink); border-color: var(--rule); background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.icon-btn.on, .icon-btn[aria-expanded="true"] { color: var(--ink); border-color: var(--rule); background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.icon-btn:hover { color: var(--ink); }
+/* settings: sound and night mode, in a small sheet under the button */
+.settings { position: relative; flex: none; }
+.settings-menu { position: absolute; top: calc(100% + .5rem); right: 0; z-index: 20; width: max-content; max-width: calc(100vw - 1.5rem);
+  display: grid; gap: 1rem; padding: .9rem 1rem 1rem; background: var(--sheet); border: 1px solid var(--frame);
+  box-shadow: 0 .4rem 1.2rem color-mix(in srgb, var(--ink) 18%, transparent); }
+.settings-menu[hidden] { display: none; }
+.sm-set { display: grid; gap: .2rem; }
+.sm-set b { font: 700 .85rem var(--sans); color: var(--ink); }
+.sm-set small { font: .76rem var(--sans); color: var(--slate); }
+.seg.choice { position: static; justify-self: start; margin-top: .35rem; }
+.seg.choice button { padding: .5rem .9rem; }
 .clock { font: 700 1.25rem var(--sans); font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: .7rem; }
 /* coordinated universal time beside the local time, the way aviation keeps the clock */
 .clock small { font: 400 .72rem var(--mono); letter-spacing: .06em; color: var(--slate); }
@@ -174,18 +187,18 @@ main { min-height: 0; padding: 0 1.4rem; }
 @keyframes fade { from { opacity: 0; } }
 .enter > * { animation: fade .5s ease-out backwards; }
 /* section heads run into a rule across the sheet */
-h2 { display: flex; align-items: center; gap: .8rem; font-weight: 700; color: var(--ink-2); margin: .3rem 0 .55rem; }
+h2 { display: flex; align-items: center; gap: .8rem; color: var(--ink-2); margin: .3rem 0 .55rem; }
 h2::after { content: ""; flex: 1; border-top: 1px solid var(--rule); }
 
 /* tabs: sheet names along the foot of the set, with a magenta bar over the current one */
 nav { display: flex; justify-content: center; gap: 2.6rem; padding: .55rem 1.4rem .8rem; }
-nav button { position: relative; font: .72rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--slate);
+nav button { position: relative; font: .9rem var(--sans); color: var(--slate);
   padding: .65rem .4rem .7rem; transition: color .2s; }
 nav button::after { content: ""; position: absolute; left: 50%; top: 0; width: 0; height: 2px;
   background: var(--magenta); transform: translateX(-50%); transition: width .25s; }
 nav button.active { color: var(--ink); font-weight: 700; }
 nav button.active::after { width: 100%; }
-nav button span { color: var(--slate); font-weight: 400; margin-left: .4rem; letter-spacing: .04em; }
+nav button span { color: var(--slate); font-weight: 400; margin-left: .4rem; }
 
 /* ---------- split-flap letters: the flip without the retro tiles ---------- */
 .flaps { display: inline-flex; font-family: var(--mono); font-weight: 700; line-height: 1; perspective: 20em; }
@@ -223,9 +236,9 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .tags:not(:has(.badge)) { display: none; }
 .badges { display: flex; flex-wrap: wrap; gap: .45rem; }
 .badges:empty { display: none; }
-/* badges are stamps on the sheet: square, ruled, lettered in capitals */
-.badge { font: 700 .6rem var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: .22rem .5rem .2rem;
-  border-radius: 1px; border: 1px solid currentColor; color: var(--ink-2); }
+/* tags: a word or two in a light rule, in the colour of what they mark */
+.badge { font: 700 .74rem var(--sans); padding: .1rem .45rem .12rem; white-space: nowrap;
+  border-radius: var(--corner); border: 1px solid color-mix(in srgb, currentColor 38%, transparent); color: var(--ink-2); }
 .badge.new { color: var(--blue); } .badge.rare { color: var(--magenta); }
 .badge.hot { color: var(--sheet); background: var(--red); border-color: var(--red); font-weight: 700; }
 .badge.med { color: #fff; background: var(--med); border-color: var(--med); }
@@ -312,7 +325,7 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 .metric:first-child { padding-left: 0; }
 .metric .label { margin-bottom: .2rem; }
 .metric .v { font: 700 min(2rem, 5.6cqi)/1.1 var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -.02em; }
-.metric .v small { font: 400 .72rem var(--mono); color: var(--slate); letter-spacing: .04em; }
+.metric .v small { font: 400 .76rem var(--sans); color: var(--slate); letter-spacing: 0; }
 .metric .s { font-size: .72rem; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .15rem; }
 
 .h-bottom { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 1.6rem; align-items: center; min-height: 0; }
@@ -335,7 +348,7 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
     linear-gradient(90deg, var(--grid) 1px, transparent 0) center / .5rem .5rem; }
 /* the type designator in the corner of the sheet, where a drawing number goes */
 .sil-box[data-code]::before { content: attr(data-code); position: absolute; top: .5rem; right: .65rem;
-  font: 700 .6rem var(--mono); letter-spacing: .12em; color: var(--slate); }
+  font: 700 .66rem var(--mono); letter-spacing: .04em; color: var(--slate); }
 .facts { display: grid; grid-template-columns: auto 1fr; column-gap: 1.2rem; row-gap: .55rem; align-content: center; align-items: baseline; font-size: .92rem; margin: 0; }
 .facts dd { margin: 0; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
 /* type plates: a side elevation over a dimension line with its length. The box is a size container,
@@ -457,21 +470,21 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 /* ---------- radar and Map view ---------- */
 .scope { display: flex; padding: 2.4rem .2rem 2.6rem; }
 .seg { position: absolute; top: .4rem; left: .2rem; z-index: 3; display: inline-flex; border: 1px solid var(--rule); border-radius: var(--corner); overflow: hidden; }
-.seg button { font: .62rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); padding: .5rem .75rem; }
+.seg button { font: .76rem var(--sans); color: var(--slate); padding: .45rem .75rem; }
 .seg button + button { border-left: 1px solid var(--rule); }
 .seg button.on { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--ink) 7%, transparent); }
 #radar .bezel { fill: none; stroke: var(--slate); stroke-width: .3; stroke-linecap: butt; opacity: .8; }
 #radar .bezel.major { stroke: var(--ink-2); stroke-width: .45; }
-#radar .bearing { font: 3.6px var(--mono); fill: var(--slate); }
+#radar .bearing { font: 3.6px var(--sans); fill: var(--slate); }
 #radar .spoke { fill: none; stroke: var(--rule); stroke-width: .3; stroke-dasharray: .6 1.8; }
 /* the key and the heard-nearby note sit in the drawing's lower corners, outside the disc */
-#radar :is(.legend, .status) { font: 4.2px var(--mono); letter-spacing: .06em; text-transform: uppercase; fill: var(--slate); }
+#radar :is(.legend, .status) { font: 4.6px var(--sans); fill: var(--slate); }
 .attrib { position: absolute; right: .3rem; top: .55rem; font-size: .5rem; color: var(--slate); max-width: 45%; text-align: right; }
 /* the radar's options along the foot of the panel: style and track lines at the left, range at the right */
 .scope-tools { position: absolute; bottom: .4rem; left: .2rem; right: .2rem; z-index: 3; display: flex; gap: .5rem; }
 .scope-tools .seg { position: static; }
 .scope-tools #range-seg { margin-left: auto; }
-.seg .seg-unit { font: .62rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); padding: .5rem .6rem;
+.seg .seg-unit { font: .76rem var(--sans); color: var(--slate); padding: .45rem .6rem;
   border-left: 1px solid var(--rule); display: flex; align-items: center; }
 /* each view shows its own options: the radar its style and tracks, the Map view satellite or streets */
 #scope:not(.map) #mapstyle-seg, #scope.map #style-seg, #scope.map #btn-tracks { display: none; }
@@ -513,7 +526,7 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 #radar .hero .blip { fill: var(--magenta); }
 #radar .blip.gnd { fill: var(--slate); opacity: .4; stroke: none; }
 #radar .tag { fill: var(--ink); font-size: 5px; font-weight: 700; paint-order: stroke; stroke: var(--disc); stroke-width: 1.6px; stroke-linejoin: round; }
-#radar .tag-sub { font-family: var(--mono); font-size: 4.2px; fill: var(--slate); paint-order: stroke; stroke: var(--disc); stroke-width: 1.4px; }
+#radar .tag-sub { font-family: var(--sans); font-size: 4.2px; fill: var(--slate); paint-order: stroke; stroke: var(--disc); stroke-width: 1.4px; }
 /* lead lines: where each aircraft will be in a minute at its ground speed */
 #radar .vec { stroke: var(--blue); stroke-width: .45; stroke-linecap: round; opacity: .7; }
 #radar .hero .vec { stroke: var(--magenta); stroke-width: .6; opacity: .9; }
@@ -562,7 +575,7 @@ table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nu
 th { text-align: left; padding: .2rem .7rem .6rem;
   position: sticky; top: -1.1rem; background: var(--sheet); z-index: 1; border-bottom: 1px solid var(--rule); }
 td { padding: .7rem .7rem; border-top: 1px solid var(--rule); white-space: nowrap; font: 400 1rem var(--sans); font-variant-numeric: tabular-nums; vertical-align: middle; }
-.board td.fl, .board td.rt, .board td.ty { font-family: var(--mono); }
+.board td.fl, .board td.ty, .board td.rt b { font-family: var(--mono); }
 tbody tr:first-child td { border-top: 0; }
 td small { display: block; font: 400 .72rem var(--sans); color: var(--slate); margin-top: .15rem; max-width: 15rem; overflow: hidden; text-overflow: ellipsis; }
 td small.u { display: inline; font-size: .7rem; margin: 0; }
@@ -606,15 +619,14 @@ td.num, th.num { text-align: right; }
 .hours { display: flex; align-items: flex-end; gap: 3px; height: 3.2rem; border-bottom: 1px solid var(--ink-2); padding-bottom: 1px; }
 .hours i { flex: 1; background: var(--blue); min-height: 2px; opacity: .75; }
 .hours i.z { background: var(--rule); opacity: 1; }
-.hours-axis { display: flex; justify-content: space-between; font: .6rem var(--mono); letter-spacing: .06em; color: var(--slate); margin: 0 0 1.4rem; padding-top: .5rem;
+.hours-axis { display: flex; justify-content: space-between; font: .7rem var(--sans); color: var(--slate); margin: 0 0 1.4rem; padding-top: .5rem;
   background: repeating-linear-gradient(90deg, var(--slate) 0 1px, transparent 0 calc(100% / 24)) top left / 100% .25rem no-repeat,
     repeating-linear-gradient(90deg, var(--ink-2) 0 1px, transparent 0 25%) top left / calc(100% + 1px) .45rem no-repeat; }
 
-/* narrower windows: give the card more room, and drop the less important header items */
+/* narrower windows: give the card more room */
 @media (max-width: 1100px) {
   #view-now { grid-template-columns: 1.3fr 1fr; gap: 1rem; }
   header { gap: 1rem; } .chips { gap: 1rem; }
-  .icon-btn span { display: none; }
 }
 @media (max-aspect-ratio: 1/1) {
   html { font-size: clamp(9px, min(2.15vw, 1.55vh), 26px); }
@@ -682,7 +694,7 @@ figcaption p { margin: 0; } figcaption .cap-main { font-weight: 700; color: var(
 .hist { touch-action: none; }
 .hchart { margin-bottom: .45rem; }
 .htitle { display: flex; justify-content: space-between; align-items: baseline; gap: .8rem; margin-bottom: .1rem; padding-left: 52px; }
-.htitle .lg { font: .72rem var(--sans); letter-spacing: 0; text-transform: none; color: var(--ink-2); white-space: nowrap; }
+.htitle .lg { font: .72rem var(--sans); color: var(--ink-2); white-space: nowrap; }
 .hchart svg, .haxis { display: block; overflow: visible; }
 .ln { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .ln.temp { stroke: var(--temp); } .ln.dew { stroke: var(--dew); }
@@ -778,7 +790,7 @@ html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
    height, so the 1024×600 and 1920×1080 panels look the same. */
 html.kiosk body { grid-template-rows: auto 1fr; }
 /* the kiosk leaves out the radar's key and the ATC status area: small print, and it has its own clock */
-.kiosk nav, .kiosk .chips, .kiosk .icon-btn, .kiosk .seg, .kiosk #mini-board, .kiosk #radar :is(.legend, .status) { display: none !important; }
+.kiosk nav, .kiosk .chips, .kiosk .settings, .kiosk .seg, .kiosk #mini-board, .kiosk #radar :is(.legend, .status) { display: none !important; }
 .kiosk header { padding: 1.6vh 3vh 1vh; }
 .kiosk .brand { font-size: 2.6vh; flex: 1; }
 .kiosk .clock small { display: none; }
@@ -823,11 +835,13 @@ body.night .k-who .logo-tile { height: 8.5vh; padding: .8vh 1.4vh; border-radius
 .k-read b i { font-style: normal; font-size: .38em; margin-left: .2em; vertical-align: .9em; }
 .k-read b.word { font-size: 6.6vh; line-height: 10.5vh; letter-spacing: -.01em; }
 /* labels in the same drawing lettering as the desktop, sized to read across the room */
-.k-read span, .k-count span, .k-kicker { font: 2.5vh var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--slate); }
+.k-read span, .k-count span { font: 2.9vh var(--sans); color: var(--slate); }
+.k-kicker { font: 700 2.9vh var(--sans); color: var(--slate); }
 .k-read span { margin-top: .4vh; }
 
 .k-slide { justify-content: center; gap: 2.6vh; }
-.k-big { font: 700 16vh/1 var(--mono); letter-spacing: -.02em; }
+.k-big { font: 700 16vh/1 var(--sans); letter-spacing: -.02em; }
+.k-big.code { font-family: var(--mono); }
 .k-big.quiet { font-family: var(--sans); font-size: 12vh; }
 .k-mid { font: 700 8vh/1.1 var(--sans); }
 .k-mid i { font-style: normal; font-weight: 400; color: var(--slate); font-size: .5em; margin: 0 .4em; }
@@ -866,8 +880,7 @@ body.emergency { animation: em-pulse 2.4s ease-in-out infinite; }
 body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
 .em-card { display: flex; flex-direction: column; justify-content: center; gap: 1.1rem; padding: 2rem 2.2rem; background: var(--sheet); }
 .em-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 1.1rem; color: var(--ink-2); }
-.em-code { text-transform: uppercase; letter-spacing: .08em; }
-.em-code b { font: 700 2.6rem var(--mono); letter-spacing: 0; margin-left: .4rem; color: #ffd84d; }
+.em-code b { font: 700 2.6rem var(--mono); margin-left: .4rem; color: #ffd84d; }
 .em-since { font-variant-numeric: tabular-nums; }
 .em-title { font-size: 4.2rem; line-height: 1; letter-spacing: -.02em; }
 .em-meaning { font-size: 1.3rem; color: var(--ink-2); max-width: 40em; }
@@ -931,7 +944,7 @@ table.ct td { padding: .28rem .4rem .28rem 0; border-top: 1px solid var(--rule);
 .tfr-item p { margin-top: .2rem; }
 .tfr-top { display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
 .tfr-top b { font-size: .98rem; }
-.tfr-top .tag { font: .6rem var(--mono); letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--rule); color: var(--slate); border-radius: 1px; padding: .05rem .35rem; }
+.tfr-top .tag { font: .7rem var(--sans); border: 1px solid var(--rule); color: var(--slate); border-radius: 1px; padding: .05rem .35rem; }
 .tfr-top .tag.on { border-color: var(--red); color: var(--red); font-weight: 700; }
 .tfr-item details { margin-top: .3rem; font-size: .78rem; }
 .tfr-item summary { cursor: pointer; color: var(--blue); }
@@ -1043,7 +1056,7 @@ html.phone.land { font-size: 13px; }
   html.phone:not(.land) .brand .station { margin-left: 0; padding-left: 0; border-left: 0; }
   .pb-row { grid-template-columns: .3rem 4.7rem minmax(0, 1fr) auto; column-gap: .55rem; }
 }
-html.phone :is(.label, .facts dt, th, .wx-read dt, .sm-sun dt, .htitle, h2) { font-size: .7rem; }
+html.phone :is(.label, .facts dt, th, .wx-read dt, .sm-sun dt, .htitle, h2) { font-size: .76rem; }
 html.phone th { position: static; }
 
 /* the status line: brand, sound, night and the clock; alerts drop to a line of their own beneath */
@@ -1063,7 +1076,6 @@ html.phone .place-menu .pm-remove { width: 3rem; }
 html.phone .loc-field input { font-size: 16px; }
 html.phone .icon-btn { width: 2.6rem; height: 2.6rem; justify-content: center; padding: 0; }
 html.phone .icon-btn svg { width: 1.2rem; height: 1.2rem; }
-html.phone .icon-btn span { display: none; }
 html.phone .clock { font-size: 1.1rem; gap: .4rem; margin-left: .2rem; }
 html.phone .chips { order: 1; flex: 1 0 100%; flex-wrap: wrap; gap: .3rem 1rem; }
 /* the runway flow and the weather are a tab away; what's left calls for attention */
@@ -1076,7 +1088,7 @@ html.phone .em-chip { padding: .35rem .7rem; }
 /* sheet names along the foot, each a quarter of the width */
 html.phone nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0;
   padding: 0 max(.25rem, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(.25rem, env(safe-area-inset-left)); }
-html.phone nav button { padding: .95rem .1rem 1rem; font-size: .66rem; letter-spacing: .08em; white-space: nowrap; }
+html.phone nav button { padding: .95rem .1rem 1rem; font-size: .8rem; white-space: nowrap; }
 html.phone nav button span { margin-left: .3rem; }
 
 /* upright: one column that scrolls, the strip and the tabs staying put */
@@ -1356,7 +1368,7 @@ html.phone #radar .helipad-label { font-size: 5.4px; }
 .so-nums { display: flex; gap: 1.6rem; flex: none; }
 .so-nums > div { display: flex; flex-direction: column; }
 .so-nums > div + div { padding-left: 1.4rem; border-left: 1px solid var(--rule); }
-.so-nums b { font: 700 2.3rem/1.05 var(--sans); font-variant-numeric: tabular-nums; } .so-nums b small { font: 400 .8rem var(--mono); color: var(--slate); }
+.so-nums b { font: 700 2.3rem/1.05 var(--sans); font-variant-numeric: tabular-nums; } .so-nums b small { font: 400 .8rem var(--sans); color: var(--slate); }
 .so-nums span { font-size: .85rem; color: var(--slate); }
 .q-row { display: grid; grid-template-columns: 1.8rem auto minmax(0, 1fr) auto; align-items: center; gap: .8rem; width: 100%; text-align: left;
   padding: .45rem 0; border-top: 1px solid var(--rule); font-size: 1.05rem; }
@@ -1375,7 +1387,7 @@ html.phone #radar .helipad-label { font-size: 5.4px; }
 .tlist { display: flex; flex-direction: column; }
 .gh { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-top: .55rem; padding-bottom: .2rem; }
 .gh:first-child { margin-top: 0; }
-.gl { display: inline-flex; align-items: center; gap: .45rem; font: 700 max(11px, .66rem) var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; }
+.gl { display: inline-flex; align-items: center; gap: .45rem; font: 700 max(11px, .82rem) var(--sans); color: var(--ink-2); white-space: nowrap; }
 .gl b { color: var(--slate); font-weight: 400; margin-left: .15rem; }
 .gn { font-size: .78rem; color: var(--slate); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gh.heard .gl { color: var(--advisory); }
@@ -1394,14 +1406,14 @@ html.phone #radar .helipad-label { font-size: 5.4px; }
 .tr .when small { font-size: .68rem; color: var(--slate); }
 .tr.sel { background: color-mix(in srgb, var(--magenta) 8%, transparent); box-shadow: inset 2px 0 0 var(--magenta); }
 .t-empty { color: var(--slate); padding: 1rem 0; }
-.sheet-title { font: max(11px, .64rem) var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); }
+.sheet-title { font: 700 max(11px, .8rem) var(--sans); color: var(--slate); }
 /* the side view takes the room the list leaves, between its shortest and a height that still reads as one chart */
 .mb-prof { flex: 1 1 auto; display: flex; flex-direction: column; gap: .2rem; min-height: 11rem; max-height: 26rem; margin-top: .9rem; padding-top: .6rem; border-top: 1px solid var(--rule); }
 .prof-box { flex: 1; min-height: 0; }
 .profile { display: block; overflow: visible; }
 .el-grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 3; }
 .el-tick, .el-cloud-l, .el-gs-l { font: 10px var(--sans); fill: var(--slate); font-variant-numeric: tabular-nums; }
-.el-cloud-l { font-family: var(--mono); letter-spacing: .04em; }
+.el-cloud-l { font-family: var(--sans); font-variant-numeric: tabular-nums; }
 .el-ground { stroke: var(--ink-2); stroke-width: 1.3; }
 .el-hatch { stroke: var(--slate); stroke-width: .8; opacity: .55; }
 .el-rwy { stroke: var(--ink); stroke-width: 3.2; }
@@ -1600,7 +1612,7 @@ html.phone.land .seg.dens.mini button + button { border-top: 0; border-left: 1px
 
 /* ---- the Board, grouped ---- */
 table.grouped td.b-k { width: 2rem; padding-right: 0; }
-table.grouped tr.gsec th { position: static; padding: 1.1rem .7rem .45rem; background: transparent; border-bottom: 1px solid var(--rule); text-transform: none; letter-spacing: 0; }
+table.grouped tr.gsec th { position: static; padding: 1.1rem .7rem .45rem; background: transparent; border-bottom: 1px solid var(--rule); }
 table.grouped tr.gsec th .gl { margin-right: 1rem; }
 table.grouped tr.gsec th .gn { font: .8rem var(--sans); }
 table.grouped tbody tr.gsec + tr td { border-top: 0; }
@@ -1616,7 +1628,7 @@ table.grouped td.rt b { font-weight: 700; } table.grouped .b-to { font: 400 .78r
 /* ---- the next few minutes ---- */
 /* Simple: the next three, in words, each with its countdown */
 .tl.line { display: flex; flex-wrap: wrap; align-items: center; column-gap: 1.4rem; row-gap: .25rem; font-size: .92rem; color: var(--ink-2); }
-.tl-k { font: .62rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--slate); }
+.tl-k { font: 700 .8rem var(--sans); color: var(--slate); }
 .tl-e { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
 .tl-e b { color: var(--ink); font-variant-numeric: tabular-nums; }
 .tl .seq { width: 1.05rem; height: 1.05rem; font-size: .62rem; border-width: 1.3px; }
@@ -1624,7 +1636,7 @@ table.grouped td.rt b { font-weight: 700; } table.grouped .b-to { font: 400 .78r
 .tl.axis { min-width: 0; }
 .tl-track { position: relative; height: 3.05rem; margin-right: .4rem; }
 .tl-track::before { content: ""; position: absolute; left: 0; right: 0; top: 2.15rem; border-top: 1px solid var(--rule); }
-.tl-tick { position: absolute; top: 2.38rem; font: .6rem var(--mono); color: var(--slate); letter-spacing: .06em; transform: translateX(-50%); white-space: nowrap; }
+.tl-tick { position: absolute; top: 2.38rem; font: .68rem var(--sans); font-variant-numeric: tabular-nums; color: var(--slate); transform: translateX(-50%); white-space: nowrap; }
 .tl-tick::before { content: ""; position: absolute; left: 50%; top: -.33rem; height: .3rem; border-left: 1px solid var(--rule); }
 .tl-tick.start { transform: none; } .tl-tick.start::before { left: 0; }
 .tl-tick.end { transform: translateX(-100%); } .tl-tick.end::before { left: 100%; }

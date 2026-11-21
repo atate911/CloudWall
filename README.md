@@ -138,8 +138,8 @@ screen remembers its own choice, `?density=simple` or `detailed` sets it in the 
   records (highest, lowest, fastest, closest, furthest origin), flyovers by hour.
 
 The display switches to its night chart, dim and dark, when the sun sets at your house;
-the `Night` button forces it on or off. `Sound` turns on a soft chime when an aircraft comes overhead, with
-a different one for rare, military or emergency traffic.
+the settings button beside the clock forces it on or off, and turns on `Sound`: a soft chime when an
+aircraft comes overhead, with a different one for rare, military or emergency traffic.
 
 Badges mark the interesting ones: `NEW TYPE`, `NEW AIRLINE`, `RARE TYPE`, `HEAVY`,
 `HELICOPTER`, `MILITARY`, repeat visitors (`3rd VISIT`) and emergency squawks.
@@ -286,7 +286,7 @@ board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk 
 
 | Address | For | What it shows |
 |---|---|---|
-| `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, sound and night buttons. On screens 1200 px wide and up, Detailed adds a live list of every aircraft grouped by what it is doing, with the side view along the runways under it; click a flight to follow it. The arrow on the divider between the radar and the list hides or shows the list, and dragging the divider gives the radar more or less room (double-click it for the usual width); the flight card keeps its size, and each screen remembers its setting. On a wide, short window the radar's column keeps to the width of its disc and the card and the list share the rest; when the card is short, its route map moves beside the facts or takes the drawing's room (whichever shows the route bigger), then gives way, then the aircraft drawing does (the facts go into columns), so nothing runs into anything else. Simple on a wide window puts what's worth a look in a third column, past the radar. |
+| `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, and the settings menu (sound and night mode). On screens 1200 px wide and up, Detailed adds a live list of every aircraft grouped by what it is doing, with the side view along the runways under it; click a flight to follow it. The arrow on the divider between the radar and the list hides or shows the list, and dragging the divider gives the radar more or less room (double-click it for the usual width); the flight card keeps its size, and each screen remembers its setting. On a wide, short window the radar's column keeps to the width of its disc and the card and the list share the rest; when the card is short, its route map moves beside the facts or takes the drawing's room (whichever shows the route bigger), then gives way, then the aircraft drawing does (the facts go into columns), so nothing runs into anything else. Simple on a wide window puts what's worth a look in a third column, past the radar. |
 | `http://<server>:5050/` on a phone | A phone in the hand | The same tabs and switches, laid out for a phone. Upright, the page scrolls: the flight card at full width, then a square radar with its switches above and below it, the tabs along the foot and the status line held at the top. The Board becomes a two-line list (flight, route and when it's overhead; airline, type, altitude and speed), and Weather and Logbook stack into one column. Turned sideways, the card and radar sit side by side. Tapping a blip on the radar brings its flight card into view. |
 | `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Built to read from across the room. Across the header, what's next (the next aircraft over the house, the next landings) with a countdown each. Simple (the default): the headline and counts, the next aircraft over the house, the landing queue and what's worth a look beside the radar (on the 7.5" panel the queue shortens to make room for what's worth a look, and says how many more are behind it). Detailed: one big card (flight number, airline logo, route, altitude, speed and time until overhead) with the landing queue under it, beside the radar with every aircraft labelled and the headline over it (or the Map view, `[kiosk] view = "map"`). No tabs, buttons or small print. When the sky is empty it rotates every 12 seconds between the next flight, the weather with a windsock, and today's count. Tap the card to skip ahead. Tap a blip to show that flight; it goes back to what's overhead after 90 seconds untouched, or when the card is tapped. `[kiosk] quiet = "23:00-06:30"` sets quiet hours: only a dim clock and what's next, on near-black, waking while something is overhead or due over the house within a minute, for an emergency, and for two minutes when something new is worth a look or the panel is tapped. |
 
@@ -465,11 +465,13 @@ no requests (or, with `"log"`, only the slow position check).
   false` turns them off, and `url` can point at another source.
 - The look is an aeronautical chart laid out like a set of engineering drawings: cool chart
   paper, navy ink, chart blue for traffic and magenta only for the aircraft overhead, switching
-  to a night chart after dusk. Panels are framed as drawing sheets with corner marks, labels are
-  lettered in small capitals, type plates sit on a drafting grid with their ICAO type designator,
-  the radar carries a compass bezel, and the clock shows UTC beside local time. Type is
-  B612, the typeface Airbus designed for cockpit displays, bundled under the SIL Open Font
-  License (see `cloudwall/web/fonts/`), so the board looks the same on every machine.
+  to a night chart after dusk. Panels are framed as drawing sheets with corner marks, type plates
+  sit on a drafting grid with their ICAO type designator, the radar carries a compass bezel, and
+  the clock shows UTC beside local time. Type is B612, the typeface Airbus designed for cockpit
+  displays, bundled under the SIL Open Font License (see `cloudwall/web/fonts/`), so the board
+  looks the same on every machine. Words, labels included, are set in B612 in sentence case; B612
+  Mono is kept for codes read a character at a time: callsigns, airports, type designators,
+  runways and weather reports.
 - Airlines are one table, `cloudwall/data/airlines.csv`: the code a callsign starts with, the code
   its flights are sold under (which its logo and flight numbers go by), its name, whether it flies
   freight only, and its livery's colours for the board. Add a line to teach CloudWall an airline.

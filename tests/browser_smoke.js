@@ -150,8 +150,12 @@ const SCENARIOS = {
     out.backToRadar = true;
     const night = () => page.evaluate(() => document.body.classList.contains("night"));
     const before = await night(), seen = new Set([before]);
-    for (let i = 0; i < 3; i++) { await page.click("#btn-night"); seen.add(await night()); }      // auto, on, off
+    await page.click("#btn-settings");
+    for (const m of ["on", "off", "auto"]) { await page.click(`#settings-menu [data-night="${m}"]`); seen.add(await night()); }
     out.nightChanges = seen.size === 2;
+    out.nightPressed = await page.evaluate(() => [...document.querySelectorAll("#settings-menu [aria-pressed=true]")].map((b) => b.dataset.night || "sound-" + b.dataset.sound));
+    await page.keyboard.press("Escape");
+    out.settingsCloses = await page.evaluate(() => document.getElementById("settings-menu").hidden && document.activeElement.id === "btn-settings");
     await page.click("#station");
     out.places = await count(page, "#place-menu .pm-row");
     await page.click("#pm-add");

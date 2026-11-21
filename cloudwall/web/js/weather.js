@@ -15,6 +15,13 @@ const hourLabel = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "nume
 const compass = (d) => POINTS[Math.round(d / 22.5) % 16];
 
 // ---------- words ----------
+
+// A raw report, its kind in bold. Reports usually start with their kind ("METAR KPDX ..."), so that word becomes the label.
+function rawLine(kind, raw) {
+  const m = /^(METAR|SPECI|TAF(?: AMD| COR)?)\s+/.exec(raw || "");
+  return `<p><b>${m ? m[1] : kind}</b> ${esc(m ? raw.slice(m[0].length) : raw || "")}</p>`;
+}
+
 export function windWords(w) {
   if (!w || !w.speed) return "Calm wind";
   const from = w.variable ? "Variable" : `From ${String(w.dir).padStart(3, "0")}° (${compass(w.dir)})`;
@@ -208,7 +215,7 @@ function histCharts(width, hist) {
   const CAP = 10000, h3 = 76, y3 = scale(0, CAP, h3);
   const cBody = `<path class="ln ceil step" d="${stepPath(hist.map((o) => [x(o.time), y3(Math.min(o.ceiling ?? CAP, CAP))]))}"/>
     <text class="dlabel" x="${width - padR + 8}" y="${y3(Math.min(tLast.ceiling ?? CAP, CAP)) + 4}">${tLast.ceiling == null ? "none" : num(tLast.ceiling)}</text>`;
-  charts.push(frame(h3, cBody, "Ceiling, feet (top line: no ceiling or above 10,000)", ticks([0, 5000, CAP], y3, (v) => (v ? num(v / 1000) + "k" : "0")), ""));
+  charts.push(frame(h3, cBody, "Ceiling, feet", ticks([0, 5000, CAP], y3, (v) => (v ? num(v / 1000) + "k" : "0")), `<span class="lg">Top line: no ceiling below ${num(CAP)}</span>`));
 
   // visibility (mi)
   const h4 = 64, y4 = scale(0, 10, h4);
@@ -278,7 +285,7 @@ export function renderWeatherTab(el, W, state) {
       <div class="hreadout" id="wx-readout">Touch or hover over the charts to read a report</div>
       <h2>Forecast</h2>
       <div id="wx-taf"></div>
-      <div class="raw"><p><b>METAR</b> ${esc(n.raw || "")}</p>${W.taf && W.taf.raw ? `<p><b>TAF</b> ${esc(W.taf.raw)}</p>` : ""}</div>
+      <div class="raw">${rawLine("METAR", n.raw)}${W.taf && W.taf.raw ? rawLine("TAF", W.taf.raw) : ""}</div>
     </section>
     <section class="wx-more">
       <div class="panel-sky">${sunMoonPanel(skyToday(home.lat, home.lon))}</div>

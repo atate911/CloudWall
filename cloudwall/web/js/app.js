@@ -1,6 +1,6 @@
 "use strict";
 import { $, esc, store, phone, api, runwayList, degF, since, dataAge, COUNT_STOP_S } from "./util.js";
-import { updateSky, sky } from "./sky.js";
+import { updateSky } from "./sky.js";
 import { drawScope, mapReach, flashCraft } from "./scope.js";
 import { loadMap } from "./map.js";
 import { renderHero, tickHero, nextSlide, forgetHero } from "./hero.js";
@@ -181,15 +181,18 @@ function setView(v) {
   if (phone() === "stack") scrollTo(0, 0);        // each tab starts at its top
   render();
 }
+// Sound and night mode live in one small menu behind the settings button in the header.
 function renderToggles() {
-  const on = soundOn();
-  $("btn-sound").classList.toggle("on", on);
-  $("snd-on").style.display = on ? "" : "none";
-  $("snd-off").style.display = on ? "none" : "";
-  $("snd-text").textContent = on ? "Sound on" : "Sound off";
-  const n = store("night") || "auto";
-  $("night-text").textContent = n === "auto" ? "Night auto" : n === "on" ? "Night on" : "Night off";
-  $("btn-night").classList.toggle("on", sky.night);
+  const on = soundOn(), night = store("night") || "auto";
+  for (const b of $("settings-menu").querySelectorAll("button")) {
+    const set = b.dataset.sound ? (b.dataset.sound === "on") === on : b.dataset.night === night;
+    b.classList.toggle("on", set);
+    b.setAttribute("aria-pressed", String(set));
+  }
+}
+function showSettings(open) {
+  $("settings-menu").hidden = !open;
+  $("btn-settings").setAttribute("aria-expanded", String(open));
 }
 // The traffic picture around the radar: the strip across the top, and in Simple the side panel
 // (the next aircraft over the house, the landing queue, what's worth a look) in place of the card.
@@ -481,8 +484,16 @@ $("mapstyle-seg").addEventListener("click", (e) => { const b = e.target.closest(
 $("style-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { qs.delete("radar"); store("radarStyle", b.dataset.style); scopeLabel = ""; } });
 $("btn-tracks").addEventListener("click", () => { const on = radarPrefs().tracks; qs.delete("tracks"); store("tracks", on ? "off" : "on"); scopeLabel = ""; });
 $("range-seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { qs.delete("range"); store("range", b.dataset.range); scopeLabel = ""; poll(); } });
-$("btn-sound").addEventListener("click", () => { setSound(!soundOn()); renderToggles(); });
-$("btn-night").addEventListener("click", () => { const m = ["auto", "on", "off"]; store("night", m[(m.indexOf(store("night") || "auto") + 1) % 3]); render(); });
+$("btn-settings").addEventListener("click", () => showSettings($("settings-menu").hidden));
+$("settings-menu").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (b && b.dataset.sound) { setSound(b.dataset.sound === "on"); renderToggles(); }
+  if (b && b.dataset.night) { store("night", b.dataset.night); render(); }
+});
+document.addEventListener("pointerdown", (e) => { if (!e.target.closest(".settings")) showSettings(false); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !$("settings-menu").hidden) { showSettings(false); $("btn-settings").focus(); }
+});
 
 setInterval(poll, 2000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) { lastAnswer = Date.now(); poll(); } });

@@ -735,10 +735,13 @@ function placeLabels(heroHex) {
   const edge = opt.atc ? SQ - 9.5 : opt.map ? MX - 1.5 : 112;          // the ATC style keeps data blocks inside the compass
   const edgeY = opt.map ? MY - 1.5 : edge;
   const pick = (c) => {
+    // the chart style never leaves off the selected aircraft's label, so running off the edge, where
+    // it would be cut in half, costs it far more than sitting over a neighbour
+    const offCost = !opt.atc && !opt.map && c.hex === heroHex ? 400 : 20;
     const score = (i) => {
       const b = labelBox(c, i);
       let s = placed.reduce((n, p) => n + overlap(b, p), 0) + blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
-      s += (Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0)) * 20;
+      s += (Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0)) * offCost;
       if (square()) s += (Math.max(0, b.y1 - edgeY) + Math.max(0, -edgeY - b.y0)) * 20 + (opt.atc && i ? 1.5 : 0);
       return s - (i === c.slot ? 6 : 0);                                    // stickiness
     };

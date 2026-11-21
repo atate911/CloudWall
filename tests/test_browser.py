@@ -146,6 +146,8 @@ class BrowserTest(unittest.TestCase):
         self.assertRegex(m["note"], r"within \d+ miles of home")
         self.assertTrue(c["backToRadar"])
         self.assertTrue(c["nightChanges"])
+        self.assertEqual(sorted(c["nightPressed"]), ["auto", "sound-off"])      # one choice pressed in each setting
+        self.assertTrue(c["settingsCloses"])
         self.assertGreaterEqual(c["places"], 1)
         self.assertIn("98683", c["located"]["where"])
         self.assertGreaterEqual(c["located"]["airports"], 2)                 # the closest major airport, and others

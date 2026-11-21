@@ -83,7 +83,7 @@ function nextSlideHtml(n, state) {
   const r = n.route && n.route.plausible ? n.route : null;
   return `<div class="k-card k-slide">
     <div class="k-kicker">Next overhead</div>
-    <div class="k-row"><div class="k-big">${esc(boardFlight(ident(n)))}</div><div class="k-count"><b id="k-next">${mmss(Math.max(0, n.cpa_s - since(state)))}</b><span>to go</span></div></div>
+    <div class="k-row"><div class="k-big code">${esc(boardFlight(ident(n)))}</div><div class="k-count"><b id="k-next">${mmss(Math.max(0, n.cpa_s - since(state)))}</b><span>to go</span></div></div>
     <div class="k-mid">${r ? `${esc(r.origin.iata)} <i>to</i> ${esc(r.dest.iata)}` : esc(n.type_name || n.type || "")}</div>
     <div class="k-small">${esc([n.airline, r && n.type_name].filter(Boolean).join(", "))}</div>
   </div>`;
