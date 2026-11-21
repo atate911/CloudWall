@@ -1,0 +1,36 @@
+name = "North American P-51 Mustang"
+types = ["P51"]
+production = [1941, 1945]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/North_American_P-51_Mustang",
+  "https://en.wikipedia.org/wiki/North_American_P-51_Mustang_variants",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing-Chronology.pdf",
+]
+
+text = """
+In 1940 the British Purchasing Commission asked North American Aviation to build Curtiss P-40s
+under licence. North American's president, Dutch Kindelberger, offered a better fighter with the
+same Allison engine instead, and the prototype, designed by a team under Edgar Schmued, was rolled
+out 102 days after the order and flew on 26 October 1940. Its wing used new laminar-flow aerofoils
+worked out with NACA for low drag at speed, and its radiator sat in a duct under the belly, shaped
+so that the air leaving it, heated by the engine, gave back a little thrust. The Allison lost power
+above 15,000 ft, though, and the RAF flew its first Mustangs low down, on reconnaissance and ground
+attack.
+
+In 1942 Ronald Harker, a Rolls-Royce test pilot, suggested fitting the Merlin with its two-stage
+supercharger. Built in America by Packard, it made the Mustang the escort that could stay with the
+bombers from England deep into Germany and back, and in 1944 Mustangs helped break the Luftwaffe's
+fighter force; by the end of the war in Europe their pilots had claimed some 4,950 aircraft shot
+down. The P-51D added the bubble canopy that, with the big scoop under the belly, makes it easy to
+tell. More than 15,000 were built. Surplus Mustangs sold after the war for as little as $1,500, and
+one can now fetch more than a million dollars; those still flying are fixtures of airshows and air
+races.
+"""
+
+[facts]
+"First flight" = "October 1940"
+"Built" = "over 15,000"
+"Range" = "1,650 mi (2,660 km) with drop tanks (P-51D)"
+"Engine" = "Allison V-1710; Packard V-1650 Merlin from the P-51B"

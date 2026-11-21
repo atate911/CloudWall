@@ -1,0 +1,35 @@
+name = "Piper PA-30 and PA-39 Twin Comanche"
+types = ["PA30"]
+production = [1963, 1972]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Piper_PA-30_Twin_Comanche",
+  "https://en.wikipedia.org/wiki/Piper_PA-24_Comanche",
+  "https://en.wikipedia.org/wiki/Piper_Aircraft",
+  "https://en.wikipedia.org/wiki/Max_Conrad",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-P.htm",
+  "https://cfapps.icao.int/doc8643/8643_List3.cfm?mfc=PIPER",
+]
+
+text = """
+Piper's single-engined Comanche with a 160 hp four-cylinder Lycoming on each wing, an idea first
+tried by Ed Swearingen, who converted a Comanche in San Antonio in 1961. It was light and slippery
+for a twin: 320 hp in all gave it a top speed of 178 knots, and with tip tanks it carried 120 US
+gallons. In December 1964 Max Conrad flew one nonstop from Cape Town to St Petersburg, Florida,
+6,846 nm, for a distance record, and Prince William of Gloucester flew his own to diplomatic posts
+in Nigeria and Japan.
+
+In the 1960s it had a run of crashes in which pilots lost control at low speed after an engine
+failed or was throttled back in training. FAA flight tests and NASA wind-tunnel tests found nothing
+unusual in the aircraft, and the crashes fell away once the FAA changed how multi-engine flying was
+taught, but Piper's answer was the PA-39 Twin Comanche C/R, certified at the end of 1969: the first
+Piper twin with engines turning in opposite directions, so that neither is a "critical engine"
+whose loss is the harder to control. Production ended in 1972, when the Susquehanna, swollen by
+Hurricane Agnes, flooded the Lock Haven factory and Piper chose not to rebuild the tooling.
+"""
+
+[facts]
+"First flight" = "November 1962"
+"Built" = "2,001 PA-30s and 155 PA-39s"
+"Engines" = "2 × Lycoming IO-320, 160 hp"
+"Top speed" = "178 kt (PA-39)"

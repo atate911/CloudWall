@@ -1,0 +1,33 @@
+name = "Northrop T-38 Talon"
+types = ["T38"]
+production = [1961, 1972]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Northrop_T-38_Talon",
+  "https://en.wikipedia.org/wiki/United_States_Air_Force_Thunderbirds",
+]
+
+text = """
+The world's first supersonic trainer entered service in 1961, and more than sixty years on it is
+still where US Air Force pilots learn to fly fast jets, until the Boeing-Saab T-7 Red Hawk takes
+over. Northrop's Edgar Schmued, who had led the design of the P-51 Mustang, saw in a small new
+General Electric engine, the J85, a way to reverse the trend towards ever bigger fighters, and
+Northrop drew a twin-engined "hot rod" around two of them; the fighter version became the F-5.
+Weight was watched so closely that the T-38 carries no fuel in its wings and nothing under them,
+and the engines hang on rails, so a crew can change one in about an hour. In 1962 it took the
+time-to-climb records to 3,000, 6,000, 9,000 and 12,000 m from the F-104 Starfighter. By the time
+production ended in 1972, 1,187 had been built, and some 50,000 military pilots have trained on it.
+
+NASA's astronauts fly T-38s from Ellington Field in Houston, and in the Space Shuttle era crews
+traditionally arrived at Kennedy Space Center in them. The Thunderbirds flew it from 1974 because,
+in the oil crisis, five T-38s burned the fuel of one F-4 Phantom, until four of the team's pilots
+were killed in 1982 when their diamond formation flew into the ground while practising a loop.
+Tell it from the two-seat F-5, its close relative, by the wing, which meets the fuselage straight
+and ends square, with none of the F-5's extensions at the roots or missile rails at the tips.
+"""
+
+[facts]
+"First flight" = "April 1959"
+"Built" = "1,187"
+"Top speed" = "Mach 1.3"
+"Engines" = "2 × GE J85, 3,850 lb thrust with afterburner"

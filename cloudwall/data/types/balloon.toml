@@ -1,0 +1,45 @@
+name = "Balloon"
+types = ["BALL"]
+checked = "2026-11"
+sources = [
+  "https://www.icao.int/operational-safety/doc-8643-aircraft-type-designators/special-designators",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+  "https://en.wikipedia.org/wiki/Hot_air_balloon",
+  "https://en.wikipedia.org/wiki/Ed_Yost",
+  "https://en.wikipedia.org/wiki/Gas_balloon",
+  "https://en.wikipedia.org/wiki/Albuquerque_International_Balloon_Fiesta",
+  "https://en.wikipedia.org/wiki/Gordon_Bennett_Cup_(ballooning)",
+  "https://en.wikipedia.org/wiki/Breitling_Orbiter",
+  "https://www.faa.gov/regulations_policies/handbooks_manuals/aviation/Balloon_Flying_Handbook_FAA-H-8083-11B/bfh_chapter_3.pdf",
+  "https://www.law.cornell.edu/cfr/text/14/91.225",
+]
+
+text = """
+A balloon travels with the wind and at its speed, so it can't be steered. All the pilot controls is
+height, climbing or sinking into a layer of air moving the way they want to go, and the wind usually
+turns as it rises. At Albuquerque, home of the world's largest balloon festival, northerly winds near
+the ground and southerly winds above them can carry a balloon south, up, back north and down to land
+near where it started. Most flights are in the first couple of hours after sunrise or the last before
+sunset, when the air is stable: by mid-morning the sun's heating stirs up thermals and gusts, and they
+die away again towards evening.
+
+A hot-air balloon is lifted by heat alone. Liquid propane from cylinders in the basket feeds burners
+of 2 to 3 megawatts each, heating the air in a nylon envelope to as much as 120 °C, with
+fire-resistant Nomex at the mouth nearest the flame and a parachute valve in the crown that lets hot
+air out to come down. Ed Yost flew the first modern one, with a propane burner, from Bruning,
+Nebraska, in 1960. The commonest size, about 2,800 m³, carries three to five people; ride operators
+fly envelopes six times that, with more than two dozen aboard, and a chase crew follows by road to
+collect them wherever they land.
+
+Gas balloons, filled with hydrogen or helium, climb by dropping ballast and descend by letting gas
+out, and can stay up for days. The Gordon Bennett Cup, first flown from Paris in 1906, is still a race
+to land farthest from the start, and Breitling Orbiter 3, a hybrid of the two kinds, made the first
+nonstop balloon flight around the world in 1999, in just under 20 days. Few balloons broadcast ADS-B,
+which the US, for one, doesn't require of them, so one that appears here is doing so by choice.
+"""
+
+[facts]
+"First crewed flight" = "November 1783 (Montgolfier hot-air balloon)"
+"Burners" = "2–3 MW each (7–10 million BTU/h)"
+"Envelope" = "Nylon, heated to about 120 °C (250 °F) at most"
+"Altitude record" = "68,986 ft (21,027 m), hot air, November 2005"

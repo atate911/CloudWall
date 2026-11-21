@@ -1,0 +1,46 @@
+name = "Bombardier Challenger 300"
+types = ["CL30", "CL35"]
+production = [2004]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Bombardier_Challenger_300",
+  "https://en.wikipedia.org/wiki/Honeywell_HTF7000",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://www.flycraft.com/aircraft/n350tt",
+]
+
+text = """
+Bombardier drew the Challenger 300 from a clean sheet in the late 1990s, owing nothing to the bigger
+Challenger 600 whose name it borrows, to fill the gap between its Learjet 60 and Challenger 604: eight
+passengers flown 3,100 nm at Mach 0.80, far enough to cross the United States without a stop.
+Mitsubishi Heavy Industries designed and built its one-piece wing and Taiwan's AIDC the rear fuselage
+and tail, with final assembly in Montreal. The engine was new as well. Honeywell developed the
+AS907, since renamed the HTF7000, for the Challenger, and versions of it now power the jets it
+competes with: the Gulfstream G280, Embraer's Legacy 450 and 500, and the Cessna Citation Longitude.
+
+It entered service with the fractional operator Flexjet in January 2004, and NetJets was launch
+customer for the improved Challenger 350 of 2014, with an order for 75. The 350's engines give 7.3% more
+takeoff thrust, and its strengthened wing ends in canted winglets that add 1.6 m to the span. Those
+winglets, angled outward where the 300's stand closer to upright, are the way to tell the two apart.
+Bombardier claimed 58% of the super-midsize market in 2018, and had delivered about 800 of the two
+by mid-2020. The Challenger 3500, delivered from 2022, is the same airframe with autothrottles and a
+new cabin.
+"""
+
+[facts]
+"First flight" = "August 2001"
+
+[variants.CL30]
+name = "Bombardier Challenger 300"
+[variants.CL30.facts]
+"Range" = "3,100 nm (5,741 km)"
+"Max takeoff weight" = "38,850 lb (17,622 kg)"
+"Engines" = "2 × Honeywell HTF7000, 6,826 lbf"
+
+[variants.CL35]
+name = "Bombardier Challenger 350 or 3500"
+production = [2014]
+[variants.CL35.facts]
+"Range" = "3,200 nm (5,926 km), Challenger 350"
+"Max takeoff weight" = "40,600 lb (18,416 kg), Challenger 350"
+"Engines" = "2 × Honeywell HTF7350, 7,323 lbf"

@@ -1,0 +1,66 @@
+name = "Aérospatiale / Airbus Helicopters Dauphin"
+types = ["AS65", "EC55", "S65C", "S360"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Eurocopter_AS365_Dauphin",
+  "https://en.wikipedia.org/wiki/A%C3%A9rospatiale_SA_360_Dauphin",
+  "https://en.wikipedia.org/wiki/Eurocopter_MH-65_Dolphin",
+  "https://en.wikipedia.org/wiki/Eurocopter_EC155",
+  "https://en.wikipedia.org/wiki/KAI_LCH",
+  "https://en.wikipedia.org/wiki/Fenestron",
+  "https://www.airbus.com/en/newsroom/press-releases/2022-01-airbus-delivers-the-last-ever-dauphin-to-spanish-customs",
+  "https://doc8643.com/aircraft/AS65",
+  "https://doc8643.com/aircraft/EC55",
+  "https://doc8643.com/aircraft/S65C",
+  "https://www.doc8643.com/aircraft/S360",
+]
+
+text = """
+Aérospatiale's single-engined SA 360 Dauphin (dolphin) of 1972 found few buyers, a helicopter its
+size with one engine being seen as underpowered, so it added a second. The Dauphin 2, flown in
+January 1975, then sold for more than four decades, and the last was delivered to Spanish Customs in
+January 2022. Its tail carries the Fenestron's second generation, all-composite, larger, and turning
+the opposite way to the Gazelle's after testing showed the main rotor's downwash working against
+it. From the SA 365 N of 1979 it also has a retractable tricycle undercarriage, so a Dauphin in
+flight shows a clean belly, its wheels folded away, ahead of the ducted tail.
+
+Offshore crews, companies, air ambulances and news stations flew it, and India's Pawan Hans took the
+1,000th in 2011. The US Coast Guard bought 99 as the HH-65 Dolphin for short-range rescue, in
+service from 1985, first with Lycoming engines to meet rules on American content and from 2004
+with Arriels. Its autopilot can bring it down to a steady hover 50 ft above a chosen spot in the
+dark or in bad weather, and the armed MH-65s carry a .50-calibre rifle to fire disabling shots at
+boats. The Coast Guard plans to replace them with Sikorsky MH-60s.
+"""
+
+[facts]
+"First flight" = "January 1975 (Dauphin 2)"
+
+[variants.AS65]
+name = "Airbus Helicopters AS365 Dauphin"
+production = [1982, 2022]
+[variants.AS65.facts]
+"Engines" = "2 × Turbomeca (now Safran) Arriel; 2 × Lycoming LTS101 on the first HH-65s"
+"Max takeoff weight" = "4,300 kg (9,480 lb) (AS365 N3)"
+
+[variants.EC55]
+name = "Airbus Helicopters H155 / Eurocopter EC155"
+more = """
+The EC155, first flown in 1997 and called the H155 since 2015, stretched the Dauphin for offshore
+and VIP work, with a cabin 30% roomier, seats for up to 13 passengers and a five-bladed Spheriflex
+rotor. The H160 replaced both it and the Dauphin in Airbus's range, and Korea Aerospace Industries
+took over EC155 production and built its own LCH and LAH helicopters from it.
+"""
+[variants.EC55.facts]
+"First flight" = "June 1997"
+"Engines" = "2 × Turbomeca Arriel 2C1 or 2C2"
+
+[variants.S65C]
+name = "Aérospatiale SA 365 C Dauphin 2"
+[variants.S65C.facts]
+"Engines" = "2 × Turbomeca Arriel 1"
+
+[variants.S360]
+name = "Aérospatiale SA 360 Dauphin"
+[variants.S360.facts]
+"First flight" = "June 1972"
+"Engine" = "Turbomeca Astazou XVIIIA, 1,050 shp"

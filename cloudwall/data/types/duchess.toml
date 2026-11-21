@@ -1,0 +1,34 @@
+name = "Beechcraft Duchess"
+types = ["BE76"]
+production = [1978, 1983]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Beechcraft_Duchess",
+  "https://en.wikipedia.org/wiki/Beechcraft_Musketeer",
+  "https://www.avweb.com/features/beechcraft-duchess/",
+  "https://commons.wikimedia.org/wiki/File:Beechcraft_76_Duchess_3-view_line_drawing.png",
+  "https://commons.wikimedia.org/wiki/File:Piper_PA-44-180_Seminole_3-view_line_drawing.png",
+]
+
+text = """
+Beech designed the Duchess in the mid-1970s as an inexpensive twin on which its own flying schools,
+the Beech Aero Centers, could teach multi-engine flying. It is built from Beech's single-engined
+Musketeer family: the fuselage and wing of the retractable-gear Sierra, its spar redesigned to carry
+two engines, the nose gear of the A36 Bonanza, and a wing of bonded aluminium honeycomb in place of
+rivets, cheaper to make and smoother. Its two 180 hp Lycomings turn in opposite directions, so it
+has no "critical engine" whose failure would be the harder to control.
+
+Critics took the T-tail for an affectation copied from jet airliners, but it came out of flight
+testing. AVweb reports that the conventional tailplane first tried was too small and buffeted in the
+propellers' wash; moving it to the top of the fin cured the buffet for only 15 lb more, and set it
+further back, where it works harder and widens the range of loading the aircraft accepts. Beech
+built 437 at Liberal, Kansas, from 1978 to 1983, and many still teach at flight schools. Tell it
+from the Piper Seminole, the T-tailed trainer with counter-rotating engines that followed it, by its
+wing, the same width from root to tip.
+"""
+
+[facts]
+"First flight" = "September 1974"
+"Built" = "437"
+"Engines" = "2 × Lycoming O-360, 180 hp, counter-rotating"
+"Max takeoff weight" = "3,900 lb"

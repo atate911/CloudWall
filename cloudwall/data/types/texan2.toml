@@ -1,0 +1,30 @@
+name = "Beechcraft T-6 Texan II"
+types = ["TEX2"]
+production = [2000]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Beechcraft_T-6_Texan_II",
+  "https://en.wikipedia.org/wiki/Pilatus_PC-9",
+  "https://en.wikipedia.org/wiki/North_American_T-6_Texan_variants",
+]
+
+text = """
+US Air Force pilots, and Navy, Marine Corps and Coast Guard aviators, do their basic flight
+training in the Texan II, which replaced the Air Force's T-37 jet and the Navy's T-34C turboprop.
+Canada flies it as the CT-156 Harvard II, and air forces from Greece and Israel to Mexico, New
+Zealand and the UK have bought it too. It began as Switzerland's Pilatus PC-9, which Pilatus and
+Beechcraft modified extensively to win the US joint trainer competition in 1995, and it was named after the
+North American T-6 that trained the Allied pilots of the Second World War.
+
+Student and instructor sit one behind the other on Martin-Baker ejection seats, with a system that
+fractures the canopy so they can eject through it. A single Pratt &
+Whitney Canada PT6A-68 turboprop of 1,100 shp drives a four-bladed propeller, and the airframe is
+cleared for 7 g. Tell it from its namesake by the slim turboprop nose and tricycle undercarriage,
+where the old T-6 has a round radial engine and sits on a tailwheel.
+"""
+
+[facts]
+"First flight" = "July 1998"
+"Engine" = "Pratt & Whitney Canada PT6A-68, 1,100 shp"
+"Ceiling" = "31,000 ft"
+"Load limits" = "+7 g, −3.5 g"

@@ -1,0 +1,46 @@
+name = "Bell 47"
+types = ["B47G", "B47J"]
+production = [1946, 1974]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Bell_47",
+  "https://en.wikipedia.org/wiki/Bell_H-13_Sioux",
+  "https://en.wikipedia.org/wiki/Arthur_M._Young",
+  "https://en.wikipedia.org/wiki/Bell_47J_Ranger",
+  "https://en.wikipedia.org/wiki/Bell_UH-1_Iroquois",
+  "https://en.wikipedia.org/wiki/Bell_206",
+  "https://en.wikipedia.org/wiki/Bell_Textron",
+  "https://cfapps.icao.int/doc8643/reports/Part3-By%20Model%20Number_Name.pdf",
+]
+
+text = """
+Arthur Young spent twelve years alone on his father's farm in Pennsylvania working out how to make a
+helicopter stable, then took his models to Bell in 1941, and the 47 grew from the prototypes he
+built there. In March 1946 it became the first helicopter certified for civil use, and the weighted
+stabilizer bar Young patented, set across the mast below the rotor to hold it level against gusts,
+lived on in Bell's two-bladed rotors through to the Huey. As the Army's H-13 Sioux in Korea it flew
+the wounded from the front in panniers on its skids, earning the name Angel of Mercy, and the film
+and television series M*A*S*H made it the helicopter people picture when they think of that war.
+
+The 47G of 1953, the most common model, is the familiar shape: a "soap bubble" canopy, as Young
+called it, an open welded-tube tail boom, two saddle fuel tanks and skids, with a piston engine
+mounted upright. A 47 made the first television news helicopter flight, for KTLA in Los Angeles in
+July 1958, others trained Apollo astronauts to fly the lunar lander, and in 1984 New York's Museum of
+Modern Art added one to its collection. More than 5,600 were built, under licence in Italy, Japan and
+Britain as well.
+"""
+
+[facts]
+"First flight" = "December 1945"
+"Certified" = "March 1946, the first civil helicopter"
+"Built" = "over 5,600"
+"Engine" = "Franklin or Lycoming piston, 175–305 hp"
+
+[variants.B47J]
+name = "Bell 47J Ranger"
+more = """
+The 47J Ranger of 1956 encloses it all: a four-seat cabin with a bench across the back, the pilot
+sitting in the middle up front, and a covered tail boom. On 13 July 1957 an Air Force H-13J carried
+Dwight Eisenhower from the White House, the first time a US president flew in a helicopter, and the
+Ranger name went on to the JetRanger.
+"""

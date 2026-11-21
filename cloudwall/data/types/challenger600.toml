@@ -1,0 +1,35 @@
+name = "Bombardier Challenger 600 series"
+types = ["CL60"]
+production = [1980]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Bombardier_Challenger_600_series",
+  "https://en.wikipedia.org/wiki/Bill_Lear",
+  "https://en.wikipedia.org/wiki/General_Electric_CF34",
+  "https://en.wikipedia.org/wiki/Bombardier_Global_Express",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+The Challenger began as a rough concept of Bill Lear's, the LearStar 600, which Canadair bought in
+1976 and redrew into a much bigger aeroplane: a fuselage wide enough for a flat floor and a cabin you
+can walk about in, on one of the first supercritical wings in a business jet. The original tail had
+to become a T-tail when it was found to sit in the engines' exhaust, and Lear, who had left the
+programme, reportedly called the result Fat Albert. Flight International called it a miniature twinjet
+airliner in every respect. The wide cargo door was there because the launch customer was FedEx, which
+wanted it as a small freighter before deregulation led it to cancel.
+
+Slow early sales helped bring Canadair close to bankruptcy. A test aircraft crashed in the Mojave Desert in 1980
+when its recovery parachute failed to let go after a deep stall, and only with the 601 of 1982, which
+swapped the Lycoming ALF 502s for General Electric CF34s and added winglets, did orders pick up; the
+CF34 went on to power the CRJ and Embraer's E-Jets. Bombardier bought Canadair in 1986, stretched the
+Challenger into the CRJ airliner and gave its cross-section to the Global Express. The 604, 605 and
+650 look much alike, the last two with a streamlined tail cone. The first 600s are the ones with
+no winglets, their engines in full-length cowlings.
+"""
+
+[facts]
+"First flight" = "November 1978"
+"Built" = "over 1,000"
+"Range" = "4,000 nm (7,400 km), Challenger 650"
+"Engines" = "2 × GE CF34; Lycoming ALF 502L on the original 600"

@@ -1,0 +1,43 @@
+name = "MBB/Kawasaki BK 117 and Airbus Helicopters H145"
+types = ["BK17", "EC45"]
+production = [1983]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/MBB/Kawasaki_BK_117",
+  "https://en.wikipedia.org/wiki/Eurocopter_EC145",
+  "https://en.wikipedia.org/wiki/Eurocopter_UH-72_Lakota",
+  "https://en.wikipedia.org/wiki/Eurocopter_EC135",
+  "https://en.wikipedia.org/wiki/Fenestron",
+  "https://doc8643.com/aircraft/EC45",
+]
+
+text = """
+MBB and Kawasaki designed the BK 117 together from 1977: MBB brought the hingeless rotor of its
+Bo 105, the flight controls and the tail boom, Kawasaki the airframe, main transmission and landing
+gear, and each built it for its own market. It first flew in June 1979 and was delivered from 1983.
+The tail boom sits high on the cabin so that clamshell doors at the back can open beneath it, and a
+stretcher can go in with the rotor turning, which with its second engine made it, and everything
+built from it since, a mainstay of air ambulances, rescue services and police.
+
+Eurocopter joined the EC135's cockpit to the rear of a BK 117 to make the EC145, delivered from
+2002, which the US Army bought as the UH-72 Lakota. The EC145 T2 of 2014, renamed H145, has Safran
+Arriel 2E engines and a Fenestron in place of the open tail rotor, and since 2020 a five-bladed
+bearingless rotor, which added 150 kg of payload and tells the newest from the four-bladed H135. On
+paper every one, the H145 included, is still a BK 117, all on one type certificate. In September
+2019 an H145 landed on the summit of Aconcagua, 6,962 m, a record for a twin-engined helicopter.
+"""
+
+[variants.BK17]
+name = "MBB/Kawasaki BK 117"
+[variants.BK17.facts]
+"First flight" = "June 1979"
+"Engines" = "2 × Lycoming LTS101; 2 × Turbomeca Arriel 1E (BK 117 C-1)"
+
+[variants.EC45]
+name = "Airbus Helicopters H145 / Eurocopter EC145"
+production = [2002]
+[variants.EC45.facts]
+"First flight" = "June 1999"
+"Engines" = "2 × Turbomeca (now Safran) Arriel 1E2 (EC145) or 2E (H145)"
+"Max takeoff weight" = "3,800 kg (8,380 lb) (five-bladed H145)"
+"Highest landing" = "Aconcagua, 6,962 m (22,840 ft), September 2019"

@@ -1,0 +1,49 @@
+name = "Cessna 210 Centurion"
+types = ["C210", "T210", "P210"]
+production = [1960, 1986]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_210_Centurion",
+  "https://en.wikipedia.org/wiki/Cessna_206",
+  "https://en.wikipedia.org/wiki/List_of_most-produced_aircraft",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+  "https://doc8643.com/aircraft/T210",
+  "https://www.doc8643.com/aircraft/C210",
+]
+
+text = """
+The 210 went on sale in 1960 as a Cessna 182 with retractable gear, a swept tail and a new wing,
+and Cessna went on reworking it until 1986. Its main wheels fold back into the fuselage behind the
+passengers. For 1964 Cessna fitted two child seats into that space; for 1970 it gave the main gear
+longer, tapered steel-tube legs that tuck the wheels further back, which made room for full-size
+seats and made the 210K the first true six-seater. From 1979 the gear doors were left off, the legs
+lying in shallow channels under the belly, and most older 210s have since had theirs removed too,
+because they were troublesome to maintain.
+
+From 1967 the wing has no strut: a big high-wing Cessna with nothing bracing its wing and its
+wheels tucked away is a 210, the smaller Cardinal aside. The turbocharged T210 arrived in 1966 and
+the pressurised P210 in 1978, with four windows down each side. That cantilever wing's spar
+carry-through has become the type's ageing problem: in 2019 a T210M lost its right wing near Mount
+Isa, Australia, to a fatigue crack that had grown from a small corrosion pit, and in 2020 the FAA
+made eddy-current inspections of the carry-through mandatory.
+"""
+
+[facts]
+"First flight" = "January 1957"
+"Built" = "more than 9,000, all versions"
+"Engine" = "Continental IO-520, 285 hp, from 1964 (IO-470, 260 hp, before)"
+
+[variants.T210]
+name = "Cessna T210 Turbo Centurion"
+production = [1966, 1986]
+[variants.T210.facts]
+"Engine" = "Continental TSIO-520, turbocharged, 285–310 hp"
+"Ceiling" = "27,000 ft (T210N)"
+"Max takeoff weight" = "4,000 lb (1,814 kg), T210N"
+
+[variants.P210]
+name = "Cessna P210 Pressurized Centurion"
+production = [1978, 1986]
+[variants.P210.facts]
+"Built" = "874"
+"Engine" = "Continental TSIO-520, 310 hp (325 hp on the 1986 P210R)"

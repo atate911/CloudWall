@@ -1,0 +1,59 @@
+name = "Bell 222, 230 and 430"
+types = ["B222", "B230", "B430"]
+production = [1980, 1991]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Bell_222/230",
+  "https://en.wikipedia.org/wiki/Bell_430",
+  "https://en.wikipedia.org/wiki/Airwolf",
+  "https://en.wikipedia.org/wiki/Bell_Textron",
+]
+
+text = """
+The first light twin-turbine helicopter developed in the United States, the 222 first flew in August
+1976 and was delivered from 1980, a sleek executive and air ambulance helicopter whose main wheels
+retract into stub sponsons on its sides that also carry fuel. It has two Lycoming LTS101 engines and
+a two-bladed rotor of stainless steel and glassfibre, its hub on lubricant-free elastomeric bearings,
+of a design like the AH-1 Cobra's. A cosmetically modified 222 played Airwolf, the attack helicopter
+of the 1980s television series, dressed up with dummy jet intakes, guns and a rocket pod.
+"""
+
+[facts]
+"First flight" = "August 1976 (222)"
+
+[variants.B222]
+name = "Bell 222"
+more = """
+The 222B of 1982 has more power and a larger rotor, and the 222UT of 1983 sits on skids in place of
+the retractable gear. Bell built 199 before reworking it as the 230.
+"""
+[variants.B222.facts]
+"Built" = "199"
+"Engines" = "2 × Lycoming (now Honeywell) LTS101"
+
+[variants.B230]
+name = "Bell 230"
+production = [1992, 1995]
+more = """
+The 230 is a 222B with Allison 250 engines in place of the LTS101s, their exhausts set high on the
+cowling, and a choice of skids or wheels. Bell built only 38, from 1992 to 1995, before the 430
+replaced it.
+"""
+[variants.B230.facts]
+"First flight" = "August 1991"
+"Built" = "38"
+"Engines" = "2 × Allison 250-C30G/2"
+
+[variants.B430]
+name = "Bell 430"
+production = [1996, 2008]
+more = """
+The 430 stretches the 230 for another row of seats and has more powerful Rolls-Royce 250-C40B
+engines and, in place of the two blades, a four-bladed, bearingless composite rotor, which tells it
+from a 222 or 230 at a glance. In 1996 Ron Bower and John Williams flew one around the world in 17
+days, 6 hours and 14 minutes, a record for a helicopter. Bell built 136, the last in 2008.
+"""
+[variants.B430.facts]
+"First flight" = "October 1994"
+"Built" = "136"
+"Engines" = "2 × Rolls-Royce 250-C40B"

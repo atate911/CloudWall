@@ -1,0 +1,53 @@
+name = "Bell 206 JetRanger and LongRanger"
+types = ["B06", "B06T"]
+production = [1967, 2017]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Bell_206",
+  "https://en.wikipedia.org/wiki/Bell_OH-58_Kiowa",
+  "https://en.wikipedia.org/wiki/Bell_407",
+  "https://en.wikipedia.org/wiki/Helicopter_rotor",
+  "https://en.wikipedia.org/wiki/Allison_Model_250",
+  "https://en.wikipedia.org/wiki/Spirit_of_Texas",
+  "https://en.wikipedia.org/wiki/Bell_400_TwinRanger",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+  "https://cfapps.icao.int/doc8643/reports/Doc8643-Ed39Amnt01/Part1-By%20Manufacturer%20(Encode).pdf",
+]
+
+text = """
+Bell first built it for the US Army's light observation helicopter contest of the early 1960s, and
+lost: its YOH-4, nicknamed the Ugly Duckling, was beaten by the Hughes OH-6 in 1965. Bell gave it a
+sleeker five-seat cabin with a baggage hold, named it the JetRanger after the piston-engined 47J
+Ranger, and from 1967 sold it to civilians, among them the TV news crews and police forces who made
+it their own. The Army bought it after all, as the OH-58 Kiowa, and the US Navy and Army taught their
+helicopter pilots on it. The LongRanger of 1975 stretched the cabin by 30 inches for two more seats,
+and in 1982 a LongRanger, Spirit of Texas, made the first flight around the world by helicopter, in
+29 days. It is now in the Smithsonian.
+
+Its Allison 250 turboshaft, now the Rolls-Royce M250, was developed for the same Army requirement,
+and grew from 317 hp in the first JetRanger to the 250-C30P of the last LongRangers, built until
+2017. The rotor is Bell's classic two-bladed teetering design, the blades joined across the hub so
+that they see-saw together on a single hinge atop the mast. That keeps it simple and light, but in
+low g the rotor stops controlling the fuselage, which can roll until the blade roots strike the
+mast, so pilots are taught never to push over sharply. Two blades also beat slower and louder than
+four: the four-bladed rotor Bell later gave the Army's Kiowa Warrior made it quieter than the
+two-bladed Kiowa. The 407, which grew from the LongRanger, has that rotor, so count the blades.
+"""
+
+[facts]
+"First flight" = "January 1966 (206A)"
+"Engine" = "Allison (now Rolls-Royce) 250"
+"Main rotor" = "2 blades, teetering; 33 ft 4 in (10.2 m) across (206B)"
+"Military versions" = "OH-58 Kiowa, TH-57 Sea Ranger, TH-67 Creek"
+
+[variants.B06T]
+name = "Bell 206LT TwinRanger"
+production = [1994, 1997]
+more = """
+The TwinRanger is a LongRanger with two engines, built new by Bell to match Tridair's Gemini ST
+conversion, which in 1994 became the first helicopter certified to fly as either a single or a twin
+through every phase of flight. Bell delivered only 13, from 1994 to 1997, before the 427 replaced
+it.
+"""
+[variants.B06T.facts]
+"Built" = "13"

@@ -1,0 +1,34 @@
+name = "Bell 407"
+types = ["B407"]
+production = [1996]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Bell_407",
+  "https://en.wikipedia.org/wiki/Bell_OH-58_Kiowa",
+  "https://en.wikipedia.org/wiki/Helicopter_rotor",
+  "https://en.wikipedia.org/wiki/Bell_206",
+  "https://en.wikipedia.org/wiki/Northrop_Grumman_MQ-8_Fire_Scout",
+  "https://en.wikipedia.org/wiki/List_of_most-produced_rotorcraft",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+]
+
+text = """
+Bell's successor to the 206 began in 1993 as a LongRanger with a new rotor, the four-bladed one
+developed for the Army's OH-58D Kiowa Warrior. Its blades and hub are composite, and the hub flexes
+where the 206's two-bladed rotor teeters on a hinge; four blades had made the Kiowa Warrior quieter
+than the two-bladed Kiowa, and they give the 407 a smoother ride. Bell also widened the cabin by 8
+inches, made the windows 35% larger and fitted the more powerful Allison 250-C47, which lets it lift
+more on hot days and at altitude.
+
+It has been built at Mirabel, Quebec, since 1996, with more than 1,600 delivered by early 2023, and
+police air units, air ambulances and tour operators fly it the world over. Tell it from a 206 by its
+four blades and broader cabin. In 2006–07 Jennifer Murray and Colin Bodill flew a standard 407 around
+the world from pole to pole, some 36,000 miles in 189 days, and Northrop Grumman turned it into the
+US Navy's unmanned MQ-8C Fire Scout.
+"""
+
+[facts]
+"First flight" = "June 1995"
+"Engine" = "Allison (now Rolls-Royce) 250-C47, 813 shp"
+"Main rotor" = "4 composite blades, from the OH-58D"
+"Built" = "over 1,600 by early 2023"

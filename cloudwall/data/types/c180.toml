@@ -1,0 +1,58 @@
+name = "Cessna 170, 180 and 185"
+types = ["C170", "C180", "C185"]
+production = [1948, 1985]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_170",
+  "https://en.wikipedia.org/wiki/Cessna_180_Skywagon",
+  "https://en.wikipedia.org/wiki/Cessna_185_Skywagon",
+  "https://en.wikipedia.org/wiki/Cessna_182_Skylane",
+  "https://en.wikipedia.org/wiki/Cessna_172",
+  "https://en.wikipedia.org/wiki/Spirit_of_Columbus",
+  "https://en.wikipedia.org/wiki/Jerrie_Mock",
+  "https://en.wikipedia.org/wiki/List_of_most-produced_aircraft",
+  "https://cfapps.icao.int/doc8643/8643_List3.cfm?mfc=CESSNA",
+]
+
+text = """
+Cessna's tailwheel singles, and the aircraft the 172 and 182 grew from: the 172 began as a 170 on a
+nosewheel, and the 182 as a 180 on one. The 170 of 1948 was a four-seat development of the two-seat
+140 with a 145 hp Continental, and the 170B of 1952 brought in the wing, constant in chord as far as
+large slotted flaps adapted from the Army's L-19 Bird Dog and tapered beyond them, whose planform
+the 172, 182 and 206 still use. The 180 of 1953 put a 225 to 230 hp Continental O-470 into a heavier
+airframe, and the 185 of 1961, strengthened again and with a bigger fin, took 260 hp and then 300.
+
+The 180 and 185 are widely flown as bush planes, mostly in Alaska and Canada, carrying people and
+freight into rough strips, lakes and snowfields on wheels, floats or skis, and when Cessna went
+back to building singles in the 1990s it left them out. A 170 has a rounded fin, the 180 and 185 a
+squared one. Telling a late 180 from a 185 is harder: from 1964 the 180 has the 185's fuselage, with
+three side windows instead of two, and from 1977 its larger dorsal fairing too.
+"""
+
+[variants.C170]
+name = "Cessna 170"
+production = [1948, 1956]
+[variants.C170.facts]
+"Engine" = "Continental C145 (O-300), 145 hp"
+"Built" = "5,174"
+
+[variants.C180]
+name = "Cessna 180 Skywagon"
+production = [1953, 1981]
+more = """
+In 1964 Jerrie Mock flew a 1953 Cessna 180, the Spirit of Columbus, from Columbus, Ohio, around the
+world and back in 29 days, the first woman to fly solo around the world. It hangs in the
+Smithsonian's National Air and Space Museum.
+"""
+[variants.C180.facts]
+"First flight" = "May 1952"
+"Engine" = "Continental O-470, 225 to 230 hp"
+"Built" = "6,193"
+
+[variants.C185]
+name = "Cessna 185 Skywagon"
+production = [1961, 1985]
+[variants.C185.facts]
+"First flight" = "July 1960"
+"Engine" = "Continental IO-470, 260 hp, then IO-520, 300 hp"
+"Max takeoff weight" = "3,350 lb (1,520 kg), A185E"

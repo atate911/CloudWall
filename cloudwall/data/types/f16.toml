@@ -1,0 +1,39 @@
+name = "General Dynamics F-16 Fighting Falcon"
+types = ["F16"]
+production = [1979]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/General_Dynamics_F-16_Fighting_Falcon",
+  "https://en.wikipedia.org/wiki/United_States_Air_Force_Thunderbirds",
+  "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104505/f-16-fighting-falcon/",
+  "https://www.hill.af.mil/News/Article-Display/Article/2208852/the-388th-tactical-fighter-wing-and-arrival-of-the-f-16-at-hill-afb/",
+  "https://www.lockheedmartin.com/en-ae/news/4600th-f-16-production-milestone-reached-withf-16-block-70-destined-for-kingdom-of-bahrain.html",
+]
+
+text = """
+The F-16 grew out of a revolt inside the Pentagon. John Boyd and the "Fighter Mafia" argued, from
+his energy-manoeuvrability theory, that a small, light fighter with more thrust than weight would
+beat the big, costly ones, and in 1975 General Dynamics' YF-16 won the contest against Northrop's
+YF-17, which the Navy went on to develop into the Hornet. It was the first production fighter
+designed to be slightly unstable, to cut drag and sharpen its response, so it can only be flown
+through computers: four channels of fly-by-wire, with no mechanical link at all from the stick to
+the control surfaces, earned it the name "the electric jet". Its first flight was an accident. In
+January 1974, during a fast taxi test, the prototype began to rock and veer off the runway, and
+test pilot Phil Oestricher chose to take off rather than crash, landing six minutes later.
+
+The specification asked for 7.33 g; General Dynamics built it for 9 g on full internal fuel, the
+first fighter designed for that from the start. The pilot sits under a frameless bubble canopy in
+a seat tilted back 30 degrees, which raises g tolerance, and flies with a side-stick on the
+armrest that at first didn't move at all, sensing only pressure, until pilots' complaints won it a
+little play. Tell it by the single fin and the intake slung under the cockpit like an open mouth.
+Its crews call it the Viper. More than 4,600 have been built, Lockheed Martin still builds it in
+Greenville, South Carolina, and as of 2026 it is the most numerous fixed-wing military aircraft in
+service. The Thunderbirds have flown it since 1983.
+"""
+
+[facts]
+"First flight" = "January 1974, unplanned"
+"Built" = "over 4,600"
+"Top speed" = "Mach 2"
+"Load limit" = "9 g"
+"Engine" = "Pratt & Whitney F100 or GE F110"

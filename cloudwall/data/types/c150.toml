@@ -1,0 +1,47 @@
+name = "Cessna 150 and 152"
+types = ["C150", "C152"]
+production = [1958, 1985]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_150",
+  "https://en.wikipedia.org/wiki/Cessna_152",
+  "https://en.wikipedia.org/wiki/Cessna_172",
+  "https://en.wikipedia.org/wiki/List_of_most-produced_aircraft",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+]
+
+text = """
+Cessna's two-seat trainer, built from 1958 to 1985: more than 31,000 150s and 152s, most of them in
+Wichita, with more from Reims Aviation in France. It began as a Cessna 140 with a nosewheel, and it
+is laid out like a scaled-down 172, with a strut-braced high wing and fixed tricycle gear, about
+three feet shorter in both length and span. Pilot and passenger sit shoulder to shoulder: for 1967
+Cessna bowed the doors out an inch and a half on each side to give them more elbow room, and an
+optional bench in the baggage space took two children, as long as they weighed no more than 120 lb
+between them.
+
+The 152 replaced the 150 in 1977. Its 110 hp Lycoming O-235, in place of the 150's 100 hp
+Continental O-200, suited the new low-lead 100LL fuel better; its maximum weight went up 70 lb to
+1,670 lb; and its flaps stop at 30 degrees instead of the 150's 40, so that it climbs better with
+them fully down. The oldest 150s, built before 1964, have a straight fin and a fastback with no
+rear window, and the fin is swept from 1966 on. The Aerobat versions, stressed to +6 and −3 g
+against the standard +4.4 and −1.76, came with skylights in the roof, doors that could be jettisoned
+and a checkerboard paint scheme.
+"""
+
+[facts]
+"First flight" = "September 1957"
+"Built" = "more than 31,000, 150s and 152s together"
+
+[variants.C150]
+name = "Cessna 150"
+production = [1958, 1977]
+[variants.C150.facts]
+"Engine" = "Continental O-200, 100 hp"
+"Max takeoff weight" = "1,600 lb (726 kg)"
+
+[variants.C152]
+name = "Cessna 152"
+production = [1977, 1985]
+[variants.C152.facts]
+"Engine" = "Lycoming O-235, 110 hp (108 hp from 1983)"
+"Max takeoff weight" = "1,670 lb (757 kg)"
