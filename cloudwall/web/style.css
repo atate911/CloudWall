@@ -1360,6 +1360,27 @@ html.phone #radar .helipad-label { font-size: 5.4px; }
 .so-nums span { font-size: .85rem; color: var(--slate); }
 .q-row { display: grid; grid-template-columns: 1.8rem auto minmax(0, 1fr) auto; align-items: center; gap: .8rem; width: 100%; text-align: left;
   padding: .45rem 0; border-top: 1px solid var(--rule); font-size: 1.05rem; }
+/* how soon it lands, as a line along the foot of its row that runs down with the countdown: the
+   rows' lines step down the queue, so landings bunched together or far apart show at a glance */
+.q-row { position: relative; }
+.q-row::after { content: ""; position: absolute; left: 0; bottom: -1px; height: 2px; width: var(--left, 0%); background: var(--c-arr); opacity: .7;
+  transition: width 1s linear; pointer-events: none; }
+/* where to look: the sky over the house, the horizon its rim (situation.js, skyLook) */
+.sky { display: block; overflow: visible; }
+.sky .sk-h { fill: color-mix(in srgb, var(--blue) 7%, transparent); stroke: var(--slate); stroke-width: .7; }
+.sky .sk-m { fill: none; stroke: var(--rule); stroke-width: .5; }
+.sky .sk-n, .sky .sk-z { fill: none; stroke: var(--slate); stroke-width: .7; }
+.sky .sk-past { fill: none; stroke: var(--slate); stroke-width: .8; stroke-dasharray: 1.2 1.4; opacity: .8; }
+.sky .sk-next { fill: none; stroke: var(--ink-2); stroke-width: 1; stroke-linecap: round; }
+.sky .sk-dot { fill: var(--magenta); stroke: var(--sheet); stroke-width: .6; }
+.so-look .sky { height: 2.42rem; width: 2.42rem; }
+.so-look .sl-b, html.phone .so-look .sl-w { display: none; }
+html.phone .so-look .sl-b { display: inline; }
+html.phone .so-nums { gap: 1rem; } html.phone .so-nums > div + div { padding-left: .9rem; }
+.m-look { position: relative; }
+.m-sky { position: absolute; right: .5rem; top: 50%; translate: 0 -50%; width: 2.6rem; height: 2.6rem; }
+.m-sky .sky { width: 100%; height: 100%; }
+html.phone .m-sky { right: .9rem; }
 .q-row .seq { width: 1.5rem; height: 1.5rem; font-size: .78rem; }
 .q-fl { font-weight: 700; white-space: nowrap; } .q-from { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .q-t { font-variant-numeric: tabular-nums; }
@@ -1525,6 +1546,7 @@ html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #side { display: 
 .kiosk .ss .logo-tile { height: 4.4vh; }
 .kiosk .so-what { font-size: 2.6vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kiosk .so-plate { height: 8vh; }
+.kiosk .so-look .sky { height: 5.4vh; width: 5.4vh; }
 .kiosk .so-nums b { font-size: 5.2vh; } .kiosk .so-nums b small { font-size: 1.9vh; } .kiosk .so-nums span { font-size: 2vh; }
 .kiosk .q-row { font-size: 2.9vh; padding: .8vh 0; gap: 2vh; grid-template-columns: 4.2vh auto minmax(0, 1fr) auto; border-top-width: 2px; }
 .kiosk .q-row .seq { width: 3.8vh; height: 3.8vh; font-size: 2vh; border-width: 2px; }
@@ -1567,6 +1589,7 @@ html.phone .ss { padding: 1rem; gap: 1rem; }
 html.phone .so-flight { font-size: 2.4rem; }
 html.phone .so-what { font-size: 1rem; }
 html.phone .so-nums b { font-size: 1.8rem; }
+html.phone .so-look .sky { height: 1.9rem; width: 1.9rem; }
 html.phone .q-row { font-size: .95rem; }
 html.phone .gn { display: none; }
 html.phone body.d-detailed #mini-board { display: block; }

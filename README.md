@@ -36,7 +36,11 @@ is carried on along its track, faded, its card marked "Position estimated".
 screen draws. *Simple* shows what someone in the house wants to know right now: the next aircraft
 over the house, the landing queue with a countdown for each, and what's worth a look (a medical
 flight and the hospital it's going to, military traffic, a rare type, a balloon or glider, jets heard
-with no position). Its radar numbers the
+with no position). Beside the countdown, a small dial of the sky says where to look: its rim is the
+horizon and its middle straight up, north at the top, with the aircraft as a dot and its way across
+the sky as a line ("look northwest, low"). Each row of the landing queue has a line along its foot
+that runs down with its countdown, ten minutes across, so landings bunched together or far apart
+show at a glance. Its radar numbers the
 arrivals, names the selected aircraft and anything worth a look, and leaves the rest unlabelled;
 when the sky is empty it shows the flight card's quiet-sky slides. *Detailed* adds everything an
 enthusiast reads the situation from: the flight card, every aircraft labelled with its altitude
@@ -52,7 +56,8 @@ screen remembers its own choice, `?density=simple` or `detailed` sets it in the 
   departure board shows it (with "operated by" for regional partners), the airline's logo,
   the route with distance flown and to go, the departure and arrival times under the airports
   and the flight time between them, altitude and climb or descent rate (with the
-  altitude the autopilot is heading for, when it reports one), speed, distance and heading,
+  altitude the autopilot is heading for, when it reports one), speed, distance and how high up
+  to look ("2.3 mi NW, 13° up"), heading with the same dial of the sky as Simple's beside it,
   and a photo of the airframe beside when it passes the house, the aircraft type,
   registration and build year, and what the autopilot is doing. The departure time comes from
   a paid route provider (see below); without one, the card shows an estimated arrival only.
