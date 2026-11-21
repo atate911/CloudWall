@@ -34,9 +34,10 @@ Without a file each downloads its source. Every output is limited to what CloudW
   -> "St. Vincent Medical Center"), with a short form for the radar ("OHSU"). The US only.
 - borders: for the flight card's route map (cloudwall/web/maps/world.json), Natural Earth's 1:50m
   country borders on land and state and province lines (the US, Canada, Australia, Brazil and a
-  few more), simplified to about 2 km, and its populated places (the larger cities and the
-  national, state and provincial capitals). Takes a folder holding the three GeoJSON files, else
-  downloads them from Natural Earth's repository.
+  few more), simplified to about 2 km, and its 1:10m populated places down to the regional towns
+  (those Natural Earth would label by map zoom 6.7), each with that zoom: its rank, which keeps a
+  map's labels to places of like importance for its scale. Takes a folder holding the three
+  GeoJSON files, else downloads them from Natural Earth's repository.
 """
 import csv
 import gzip
@@ -313,7 +314,8 @@ def cwt(arg):
 
 NE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/{}.geojson"
 NE_FILES = {"country": "ne_50m_admin_0_boundary_lines_land", "state": "ne_50m_admin_1_states_provinces_lines",
-            "cities": "ne_50m_populated_places_simple"}
+            "cities": "ne_10m_populated_places_simple"}
+CITY_ZOOM = 6.7         # the places Natural Earth labels by this zoom: down to towns like Corvallis or Grants Pass
 
 
 def borders(arg):
@@ -334,16 +336,19 @@ def borders(arg):
     cities = []
     for f in load("cities")["features"]:
         p = f["properties"]
+        if p["min_zoom"] > CITY_ZOOM:
+            continue
         capital = p["featurecla"].startswith("Admin-0 capital")
         lon, lat = f["geometry"]["coordinates"]
-        cities.append([" ".join((p["name"] or p["nameascii"]).split()), p["iso_a2"], round(lat, 3), round(lon, 3),
-                       max(1, round(p["pop_max"] / 1000)), 1 if capital else 0])
-    cities.sort(key=lambda c: -c[4])
+        cities.append([" ".join((p["name"] or p["nameascii"]).split()), p["iso_a2"], round(lat, 2), round(lon, 2),
+                       max(1, round(p["pop_max"] / 1000)), 1 if capital else 0, round(p["min_zoom"] * 10)])
+    cities.sort(key=lambda c: (c[6], -c[4]))
     out = Path(__file__).resolve().parent.parent / "cloudwall" / "web" / "maps" / "world.json"
-    data = {"about": ["Country borders on land, state and province lines and the larger cities, from Natural Earth",
-                      "(naturalearthdata.com, public domain), 1:50m, lines simplified to about 2 km.",
+    data = {"about": ["Country borders on land, state and province lines and the cities and towns, from Natural Earth",
+                      "(naturalearthdata.com, public domain): lines 1:50m, simplified to about 2 km; places 1:10m.",
                       "Lines: [lat, lon, lat, lon, ...]. Cities: [name, country, lat, lon, population in thousands,",
-                      "national capital 1 or 0], largest first. Rebuild with: python3 tools/build_data.py borders"],
+                      "national capital 1 or 0, rank: the map zoom x 10 at which Natural Earth labels it], most",
+                      "important first. Rebuild with: python3 tools/build_data.py borders"],
             "country": lines(load("country")), "state": lines(load("state")), "cities": cities}
     out.write_text(json.dumps(data, separators=(",", ":")) + "\n")
     print(f"{len(data['country'])} border lines, {len(data['state'])} state lines, {len(cities)} cities -> {out} "

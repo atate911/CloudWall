@@ -104,6 +104,20 @@ function layoutPathKey(svg) {
   k.querySelector(".pk-end").setAttribute("x", (x + sw + 1.1).toFixed(2));
 }
 
+// The key's lines run out toward the compass bezel in the lower left: a bearing number they would
+// touch is left off (the bezel reads without it; the key wouldn't).
+function clearKey(svg) {
+  const lines = [...svg.querySelectorAll("#s-static .legend tspan, #s-static .path-key")].map((e) => {
+    try { return e.getBBox(); } catch (err) { return null; }
+  }).filter((b) => b && b.width);
+  for (const t of svg.querySelectorAll("#s-static .bearing")) {
+    let b;
+    try { b = t.getBBox(); } catch (err) { continue; }
+    const hit = lines.some((l) => b.x < l.x + l.width + 1 && b.x + b.width > l.x - 1 && b.y < l.y + l.height + .5 && b.y + b.height > l.y - .5);
+    t.style.display = hit ? "none" : "";
+  }
+}
+
 const pts = (home, line, k) => line.map(([lat, lon]) => { const o = offset(home, { lat, lon }); return `${(o.x * k).toFixed(1)},${(-o.y * k).toFixed(1)}`; }).join(" ");
 
 // The FAA's charts, as maps: each prints its own towns, so the radar adds no names over them.
@@ -880,6 +894,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     if (opt.map) fitMapNote(svg);
     else if (!opt.atc) measureYielders(svg);
     layoutPathKey(svg);
+    if (!opt.map && !opt.atc) clearKey(svg);
   }
   const wall = Date.now(), phase = clockPhase(wall);
   if (opt.atc && Math.floor(wall / 1000) !== lastSecond) {          // the status area's clock shows seconds

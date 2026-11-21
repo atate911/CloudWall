@@ -164,6 +164,20 @@ class BrowserTest(unittest.TestCase):
         self.assertGreaterEqual(len(d["cities"]), 2)                         # a few places to find your way by
         self.assertNotIn("Tokyo", d["cities"])                               # not one the airport code already names
 
+    def test_the_route_maps_shape_follows_the_route(self):
+        m = self.scenario("routeShape")
+        n, e = m["north"], m["east"]
+        self.assertTrue(n["beside"] and n["h"] >= n["w"])                   # north and south: upright, beside the facts
+        self.assertGreaterEqual(n["fillH"], 0.6)                             # the route reaching most of its height
+        self.assertTrue(not e["beside"] and e["w"] >= 2 * e["h"])           # east and west: across the card
+        self.assertGreaterEqual(e["fillW"], 0.6)
+        self.assertGreater(m["phoneNorth"]["h"], m["phoneEast"]["h"] + 60)  # a phone's map as tall as its route needs
+        self.assertGreaterEqual(m["phoneNorth"]["fillH"], 0.6)
+        for k in ("north", "east", "phoneNorth", "phoneEast"):
+            v = m[k]
+            self.assertGreaterEqual(v["places"], 1, k)                       # places along the way
+            self.assertEqual((v["clash"], v["outside"]), (0, 0), k)          # no name on another, none off the map
+
     def test_the_wall_panel(self):
         k = self.scenario("kiosk")
         self.assertIn("kiosk", k["layout"])
@@ -186,6 +200,13 @@ class BrowserTest(unittest.TestCase):
         self.assertRegex(g["estimated"]["chip"], r"Position estimated: last report \d+ s ago")
         self.assertTrue(g["estimated"]["faded"])
         self.assertEqual((g["hushed"], g["woken"]), (True, True))
+
+    def test_a_wide_short_window(self):
+        w = self.scenario("wide")
+        self.assertEqual((w["card"]["overlaps"], w["card"]["inside"]), ([], True))   # the card's parts give way rather than collide
+        self.assertLessEqual(w["card"]["slack"], 4)                          # and leave no empty band at its foot
+        self.assertLess(w["radar"], 80)                                       # the radar's column hugs its disc
+        self.assertTrue(w["simple"]["notes"] and w["simple"]["rows"] >= 1)  # Simple: worth a look past the radar
 
     def test_the_wall_panel_on_the_map(self):
         self.assertGreaterEqual(self.scenario("kioskMap")["onMap"], 1)

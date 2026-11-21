@@ -35,12 +35,14 @@ export function lineHtml(state, max = 3) {
 // Detailed: the ten-minute axis
 export function axisHtml(state) {
   const t0 = since(state), ev = events(state).filter((e) => e.t - t0 <= SPAN_S);
+  // nothing due: a quiet line, not an empty ruler across the screen
+  if (!ev.length) return `<div class="tl quiet">Nothing due over the house or landing in the next ten minutes</div>`;
   const ticks = [0, 2, 4, 6, 8, 10].map((m) => `<span class="tl-tick${m ? (m === 10 ? " end" : "") : " start"}" style="left:${m * 10}%">${m ? (m === 10 ? "10 min" : m) : "now"}</span>`).join("");
   // each mark drawn where it stands, so a redraw doesn't slide it in from the start
   const at = (e) => (Math.max(0, Math.min(1, (e.t - t0) / SPAN_S)) * 100).toFixed(2);
   return `<div class="tl axis" aria-label="The next ten minutes"><div class="tl-track">${ticks}${ev.map((e) =>
     `<span class="tl-ev k-${e.kind}" style="left:${at(e)}%" data-at="${e.t}" data-hex="${esc(e.a.hex)}" title="${esc(e.text)}"><i class="tl-mk">${mark(e)}</i><span class="tl-lb">${esc(e.short || e.text)}</span></span>`).join("")}` +
-    `${ev.length ? "" : `<span class="tl-none">Nothing due over the house or landing in the next ten minutes</span>`}</div></div>`;
+    `</div></div>`;
 }
 
 const until = (s) => (s < 12 ? "now" : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`);

@@ -14,7 +14,7 @@ const { chromium, devices } = require("playwright");
 
 const BASE = process.argv[2];
 const SIZES = { desktop: { viewport: { width: 1600, height: 950 } }, kiosk: { viewport: { width: 1024, height: 600 } },
-  phone: { ...devices["iPhone 13"] } };
+  wide: { viewport: { width: 2000, height: 730 } }, phone: { ...devices["iPhone 13"] } };
 
 async function open(browser, size, path, errors, tamper, before) {
   const page = await (await browser.newContext(SIZES[size])).newPage();
@@ -260,6 +260,36 @@ const SCENARIOS = {
     return out;
   },
 
+  // a wide, short window: the card's parts never run into each other or out of it, the radar's
+  // column is as wide as its disc, and Simple puts what's worth a look in a third column
+  async wide(browser, errors) {
+    const out = {};
+    let page = await open(browser, "wide", "/?density=detailed", errors);
+    await page.evaluate(() => { const r = document.querySelector("#mini-board .tr[data-hex]"); if (r) r.click(); });   // a flight with a route
+    await page.waitForTimeout(2500);
+    out.card = await page.evaluate(() => {
+      const card = document.getElementById("hero").getBoundingClientRect(), parts = [...document.querySelectorAll("#hero > *")].filter((e) => e.offsetHeight);
+      const overlaps = [];
+      for (let i = 1; i < parts.length; i++) {
+        const a = parts[i - 1].getBoundingClientRect(), b = parts[i].getBoundingClientRect();
+        if (a.bottom > b.top + 1) overlaps.push(`${parts[i - 1].className} over ${parts[i].className}`);
+      }
+      const last = parts[parts.length - 1].getBoundingClientRect(), pad = parseFloat(getComputedStyle(document.getElementById("hero")).paddingBottom);
+      // and no empty band at its foot: the last part reaches the card's padding
+      return { overlaps, inside: last.bottom <= card.bottom + 1, slack: Math.round(card.bottom - pad - last.bottom) };
+    });
+    out.radar = await page.evaluate(() => { const s = document.getElementById("scope"), r = document.getElementById("radar");
+      const pad = parseFloat(getComputedStyle(s).paddingTop) + parseFloat(getComputedStyle(s).paddingBottom);
+      return Math.round(s.clientWidth - (s.clientHeight - pad)); });          // spare width beside the disc, px
+    await page.close();
+    page = await open(browser, "wide", "/?density=simple", errors);
+    await page.waitForTimeout(1500);
+    out.simple = await page.evaluate(() => { const n = document.getElementById("notes"), s = document.getElementById("scope");
+      return { notes: n.offsetWidth > 0 && n.getBoundingClientRect().left > s.getBoundingClientRect().right, rows: n.querySelectorAll(".n-row").length }; });
+    await page.close();
+    return out;
+  },
+
   // a phone: the page stacked, the board as two lines a flight
   async phone(browser, errors) {
     const page = await open(browser, "phone", "/", errors), out = {};
@@ -343,6 +373,42 @@ const SCENARIOS = {
         cities: [...document.querySelectorAll("#h-map .rm-place")].map((t) => t.textContent), credit: document.querySelector("#h-map .rm-credit").textContent };
     });
     await page.close();
+    return out;
+  },
+
+  // the route map's shape follows the route's: one running north and south has its map upright beside
+  // the facts, the route reaching most of its height; one running east and west has it across the
+  // card; on a phone the map is as tall as its route needs. No place's name runs into another, or
+  // into an airport's code, or off the map.
+  async routeShape(browser, errors) {
+    const apt = (iata, lat, lon) => ({ iata, city: iata, lat, lon });
+    const SEA = apt("SEA", 47.45, -122.31), LAX = apt("LAX", 33.94, -118.41), PDX = apt("PDX", 45.59, -122.6), JFK = apt("JFK", 40.64, -73.78), DEN = apt("DEN", 39.86, -104.67);
+    const pin = (origin, dest) => (state) => {
+      state.charts.layers.world = { enabled: true, style: "satellite", attribution: "Test imagery", zooms: [0, 6], layer: "world" };
+      state.emergency = [];
+      const a = state.hero || state.aircraft.find((x) => !x.on_ground) || state.aircraft[0];
+      Object.assign(a, { local: null, local_inferred: false, route_pending: false, medical: false, hospital: null,
+        route: { flight: "XX1", airline: "Test", plausible: true, progress: 0.4, origin, dest, flown_nm: 300, left_nm: 400 } });
+      state.hero = a;
+    };
+    const out = {};
+    for (const [name, size, o, d] of [["north", "desktop", SEA, LAX], ["east", "desktop", PDX, JFK], ["phoneNorth", "phone", SEA, LAX], ["phoneEast", "phone", DEN, PDX]]) {
+      const page = await open(browser, size, "/?density=detailed", errors, pin(o, d), fakeTiles());
+      await page.waitForSelector("#h-map svg.rm .rm-border", { state: "attached" });
+      await page.waitForTimeout(600);
+      out[name] = await page.evaluate(() => {
+        const m = document.getElementById("h-map"), box = m.getBoundingClientRect(), path = m.querySelector(".rm-todo").getBoundingClientRect();
+        const labels = [...m.querySelectorAll(".rm-place, .rm-code")].map((t) => t.getBoundingClientRect());
+        let clash = 0, outside = 0;
+        labels.forEach((a, i) => {
+          if (a.left < box.left - 1 || a.right > box.right + 1 || a.top < box.top - 1 || a.bottom > box.bottom + 1) outside++;
+          for (const b of labels.slice(i + 1)) if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) clash++;
+        });
+        return { beside: document.getElementById("hero").classList.contains("map-beside"), w: Math.round(box.width), h: Math.round(box.height),
+          fillW: +(path.width / box.width).toFixed(2), fillH: +(path.height / box.height).toFixed(2), places: labels.length - 2, clash, outside };
+      });
+      await page.close();
+    }
     return out;
   },
 

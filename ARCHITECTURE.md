@@ -200,7 +200,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | Module | What it owns |
 |---|---|
 | `app.js` | The conductor: polls `/api/state`, holds the current `state`, switches views, keeps the radar's options, and wires up every button. It draws nothing itself. |
-| `hero.js` | The flight card for the aircraft overhead, and the desktop's quiet-sky slides. |
+| `hero.js` | The flight card for the aircraft overhead, and the desktop's quiet-sky slides. On the desktop the card is as tall as its row: one picture (the route map, else the aircraft's drawing) takes the room the words leave. `fitCard` tries the map in its three places (across under the airports, across and taking the drawing's room, or beside the facts in the drawing's place) and keeps the one that draws the route biggest, by `routeScale`, preferring those that keep the drawing; then lets the spacing, the map and the drawing go when the row is short. On a phone the map is as tall as its route needs (`routeHeight`). |
 | `kiosk.js` | The wall panel's large card and slides. |
 | `emergency.js` | The red takeover for 7500/7600/7700. |
 | `board.js` | The Board grouped by what each aircraft is doing, its two-line form for a phone, and the traffic list and side view beside the radar. |
@@ -213,11 +213,11 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | `scope.js` | The radar (chart and ATC styles) and the Map view (the flights on a satellite or street map, in words): a static layer rebuilt on each update and one persistent SVG group per aircraft, moved every frame. Labels are placed on each update (`placeLabels`); every frame, the map's fixed names fade where traffic covers them (`giveWay`). |
 | `parts.js` | What several displays are made of: the logo tile, badges, a flight number as boards set it, "Landing at ...", records. |
 | `map.js` | The ground under the displays: map tiles around home, the hand-drawn map, runways. |
-| `routemap.js` | The flight card's route on a real map: world-layer tiles, borders and cities (`maps/world.json`), the great-circle path, the aircraft on it. |
+| `routemap.js` | The flight card's route on a real map: world-layer tiles, borders and places (`maps/world.json`), the great-circle path, the aircraft on it. `frame` fits the path to the box with room for the airport codes; `pickCities` names places by Natural Earth's rank for the map's zoom, those along the route first and spaced along it, each on the side away from the route. |
 | `fresh.js` | One copy for the page of what changes slowly (weather, logbook, heatmap), fetched at most once a minute whoever asks. |
 | `plate.js`, `silhouette.js`, `profiles.js`, `profiles/*.js` | Aircraft side elevations drawn from measurements, the type plates and the fleet line-up. |
 | `icons.js` | The chart-style radar's top-down icons, one for each kind of traffic. Which kind an aircraft is comes on its record. |
-| `astro.js`, `sky.js`, `fx.js`, `divider.js`, `util.js` | Sun and moon; day and night; split-flap and rolling-number effects and chimes; the traffic list's divider; DOM, formatting and geometry helpers. |
+| `astro.js`, `sky.js`, `fx.js`, `divider.js`, `util.js` | Sun and moon; day and night; split-flap and rolling-number effects and chimes; the traffic list's divider (which also holds the radar's column to its disc on a wide, short window); DOM, formatting and geometry helpers. |
 
 Between updates the page moves aircraft itself: each position is dead-reckoned from the time
 the feed reported it (the server's `status.updated`, not the time the page fetched it) and eased

@@ -1,7 +1,8 @@
 // The divider between the radar and the traffic list, on the desktop's widest layout (1500 px
 // and up). Its arrow hides or shows the list; dragging it gives the radar more or less room.
 // The flight card keeps its width either way: whatever the list gives up goes to the radar.
-// Each screen remembers its own setting.
+// Each screen remembers its own setting. On a wide, short screen the radar's disc is only as wide
+// as its panel is tall, so its column is held to that and the card and the list share what's left.
 import { $, clamp, store } from "./util.js";
 
 const PAIR = 1.85;            // the radar's and the list's columns together, in the grid's fr (the card has 1.3)
@@ -10,6 +11,8 @@ const MIN_LIST = 13;          // the list's narrowest, in rem; dragged to half t
 const MIN_RADAR = 18;         // and the radar's narrowest
 const STEP = 2;               // rem per arrow key
 const ANIMATE_MS = 220;       // as the stylesheet's transition
+const CARD = 1.3;             // the card's column, in fr
+const RADAR_ASPECT = 1.04;    // the radar's drawing at its widest, for its height: the disc, and a little room either side
 
 export function nearbyDivider(shown) {
   const grid = $("view-now"), bar = $("pane-split"), btn = $("ps-toggle");
@@ -24,6 +27,7 @@ export function nearbyDivider(shown) {
     const m = open ? share : 0;
     grid.style.setProperty("--mb-w", `${m.toFixed(3)}fr`);
     grid.style.setProperty("--scope-w", `${(PAIR - m).toFixed(3)}fr`);
+    fit(m);
     // closing, the list stays drawn while its column narrows, then goes
     if (open || !animate) grid.classList.toggle("nearby-closed", !open);
     else hideTimer = setTimeout(() => grid.classList.add("nearby-closed"), ANIMATE_MS);
@@ -35,6 +39,25 @@ export function nearbyDivider(shown) {
     if (open && !drawn) shown();            // fill it in now rather than at the next update
     drawn = open;
   }
+  // hold the radar's column to its disc: the drawing is as tall as the panel less its button rows
+  // above and below, and when the column would be wider than that (and a little), the card and the
+  // list grow in step until it isn't
+  function fit(m) {
+    const r = PAIR - m, scope = $("scope"), sc = getComputedStyle(scope);
+    const want = (scope.clientHeight - parseFloat(sc.paddingTop) - parseFloat(sc.paddingBottom)) * RADAR_ASPECT + parseFloat(sc.paddingLeft) + parseFloat(sc.paddingRight);
+    const style = getComputedStyle(grid), gaps = parseFloat(style.columnGap) || 0;
+    const fixed = [...grid.children].filter((e) => e.classList.contains("pane-split")).reduce((w, e) => w + e.offsetWidth, 0) + rem() * 1.4;
+    const room = grid.clientWidth - parseFloat(style.paddingLeft || 0) - parseFloat(style.paddingRight || 0) - fixed - gaps * 4;
+    let f = 1;
+    if (want > 0 && room > 0 && (r / (CARD + r + m)) * room > want) f = (r * room / want - r) / (CARD + m);
+    grid.style.setProperty("--card-w", `${(CARD * f).toFixed(3)}fr`);
+    if (f !== 1) grid.style.setProperty("--mb-w", `${(m * f).toFixed(3)}fr`);
+  }
+  // again whenever the room changes: the window, or the strip above growing a line (the panel's height)
+  const refit = new ResizeObserver(() => { if (!grid.classList.contains("dragging")) fit(open ? share : 0); });
+  refit.observe(grid);
+  refit.observe($("scope"));
+
   function save() {
     store("nearby", open ? "open" : "closed");
     store("nearbyShare", share.toFixed(3));
