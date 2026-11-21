@@ -203,7 +203,7 @@ function renderPicture(dens) {
     renderInto($("next-line"), lineHtml(state, 3));                   // the wall panel: across its header, read from the room
     if (!easy) renderInto($("strip"), stripHtml(state, { short: true, notes: false }));      // over the radar
   }
-  if (easy && KIOSK) { renderInto($("side"), `<section class="k-sit">${stripHtml(state, { short: true, notes: 2 })}</section>` + sideHtml(state, { queue: 3, notes: 2 })); fitSide($("side")); }
+  if (easy && KIOSK) { renderInto($("side"), `<section class="k-sit">${stripHtml(state, { short: true, notes: 2 })}</section>` + sideHtml(state, { queue: 3, notes: 2 })); fitSide($("side")); refitSide($("side")); }
   else if (easy && ph === "side") renderInto($("side"), sideHtml(state, { compact: true }));      // sideways: all in one column beside the radar
   else if (easy && ph) { renderInto($("side"), sideHtml(state, { compact: true, notes: 0 })); renderInto($("notes"), notesHtml(state)); }
   else if (easy && WIDE.matches) { renderInto($("side"), sideHtml(state, { notes: 0 })); renderInto($("notes"), notesHtml(state)); }   // a wide screen: worth a look on the radar's far side
@@ -245,6 +245,20 @@ function fitSide(el) {
   trim(); behind();         // again, in case that line took the last of the room
   const note = el.querySelector(".ss-note");
   if (note && !note.querySelector(".n-row")) note.remove();
+}
+// The side is fitted as it's drawn, and again whenever it or anything in it changes size before the
+// next update: the header taking a second line when a notice arrives a moment after the page, or a
+// flight number flapping into place, which grows its row after the fitting. Fitted before it's
+// painted, so it never runs off its foot meanwhile.
+function refitSide(el) {
+  if (!el._refit) {
+    el._refit = new ResizeObserver(() => {
+      if (KIOSK && document.body.classList.contains("d-simple") && el.scrollHeight > el.clientHeight + 1) fitSide(el);
+    });
+  }
+  el._refit.disconnect();
+  el._refit.observe(el);
+  for (const part of el.children) el._refit.observe(part);
 }
 const densSeg = (dens) => `<div class="seg dens mini" role="group" aria-label="How much to show">${["simple", "detailed"].map((d) =>
   `<button data-dens="${d}" class="${d === dens ? "on" : ""}" aria-pressed="${d === dens}">${d === "simple" ? "Simple" : "Detailed"}</button>`).join("")}</div>`;
