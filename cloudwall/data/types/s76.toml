@@ -1,0 +1,33 @@
+name = "Sikorsky S-76"
+types = ["S76"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Sikorsky_S-76",
+  "https://en.wikipedia.org/wiki/AgustaWestland_AW139",
+]
+
+text = """
+Sikorsky's first helicopter designed for civil customers rather than the military, begun in the
+mid-1970s as the S-74 and renumbered for the US Bicentennial. Its rotor blades and heads came from
+the Black Hawk, then being developed: four main blades with titanium spars, ten degrees of twist
+and tips that taper and sweep back, on a one-piece aluminium hub whose elastomeric bearings need
+no lubrication. The main gearbox ends in a single bull gear instead of the planetary gears of
+earlier Sikorskys, with 30% fewer parts, and retracting the wheels added 6 knots to its cruise.
+The nose is glassfibre and the cabin aluminium honeycomb, with room for 12 passengers in three rows
+of four.
+
+The engines changed with the models: 650 shp Allison 250s in the first S-76As of 1979, Pratt &
+Whitney Canada PT6Bs in the S-76B, Turbomeca Arriels in the C, and PW210Ss in the S-76D,
+certified in 2012 after four years of delays. Oil companies bought it first, to fly crews
+offshore, then corporate and government flyers; by 2020 ten countries carried their heads of state
+in one. Newer types such as the AgustaWestland AW139, with five main rotor blades to the S-76's
+four, took its place on many contracts, and the S-76 lacked the crash-resistant fuel system the
+FAA required of newly built helicopters from April 2020. In March 2022, after more than 875 had
+been built, Sikorsky stopped taking orders.
+"""
+
+[facts]
+"First flight" = "March 1977"
+"Built" = "over 875"
+"Max takeoff weight" = "11,700 lb (5,307 kg)"
+"Engines" = "2 × Allison 250, P&WC PT6B, Turbomeca Arriel or P&WC PW210S, by model"
