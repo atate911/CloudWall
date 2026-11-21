@@ -34,7 +34,7 @@ often as Air Force Two.
 name = "Boeing 757-200"
 [variants.B752.facts]
 "Range" = "up to 3,900 nm (7,220 km)"
-"Max takeoff weight" = "up to 115,700 kg"
+"Max takeoff weight" = "up to 115,700 kg (255,000 lb)"
 
 [variants.B753]
 name = "Boeing 757-300"
@@ -43,4 +43,4 @@ The -300 is 7 m longer, and at 54.4 m it is the longest single-aisle twinjet eve
 were made.
 """
 [variants.B753.facts]
-"Max takeoff weight" = "up to 122,400 kg"
+"Max takeoff weight" = "up to 122,400 kg (269,800 lb)"

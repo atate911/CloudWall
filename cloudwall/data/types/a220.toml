@@ -40,9 +40,9 @@ aircraft, slung well forward under a wing that ends in a small, upswept winglet.
 [variants.BCS1]
 name = "Airbus A220-100"
 [variants.BCS1.facts]
-"Max takeoff weight" = "up to 63,700 kg"
+"Max takeoff weight" = "up to 63,700 kg (140,400 lb)"
 
 [variants.BCS3]
 name = "Airbus A220-300"
 [variants.BCS3.facts]
-"Max takeoff weight" = "up to 70,900 kg"
+"Max takeoff weight" = "up to 70,900 kg (156,300 lb)"

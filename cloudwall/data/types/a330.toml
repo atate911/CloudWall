@@ -38,13 +38,13 @@ Azores. All 306 aboard survived.
 name = "Airbus A330-200"
 [variants.A332.facts]
 "Range" = "7,250 nm (13,450 km)"
-"Max takeoff weight" = "up to 242,000 kg"
+"Max takeoff weight" = "up to 242,000 kg (533,500 lb)"
 
 [variants.A333]
 name = "Airbus A330-300"
 [variants.A333.facts]
 "Range" = "6,350 nm (11,750 km)"
-"Max takeoff weight" = "up to 242,000 kg"
+"Max takeoff weight" = "up to 242,000 kg (533,500 lb)"
 
 [variants.A338]
 name = "Airbus A330-800"

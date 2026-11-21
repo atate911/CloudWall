@@ -35,12 +35,12 @@ than under the wing, and by its long, narrow, pencil-like fuselage.
 [variants.CRJ1]
 name = "Bombardier CRJ100"
 [variants.CRJ1.facts]
-"Max takeoff weight" = "up to 24,041 kg"
+"Max takeoff weight" = "up to 24,041 kg (53,000 lb)"
 
 [variants.CRJ2]
 name = "Bombardier CRJ200"
 [variants.CRJ2.facts]
-"Max takeoff weight" = "up to 24,041 kg"
+"Max takeoff weight" = "up to 24,041 kg (53,000 lb)"
 
 [variants.CRJ7]
 name = "Bombardier CRJ700"
@@ -48,9 +48,9 @@ name = "Bombardier CRJ700"
 [variants.CRJ9]
 name = "Bombardier CRJ900"
 [variants.CRJ9.facts]
-"Max takeoff weight" = "up to 38,329 kg"
+"Max takeoff weight" = "up to 38,329 kg (84,500 lb)"
 
 [variants.CRJX]
 name = "Bombardier CRJ1000"
 [variants.CRJX.facts]
-"Max takeoff weight" = "up to 41,640 kg"
+"Max takeoff weight" = "up to 41,640 kg (91,800 lb)"

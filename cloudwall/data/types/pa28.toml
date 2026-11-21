@@ -37,7 +37,7 @@ of what is below. There is one door, on the right, reached by stepping up onto t
 name = "Piper PA-28 Cherokee, Warrior or Archer"
 [variants.P28A.facts]
 "Engine" = "140 to 180 hp"
-"Range" = "522 nm (Archer LX)"
+"Range" = "522 nm (967 km), Archer LX"
 
 [variants.P28B]
 name = "Piper PA-28 Cherokee 235 or Dakota"

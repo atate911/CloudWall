@@ -41,19 +41,19 @@ stronger wing.
 [variants.B736]
 name = "Boeing 737-600"
 [variants.B736.facts]
-"Max takeoff weight" = "up to 65,544 kg"
+"Max takeoff weight" = "up to 65,544 kg (144,500 lb)"
 
 [variants.B737]
 name = "Boeing 737-700"
 [variants.B737.facts]
 "Range" = "2,900 nm (5,370 km)"
-"Max takeoff weight" = "up to 70,080 kg"
+"Max takeoff weight" = "up to 70,080 kg (154,500 lb)"
 
 [variants.B738]
 name = "Boeing 737-800"
 [variants.B738.facts]
 "Range" = "2,800 nm (5,190 km)"
-"Max takeoff weight" = "up to 79,010 kg"
+"Max takeoff weight" = "up to 79,010 kg (174,200 lb)"
 
 [variants.B739]
 name = "Boeing 737-900"
@@ -64,4 +64,4 @@ wing and a flat rear pressure bulkhead in place of the domed one, changes that l
 """
 [variants.B739.facts]
 "Range" = "2,700 nm (5,000 km), -900ER"
-"Max takeoff weight" = "up to 85,130 kg (-900ER)"
+"Max takeoff weight" = "up to 85,130 kg (187,700 lb), -900ER"

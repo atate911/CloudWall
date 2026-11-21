@@ -37,15 +37,15 @@ drag strip. All 69 aboard survived, and the "Gimli Glider" flew on until 2008.
 [variants.B762]
 name = "Boeing 767-200"
 [variants.B762.facts]
-"Max takeoff weight" = "up to 179,200 kg"
+"Max takeoff weight" = "up to 179,200 kg (395,000 lb)"
 
 [variants.B763]
 name = "Boeing 767-300"
 [variants.B763.facts]
-"Max takeoff weight" = "up to 186,900 kg"
+"Max takeoff weight" = "up to 186,900 kg (412,000 lb)"
 
 [variants.B764]
 name = "Boeing 767-400ER"
 [variants.B764.facts]
 "Engines" = "2 × GE CF6-80C2 or Pratt & Whitney PW4000"
-"Max takeoff weight" = "up to 204,100 kg"
+"Max takeoff weight" = "up to 204,100 kg (450,000 lb)"

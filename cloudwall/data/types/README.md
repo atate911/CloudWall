@@ -53,7 +53,8 @@ The facts are short and alike from type to type, so that one panel reads like th
   light, American military and historic aircraft, "68,000 lb (30,800 kg)"; speeds in knots, "290 kt",
   or Mach; heights in feet. Round converted figures as the source rounds its own.
 - **"up to"** before a weight or range only when the type is offered at several, and the figure is
-  the greatest. A figure for one model of a family names it in brackets: "640 nm (172S)".
+  the greatest. A figure for one model of a family names it: "Lycoming IO-360, 180 hp (172S)", or
+  after a comma when the figure already has brackets, "640 nm (1,185 km), 172S".
 - **Engines** as "2 × CFM LEAP-1B", with power or thrust where it says something: "PT6A-67P,
   1,200 shp".
 - **Dates** as month and year, "June 2003"; counts as "1,050", or "over 2,000" for a figure still

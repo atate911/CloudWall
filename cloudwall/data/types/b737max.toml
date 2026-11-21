@@ -35,7 +35,7 @@ name = "Boeing 737 MAX 7"
 [variants.B38M]
 name = "Boeing 737 MAX 8"
 [variants.B38M.facts]
-"Max takeoff weight" = "up to 82,600 kg"
+"Max takeoff weight" = "up to 82,600 kg (182,200 lb)"
 
 [variants.B39M]
 name = "Boeing 737 MAX 9"
@@ -47,7 +47,7 @@ Portland.
 """
 [variants.B39M.facts]
 "Range" = "3,300 nm (6,110 km)"
-"Max takeoff weight" = "up to 88,300 kg"
+"Max takeoff weight" = "up to 88,300 kg (194,700 lb)"
 
 [variants.B3XM]
 name = "Boeing 737 MAX 10"

@@ -45,11 +45,11 @@ wing became its first operational unit in 2024.
 [variants.F15]
 name = "F-15 Eagle"
 [variants.F15.facts]
-"Max takeoff weight" = "68,000 lb (F-15C/D)"
+"Max takeoff weight" = "68,000 lb (30,840 kg), F-15C/D"
 
 [variants.F15E]
 name = "F-15E Strike Eagle"
 [variants.F15E.facts]
-"Range" = "2,400 mi (3,860 km) ferry"
-"Max takeoff weight" = "81,000 lb"
+"Range" = "2,080 nm (3,860 km), ferry"
+"Max takeoff weight" = "81,000 lb (36,740 kg)"
 "Engines" = "2 × Pratt & Whitney F100"
