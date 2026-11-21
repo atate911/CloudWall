@@ -41,11 +41,16 @@ class Details:
         free = self.enricher.route(a.get("callsign"))
         a.update(aircraft.shape(a.get("type"), a.get("category")))      # for its drawing: shape, length, known
         airline = airlines.code(a.get("callsign"))
-        if free and free.get("airline"):
-            a["airline"] = free["airline"]      # the airline is reliable even when the route isn't
-        elif airlines.name(airline):
+        # the name comes from the callsign, as the logo, colours and flight number do, so they agree;
+        # the route database's (reliable even when its route isn't) for an airline the table doesn't name
+        if airlines.name(airline):
             a["airline"] = airlines.name(airline)
+        elif free and free.get("airline"):
+            a["airline"] = free["airline"]
         a["airline_iata"] = airlines.iata_for(a.get("callsign"), (free or {}).get("airline_iata"))
+        brand = airlines.flies_as(airline)
+        if brand and airlines.name(brand):       # Horizon flies as Alaska: the airline you'd book, and who flies it
+            a["airline"], a["operated_by"] = airlines.name(brand), airlines.name(airline)
         a["seats"] = seat_estimate(airline, a.get("type"))
         route = self._with_geometry(a, free)
         state, live = self._live_route(a, route, wanted and not idle)

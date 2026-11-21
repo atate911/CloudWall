@@ -13,7 +13,7 @@ import { boardHtml, renderMiniBoard } from "./board.js";
 import { loadLog } from "./logbook.js";
 import { renderPlace, placeMenu } from "./places.js";
 import { refresh } from "./fresh.js";
-import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture, notables, keepFocus } from "./situation.js";
+import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture, notables, keepFocus, queueMore } from "./situation.js";
 
 // Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
 const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
@@ -196,7 +196,7 @@ function renderPicture(dens) {
   const easy = dens === "simple", ph = phone();
   if (!KIOSK) renderInto($("strip"), stripHtml(state, { short: easy }) + (ph ? densSeg(dens) : ""));
   else if (!easy) renderInto($("strip"), stripHtml(state, { short: true, notes: false }));     // over the radar
-  if (easy && KIOSK) { renderInto($("side"), `<section class="k-sit">${stripHtml(state, { short: true })}</section>` + sideHtml(state, { queue: 3, notes: 2 })); fitSide($("side")); }
+  if (easy && KIOSK) { renderInto($("side"), `<section class="k-sit">${stripHtml(state, { short: true, notes: 2 })}</section>` + sideHtml(state, { queue: 3, notes: 2 })); fitSide($("side")); }
   else if (easy && ph === "side") renderInto($("side"), sideHtml(state, { compact: true }));      // sideways: all in one column beside the radar
   else if (easy && ph) { renderInto($("side"), sideHtml(state, { compact: true, notes: 0 })); renderInto($("notes"), notesHtml(state)); }
   else if (easy) renderInto($("side"), sideHtml(state));
@@ -207,9 +207,34 @@ function renderPicture(dens) {
 }
 // The wall panel's side column has a fixed height: what's worth a look gives way, a whole row at a
 // time, when the rest leaves no room for it.
+// The wall panel's Simple side, fitted to its height. What gives way first: the landing queue past its
+// second row (the radar numbers every arrival), then all but the first thing worth a look, then the
+// queue's second row, then that last note. Aircraft heard with no position whose note goes are said
+// in the line at the top instead, so they're never left out.
 function fitSide(el) {
-  let rows;
-  while (el.scrollHeight > el.clientHeight + 1 && (rows = el.querySelectorAll(".ss-note .n-row")).length) rows[rows.length - 1].remove();
+  const over = () => el.scrollHeight > el.clientHeight + 1;
+  const drop = (sel, keep) => {
+    const rows = el.querySelectorAll(sel);
+    if (rows.length <= keep) return false;
+    const row = rows[rows.length - 1];
+    if (row.classList.contains("heard")) el.querySelectorAll(".ph.covered").forEach((p) => { p.hidden = false; });
+    row.remove();
+    return true;
+  };
+  const trim = () => {
+    for (const [sel, keep] of [[".ss-queue .q-row", 2], [".ss-note .n-row", 1], [".ss-queue .q-row", 1], [".ss-note .n-row", 0]]) {
+      while (over() && drop(sel, keep)) { /* one row at a time */ }
+    }
+  };
+  // the queue says how many more are behind the rows it kept
+  const behind = () => {
+    const q = el.querySelector(".ss-queue[data-n]"), n = q ? +q.dataset.n - q.querySelectorAll(".q-row").length : 0;
+    let more = q && q.querySelector(".q-more");
+    if (n > 0 && !more) { more = document.createElement("div"); more.className = "q-more"; q.append(more); }
+    if (more) more.textContent = queueMore(n);
+  };
+  trim(); behind();
+  trim(); behind();         // again, in case that line took the last of the room
   const note = el.querySelector(".ss-note");
   if (note && !note.querySelector(".n-row")) note.remove();
 }

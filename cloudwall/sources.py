@@ -184,7 +184,7 @@ DEMO_FLIGHTS = [
     (None, None, None, "C172", "Cessna 172S Skyhawk", "N751SP", None, None, "ga"),
     ("LIFE3", None, "Life Flight Network", "EC35", "Eurocopter EC135", "N135LF", None, None, "heli"),
     # one of each of the radar's other kinds: a regional jet, a four-engined heavy, a business jet and a turboprop
-    ("SKW3486", "DL3486", "Delta Connection", "CRJ9", "Bombardier CRJ900LR", "N914SK", "SEA", "PDX", "arr"),
+    ("SKW3486", "OO3486", "SkyWest Airlines", "CRJ9", "Bombardier CRJ900LR", "N914SK", "SEA", "PDX", "arr"),
     ("GTI8315", "5Y8315", "Atlas Air", "B744", "Boeing 747-400F", "N415MC", "PDX", "ANC", "dep"),
     ("EJA524", "EJA524", "NetJets", "C56X", "Cessna Citation Excel", "N524QS", "PDX", "LAX", "dep"),
     (None, None, None, "B350", "Beechcraft King Air 350", "N350TW", None, None, "ga"),

@@ -167,6 +167,11 @@ const SCENARIOS = {
     out.side = await count(page, "#side .k-sit h1");
     out.onScope = await count(page, "#s-craft g.craft");
     out.tabsShown = await page.evaluate(() => getComputedStyle(document.querySelector("nav")).display !== "none");
+    // the demo's fighters heard with no position are said, in the line at the top or worth a look,
+    // whatever the side had to leave out to fit; and the side fits
+    out.heardSaid = await page.evaluate(() => [...document.querySelectorAll("#side .k-sit .ph")].some((p) => !p.hidden && p.querySelector(".ci.heard"))
+      || !!document.querySelector("#side .ss-note .n-row.heard"));
+    out.sideFits = await page.evaluate(() => { const s = document.getElementById("side"); return s.scrollHeight <= s.clientHeight + 1; });
     await page.close();
     // detailed: the flight card, the landing queue under it, and the situation over the radar
     page = await open(browser, "kiosk", "/kiosk?density=detailed", errors);
@@ -174,6 +179,16 @@ const SCENARIOS = {
     await page.waitForSelector("#hero .k-q .q-row", { timeout: 8000 }).catch(() => {});
     out.queue = await count(page, "#hero .k-q .q-row");
     out.strip = await page.evaluate(() => getComputedStyle(document.getElementById("strip")).display !== "none" && !!document.querySelector("#strip h1"));
+    // every label shown on the radar has been placed, and inside it (the wall panel's type is large)
+    out.labelsInside = await page.evaluate(() => {
+      const svg = document.getElementById("radar"), r = svg.getBoundingClientRect(), bad = [];
+      for (const t of svg.querySelectorAll("#s-craft :is(.tag, .tag-sub)")) {
+        if (t.style.display === "none" || !t.textContent) continue;
+        const q = t.getBoundingClientRect();
+        if (t.getAttribute("x") == null || q.left < r.left - 2 || q.right > r.right + 2 || q.top < r.top - 2 || q.bottom > r.bottom + 2) bad.push(t.textContent);
+      }
+      return bad;
+    });
     await page.close();
     return out;
   },

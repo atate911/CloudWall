@@ -1082,6 +1082,19 @@ class PresentationDataTest(unittest.TestCase):
                          ("AS3108", "Alaska Airlines", "SkyWest Airlines", "AS"))
         self.assertGreater(a["route"]["eta_est"], time.time())
 
+    def test_airline_name_agrees_with_logo_and_flight_number(self):
+        apt = lambda code, ll: {"iata": code, "city": code, "lat": ll[0], "lon": ll[1]}
+        # the route database names the brand a regional flies under; the logo and number are the operator's
+        self.enricher.routes["SKW3486"] = {"flight": "DL3486", "airline": "Delta Connection", "airline_iata": "DL",
+                                           "origin": apt("SEA", (47.45, -122.31)), "dest": apt("PDX", PDX)}
+        # Horizon only ever flies as Alaska: Alaska's flight, operated by Horizon
+        self.enricher.routes["QXE2162"] = {"flight": "QX2162", "airline": "Horizon Air", "airline_iata": "QX",
+                                           "origin": apt("BOI", (43.56, -116.22)), "dest": apt("PDX", PDX)}
+        self.t.update([plane("a1", "SKW3486", 1.0, typ="CRJ9"), plane("a2", "QXE2162", 3.0, typ="E75L")], "test")
+        got = {a["hex"]: (a["flight_no"], a["airline"], a.get("operated_by"), a["airline_iata"]) for a in self.t.snapshot()["aircraft"]}
+        self.assertEqual(got["a1"], ("OO3486", "SkyWest Airlines", None, "OO"))
+        self.assertEqual(got["a2"], ("AS2162", "Alaska Airlines", "Horizon Air", "AS"))
+
     def test_brief_feed_outage_is_not_a_warning(self):
         self.t.update([plane("a1", "ASA1", 1.0)], "test")
         self.t.failed("test", "timeout")

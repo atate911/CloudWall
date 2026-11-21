@@ -124,11 +124,12 @@ function showHero(el, a, state) {
     slideShown = -1;
     showLogo($("h-logo"), $("h-logo-img"), state, a.airline_iata, $("h-airline"));
   }
-  const r = a.route, pr = r && r.plausible ? r : null;
+  const r = a.route;
   const id = ident(a), info = typeInfo(a);
   flap($("h-flight"), boardFlight(id));
   const ga = info.shape === "piston" || info.shape === "heli" || /^N\d/.test(a.callsign || "");
-  $("h-airline").textContent = (pr && pr.airline) || (r && r.airline) || a.airline || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
+  // the server's airline agrees with the logo and the flight number (a partner's flight under the airline you'd book)
+  $("h-airline").textContent = a.airline || (r && r.airline) || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
   $("h-sub").innerHTML = [a.operated_by ? `Operated by ${a.operated_by}` : null, a.callsign !== id ? a.callsign : null].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("");
   const bh = badges(a.badges);
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;

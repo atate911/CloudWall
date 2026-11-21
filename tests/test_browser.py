@@ -164,7 +164,9 @@ class BrowserTest(unittest.TestCase):
         k = self.scenario("kiosk")
         self.assertIn("kiosk", k["layout"])
         self.assertEqual((k["simple"], k["side"], k["card"], k["tabsShown"]), (True, 1, 1, False))
+        self.assertTrue(k["heardSaid"] and k["sideFits"])                     # heard aircraft said, however the side is trimmed
         self.assertTrue(k["strip"])                                          # Detailed: the situation over the radar
+        self.assertEqual(k["labelsInside"], [])                              # every radar label placed, and inside the radar
         self.assertGreaterEqual(k["queue"], 1)                               # and the demo's arrivals under the card
         self.assertNotIn("map", k["scope"])                                  # the radar unless [kiosk] view says map
         self.assertGreaterEqual(k["onScope"], 1)

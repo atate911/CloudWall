@@ -59,6 +59,11 @@ const CHAR_W = 3.35;                          // estimated label width per chara
 // aircraft is still more than a speck. Labels and lines make room for them.
 const ICON_UNIT_PX = 2.5, ICON_BOOST_MAX = 1.5;
 let placeBoxes = [];        // where the place names sit, so aircraft labels can avoid them
+// The chart style's fixed names (range rings, the airport, airfields, towns, flight restrictions,
+// the approach course) give way to traffic: while an aircraft or its label is over one, it fades
+// out. Measured as drawn.
+const YIELDING = ".ring-label, .apt-label, .field-label, .place, .tfr-label, .final-label";
+let yielders = [];
 
 // The selected aircraft's whole track is drawn in its colour, strongest near the ground and fading
 // with height: these are the bands' lower edges in feet (0-2, 2-5, 5-10, 10-18, 18-28, 28+ thousand).
@@ -116,7 +121,7 @@ function mapLayer(home, k, hasBasemap, charted = false) {
     if (Math.hypot(o.x, o.y) * k < 7) continue;   // the town you're in: the home reticle already marks it
     s += `<text class="place" x="${o.x * k}" y="${-o.y * k}" text-anchor="middle">${esc(p.name)}</text>`;
     const w = p.name.length * 3.1;
-    placeBoxes.push({ x0: o.x * k - w / 2, x1: o.x * k + w / 2, y0: -o.y * k - 4.5, y1: -o.y * k + 1 });
+    placeBoxes.push({ x0: o.x * k - w / 2, x1: o.x * k + w / 2, y0: -o.y * k - 4.5, y1: -o.y * k + 1, soft: true });
   }
   return s;
 }
@@ -379,7 +384,7 @@ function radarStatic(state) {
   for (const r of rings) {
     s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + " nm")}`;
     const d = r * k * Math.SQRT1_2;
-    placeBoxes.push({ x0: d + 1, x1: d + 13, y0: -d - 5.5, y1: -d - 0.5 });          // aircraft labels steer around it
+    placeBoxes.push({ x0: d + 1, x1: d + 13, y0: -d - 5.5, y1: -d - 0.5, soft: true });          // aircraft labels steer around it
   }
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
   // the key, in the drawing's lower left corner, with the selected aircraft's track shades along its foot
@@ -390,7 +395,7 @@ function radarStatic(state) {
   const ap = offset(home, state.airport);
   if (Math.hypot(ap.x, ap.y) < R) {
     s += `<text class="apt-label" x="${ap.x * k}" y="${-ap.y * k + 9}" text-anchor="middle">${esc(state.airport.iata)}</text>${runwaysFor(state).length ? "" : `<rect class="apt-mark" x="${ap.x * k - 2.5}" y="${-ap.y * k - 2.5}" width="5" height="5"/>`}`;
-    placeBoxes.push({ x0: ap.x * k - 6, x1: ap.x * k + 6, y0: -ap.y * k + 4.5, y1: -ap.y * k + 10 });     // labels steer around the airport's name
+    placeBoxes.push({ x0: ap.x * k - 6, x1: ap.x * k + 6, y0: -ap.y * k + 4.5, y1: -ap.y * k + 10, soft: true });     // labels steer around the airport's name
   }
   for (const a of state.aircraft) {
     if (!a.on_ground) continue;
@@ -438,7 +443,7 @@ function tfrLayer(state, k) {
       const y = spots.find(free) ?? spots[0];
       if (Math.hypot(cx, y) < 96) {
         s += `<text class="tfr-label" x="${cx.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle">TFR</text>`;
-        placeBoxes.push({ x0: cx - 5, x1: cx + 5, y0: y - 4.5, y1: y + 1 });
+        placeBoxes.push({ x0: cx - 5, x1: cx + 5, y0: y - 4.5, y1: y + 1, soft: true });
       }
     }
   }
@@ -461,7 +466,7 @@ function fieldsLayer(state, k) {
     }
     s += `</g><text class="field-label" x="${x.toFixed(1)}" y="${(y + 7.9).toFixed(1)}" text-anchor="middle">${esc(f.code)}</text>`;
     // aircraft labels steer around the airfield and its code, as they do around place names
-    placeBoxes.push({ x0: o.x * k - 5, x1: o.x * k + 5, y0: -o.y * k - 2.5, y1: -o.y * k + 8.5 });
+    placeBoxes.push({ x0: o.x * k - 5, x1: o.x * k + 5, y0: -o.y * k - 2.5, y1: -o.y * k + 8.5, soft: true });
   }
   return s;
 }
@@ -566,7 +571,8 @@ function craftFor(svg, hex) {
   // hidden until placed: a dot without a position would sit on home
   for (let i = 0; i < HISTORY; i++) el("circle", { r: 1.05, class: `h${i}`, style: "display:none" }, hist);
   const l0 = el("text", { class: "tag-top" }, g), seqring = el("circle", { class: "seqring", style: "display:none" }, g);
-  const tag = el("text", { class: "tag" }, g), sub = el("text", { class: "tag-sub" }, g);
+  // the label stays hidden until it's first placed, on the next update
+  const tag = el("text", { class: "tag", style: "display:none" }, g), sub = el("text", { class: "tag-sub", style: "display:none" }, g);
   // the chart style's short track behind every other aircraft: its last two minutes, fading with age
   const tl = el("g", { class: "tl" }, svg.querySelector("#s-trails")), tlSegs = el("g", {}, tl), tlEnd = el("line", {}, tl);
   // the chart style's track, while it is the selected aircraft: runs of one altitude band,
@@ -603,8 +609,10 @@ function slot(c, i) {
   return { d, ex, ey, tx: ex + (d.right ? -c.gap : c.gap), ty: ey, anchor: d.right ? "end" : "start" };
 }
 
-// The size of a label, measured: the kiosk sets labels larger.
+// The size of a label, measured: the kiosk sets labels larger. A label hidden last time (or not yet
+// placed) is shown for the measuring, as hidden text measures nothing; applyLabel sets it after.
 function measure(c) {
+  if (c.tag.style.display === "none") c.tag.style.display = c.sub.style.display = "";
   const fs = (e, d) => parseFloat(getComputedStyle(e).fontSize) || d;
   if (opt.atc) {
     // monospaced, so a block is as wide as its longest line; a leader is about one and a half
@@ -652,6 +660,7 @@ function placeLabels(heroHex) {
     if (Math.hypot(c.vx, c.vy) * f > 5) blips.push({ x0: x - 2, x1: x + 2, y0: y - 2, y1: y + 2, c: null });   // its own line too
   }
   const labelled = all.filter((c) => c.text);
+  for (const c of labelled) if (c.fallback) { c.fallback = false; showFull(c); }
   labelled.forEach(measure);
   // the selected aircraft first, then the arrivals in landing order, departures, overflights and the rest by distance
   labelled.sort((a, b) => (b.hex === heroHex) - (a.hex === heroHex) || a.pri - b.pri);
@@ -671,26 +680,36 @@ function placeLabels(heroHex) {
     return labelBox(c, best);
   };
   for (const c of labelled) {
-    // the chart style leaves off a label that would touch another label or a name on the map, cover
-    // an aircraft by more than a quarter of itself, or run off the edge: the aircraft still shows in
-    // its colour, and a tap names it. Labels go in order of importance, so the ones left off matter least.
+    // the chart style leaves off a label that would touch another label or the compass, cover an
+    // aircraft by more than a quarter of itself, or run off the edge: the aircraft still shows in its
+    // colour, and a tap names it. Labels go in order of importance, so the ones left off matter least.
+    // A fixed name (a town, a range ring, the airport) only steers a label: if there's no better
+    // place, the name fades while the label is over it (giveWay).
     let b = pick(c);
     const area = (b.x1 - b.x0) * (b.y1 - b.y0);
-    const textHit = placed.reduce((n, p) => n + overlap(b, p), 0), iconHit = blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
+    const textHit = placed.reduce((n, p) => n + (p.soft ? 0 : overlap(b, p)), 0), iconHit = blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
     const off = Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0) + (square() ? Math.max(0, b.y1 - edgeY) + Math.max(0, -edgeY - b.y0) : 0);
     const key = c.act === "arr" || c.act === "dep";          // arrivals and departures may sit over an icon
     c.hide = !opt.atc && !opt.map && c.hex !== heroHex && !c.seqtag && (textHit > 0.03 * area || (!key && iconHit > 0.25 * area) || off > 1.5);
     // an arrival keeps its landing number, in its ring as Simple draws it, so the landing queue and
     // the list still find it on the radar (until the next update puts its whole label back)
-    if (c.hide && c.seqNum) {
-      c.seqtag = true; c.tag.classList.add("seqtag");
+    if (c.hide && c.seqNum && c.full) {
+      c.fallback = c.seqtag = true; c.tag.classList.add("seqtag");
       c.text = c.tag.textContent = String(c.seqNum); c.subs = [""]; c.sub.textContent = "";
       measure(c);
       b = pick(c);
       c.hide = false;
     }
-    if (!c.hide) placed.push(b);
+    // with a margin round it that only steers the labels after it, so two labels side by side
+    // don't read as one block (the chart style)
+    if (!c.hide) placed.push(b, ...(opt.atc || opt.map ? [] : [{ x0: b.x0 - 1.5, x1: b.x1 + 1.5, y0: b.y0 - 1.5, y1: b.y1 + 1.5, soft: true }]));
   }
+}
+
+// Back from a landing number to the whole label, to see whether it fits now.
+function showFull(c) {
+  c.seqtag = false; c.tag.classList.remove("seqtag");
+  c.text = c.tag.textContent = c.full.text; c.subs = [c.full.sub]; c.sub.textContent = c.full.sub;
 }
 
 function applyLabel(c) {
@@ -803,6 +822,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     staticKey = key;
     svg.querySelector("#s-static").innerHTML = opt.map ? mapStatic(state) : radarStatic(state);
     if (opt.map) fitMapNote(svg);
+    else if (!opt.atc) measureYielders(svg);
     layoutPathKey(svg);
   }
   const wall = Date.now(), phase = clockPhase(wall);
@@ -871,6 +891,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     c.ring.style.display = ringed ? "" : "none";
     if (ringed) c.ring.setAttribute("r", ((c.reach || 4) + 2.2).toFixed(2));
     let text, line0 = "", seqtag = false;
+    c.full = null;              // Detailed's whole label, while an arrival shows only its landing number
     c.seqNum = !opt.atc && !opt.map && act === "arr" ? a.seq || null : null;
     if (opt.atc) {
       const b = starsBlock(a, isHero);
@@ -892,7 +913,11 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       const r = a.route && a.route.plausible ? a.route : null;
       text = ident(a);
       c.subs = [p.sub + (a.activity === "arr" && a.rwy ? ` ${a.rwy}${a.seq ? ` #${a.seq}` : ""}` : a.activity === "dep" && r && r.dest.iata ? ` ${r.dest.iata}` : "")];
+      c.full = { text, sub: c.subs[0] };
+      // an arrival whose whole label found no room keeps its landing number until the next update
+      if (c.fallback && c.seqNum) { text = String(c.seqNum); c.subs = [""]; seqtag = true; }
     }
+    if (!c.full || !seqtag) c.fallback = false;
     if (!!seqtag !== !!c.seqtag) { c.seqtag = !!seqtag; c.tag.classList.toggle("seqtag", c.seqtag); }
     if (text !== c.text) { c.text = text; c.tag.textContent = text; }
     if (c.l0.textContent !== line0) c.l0.textContent = line0;
@@ -929,4 +954,46 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   }
   for (const hex of [...live.keys()]) if (!seen.has(hex)) dropCraft(hex);
   if (fresh) { placeLabels(heroHex); for (const c of live.values()) applyLabel(c); }
+  if (!opt.atc && !opt.map) giveWay();
+}
+
+// Each fixed name's box as drawn (the kiosk and a phone draw them larger than the estimates the
+// labels steer by), added to the boxes aircraft labels keep clear of.
+// The layer is rebuilt on each update: a name that had faded starts out faded, before it is first
+// laid out, so it doesn't flash back.
+function measureYielders(svg) {
+  const was = new Set(yielders.filter((y) => y.off).map((y) => y.key)), els = [...svg.querySelectorAll(`#s-static :is(${YIELDING})`)];
+  yielders = [];
+  for (const e of els) {
+    const key = `${e.getAttribute("class")}|${e.textContent}|${e.getAttribute("x")}|${e.getAttribute("y")}`, off = was.has(key);
+    if (off) e.classList.add("yield");
+    yielders.push({ e, key, off });
+  }
+  for (const y of yielders) {
+    let b;
+    try { b = y.e.getBBox(); } catch (err) { b = null; }       // not laid out yet
+    y.box = b && b.width ? { x0: b.x - 0.5, x1: b.x + b.width + 0.5, y0: b.y, y1: b.y + b.height, soft: true } : null;
+    if (y.box) placeBoxes.push(y.box);
+  }
+  yielders = yielders.filter((y) => y.box);
+}
+
+// Fade out a fixed name while an aircraft, or a label shown, covers it; back once it's clear by
+// a margin, so a name at an icon's edge doesn't flicker.
+function giveWay() {
+  if (!yielders.length) return;
+  const over = [];
+  for (const c of live.values()) {
+    if (c.x == null) continue;
+    const r = Math.max(3, c.reach || 4.5);
+    over.push({ x0: c.x - r, x1: c.x + r, y0: c.y - r, y1: c.y + r });
+    // a label's box is its letters' cap height and descent: allow for the rest of the line above
+    if (c.text && !c.hide && c.w) { const l = labelBox(c, c.slot); over.push({ x0: l.x0 - 0.5, x1: l.x1 + 0.5, y0: l.y0 - 1.2, y1: l.y1 + 0.5 }); }
+  }
+  for (const y of yielders) {
+    const m = y.off ? 1.2 : 0, b = { x0: y.box.x0 - m, x1: y.box.x1 + m, y0: y.box.y0 - m, y1: y.box.y1 + m };
+    const area = (y.box.x1 - y.box.x0) * (y.box.y1 - y.box.y0);
+    const off = over.some((o) => overlap(b, o) > (y.off ? 0 : Math.max(0.5, 0.04 * area)));
+    if (off !== y.off) { y.off = off; y.e.classList.toggle("yield", off); }
+  }
 }

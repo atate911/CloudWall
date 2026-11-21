@@ -467,6 +467,9 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 #radar .ring { fill: none; stroke: var(--rule); stroke-width: .5; }
 #radar .ring.oh { stroke: var(--magenta); stroke-dasharray: 1.4 2.2; stroke-width: .6; opacity: .8; }
 #radar .ring-label { font-size: 4.2px; }
+/* fixed names fade while traffic passes over them */
+#radar :is(.ring-label, .apt-label, .field-label, .place, .tfr-label, .final-label) { transition: opacity .5s; }
+#radar .yield { opacity: 0; }
 #radar .compass { font-size: 5.6px; font-weight: 700; fill: var(--ink-2); }
 #radar .water { fill: none; stroke: var(--water); stroke-linecap: round; stroke-linejoin: round; }
 #radar .runway { stroke: var(--ink); stroke-width: 1.2; stroke-linecap: round; }
@@ -1276,7 +1279,7 @@ body.night { --c-arr: #3987e5; --c-dep: #199e70; --c-loc: #d95926; --c-pass: #86
 .sit h1 { font-size: 1.3rem; letter-spacing: -.01em; line-height: 1.2; }
 .pic { font-size: .95rem; line-height: 1.5; color: var(--ink-2); margin-top: .25rem; }
 .ph { margin-right: 1.5em; }
-.ph:last-child { margin-right: 0; }
+.ph:last-child, .ph:has(+ .ph[hidden]:last-child) { margin-right: 0; }
 .ph-k { white-space: nowrap; }
 .ph-k .ci { vertical-align: -.16em; margin-right: .35em; }
 .ph-k b { color: var(--ink); font-variant-numeric: tabular-nums; }
@@ -1409,7 +1412,7 @@ body.night #scope:not(.map, .atc) #radar .basemap:is(.dark, .carto-dark) { filte
 #radar.simple .craft:not(.hero) .vec { display: none; }
 #radar.simple .tag:not(.seqtag) { font-size: 5.6px; }
 #radar.simple .tag-sub { font-family: var(--sans); font-size: 4.6px; }
-#radar.simple .ring-label { opacity: .8; }
+#radar.simple .ring-label:not(.yield) { opacity: .8; }
 /* Simple keeps the Radar / Map switch and the range; the radar's look and its tracks are Detailed's */
 body.d-simple #scope:not(.map) .scope-tools > :is(#style-seg, .seg:has(#btn-tracks)) { display: none; }
 

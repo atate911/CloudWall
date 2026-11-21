@@ -127,10 +127,11 @@ const arrow = (a) => ((a.vrate || 0) > 300 ? "↑" : (a.vrate || 0) < -300 ? "�
 // land on 28L and 28R, 1½ to 4½ minutes apart", "1 flying locally: an Army Chinook"); Simple says
 // it short ("3 landing at PDX", "2 departing", "1 flying locally"), leaving the rest to the landing
 // queue and to what's worth a look beside it. Aircraft heard with no position are left to "Worth a
-// look" where that is shown beside the strip ("notes").
+// look" where that is shown beside the strip ("notes": true, or how many of its rows are shown):
+// their phrase is still made, marked covered, for when the page has to trim that row (fitSide).
 export function situation(state, { short = false, notes = short } = {}) {
   const p = picture(state), g = p.groups, n = p.air.length, R = state.tracking.radius_nm, out = [];
-  const add = (cat, count, text) => out.push({ cat, n: count, text });
+  const add = (cat, count, text, covered = false) => out.push({ cat, n: count, text, covered });
   if (g.arr.length) {
     const from = state.flow && FROM[state.flow.dir] ? ` from the ${FROM[state.flow.dir]}` : "";
     const gap = spacing(g.arr);
@@ -148,9 +149,11 @@ export function situation(state, { short = false, notes = short } = {}) {
     add("loc", g.loc.length, short ? "flying locally" : `flying locally: ${words(list.length > 4 ? [...list.slice(0, 3), `${n2w(list.length - 3)} more`] : list)}`);
   }
   const hg = heardGroups(state.heard || []), heard = hg.reduce((s, h) => s + h.n, 0);
-  if (heard && !(notes && notables(state).some((x) => x.heard))) {
+  if (heard) {
+    const shown = notes === true ? 3 : +notes || 0;
     add("heard", heard, hg.length === 1 ? `${hg[0].type}${heard > 1 ? "s" : ""} heard${short ? "" : ", with no position"}`
-      : short ? "military aircraft heard" : `heard, with no position: ${words(hg.map((h) => (h.n > 1 ? `${n2w(h.n)} ${h.type}s` : withArticle(h.type))))}`);
+      : short ? "military aircraft heard" : `heard, with no position: ${words(hg.map((h) => (h.n > 1 ? `${n2w(h.n)} ${h.type}s` : withArticle(h.type))))}`,
+      notables(state).slice(0, shown).some((x) => x.heard));
   }
   // an emergency leads, in the takeover's own words
   const em = (state.emergency || [])[0];
@@ -166,12 +169,13 @@ export function catIcon(cat, a = null, size = 16) {
   return `<svg class="ci c-${cat}" width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" aria-hidden="true"><path d="${ic.d}" transform="rotate(${rot}) scale(${k.toFixed(3)})"/></svg>`;
 }
 const heardIcon = (size = 16) => `<svg class="ci heard" width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" aria-hidden="true"><path d="${iconFor("fighter").d}" transform="scale(${((size * 0.44) / iconFor("fighter").r).toFixed(3)})"/></svg>`;
-// The strip across the top: the headline, and the phrases under it (short, in Simple).
+// The strip across the top: the headline, and the phrases under it (short, in Simple). A phrase
+// "Worth a look" covers is there but hidden, as .ph.covered.
 export function stripHtml(state, opts = {}) {
   const s = situation(state, opts);
   // the icon, the count and the first word keep together when a line wraps
   const ph = s.phrases.map((x) => { const [w, ...rest] = x.text.split(" ");
-    return `<span class="ph"><span class="ph-k">${x.cat === "heard" ? heardIcon() : catIcon(x.cat)}<b>${x.n}</b> ${esc(w)}</span> ${esc(rest.join(" "))}</span>`; });
+    return `<span class="ph${x.covered ? " covered" : ""}"${x.covered ? " hidden" : ""}><span class="ph-k">${x.cat === "heard" ? heardIcon() : catIcon(x.cat)}<b>${x.n}</b> ${esc(w)}</span> ${esc(rest.join(" "))}</span>`; });
   return `<div class="sit"><h1>${esc(s.head)}</h1>${ph.length ? `<p class="pic${opts.short ? " short" : ""}">${ph.join(" ")}</p>` : ""}</div>`;
 }
 
@@ -248,11 +252,12 @@ export function queueHtml(state, max = 4) {
   const p = picture(state), arr = p.groups.arr.filter((a) => a.seq), t = since(state);
   const heroHex = (state.hero || state.next || {}).hex;        // the one over the house, in the card above
   if (!arr.length) return "";
-  return `<section class="ss-queue"><div class="label">Landing next ${esc(landOn(p, state))}</div>
+  return `<section class="ss-queue" data-n="${arr.length}"><div class="label">Landing next ${esc(landOn(p, state))}</div>
     ${arr.slice(0, max).map((a) => `<button class="q-row${a.hex === heroHex ? " sel" : ""}" data-hex="${esc(a.hex)}"><span class="seq">${a.seq}</span><b class="q-fl">${esc(flightName(a))}</b>` +
       `<span class="q-from">${plausible(a) ? `from ${esc(city(a.route.origin))}` : esc(cap(kind(a)))}</span><b class="q-t" data-until="${a.lands_s}">${until(a.lands_s - t)}</b></button>`).join("")}
-    ${arr.length > max ? `<div class="q-more">and ${n2w(arr.length - max)} more behind them</div>` : ""}</section>`;
+    ${arr.length > max ? `<div class="q-more">${queueMore(arr.length - max)}</div>` : ""}</section>`;
 }
+export const queueMore = (n) => `and ${n2w(n)} more behind them`;
 // Worth a look: what's out of the ordinary right now, at most three: military, a rare type, a
 // balloon or glider, and military jets heard with no position. Emergencies have the whole screen.
 export function notables(state) {
@@ -275,7 +280,7 @@ export function notables(state) {
 export function notesHtml(state, max = 3) {
   const n = notables(state).slice(0, max);
   if (!n.length) return "";
-  return `<section class="ss-note"><div class="label">Worth a look</div>${n.map((x) => `<${x.a ? `button data-hex="${esc(x.a.hex)}"` : "div"} class="n-row">` +
+  return `<section class="ss-note"><div class="label">Worth a look</div>${n.map((x) => `<${x.a ? `button data-hex="${esc(x.a.hex)}"` : "div"} class="n-row${x.heard ? " heard" : ""}">` +
     `${x.heard ? heardIcon(18) : catIcon(x.a.activity || "pass", x.a, 18)}<span><b>${esc(x.text)}</b><small>${esc(x.sub)}</small></span></${x.a ? "button" : "div"}>`).join("")}</section>`;
 }
 // The simple side: everything at once (the desktop, the wall panel), or split around the radar (a phone).
