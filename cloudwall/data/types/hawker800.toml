@@ -1,0 +1,62 @@
+name = "BAe 125 and Hawker 800"
+types = ["H25A", "H25B", "H25C"]
+production = [1964, 2013]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/British_Aerospace_125",
+  "https://en.wikipedia.org/wiki/Hawker_800",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+De Havilland designed it as the DH.125 Jet Dragon, a jet to replace its piston-engined Dove, and it
+first flew in August 1962. It was built as the Hawker Siddeley HS.125, became the BAe 125 in 1977,
+and was sold as the Hawker 800 and 1000 after Raytheon bought the line. Its gently swept one-piece
+wing, slung beneath the fuselage, follows the planform of the Comet airliner's and has big slotted
+flaps and airbrakes for short strips; it was cleared to fly from hardened grass. For most of its
+life the fuselage and wing were built at Broughton, near Chester, and from 1996 they were shipped to
+Wichita for final assembly. Production ended only in 2013, when Hawker Beechcraft went bankrupt,
+after more than 50 years and over 1,600 aircraft. Flying magazine called it, by numbers, the most
+successful British commercial aircraft ever built.
+
+It is probably also the only business jet to have survived a hit from an air-to-air missile. In 1988
+an Angolan MiG-23 fired on a 125-800 carrying Botswana's president: the missile knocked off an
+engine, depressurised the cabin and ruptured the fuel tanks, and the crew landed on a bush strip.
+The jet was rebuilt. The RAF trained navigators in the 125 as the Dominie from 1965 to 2011, and the
+US Air Force flies it as the C-29A to check navigation aids.
+"""
+
+[facts]
+"First flight" = "August 1962"
+"Built" = "over 1,600"
+
+[variants.H25A]
+name = "Hawker Siddeley HS.125, Series 1 to 600"
+more = """
+The early 125s had Bristol Siddeley Viper turbojets, and many were later re-engined with Garrett
+TFE731 turbofans. In 1967 one became the only business jet ever hijacked, when Moïse Tshombe, the
+former Congolese prime minister, was flown to Algeria at gunpoint.
+"""
+[variants.H25A.facts]
+"Engines" = "2 × Bristol Siddeley Viper turbojets; TFE731 on re-engined aircraft"
+
+[variants.H25B]
+name = "BAe 125-700/800 or Hawker 800"
+more = """
+The 700 of 1976 brought Garrett TFE731 turbofans, and the 800 of 1983 a sloping new windscreen and
+the first glass cockpit in a corporate jet. The 800XP, 850XP and 900XP followed, the last two with
+winglets, and the 750 swapped the ventral fuel tank for a baggage pannier.
+"""
+[variants.H25B.facts]
+"Engines" = "2 × Honeywell TFE731"
+
+[variants.H25C]
+name = "BAe 125-1000 or Hawker 1000"
+more = """
+The 1000, first flown in 1990, is stretched by 2 ft 9 in for up to 15 passengers and carries more
+fuel for intercontinental range, on Pratt & Whitney Canada PW305 engines with digital controls.
+Only 52 were built.
+"""
+[variants.H25C.facts]
+"Built" = "52"
+"Engines" = "2 × Pratt & Whitney Canada PW305, 5,200 lbf"

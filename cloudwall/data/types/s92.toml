@@ -1,0 +1,35 @@
+name = "Sikorsky S-92"
+types = ["S92"]
+production = [2004]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Sikorsky_S-92",
+  "https://en.wikipedia.org/wiki/Sikorsky_VH-92_Patriot",
+  "https://en.wikipedia.org/wiki/Sikorsky_CH-148_Cyclone",
+  "https://en.wikipedia.org/wiki/General_Electric_T700",
+  "https://skybrary.aero/aircraft/s92",
+]
+
+text = """
+Sikorsky built the S-92 for the long flights out to oil platforms far offshore, putting the rotor
+system and flight controls of the S-70 Black Hawk family on a bigger, new airframe. Its four
+composite main blades are wider and longer than the Black Hawk's, with tips that sweep back and
+angle down to cut noise and add lift, and its two GE CT7-8A turboshafts of 2,520 shp each are the
+civil version of the Black Hawk's T700. Sensors and force generators built into the structure
+work against the rotor's vibration. The cabin, 20 ft long, seats 19 airline style, and the design
+was made to tolerate cracks, survive bird strikes and contain a bursting engine.
+
+It first flew in December 1998 and went to its first customer, PHI, in 2004. The FAA certified it
+with an exemption, because its main gearbox could not keep running for the required time after
+losing its oil. In 2009 an S-92 carrying 18 people to the oil fields off Newfoundland lost its
+gearbox oil when titanium studs failed, and crashed into the sea; one person survived. After a
+Super Puma crashed off Norway in 2016, Statoil said it would fly its crews in S-92s instead. The
+British and Irish coastguards use S-92s for search and rescue, and the US presidential VH-92 and
+Canada's CH-148 Cyclone are military versions of it.
+"""
+
+[facts]
+"First flight" = "December 1998"
+"Engines" = "2 × GE CT7-8A, 2,520 shp"
+"Range" = "539 nm (998 km)"
+"Built at" = "Coatesville, Pennsylvania"

@@ -24,9 +24,9 @@ tail keep the same chord and thickness from root to tip, every rib in the wing i
 fuselage is a plain box on fixed landing gear. It first flew on 13 June 1965 and was at the Paris
 Air Show four days later.
 
-In 1974 its sales passed the record of 548 orders for a British multi-engined commercial aircraft,
-and more than 1,200 have been built, over 500 of them in Romania, before production returned to
-Bembridge in 2023. It is the aircraft of island hops: Loganair's Islander between Westray and Papa
+In 1974 its sales passed the record of 548 orders for a British multi-engined commercial aircraft.
+More than 1,200 have been built, over 500 of them in Romania, and in 2023 production returned to
+Bembridge. It is the aircraft of island hops: Loganair's Islander between Westray and Papa
 Westray in Orkney, 1.7 miles and two minutes on the timetable, is the shortest scheduled flight in
 the world.
 """
@@ -51,9 +51,9 @@ name = "Britten-Norman Trislander"
 production = [1971, 1982]
 more = """
 The Trislander stretches the Islander to 18 seats and puts a third engine on the centreline, high
-on a lengthened fin. The prototype first flew on 11 September 1970 and was at the Farnborough show the same
-day. About 80 were built, until 1982, and Aurigny flew them between the Channel Islands for more
-than 40 years, until 2017; one of its fleet is now at the Imperial War Museum, Duxford.
+on a lengthened fin. The prototype first flew on 11 September 1970 and was at the Farnborough show
+the same day. About 80 were built, until 1982, and Aurigny flew them between the Channel Islands
+for more than 40 years, until 2017; one of its fleet is now at the Imperial War Museum, Duxford.
 """
 [variants.TRIS.facts]
 "First flight" = "September 1970"

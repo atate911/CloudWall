@@ -68,8 +68,8 @@ and resumed a few years later with a new wing; aircraft with it are RV-3Bs.
 name = "Van's RV-4"
 production = [1980, 2025]
 more = """
-A two-seat development of the RV-3, with the passenger behind the pilot, sold only as a taildragger.
-The Australian Jon Johanson flew his around the world three times, and in 2003 over the South Pole,
+The RV-4 is a two-seat development of the RV-3, with the passenger behind the pilot, sold only as a
+taildragger. The Australian Jon Johanson flew his around the world three times, and in 2003 over the South Pole,
 the first solo flight there in a single-engine homebuilt. The base at McMurdo, not wanting to
 encourage private flights, refused to sell him fuel, and he flew on only after the aviator Polly
 Vacher gave him some.
@@ -105,8 +105,8 @@ as the Air Beetle.
 name = "Van's RV-7 or RV-7A"
 production = [2001]
 more = """
-The RV-6's replacement from 2001, with a longer wing, more fuel, room for engines up to 215 hp and a
-larger rudder for better spin recovery. The 10,000th RV to fly, in 2017, was an RV-7 built in
+The RV-7 replaced the RV-6 in 2001, with a longer wing, more fuel, room for engines up to 215 hp and
+a larger rudder for better spin recovery. The 10,000th RV to fly, in 2017, was an RV-7 built in
 Martinsburg, West Virginia.
 """
 [variants.RV7.facts]
@@ -119,7 +119,7 @@ Martinsburg, West Virginia.
 name = "Van's RV-8 or RV-8A"
 production = [1996]
 more = """
-A larger tandem two-seater, brought out in 1996 for pilots who wanted the RV-4's fighter-like seat on
+Van's brought out this larger tandem two-seater in 1996 for pilots who wanted the RV-4's fighter-like seat on
 the centreline with more room: the front takes a pilot of up to 6 ft 7 in, and baggage bays ahead of
 and behind the cockpit help keep it in balance. Van's rates it the fastest RV, and many are painted
 in military colours.
@@ -164,8 +164,8 @@ limit, and Van's reckons an average builder needs about 2,000 hours to finish on
 name = "Van's RV-12 or RV-12iS"
 production = [2008]
 more = """
-A light-sport two-seater with a 100 hp Rotax, sold as a kit or, since 2013, ready to fly, which lets
-it be used for hire and training. Two people can take its wings off in under five minutes and tow it
+The RV-12 is a light-sport two-seater with a 100 hp Rotax, sold as a kit or, since 2013, ready to
+fly, which lets it be used for hire and training. Two people can take its wings off in under five minutes and tow it
 home on a trailer. VanGrunsven, now in his eighties, spends his Saturdays teaching young people to
 build them.
 """
