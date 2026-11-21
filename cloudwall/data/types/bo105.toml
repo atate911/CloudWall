@@ -1,0 +1,32 @@
+name = "MBB Bo 105"
+types = ["B105"]
+production = [1970, 2001]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/MBB_Bo_105",
+  "https://en.wikipedia.org/wiki/Helicopter_rotor",
+  "https://en.wikipedia.org/wiki/MBB/Kawasaki_BK_117",
+  "https://en.wikipedia.org/wiki/Eurocopter_EC135",
+]
+
+text = """
+Bölkow's Bo 105, first flown in 1967, was the first light twin-engined helicopter, and its rotor set
+it apart. It has no flapping or lead-lag hinges: the four glass-fibre blades bolt to a solid
+titanium hub and bend instead, which is mechanically simpler and passes the rotor's forces straight
+into the airframe, so it answers the controls quickly and has none of the mast bumping that limits
+teetering rotors. It was the first helicopter that could fly aerobatics, loops and rolls included,
+cleared by MBB for 3.5 g and 1 negative, and Red Bull has flown one in displays.
+
+Its first customers, in 1970, were ADAC Air Rescue and the Bavarian police, and clamshell doors at
+the back of the short cabin took a stretcher, so it spread through air ambulance services. The
+German Army flew 212 armed with HOT anti-tank missiles as the PAH-1, and retired its last Bo 105s
+in 2016. About 1,640 were built, many under licence in Canada, Spain, Indonesia and the
+Philippines, before Eurocopter ended production in 2001 in favour of the EC135, which began as the
+Bo 108. Its hingeless rotor went on to the BK 117.
+"""
+
+[facts]
+"First flight" = "February 1967"
+"Built" = "about 1,640, with licence production"
+"Engines" = "2 × Allison 250-C20B (Bo 105 CB)"
+"Load limits" = "+3.5 g, −1 g"

@@ -40,7 +40,7 @@ name = "Airbus Helicopters AS365 Dauphin"
 production = [1982, 2022]
 [variants.AS65.facts]
 "Engines" = "2 × Turbomeca (now Safran) Arriel; 2 × Lycoming LTS101 on the first HH-65s"
-"Max takeoff weight" = "4,300 kg (9,480 lb) (AS365 N3)"
+"Max takeoff weight" = "4,300 kg (9,480 lb), AS365 N3"
 
 [variants.EC55]
 name = "Airbus Helicopters H155 / Eurocopter EC155"

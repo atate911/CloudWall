@@ -11,21 +11,21 @@ sources = [
 ]
 
 text = """
-A Cessna 210 with its landing gear fixed down, and the load-carrier of the family. The first, the
-205 of 1962, still had the bulge in its cowling where the 210 stows its nosewheel. The 206 of 1964
-smoothed the cowling, kept only the pilot's door on the left, and put a pair of cargo doors 42
-inches wide on the right, opening onto the two rear rows of seats. Cessna named it the Stationair,
-for station wagon of the air, and it works like one: a bush plane on wheels, floats or skis, a
-skydiving and aerial photography aircraft, a freighter. When production restarted in 1998, after twelve years,
-a 300 hp Lycoming took the place of the Continental.
+The Stationair began as a Cessna 210 with its landing gear fixed down: the 205 of 1962 even kept the
+bulge in its cowling where the early 210 stowed its nosewheel. The 206 of 1964 smoothed the cowling,
+kept only the pilot's door on the left, and put a pair of cargo doors 42 inches wide on the right,
+opening onto the two rear rows of seats. Its name, Stationair, is short for station wagon of the
+air, and it is used like one, as a bush plane on wheels, floats or skis, for skydiving, for aerial
+photography and for freight. When production restarted in 1998, after twelve years, a 300 hp
+Lycoming took the place of the Continental.
 
 With the flaps down, the rear half of the cargo door will only open fully after a fiddly sequence,
-so the flaps are wired not to move while the doors are open, and Transport Canada certifies the
-206H for five people rather than six. The 207 of 1969 stretched the 206 by 45 inches for seven
-seats, and eight from 1980. Eighteen inches went into a baggage compartment ahead of the cabin,
-which moved the propeller and nosewheel forward together and kept the propeller's ground clearance;
-the other 27 went in behind the wing, which left the tail further behind the main wheels and a tail
-strike on landing easier. Few 207s have been privately owned; most have flown for air-taxi firms.
+so the flaps are wired not to move while the doors are open, and Transport Canada certifies the 206H
+for five people rather than six. The 207 of 1969 stretched the 206 by 45 inches for seven seats, and
+eight from 1980. Eighteen inches went into a baggage compartment ahead of the cabin, which moved the
+propeller and nosewheel forward together and kept the propeller's ground clearance; the other 27
+went in behind the wing, which left the tail further behind the main wheels and a tail strike on
+landing easier. The 207 was popular with air-taxi operators, and few have been privately owned.
 """
 
 [facts]

@@ -8,21 +8,22 @@ sources = [
 ]
 
 text = """
-Airbus designed the A340 alongside the A330, on the same wing, fuselage and cockpit, and gave it four
-engines because in the early 1980s twinjets were still kept close to diversion airports, and many
-airlines, Asian ones above all, wanted an aircraft that could fly anywhere. The outer engines also
-relieve the wing of bending load. The two projects' names began the other way round and were swapped
-so that the four-engined one would have a 4 in it. Airbus had hoped to offer the advanced IAE
-SuperFan; when it was cancelled the CFM56, of up to 34,000 lb thrust, became the only engine, and the
-A340-300 earned a name for being underpowered.
+Airbus designed the A340 alongside the A330, on the same wing, fuselage and cockpit, and gave it
+four engines because in the early 1980s twinjets were still kept close to diversion airports, and
+many airlines, Asian ones above all, wanted an aircraft that could fly anywhere. The outer engines
+also relieve the wing of bending load. The two projects' names began the other way round and were
+swapped so that the four-engined one would have a 4 in it. Airbus had hoped to offer the advanced
+IAE SuperFan; when it was cancelled the CFM56, of up to 34,000 lb thrust, became the only engine,
+and the A340-300 earned a name for being underpowered.
 
 In 1993 an A340-200 flew nonstop from Paris to Auckland, 19,277 km, the first nonstop flight between
 Europe and New Zealand. The A340-500 flew Singapore Airlines' Newark–Singapore service, nearly 19
 hours and the longest scheduled flight in the world until 2013, and the 75.4 m A340-600 was the
 longest airliner until the 747-8. Count the engines to tell it from an A330, then look under the
-belly for an extra main gear leg on the centreline, two-wheeled on the -200 and -300 and four-wheeled
-on the -500 and -600. Twins such as the 777 took its market and only 377 were built; when fuel prices
-doubled in 2008, Air France–KLM's chief called it "a flying tanker with a few people on board".
+belly for an extra main gear leg on the centreline, two-wheeled on the -200 and -300 and
+four-wheeled on the -500 and -600. Twins such as the 777 took its market and only 377 were built;
+when fuel prices doubled in 2008, Air France–KLM's chief called it "a flying tanker with a few
+people on board".
 """
 
 [facts]

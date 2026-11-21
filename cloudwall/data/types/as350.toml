@@ -33,7 +33,7 @@ production = [1978]
 [variants.AS50.facts]
 "First flight" = "June 1974"
 "Engine" = "Safran (Turbomeca) Arriel; Lycoming LTS101 on early AStars"
-"Everest summit" = "14 May 2005, 8,848 m (29,029 ft)"
+"Everest summit" = "29,029 ft (8,848 m), 14 May 2005"
 
 [variants.AS55]
 name = "Eurocopter AS355 Écureuil 2 (TwinStar)"

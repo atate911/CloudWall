@@ -13,19 +13,19 @@ text = """
 The first Airbus, launched by France and West Germany at the 1969 Paris Air Show and flown in
 October 1972, was also the first widebody with only two engines. Its fuselage, 5.64 m across, was
 sized for eight seats abreast with two LD3 cargo containers side by side under the floor, and Airbus
-kept that cross-section for the A330 and A340. Orders dried up in the mid-1970s, until
-in 1977 Airbus lent Eastern Air Lines four A300s for six months, free apart from training and
-running costs. Eastern's chief, the former astronaut Frank Borman, found they burned 30 percent less
-fuel than his TriStars and ordered 23, and that order is usually counted as the moment Airbus became
-a serious rival to Boeing.
+kept that cross-section for the A330 and A340. Orders dried up in the mid-1970s, until in 1977
+Airbus lent Eastern Air Lines four A300s for six months, free apart from training and running costs.
+Eastern's chief, the former astronaut Frank Borman, found they burned 30 percent less fuel than his
+TriStars and ordered 23, and that order is usually counted as the moment Airbus became a serious
+rival to Boeing.
 
 In 1982 Garuda put the first widebody flown by two pilots into service, an A300 with the flight
 engineer's work automated away. The shorter A310 that followed brought a two-pilot glass cockpit,
 which the later A300-600 took over, so one type rating covers both; neither has fly-by-wire, and
 both are flown with control yokes. The line closed in 2007 after 561 A300s and 255 A310s, and most
 A300s still flying now carry freight, many of them A300-600Fs with FedEx and UPS. Next to a 767 an
-A300 is wider, eight abreast in economy where the 767 seats seven; the A310 is about 7 m shorter than
-the original A300 and has small emergency exits over the wing.
+A300 is wider, eight abreast in economy where the 767 seats seven; the A310 is about 7 m shorter
+than the original A300 and has small emergency exits over the wing.
 """
 
 [facts]
@@ -35,7 +35,7 @@ the original A300 and has small emergency exits over the wing.
 [variants.A30B]
 name = "Airbus A300B2 and A300B4"
 more = """
-These first A300s were flown by three, two pilots and a flight engineer, from a cockpit of round
+Most of these first A300s carried a flight engineer behind the two pilots, in a cockpit of round
 dials.
 """
 [variants.A30B.facts]

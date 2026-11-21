@@ -12,17 +12,17 @@ sources = [
 
 text = """
 Bell designed it for air ambulances, after the 427 before it proved too small for a stretcher. It
-kept the 427's engines and drive and built a new airframe around them from its Modular Affordable
-Product Line research, with a flat floor, room for a stretcher and, as an option, clamshell doors
-under the tail boom to load one from behind. It is certified Category A, able to land or fly on if an engine
-fails, and for instrument flight with a single pilot, and Air Methods, the largest air ambulance
-operator in the US, took the first in July 2009.
+kept derivatives of the 427's engines and drive and built a new airframe around them from its
+Modular Affordable Product Line research, with a flat floor, room for a stretcher and, as an option,
+clamshell doors under the tail boom to load one from behind. It is certified Category A, able to
+land or fly on if an engine fails, and for instrument flight with a single pilot, and Air Methods,
+the largest air ambulance operator in the US, took the first in July 2009.
 
 Its four composite blades have swept tips to cut noise and flex on soft-in-plane composite beams
 rather than hinges, and the tail rotor, also for quiet, is two two-bladed rotors stacked into a
-lopsided X. That tail rotor tells it from the single-engined 407, and from the Airbus H135, the
-other twin of air ambulances, which has a fan in a ring in its fin. Police forces, coast guards and
-navies fly it too, and Bell delivered the 500th in July 2024.
+lopsided X. That tail rotor tells it from the single-engined 407, and from the Airbus H135, another
+air ambulance twin, which has a fan in a ring in its fin. Police forces, coast guards and navies fly
+it too, and Bell delivered the 500th in July 2024.
 """
 
 [facts]

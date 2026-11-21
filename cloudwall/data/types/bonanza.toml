@@ -24,9 +24,10 @@ the last orders were filled.
 The straight-tailed Model 33 arrived in 1960 as the Debonair, a plainer, cheaper Bonanza, and took
 the Bonanza name in 1968, the year the Model 36 stretched it by ten inches for six seats, with four
 windows down each side and double doors at the back on the right. The V-tail ended in 1982 and the
-33 in 1995. Early Bonanzas had an unusually high rate of gear-up landings and of wheels retracted on
-the ground, blamed on a non-standard gear switch easily mistaken for the flap switch; from 1984 Beech
-moved it and added switches that stop the gear coming up with weight on the wheels or at low power.
+33 in 1995. Bonanzas had an unusually high rate of gear-up landings and of wheels retracted on the
+ground, blamed on early models' non-standard gear switch, easily mistaken for the flap switch; from
+1984 Beech moved it and added switches that stop the gear coming up with weight on the wheels or at
+low power.
 """
 
 [facts]
@@ -37,10 +38,10 @@ moved it and added switches that stop the gear coming up with weight on the whee
 name = "Beechcraft Bonanza 35 (V-tail)"
 production = [1947, 1982]
 more = """
-The V-tail gave it a nickname, the "forked-tail doctor killer", after crashes by wealthy,
-overconfident owners and tails that broke in flight. An AOPA study of 1982–89 accidents found the
-Bonanza's rate slightly lower than that of comparable retractables, with pilot error behind 73% of
-V-tail crashes. The breakups were real, though: NTSB records from 1962 to 2007 show about three
+The V-tail Bonanza earned the nickname "forked-tail doctor killer" from crashes by wealthy,
+overconfident owners and from tails that broke in flight. An AOPA study of 1982–89 accidents found
+the Bonanza's rate slightly lower than that of comparable retractables, with pilot error behind 73%
+of V-tail crashes. The breakups were real, though: NTSB records from 1962 to 2007 show about three
 V-tail structural failures a year, mostly after flying into cloud, thunderstorms or ice, against
 eleven in all for the 33 and 36. FAA wind-tunnel and flight tests in the late 1980s found the tail
 short of certification standards in some conditions, and a directive to strengthen it greatly

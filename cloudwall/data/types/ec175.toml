@@ -1,0 +1,28 @@
+name = "Airbus Helicopters H175"
+types = ["EC75"]
+production = [2014]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_Helicopters_H175",
+]
+
+text = """
+Airbus calls it a super-medium: a seven-tonne class twin designed with China's Harbin from 2005 to
+carry up to 18 workers to offshore platforms, which entered service over the North Sea with NHV of
+Belgium in December 2014, about two years late. Airbus makes the main gearbox, tail rotor,
+avionics and autopilot, Harbin the airframe, main rotor, fuel system and landing gear, and the
+Chinese-built version, the Avicopter AC352, has Safran-AVIC Ardiden 3C engines where Airbus's has
+Pratt & Whitney Canada PT6Cs.
+
+Its main gearbox can be declutched, which spares it the weight and cost of an auxiliary power unit,
+and in 2014 it held the FAI time-to-climb records for its class to 3,000 and 6,000 m, at about a
+minute a kilometre. Orders shrank with the price of oil: UTair put most of its 15 on hold in 2015,
+and Bristow cancelled 22 as it came out of bankruptcy in 2020. Hong Kong's Government Flying
+Service was the first customer for the search and rescue version. Unlike the H160 and the Dauphin,
+it has an open tail rotor, with three blades, behind a five-bladed main rotor.
+"""
+
+[facts]
+"First flight" = "December 2009"
+"Entered service" = "December 2014, with NHV"
+"Engines" = "2 × Pratt & Whitney Canada PT6C-67E"

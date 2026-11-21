@@ -1,0 +1,75 @@
+name = "Gulfstream's Israeli-built jets"
+types = ["G280", "GALX", "G150", "ASTR"]
+production = [1986]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Gulfstream_G280",
+  "https://en.wikipedia.org/wiki/Gulfstream_G200",
+  "https://en.wikipedia.org/wiki/Gulfstream_G150",
+  "https://en.wikipedia.org/wiki/IAI_Westwind",
+  "https://en.wikipedia.org/wiki/Honeywell_HTF7000",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+All four were built by Israel Aerospace Industries at its Tel Aviv plant, and the line began as an
+American design: the Aero Commander Jet Commander of 1963. When North American Rockwell bought Aero
+Commander, antitrust law would not let it keep the Jet Commander in production alongside its own
+Sabreliner, so in 1968 it sold the design to IAI, which developed it into the Westwind and then, in
+1984, the Astra. In 2001 Gulfstream bought Galaxy Aerospace, the IAI company holding the Astra and
+the larger Galaxy, and renamed them the G100 and G200; the G150 and G280 that followed are still
+built in Israel and flown to Dallas for their interiors and paint.
+
+The Galaxy began as a partnership with Russia's Yakovlev design bureau, which designed and built its
+forward fuselage and tail until the deal broke down in 1995. It put a new fuselage, wide enough for
+three-abreast seating, on a strengthened Astra wing, and first flew on Christmas Day 1997. The G280
+keeps that fuselage but has a new Gulfstream-designed wing with the G550's airfoil and a third more
+area, a new T-tail and Honeywell HTF7250G engines, and climbs straight to 43,000 ft. Gulfstream had
+called it the G250 until 2011, when it noticed that in Mandarin slang 250 means an idiot.
+"""
+
+[facts]
+"Built by" = "Israel Aerospace Industries"
+
+[variants.G280]
+name = "Gulfstream G280"
+production = [2012]
+[variants.G280.facts]
+"First flight" = "December 2009"
+"Range" = "3,600 nm (6,667 km)"
+"Max takeoff weight" = "39,600 lb (17,960 kg)"
+"Engines" = "2 × Honeywell HTF7250G, 7,624 lbf"
+
+[variants.GALX]
+name = "Gulfstream G200 (IAI Galaxy)"
+production = [1999, 2011]
+[variants.GALX.facts]
+"First flight" = "December 1997"
+"Built" = "250"
+"Engines" = "2 × Pratt & Whitney Canada PW306A"
+
+[variants.G150]
+name = "Gulfstream G150"
+production = [2006, 2017]
+more = """
+The G150 of 2005 is an Astra with a cabin 12 in wider and a new, more streamlined nose, and its
+oval windows replaced the Astra's rectangular ones. Gulfstream called it its first true midsize jet,
+and ended production in 2017 as sales slowed.
+"""
+[variants.G150.facts]
+"First flight" = "May 2005"
+"Built" = "about 120"
+"Engines" = "2 × Honeywell TFE731"
+
+[variants.ASTR]
+name = "IAI Astra or Gulfstream G100"
+production = [1986, 2006]
+more = """
+The Astra put a new swept, supercritical wing on the Westwind's fuselage. The US Air Force flew it
+as the C-38A Courier, and two now serve the US Navy at Patuxent River as chase planes and radar
+targets for test flying.
+"""
+[variants.ASTR.facts]
+"First flight" = "March 1984"
+"Built" = "145"
+"Engines" = "2 × Garrett (later Honeywell) TFE731"

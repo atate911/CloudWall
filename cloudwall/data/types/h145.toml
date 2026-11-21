@@ -39,5 +39,5 @@ production = [2002]
 [variants.EC45.facts]
 "First flight" = "June 1999"
 "Engines" = "2 × Turbomeca (now Safran) Arriel 1E2 (EC145) or 2E (H145)"
-"Max takeoff weight" = "3,800 kg (8,380 lb) (five-bladed H145)"
-"Highest landing" = "Aconcagua, 6,962 m (22,840 ft), September 2019"
+"Max takeoff weight" = "3,800 kg (8,380 lb), five-bladed H145"
+"Highest landing" = "22,840 ft (6,962 m), Aconcagua, September 2019"

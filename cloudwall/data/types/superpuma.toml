@@ -1,0 +1,59 @@
+name = "Aérospatiale / Airbus Helicopters Super Puma"
+types = ["AS32", "AS3B", "EC25"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Eurocopter_AS332_Super_Puma",
+  "https://en.wikipedia.org/wiki/Eurocopter_AS532_Cougar",
+  "https://en.wikipedia.org/wiki/Eurocopter_EC225_Super_Puma",
+  "https://en.wikipedia.org/wiki/Eurocopter_EC725",
+  "https://en.wikipedia.org/wiki/Fenestron",
+  "https://en.wikipedia.org/wiki/2016_Tur%C3%B8y_helicopter_crash",
+  "https://en.wikipedia.org/wiki/April_2009_North_Sea_helicopter_crash",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+  "https://doc8643.com/aircraft/AS32",
+  "https://doc8643.com/aircraft/AS3B",
+  "https://doc8643.com/aircraft/EC25",
+]
+
+text = """
+Aérospatiale grew the Super Puma from its SA 330 Puma in the 1970s, keeping the layout but adding
+Turbomeca Makila engines, composite rotor blades, a tougher airframe on crashworthy landing gear, a
+more streamlined nose and a fin under the tail boom, the quickest way to tell it from a Puma. It
+first flew in September 1978 and was delivered from 1981, burning 17% less fuel than the Puma and
+flying faster and further. Aérospatiale had tried a Fenestron on a Puma and found that a helicopter
+this big was past what the ducted fan could practically do, so the Super Puma kept an open tail
+rotor. Military ones have been sold as the Cougar since 1990, and the stretched civil versions,
+seating up to about 20, became a workhorse of the North Sea oil fields.
+
+Much of their offshore story is about the main gearbox. In April 2009 an AS332 L2 crashed off
+Aberdeen after a catastrophic failure in the gearbox's epicyclic module, killing all 16 aboard. Two
+of its successor, the EC225, ditched in the North Sea in 2012 after a gearbox shaft cracked, and in
+April 2016 another lost its main rotor near Bergen, killing all 13, after a fatigue crack in a gear
+inside the gearbox had grown unseen. Regulators grounded most of the world's EC225s, and Norway's
+Statoil, whose contract it had been flying, turned to the Sikorsky S-92.
+"""
+
+[facts]
+"First flight" = "September 1978"
+"Engines" = "2 × Turbomeca (now Safran) Makila"
+
+[variants.AS32]
+name = "Aérospatiale AS332 Super Puma / AS532 Cougar (H215)"
+production = [1981]
+
+[variants.AS3B]
+name = "Eurocopter AS332 L2 Super Puma Mk 2 / AS532 Cougar Mk 2"
+
+[variants.EC25]
+name = "Airbus Helicopters H225 / Eurocopter EC225 Super Puma"
+production = [2005]
+more = """
+The EC225, now the H225, first flew in November 2000 with five rotor blades where the AS332 has
+four, Makila 2A1 engines and a redesigned main gearbox with an emergency oil-spray system that kept
+it running for 50 minutes in tests, beyond the 30 the rules ask for. The military version, the
+H225M, formerly the EC725 Caracal, flies combat search and rescue for the French Air Force and is
+built in Brazil by Helibras for that country's forces.
+"""
+[variants.EC25.facts]
+"First flight" = "November 2000"
+"Engines" = "2 × Turbomeca (now Safran) Makila 2A1"

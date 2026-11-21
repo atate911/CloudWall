@@ -26,13 +26,13 @@ were built, more than any other Western helicopter, and its descendants are stil
 [variants.UH1]
 name = "Bell UH-1 Iroquois (Huey)"
 more = """
-The 204 and the stretched 205, built for the Army as the UH-1D and H and for civilians as the
-205A-1, have a single Lycoming T53 turboshaft and a two-bladed, semi-rigid rotor 48 ft across, its
+The 204, the Army's UH-1A to C, and the stretched 205, its UH-1D and H and the civil 205A-1, have a
+single Lycoming T53 turboshaft and a two-bladed, semi-rigid rotor, 48 ft across on the 205, its
 blades pre-coned and slung under the teetering hinge, with a stabilizer bar, a design carried over
 from the Bell 47. On a UH-1H the two big blades turn at 324 rpm, and the slap of each blade meeting
 the vortex shed by the one ahead is the deep "Huey thump", loudest as it descends or turns. The US
-Army retired its last active Hueys in 2005, but civil 205s and ex-military UH-1Hs still fight fires,
-lift loads and spray crops.
+Army retired its last active-duty Hueys in 2005, but civil 205s and ex-military UH-1Hs still fight
+fires, lift loads and spray crops.
 """
 [variants.UH1.facts]
 "First flight" = "October 1956 (XH-40)"

@@ -1,0 +1,73 @@
+name = "Embraer E-Jet"
+types = ["E170", "E190", "E195"]
+production = [2004, 2022]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Embraer_E-Jet_family",
+  "https://en.wikipedia.org/wiki/Embraer_E-Jet_E2_family",
+  "https://www.embraer.com/e-jets/en/",
+  "https://www.embraer.com/e-jets/e190/en/",
+  "https://www.embraer.com/e-jets/e195/en/",
+  "https://aviationweek.com/business-aviation/embraer-delivers-181-total-jets-2018",
+  "https://aviationweek.com/air-transport/embraer-0",
+  "https://www.airdatanews.com/embraer-delivered-44-commercial-jets-in-2020/",
+  "https://www.airdatanews.com/embraer-delivers-the-last-three-e190s-assembled/",
+  "https://www.aerotelegraph.com/fuer-air-cairo-embraer-liefert-letzte-e190-aus",
+  "https://www.airdatanews.com/embraer-e-jets-reach-2-000-deliveries-joining-worlds-three-largest-commercial-jet-families/",
+  "https://www.airdatanews.com/lot-retires-e170-the-aircraft-that-launched-the-e-jet-era-22-years-ago/",
+]
+
+text = """
+Embraer designed the E-Jets as two pairs on one fuselage cross-section. The E170 and the slightly
+longer E175 share a wing and GE CF34-8E engines of some 14,000 lb thrust. The E190 and E195 are
+stretched further, with a wing more than a quarter larger in area, a bigger tailplane, stronger
+landing gear and CF34-10Es of some 20,000 lb. Within each pair 95% of the parts are common, and
+about 89% across the family, and one type rating covers all four, so an airline can move its pilots
+between sizes as demand changes. All of them have fly-by-wire controls and the "double-bubble"
+fuselage, four abreast with no middle seat.
+
+The E190 and E195 seat about as many as the first DC-9s and 737s, and Embraer aimed them at the gap
+between regional and mainline jets. JetBlue launched the E190 in 2003 with an order for 100, and in
+2017 an Airlink E190 opened the first scheduled air service in Saint Helena's history, six hours
+from Johannesburg by way of Windhoek. Tell an E190 or E195 from the shorter pair by its length and
+the emergency exit over each wing, which the E170 and E175 lack, and from the second-generation E2
+by its winglets, where the E2's longer wing ends in a raked tip.
+"""
+
+[facts]
+"First flight" = "February 2002 (E170)"
+"Engines" = "2 × GE CF34-8E or CF34-10E"
+
+[variants.E170]
+name = "Embraer 170"
+production = [2004, 2018]
+more = """
+The first E-Jet. LOT Polish Airlines flew its first revenue flight, Warsaw to Vienna, in March 2004,
+and retired its last E170 on the same route in October 2026. Only 191 were built, against more than
+1,000 E175s ordered, and with demand for 70-seat jets fading, Embraer gave it no E2 successor.
+"""
+[variants.E170.facts]
+"First flight" = "February 2002"
+"Built" = "191"
+"Engines" = "2 × GE CF34-8E"
+
+[variants.E190]
+name = "Embraer 190"
+production = [2005, 2022]
+more = """
+The Lineage 1000 business jet, an E190 seating up to 19 with a range of up to 4,200 nm, shares its
+designator.
+"""
+[variants.E190.facts]
+"First flight" = "March 2004"
+"Built" = "568"
+"Range" = "2,450 nm (4,537 km)"
+"Engines" = "2 × GE CF34-10E"
+
+[variants.E195]
+name = "Embraer 195"
+production = [2006, 2019]
+[variants.E195.facts]
+"First flight" = "December 2004"
+"Built" = "172"
+"Engines" = "2 × GE CF34-10E"

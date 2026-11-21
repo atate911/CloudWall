@@ -10,12 +10,13 @@ sources = [
 ]
 
 text = """
-The first light twin-turbine helicopter developed in the United States, the 222 first flew in August
-1976 and was delivered from 1980, a sleek executive and air ambulance helicopter whose main wheels
-retract into stub sponsons on its sides that also carry fuel. It has two Lycoming LTS101 engines and
-a two-bladed rotor of stainless steel and glassfibre, its hub on lubricant-free elastomeric bearings,
-of a design like the AH-1 Cobra's. A cosmetically modified 222 played Airwolf, the attack helicopter
-of the 1980s television series, dressed up with dummy jet intakes, guns and a rocket pod.
+The first light commercial twin-turbine helicopter developed in the United States, the 222 first
+flew in August 1976 and was delivered from 1980, a sleek executive and air ambulance helicopter
+whose main wheels retract into stub sponsons on its sides that also carry fuel. It has two Lycoming
+LTS101 engines and a two-bladed rotor much like the AH-1 Cobra's, its blades of stainless steel and
+glassfibre and its hub on elastomeric bearings that need no lubrication. A cosmetically modified 222
+played Airwolf, the attack helicopter of the 1980s television series, dressed up with dummy jet
+intakes, guns and a rocket pod.
 """
 
 [facts]

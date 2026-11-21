@@ -1,0 +1,35 @@
+name = "Gyroplane"
+types = ["GYRO"]
+checked = "2026-11"
+sources = [
+  "https://www.icao.int/operational-safety/doc-8643-aircraft-type-designators/special-designators",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+  "https://en.wikipedia.org/wiki/Autogyro",
+  "https://en.wikipedia.org/wiki/Juan_de_la_Cierva",
+]
+
+text = """
+A gyroplane's rotor isn't driven by its engine. A propeller, usually behind the pilot, pushes it
+along, and the air flowing up through the tilted rotor keeps the blades turning on their own in
+autorotation, as a sycamore seed spins when it falls, and they make the lift. Juan de la Cierva, a
+Spanish engineer, wanted an aircraft that could fly safely at low speed, after a bomber he had
+designed stalled and crashed in 1921. His early machines rolled over as they tried to take off, the
+advancing blade making more lift than the retreating one, until he hinged each blade so it could
+flap up and down and even out the difference, as every articulated helicopter rotor still does. His C.4 flew
+near Madrid in January 1923, and in 1928 one of his autogiros became the first rotorcraft to cross
+the English Channel.
+
+With nothing but the passing air to turn its rotor, a gyroplane can't hover, and it can't take off
+vertically except into a strong headwind, though a pre-rotator spins the rotor up before takeoff to
+shorten the run. After the war Igor Bensen's homebuilt Gyrocopter, an open frame of tubing with the
+engine and propeller behind the seat, made that layout the common one, and Ken Wallis's tiny
+single-seater flew in the 1967 Bond film You Only Live Twice. Some designs that followed Bensen's set
+the propeller's thrust well away from the centre of gravity, and could pitch violently nose-down when
+power was added, killing their pilots and giving gyroplanes a poor name; most new ones are designed
+against it. ICAO's GYRO code is for those weighing 454 kg (1,000 lb) or less.
+"""
+
+[facts]
+"First flight" = "January 1923 (Cierva C.4)"
+"Covers" = "gyroplanes of 454 kg (1,000 lb) or less"
+"Earhart's record" = "18,415 ft, women's altitude record, Pitcairn PCA-2, 1931"

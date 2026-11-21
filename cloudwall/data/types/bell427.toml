@@ -12,9 +12,9 @@ sources = [
 text = """
 Bell's light twin of 2000, built with Samsung Aerospace of South Korea, which made the fuselage and
 tail boom at Sacheon for final assembly at Mirabel, Quebec. It was the first Bell designed entirely
-on computer, and it put the 407's four-bladed rotor over two Pratt & Whitney Canada PW207D engines
-with digital controls, in a mostly composite cabin 13 inches longer than the 407's and free of the
-roof beam that crosses the cabins of the 206 and 407.
+on computer, and it put a four-bladed rotor with a composite hub, like the 407's, over two Pratt &
+Whitney Canada PW207D engines with digital controls, in a mostly composite cabin 13 inches longer
+than the 407's and free of the roof beam that crosses the cabins of the 206 and 407.
 
 It was meant for air ambulances, but its cabin was too small to take a stretcher well, and it could
 not be flown on instruments by a single pilot. Bell stretched it into the 427i, then gave up on the
@@ -25,5 +25,5 @@ were delivered in 2010.
 [facts]
 "First flight" = "December 1997"
 "Engines" = "2 × Pratt & Whitney Canada PW207D"
-"Main rotor" = "4 blades, composite hub, from the 407"
+"Main rotor" = "4 blades, composite hub, like the 407's"
 "Built at" = "Mirabel, Quebec, with Korean-built fuselages"

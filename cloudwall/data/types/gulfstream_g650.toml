@@ -1,0 +1,68 @@
+name = "Gulfstream G650, G700 and G800"
+types = ["GLF6", "GA7C", "GA8C"]
+production = [2012]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Gulfstream_G650",
+  "https://en.wikipedia.org/wiki/Gulfstream_G500_and_G600",
+  "https://en.wikipedia.org/wiki/Rolls-Royce_Pearl",
+  "https://en.wikipedia.org/wiki/Bombardier_Global_7500",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://fr.flightaware.com/live/aircrafttype/GA8C",
+  "https://ainonline.com/aviation-news/business-aviation/2025-04-16/gulfstream-g800-wins-faa-and-easa-certification",
+  "https://www.aopa.org/news-and-media/all-news/2025/april/17/gulfstream-g800-certified",
+]
+
+text = """
+For the G650 Gulfstream gave up the usual round fuselage for an oval one, flatter in its lower half
+to make better use of the cabin, with panels bonded together rather than riveted. Its wing has no
+slats on the leading edge, and the flap tracks are hidden inside the wing's profile. It was the
+second business jet with fly-by-wire controls, after the Dassault Falcon 7X, and is good for Mach
+0.925; in testing one dived to Mach 0.995. Its oval windows are 28 in wide, and there are eight a side
+on it and the G800 and ten on the stretched G700, the quickest way to tell them apart. The design won
+the Collier Trophy for 2014.
+
+The extended-range G650ER carries 4,000 lb more fuel in the same wing, and in 2019 one flew 8,379 nm
+nonstop from Singapore to Tucson, taking back from the Global 7500 the record for a purpose-built
+business jet. The G700, delivered from 2024, is 10 ft longer, with Rolls-Royce Pearl 700 engines,
+wider winglets and the sidestick, touch-screen cockpit of the G500 and G600. The G800 of 2025 pairs
+the G650's length with the G700's engines and winglets, flies 8,200 nm and has replaced the G650 in
+production. Both reach Mach 0.935, the fastest of any Gulfstream.
+"""
+
+[facts]
+"First flight" = "November 2009"
+"Top speed" = "Mach 0.925"
+
+[variants.GLF6]
+name = "Gulfstream G650 or G650ER"
+production = [2012, 2025]
+more = """
+In April 2011 the second test aircraft crashed at Roswell, New Mexico, during a takeoff test with one
+engine throttled back to simulate a failure: it lifted off at too high an angle, stalled, and its
+right wingtip hit the runway, killing the four Gulfstream employees on board. The NTSB found that
+Gulfstream had pursued a takeoff safety speed that was too low, and it was raised from 135 to 150 kt.
+"""
+[variants.GLF6.facts]
+"Range" = "up to 7,500 nm (13,900 km), G650ER"
+"Max takeoff weight" = "up to 103,600 lb (47,000 kg), G650ER"
+"Engines" = "2 × Rolls-Royce BR725, 16,900 lbf"
+
+[variants.GA7C]
+name = "Gulfstream G700"
+production = [2024]
+[variants.GA7C.facts]
+"First flight" = "February 2020"
+"Top speed" = "Mach 0.935"
+"Max takeoff weight" = "107,600 lb (48,800 kg)"
+"Engines" = "2 × Rolls-Royce Pearl 700, 18,250 lbf"
+
+[variants.GA8C]
+name = "Gulfstream G800"
+production = [2025]
+[variants.GA8C.facts]
+"First flight" = "June 2022"
+"Top speed" = "Mach 0.935"
+"Range" = "8,200 nm (15,200 km)"
+"Max takeoff weight" = "105,600 lb (47,900 kg)"
+"Engines" = "2 × Rolls-Royce Pearl 700, 18,250 lbf"
