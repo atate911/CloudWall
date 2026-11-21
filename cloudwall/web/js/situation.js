@@ -6,7 +6,7 @@
 // Two densities share it. Simple shows what someone in the house wants to know right now; Detailed
 // adds what an enthusiast reads the situation from. Both use the same four colours and the same
 // numbered landing order, so switching between them adds detail without anything to relearn.
-import { esc, num, mmss, since, runwayList, offset, ident } from "./util.js";
+import { esc, num, mmss, since, runwayList, offset, ident, azEl, projected, clamp } from "./util.js";
 import { iconFor } from "./icons.js";
 import { map } from "./map.js";
 import { boardFlight, shortType, heardGroups } from "./parts.js";
@@ -121,6 +121,24 @@ export function where(a, state, { town = false } = {}) {
 }
 const trend = (a) => ((a.vrate || 0) > 300 ? "climbing" : (a.vrate || 0) < -300 ? "descending" : "level");
 const arrow = (a) => ((a.vrate || 0) > 300 ? "↑" : (a.vrate || 0) < -300 ? "↓" : "");
+
+// ---- where to look: how far up from the horizon, drawn from the side ----
+// The house on the ground, the sky a quarter circle from the horizon to straight up, and a line of
+// sight from the house to the aircraft, a dot in the selected aircraft's magenta: the angle to raise
+// your eyes by. The words beside it say which way to face ("look northwest, low").
+export function skyLook(a, state) {
+  if (!a || a.lat == null || a.alt == null || a.on_ground || !state.home) return null;
+  const t = since(state), p = azEl(state.home, projected(a, t), Math.max(0, a.alt + ((a.vrate || 0) * t) / 60));
+  const el = clamp(p.el, 0, 90), R = 17, e = Math.max(el, 3) * RAD, x = R * Math.cos(e), y = -R * Math.sin(e);
+  const high = el >= 75 ? "straight up" : el >= 55 ? "high up" : el >= 30 ? "halfway up" : el >= 10 ? "low" : "very low";
+  const words = el >= 75 ? "look straight up" : `look ${dir8(p.az)}, ${high}`;
+  const brief = el >= 75 ? "straight up" : `${short8(p.az)}, ${high}`;        // for a phone's width
+  const svg = `<svg class="sky" viewBox="-5 -20 27 23" role="img" aria-label="${esc(words)}"><title>How far up to look: ${Math.round(el)}° above the horizon</title>` +
+    `<path class="sk-arc" d="M${R},0A${R},${R} 0 0 0 0,${-R}"/><path class="sk-gnd" d="M-5,0H22"/>` +
+    `<path class="sk-sight" d="M0,-2.5L${x.toFixed(2)},${y.toFixed(2)}"/><path class="sk-house" d="M-2.6,0V-3L0,-5.4L2.6,-3V0Z"/>` +
+    `<circle class="sk-dot" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="1.9"/></svg>`;
+  return { svg, words, brief, el, az: p.az };
+}
 
 // ---- the situation: a headline, and a phrase for each group led by its icon ----
 // Each phrase's icon is the key to the radar's colours, and its number the count, so the words and
@@ -271,21 +289,26 @@ function overHtml(state, { compact = false } = {}) {
   const first = coming ? `<div><b data-oh="${a.cpa_s}">${mmss(Math.max(0, a.cpa_s - t))}</b><span>overhead in</span></div>`
     : toHosp ? `<div><b data-until="${h.eta_s}">${until(h.eta_s - t)}</b><span>to ${esc(h.short)}</span></div>`        // a medical helicopter: how soon it's there
     : `<div><b>${a.dist.toFixed(1)}<small> nm</small></b><span>${a.dist < 0.3 ? "right overhead" : `to the ${dir8(a.brg)}`}</span></div>`;
+  const look = skyLook(a, state);
   return `<section class="ss-over${compact ? " compact" : ""}"><div class="so-head"><span class="label">${label}</span>${state.pinned ? '<button class="so-let" data-let>Back to overhead</button>' : ""}</div>
     <div class="so-id"><div class="flaps so-flight" data-hex="${esc(a.hex)}" data-flight="${esc(flightName(a))}"></div>${state.logos && a.airline_iata ? `<span class="logo-tile"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(a.airline || "")}"></span>` : ""}</div>
     <p class="so-what">${esc(doing(a, state))}</p>
     <div class="so-row">${compact || !a.known ? "" : `<div class="so-plate sil-box">${plate(typeInfo(a), { share: 0.98, dim: false })}</div>`}
-      <div class="so-nums">${first}<div><b>${a.alt == null ? "–" : num(a.alt)}<small> ft</small></b><span>${trend(a)}</span></div></div></div></section>`;
+      <div class="so-nums">${first}<div><b>${a.alt == null ? "–" : num(a.alt)}<small> ft</small></b><span>${trend(a)}</span></div>${look ? `<div class="so-look">${look.svg}<span class="sl-w">${esc(look.words)}</span><span class="sl-b">${esc(look.brief)}</span></div>` : ""}</div></div></section>`;
 }
 export function queueHtml(state, max = 4) {
   const p = picture(state), arr = p.groups.arr.filter((a) => a.seq), t = since(state);
   const heroHex = (state.hero || state.next || {}).hex;        // the one over the house, in the card above
   if (!arr.length) return "";
   return `<section class="ss-queue" data-n="${arr.length}"><div class="label">Landing next ${esc(landOn(p, state))}</div>
-    ${arr.slice(0, max).map((a) => `<button class="q-row${a.hex === heroHex ? " sel" : ""}" data-hex="${esc(a.hex)}"><span class="seq">${a.seq}</span><b class="q-fl">${esc(flightName(a))}</b>` +
+    ${arr.slice(0, max).map((a) => `<button class="q-row${a.hex === heroHex ? " sel" : ""}" data-hex="${esc(a.hex)}" style="--left:${queueLeft(a.lands_s - t)}"><span class="seq">${a.seq}</span><b class="q-fl">${esc(flightName(a))}</b>` +
       `<span class="q-from">${plausible(a) ? `from ${esc(city(a.route.origin))}` : esc(cap(kind(a)))}</span><b class="q-t" data-until="${a.lands_s}">${until(a.lands_s - t)}</b></button>`).join("")}
     ${arr.length > max ? `<div class="q-more">${queueMore(arr.length - max)}</div>` : ""}</section>`;
 }
+// How soon a landing is, as the share of the queue's line it takes: ten minutes fills the row,
+// the span of the Detailed timeline.
+const QUEUE_S = 600;
+const queueLeft = (s) => `${(clamp(s / QUEUE_S, 0, 1) * 100).toFixed(1)}%`;
 export const queueMore = (n) => `and ${n2w(n)} more behind them`;
 // Worth a look: what's out of the ordinary right now, at most three: military, a rare type, a
 // balloon or glider, and military jets heard with no position. Emergencies have the whole screen.
@@ -347,6 +370,9 @@ export function renderInto(el, html) {
 // The countdowns, between answers from the server: each element keeps the seconds it was drawn with.
 export function tickCounts(root, state) {
   const t = since(state);
-  for (const e of root.querySelectorAll("[data-until]")) e.textContent = until(+e.dataset.until - t);
+  for (const e of root.querySelectorAll("[data-until]")) {
+    e.textContent = until(+e.dataset.until - t);
+    if (e.classList.contains("q-t")) e.parentElement.style.setProperty("--left", queueLeft(+e.dataset.until - t));
+  }
   for (const e of root.querySelectorAll("[data-oh]")) e.textContent = mmss(Math.max(0, +e.dataset.oh - t));
 }

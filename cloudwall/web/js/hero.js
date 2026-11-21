@@ -7,7 +7,7 @@ import { weatherSlide } from "./weather.js";
 import { showLogo, badges, boardFlight, localPlace, localWords, recordsHtml, heardGroups } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
 import { mappable, drawRouteMap, moveRouteMap, routeScale, routeHeight } from "./routemap.js";
-import { medIcon, hospitalLine } from "./situation.js";
+import { medIcon, hospitalLine, skyLook } from "./situation.js";
 
 // Play the entrance animation once for freshly inserted content.
 function enter(el) {
@@ -203,7 +203,9 @@ function showHero(el, a, state) {
   roll($("h-gs"), a.gs);
   $("h-mph").textContent = num((a.gs || 0) * 1.15078) + " mph";
   roll($("h-dist"), a.dist, (x) => x.toFixed(1));
-  $("h-dist2").textContent = `${(a.dist * 1.15078).toFixed(1)} mi ${a.compass}`;
+  // how high up to look, beside how far away
+  const look = skyLook(a, state);
+  $("h-dist2").textContent = `${(a.dist * 1.15078).toFixed(1)} mi ${a.compass}${look ? `, ${Math.round(look.el)}° up` : ""}`;
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
   $("h-phase").textContent = a.local ? localWords(a, state)
     : a.track == null ? "" : `Toward the ${POINTS[Math.round(a.track / 22.5) % 16]}`;
