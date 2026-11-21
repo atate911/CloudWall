@@ -13,13 +13,13 @@ sources = [
 
 text = """
 The Hughes 369 won the US Army's light observation helicopter contest of the early 1960s and went
-into service in 1966 as the OH-6 Cayuse, the "Loach". Its egg-shaped cabin, braced inside by
-bulkheads, crumpled and absorbed a crash while protecting the crew, who often walked away from
-forced landings that would have killed them in other helicopters, and its short rotor got it into
-tight clearings in Vietnam. Hughes won with a price reportedly below what it cost to build, then lost
-the follow-on order to Bell's OH-58 Kiowa when the Army reopened bidding in 1967. In 1966 one flew
-1,923 nm non-stop from Culver City, California, to Ormond Beach, Florida, a distance record for
-helicopters still unbroken in 2021.
+into service in 1966 as the OH-6 Cayuse, the "Loach". That year one flew 1,923 nm non-stop from
+Culver City, California, to Ormond Beach, Florida, a distance record for helicopters still unbroken
+in 2021. Its egg-shaped cabin, braced inside by bulkheads, crumpled and absorbed a crash while
+protecting its crew, who often walked away from forced landings that would have killed them in
+other helicopters, and its short rotor got it into tight clearings in Vietnam. Hughes won the
+contract with a price reportedly below what the helicopter cost to build, then lost the follow-on
+order to Bell's OH-58 Kiowa when the Army reopened bidding in 1967.
 
 The civil Hughes 500 followed in 1967, and has been built by Hughes, McDonnell Douglas and MD
 Helicopters in turn, for police forces, utility work and private owners. The turbine sits at 45
@@ -35,7 +35,7 @@ all egg: a round cabin on a thin tail boom.
 "Distance record" = "1,923 nm non-stop, April 1966"
 
 [variants.H500]
-name = "Hughes / MD Helicopters 500, OH-6 Cayuse"
+name = "Hughes / MD 500 and OH-6 Cayuse"
 
 [variants.MD52]
 name = "MD Helicopters MD 520N"
