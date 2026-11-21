@@ -4,21 +4,30 @@ production = [1957, 1965]
 checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/Boeing_KC-135_Stratotanker",
+  "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/1529736/kc-135-stratotanker/",
+  "https://www.boeing.com/features/2026/08/kc-135-marks-70-years-in-flight",
+  "https://www.aflcmc.af.mil/NEWS/Article/4577469/celebrating-70-years-of-the-kc-135-enduring-lessons-in-acquisition/",
+  "https://en.wikipedia.org/wiki/Boeing_C-135_Stratolifter",
+  "https://www.amc.af.mil/News/Features/Display/Article/787595/new-tankers-in-old-memories/",
+  "https://en.wikipedia.org/wiki/CFM_International_CFM56",
+  "https://www.afrc.af.mil/News/Article-Display/Article/156777/window-seat/",
 ]
 
 text = """
-Every KC-135 was built between 1956 and 1965, and more than 350 of them still refuel US and allied
-aircraft, older than most of the crews who fly them. It grew from the same Boeing prototype as the
-707 but with a narrower fuselage. From 1984 most were re-engined with CFM56s, the engine family of
-the 737 Classic and the A320, which made them quieter, gave them more thrust and let them offload far
-more fuel; those are the KC-135R.
+Every KC-135 was built between 1956 and 1965, so each is older than most of the crews who fly it,
+and as of 2026 about 375 still serve with the US Air Force. It grew from the same Boeing prototype
+as the 707 but with a narrower fuselage. From 1984 most were re-engined with the CFM56-2, the first
+of the engine family that went on to power the 737 Classic and the A320. The new engines made them
+quieter and stronger and let them offload up to 50 percent more fuel; those are the KC-135R and T.
 
-Fuel goes through a flying boom under the tail, steered into the receiving aircraft by a boom
+Fuel goes mostly through a flying boom under the tail, steered into the receiving aircraft by a boom
 operator lying on their front at a window in the tail. From the ground it looks like an early
-four-engined airliner with very large engines, in grey, with the boom folded up beneath the fin.
+four-engined airliner with very large engines, in grey, with the boom raised beneath the fin.
 """
 
 [facts]
 "First flight" = "August 1956"
-"Built" = "803"
-"Engines" = "4 × CFM International F108 (CFM56)"
+"Built" = "732 (of 820 in the C-135 family)"
+"Max transfer fuel" = "200,000 lb (90,719 kg)"
+"Max takeoff weight" = "322,500 lb (146,285 kg)"
+"Engines" = "4 × CFM International F108 (CFM56-2)"
