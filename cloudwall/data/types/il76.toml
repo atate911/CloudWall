@@ -8,7 +8,7 @@ sources = [
 ]
 
 text = """
-Ilyushin drew up the Il-76 in 1967 to replace the turboprop An-12, to a requirement to carry 40
+Ilyushin drew up the Il-76 in 1967 as a replacement for the turboprop An-12, required to carry 40
 tonnes 5,000 km in under six hours and set it down on short, unpaved strips in Siberia and the
 Soviet Arctic. It first flew in March 1971 and is still built, now at Ulyanovsk in Russia after
 decades at Tashkent in Uzbekistan. Its high wing, T-tail and rear ramp follow the airlifter pattern
@@ -18,9 +18,9 @@ and on many military versions a manned turret at the base of the tail with two 2
 Between 1979 and 1991 Soviet Il-76s made 14,700 flights into Afghanistan and carried 89 percent of
 the Soviet troops who went there by air. Rebels could not reach them at cruising height and tried
 instead with Stingers and heavy machine guns as they took off and landed, but the strong airframes
-often flew on after being hit, and remarkably few were lost. The design was also developed into the
-Il-78 tanker and the A-50 radar aircraft, carries up to 49,000 litres of water as a firebomber,
-three and a half times a C-130's load, and flies parabolas to train cosmonauts in weightlessness.
+often flew on after being hit, and remarkably few were lost. It was also developed into the Il-78
+tanker and the A-50 radar aircraft; as a firebomber it carries up to 49,000 litres of water, three
+and a half times a C-130's load, and it flies parabolas to train cosmonauts in weightlessness.
 """
 
 [facts]

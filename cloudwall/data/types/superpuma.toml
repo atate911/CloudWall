@@ -7,8 +7,8 @@ sources = [
   "https://en.wikipedia.org/wiki/Eurocopter_EC225_Super_Puma",
   "https://en.wikipedia.org/wiki/Eurocopter_EC725",
   "https://en.wikipedia.org/wiki/Fenestron",
-  "https://en.wikipedia.org/wiki/2016_Tur%C3%B8y_helicopter_crash",
-  "https://en.wikipedia.org/wiki/April_2009_North_Sea_helicopter_crash",
+  "https://en.wikipedia.org/wiki/CHC_Helikopter_Service_Flight_241",
+  "https://en.wikipedia.org/wiki/Bond_Offshore_Helicopters_Flight_85N",
   "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
   "https://doc8643.com/aircraft/AS32",
   "https://doc8643.com/aircraft/AS3B",
@@ -25,12 +25,13 @@ this big was past what the ducted fan could practically do, so the Super Puma ke
 rotor. Military ones have been sold as the Cougar since 1990, and the stretched civil versions,
 seating up to about 20, became a workhorse of the North Sea oil fields.
 
-Much of their offshore story is about the main gearbox. In April 2009 an AS332 L2 crashed off
-Aberdeen after a catastrophic failure in the gearbox's epicyclic module, killing all 16 aboard. Two
-of its successor, the EC225, ditched in the North Sea in 2012 after a gearbox shaft cracked, and in
-April 2016 another lost its main rotor near Bergen, killing all 13, after a fatigue crack in a gear
-inside the gearbox had grown unseen. Regulators grounded most of the world's EC225s, and Norway's
-Statoil, whose contract it had been flying, turned to the Sikorsky S-92.
+In April 2009 an AS332 L2 crashed into the sea off Peterhead, Scotland, killing all 16 aboard,
+when a second-stage planet gear in the epicyclic module of its main gearbox broke from fatigue; a
+metal particle found 36 flying hours earlier had not been recognised as the warning it was. In April
+2016 its successor, an EC225, lost its main rotor near Bergen, killing all 13, after the same kind of gear failed
+the same way, from a crack that grew beneath the surface without being detected. By July 80% of the
+world's EC225s were on the ground, and Statoil, whose contract it had been flying, gave up Super
+Pumas altogether.
 """
 
 [facts]

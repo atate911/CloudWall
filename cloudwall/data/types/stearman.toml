@@ -1,0 +1,30 @@
+name = "Boeing-Stearman Model 75 Kaydet"
+types = ["ST75"]
+production = [1936, 1944]
+checked = "2026-11"
+sources = [
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing-Chronology.pdf",
+  "https://en.wikipedia.org/wiki/Boeing-Stearman_Model_75",
+]
+
+text = """
+Its design was close to obsolete by the Second World War, but it was simple and hard to break, which
+was what a primary trainer needed: a big biplane with fabric-covered wooden wings, an over-built
+welded steel fuselage, a sturdy single leg for each main wheel, and student and instructor in open
+cockpits, one behind the other. Built by Boeing's Stearman division in Wichita, it became America's
+commonest primary trainer, flown by the Army as the PT-13, PT-17 or PT-18, depending on which radial
+engine it had, by the Navy as the N2S, called the "Yellow Peril" for its all-yellow paint, and by
+Canada, which named it the Kaydet. George H. W. Bush learned to fly the Navy's version.
+
+After the war thousands were sold off as surplus, and their slow, low flying suited crop dusting: a
+hopper for chemicals went in place of the front cockpit, with spray bars under the lower wing, and
+many were given a bigger Pratt & Whitney Wasp Junior engine. Others went to airshows for aerobatics
+and wing walking, and many still fly. It is easy to know: a large biplane sitting back on its
+tailwheel, its radial engine usually left uncowled, so each cylinder stands out round the nose.
+"""
+
+[facts]
+"First flight" = "1934"
+"Built" = "8,584, plus spare parts equal to some 2,000 more"
+"Engine" = "Continental R-670, 220 hp (PT-17); Lycoming R-680 (PT-13); Jacobs R-755 (PT-18)"
