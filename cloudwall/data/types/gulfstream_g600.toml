@@ -3,7 +3,7 @@ types = ["GA5C", "GA6C"]
 production = [2018]
 checked = "2026-11"
 sources = [
-  "https://en.wikipedia.org/wiki/Gulfstream_G500_and_G600",
+  "https://en.wikipedia.org/wiki/Gulfstream_G400/G500/G600",
   "https://en.wikipedia.org/wiki/Gulfstream_G650",
   "https://en.wikipedia.org/wiki/Gulfstream_IV",
   "https://en.wikipedia.org/wiki/Gulfstream_G550",
