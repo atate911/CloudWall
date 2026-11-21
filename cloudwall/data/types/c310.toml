@@ -1,0 +1,46 @@
+name = "Cessna 310"
+types = ["C310", "C320"]
+production = [1954, 1981]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_310",
+  "https://en.wikipedia.org/wiki/Sky_King",
+  "https://cfapps.icao.int/doc8643/8643_List3.cfm?mfc=CESSNA",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-C.htm",
+  "https://avweb.com/?p=121480",
+  "https://aviationconsumer.com/aircraftreviews/cessna-310-3/",
+  "https://www.controller.com/listing/for-sale/257327955",
+]
+
+text = """
+Cessna's first twin since the wartime T-50 Bobcat, first flown in January 1953, and the first of
+its twins to carry their fuel in tanks on the wingtips. On the early 310s those tanks held all of
+it; tanks inside the wing came only with the 310L of 1967. The exhaust first left
+through augmenter tubes behind the engines, meant to turn it into a little extra thrust, but they
+were loud, and from 1964 it was piped under the wing instead. The 310D of 1960 brought the swept
+fin, the 310G of 1962 the canted "Stabila-Tip" tanks that went on to most of Cessna's twins, and the
+last, the 310R, a longer nose with a baggage locker in it.
+
+It was fast for a piston twin and could carry 2,000 lb or more of useful load, so the air-taxi firms
+of the postwar boom took to it, and the US Air Force bought 196 as the L-27, later the U-3, known as
+the Blue Canoe. On television Sky King flew one as the Songbird: a 310B lent free by Cessna and
+flown for the cameras by the company's own 310 sales manager. More than 6,000 310s and 320s were
+built before production ended in 1981.
+"""
+
+[facts]
+"First flight" = "January 1953"
+"Built" = "over 6,000, with the 320"
+"Engines" = "2 × Continental, 240 hp (310) to 285 hp (310R)"
+"Max takeoff weight" = "5,500 lb (2,500 kg), 310R"
+
+[variants.C320]
+name = "Cessna 320 Skyknight"
+production = [1961, 1969]
+more = """
+The 320 Skyknight was a 310F with turbocharged engines, a bigger cabin and an extra window each
+side. It was built until 1969, when the turbocharged T310 took its place.
+"""
+[variants.C320.facts]
+"Built" = "577"
+"Engines" = "2 × Continental TSIO-470 or TSIO-520, turbocharged"

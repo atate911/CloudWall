@@ -1,0 +1,38 @@
+name = "Piper PA-44 Seminole"
+types = ["PA44"]
+production = [1978]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Piper_PA-44_Seminole",
+  "https://en.wikipedia.org/wiki/Piper_PA-28_Cherokee",
+  "https://en.wikipedia.org/wiki/Piper_Aircraft",
+  "https://www.aopa.org/news-and-media/all-news/2020/july/flight-training-magazine/ramp-appeal-piper-seminole",
+  "https://avweb.com/aviation-news/piper-seminole-dx-receives-first-us-order/",
+  "https://commons.wikimedia.org/wiki/File:Piper_PA-44-180_Seminole_3-view_line_drawing.png",
+  "https://commons.wikimedia.org/wiki/File:Beechcraft_76_Duchess_3-view_line_drawing.png",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-P.htm",
+]
+
+text = """
+The Seminole is Piper's single-engined Arrow IV with an engine on each wing: it keeps the Arrow's
+fuselage, its semi-tapered wing and its T-tail. The right-hand engine is the LO-360, built to turn
+the opposite way, so the propellers rotate in opposite directions and losing either engine is
+equally manageable, a help to the student pilots who fly most Seminoles. The T-tail puts the
+stabilator above the propellers' wash and the wing's downwash, so the nose pitches less when the
+pilot changes flap or power.
+
+It first flew in May 1976 and has been built in three spells: from late 1978 to 1982, briefly at the
+end of the 1980s, and continuously since Piper came out of bankruptcy in 1995. The 1,000th was
+completed in 2021, and airline-pilot schools buy them by the fleet: in 2019 L3 ordered up to 240
+Archers and Seminoles. Piper has also been developing a diesel version, the Seminole DX, with
+DeltaHawk engines. From a distance it is easily taken for the Beechcraft Duchess, another four-seat
+trainer with a T-tail and counter-rotating engines, but the Seminole's wing narrows toward the tips,
+where the Duchess's keeps the same width all the way out.
+"""
+
+[facts]
+"First flight" = "May 1976"
+"Built" = "over 1,000"
+"Engines" = "2 × Lycoming O-360, 180 hp, counter-rotating"
+"Max takeoff weight" = "3,800 lb (1,720 kg)"
+"Single-engine ceiling" = "4,100 ft (1982)"

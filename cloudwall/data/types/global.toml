@@ -1,0 +1,71 @@
+name = "Bombardier Global"
+types = ["GLEX", "GL5T", "GL7T"]
+production = [1999]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Bombardier_Global_Express",
+  "https://en.wikipedia.org/wiki/Bombardier_Global_7500",
+  "https://en.wikipedia.org/wiki/Rolls-Royce_BR700",
+  "https://en.wikipedia.org/wiki/General_Electric_Passport",
+  "https://en.wikipedia.org/wiki/Gulfstream_G650",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://skybrary.aero/aircraft-model/global-6000",
+  "https://skybrary.aero/index.php/GL5T",
+  "https://www.ainonline.com/aviation-news/business-aviation/2025-12-08/bombardier-delivers-first-global-8000",
+  "https://www.flyingmag.com/bombardier-global-8000-enters-service/",
+]
+
+text = """
+Bombardier unveiled the Global Express in 1991 to beat Gulfstream on range, and by its launch had
+promised 6,500 nm. Rather than start from nothing it kept the fuselage cross-section of
+its own Challenger and CRJ, dropping the floor two inches for more shoulder room, and gave it a new
+T-tail and a new wing swept at 35°, with two BMW Rolls-Royce BR710s on the tail. The wing is
+flexible and, on the Global 6000, more heavily loaded than any rival's, and both soften the ride
+through turbulence. The Global 5000 is a shortened version; the XRS, 6000 and
+6500 are the full-length jet updated, the 5500 and 6500 with a reworked wing and Rolls-Royce Pearl
+engines.
+
+Range and a 51,000 ft ceiling have made it a favourite of air forces needing a high, long-endurance
+platform. The RAF flew it with a ground-surveillance radar as the Sentinel, the US Air Force flies
+it as the E-11A airborne communications relay, Saab builds its GlobalEye early-warning aircraft on
+the Global 6000, and the US Army's ME-11B intelligence aircraft is a Global 6500.
+"""
+
+[facts]
+"First flight" = "October 1996"
+"Engines" = "2 × Rolls-Royce BR710; Pearl 15 on the 5500 and 6500"
+
+[variants.GLEX]
+name = "Bombardier Global Express, XRS, 6000 or 6500"
+[variants.GLEX.facts]
+"Range" = "up to 6,600 nm (12,223 km), Global 6500"
+"Max takeoff weight" = "up to 99,500 lb (45,100 kg)"
+
+[variants.GL5T]
+name = "Bombardier Global 5000 or 5500"
+production = [2005]
+[variants.GL5T.facts]
+"First flight" = "March 2003"
+"Range" = "up to 5,900 nm (10,927 km), Global 5500"
+"Max takeoff weight" = "up to 92,500 lb (42,000 kg)"
+
+[variants.GL7T]
+name = "Bombardier Global 7500 or 8000"
+production = [2018]
+more = """
+The Global 7500 of 2018 is 11 ft longer and shares little with the first Global beyond its
+cross-section: a new, thinner wing swept at 35.3° with slats and double-slotted flaps, fly-by-wire
+controls derived from the CSeries airliner's, aluminium-lithium structure and GE Passport engines
+whose 52-inch fan is a single titanium blisk, blades and disc in one piece. It was the first
+purpose-built business jet with four cabin zones, and in 2019 one flew 8,152 nm from Singapore to
+Tucson, a record for such a jet until a Gulfstream G650ER beat it a month later. The Global 8000
+replaced it in 2025, with 8,000 nm of range and a top speed of Mach 0.95, the fastest of any civil
+aircraft since Concorde; a test aircraft reached Mach 1.015 in 2021.
+"""
+[variants.GL7T.facts]
+"First flight" = "November 2016"
+"Range" = "up to 8,000 nm (14,800 km), Global 8000"
+"Top speed" = "Mach 0.95, Global 8000"
+"Cabin altitude" = "2,691 ft at 41,000 ft, Global 8000"
+"Max takeoff weight" = "114,850 lb (52,100 kg), Global 7500"
+"Engines" = "2 × GE Passport 20, 18,920 lbf"

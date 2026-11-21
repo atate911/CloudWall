@@ -1,0 +1,45 @@
+name = "Lockheed C-5 Galaxy"
+types = ["C5M", "C5"]
+production = [1969, 1989]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Lockheed_C-5_Galaxy",
+  "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/1529718/c-5-abc-galaxy-and-c-5m-super-galaxy/",
+  "https://en.wikipedia.org/wiki/General_Electric_TF39",
+  "https://en.wikipedia.org/wiki/General_Electric_CF6",
+  "https://en.wikipedia.org/wiki/Landing_gear",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://skybrary.aero/aircraft/c5",
+]
+
+text = """
+Lockheed beat Boeing to build it in 1965, and Boeing turned its losing design's raised cockpit and
+opening nose into the 747. The C-5's engine, GE's TF39, was the first big high-bypass turbofan, with
+eight times as much air flowing around its core as through it when every engine before had managed
+less than two, and it grew into the CF6 that went on to power the DC-10, 747 and A300. The nose
+swings up and a ramp drops at the tail so vehicles can load from either end, the 28-wheel landing
+gear kneels to bring the floor down to truck-bed height, and the six-wheel main units swivel for
+crosswind landings. The hold is 121 ft long, a foot longer than the Wright brothers' first flight.
+It shares the C-17's high wing and T-tail but dwarfs it, and its wingtips are plain where the C-17's
+turn up into winglets.
+
+The C-5 was the first development programme to overrun its budget by a billion dollars, and its
+wings cracked so soon that 77 C-5As were given new ones in the 1980s. In 1974 a C-5A dropped a
+Minuteman missile by parachute over the Pacific, and its motor fired in midair, proving an ICBM
+could be launched from the air. Lockheed built 81 C-5As and 50 C-5Bs, and between 2006 and 2018 the
+52 kept in service were rebuilt as C-5M Super Galaxies, with CF6 engines 22 percent more powerful
+that cut the takeoff run by 30 percent.
+"""
+
+[facts]
+"First flight" = "June 1968"
+"Built" = "131: 81 C-5A, 50 C-5B"
+"Max payload" = "281,000 lb (127,460 kg)"
+"Max takeoff weight" = "840,000 lb (381,000 kg)"
+"Engines" = "4 × General Electric F138 (CF6-80C2)"
+
+[variants.C5M]
+name = "Lockheed C-5M Super Galaxy"
+
+[variants.C5.facts]
+"Engines" = "4 × General Electric TF39"

@@ -1,0 +1,53 @@
+name = "Boeing 787 Dreamliner"
+types = ["B788", "B789", "B78X"]
+production = [2011]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/2013_Boeing_787_Dreamliner_grounding",
+  "https://www.boeing.com/commercial/787",
+  "https://www.boeing.com/commercial/787/by-design",
+  "https://www.boeing.com/content/dam/boeing/v2/airports/acaps/787_ACAP_Rev_Q.pdf",
+  "https://www.flightglobal.com/787-special-electric-dream/69721.article",
+  "https://en.wikipedia.org/wiki/Boeing_787_Dreamliner",
+  "https://info.flightmapper.net/flight/Qantas_QF_9",
+]
+
+text = """
+About half the airframe by weight is carbon composite, and only a fifth is aluminium. The fuselage
+is wound as one-piece barrels instead of riveted aluminium sheet, and because composite doesn't
+fatigue like metal, the cabin can be pressurised to a 6,000 ft altitude rather than the usual 8,000,
+with more humid air. The windows are 27 by 47 cm, the largest of any widebody flying, with no
+shades. Passengers dim them electronically.
+
+It is also the first airliner to give up almost all the compressed air that engines usually supply.
+Pressurisation, wing de-icing and engine start run on electricity instead, from six generators rated
+at 1,450 kVA in all. The wings are long and flexible enough that in flight the tips ride well above
+where they sit at the gate. They sweep back to a point with no winglet, and the engine nacelles end
+in a saw-tooth edge that softens the jet noise. Its electrical systems lean on lithium-ion
+batteries, and two battery fires in January 2013 grounded every 787 for about three months.
+"""
+
+[facts]
+"First flight" = "December 2009"
+"Engines" = "2 × GE GEnx-1B or Rolls-Royce Trent 1000"
+
+[variants.B788]
+name = "Boeing 787-8 Dreamliner"
+[variants.B788.facts]
+"Range" = "up to 8,000 nm (14,800 km)"
+
+[variants.B789]
+name = "Boeing 787-9 Dreamliner"
+production = [2014]
+more = """
+The -9 is the long-range model: Qantas flies one nonstop from Perth to London, about 14,500 km, in
+some 17 hours.
+"""
+[variants.B789.facts]
+"Range" = "up to 8,300 nm (15,370 km)"
+
+[variants.B78X]
+name = "Boeing 787-10 Dreamliner"
+production = [2018]
+[variants.B78X.facts]
+"Range" = "up to 7,500 nm (13,890 km)"

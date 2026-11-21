@@ -1,0 +1,33 @@
+name = "Bell 429 GlobalRanger"
+types = ["B429"]
+production = [2009]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Bell_429_GlobalRanger",
+  "https://en.wikipedia.org/wiki/Bell_427",
+  "https://en.wikipedia.org/wiki/Helicopter_rotor",
+  "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_Canada_PW200",
+  "https://en.wikipedia.org/wiki/Eurocopter_EC135",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+]
+
+text = """
+Bell designed it for air ambulances, after the 427 before it proved too small for a stretcher. It
+kept derivatives of the 427's engines and drive and built a new airframe around them from its
+Modular Affordable Product Line research, with a flat floor, room for a stretcher and, as an option,
+clamshell doors under the tail boom to load one from behind. It is certified Category A, able to
+land or fly on if an engine fails, and for instrument flight with a single pilot. Air Methods, the
+largest air ambulance operator in the US, took the first in July 2009.
+
+Its four composite blades have swept tips to cut noise and flex on soft-in-plane composite beams
+rather than hinges, and the tail rotor, also for quiet, is two two-bladed rotors stacked into a
+lopsided X. That tail rotor tells it from the single-engined 407, and from the Airbus H135, another
+air ambulance twin, which has a fan in a ring in its fin. Police forces and Canada's coast guard fly
+it too, and Bell delivered the 500th in July 2024.
+"""
+
+[facts]
+"First flight" = "February 2007"
+"Engines" = "2 × Pratt & Whitney Canada PW207D1"
+"Main rotor" = "4 composite blades, soft-in-plane"
+"Built" = "500 by July 2024"

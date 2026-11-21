@@ -1,0 +1,62 @@
+name = "Airbus A300 and A310"
+types = ["A30B", "A306", "A310"]
+production = [1974, 2007]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_A300",
+  "https://en.wikipedia.org/wiki/Airbus_A310",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://www.airbus.com/en/newsroom/stories/2022-10-28-october-50th-anniversary-of-the-first-flight-of-the-airbus-a300",
+]
+
+text = """
+The first Airbus, launched by France and West Germany at the 1969 Paris Air Show and flown in
+October 1972, was also the first widebody with only two engines. Its fuselage, 5.64 m across, was
+sized for eight seats abreast with two LD3 cargo containers side by side under the floor, and Airbus
+kept that cross-section for the A330 and A340. Orders dried up in the mid-1970s, until in 1977
+Airbus lent Eastern Air Lines four A300s for six months, free apart from training and running costs.
+Eastern's chief, the former astronaut Frank Borman, found they burned 30 percent less fuel than his
+TriStars and ordered 23, and that order is usually counted as the moment Airbus became a serious
+rival to Boeing.
+
+In 1982 Garuda put the first widebody flown by two pilots into service, an A300 with the flight
+engineer's work automated away. The shorter A310 that followed brought a two-pilot glass cockpit,
+which the later A300-600 took over, so one type rating covers both; neither has fly-by-wire, and
+both are flown with control yokes. The line closed in 2007 after 561 A300s and 255 A310s, and most
+A300s still flying now carry freight, many of them A300-600Fs with FedEx and UPS. Next to a 767 an
+A300 is wider, eight abreast in economy where the 767 seats seven; the A310 is about 7 m shorter
+than the original A300 and has small emergency exits over the wing.
+"""
+
+[facts]
+"First flight" = "October 1972"
+"Built" = "561"
+
+[variants.A30B]
+name = "Airbus A300B2 and A300B4"
+more = """
+Most of these first A300s carried a flight engineer behind the two pilots, in a cockpit of round
+dials.
+"""
+[variants.A30B.facts]
+"Range" = "2,900 nm (5,375 km), A300B4-200"
+"Max takeoff weight" = "up to 165,000 kg (363,800 lb)"
+"Engines" = "2 × GE CF6-50 or Pratt & Whitney JT9D"
+
+[variants.A306]
+name = "Airbus A300-600"
+production = [1984, 2007]
+[variants.A306.facts]
+"Range" = "4,050 nm (7,500 km), A300-600R"
+"Max takeoff weight" = "up to 171,700 kg (378,500 lb)"
+"Engines" = "2 × GE CF6-80C2 or Pratt & Whitney PW4000"
+
+[variants.A310]
+name = "Airbus A310"
+production = [1983, 1998]
+[variants.A310.facts]
+"First flight" = "April 1982"
+"Built" = "255"
+"Range" = "up to 5,150 nm (9,540 km)"
+"Max takeoff weight" = "up to 164,000 kg (361,600 lb)"
+"Engines" = "2 × GE CF6-80 or Pratt & Whitney JT9D or PW4000"

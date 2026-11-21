@@ -1,0 +1,33 @@
+name = "Saab 340"
+types = ["SF34"]
+production = [1984, 1999]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Saab_340",
+  "https://en.wikipedia.org/wiki/General_Electric_T700",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Saab, until then almost entirely a maker of military aircraft, began the 340 with Fairchild of the
+United States as its partner, and it was first sold as the SF340. Fairchild built the wings, tail
+and engine nacelles and Saab the fuselage, assembling the aircraft in Linköping, until Fairchild
+left after the first 40. Its GE CT7 turboprops are the airliner version of the T700 that powers the
+Black Hawk and Apache helicopters, the same core with a propeller gearbox in front. A low wing tells
+it apart from the high-winged ATRs and Dash 8s. The launch customer, Crossair, received the first in
+June 1984, and among the passengers on its first fare-paying flight a week later was Pope John Paul
+II.
+
+The 340B of 1989 brought more powerful CT7-9B engines and a wider tailplane, and the 340B Plus of
+1994 added active noise control, cutting cabin noise by about 10 dB, and made standard the extended
+wingtips earlier offered as an option. The 340 was soon the best-selling commuter airliner in the
+world, but in the 1990s airlines turned to regional jets, and Saab stopped in 1999 after 459. The
+airframe's life has since been extended from 45,000 to 80,000 flight hours. Many still fly with
+regional airlines and freight operators, Japan's coast guard uses it for search and rescue, and Saab
+built airborne early-warning versions with the Erieye radar mounted along the top of the fuselage.
+"""
+
+[facts]
+"First flight" = "January 1983"
+"Built" = "459"
+"Engines" = "2 × GE CT7-9B, 1,870 shp (340B)"

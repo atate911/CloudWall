@@ -1,0 +1,67 @@
+name = "McDonnell Douglas DC-10"
+types = ["DC10", "KC10"]
+production = [1971, 1989]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/McDonnell_Douglas_DC-10",
+  "https://en.wikipedia.org/wiki/McDonnell_Douglas_KC-10_Extender",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://en.wikipedia.org/wiki/Lockheed_L-1011_TriStar",
+  "https://en.wikipedia.org/wiki/Turkish_Airlines_Flight_981",
+  "https://en.wikipedia.org/wiki/American_Airlines_Flight_191",
+  "https://en.wikipedia.org/wiki/United_Airlines_Flight_232",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://skybrary.aero/aircraft/dc10",
+]
+
+text = """
+American Airlines asked for a widebody smaller than the 747 that could use shorter runways, and
+Douglas, newly merged with McDonnell, answered with a trijet: two engines under the wings and the
+third high on the tail, its nacelle running straight through the base of the fin. That tells it
+from the Lockheed TriStar, offered to the same airlines, which buries its centre engine in the rear
+fuselage and feeds it through an S-shaped duct. The long-range -30 and -40 have a third main landing
+gear leg under the belly.
+
+A cargo door that could look locked when it wasn't blew out over Windsor, Ontario, in 1972,
+collapsing the cabin floor onto the control cables; the crew landed, but no fix was ordered, and in
+1974 the same failure brought down a Turkish DC-10 near Paris, killing 346. In 1979 an engine and its
+pylon, damaged by a maintenance shortcut, tore off an American DC-10 taking off from Chicago and
+273 died; the FAA withdrew the type certificate for five weeks and orders collapsed. Ten years later
+a tail engine failure severed all three hydraulic systems on United 232, and the crew steered with
+the throttles alone to a crash landing at Sioux City that 184 of the 296 aboard survived.
+
+As the faults were fixed, its long-term record came to match other jets of its time. McDonnell
+Douglas built 386 airliners and 60 KC-10 tankers, and from 1999 Boeing converted many into MD-10s,
+with a two-pilot glass cockpit shared with the MD-11; the last passenger flight was in 2014. About ten were airworthy at the end of 2024, most of them
+firefighting or air-refuelling tankers, and all were grounded with the MD-11 from November 2025 to
+May 2026.
+"""
+
+[facts]
+"First flight" = "August 1970"
+"Built" = "386 airliners and 60 KC-10s"
+"Engines" = "3 × GE CF6 or Pratt & Whitney JT9D"
+
+[variants.DC10]
+name = "McDonnell Douglas DC-10 or MD-10"
+
+[variants.KC10]
+name = "McDonnell Douglas KC-10 Extender"
+production = [1981, 1988]
+text = """
+The KC-10 Extender is a DC-10-30 convertible freighter rebuilt as a tanker for the US Air Force,
+chosen over the 747 and the C-5 in 1977 mainly because it could use shorter runways. Tanks in the
+lower holds took its fuel to 356,000 lb, nearly double a KC-135's, and it could refuel while
+carrying cargo on the main deck. Its boom operator sat facing backward at a wide window in the tail,
+steering a fly-by-wire boom, rather than lying on their front as on the KC-135, and a hose-and-drogue
+on the same aircraft let it refuel Navy, Marine and allied jets on one mission.
+
+Sixty were delivered between 1981 and 1988, and they flew in US operations from the 1986 raid on
+Libya to the Iraq War. The Air Force retired the last in September 2024. A few DC-10s converted to a
+similar standard, the KDC-10s, fly on as contract tankers with Omega Aerial Refueling Services.
+"""
+[variants.KC10.facts]
+"First flight" = "July 1980"
+"Built" = "60"
+"Max fuel" = "356,000 lb (161,000 kg)"
+"Engines" = "3 × General Electric CF6"

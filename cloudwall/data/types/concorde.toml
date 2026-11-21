@@ -1,0 +1,39 @@
+name = "Concorde"
+types = ["CONC"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Concorde",
+  "https://en.wikipedia.org/wiki/List_of_Concorde_aircraft",
+  "https://en.wikipedia.org/wiki/Concorde_operational_history",
+  "https://en.wikipedia.org/wiki/Air_France_Flight_4590",
+]
+
+text = """
+Concorde's wing had to work at twice the speed of sound and at landing speed, and researchers at
+Britain's Royal Aircraft Establishment found the shape that could. A slender delta, pitched up
+steeply, rolls the air off its leading edges into two strong vortices that lower the pressure over
+the wing and lift it, and the ogee curve of Concorde's planform kept the centre of lift close to the
+centre of gravity. The price was a steep nose-high attitude on approach that hid the runway, so the
+long nose drooped: 5 degrees for taxi and takeoff, 12.5 for landing, with a glass visor that rose
+over the windscreen for the cruise.
+
+It cruised at Mach 2.02 as high as 60,000 ft on four Olympus 593s, using their afterburners only for
+takeoff and to push through the transonic range. Mach 2 was as fast as its aluminium alloy could
+bear: friction heated the skin until the fuselage grew by as much as 300 mm, opening a gap beside
+the flight engineer's panel. Fuel was pumped fore and aft to trim it as the centre of lift moved
+about 2 m going supersonic, and the brakes were the first carbon brakes on an airliner.
+
+Twenty were built, and only British Airways and Air France flew them, from January 1976, crossing
+from New York to London in about three and a half hours. In July 2000 an Air France Concorde ran over
+debris on the runway at Paris; a burst tyre ruptured a fuel tank, and the fire brought it down on a
+hotel in Gonesse, killing 113. The fleet flew again in 2001 but was retired in 2003, and eighteen of
+the twenty survive in museums in Europe and North America.
+"""
+
+[facts]
+"First flight" = "March 1969"
+"Built" = "20"
+"Cruise" = "Mach 2.02"
+"Ceiling" = "60,000 ft"
+"Engines" = "4 × Rolls-Royce/Snecma Olympus 593, with afterburners"
+"Fastest crossing" = "New York to London in 2 h 52 min 59 s, February 1996"

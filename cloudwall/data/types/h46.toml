@@ -1,0 +1,33 @@
+name = "Boeing Vertol CH-46 Sea Knight"
+types = ["H46"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_Vertol_CH-46_Sea_Knight",
+  "https://en.wikipedia.org/wiki/Columbia_Helicopters",
+  "https://en.wikipedia.org/wiki/Boeing_CH-47_Chinook",
+  "https://skybrary.aero/aircraft-model/107-0",
+]
+
+text = """
+Vertol's Model 107 first flew in April 1958, a turbine-powered successor to the company's
+piston-engined "Flying Banana". Its two engines sit either side of the rear rotor pylon and drive
+the front rotor through a shaft, coupled so that either one can turn both rotors if the other
+fails. The Marines took it as the CH-46 Sea Knight from 1964. It sits nose-up on fixed tricycle
+gear, with twin wheels on each leg and the main wheels in sponsons at the back that also hold the
+fuel, which tells it from the bigger Chinook on its four legs. It can land on calm water and float
+for up to two hours.
+
+The Marines called it the Phrog and flew it from Vietnam until 2015, so long that its crews said
+never to trust a helicopter under 30. The last helicopter to leave the roof of the US embassy in
+Saigon, in April 1975, was a Marine CH-46. Retired ones went to the State Department, and in
+August 2021 seven were disabled and left behind at Kabul airport; one of them had also flown in
+the evacuation of Saigon 46 years earlier. The civil 107-II carried New York Airways passengers
+from the roof of the Pan Am Building to JFK in the 1960s, and Columbia Helicopters, which bought
+the type certificate in 2006, flies them commercially.
+"""
+
+[facts]
+"First flight" = "April 1958 (Vertol 107)"
+"Engines" = "2 × General Electric T58"
+"Built" = "524 H-46s, plus civil and Kawasaki-built 107s"
+"Retired" = "August 2015 (US Marine Corps)"

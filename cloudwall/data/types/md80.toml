@@ -1,0 +1,72 @@
+name = "McDonnell Douglas MD-80 and MD-90"
+types = ["MD81", "MD82", "MD83", "MD87", "MD88", "MD90"]
+production = [1980, 2000]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/McDonnell_Douglas_MD-80",
+  "https://en.wikipedia.org/wiki/McDonnell_Douglas_MD-90",
+  "https://en.wikipedia.org/wiki/Boeing_717",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+The MD-80 is the DC-9 stretched as far as it would go: a fuselage 4.3 m longer than the DC-9-50's,
+a wing 28% larger with new sections at the root and the tip, and refanned, quieter Pratt & Whitney
+JT8D-200s on the tail. It flew in 1979 as the DC-9 Super 80 and became the MD-80 in 1983, though the
+type certificate still calls most of them DC-9s, the DC-9-81 to -87. The long, slender body ahead of
+a T-tail and two tail engines makes it easy to pick out, and its crews know it as the Mad Dog.
+Inside, the seats are five abreast, two and three, so each row has only one middle seat.
+
+American Airlines built its 1980s and 1990s fleet around it, with more than 360 at its peak in 2002,
+nearly a third of the 1,191 made. Its old engines burned nearly a quarter more fuel an hour than the
+larger 737-800, and American retired its last in 2019; Delta's final flights, in June 2020, were the
+last scheduled passenger service of any McDonnell Douglas airliner in the US. Some survivors were converted to haul freight, and Erickson
+Aero Tanker turned MD-87s into firefighting tankers that carry 4,000 US gallons of retardant.
+"""
+
+[facts]
+"First flight" = "October 1979"
+"Built" = "1,191 MD-80s"
+"Engines" = "2 × Pratt & Whitney JT8D-200"
+
+[variants.MD81]
+name = "McDonnell Douglas MD-81"
+production = [1980, 1994]
+
+[variants.MD82]
+name = "McDonnell Douglas MD-82"
+production = [1981, 1997]
+
+[variants.MD83]
+name = "McDonnell Douglas MD-83"
+production = [1985, 1999]
+[variants.MD83.facts]
+"Range" = "2,504 nm (4,637 km) with 155 passengers"
+
+[variants.MD87]
+name = "McDonnell Douglas MD-87"
+production = [1987, 1992]
+more = """
+The MD-87 is 5.3 m shorter than the other MD-80s, with its fin extended above the tailplane and a
+low-drag "beaver tail" cone that later became standard on every MD-80.
+"""
+
+[variants.MD88]
+name = "McDonnell Douglas MD-88"
+production = [1987, 1997]
+
+[variants.MD90]
+name = "McDonnell Douglas MD-90"
+production = [1995, 2000]
+more = """
+The MD-90 is the last and longest stretch, 1.4 m longer than an MD-88, with the A320's IAE V2500
+engines in place of the JT8Ds; their fat nacelles are the quickest way to tell it from an MD-80.
+McDonnell Douglas first meant to give it unducted propfans, which an MD-81 flew as a testbed, and
+turned to the V2500 when airlines showed no interest; Delta's launch order followed within six
+weeks. 116 were built, and Delta flew the last passenger service in June 2020.
+"""
+[variants.MD90.facts]
+"First flight" = "February 1993"
+"Built" = "116"
+"Engines" = "2 × IAE V2500"

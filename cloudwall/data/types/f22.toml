@@ -1,0 +1,33 @@
+name = "Lockheed Martin F-22 Raptor"
+types = ["F22"]
+production = [2002, 2012]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Lockheed_Martin_F-22_Raptor",
+]
+
+text = """
+The F-22 was conceived in the 1980s to take control of the sky from Soviet fighters and missiles,
+and it was the first operational aircraft to combine stealth with supercruise, flying at Mach 1.5
+and more without afterburner. Its two Pratt & Whitney F119s, each in the 35,000 lb thrust class,
+exhaust through flat, rectangular nozzles that swivel 20 degrees up or down to help it turn, and
+that flatten the plume so it mixes quickly with the air around it and is harder for heat-seeking
+missiles to find. Titanium makes up 42% of the structure, to bear the heat and stress of sustained
+supersonic flight. The Air Force wanted 750, but the end of the Cold War, the cost and the cheaper
+F-35 cut that to 187 for the squadrons; with the test aircraft 195 were built, the last delivered
+in 2012. Every US defence appropriations act since fiscal 1998 has barred its sale abroad.
+
+Its outline keeps to a few angles, the edges of wing, tailplane and intakes running parallel, and
+with its diamond-shaped wing, twin canted fins and flat nozzles tucked between the tail booms it is
+easy to tell from the smaller, single-engined F-35. Its first deployment overseas, in February
+2007, began with six F-22s turning back to Hawaii: crossing the International Date Line set off
+software failures, and they followed their tankers home until a fix came within 48 hours. Its first
+air-to-air kill came in February 2023, when an F-22 shot down a Chinese balloon off South Carolina
+at around 60,000 ft.
+"""
+
+[facts]
+"First flight" = "September 1997"
+"Built" = "195"
+"Max takeoff weight" = "83,500 lb (37,900 kg)"
+"Engines" = "2 × Pratt & Whitney F119, 35,000 lb thrust class"

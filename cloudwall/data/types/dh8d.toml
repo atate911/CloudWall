@@ -1,0 +1,34 @@
+name = "De Havilland Canada Dash 8-400"
+types = ["DH8D"]
+production = [2000, 2022]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/De_Havilland_Canada_Dash_8",
+  "https://www.airport-technology.com/projects/dash8/",
+  "https://dehavilland.com/wp-content/uploads/2026/07/DHC_Dash8_Spec-Sheet_v11_Digital.pdf",
+  "https://dehavilland.com/dash8-special-mission/",
+  "https://www.easa.europa.eu/es/downloads/17870/en",
+  "https://flightglobal.com/quiet-revolution/31793.article",
+  "https://jcaa.caa-aca.ca/index.php/jcaa/article/download/1288/1028",
+  "https://www.ge.com/news/press-releases/ges-dowty-business-delivers-600th-dash-8-q400-propeller-system",
+  "https://ainonline.com/aviation-news/aerospace/2022-06-21/de-havilland-aircraft-departs-downsview-airport",
+  "https://irishaviationresearchinstitute.ie/?p=2789",
+  "https://www.journal-aviation.com/en/mro-support-news/modification-and-conversion/de-havilland-wins-new-contracts-for-its-dash-8-400-retrofit-program-20260313.html",
+]
+
+text = """
+It cruises at up to 360 knots, close to most regional jets, on two Pratt & Whitney Canada PW150As
+of up to 5,071 shp each, and burns far less fuel doing it. The "Q" it was marketed under stood for
+quiet: microphones in the cabin tell vibration absorbers on the fuselage frames how to counter the
+propellers' drone. It seats up to 90.
+
+From the ground it is long and slender, with a high wing, a T-tail, six-bladed propellers and long
+engine nacelles the main gear folds into. In September 2007 the landing gear of two SAS Q400s
+collapsed within four days, and after a third gear failure in October SAS retired its fleet for
+good. De Havilland Canada delivered the last new one in 2022 and, as of 2026, has not restarted
+production.
+"""
+
+[facts]
+"First flight" = "January 1998"
+"Engines" = "2 × Pratt & Whitney Canada PW150A"

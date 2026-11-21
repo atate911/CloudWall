@@ -1,0 +1,59 @@
+name = "Gulfstream IV and V"
+types = ["GLF4", "GLF5"]
+production = [1987, 2021]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Gulfstream_IV",
+  "https://en.wikipedia.org/wiki/Gulfstream_V",
+  "https://en.wikipedia.org/wiki/Gulfstream_G550",
+  "https://en.wikipedia.org/wiki/Gulfstream_III",
+  "https://en.wikipedia.org/wiki/Grumman_Gulfstream_II",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://www.georgiaencyclopedia.org/articles/business-economy/gulfstream-aerospace-corporation/m-8744/",
+  "https://historynet.com/grumman-gulfstream-bizjet-turns-50/",
+]
+
+text = """
+The Gulfstream IV and V descend directly from the Gulfstream II of 1966, Grumman's jet successor to
+its turboprop Gulfstream I, through the stretched GIII, and both carry the big oval cabin windows that have marked
+every large Gulfstream since the Gulfstream I. Count them to tell the models apart: six a side on
+most GIVs and on the GV, seven on the G550. Their speed, range and roomy cabins have made them a
+favourite of governments as well as owners. The US forces fly them as the C-20 and C-37, NOAA flies
+a GIV around hurricanes at 45,000 ft dropping instruments that help forecast where a storm will go,
+and Israel, Italy and Singapore fly G550s with early-warning radars built into the fuselage.
+"""
+
+[variants.GLF4]
+name = "Gulfstream IV (G300 to G450)"
+production = [1987, 2018]
+more = """
+The GIV of 1985 stretched the GIII, swapped its Speys for quieter, more frugal Rolls-Royce Tays, and
+rebuilt the wing to save weight, reshaping its profile at the same time for more than 300 nm of
+extra range. It was the first business jet with an all-glass cockpit, and in 1987 one flew west
+round the world in 45 hours 25 minutes, setting 22 records in its class. The GIV-SP became the G400,
+with the shorter-range G300 alongside, and the G450 of 2004 added a foot of fuselage, a door moved
+aft and the G550's cockpit. The last G450 was delivered in January 2018, ending a 30-year run of more
+than 900 aircraft.
+"""
+[variants.GLF4.facts]
+"First flight" = "September 1985"
+"Built" = "over 900"
+"Range" = "4,350 nm (8,060 km), G400"
+"Engines" = "2 × Rolls-Royce Tay"
+
+[variants.GLF5]
+name = "Gulfstream V or G550"
+production = [1997, 2021]
+more = """
+The GV was Gulfstream's answer to the Bombardier Global Express. Its fuselage is 7 ft longer than
+the GIV's and its wing new, spanning nearly 19 ft more, with 12,000 lb more fuel inside, and with
+BMW Rolls-Royce BR710 engines it could cruise up to 51,000 ft and fly 6,500 nm, Gulfstream's first
+true ultra-long-range jet. It entered service in 1997. The G550 of 2003 cleaned up the drag for
+another 250 nm, moved the door 2 ft forward to lengthen the cabin and added the seventh pair of
+windows, and more than 600 were built before commercial production ended in 2021.
+"""
+[variants.GLF5.facts]
+"First flight" = "November 1995"
+"Range" = "6,500 nm (12,000 km), GV"
+"Ceiling" = "51,000 ft"
+"Engines" = "2 × Rolls-Royce BR710"

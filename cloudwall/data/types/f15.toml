@@ -1,0 +1,55 @@
+name = "McDonnell Douglas F-15 Eagle"
+types = ["F15", "F15E"]
+production = [1974]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/McDonnell_Douglas_F-15_Eagle",
+  "https://en.wikipedia.org/wiki/Boeing_F-15EX_Eagle_II",
+  "https://en.wikipedia.org/wiki/1983_Negev_mid-air_collision",
+  "https://en.wikipedia.org/wiki/142nd_Wing",
+  "https://www.nationalmuseum.af.mil/Visit/Museum-Exhibits/Fact-Sheets/Display/Article/197972/mcdonnell-douglas-f-15-streak-eagle/",
+  "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104501/f-15-eagle/",
+  "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104499/f-15e-strike-eagle/",
+  "https://www.104fw.ang.af.mil/About/Fact-Sheets/Article/3409364/f-15-eagle/",
+  "https://www.ang.af.mil/Media/Article-Display/Article/3838592/f-15ex-eagle-ii-unveiled-at-portland-air-national-guard-base",
+  "https://www.125fw.ang.af.mil/News/Article-Display/Article/4282487/125th-fighter-wing-receives-first-permanently-assigned-f-35/",
+  "https://www.ngaus.org/sites/default/files/2026-03/NGAUS_Fighter%20Recapitalization_2.pdf",
+  "https://www.19fortyfive.com/2026/07/the-f-15-eagle-is-the-michael-jordan-of-fighter-jets-104-wins-zero-air-to-air-losses/",
+]
+
+text = """
+Designed as Vietnam showed American fighters struggling in the close-in fight, the F-15 was built
+around a simple idea: more thrust than weight. Its two Pratt & Whitney F100s let it accelerate going
+straight up, and in 1975 a stripped F-15, the Streak Eagle, climbed from a standing start to 30,000 m
+in under three and a half minutes. In air-to-air combat, flown by the US, Israel and Saudi Arabia, it
+has more than 100 victories and no losses.
+
+Its wide fuselage makes so much lift, and its engines so much thrust, that in 1983 an Israeli F-15D
+landed after losing most of its right wing in a mid-air collision. You can tell it by its twin
+upright fins, square intakes either side of the cockpit and a wing that looks too big for the jet.
+The Air National Guard keeps F-15s on 24-hour alert at a few US bases, ready to launch within
+minutes to meet an aircraft that won't answer.
+
+Two later versions are built with a second seat behind the pilot. The F-15E Strike Eagle, a dual-role
+version built for ground attack without giving up the Eagle's air-to-air ability, has conformal fuel
+tanks fitted flat along the sides of its intakes. The F-15EX Eagle II, derived from it, adds
+fly-by-wire controls and GE F110 engines and is replacing the F-15C; Portland's Air National Guard
+wing became its first operational unit in 2024.
+"""
+
+[facts]
+"First flight" = "July 1972"
+"Top speed" = "Mach 2.5"
+"Engines" = "2 × Pratt & Whitney F100; GE F110 on the F-15EX"
+
+[variants.F15]
+name = "F-15 Eagle"
+[variants.F15.facts]
+"Max takeoff weight" = "68,000 lb (30,840 kg), F-15C/D"
+
+[variants.F15E]
+name = "F-15E Strike Eagle"
+[variants.F15E.facts]
+"Range" = "2,080 nm (3,860 km), ferry"
+"Max takeoff weight" = "81,000 lb (36,740 kg)"
+"Engines" = "2 × Pratt & Whitney F100"

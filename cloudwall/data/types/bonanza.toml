@@ -1,0 +1,64 @@
+name = "Beechcraft Bonanza"
+types = ["BE35", "BE33", "BE36"]
+production = [1947]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Beechcraft_Bonanza",
+  "https://en.wikipedia.org/wiki/Mooney_International_Corporation",
+  "https://en.wikipedia.org/wiki/List_of_most-produced_aircraft",
+  "https://doc8643.com/aircraft/BE35",
+  "https://doc8643.com/aircraft/BE33",
+  "https://doc8643.com/aircraft/BE36",
+]
+
+text = """
+The Bonanza first flew in December 1945, one of the first light aircraft built entirely of metal,
+designed by a Beech team under Ralph Harmon with a flat-six engine, retractable tricycle gear and,
+on the Model 35, a V-tail whose two surfaces each do the work of elevator and rudder, called
+ruddervators. Executives and professionals bought it for business and personal travel, and in 1949
+one of the first, Waikiki Beech, flew 5,273 statute miles nonstop from Honolulu to Teterboro, New
+Jersey, in 36 hours, a record; it is in the National Air and Space Museum. More than 18,000 have
+been built since 1947, and in November 2025 Textron announced that it would stop building them once
+the last orders were filled.
+
+The straight-tailed Model 33 arrived in 1960 as the Debonair, a plainer, cheaper Bonanza, and took
+the Bonanza name in 1968, the year the Model 36 stretched it by ten inches for six seats, with four
+windows down each side and double doors at the back on the right. The V-tail ended in 1982 and the
+33 in 1995. Bonanzas had an unusually high rate of gear-up landings and of wheels retracted on the
+ground, blamed on early models' non-standard gear switch, easily mistaken for the flap switch; from
+1984 Beech moved it and added switches that stop the gear coming up with weight on the wheels or at
+low power.
+"""
+
+[facts]
+"First flight" = "December 1945"
+"Built" = "over 18,000, all models"
+
+[variants.BE35]
+name = "Beechcraft Bonanza 35 (V-tail)"
+production = [1947, 1982]
+more = """
+The V-tail Bonanza earned the nickname "forked-tail doctor killer" from crashes by wealthy,
+overconfident owners and from tails that broke in flight. An AOPA study of 1982–89 accidents found
+the Bonanza's rate slightly lower than that of comparable retractables, with pilot error behind 73%
+of V-tail crashes. The breakups were real, though: NTSB records from 1962 to 2007 show about three
+V-tail structural failures a year, mostly after flying into cloud, thunderstorms or ice, against
+eleven in all for the 33 and 36. FAA wind-tunnel and flight tests in the late 1980s found the tail
+short of certification standards in some conditions, and a directive to strengthen it greatly
+reduced the breakups; Beech held that most had come from flying far outside the envelope.
+"""
+[variants.BE35.facts]
+"Engine" = "Continental, 165 to 285 hp"
+
+[variants.BE33]
+name = "Beechcraft Bonanza 33 or Debonair"
+production = [1960, 1995]
+[variants.BE33.facts]
+"Engine" = "Continental, 225 to 285 hp"
+
+[variants.BE36]
+name = "Beechcraft Bonanza 36"
+production = [1968]
+[variants.BE36.facts]
+"Engine" = "Continental IO-550, 300 hp, since 1984"
+"Cruise" = "176 kt (G36)"

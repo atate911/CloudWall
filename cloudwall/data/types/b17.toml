@@ -1,0 +1,34 @@
+name = "Boeing B-17 Flying Fortress"
+types = ["B17"]
+production = [1937, 1945]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_B-17_Flying_Fortress",
+  "https://www.nationalmuseum.af.mil/Visit/Museum-Exhibits/Fact-Sheets/Display/Article/610002/model-299-crash/",
+  "https://www.nationalmuseum.af.mil/Visit/Museum-Exhibits/Fact-Sheets/Display/Article/1513340/combat-box-bomber-formations",
+  "https://en.wikipedia.org/wiki/List_of_surviving_Boeing_B-17_Flying_Fortresses",
+]
+
+text = """
+The prototype crashed just after takeoff in 1935 because the crew had left the control locks
+engaged. Boeing lost the Army contract, though the Army still ordered thirteen for trials. The
+lasting response was a written list of steps for the crew to go through before every flight, and
+the pilot's checklist was born.
+
+Each of the production aircraft's four Wright Cyclone radials had a General Electric
+turbosupercharger, driven by exhaust gas, which kept full power above 25,000 ft. The crew of ten
+worked up there on oxygen, in an unpressurised fuselage at forty below, where the cabin heat barely
+reached past the cockpit and the gunners wore electrically heated suits.
+
+A Seattle reporter gave it its name after seeing the guns bristling from it, and the late G model
+carried thirteen, including a turret under its glazed nose. Its tall fin sweeps forward and down
+into the spine. 12,731 were built, and only a handful still fly. One over the house is almost
+certainly on its way to an airshow, or selling rides.
+"""
+
+[facts]
+"Built" = "12,731"
+"Crew" = "10"
+"Ceiling" = "35,600 ft (B-17G)"
+"Range" = "1,740 nm (3,220 km) with 6,000 lb of bombs"
+"Engines" = "4 × Wright R-1820 Cyclone, turbosupercharged"

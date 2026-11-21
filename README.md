@@ -73,7 +73,15 @@ in the address, and `[kiosk] density` sets the wall panel's.
   number that once belonged to another aircraft doesn't bring up its pictures), credited to its
   photographer in its bottom right corner, with a link to the photo's page there.
   Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
-  dimension line with its length. With no photo, the plate fills the frame.
+  dimension line with its length. With no photo, the plate fills the frame. *About this type*, in
+  the plate's corner, opens a page on the type, written for enthusiasts: for the types over the
+  house every day, what they're built from and why they look and fly as they do; for the rare
+  visitors, their story; a few facts chosen for each type; its seats and wake category; where this
+  airframe's build year falls in the type's production run; and how often it and its type have
+  come over the house. A type nobody has written about yet still gets its drawing, its seats and
+  wake category and what the logbook knows of it. The write-ups are in `cloudwall/data/types/`,
+  one file a family, each fact checked against the sources it lists; they are read as CloudWall
+  starts, so restart it after changing one.
   Its first line says why it shows this flight ("Overhead now", "Over the house next",
   "Selected"), and the route's codes are joined by a line of how far it has come. On the desktop
   the card fills its column: the route map takes the room the words leave, or, for a flight with
@@ -147,7 +155,7 @@ in the address, and `[kiosk] density` sets the wall panel's.
   of reports as charts (touch one to read that report); and the TAF forecast as a
   timeline. A compact version joins the quiet-sky rotation.
 - **Logbook** – every flyover is logged: a drawn type collection (each type with its count
-  and first sighting; a new one is marked on the flight card), airlines, daily and all-time
+  and first sighting; a new one is marked on the flight card; tap one for its page), airlines, daily and all-time
   records (highest, lowest, fastest, closest, furthest origin), flyovers by hour.
 
 The display switches to its night chart, dim and dark, when the sun sets at your house;

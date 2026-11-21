@@ -1,0 +1,33 @@
+name = "NHIndustries NH90"
+types = ["NH90"]
+production = [2006]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/NHIndustries_NH90",
+  "https://en.wikipedia.org/wiki/NHIndustries_MRH-90_Taipan",
+]
+
+text = """
+The NH90 was the first production helicopter flown entirely by wire: four channels of computers
+stand between the pilots' controls and the rotors, and in 2002 the third prototype flew with its
+mechanical backup taken out. The fuselage is composite, chosen for ballistic tolerance,
+crashworthiness and lower weight, and diamond-shaped, which Airbus Helicopters says gives it the
+lowest radar signature in its class. Customers choose Rolls-Royce Turbomeca RTM322 or General
+Electric CT7-8 engines. The army version, the TTH, carries 20 soldiers and has a rear ramp; the
+navy's NFH folds its rotor blades and tail and locks itself to a frigate's deck with a harpoon.
+
+Germany's army took the first production aircraft in December 2006, and more than 500 have been
+delivered, but the programme has been dogged by delays, poor availability and high running costs:
+Belgium put its cost at €12,000 an hour, more than twice its old Sea Kings'. Norway ordered 14 for
+delivery from 2005, received the first in 2011, cancelled in 2022 and in 2025 settled for €305
+million and handed them back. Australia, which had planned to fly its 46 MRH-90 Taipans until
+2037, decided in 2021 to replace them with Black Hawks and grounded them for good in September
+2023, after one crashed during an exercise that July, killing its crew of four. As of 2026 about a
+dozen countries fly the NH90.
+"""
+
+[facts]
+"First flight" = "December 1995"
+"Engines" = "2 × Rolls-Royce Turbomeca RTM322 or GE CT7-8"
+"Max takeoff weight" = "10,600 kg (23,370 lb); 11,000 kg (24,250 lb), Standard 3"
+"Built" = "over 500"

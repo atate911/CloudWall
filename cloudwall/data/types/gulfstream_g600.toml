@@ -1,0 +1,45 @@
+name = "Gulfstream G500 and G600"
+types = ["GA5C", "GA6C"]
+production = [2018]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Gulfstream_G400/G500/G600",
+  "https://en.wikipedia.org/wiki/Gulfstream_G650",
+  "https://en.wikipedia.org/wiki/Gulfstream_IV",
+  "https://en.wikipedia.org/wiki/Gulfstream_G550",
+]
+
+text = """
+The G500 and G600 replaced the G450 and G550 with the G650's ideas at a smaller scale: a fuselage
+built up from four circular arcs, 7 in narrower and lower than the G650's but wider and taller than
+the cabins it replaced, a wing based on the G650's with the same sweep, a tail shaped like the
+G650's, and fly-by-wire controls. In the new Honeywell cockpit the pilots fly with sidesticks, as
+in an Airbus, but these are active, driven electrically so that each moves when the other does, as
+linked yokes would; they were the first civil aircraft built that way. The overhead panel is three
+touch-screens instead of rows of switches.
+
+Unusually for Gulfstream, the engines are not Rolls-Royces but Pratt & Whitney Canada PW800s, which
+use the core of Pratt's geared turbofan airliner engine without the gearbox. The cabin is held at a
+4,850 ft altitude at the 51,000 ft ceiling. The G600 is 5 ft longer, with 8 ft more wingspan and
+11,250 lb more fuel, and flies 6,600 nm to the G500's 5,300 nm.
+"""
+
+[facts]
+"Ceiling" = "51,000 ft"
+
+[variants.GA5C]
+name = "Gulfstream G500"
+[variants.GA5C.facts]
+"First flight" = "May 2015"
+"Range" = "5,300 nm (9,816 km)"
+"Max takeoff weight" = "79,600 lb (36,100 kg)"
+"Engines" = "2 × Pratt & Whitney Canada PW814GA, 15,144 lbf"
+
+[variants.GA6C]
+name = "Gulfstream G600"
+production = [2019]
+[variants.GA6C.facts]
+"First flight" = "December 2016"
+"Range" = "6,600 nm (12,223 km)"
+"Max takeoff weight" = "94,600 lb (42,900 kg)"
+"Engines" = "2 × Pratt & Whitney Canada PW815GA, 15,680 lbf"

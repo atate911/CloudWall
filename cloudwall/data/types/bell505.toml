@@ -1,0 +1,25 @@
+name = "Bell 505 Jet Ranger X"
+types = ["B505"]
+production = [2017]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Bell_505_Jet_Ranger_X",
+  "https://en.wikipedia.org/wiki/Bell_206",
+  "https://en.wikipedia.org/wiki/Bell_Textron",
+]
+
+text = """
+Bell's replacement for the five-seat JetRanger, unveiled at the 2013 Paris Air Show as the Short
+Light Single and aimed at Robinson's R66. The airframe is new, of metal and composites, with a flat
+floor and an 18 cu ft baggage bay, but the two-bladed rotor and drive are the LongRanger's. Its
+Safran Arrius 2R turbine is run by a dual-channel FADEC, a digital engine control, and the cockpit
+is a Garmin G1000H glass panel. Private owners, tour operators and police fly it, and armed forces
+from Japan to Jordan train their helicopter pilots on it. Bell builds it at Mirabel, Quebec, and
+delivered the 505th in November 2023.
+"""
+
+[facts]
+"First flight" = "November 2014"
+"Engine" = "Safran Arrius 2R"
+"Main rotor" = "2 blades, from the 206L-4 LongRanger"
+"Built" = "505 by November 2023"

@@ -1,0 +1,33 @@
+name = "Cessna 172 Skyhawk"
+types = ["C172"]
+production = [1956]
+checked = "2026-11"
+sources = [
+  "https://cessna.txtav.com/en/piston/cessna-skyhawk",
+  "https://www.aopa.org/go-fly/aircraft-and-ownership/aircraft-fact-sheets/cessna-172",
+  "https://www.easa.europa.eu/es/downloads/7423/en",
+  "https://aviationweek.com/business-aviation/aircraft-propulsion/cessnas-172-still-going-strong-65",
+  "https://www.aopa.org/news-and-media/all-news/1996/september/pilot/newfound-independence",
+  "https://guinnessworldrecords.com/world-records/63093-longest-time-flying-an-aircraft",
+  "https://www.smithsonianmag.com/air-space-magazine/airborne-for-64-days-163974675/",
+]
+
+text = """
+More 172s have been built than any other aircraft: more than 45,000 since deliveries began in 1956,
+and it is still in production. Generations of pilots learned on one because it forgives mistakes: a
+high wing braced by a single strut, fixed tricycle gear, a stall at 48 knots clean and 40 with the
+flaps down, and handling that rarely surprises a student. Tell it from a Piper Cherokee, the other
+common trainer, by its wing, on top on the Cessna and underneath on the Piper. At its cruise of
+about 124 knots, in a stiff headwind it can be slower over the ground than the traffic on the
+freeway beneath it.
+
+Cessna stopped building piston aircraft in 1986, when liability lawsuits made them too costly to
+insure, and started the 172 again in 1996, two years after Congress limited that liability. In
+1958–59 two pilots kept one in the air over Las Vegas for 64 days and 22 hours, refuelling from a
+truck racing beneath them, and the record still stands.
+"""
+
+[facts]
+"Engine" = "Lycoming IO-360, 180 hp (172S)"
+"Range" = "640 nm (1,185 km), 172S"
+"Built at" = "Independence, Kansas, since 1996"

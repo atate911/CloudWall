@@ -1,0 +1,33 @@
+name = "Fairchild Republic A-10 Thunderbolt II"
+types = ["A10"]
+production = [1976, 1984]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Fairchild_Republic_A-10_Thunderbolt_II",
+  "https://en.wikipedia.org/wiki/GAU-8_Avenger",
+]
+
+text = """
+The A-10 was built around its gun: the Air Force wrote a 30 mm rotary cannon into the requirement,
+and Fairchild Republic shaped the fuselage around General Electric's seven-barrel GAU-8 Avenger,
+which with its drum full weighs more than 4,000 lb. The gun is mounted a little to the left so the
+barrel that is firing always lies on the centreline, and the nose wheel is offset to the right to
+make room. Its recoil averages 10,000 lb of force, slightly more than the thrust of either of the
+jet's two engines. The pilot sits in a 1,200 lb tub of titanium armour, and the A-10 is designed to
+fly with one engine, half its tail, one elevator and half a wing gone. Over Baghdad in 2003,
+Captain Kim Campbell flew one for nearly an hour with an engine damaged and the hydraulics knocked
+out, steering on its mechanical backup controls, and landed it safely.
+
+Its straight, broad wings are made for slow, tight flying close to the ground, its twin fins stand
+at the ends of the tailplane, and its two engine pods are perched high on the rear fuselage, where
+they are less likely to swallow debris from rough strips and can keep running while the ground crew
+rearm it. Many parts, the engines, main gear and fins among them, fit either side. Its crews named
+it the Warthog. Congress has resisted the Air Force's attempts to retire it for more than a decade,
+and as of 2026 the Air Force plans to keep it flying until 2030.
+"""
+
+[facts]
+"First flight" = "May 1972"
+"Gun" = "GAU-8/A Avenger, 30 mm, 3,900 rounds a minute"
+"Armour" = "1,200 lb (540 kg) of titanium around the cockpit"
+"Engines" = "2 × GE TF34, 9,065 lb thrust each"

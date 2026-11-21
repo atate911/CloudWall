@@ -1,0 +1,88 @@
+name = "Cessna CitationJet and CJ"
+types = ["C525", "C25M", "C25A", "C25B", "C25C"]
+production = [1993]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_CitationJet/M2",
+  "https://en.wikipedia.org/wiki/Williams_FJ44",
+  "https://en.wikipedia.org/wiki/Williams_International",
+  "https://www.jetaviva.com/from-cruise-missiles-to-business-jets-the-journey-of-the-williams-fj44-engine",
+  "https://www.ainonline.com/aviation-news/business-aviation/2017-06-08/textron-delivers-2000th-cj-family-aircraft",
+  "https://www.ainonline.com/aviation-news/business-aviation/2011-03-17/cessna-end-citation-cj1-production-summer",
+  "https://www.ainonline.com/aviation-news/business-aviation/2016-01-06/cessna-drops-citation-cj2-product-lineup",
+  "https://media.txtav.com/194661-cessna-celebrates-citation-m2-faa-certification-and-first-deliveries/",
+  "https://aviationweek.com/business-aviation/aircraft-propulsion/textron-aviation-delivers-500th-citation-cj4",
+  "https://www.govinfo.gov/content/pkg/FR-2011-11-01/html/2011-27596.htm",
+  "https://www.faa.gov/documentLibrary/media/Order/2017-03-07_FAA_Order_JO_7360.1B_Aircraft_Type_Designators.pdf",
+]
+
+text = """
+Cessna launched the CitationJet in 1989 to bring back the formula that had sold its first Citation,
+a small straight-winged jet docile enough for its owner to fly alone from short runways, but faster
+and cheaper to run. It kept the Citation I's round fuselage, 58 inches across inside, with a new
+wing carry-through that did away with the step the spar had made in the aisle. The wing is a
+natural-laminar-flow section developed with NASA, holding laminar flow over 30% of its upper
+surface, and to preserve that it is kept clear of ice by hot engine air instead of rubber boots. Its
+engines were the first production Williams FJ44s, from a company until then known for the little
+turbofans in cruise missiles and drones.
+
+Cessna has stretched it three times: the CJ2 in 2000, the CJ3 in 2004, and in 2010 the CJ4, with a
+swept wing derived from the bigger Citation Sovereign's and engines of nearly twice the original's
+thrust. In 2013 the CJ1 became the M2, with small winglets and a Garmin glass cockpit. Every one can
+be flown by a single pilot, and more than 2,000 had been delivered by 2017. The early CitationJets
+have no thrust reversers; two paddles behind the engines swing into the exhaust instead, as on
+Cessna's T-37 jet trainer. Otherwise the family looks much alike, small T-tailed jets with the
+engines high on the rear fuselage, and the CJ4's swept wing and the M2's winglets are the giveaways.
+"""
+
+[facts]
+"First flight" = "April 1991 (CitationJet)"
+"Engines" = "2 × Williams FJ44"
+
+[variants.C525]
+name = "Cessna CitationJet, CJ1 and CJ1+"
+production = [1993, 2011]
+[variants.C525.facts]
+"Engines" = "2 × Williams FJ44-1A; FJ44-1AP on the CJ1+"
+
+[variants.C25M]
+name = "Cessna Citation M2"
+production = [2013]
+[variants.C25M.facts]
+"First flight" = "March 2012"
+"Range" = "1,550 nm (2,871 km)"
+"Max takeoff weight" = "10,700 lb (4,853 kg)"
+"Engines" = "2 × Williams FJ44-1AP-21, 1,965 lb thrust"
+"Built" = "over 250"
+
+[variants.C25A]
+name = "Cessna Citation CJ2 and CJ2+"
+production = [2000, 2014]
+[variants.C25A.facts]
+"Max takeoff weight" = "12,500 lb (5,670 kg), CJ2+"
+"Engines" = "2 × Williams FJ44-2C; FJ44-3A-24 on the CJ2+"
+
+[variants.C25B]
+name = "Cessna Citation CJ3"
+production = [2004]
+[variants.C25B.facts]
+"First flight" = "April 2003"
+"Range" = "2,040 nm (3,778 km), CJ3+"
+"Max takeoff weight" = "13,870 lb (6,291 kg), CJ3+"
+"Engines" = "2 × Williams FJ44-3A, 2,820 lb thrust"
+"Built" = "over 500"
+
+[variants.C25C]
+name = "Cessna Citation CJ4"
+production = [2010]
+more = """
+The CJ4 is the biggest and fastest of the family, cruising at up to 451 knots, and the 500th was
+delivered in 2026. In 2011 the FAA briefly grounded it after fires in its lithium-ion main battery,
+two years before lithium-ion batteries grounded the Boeing 787.
+"""
+[variants.C25C.facts]
+"First flight" = "May 2008"
+"Range" = "2,165 nm (4,010 km)"
+"Max takeoff weight" = "17,110 lb (7,761 kg)"
+"Engines" = "2 × Williams FJ44-4A, 3,621 lb thrust"
+"Built" = "over 500"

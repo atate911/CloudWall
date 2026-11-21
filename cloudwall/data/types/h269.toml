@@ -1,0 +1,44 @@
+name = "Hughes / Schweizer 269 and 300"
+types = ["H269", "S330"]
+production = [1961]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Hughes_TH-55_Osage",
+  "https://en.wikipedia.org/wiki/Schweizer_S300",
+  "https://en.wikipedia.org/wiki/Schweizer_S333",
+  "https://en.wikipedia.org/wiki/Robinson_R22",
+]
+
+text = """
+Hughes surveyed the market in 1955, found demand for a cheap, light two-seater, and built the 269,
+half the weight of the smallest helicopter then in service. It flew in October 1956 and was simple
+to the bone: a fully articulated three-bladed rotor, a two-bladed tail rotor on a plain tube of a
+boom, skids on shock absorbers, and controls linked straight to the rotor with no hydraulics. The US
+Army bought it in 1964 as the TH-55A Osage, and until 1988 it was where Army helicopter pilots
+started; more than 60,000 learned on it.
+
+The three-seat 300 followed in 1964, and that year a 269 stayed up for 101 hours, refuelled in a
+hover by two pilots taking turns, with eggs fixed under its skids to prove it never touched down.
+The 300C of 1970 brought 190 hp and a bigger rotor. Schweizer built it under licence from 1983,
+bought the design in 1986 and made more than 250 small improvements, and it has since passed through
+Sikorsky to Schweizer RSG in Texas. Nearly 3,000 have been built. Tell it from a Robinson R22 by its
+three blades to the Robinson's two.
+"""
+
+[facts]
+"First flight" = "October 1956"
+"Engine" = "Lycoming HIO-360-D1A, 190 hp (300C)"
+"Built" = "nearly 3,000"
+
+[variants.S330]
+name = "Schweizer 330 and 333"
+production = [1992]
+more = """
+The Schweizer 330 put a Rolls-Royce (Allison) 250 turbine and a new four-seat body on the 300C's
+rotor and controls. Converted from a 300C, it first flew in June 1988 and was certified in 1992; the
+333 that followed has a larger rotor with cambered blades and nearly 30% more performance than the
+330SP. The Northrop Grumman Fire Scout drone began as a 330SP.
+"""
+[variants.S330.facts]
+"First flight" = "June 1988"
+"Engine" = "Rolls-Royce 250-C20W (330SP and 333)"

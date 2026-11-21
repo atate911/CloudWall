@@ -1,0 +1,46 @@
+name = "Piper PA-46"
+types = ["PA46", "P46T"]
+production = [1983]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Piper_PA-46",
+  "https://en.wikipedia.org/wiki/Autoland",
+  "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_Canada_PT6",
+  "https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/types.json",
+]
+
+text = """
+When it was certified in 1983 the Malibu was only the third pressurised piston single, after the
+Mooney M22 and Cessna's P210, and it has outlasted both by decades. Its cabin for six is
+pressurised to 5.5 psi, so the current M350, on a turbocharged 350 hp Lycoming, can fly as high as
+25,000 ft and cruises at up to 213 knots. The first Malibus had a 310 hp
+Continental, dropped in 1988 after a run of engine failures, and Piper also built an unpressurised
+version, the Matrix, from 2008 to 2015.
+
+In 2000 Piper put a 500 shp Pratt & Whitney Canada PT6A turboprop in it as the Malibu Meridian, now
+the M500, with larger wing and tail surfaces to take the power. The M600 of 2016 has a new wing and
+260 US gallons of fuel, and the M700 Fury of 2024 has 700 shp and cruises at 301 knots. In 2020 the
+M600 and the Cirrus Vision Jet were the first aircraft certified with Garmin's emergency autoland,
+which Piper calls HALO: a passenger presses a guarded button and the aircraft picks an airport by
+weather, wind and fuel, tells air traffic control, flies there and lands. The turboprops have a
+longer nose than the piston Malibus, and four or five propeller blades to their three.
+"""
+
+[facts]
+"First flight" = "November 1979"
+
+[variants.PA46]
+name = "Piper PA-46 Malibu, Mirage, Matrix or M350"
+[variants.PA46.facts]
+"Engine" = "Lycoming TIO-540, 350 hp (Continental TSIO-520, 310 hp, until 1988)"
+"Cruise" = "213 kt (M350)"
+"Range" = "1,343 nm (M350)"
+
+[variants.P46T]
+name = "Piper PA-46 Meridian, M500, M600 or M700"
+production = [2000]
+[variants.P46T.facts]
+"Engine" = "Pratt & Whitney Canada PT6A, 500 to 700 shp"
+"Cruise" = "260 kt (M500), 274 kt (M600), 301 kt (M700)"
+"Range" = "1,484 nm (M600)"
+"Ceiling" = "30,000 ft"

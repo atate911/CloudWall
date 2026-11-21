@@ -1,0 +1,37 @@
+name = "Airbus A380"
+types = ["A388"]
+production = [2007, 2021]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_A380",
+  "https://en.wikipedia.org/wiki/Itin%C3%A9raire_%C3%A0_Grand_Gabarit",
+  "https://en.wikipedia.org/wiki/Airbus_Beluga",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+The A380 is the only airliner with two passenger decks running its whole length, and its wing was
+sized for a maximum takeoff weight above 600 tonnes, to carry a stretched model and a freighter that
+were never built. Airport gates limited the span to 80 m, so Airbus made the wing broad from front
+to back instead, and that stubby shape costs the A380-800 about 10 percent in fuel. It was the first
+airliner with a centre wing box of carbon fibre; the upper fuselage is skinned in GLARE, a laminate
+of aluminium and glass fibre, and the hydraulics run at 5,000 psi instead of the usual 3,000 to save
+weight in pipes and actuators. Only the inboard engines have thrust reversers, so the outer ones,
+more than 25 m from the centreline, don't blow debris off the edge of the runway.
+
+Most of its fuselage sections are too big even for Airbus's Beluga transports, so they reached
+Toulouse by ship to Bordeaux, by barge up the Garonne and in road convoys that moved mostly at
+night. Singapore Airlines flew the first passengers in October 2007. Production ended in 2021 after
+251 deliveries, 123 of them to Emirates, and Airbus never recovered the $25 billion it had spent.
+From below it is unmistakable: four engines on a vast wing with fences above and below each tip, 22
+wheels, and windows along the whole upper deck, where a 747's stop short behind the cockpit.
+"""
+
+[facts]
+"First flight" = "April 2005"
+"Built" = "254, three of them test aircraft"
+"Max takeoff weight" = "575,000 kg (1,267,700 lb)"
+"Engines" = "4 × Rolls-Royce Trent 900 or Engine Alliance GP7200"
+
+[variants.A388]
+name = "Airbus A380-800"

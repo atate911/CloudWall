@@ -1,0 +1,32 @@
+name = "Cessna Citation Excel, XLS and Ascend"
+types = ["C56X"]
+production = [1998]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_Citation_Excel",
+  "https://www.ainonline.com/aviation-news/business-aviation/2021-04-13/textron-aviation-delivers-1000th-citation-560xl-twinjet",
+  "https://media.txtav.com/197869-textron-aviation-celebrates-1-000-deliveries-of-the-best-selling-cessna-citation-560xl-series",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Cessna built the Excel mostly from parts it already had: the stand-up cabin of the Citation X,
+shortened by about two feet, on an unswept supercritical wing based on the Citation II's, with the
+tail of the Citation V, its tailplane set partway up the fin. Two Pratt & Whitney Canada PW545
+turbofans hang on the rear fuselage. The idea was a jet with a cabin tall enough to stand in that
+would compete mainly with twin turboprops. It first flew on 29 February 1996, and by the time it was
+certified in 1998 more than 200 had been ordered; two years later one was leaving the Wichita line
+every three days.
+
+The 1,000th was delivered in March 2021, a total only a handful of business-jet families have
+reached, and charter and fractional fleets such as NetJets fly many of them. It has been updated
+three times without much change to its shape: the XLS of 2004 brought a glass cockpit and stronger
+engines, the XLS+ of 2008 digital engine control and a new nose like the Sovereign's, and the
+Ascend, in service from 2025, a flat cabin floor and bigger windows. A straight wing on a jet with a
+cabin this size, and that cruciform tail, set it apart from most of its rivals.
+"""
+
+[facts]
+"First flight" = "February 1996"
+"Engines" = "2 × Pratt & Whitney Canada PW545"
+"Built" = "over 1,000"

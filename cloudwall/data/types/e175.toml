@@ -1,0 +1,33 @@
+name = "Embraer 175"
+types = ["E75L", "E75S"]
+production = [2005]
+checked = "2026-11"
+sources = [
+  "https://www.embraer.com/media/5hun3qcb/e175_spec.pdf",
+  "https://www.embraer.com/media/vmsjxvk5/e-jets-e2_apm_e-jetse2.pdf",
+  "https://en.wikipedia.org/wiki/Embraer_E-Jet_family",
+  "https://en.wikipedia.org/wiki/Embraer_E-Jet_E2_family",
+  "https://aviationweek.com/air-transport/aircraft-propulsion/embraer-extends-e175-e2-pause-four-years",
+  "https://centreforaviation.com/news/skywest-to-operate-e175-aircraft-for-united-airlines-alaska-airlines-and-delta-air-lines-1357441",
+]
+
+text = """
+Seventy-six seats, two GE CF34-8E engines of about 14,200 lb thrust each, and 31.7 m long. More
+than 800 have been built in São José dos Campos, Brazil, and you'll see the same airframe in the
+colours of United Express, Delta Connection, American Eagle and Alaska. The engines hang under the
+wings, which tells it apart at a glance from the CRJ, the other regional jet, with its engines on
+the tail. Inside, a "double-bubble" fuselage, two overlapping circles in cross-section, gives a
+four-abreast cabin with full-size overhead bins and room for bags below.
+
+The 76 seats aren't an engineering limit. Pilot contracts cap the aircraft major airlines can hand
+to regional partners at that size and an 86,000 lb maximum takeoff weight, and the E175's
+long-range version is certified at 85,517 lb to fit underneath. Embraer's successor, the E175-E2,
+has geared turbofans and a longer wing, but at about 98,300 lb it is far too heavy. It has never
+entered service, and US airlines have kept buying the original.
+"""
+
+[facts]
+"First flight" = "June 2003"
+"Range" = "2,150 nm (3,980 km), E175LR"
+"Max takeoff weight" = "38,790 kg (85,517 lb), E175LR"
+"Engines" = "2 × GE CF34-8E"

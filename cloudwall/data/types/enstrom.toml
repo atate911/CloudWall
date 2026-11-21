@@ -1,0 +1,49 @@
+name = "Enstrom helicopters"
+types = ["EN28", "EN48"]
+production = [1965]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Enstrom_F-28",
+  "https://en.wikipedia.org/wiki/Enstrom_480",
+  "https://en.wikipedia.org/wiki/Enstrom_Helicopter_Corporation",
+]
+
+text = """
+Rudy Enstrom, a mining engineer in Michigan's Upper Peninsula, set out to build a helicopter of his
+own, and local businessmen were impressed enough to hire trained engineers and form a company around
+him in 1959. Its F-28 was certified in April 1965, by which time Enstrom himself had been pushed out,
+though the helicopters still carry his name. The company's hallmark is the rotor head: the links
+that change the pitch of the three blades run inside the hollow mast instead of outside it, which
+cuts drag and leaves the head clean, and most of the piston models since the F-28C of 1975 have a
+turbocharged Lycoming HIO-360.
+
+F. Lee Bailey, the criminal defence lawyer, bought the company in 1971, soon had it building more
+than a hundred helicopters a year, and brought out the 280 Shark, a streamlined F-28 that sold at
+once; its 280FX version is the one with fins at the ends of the tailplane. Later owners included
+Victor Kiam, Dean Kamen, who developed the Segway, and from 2013 a Chinese investor. Enstrom went
+bankrupt in January 2022, was bought that May, and flew its first new helicopter in January 2023.
+"""
+
+[facts]
+"Built at" = "Menominee, Michigan"
+
+[variants.EN28]
+name = "Enstrom F-28 and 280 Shark"
+[variants.EN28.facts]
+"Certified" = "April 1965"
+"Engine" = "Lycoming HIO-360, 225 hp turbocharged (F-28F)"
+
+[variants.EN48]
+name = "Enstrom 480"
+production = [1993]
+more = """
+The 480 began as the TH-28, Enstrom's entry when the US Army wanted a new turbine training
+helicopter: a 280 with a bigger cabin and a Rolls-Royce (Allison) 250 turbine. The Army didn't buy
+it, but Enstrom put it on sale in 1993, and Japan's ground forces train on it. The engine can make
+420 shp but is held to 305, so it has its full rated power up to 13,000 ft on a standard day, and
+the rotor and hub weigh 300 lb, enough stored energy to make an autorotation uneventful. Unusually
+for a helicopter, the pilot sits on the left.
+"""
+[variants.EN48.facts]
+"First flight" = "October 1989"
+"Engine" = "Rolls-Royce 250-C20W, held to 305 shp (480B)"

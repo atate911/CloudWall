@@ -1,0 +1,58 @@
+name = "Cessna 206 Stationair"
+types = ["C205", "C206", "T206", "C207"]
+production = [1962]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_206",
+  "https://en.wikipedia.org/wiki/Cessna_210_Centurion",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+  "https://www.doc8643.com/aircraft/T206",
+  "https://www.doc8643.com/aircraft/C207",
+]
+
+text = """
+The Stationair began as a Cessna 210 with its landing gear fixed down: the 205 of 1962 even kept the
+bulge in its cowling where the early 210 stowed its nosewheel. The 206 of 1964 smoothed the cowling,
+kept only the pilot's door on the left, and put a pair of cargo doors 42 inches wide on the right,
+opening onto the two rear rows of seats. Its name, Stationair, is short for station wagon of the
+air, and it is used like one, as a bush plane on wheels, floats or skis, for skydiving, for aerial
+photography and for freight. When production restarted in 1998, after twelve years, a 300 hp
+Lycoming took the place of the Continental.
+
+With the flaps down, the rear half of the cargo door will only open fully after a fiddly sequence,
+so the flaps are wired not to move while the doors are open, and Transport Canada certifies the 206H
+for five people rather than six. The 207 of 1969 stretched the 206 by 45 inches for seven seats, and
+eight from 1980. Eighteen inches went into a baggage compartment ahead of the cabin, which moved the
+propeller and nosewheel forward together and kept the propeller's ground clearance; the other 27
+went in behind the wing, which left the tail further behind the main wheels and a tail strike on
+landing easier. The 207 was popular with air-taxi operators, and few have been privately owned.
+"""
+
+[variants.C205]
+name = "Cessna 205"
+production = [1962, 1964]
+[variants.C205.facts]
+"Engine" = "Continental IO-470-S, 260 hp"
+"Max takeoff weight" = "3,300 lb (1,497 kg)"
+
+[variants.C206]
+name = "Cessna 206 Stationair"
+production = [1964, 2013]
+[variants.C206.facts]
+"Cargo doors" = "double, 42 in (107 cm), on the right"
+"Max takeoff weight" = "3,600 lb (1,633 kg), 206H"
+"Engine" = "Continental IO-520, 285–300 hp; Lycoming IO-540, 300 hp, from 1998"
+
+[variants.T206]
+name = "Cessna T206 Turbo Stationair"
+production = [1966]
+[variants.T206.facts]
+"Cargo doors" = "double, 42 in (107 cm), on the right"
+"Engine" = "Continental TSIO-520, 285–310 hp; Lycoming TIO-540, 310 hp, from 1999"
+
+[variants.C207]
+name = "Cessna 207 Stationair"
+production = [1969, 1984]
+[variants.C207.facts]
+"Engine" = "Continental IO-520 or turbocharged TSIO-520, 300–310 hp"
+"Max takeoff weight" = "3,800 lb (1,724 kg), 1969"

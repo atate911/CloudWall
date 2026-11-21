@@ -1,0 +1,60 @@
+name = "Fairchild Swearingen Metro"
+types = ["SW4", "SW3"]
+production = [1972, 2001]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Fairchild_Swearingen_Metroliner",
+  "https://en.wikipedia.org/wiki/Swearingen_Merlin",
+  "https://en.wikipedia.org/wiki/Fairchild_C-26_Metroliner",
+  "https://man.fas.org/dod-101/sys/ac/docs/a18sw.pdf",
+  "https://bjtonline.com/node/5356",
+  "https://skybrary.aero/aircraft/sw3",
+  "https://skybrary.aero/index.php/SW4",
+]
+
+text = """
+Ed Swearingen, a Texas engineer and fixed-base operator who had spent years modifying Beechcraft
+twins, designed the Metro as a stretch of his Merlin business turboprop. US rules let an airliner of
+up to 19 seats fly without a flight attendant, so the Metro was built around 19, in a long, narrow
+tube with 4 ft 9 in (1.45 m) of headroom and a single seat either side of the aisle. People have
+called it the flying pencil and the lawn dart. It flies on two Garrett TPE331 turboprops, and like a
+jet it trims with a moving tailplane, set part-way up the fin; the rival Beech 99 is one of the few
+other turboprops built that way.
+
+The Metro III of 1980 added 10 ft of wingspan, four-bladed propellers and gear doors that close
+behind the lowered wheels, and the Metro 23 that followed met the newer FAR Part 23 commuter
+standards. Fairchild sold a corporate version as the Merlin IV and a windowless freighter as the
+Expediter, and the US military flies it as the C-26. Production ended in 1998 after 703, and the
+last unsold airframe was delivered in 2001. It has been especially popular in Australia, and much of
+the fleet now flies freight; in 2019 the largest operator was Ameriflight, a cargo airline.
+"""
+
+[variants.SW4]
+name = "Fairchild Swearingen Metro / Merlin IV"
+[variants.SW4.facts]
+"First flight" = "August 1969"
+"Built" = "703, with the Merlin IV, Expediter and C-26"
+"Cabin height" = "4 ft 9 in (1.45 m)"
+"Max takeoff weight" = "16,500 lb (7,484 kg), Metro 23"
+"Engines" = "2 × Garrett (now Honeywell) TPE331"
+
+[variants.SW3]
+name = "Swearingen Merlin III"
+production = [1972, 1983]
+text = """
+The Merlin III is the short business version of the Swearingen family, in production from 1972
+alongside the Metro and built with the Metro's wing, its landing gear with two wheels on each leg,
+its cruciform tail and its Garrett TPE331 engines, and a longer nose with room for baggage. Like the
+Metro it trims with a moving tailplane, as jets do. It replaced the Merlin II, which Ed Swearingen
+had built by putting a new pressurised fuselage on Beechcraft Queen Air wings and Twin Bonanza
+landing gear.
+
+The IIIA of 1974 added windows, the IIIB of 1979 more powerful engines turning four-bladed
+propellers, and the IIIC was redesigned to meet newer certification rules; ten of the last 25 were
+built with winglets as the Merlin 300. The short-fuselage line closed in 1983 after 158.
+"""
+[variants.SW3.facts]
+"Built" = "158"
+"Engines" = "2 × Garrett TPE331-10U, 900 shp (Merlin IIIC)"
+"Max takeoff weight" = "13,230 lb (6,000 kg), Merlin IIIC"
+"Cruise" = "300 kt (Merlin IIIC)"

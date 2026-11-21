@@ -1,0 +1,33 @@
+name = "Boeing E-6 Mercury"
+types = ["E6"]
+production = [1988, 1992]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_E-6_Mercury",
+  "https://en.wikipedia.org/wiki/TACAMO",
+  "https://en.wikipedia.org/wiki/Communication_with_submarines",
+]
+
+text = """
+The last new aircraft built on the Boeing 707 airframe, and one of the least seen: sixteen were
+delivered to the US Navy between 1988 and 1992 to pass orders from the national command authority
+to ballistic-missile submarines at sea, a mission called TACAMO, for Take Charge And Move Out.
+Submarines under water listen on very low frequencies, which need an enormous transmitting antenna,
+so the E-6 reels out a long trailing wire and, by a technique the Navy calls stalling the wire, flies so
+that it hangs nearly vertical. For almost three decades, until 1991, a TACAMO aircraft was kept in
+the air around the clock. Upgraded to the E-6B from the late 1990s, it also took over the Air Force's
+Looking Glass role as an airborne command post, able to take control of nuclear forces, and even to
+launch Minuteman missiles, if the command centres on the ground were lost.
+
+It shares the 707-320 airframe of the E-3 Sentry, with the CFM56 engines of the British and French
+E-3s, but no radar disc, a 737 Next Generation flight deck, and a refuelling receptacle on top of the
+forward fuselage so that Air Force tankers can keep it aloft. The whole fleet is based at Tinker Air
+Force Base in Oklahoma. As of 2026 the Navy is replacing it with the E-130J, a version of the
+C-130J Hercules.
+"""
+
+[facts]
+"First flight" = "February 1987"
+"Built" = "16"
+"Max takeoff weight" = "342,000 lb (155,100 kg)"
+"Engines" = "4 × CFM International CFM56-2"

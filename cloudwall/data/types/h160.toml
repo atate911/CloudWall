@@ -1,0 +1,28 @@
+name = "Airbus Helicopters H160"
+types = ["H160"]
+production = [2021]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_Helicopters_H160",
+  "https://en.wikipedia.org/wiki/Fenestron",
+]
+
+text = """
+Airbus's successor to the Dauphin first flew in June 2015, and the first delivery, in December 2021,
+went to All Nippon Helicopter for news gathering in Japan. Its five Blue Edge main rotor blades are
+double-swept towards the tips, which weakens the vortex each blade meets as it passes through the
+wake of the one ahead, cutting the noise by 3 to 4 dB and adding about 100 kg of payload against a
+scaled-up Dauphin rotor. The Fenestron is canted at 12°, the first on a civil helicopter, and with a
+biplane tailplane it gives about 80 kg of extra lift, while the rotor mast leans 4° forward and 2°
+to the right. The double-swept blade tips and the tilted ring in the tail make it easy to pick out.
+
+The airframe is composite throughout, and it is the first helicopter to have electric landing gear
+and brakes instead of hydraulic ones, saving weight. France chose it in 2017 as the H160M Guépard to
+replace six older types across its army, navy and air force, from the Alouette III and the Gazelle
+to the Puma.
+"""
+
+[facts]
+"First flight" = "June 2015"
+"First delivery" = "December 2021, All Nippon Helicopter"
+"Engines" = "2 × Safran Arrano"

@@ -1,0 +1,39 @@
+name = "Cessna 340"
+types = ["C340", "C335"]
+production = [1971, 1984]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_340",
+  "https://avweb.com/features/used-aircraft-guide-cessna-340-340a/",
+  "https://www.flyingmag.com/used-aircraft-guide-cessna-340-boasts-cabin-class-comfort-and-pleasing-handling/",
+  "https://aopa.org/go-fly/aircraft-and-ownership/aircraft-fact-sheets/cessna-340",
+  "https://cfapps.icao.int/doc8643/8643_List3.cfm?mfc=CESSNA",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-C.htm",
+]
+
+text = """
+A pressurised cabin on the scale of a 310. Cessna conceived the 340 as a cabin-class development of
+the 310 and built it largely from parts it already had, the 310's tail and landing gear and the
+414's wing, around a new fuselage with six seats, an aisle between them and an airstair door. Work
+began in 1969, a prototype crashed in flight testing in 1970, and the first was delivered late, in
+1971. The 340A of 1976 has 310-hp turbocharged Continentals, and smaller propellers to meet the
+international noise rules. Its cabin holds a 4.2 psi difference from the air outside, enough to
+keep it at about 8,000 ft while the aircraft cruises at 20,000, so the passengers fly without
+oxygen masks.
+
+In 1979 Cessna offered it without pressurisation, cheaper and identical outside, as the 335. Only
+about 65 were sold before it was dropped in 1980, while the 340 stayed in production until 1984.
+"""
+
+[facts]
+"Pressurisation" = "4.2 psi (340A)"
+"Engines" = "2 × Continental TSIO-520, turbocharged, 285 hp; 310 hp (340A)"
+"Max takeoff weight" = "5,990 lb (2,717 kg), 340A"
+"Ceiling" = "29,800 ft (340A)"
+
+[variants.C335]
+name = "Cessna 335"
+production = [1979, 1980]
+[variants.C335.facts]
+"Pressurisation" = "None"
+"Engines" = "2 × Continental TSIO-520-EB, turbocharged, 300 hp"

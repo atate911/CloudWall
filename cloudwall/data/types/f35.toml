@@ -1,0 +1,36 @@
+name = "Lockheed Martin F-35 Lightning II"
+types = ["F35"]
+production = [2006]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Lockheed_Martin_F-35_Lightning_II",
+  "https://en.wikipedia.org/wiki/Lockheed_Martin_F-35_Lightning_II_development",
+  "https://en.wikipedia.org/wiki/Lockheed_Martin_X-35",
+  "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_F135",
+]
+
+text = """
+One design comes in three versions: the F-35A for air forces, the F-35B, which can take off in a
+short run and land vertically, for the Marines and for carriers without catapults, and the F-35C
+for the Navy's carriers, with a larger, folding wing and a stronger hook and undercarriage. In the
+B, a shaft from the engine drives a lift fan behind the cockpit while the nozzle at the tail
+swivels down on three angled bearings, the fan and the nozzle each giving close to half the lift.
+In July 2001 the X-35B prototype took off in under 500 ft, went supersonic and landed vertically on
+the same flight, and that October Lockheed Martin won the contest against Boeing's X-32. The 35 ft
+span of the A and B is set by the deck parking spots and lifts of US Navy amphibious assault ships.
+
+Its pilots have no head-up display: flight and targeting information is projected onto the helmet
+visor wherever they look, and cameras around the airframe let them see through it. The single Pratt
+& Whitney F135, grown from the F-22's F119, makes 43,000 lb of thrust with afterburner. More than
+1,000 have been built, at Fort Worth, Texas, and on final assembly lines in Italy and Japan, for
+the US and more than ten other countries. It is the most expensive weapons programme ever, and much
+criticised for its overruns and delays. Tell it from the F-22 by its single engine, with a round
+exhaust edged in sawteeth, and its intakes, which have a bump where most fighters have a splitter
+plate.
+"""
+
+[facts]
+"First flight" = "December 2006"
+"Top speed" = "Mach 1.6"
+"Built" = "over 1,000"
+"Engine" = "Pratt & Whitney F135, 43,000 lb thrust with afterburner"

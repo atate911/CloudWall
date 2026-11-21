@@ -1,0 +1,51 @@
+name = "Boeing 737 Original"
+types = ["B731", "B732"]
+production = [1967, 1988]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_737",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://en.wikipedia.org/wiki/Aloha_Airlines_Flight_243",
+  "https://en.wikipedia.org/wiki/Nolinor_Aviation",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://www.skybrary.aero/index.php/B731",
+]
+
+text = """
+When Boeing began the 737 in 1964 it was years behind: the Caravelle had carried passengers since
+1959, and the DC-9 and BAC One-Eleven were already in flight testing. To catch up it took 60% of the
+727's structure and systems, including the fuselage cross-section the 727 had inherited from the
+707, which seated six abreast where the DC-9 seated five. Engineer Joe Sutter moved the engines from
+the tail to the wings and mounted them straight onto the underside, with no pylons, so the landing gear
+could be short and the cabin sit low, a stance every later 737 has had to fit its engines around.
+On the -100 and -200 the slim JT8Ds hug the wing, their tailpipes reaching back past it; the pipes
+grew 48 inches in 1968, when the original reversers proved to lift the aircraft off its brakes and
+were replaced by target-type reversers at the end of the pipe.
+
+Lufthansa launched it, the first foreign airline to launch a new Boeing, but only 30 of the short
+-100 were built. The -200, stretched 1.9 m for United, was the one airlines wanted, and even so only
+22 737s were delivered in 1972; Air Force T-43 navigator trainers and orders from African airlines
+kept the line going until US deregulation in 1978 brought demand back. In 1988 metal fatigue and
+corrosion tore 18 ft of roof off an Aloha -200 that had made nearly 90,000 flights; it landed on
+Maui with blue sky above the front rows, but a flight attendant was swept out.
+
+Boeing offered a gravel kit for unpaved strips, a deflector on the nose gear and a vortex dissipator
+jutting forward from each engine, and that is how the type has hung on. As of 2026 Nolinor Aviation,
+the largest operator, flies ten gravel-kitted -200 combis in northern Canada; one of them, C-GNLK,
+delivered in 1974, is the oldest jet airliner still carrying paying passengers.
+"""
+
+[facts]
+"First flight" = "April 1967"
+"Engines" = "2 × Pratt & Whitney JT8D"
+
+[variants.B731]
+name = "Boeing 737-100"
+production = [1967, 1969]
+[variants.B731.facts]
+"Built" = "30"
+
+[variants.B732]
+name = "Boeing 737-200"
+[variants.B732.facts]
+"Built" = "1,114"

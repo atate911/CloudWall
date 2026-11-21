@@ -1,0 +1,63 @@
+name = "Learjet 40, 45, 70 and 75"
+types = ["LJ40", "LJ45", "LJ70", "LJ75"]
+production = [1998, 2022]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Learjet_45",
+  "https://en.wikipedia.org/wiki/Learjet_40",
+  "https://en.wikipedia.org/wiki/Learjet_75",
+  "https://en.wikipedia.org/wiki/Learjet",
+  "https://en.wikipedia.org/wiki/Learjet_23",
+]
+
+text = """
+The Learjet 45 was the first all-new Learjet since the original Model 23: every model in between had
+grown out of that 1963 design. It first flew on 7 October 1995, 32 years to the day after the 23,
+and Bombardier, which had bought Learjet in 1990, gave it a lighter structure than the old jets'
+many-spar wings, a flat-floored cabin with a non-circular section for headroom, wings from de
+Havilland Canada and a fuselage and tail from Shorts in Belfast. It kept the family look, with a
+sharp nose, a wrap-around windscreen, a T-tail and winglets, and two small "delta fins" under the
+tail that steady it and help it recover from a deep stall. Early owners had a love-hate relationship
+with it, and a faulty tailplane fastener grounded the fleet for a month in 2003, but by 2017 Business
+& Commercial Aviation was calling it a rock-solid, reliable workhorse.
+
+The 40 is a 45 shortened by two feet, and the XR versions of both have engines that hold their
+full thrust on hotter days. The
+70 and 75 of 2013 brought engines with 10% more takeoff thrust, Garmin G5000 touch-screen avionics
+and canted winglets borrowed from the Global 7500's design. They were the last Learjets. Bombardier
+ended production in 2021 to concentrate on its Challengers and Globals, and the final 75 was
+delivered on 28 March 2022, almost 60 years after the first Learjet flew and more than 3,000
+Learjets later.
+"""
+
+[facts]
+"First flight" = "October 1995, Learjet 45"
+"Ceiling" = "51,000 ft"
+
+[variants.LJ40]
+name = "Learjet 40"
+production = [2004, 2013]
+[variants.LJ40.facts]
+"First flight" = "August 2002"
+"Engines" = "2 × Honeywell TFE731-20"
+
+[variants.LJ45]
+name = "Learjet 45"
+production = [1998, 2012]
+[variants.LJ45.facts]
+"First flight" = "October 1995"
+"Engines" = "2 × Honeywell TFE731-20"
+
+[variants.LJ70]
+name = "Learjet 70"
+production = [2013, 2015]
+[variants.LJ70.facts]
+"Built" = "13"
+"Engines" = "2 × Honeywell TFE731-40BR, 3,850 lbf"
+
+[variants.LJ75]
+name = "Learjet 75"
+production = [2013, 2022]
+[variants.LJ75.facts]
+"Built" = "156"
+"Engines" = "2 × Honeywell TFE731-40BR, 3,850 lbf"

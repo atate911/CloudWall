@@ -1,0 +1,59 @@
+name = "Cessna 414 and 421"
+types = ["C421", "C414", "C411"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_421",
+  "https://en.wikipedia.org/wiki/Cessna_414",
+  "https://en.wikipedia.org/wiki/Cessna_411",
+  "https://www.aopa.org/news-and-media/all-news/2026/june/flight-training/ramp-appeal-cessna-421-golden-eagle",
+  "https://planeandpilotmag.com/cessna-421-golden-eagle-2/",
+  "https://cfapps.icao.int/doc8643/8643_List3.cfm?mfc=CESSNA",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-C.htm",
+]
+
+text = """
+The 421 Golden Eagle is Cessna's 411 with a pressurised cabin, and when it appeared in 1967 it sold
+200 in its first year. Like the 411 it has geared engines: its turbocharged Continental GTSIO-520s
+drive their propellers through a reduction gearbox, so each six-cylinder engine can turn fast enough
+to make 375 hp while its propeller turns slower. The turbochargers also supply the air that
+pressurises the cabin. Those geared engines, an ageing pressurisation system and the insurance make
+it an expensive aircraft to keep. Some have been converted to turboprops, and Cessna itself
+developed the 421 into a turboprop, the 425 Conquest I.
+
+The 414 of 1968 put the 421's cabin on the wing of the cheaper 401, with direct-drive 310-hp
+engines, as a less costly way into pressurisation. Both later moved their fuel from the wingtips
+into the wing itself, the 421C in 1976 and the 414A Chancellor, on a longer wing, in 1978, so the
+ones with plain wingtips are the later models. Cessna built both until 1985.
+"""
+
+[facts]
+"First flight" = "October 1965 (421)"
+"Engines" = "2 × Continental GTSIO-520, geared and turbocharged, 375 hp (421)"
+"Max takeoff weight" = "7,450 lb (3,379 kg), 421C"
+"Built" = "about 1,900 (421)"
+
+[variants.C421]
+name = "Cessna 421 Golden Eagle"
+production = [1967, 1985]
+
+[variants.C414]
+name = "Cessna 414 Chancellor"
+production = [1968, 1985]
+[variants.C414.facts]
+"First flight" = "November 1968"
+"Engines" = "2 × Continental TSIO-520, turbocharged, 310 hp"
+"Max takeoff weight" = "6,750 lb (3,062 kg), 414A"
+"Built" = "1,070"
+
+[variants.C411]
+name = "Cessna 411"
+more = """
+The 411 that began the line first flew in July 1962, then the biggest business aircraft Cessna had
+put into production: eight seats, no pressurisation and 340-hp geared engines. Only 302 were built,
+until 1968, but the 401 and 402 grew from it as well as the 421.
+"""
+[variants.C411.facts]
+"First flight" = "July 1962"
+"Engines" = "2 × Continental GTSIO-520-C, geared and turbocharged, 340 hp"
+"Max takeoff weight" = "6,500 lb (2,948 kg)"
+"Built" = "302"

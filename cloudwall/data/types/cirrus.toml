@@ -1,0 +1,55 @@
+name = "Cirrus SR20 and SR22"
+types = ["SR20", "SR22", "S22T"]
+production = [1999]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cirrus_SR22",
+  "https://en.wikipedia.org/wiki/Cirrus_SR20",
+  "https://en.wikipedia.org/wiki/Cirrus_Airframe_Parachute_System",
+  "https://www.cirruspilots.org/Safety/CAPS",
+  "https://www.aopa.org/news-and-media/all-news/2025/august/flight-training/what-am-i-caps",
+  "https://www.aopa.org/news-and-media/all-news/2018/march/flight-training-magazine/how-it-works-airframe-parachute",
+  "https://befa.org/wp-content/uploads/2021/04/Cirrus-CAPS-Maintenance-Manual.pdf",
+  "https://www.atsb.gov.au/sites/default/files/2024-03/AO-2023-011%20Final_0.pdf",
+  "https://www.businesswire.com/news/home/20260325996740/en/",
+  "https://aviationweek.com/business-aviation/aircraft-propulsion/20twenty-cirrus-sr22-perennial-piston-best-seller",
+  "https://assemblymag.com/articles/85800-cirrus-soars-with-composites",
+  "https://cirrusaircraft.com/wp-content/uploads/2024/01/NorthAmerica_SR22_PriceList_2026.pdf",
+  "https://cirrusaircraft.com/wp-content/uploads/2024/01/NorthAmerica_SR22T_PriceList_2026.pdf",
+  "https://www.aopa.org/go-fly/aircraft-and-ownership/aircraft-fact-sheets/cirrus-sr22",
+  "https://www.aopa.org/news-and-media/all-news/2017/january/04/cirrus-melds-new-panel-upgrades-into-2017-models",
+  "https://www.aopa.org/news-and-media/all-news/2010/june/19/cirrus-introduces-new-turbocharged-model",
+  "https://www.faa.gov/documentLibrary/media/Order/2023-03-24_Order_JO_7360.1H_Aircraft_Type_Designators_FINAL_SIGNED.pdf",
+]
+
+text = """
+Every Cirrus carries a parachute for the whole aircraft. Pull a red handle in the cabin ceiling and a
+rocket bursts through a cover behind the cabin, pulling the canopy out, and the aircraft comes down
+under it. As of 2026 the system has been credited with saving more than 300 lives. That, a composite
+airframe assembled in Duluth, Minnesota, and a glass cockpit have made the SR22 the best-selling
+piston aircraft in the world every year since 2003.
+
+The SR22 has a 310 hp Continental and cruises at up to 183 knots; the turbocharged SR22T goes higher
+and faster still. Pilots fly it with a side yoke instead of a control wheel. It is a sleek low-wing
+single with fixed gear in fairings and a three-bladed propeller, and the parachute's cover sits on
+top of the fuselage behind the cabin, with a rocket warning placard on either side.
+"""
+
+[facts]
+"First flight" = "March 1995 (SR20)"
+"Engine" = "Continental IO-550-N, 310 hp (SR22)"
+
+[variants.SR20]
+name = "Cirrus SR20"
+[variants.SR20.facts]
+"Engine" = "Lycoming IO-390, 215 hp (from 2017)"
+
+[variants.SR22]
+name = "Cirrus SR22"
+production = [2001]
+
+[variants.S22T]
+name = "Cirrus SR22T"
+production = [2010]
+[variants.S22T.facts]
+"Engine" = "Continental TSIO-550-K, 315 hp"

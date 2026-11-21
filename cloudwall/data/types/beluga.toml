@@ -1,0 +1,47 @@
+name = "Airbus Beluga"
+types = ["A3ST", "A337"]
+production = [1995, 2023]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_Beluga",
+  "https://en.wikipedia.org/wiki/Airbus_BelugaXL",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Airbus builds its aircraft in pieces across Europe, wings in Britain, fuselage sections in Germany
+and France, tails in Spain, and flies the pieces to its final assembly lines. Until the 1990s it
+used Super Guppies, 1940s Boeing Stratocruisers rebuilt with bulbous fuselages, and the joke went
+that every Airbus was delivered on the wings of a Boeing. Their replacement, first flown in 1994,
+was an A300-600 with a hold 7.1 m across built on top and the cockpit moved down below the cargo
+floor, so the whole nose could swing up for loading without disconnecting the flight controls,
+hydraulics and wiring. That halved loading times, and the five Belugas carried Airbus's parts for a
+third of what the Guppies had cost.
+
+The hold has more room than a C-5's or an An-124's, though the Beluga can lift only 47 tonnes, and
+most A380 fuselage sections were still too big for it. Its successor, the BelugaXL, is built on the
+A330-200 and entered service in January 2020. It is 6.9 m longer and 1.7 m wider than the original
+and carries two A350 wings where the Beluga took one. Six XLs had taken over Airbus's own flights by
+2023, and as of 2026 the original Belugas are being retired, the last expected to go in 2027.
+"""
+
+[facts]
+"Engines" = "2 × GE CF6-80C2A8"
+
+[variants.A3ST]
+name = "Airbus A300-600ST Beluga"
+production = [1995, 1999]
+[variants.A3ST.facts]
+"First flight" = "September 1994"
+"Built" = "5"
+"Cargo volume" = "1,500 m³ (53,000 cu ft)"
+"Max payload" = "47,000 kg (103,600 lb)"
+
+[variants.A337]
+name = "Airbus BelugaXL"
+production = [2020, 2023]
+[variants.A337.facts]
+"First flight" = "July 2018"
+"Built" = "6"
+"Cargo volume" = "2,209 m³ (78,000 cu ft)"
+"Engines" = "2 × Rolls-Royce Trent 700"

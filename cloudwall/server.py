@@ -3,12 +3,13 @@ import hashlib
 import json
 import logging
 import mimetypes
+import re
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from . import airports
+from . import about, airports
 
 CODE = Path(__file__).resolve().parent
 WEB = CODE / "web"
@@ -135,6 +136,12 @@ def make_server(cfg, places, charts=None, logos=None):
                 return self._send(200, place.heatmap())
             if path == "/api/logbook":
                 return self._send(200, place.logbook())
+            if path == "/api/type":
+                code = (q.get("type") or [""])[0].strip().upper()
+                hexid = (q.get("hex") or [""])[0].strip().lower()
+                if not about.CODE.match(code):
+                    return self._send(400, {"error": "type must be an ICAO type designator, such as B39M"})
+                return self._send(200, place.about_type(code, hexid if re.fullmatch(r"[0-9a-f]{1,8}", hexid) else None))
             if path.startswith("/tiles/"):
                 return self._tile(path)
             if path.startswith("/logos/"):

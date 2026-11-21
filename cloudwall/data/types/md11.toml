@@ -1,0 +1,31 @@
+name = "McDonnell Douglas MD-11"
+types = ["MD11"]
+production = [1990, 2001]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/McDonnell_Douglas_MD-11",
+  "https://boeing.mediaroom.com/2013-10-01-Boeing-Completes-MD-11-Freighter-Transition-to-AV-Cargo",
+  "https://www.ntsb.gov/safety/safety-recs/RecLetters/A-14-004-007.pdf",
+  "https://www.ntsb.gov/investigations/Pages/DCA26MA024.aspx",
+  "https://www.ntsb.gov/investigations/Documents/Preliminary%20Report%20DCA26MA024.pdf",
+  "https://en.wikipedia.org/wiki/UPS_Airlines_Flight_2976",
+  "https://www.aircargonews.net/freighter-operator/2026/09/majority-of-fedexs-md-11fs-now-back-in-action/",
+  "https://www.freightwaves.com/news/more-fedex-md-11-cargo-jets-return-to-service-others-are-retired",
+]
+
+text = """
+The last of the big trijets, a stretched DC-10 with winglets, a glass cockpit for two pilots and a
+third engine set into the base of the tail fin. It fell short of its promised range when it entered
+service in 1990, airlines that had ordered it for passengers took 777s and A340s instead, and only
+200 were built. Nearly all ended up flying cargo.
+
+To save fuel, McDonnell Douglas gave it a tailplane 30% smaller than the DC-10's, with a fuel tank
+inside, and let computers make up for the stability that cost. It comes in fast, at up to 186 knots
+on approach, and earned a name among pilots as demanding in the flare. In November 2025 a UPS MD-11
+lost its left engine and pylon as it took off from Louisville and crashed, and the FAA grounded the
+type until May 2026. UPS retired its MD-11s; as of 2026 FedEx is flying most of its own again.
+"""
+
+[facts]
+"Built" = "200"
+"Engines" = "3 × GE CF6-80C2 or Pratt & Whitney PW4000"

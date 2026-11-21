@@ -1,0 +1,203 @@
+name = "Van's RV"
+types = ["RV3", "RV4", "RV4T", "RV6", "RV7", "RV8", "RV9", "RV10", "RV12", "RV14", "RV15"]
+checked = "2026-11"
+sources = [
+  "https://www.vansaircraft.com/company/",
+  "https://www.vansaircraft.com/first-flights/",
+  "https://www.vansaircraft.com/rv-design/",
+  "https://www.vansaircraft.com/legacyrvs/",
+  "https://www.vansaircraft.com/rv-7/",
+  "https://www.vansaircraft.com/rv-8/",
+  "https://www.vansaircraft.com/rv-9/",
+  "https://www.vansaircraft.com/rv-10/",
+  "https://www.vansaircraft.com/rv-12is/",
+  "https://www.vansaircraft.com/rv-14/",
+  "https://www.vansaircraft.com/rv-15/",
+  "https://www.vansaircraft.com/2025/12/first-rv-15-kits-delivered/",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft",
+  "https://en.wikipedia.org/wiki/Richard_VanGrunsven",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-3",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-4",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-6",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-7",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-8",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-9",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-10",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-12",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-14",
+  "https://en.wikipedia.org/wiki/Van%27s_Aircraft_RV-15",
+  "https://en.wikipedia.org/wiki/Jon_Johanson",
+  "https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/types.json",
+]
+
+text = """
+More RVs have been built than any other kit aircraft: as of 2026 Van's Aircraft counts more than
+11,500 finished and flown, in at least 45 countries, with about one and a half more completed every
+day. Their builders rivet them together from aluminium sheet, in garages and hangars, from kits made
+in Aurora, Oregon. "RV" stands for Richard VanGrunsven, who in 1965 gave a homebuilt Stits Playboy
+new aluminium wings as the RV-1 and then drew the single-seat RV-3, which set the pattern for the
+low-wing RVs since: a short constant-chord wing with no taper or twist, a stick between the knees and
+simple fixed steel gear. An A after the model number means a nosewheel; without it, the aircraft sits
+on a tailwheel.
+
+VanGrunsven called the aim "Total Performance": not the best at any one thing, but very good at as
+many as possible. On 180 to 200 hp the low-wing two-seaters cruise at about 175 knots and get off
+the ground in a few hundred feet, and every RV up to the RV-8, and the RV-14, is aerobatic: at 1,600 lb an RV-7
+or RV-8 meets the FAA's aerobatic standard of +6 and −3 g with two aboard. The RV-9, the four-seat
+RV-10 and the light-sport RV-12 give up aerobatics for stability. Since the RV-9 the kits have come
+with every rivet hole punched in place, so they need no jigs, and an RV-7 takes an average builder
+about 1,500 hours.
+"""
+
+[variants.RV3]
+name = "Van's RV-3"
+production = [1973, 2025]
+more = """
+The only single-seater Van's has sold, and only as a taildragger, the RV-3 was the first of the line:
+VanGrunsven's prototype won an award for its aerodynamic detailing at Oshkosh in 1972 and is on
+display in the EAA museum there. Kit sales stopped in 1996 over concerns about the wing's structure
+and resumed a few years later with a new wing; aircraft with it are RV-3Bs.
+"""
+[variants.RV3.facts]
+"Layout" = "single seat, tailwheel"
+"Engine" = "100 to 160 hp"
+"Top speed" = "180 kt (150 hp)"
+"Built" = "over 300 completed"
+
+[variants.RV4]
+name = "Van's RV-4"
+production = [1980, 2025]
+more = """
+The RV-4 is a two-seat development of the RV-3, with the passenger behind the pilot, sold only as a
+taildragger. The Australian Jon Johanson flew his around the world three times, and in 2003 over the South Pole,
+the first solo flight there in a single-engine homebuilt. The base at McMurdo, not wanting to
+encourage private flights, refused to sell him fuel, and he flew on only after the aviator Polly
+Vacher gave him some.
+"""
+[variants.RV4.facts]
+"Layout" = "two in tandem, tailwheel"
+"Engine" = "150 to 180 hp"
+"Top speed" = "184 kt (180 hp)"
+"Built" = "over 1,450 completed"
+
+[variants.RV4T]
+name = "Van's RV-4 with a turbine engine"
+[variants.RV4T.facts]
+"Layout" = "two in tandem, tailwheel"
+"Engine" = "a turbine in place of the usual piston engine"
+
+[variants.RV6]
+name = "Van's RV-6 or RV-6A"
+production = [1986, 2001]
+more = """
+The RV-6 put two people side by side, and with the RV-6A Van's offered a nosewheel for the first
+time. It soon became the best-selling kit aircraft of its day, and more have flown than any other RV.
+Nigeria's air force bought 60 kits, assembled them at home and from 1989 trained its pilots on them
+as the Air Beetle.
+"""
+[variants.RV6.facts]
+"Layout" = "two side by side; tailwheel, or nosewheel on the RV-6A"
+"Engine" = "150 to 180 hp"
+"Top speed" = "182 kt (180 hp)"
+"Built" = "over 2,650 completed"
+
+[variants.RV7]
+name = "Van's RV-7 or RV-7A"
+production = [2001]
+more = """
+The RV-7 replaced the RV-6 in 2001, with a longer wing, more fuel, room for engines up to 215 hp and
+a larger rudder for better spin recovery. The 10,000th RV to fly, in 2017, was an RV-7 built in
+Martinsburg, West Virginia.
+"""
+[variants.RV7.facts]
+"Layout" = "two side by side; tailwheel, or nosewheel on the RV-7A"
+"Engine" = "150 to 215 hp"
+"Top speed" = "188 kt (200 hp)"
+"Built" = "over 2,000 completed"
+
+[variants.RV8]
+name = "Van's RV-8 or RV-8A"
+production = [1996]
+more = """
+Van's brought out the RV-8, a larger tandem two-seater, in 1996 for pilots who wanted the RV-4's
+fighter-like seat on the centreline with more room: the front takes a pilot of up to 6 ft 7 in, and
+baggage bays ahead of and behind the cockpit help keep it in balance. Van's rates it the fastest RV,
+and many are painted in military colours.
+"""
+[variants.RV8.facts]
+"Layout" = "two in tandem; tailwheel, or nosewheel on the RV-8A"
+"Engine" = "150 to 215 hp"
+"Top speed" = "192 kt (200 hp)"
+"Built" = "over 1,650 completed"
+
+[variants.RV9]
+name = "Van's RV-9 or RV-9A"
+production = [2001]
+more = """
+The RV-9 puts the RV-7's fuselage on a longer, narrower wing with a Roncz airfoil and big slotted
+flaps, for touring rather than aerobatics. It stalls about as slowly as a Cessna 150, and Van's flew
+the prototype on a 118 hp Lycoming taken from a Cessna 152. Unusually, the nosewheel RV-9A flew
+first, in 2000, and most of those built are As.
+"""
+[variants.RV9.facts]
+"Layout" = "two side by side; nosewheel on the RV-9A, or tailwheel"
+"Engine" = "118 to 160 hp"
+"Top speed" = "170 kt (160 hp)"
+"Built" = "over 1,200 completed"
+
+[variants.RV10]
+name = "Van's RV-10"
+production = [2003]
+more = """
+The first four-seat RV, sold only with a nosewheel, and the first without a canopy: you board through
+gull-wing doors on either side. Built for touring rather than aerobatics, around a 260 hp
+six-cylinder Lycoming, it carries four adults, full fuel and 60 lb of baggage within its weight
+limit, and Van's reckons an average builder needs about 2,000 hours to finish one.
+"""
+[variants.RV10.facts]
+"Layout" = "four seats, nosewheel"
+"Engine" = "Lycoming IO-540, 235 to 260 hp"
+"Top speed" = "181 kt (260 hp)"
+"Built" = "over 1,050 completed"
+
+[variants.RV12]
+name = "Van's RV-12 or RV-12iS"
+production = [2008]
+more = """
+The RV-12 is a light-sport two-seater with a 100 hp Rotax, sold as a kit or, since 2013, ready to
+fly, which lets it be used for hire and training. Two people can take its wings off in under five minutes and tow it
+home on a trailer. VanGrunsven, now in his eighties, spends his Saturdays teaching young people to
+build them.
+"""
+[variants.RV12.facts]
+"Layout" = "two side by side, nosewheel"
+"Engine" = "Rotax 912, 100 hp"
+"Top speed" = "125 kt (912 iS)"
+"Built" = "over 950 completed"
+
+[variants.RV14]
+name = "Van's RV-14 or RV-14A"
+production = [2012]
+more = """
+Van's set out to give two people the room of the four-seat RV-10: the cabin is as wide as many
+four-seaters', takes occupants of 6 ft 4 in and taller, and sits under a canopy that tips forward. It
+stands noticeably taller than the earlier two-seaters, and it is still aerobatic.
+"""
+[variants.RV14.facts]
+"Layout" = "two side by side; tailwheel, or nosewheel on the RV-14A"
+"Engine" = "200 to 220 hp, usually a Lycoming IO-390"
+"Top speed" = "188 kt (215 hp)"
+"Built" = "over 300 completed"
+
+[variants.RV15]
+name = "Van's RV-15"
+production = [2025]
+more = """
+Van's first high-wing design, a strut-braced taildragger for back-country strips, with big Fowler
+flaps, tundra tyres and 60 US gallons of fuel, designed to cruise at 140 knots and to take off and
+land in under 400 ft. The first wing kits went to builders in December 2025.
+"""
+[variants.RV15.facts]
+"Layout" = "two side by side, tailwheel"
+"Engine" = "Lycoming IO-390 on the prototype"
+"Cruise" = "140 kt (design target)"

@@ -1,0 +1,69 @@
+name = "Boeing 747"
+types = ["B741", "B742", "B743", "B744", "B748", "BLCF"]
+production = [1969, 2023]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_747",
+  "https://en.wikipedia.org/wiki/Boeing_747-400",
+  "https://en.wikipedia.org/wiki/Boeing_747-8",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://www.historylink.org/file/21243",
+  "https://www.boeing.com/resources/boeingdotcom/company/about_bca/startup/pdf/historical/747-8I_-_passenger.pdf",
+  "https://www.flightglobal.com/airframers/from-freighters-to-air-force-one-how-the-current-747-fleet-is-deployed/151866.article",
+  "https://en.wikipedia.org/wiki/Boeing_Dreamlifter",
+]
+
+text = """
+Pan Am asked for an airliner more than twice the size of the 707, and Boeing, expecting supersonic
+airliners to take over passenger flying, designed the 747 to end its days as a freighter. It put the
+cockpit up on a short upper deck so the whole nose could swing up for loading, and the hump that
+made it famous is the fairing behind that cockpit. It first flew in February 1969, from a factory in
+Everett built for it that is still the largest building in the world by volume.
+
+The 747 was the first widebody, alone in airline service until the DC-10 arrived in 1971, and
+carried more people than any airliner before it. 1,574 were built before the line closed in 2023,
+and today most of those still flying carry cargo. Its four engines and hump make it unmistakable;
+the -300 stretched the upper deck, the -400 added winglets, and the -8 a longer body, raked wingtips
+and saw-tooth engine nacelles.
+"""
+
+[facts]
+"First flight" = "February 1969"
+"Built" = "1,574"
+
+[variants.B741]
+name = "Boeing 747-100"
+
+[variants.B742]
+name = "Boeing 747-200"
+
+[variants.B743]
+name = "Boeing 747-300"
+
+[variants.B744]
+name = "Boeing 747-400"
+[variants.B744.facts]
+"Max takeoff weight" = "875,000 lb (396,900 kg); 910,000 lb (412,800 kg) on the -400ER"
+
+[variants.B748]
+name = "Boeing 747-8"
+production = [2011, 2023]
+[variants.B748.facts]
+"Max takeoff weight" = "987,000 lb (447,700 kg)"
+
+[variants.BLCF]
+name = "Boeing 747 Dreamlifter"
+more = """
+The Dreamlifter is one of four used 747-400s that Boeing had rebuilt in Taiwan from 2006 to fly 787
+parts, wings from Japan and fuselage sections from Italy among them, to final assembly in the United
+States, cutting the wings' journey from about 30 days to just over eight hours. The sections were
+too big for any freighter flying, so behind the cockpit the fuselage swells into an unpressurised
+hold of 65,000 cu ft, three times a 747-400F's, and the whole tail swings open for loading. Boeing's
+commercial airplanes chief jokingly apologised to Joe Sutter, the 747's designer: "sorry for what we
+did to your plane."
+"""
+[variants.BLCF.facts]
+"First flight" = "September 2006"
+"Built" = "4, converted from 747-400s"
+"Max payload" = "113,400 kg (250,000 lb)"
+"Cargo volume" = "65,000 cu ft (1,840 m³)"

@@ -1,0 +1,51 @@
+name = "Piper PA-32"
+types = ["PA32", "P32R", "P32T"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Piper_PA-32_Cherokee_Six",
+  "https://en.wikipedia.org/wiki/Piper_PA-32R",
+  "https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/types.json",
+]
+
+text = """
+Piper's Cherokee stretched to six or seven seats, first flown in December 1963 and certified in
+1965. It has a six-cylinder Lycoming of 260 or 300 hp, a baggage compartment in the nose between
+the engine and the cockpit, and a wide double door at the back of the cabin that makes it easy to
+load with people or freight, and it has worked around the world as an air taxi, in the bush and on
+medical flights. Next to the four-seat Cherokee it is longer and has that second door. The PA-34
+Seneca twin began as a Cherokee Six with an extra engine on each wing, flown as a trimotor to prove
+the idea.
+
+When a flood destroyed Piper's Comanche production line in 1972, the company made the Cherokee Six
+its high-performance single instead, adding retractable gear for the Lance of 1975. Midway through
+1978 the Lance moved its tailplane to the top of the fin, and pilots complained that the T-tail had
+too little authority at low speed; from 1980 the Saratoga went back to a conventional tail and
+replaced the Cherokee's constant-chord "Hershey bar" wing with a tapered one. The last fixed-gear
+PA-32s were built in 2007 and the last Saratogas in 2009.
+"""
+
+[facts]
+"First flight" = "December 1963"
+"Engine" = "Lycoming six-cylinder, 260 or 300 hp"
+
+[variants.PA32]
+name = "Piper PA-32 Cherokee Six, Saratoga or 6X"
+production = [1965, 2007]
+[variants.PA32.facts]
+"Max takeoff weight" = "3,400 lb (1,540 kg), Cherokee Six 300"
+
+[variants.P32R]
+name = "Piper PA-32R Lance or Saratoga"
+production = [1975, 2009]
+[variants.P32R.facts]
+"Max takeoff weight" = "3,600 lb (1,630 kg), Lance"
+"Range" = "875 nm (Lance)"
+
+[variants.P32T]
+name = "Piper PA-32RT Lance II or Turbo Lance II"
+production = [1978, 1979]
+more = """
+The T-tail Lance II and Turbo Lance II were built only for the 1978 and 1979 model years. The Turbo
+Lance II was the first with the large oval air intake under the propeller hub, which turbocharged
+Saratogas kept until 1997, when a new cowling with small round inlets came in.
+"""

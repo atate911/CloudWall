@@ -1,0 +1,63 @@
+name = "Sikorsky S-61 Sea King"
+types = ["S61", "S61R"]
+production = [1961, 1995]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Sikorsky_SH-3_Sea_King",
+  "https://en.wikipedia.org/wiki/Sikorsky_S-61",
+  "https://en.wikipedia.org/wiki/Sikorsky_S-61R",
+  "https://en.wikipedia.org/wiki/Sikorsky_CH-124_Sea_King",
+  "https://en.wikipedia.org/wiki/Westland_Sea_King",
+  "https://en.wikipedia.org/wiki/Helicopter_66",
+  "https://en.wikipedia.org/wiki/Marine_One",
+  "https://en.wikipedia.org/wiki/Sikorsky_VH-92_Patriot",
+  "https://en.wikipedia.org/wiki/Sikorsky_MH-60_Jayhawk",
+  "https://skybrary.aero/aircraft/s61",
+]
+
+text = """
+The US Navy's Sea King, first flown in March 1959, was the first American helicopter that could
+both hunt a submarine and attack it, jobs that had needed two helicopters before. Its two General
+Electric T58 turboshafts gave it the power to carry a dipping sonar and torpedoes together, and it
+could fly on if one failed. The hull is a boat's, watertight so that it can land on the sea, with
+flotation bags in the sponsons either side, and the five-bladed rotor and the tail fold to fit it
+aboard ships.
+
+Sea Kings fished astronauts out of the ocean from 1962 to the end of Apollo, and one of them,
+Helicopter 66, hoisted the crews of Apollo 8, 10 and 11 from their capsules. They have carried
+American presidents since 1961, the VH-3D as Marine One from the 1970s. Its successor, the VH-92,
+took over in 2024 everywhere but the White House, where its downwash scorched and tore up the
+South Lawn; as of 2026, with a helipad built there, the last VH-3Ds are being retired.
+
+Westland built its own Sea Kings in Britain, with Rolls-Royce Gnome engines and British sonar and
+radar, and Agusta and Mitsubishi built them under licence. Canada's flew from warships for 55
+years, until 2018, landing on their small decks with the help of a winch, the Beartrap, that
+hauled them down. Sikorsky sold the civil S-61L and S-61N as the first American helicopter
+designed as an airliner: New York Airways flew them from a heliport on the roof of the Pan Am
+Building, and in Britain they carried passengers to the Isles of Scilly and crews to North Sea
+oil rigs.
+"""
+
+[facts]
+"First flight" = "March 1959"
+"Engines" = "2 × General Electric T58 (Rolls-Royce Gnome in Westland's)"
+"Speed record" = "210.6 mph, February 1962 (HSS-2)"
+
+[variants.S61R]
+name = "Sikorsky S-61R (CH-3, HH-3)"
+text = """
+The S-61R kept the Sea King's engines and rotor but traded its boat hull for a conventional
+fuselage, still watertight, with retractable tricycle gear and a ramp at the back, the layout
+Sikorsky later scaled up for the CH-53. It first flew in June 1963. The US Air Force bought it as
+the CH-3 transport and as the armoured HH-3E rescue helicopter, nicknamed the Jolly Green Giant
+for its size and olive-green paint, with a probe to take on fuel from a tanker in flight. The
+Coast Guard flew the HH-3F Pelican, its search radar in a nose offset to one side, and Agusta
+built them in Italy.
+
+On 31 May 1967 two HH-3Es took off from New York and landed at the Paris Air Show 30 hours and 46
+minutes later, the first nonstop crossing of the Atlantic by helicopter, refuelled in the air
+nine times on the way. Both were later lost in Southeast Asia. The Air Force replaced its HH-3Es
+with HH-60 Pave Hawks in the 1990s, and the Coast Guard its Pelicans with HH-60 Jayhawks.
+"""
+[variants.S61R.facts]
+"First flight" = "June 1963"

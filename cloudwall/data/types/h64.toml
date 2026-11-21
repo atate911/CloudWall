@@ -1,0 +1,37 @@
+name = "Boeing AH-64 Apache"
+types = ["H64"]
+production = [1984]
+checked = "2026-11"
+sources = [
+  "https://www.boeing.com/defense/military-rotorcraft/ah-64-apache",
+  "https://en.wikipedia.org/wiki/Boeing_AH-64_Apache",
+  "https://en.wikipedia.org/wiki/TADS/PNVS",
+  "https://en.wikipedia.org/wiki/Apache_Arrowhead",
+  "https://en.wikipedia.org/wiki/Helmet-mounted_display",
+]
+
+text = """
+The Apache's nose carries two turrets. The lower one, TADS, holds a thermal camera, a TV camera and
+a laser to measure range and mark targets for missiles. The upper one, PNVS, is an infrared camera
+that turns to follow the pilot's head, at up to 120° a second, and puts its picture on a monocle
+in front of one eye, so that at night the pilot flies by looking where they want to see. The 30 mm
+M230 chain gun under the chin can be slaved to either crew member's helmet in the same way,
+pointing where they look. The turrets entered service in 1983, and since 2005 Lockheed Martin's
+Arrowhead has replaced them, with twice the range.
+
+Hughes designed it for the Army's Advanced Attack Helicopter competition, and it first flew in
+September 1975. The crew sit in tandem, the pilot behind and above the gunner with a blast shield
+between them, in a compartment that, like the rotor blades, was designed to survive hits from 23
+mm shells; some 2,500 lb of the airframe is protection. On the first night of Desert Storm, 17
+January 1991, eight Apaches guided by MH-53 Pave Lows destroyed Iraqi radar sites to let the
+strike aircraft behind them through unseen. The AH-64D Longbow, from 1997, added a millimetre-wave radar in a dome
+above the rotor, which can find targets while the helicopter hides behind trees or a hill. Boeing
+builds them at Mesa, Arizona.
+"""
+
+[facts]
+"First flight" = "September 1975"
+"Engines" = "2 × General Electric T700"
+"Max operating weight" = "23,000 lb (10,433 kg), AH-64E"
+"Top speed" = "over 150 kt (AH-64E)"
+"Armament" = "30 mm M230 chain gun; up to 16 Hellfires or 76 rockets"

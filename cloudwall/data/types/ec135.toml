@@ -1,0 +1,33 @@
+name = "Airbus Helicopters H135"
+types = ["EC35"]
+production = [1996]
+checked = "2026-11"
+sources = [
+  "https://dspace-erf.nlr.nl/items/2f538dcd-daf2-45df-b45a-00a85cb79496/full",
+  "https://en.wikipedia.org/wiki/Eurocopter_EC135",
+  "https://en.wikipedia.org/wiki/Fenestron",
+  "https://www.airbus.com/en/newsroom/press-releases/2026-06-airbus-delivers-first-h135-for-canadas-future-aircrew-training-program",
+  "https://www.airbus.com/en/newsroom/stories/2023-09-celebrating-the-1500th-delivery-of-the-h135",
+  "https://us.airbus.com/en/helicopters/products-and-services/civil-helicopters/h135",
+  "https://www.airbus.com/en/newsroom/stories/2022-07-safety-innovation-2-the-fenestron",
+  "https://www.airbus.com/en/newsroom/stories/2024-07-h135-the-flying-ambulance-ready-to-go-everywhere",
+  "https://regulatorylibrary.caa.co.uk/965-2012/Content/Regs/13180_SPAHEMS125_Performance_requirements_for_HEMS_operations.htm",
+]
+
+text = """
+The twin-engined light helicopter of air ambulances and police forces, first flown as the Eurocopter
+EC135 and built since 1996, with more than 1,600 delivered as of 2026. Its tail rotor is a
+Fenestron, a many-bladed fan set in a duct in the tail fin, which is safer for people on the ground
+and quieter than an open rotor, and its four-bladed main rotor has no hinges or bearings at the hub:
+each blade flaps, leads, lags and twists in a flexible composite root. Clamshell doors at the back
+of the cabin let a stretcher slide straight in.
+
+You can know it by the ring in its tail, the twin engine exhausts on top and the rounded nose. Its
+two engines, Turbomeca Arrius or Pratt & Whitney Canada PW206s, and its Category A certification
+mean that if one fails it can either land safely or fly on, which European rules ask of air
+ambulances based at hospital helipads in cities.
+"""
+
+[facts]
+"First flight" = "February 1994"
+"Engines" = "2 × Turbomeca (now Safran) Arrius 2B or Pratt & Whitney Canada PW206B"

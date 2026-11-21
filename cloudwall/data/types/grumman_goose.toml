@@ -1,0 +1,38 @@
+name = "Grumman G-21 Goose"
+types = ["G21", "G21T"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Grumman_G-21_Goose",
+  "https://airandspace.si.edu/collection-objects/grumman-g-21-goose/nasm_A19840405000",
+  "https://cradleofaviation.org/history/exhibits/exhibit-galleries/the_golden_age/grumman_g-21_goose.html",
+  "https://en.wikipedia.org/wiki/Antilles_Air_Boats",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-G.htm",
+]
+
+text = """
+In 1936 a group of wealthy Long Islanders, E. Roland Harriman among them, asked Grumman for an
+aircraft to carry them from the water by their homes to a seaplane base at the foot of Wall Street.
+The Goose that answered, first flown on 29 May 1937, was Grumman's first monoplane, its first twin
+and its first airliner. Its deep hull held a cabin that the first owners fitted out as a flying
+yacht, with two or three passengers, a bar and a small toilet; two Wasp Junior radials sat on the
+leading edge of the high wing, and the wheels were cranked up by hand.
+
+The war put it into uniform as the Navy's JRF and the Army's OA-9, for transport, rescue and
+training. Afterwards it flew for small airlines from Alaska to Catalina Island and the Caribbean,
+where Charles Blair's Antilles Air Boats flew a fleet of them around the Virgin Islands. McKinnon of
+Sandy, Oregon, rebuilt Geese first with four Lycoming engines and then with Pratt & Whitney Canada
+PT6 turboprops, certified as new aircraft, and Alaska Airlines sold seats on its turboprop Geese as
+the Turbo Goose propjet.
+"""
+
+[facts]
+"First flight" = "May 1937"
+"Built" = "345"
+"Engines" = "2 × Pratt & Whitney R-985 Wasp Junior, 450 hp"
+"Max takeoff weight" = "8,000 lb (3,600 kg), G-21A"
+
+[variants.G21T]
+name = "McKinnon Turbo Goose"
+[variants.G21T.facts]
+"Engines" = "2 × Pratt & Whitney Canada PT6A, 550 or 680 shp"
+"Max takeoff weight" = "12,500 lb (5,700 kg), G-21G"

@@ -1,0 +1,82 @@
+name = "Dassault Falcon 900, 2000, 7X and 8X"
+types = ["F900", "F2TH", "FA7X", "FA8X"]
+production = [1986]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Dassault_Falcon_900",
+  "https://en.wikipedia.org/wiki/Dassault_Falcon_2000",
+  "https://en.wikipedia.org/wiki/Dassault_Falcon_7X",
+  "https://en.wikipedia.org/wiki/Dassault_Falcon_50",
+  "https://en.wikipedia.org/wiki/Trijet",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Dassault kept building trijets long after the airlines gave them up. It has put three engines on
+its long-range Falcons since the Falcon 50 of 1976, two in pods on the rear fuselage and the third in
+the tail, fed through an S-shaped duct. Losing one engine on takeoff costs a third of the thrust
+rather than half, which helps from short and hot-and-high runways. The Falcon 900 of 1984 gave the
+layout a larger fuselage, with composites in its structure, and that cross-section runs through the
+family: the twin-engined Falcon 2000 is a 900 shortened by 7 ft, the 7X keeps it on a fuselage a
+fifth longer, and the 8X stretches that again.
+"""
+
+[variants.F900]
+name = "Dassault Falcon 900"
+more = """
+More than 500 have been delivered, through the longer-range 900EX of 1996, with its glass cockpit,
+to the 900LX with blended winglets from Aviation Partners. Governments are fond of it: the French Air
+and Space Force flies officials in it, the RAF's 32 Squadron has two 900LXs as the Envoy IV, and the
+Japan Coast Guard has a maritime-patrol version with a search radar and a hatch for dropping rescue
+gear.
+"""
+[variants.F900.facts]
+"First flight" = "September 1984"
+"Range" = "up to 4,750 nm (8,797 km), 900LX"
+"Engines" = "3 × Honeywell TFE731"
+
+[variants.F2TH]
+name = "Dassault Falcon 2000"
+production = [1995]
+more = """
+The 2000 drops the 900's middle engine and the slats on the inner wing, and flies up to ten
+passengers. Early ones have CFE738 engines; from the 2000EX of 2003 it has Pratt & Whitney Canada
+PW308Cs, and from the 2000LX of 2009 blended winglets, which older 2000s can have fitted. The
+current 2000LXS approaches slowly enough to land in 689 m, a distance more usual for a turboprop.
+The Japan Coast Guard and the French Navy fly maritime patrol versions.
+"""
+[variants.F2TH.facts]
+"First flight" = "March 1993"
+"Range" = "up to 4,000 nm (7,400 km), 2000LXS"
+"Engines" = "2 × Pratt & Whitney Canada PW308C; CFE738 on the first 2000s"
+
+[variants.FA7X]
+name = "Dassault Falcon 7X"
+production = [2007]
+more = """
+The 7X was the first business jet with fly-by-wire controls, flying from 2005 on a new wing swept 5°
+more than the 900's and three Pratt & Whitney Canada PW307s. Dassault says it was the first aircraft
+designed entirely on computer, in CATIA, the design software of its sister company Dassault
+Systèmes. Its cabin is quieter than 50 dBA, and in 2014 one flew from Teterboro, outside New York, to
+London City in 5 hours 54 minutes.
+"""
+[variants.FA7X.facts]
+"First flight" = "May 2005"
+"Range" = "5,950 nm (11,019 km)"
+"Max takeoff weight" = "70,000 lb (31,751 kg)"
+"Engines" = "3 × Pratt & Whitney Canada PW307A, 6,402 lbf"
+
+[variants.FA8X]
+name = "Dassault Falcon 8X"
+production = [2016]
+more = """
+The 8X is a 7X stretched by 1.1 m, with 3,200 lb more fuel, a lighter and more flexible wing and
+slightly more powerful engines, and is certified as a version of it. Its empty weight is only about
+half its maximum takeoff weight: an 8X is lighter at takeoff than a Gulfstream IV-SP, yet flies some
+2,300 nm further.
+"""
+[variants.FA8X.facts]
+"First flight" = "February 2015"
+"Range" = "6,450 nm (11,945 km)"
+"Max takeoff weight" = "73,000 lb (33,113 kg)"
+"Engines" = "3 × Pratt & Whitney Canada PW307D, 6,722 lbf"

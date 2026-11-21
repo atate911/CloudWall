@@ -1,0 +1,31 @@
+name = "Beechcraft Travel Air"
+types = ["BE95"]
+production = [1958, 1968]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Beechcraft_Travel_Air",
+  "https://en.wikipedia.org/wiki/Travel_Air",
+  "https://en.wikipedia.org/wiki/Beechcraft_Baron",
+  "https://commons.wikimedia.org/wiki/File:Beechcraft_B95_Travel_Air_3-view_line_drawing.png",
+]
+
+text = """
+Beech assembled the Travel Air from parts it already had: the fuselage of the Bonanza, the fin of
+the T-34 Mentor trainer and the stronger landing gear of the Navy's version of it, and the wing spar
+of the much bigger Twin Bonanza, with a 180 hp four-cylinder Lycoming on each wing. It was to be
+called the Badger, until the US Air Force told Beech in 1956 that Badger was already the reporting
+name of the Soviet Tu-16 bomber, and Beech revived Travel Air, the name of the company Walter Beech
+had founded in 1925 with Clyde Cessna and Lloyd Stearman.
+
+It was Beech's answer to the Cessna 310 and the Piper Apache, priced between them, and 720 were
+built from 1958 to 1968, when the faster six-cylinder Baron, first designated the 95-55, took its
+place. It is easily mistaken for an early Baron, but its fin is the T-34's, upright and
+square-topped where the Baron's is swept, and from 1960 it has a curved fairing running forward from
+the fin along the spine.
+"""
+
+[facts]
+"First flight" = "August 1956"
+"Built" = "720"
+"Engines" = "2 × Lycoming O-360 or IO-360, 180 hp"
+"Max takeoff weight" = "4,200 lb (1,910 kg), D95A"

@@ -1,0 +1,37 @@
+name = "Airship"
+types = ["SHIP"]
+checked = "2026-11"
+sources = [
+  "https://www.icao.int/operational-safety/doc-8643-aircraft-type-designators/special-designators",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+  "https://en.wikipedia.org/wiki/Airship",
+  "https://en.wikipedia.org/wiki/Zeppelin_NT",
+  "https://en.wikipedia.org/wiki/Goodyear_Blimp",
+  "https://en.wikipedia.org/wiki/LZ_129_Hindenburg",
+]
+
+text = """
+An airship gets its lift from helium, about a kilogram for every cubic metre, so it needs an enormous
+envelope to carry very little, but unlike a balloon it has engines and fins and goes where it's
+pointed. A blimp keeps its shape by the slight pressure of the gas alone, held steady as the helium
+expands and contracts by blowing air into or out of bags inside the envelope, the ballonets. The great
+Zeppelins, like the Hindenburg that burned at Lakehurst in 1937, carried hydrogen in gas cells inside
+a rigid skeleton. Since its lift doesn't depend on speed, and the power to push that much envelope
+through the air rises with the cube of the speed, an airship has every reason to go slowly: the
+airship speed record, set by a Zeppelin NT in 2004, is 111.8 km/h.
+
+The Zeppelin NT, which Goodyear has flown in the US since 2014, sits between the two kinds. It is a
+semi-rigid, with a triangular frame of carbon composite and aluminium girders inside the envelope
+carrying its engines, cabin and fins, so it can still be steered if the envelope loses pressure,
+though Goodyear still calls it a blimp. Its propellers swivel, letting it hover and take off and land
+vertically with just three people on the ground. Cruising slowly at around 1,000 ft, an NT makes a
+steady platform for the television cameras over a stadium, and as of 2026 all three of Goodyear's
+American airships are NTs; others carry sightseers from Friedrichshafen, on Lake Constance, where they
+are built.
+"""
+
+[facts]
+"Lift" = "about 1 kg per cubic metre of helium"
+"Top speed" = "125 km/h (67 kt), Zeppelin NT"
+"Engines" = "3 × Lycoming IO-360, 200 hp, with swivelling propellers (Zeppelin NT)"
+"Ground crew" = "3 (Zeppelin NT)"

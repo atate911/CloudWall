@@ -1,0 +1,33 @@
+name = "Boeing 717"
+types = ["B712"]
+production = [1999, 2006]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_717",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://en.wikipedia.org/wiki/Boeing_707",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://news.alaskaair.com/company/alaska-airlines-inc-selects-737-800s-to-strengthen-hawaiian-airlines-neighbor-island-service/",
+]
+
+text = """
+The last airliner built at the old Douglas factory in Long Beach began as the McDonnell Douglas
+MD-95: a jet the size of a DC-9-30, rebuilt around Rolls-Royce BR715 engines and a six-screen glass
+cockpit, and launched in 1995 on a single order, from ValuJet, that stayed its only one for two
+years. When Boeing took over McDonnell Douglas in 1997 it kept the jet and called it the 717, a
+model number it had first given the KC-135 tanker four decades earlier. 156 were built before the
+last two were delivered in May 2006, closing the commercial aircraft production in Southern
+California that Douglas had begun in the 1920s.
+
+It looks like a short MD-80, with the same T-tail and two engines on the tail, but the BR715s are
+high-bypass engines in fat nacelles where the DC-9 family has slim JT8D pods, and there is no
+airstair under the tail, left off to save weight. Inside, seats are five abreast, two and three, so a
+row has one middle seat. As of 2026 the 717 flies only in the United States, with Delta, which has
+begun retiring some, and Hawaiian, which plans to replace its inter-island 717s with 737-800s from
+2028. None has been lost in an accident.
+"""
+
+[facts]
+"First flight" = "September 1998"
+"Built" = "156"
+"Engines" = "2 × Rolls-Royce BR715, 18,500–21,000 lb"

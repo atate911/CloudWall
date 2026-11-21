@@ -1,0 +1,36 @@
+name = "Pilatus PC-12"
+types = ["PC12"]
+production = [1994]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Pilatus_PC-12",
+  "https://www.pilatus-aircraft.com/data/document/Pilatus-Aircraft-Ltd-PC-12NGX-Factsheet.pdf",
+  "https://www.aopa.org/news-and-media/all-news/2019/october/21/pilatus-debuts-pc-12ngx",
+  "https://www.caa.co.uk/Documents/Download/3934/ca692457-336e-4190-840e-cd26cf498935/3801",
+  "https://www.flightglobal.com/business-aviation/pilatus-celebrates-2000th-delivery-milestone-for-pc-12/153291.article",
+  "https://www.ainonline.com/aviation-news/business-aviation/2023-05-12/pilatus-delivers-2000th-pc-12-turboprop-single",
+  "https://www.flyingdoctor.org.au/about-the-rfds/our-fleet/",
+  "https://www.af.mil/About-Us/Fact-Sheets/Display/Article/104607/u-28a-draco/",
+  "https://www.ainonline.com/aviation-news/business-aviation/2017-03-30/hopes-run-high-europe-market-expansion-set-imc",
+  "https://www.legislation.gov.uk/eur/2017/363/annex/data.pdf",
+]
+
+text = """
+A single Pratt & Whitney Canada PT6 turboprop of about 1,200 shp, a pressurised cabin for up to nine
+passengers, and a cargo door big enough for a pallet: the PC-12, built by Pilatus at Stans in
+Switzerland, is a business aircraft, an airliner for small towns and an air ambulance all at once.
+It cruises at up to 290 knots and flies about 1,800 nm, from rough strips a business jet couldn't
+use. Australia's Royal Flying Doctor Service flies a large fleet of them, and the US Air Force flies
+it as the U-28 Draco.
+
+Its trust in one engine rests on the PT6's record, and since 2017 European rules have let
+single-engine turboprops like it carry paying passengers at night and in cloud. You can know it by
+its T-tail, its long, high-aspect wing with upturned winglets, and the size of it: for a single, it
+is big.
+"""
+
+[facts]
+"First flight" = "May 1991"
+"Engine" = "Pratt & Whitney Canada PT6A-67B, PT6A-67P (NG) or PT6E-67XP (NGX)"
+"Cruise" = "290 kt (PC-12 NGX)"
+"Built" = "over 2,000"

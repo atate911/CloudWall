@@ -1,0 +1,38 @@
+name = "Ted Smith / Piper Aerostar"
+types = ["AEST"]
+production = [1967, 1984]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Piper_Aerostar",
+  "https://en.wikipedia.org/wiki/Ted_R._Smith",
+  "https://en.wikipedia.org/wiki/Aero_Commander_500_family",
+  "https://www.aopa.org/news-and-media/all-news/1998/august/pilot/the-aerostars",
+  "https://www.aopa.org/news-and-media/all-news/2014/february/pilot/aerostar",
+  "https://www.aviationconsumer.com/aircraftreviews/aerostar-600-700-series/",
+  "https://www.flyingmag.com/aircraft-jets-aerostar-arrives-airventure-jet/",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-A.htm",
+]
+
+text = """
+Ted Smith had worked on the A-26 Invader at Douglas and conceived the Aero Commander before he
+designed the Aerostar, and while it was in production it held the speed record for piston twins,
+cruising at about 220 knots in the first 600s and 261 in the last 700Ps. It gets there with a
+heavily loaded wing set halfway up the fuselage, close attention to drag and, on early models,
+engines cooled without cowl flaps, which Smith insisted it didn't need. Its wing skins are unusually
+thick and stiff and its controls work through push-pull rods and torque tubes instead of cables, and
+with the high wing loading they give it a notably smooth ride in turbulence.
+
+The same wing makes it demanding at the slow end. It needs long runways, and pilots are taught to
+keep the speed up on the approach and hold off full flap until the runway is assured. Everyone
+boards through a single clamshell door beside the pilot, the passengers climbing over the folded
+pilot's seat. Piper bought the design in 1978 and built it as the PA-60 until 1984, adding the 602P
+and the 700P, whose 350 hp engines turn in opposite directions. Aerostar Aircraft, which owns the
+type certificate and supports the fleet, has flown one rebuilt with two small Pratt & Whitney Canada
+jet engines in place of its pistons.
+"""
+
+[facts]
+"First flight" = "November 1966 (prototype)"
+"Engines" = "2 × Lycoming IO-540 or TIO-540, 290 hp; 350 hp on the 700P"
+"Cruise" = "261 kt (700P)"
+"Ceiling" = "25,000 ft (700P)"

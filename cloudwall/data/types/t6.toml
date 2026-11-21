@@ -1,0 +1,32 @@
+name = "North American T-6 Texan"
+types = ["T6"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/North_American_T-6_Texan",
+  "https://en.wikipedia.org/wiki/North_American_T-6_Texan_variants",
+  "https://en.wikipedia.org/wiki/Tora!_Tora!_Tora!",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing-Chronology.pdf",
+]
+
+text = """
+Most of the Allied pilots of the Second World War passed through a T-6 on their way to front-line
+aircraft. The US Army Air Forces called it the AT-6 Texan, the US Navy the SNJ and the Commonwealth
+air forces the Harvard, and it trained several hundred thousand pilots in 34 countries. North
+American set out to build a cheap trainer with a fighter's manners: it had retractable gear, a 600
+hp Pratt & Whitney Wasp radial and fittings for guns, cameras and bomb racks, nearly every device a
+front-line pilot had to work, and though slower than a fighter it would loop, spin, snap-roll and
+Immelmann as readily. 15,495 were built, in the United States and under licence in Canada. After
+the war it flew as a forward air controller over Korea and fought in a string of smaller wars, and
+South Africa kept training pilots in it until 1995.
+
+In Tora! Tora! Tora! (1970), modified Harvards played the Japanese Zero fighters and Kate torpedo
+bombers attacking Pearl Harbor, and some of those conversions still fly at airshows. Tell it from
+the fighters of its day by the long, framed canopy over two seats in tandem, the round radial
+engine and the tailwheel.
+"""
+
+[facts]
+"First flight" = "April 1935 (NA-16 prototype)"
+"Built" = "15,495"
+"Engine" = "Pratt & Whitney R-1340 Wasp, 600 hp"

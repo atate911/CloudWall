@@ -1,0 +1,40 @@
+name = "Sikorsky H-60 Black Hawk and Seahawk"
+types = ["H60"]
+production = [1978]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Sikorsky_UH-60_Black_Hawk",
+  "https://en.wikipedia.org/wiki/Sikorsky_S-70",
+  "https://en.wikipedia.org/wiki/Sikorsky_SH-60_Seahawk",
+  "https://en.wikipedia.org/wiki/Sikorsky_MH-60_Jayhawk",
+  "https://en.wikipedia.org/wiki/Sikorsky_HH-60_Pave_Hawk",
+  "https://en.wikipedia.org/wiki/List_of_most-produced_rotorcraft",
+  "https://www.flightglobal.com/helicopters/sikorsky-delivers-5000th-black-hawk-with-potential-for-new-us-orders/151757.article",
+  "https://skybrary.aero/aircraft/h60",
+]
+
+text = """
+The US Army wrote the requirement for the Black Hawk in 1972, from what Vietnam had taught it about
+helicopters under fire. The answer has two General Electric T700 engines, developed alongside it;
+gearboxes that keep turning after losing their oil; hydraulics, electrics and flight controls
+duplicated and able to take hits; armoured, crashworthy seats and fuel system; and main gear with
+two stages of shock absorber. Its long, low fuselage was set by the need to fit inside a C-130,
+with some dismantling. It carries 11 troops or 9,000 lb on its hook, and in one lift can move a
+105 mm howitzer with 30 rounds and the four-man crew. It first flew in October 1974 and joined the
+101st Airborne in 1979.
+
+More than 5,000 have been built, and in January 2025 the US Army flew about 2,200, among them 346
+HH-60M air ambulances. The Navy's Seahawks fold their rotor blades and tail to fit aboard ships,
+with the tailwheel 13 ft further forward for small decks, and the Coast Guard's MH-60T Jayhawk can
+fly 260 nm out to sea, hoist six people aboard and fly home. Fire agencies fly Firehawks fitted
+with water tanks, operators convert retired Army UH-60As for firefighting, and PZL Mielec builds
+the S-70i for export, and the civil S-70M, in Poland. Look for the long, low body and the canted
+tail rotor.
+"""
+
+[facts]
+"First flight" = "October 1974"
+"Built" = "over 5,000"
+"Engines" = "2 × General Electric T700"
+"Max takeoff weight" = "22,000 lb (9,980 kg), UH-60M"
+"Sling load" = "9,000 lb (4,100 kg), UH-60L/M"

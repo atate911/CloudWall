@@ -1,0 +1,46 @@
+name = "Lake Buccaneer and Renegade"
+types = ["LA4", "LA25"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Lake_Buccaneer",
+  "https://en.wikipedia.org/wiki/Lake_Renegade",
+  "https://en.wikipedia.org/wiki/Lake_Aircraft",
+  "https://en.wikipedia.org/wiki/Colonial_Skimmer",
+  "https://en.wikipedia.org/wiki/Pusher_configuration",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-L.htm",
+  "https://skybrary.aero/aircraft-model/la-250-renegade",
+]
+
+text = """
+A small amphibian with its engine perched on a pylon above the cabin, pushing. David Thurston
+designed it as the Colonial Skimmer, built at Sanford, Maine, and first flown in July 1948; it
+became the four-seat Lake LA-4 in 1960, and in 1970 the Buccaneer, with a 200-hp fuel-injected
+Lycoming and extra fuel carried in the floats under its wings. The hull is all metal with a single
+step, and retractable tricycle gear lets it land on a runway as readily as on a lake. Mounting the
+engine high keeps the propeller clear of the spray, but it puts the thrust line well above the
+hull, so every change of power also pitches the nose.
+
+The Renegade of the early 1980s stretched the hull by 38 inches for six seats and a 250-hp engine;
+the Turbo Renegade has 270 hp, and the military Seawolf has hardpoints under the wings and room for
+a radar on the front of the engine pod. In 1988 and 1989 Renegades flown from Sanford set world
+altitude records for single-engined amphibians and seaplanes, climbing as high as 27,300 ft. Lake
+had about 200 employees in the 1980s and six by 2009, having built one aircraft in 2007 and none in
+2008.
+"""
+
+[facts]
+"First flight" = "July 1948 (Colonial Skimmer)"
+
+[variants.LA4]
+name = "Lake LA-4 or Buccaneer"
+production = [1960, 1985]
+[variants.LA4.facts]
+"Engine" = "Lycoming IO-360, 200 hp (Buccaneer)"
+"Max takeoff weight" = "2,690 lb (1,220 kg), Buccaneer"
+
+[variants.LA25]
+name = "Lake Renegade, Turbo Renegade or Seawolf"
+production = [1984, 2007]
+[variants.LA25.facts]
+"Engine" = "Lycoming IO-540, 250 hp; TIO-540, 270 hp (Turbo Renegade)"
+"Max takeoff weight" = "3,050 lb (1,383 kg), LA-250"

@@ -1,0 +1,48 @@
+name = "Lockheed C-130 Hercules"
+types = ["C130", "C30J"]
+production = [1956]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Lockheed_C-130_Hercules",
+  "https://en.wikipedia.org/wiki/Lockheed_Martin_C-130J_Super_Hercules",
+  "https://en.wikipedia.org/wiki/Lockheed_L-100_Hercules",
+  "https://en.wikipedia.org/wiki/Kelly_Johnson_(engineer)",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+When the proposal reached Kelly Johnson in 1951, the engineer later famous for the U-2 and SR-71
+told Lockheed's chief engineer that signing it would destroy the company. The Air Force wanted a
+transport designed for combat from the start, loaded over a ramp under the tail that could also drop
+cargo in flight, and able to use short, rough strips; Allison developed the T56 turboprop for it.
+The prototype flew in August 1954, and the C-130 has been built ever since, more than 2,700 of them
+by 2024, the longest continuous production of any military aircraft. It flies for more than 60
+countries, as transport, gunship, tanker, hurricane hunter and, on skis, supply aircraft for the
+Greenland ice cap and Antarctica.
+
+In 1963 a Marine KC-130F made 21 full-stop landings on the carrier USS Forrestal with no tailhook
+and took off again each time without a catapult; it is still the largest aircraft ever to land on a
+carrier. In 1976 four Israeli Hercules flew commandos 2,200 nm to Entebbe, mostly below 100 ft, to
+free hijacked passengers. The C-130J, flying since 1996, keeps the shape but has Rolls-Royce
+engines, a two-pilot glass cockpit and composite six-bladed propellers with swept, scimitar tips,
+the quickest way to tell it from the older Hercules and their four blades.
+"""
+
+[facts]
+"First flight" = "August 1954"
+"Built" = "over 2,700"
+"Max payload" = "42,000 lb (19,050 kg)"
+
+[variants.C130]
+production = [1956, 1996]
+[variants.C130.facts]
+"Max takeoff weight" = "155,000 lb (70,300 kg), C-130H"
+"Engines" = "4 × Allison T56, 4,590 shp (C-130H)"
+
+[variants.C30J]
+name = "Lockheed Martin C-130J Super Hercules"
+production = [1999]
+[variants.C30J.facts]
+"First flight" = "April 1996"
+"Max takeoff weight" = "164,000 lb (74,390 kg)"
+"Engines" = "4 × Rolls-Royce AE 2100D3, 4,637 shp"

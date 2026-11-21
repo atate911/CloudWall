@@ -1,0 +1,47 @@
+name = "Partenavia P.68"
+types = ["P68", "P68T"]
+production = [1972]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Partenavia_P.68",
+  "https://en.wikipedia.org/wiki/Vulcanair",
+  "https://en.wikipedia.org/wiki/Luigi_Pascale",
+  "https://www.planeandpilotmag.com/article/an-italian-light-twin-returns-to-claim-its-star",
+  "https://skybrary.aero/aircraft/p68",
+  "https://skybrary.aero/aircraft-model/ap-68tp-300-spartacus",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-P.htm",
+]
+
+text = """
+Luigi Pascale's light twin from Naples, first flown on 25 May 1970: six seats under a high wing,
+two 200-hp Lycomings and fixed tricycle landing gear. It was meant for light transport and
+training, but police forces and government agencies, from Britain's National Police Air Service to
+the Italian State Police and the wildlife and forestry departments of several US states, have made
+it an observation aircraft. The Observer, which began as conversions by Sportavia-Putzer in Germany
+and was certified in 1980, replaces the nose with a transparent one, giving the crew a view ahead
+and below.
+
+Partenavia passed through state ownership into bankruptcy, and in 1998 its type certificate went to
+Vulcanair, a Naples maker of P68 spare parts, which builds it still at Capodichino airport, with
+turbocharged engines or retractable gear as options. Pascale and his brother Giovanni went on to
+found Tecnam in 1986, where his later designs included the P2006T and P2012 Traveller twins.
+"""
+
+[facts]
+"First flight" = "May 1970"
+"Engines" = "2 × Lycoming IO-360, 200 hp"
+"Max takeoff weight" = "4,594 lb (2,084 kg), P68C"
+
+[variants.P68]
+name = "Partenavia or Vulcanair P68"
+
+[variants.P68T]
+name = "Partenavia AP68TP-300 Spartacus"
+more = """
+The AP68TP-300 Spartacus, certified in 1983, stretched the P68 to nine seats and gave it Allison
+250 turboprops while keeping the fixed gear. The AP68TP-600 Viator that followed in 1986 is longer
+again, with retractable gear.
+"""
+[variants.P68T.facts]
+"Engines" = "2 × Allison 250-B17C turboprops, 328 shp"
+"Max takeoff weight" = "5,732 lb (2,600 kg)"

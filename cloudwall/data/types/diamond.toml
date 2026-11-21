@@ -1,0 +1,108 @@
+name = "Diamond Aircraft"
+types = ["DV20", "DA40", "DA42", "DA50", "DA62"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Diamond_Aircraft_Industries",
+  "https://en.wikipedia.org/wiki/Diamond_DA20_Katana",
+  "https://en.wikipedia.org/wiki/Diamond_DA40_Diamond_Star",
+  "https://en.wikipedia.org/wiki/Diamond_DA42_Twin_Star",
+  "https://en.wikipedia.org/wiki/Diamond_DA50",
+  "https://en.wikipedia.org/wiki/Diamond_DA62",
+  "https://en.wikipedia.org/wiki/Diamond_HK36_Super_Dimona",
+  "https://en.wikipedia.org/wiki/Austro_Engine",
+  "https://en.wikipedia.org/wiki/Austro_Engine_E4",
+  "https://en.wikipedia.org/wiki/Thielert_Centurion",
+  "https://en.wikipedia.org/wiki/Aircraft_diesel_engine",
+  "https://en.wikipedia.org/wiki/Friedrich_Merz",
+  "https://en.wikipedia.org/wiki/Aeronautics_Defense_Dominator",
+  "https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/types.json",
+]
+
+text = """
+Diamond began in Austria in 1981 as a maker of motor gliders, and its aircraft still look it: smooth
+airframes moulded from glass- and carbon-fibre composite, long slender wings, a T-tail and a large
+bubble canopy. Its first light aircraft, the two-seat Katana of 1991, was developed from the Dimona
+motor glider with a shorter wing, flaps and a nosewheel, and the four-seaters and twins followed from
+factories in Wiener Neustadt and in London, Ontario. You can tell a Diamond from a Cirrus, the other
+composite single, by its tail: the Cirrus has a conventional one, the Diamond its tailplane on top of
+the fin.
+
+Diamond went its own way under the cowling too. In the early 2000s it began fitting the DA40 and the
+new DA42 twin with Thielert turbodiesels built from a Mercedes-Benz car engine, burning jet fuel or
+diesel instead of avgas, each run by a single lever through a digital engine control. When Thielert
+went bankrupt in 2008, Diamond stopped building the DA42 until it had certified a diesel of its own
+in 2009, the Austro AE300, also developed from a Mercedes block. Every Diamond since, apart from the
+two-seat trainer, has been offered with an engine that burns jet fuel.
+"""
+
+[variants.DV20]
+name = "Diamond DA20 or DV20 Katana"
+production = [1993]
+more = """
+The Katana is the two-seat trainer, built in Austria as the DV20 and in Canada as the DA20, with an
+80 or 100 hp Rotax that can run on car petrol or, on the DA20-C1 from 1998, a 125 hp Continental.
+Its nosewheel isn't linked to the rudder pedals, so on the ground it is steered with the brakes, and
+it is certified for deliberate spins. The US Air Force has used DA20s to screen its pilot
+candidates, first at the Air Force Academy and then at Pueblo, Colorado.
+"""
+[variants.DV20.facts]
+"First flight" = "1991"
+"Engine" = "Rotax 912, 80 or 100 hp, or Continental IO-240, 125 hp"
+"Built" = "over 1,000"
+
+[variants.DA40]
+name = "Diamond DA40 Diamond Star"
+more = """
+The DA40 seats four, with a 180 hp Lycoming or a diesel, and you climb in over the leading edge of
+the wing, unusual in a low-wing aircraft. Its long wing gives it a docile stall: trimmed fully
+nose-up with the engine at idle, it settles hands-off at about 48 knots and comes down more slowly
+than a Cirrus SR22 under its parachute. In a 2011 analysis by Aviation Consumer it had the lowest
+fatal accident rate in US general aviation, 0.35 per 100,000 hours, against 0.45 for the Cessna 172.
+"""
+[variants.DA40.facts]
+"First flight" = "November 1997"
+"Engine" = "Lycoming IO-360, 180 hp, or Austro AE300 diesel"
+"Built" = "over 2,200"
+
+[variants.DA42]
+name = "Diamond DA42 Twin Star"
+production = [2004]
+more = """
+The DA42 was the first new European twin of its class in more than 25 years. In August 2004 one
+became the first diesel aircraft to cross the North Atlantic nonstop, in 12½ hours, burning about 22
+litres (5.7 US gallons) an hour for both engines, and by 2008 it had about 80% of the market for new
+piston twins. With cameras and sensors it has become a surveillance aircraft: two of the RAF's flew
+2,000 hours over Iraq in 2008 and 2009, and an Israeli drone, the Dominator, was developed from it.
+"""
+[variants.DA42.facts]
+"First flight" = "December 2002"
+"Engines" = "2 × Austro AE300 diesel (Thielert Centurion until 2008)"
+
+[variants.DA50]
+name = "Diamond DA50 RG"
+more = """
+The DA50 took thirteen years to get from first flight to certification. The prototype of 2007 was
+proposed with petrol, diesel and turboprop engines before Diamond settled on retractable gear and a
+300 hp Continental CD-300, a three-litre V6 diesel, certified in Europe in 2020 and in the US in
+2023. It seats five and cruises at about 180 knots.
+"""
+[variants.DA50.facts]
+"First flight" = "April 2007"
+"Engine" = "Continental CD-300 diesel, 300 hp"
+"Range" = "750 nm"
+
+[variants.DA62]
+name = "Diamond DA62"
+production = [2015]
+more = """
+The largest Diamond, a twin with two 180 hp Austro AE330 diesels and room for up to seven, is sold
+at two weights: 2,300 kg with seven seats, and 1,999 kg with five for Europe, where staying under two
+tonnes avoids higher weight-based air traffic control charges. Friedrich Merz, who became Germany's
+chancellor in 2025, flew his own to a cabinet minister's wedding in 2022 and said it used less fuel
+than an official limousine; German fact-checkers found that true only after allowing for the car's
+slower, longer route.
+"""
+[variants.DA62.facts]
+"First flight" = "April 2012"
+"Engines" = "2 × Austro AE330 diesel, 180 hp"
+"Max takeoff weight" = "5,071 lb (2,300 kg); 4,407 lb (1,999 kg) in Europe"

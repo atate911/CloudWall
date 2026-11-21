@@ -1,0 +1,53 @@
+name = "Hughes / MD Helicopters 500"
+types = ["H500", "MD52"]
+production = [1966]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/MD_Helicopters_MD_500",
+  "https://en.wikipedia.org/wiki/Hughes_OH-6_Cayuse",
+  "https://en.wikipedia.org/wiki/Light_Observation_Helicopter",
+  "https://en.wikipedia.org/wiki/MD_Helicopters_MH-6_Little_Bird",
+  "https://en.wikipedia.org/wiki/NOTAR",
+  "https://en.wikipedia.org/wiki/MD_Helicopters",
+]
+
+text = """
+The Hughes 369 won the US Army's light observation helicopter contest of the early 1960s and went
+into service in 1966 as the OH-6 Cayuse, the "Loach". That year one flew 1,923 nm non-stop from
+Culver City, California, to Ormond Beach, Florida, a distance record for helicopters still unbroken
+in 2021. Its egg-shaped cabin, braced inside by bulkheads, crumpled and absorbed a crash while
+protecting its crew, who often walked away from forced landings that would have killed them in
+other helicopters, and its short rotor got it into tight clearings in Vietnam. Hughes won the
+contract with a price reportedly below what the helicopter cost to build, then lost the follow-on
+order to Bell's OH-58 Kiowa when the Army reopened bidding in 1967.
+
+The civil Hughes 500 followed in 1967, and has been built by Hughes, McDonnell Douglas and MD
+Helicopters in turn, for police forces, utility work and private owners. The turbine sits at 45
+degrees behind the cabin and exhausts under the tail boom. The 500D of 1976 brought a five-bladed
+rotor and a T-tail, the 500E a pointed nose, the 530F a bigger rotor and engine for hot and high
+work, and the US Army's special-operations Little Birds are military 500s. From the ground it is
+all egg: a round cabin on a thin tail boom.
+"""
+
+[facts]
+"First flight" = "February 1963"
+"Engine" = "Allison (now Rolls-Royce) 250"
+"Distance record" = "1,923 nm non-stop, April 1966"
+
+[variants.H500]
+name = "Hughes / MD 500 and OH-6 Cayuse"
+
+[variants.MD52]
+name = "MD Helicopters MD 520N"
+more = """
+The MD 520N, flying since 1990, swaps the tail rotor for NOTAR. A fan behind the cabin, driven from
+the main gearbox, blows low-pressure air down the boom and out of two slots along its right side;
+the rotor's downwash, drawn round the boom by the Coandă effect, turns it into a wing that pushes
+against the torque, and a rotating, vented drum at the tip steers. The tail rotor is the main
+source of most helicopters' noise, and without one the 520N is among the quietest the FAA has
+certified, with no blades at the back for anyone on the ground to walk into. Look for the fat round
+boom with no rotor and twin fins at its end.
+"""
+[variants.MD52.facts]
+"First flight" = "May 1990"
+"Engine" = "Rolls-Royce 250-C20R, 450 shp"

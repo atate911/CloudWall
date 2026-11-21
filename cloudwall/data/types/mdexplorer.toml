@@ -1,0 +1,31 @@
+name = "MD Helicopters MD Explorer"
+types = ["EXPL"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/MD_Helicopters_MD_Explorer",
+  "https://en.wikipedia.org/wiki/NOTAR",
+  "https://en.wikipedia.org/wiki/MD_Helicopters",
+  "https://en.wikipedia.org/wiki/AgustaWestland_AW109",
+]
+
+text = """
+The first helicopter McDonnell Douglas designed around NOTAR from the start, launched in 1989 and
+flown in December 1992. It is a light twin with a composite fuselage, built at first by Hawker de
+Havilland in Australia, a five-bladed rotor held on composite flexbeams instead of bearings, and two
+Pratt & Whitney Canada PW206s; it was the launch customer for that engine family. No tail rotor
+means less noise and nothing spinning at the back in a confined landing site, and by 2015 almost
+half of all Explorers were flying in Europe, as air ambulances, with police and with paramilitary
+forces. London's Air Ambulance flew two, and the Mexican Navy flies it from ships. Its tail gives
+it away: a smooth boom with no rotor, ending in twin fins and a vented drum.
+
+The later MD 902 has stronger engines and better NOTAR intakes. The US Coast Guard flew armed ones,
+the MH-90 Enforcer, against drug-running speedboats from 1998 to 2000. Boeing kept the rights to
+NOTAR when it sold McDonnell Douglas's civil helicopters in 1999, and MD Helicopters has changed
+hands twice since; in 2023 its chief executive said the Explorer's production line had been dormant
+for ten years and the company had no path forward for it.
+"""
+
+[facts]
+"First flight" = "December 1992"
+"Certified" = "December 1994"
+"Engines" = "2 × Pratt & Whitney Canada PW206 or PW207"

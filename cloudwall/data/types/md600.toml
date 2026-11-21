@@ -1,0 +1,29 @@
+name = "MD Helicopters MD 600N"
+types = ["MD60"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/MD_Helicopters_MD_600",
+  "https://en.wikipedia.org/wiki/MD_Helicopters_MD_500",
+  "https://en.wikipedia.org/wiki/NOTAR",
+  "https://en.wikipedia.org/wiki/MD_Helicopters",
+]
+
+text = """
+A stretched MD 520N. McDonnell Douglas put a plug behind the cockpit for a middle row of seats,
+eight in all, lengthened the tail boom to match, and gave it a six-bladed rotor, one blade more than
+the 520N, and a 600 shp Allison 250. The prototype, rebuilt from an MD 530F, flew in November 1994,
+and deliveries began in June 1997. The US Border Patrol was its main user, and has since retired it.
+Tell it from the 520N by the longer cabin and the sixth blade.
+
+Like the 520N it has no tail rotor. NOTAR began at Hughes in 1975, and an Army OH-6A fitted with it
+first flew in December 1981; that machine is now in the US Army Aviation Museum at Fort Novosel,
+Alabama. A fan driven from the main gearbox blows air out of slots along the right side of the boom,
+so the rotor's downwash curls round it and pushes the tail against the torque, and a rotating vented
+drum at the end steers. As of 2026 production of the 600N is suspended indefinitely, and in 2023
+MD Helicopters' chief executive said NOTAR was not a priority.
+"""
+
+[facts]
+"First flight" = "November 1994"
+"Certified" = "May 1997"
+"Engine" = "Allison (now Rolls-Royce) 250-C47, 600 shp"

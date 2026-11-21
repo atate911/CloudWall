@@ -1,0 +1,48 @@
+name = "Cessna 402"
+types = ["C402", "C404"]
+production = [1967, 1985]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_402",
+  "https://en.wikipedia.org/wiki/Cessna_404_Titan",
+  "https://all-aero.com/2024/01/15/cessna-ce-404-titan",
+  "https://conklindedecker.jetsupport.com/details/Cessna%20404%20Titan",
+  "https://airinsight.com/cape-air-starting-fleet-refresh/",
+  "https://flightglobal.com/fleets/us-commuter-carrier-cape-air-continues-phasing-out-high-time-cessna-402s/155181.article",
+  "https://skybrary.aero/aircraft/c402",
+  "https://cfapps.icao.int/doc8643/8643_List3.cfm?mfc=CESSNA",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-C.htm",
+]
+
+text = """
+A small airliner and freighter built to be cheap to buy and run. Cessna developed the 401 and 402
+from the 411 with simpler 300-hp turbocharged Continentals in place of its geared engines, left out
+the pressurisation, and made every seat easy to lift out so the cabin could carry cargo. The 402
+added a large cargo door, and as the 402B Utiliner it seats ten for commuter airlines, while the
+Businessliner has six to eight executive seats. The 402C of 1979 is the most capable: a wing 5 ft
+longer without tip tanks, the simpler hydraulic landing gear of the 414 on a track 4 ft wider,
+325-hp engines and a takeoff weight of 6,850 lb, and despite the extra weight it stalls a couple of
+knots slower and performs better on one engine.
+
+It found its niche on short, thin routes feeding the hubs. Cape Air, its largest operator, flies it
+in New England, the Caribbean and Micronesia, alongside the Tecnam P2012 Travellers it bought to
+replace it. The 404 Titan of 1975 is a 402 grown larger, with the 421's geared 375-hp engines, ten
+passenger seats, a taller fin and a tailplane angled upward. It was the largest piston twin Cessna
+had built, and the US Navy flew two as the C-28A and the Swedish Air Force flew it as the Tp 87.
+"""
+
+[facts]
+"First flight" = "August 1965"
+"Engines" = "2 × Continental TSIO-520, turbocharged, 300 hp; 325 hp (402C)"
+"Max takeoff weight" = "6,850 lb (3,107 kg), 402C"
+
+[variants.C402]
+name = "Cessna 401 or 402"
+
+[variants.C404]
+name = "Cessna 404 Titan"
+production = [1976, 1982]
+[variants.C404.facts]
+"First flight" = "February 1975"
+"Engines" = "2 × Continental GTSIO-520, geared and turbocharged, 375 hp"
+"Max takeoff weight" = "8,400 lb (3,810 kg)"

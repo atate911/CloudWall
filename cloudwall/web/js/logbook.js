@@ -4,6 +4,7 @@ import { $, esc, num } from "./util.js";
 import { badges, recordsHtml, shortType } from "./parts.js";
 import { plate, drawn, typeInfo } from "./plate.js";
 import { refresh } from "./fresh.js";
+import { openAbout } from "./about.js";
 
 function budgetLine(fa) {
   const u = fa.unit || "lookups";
@@ -63,10 +64,20 @@ function collection(types) {
   };
   el.innerHTML = types.map((t) => {
     const info = typeInfo(t);
-    return `<figure class="coll${drawn(info) ? "" : " unknown"}"><div class="sil-box">${drawn(info) ? plate(info, { dim: false }) : `<code>${esc(t.type)}</code>`}</div>
+    return `<figure class="coll${drawn(info) ? "" : " unknown"}" data-about="${esc(t.type)}" data-name="${esc(t.name || "")}" data-model="${esc(t.model || "")}"
+      role="button" tabindex="0" aria-label="About the ${esc(t.name || t.type)}"><div class="sil-box">${drawn(info) ? plate(info, { dim: false }) : `<code>${esc(t.type)}</code>`}</div>
       <figcaption><div><code>${esc(t.type)}</code> <span>${esc(shortType(t.name) || "")}</span></div>
       <div class="dim"><b>${num(t.n)}</b> ${t.n === 1 ? "sighting" : "sightings"}${t.first ? `, since ${day(t.first)}` : ""}</div></figcaption></figure>`;
   }).join("") || '<span class="dim">Nothing yet. The first flyover starts the collection.</span>';
   coll = { key, el };
   return el;
 }
+
+// a type in the collection: its panel (about.js)
+function aboutFrom(e) {
+  const f = e.target.closest("figure.coll[data-about]");
+  if (f) openAbout(f.dataset.about, { name: f.dataset.name || null, model: f.dataset.model || null });
+  return !!f;
+}
+$("log").addEventListener("click", aboutFrom);
+$("log").addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && aboutFrom(e)) e.preventDefault(); });

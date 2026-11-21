@@ -1,0 +1,32 @@
+name = "General Atomics MQ-1 Predator"
+types = ["Q1"]
+production = [1995, 2015]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/General_Atomics_MQ-1_Predator",
+  "https://en.wikipedia.org/wiki/V-tail",
+  "https://en.wikipedia.org/wiki/Rotax_914",
+]
+
+text = """
+It grew from the designs of Abraham Karem, formerly chief designer for the Israeli Air Force, whose
+Gnat drones the CIA had bought in secret. The Predator first flew in the Mojave Desert in July 1994
+and was over the Balkans a year later, its pilot sitting in a van near the runway and waiting
+several seconds for the aircraft to answer the stick once control passed to a satellite link. In
+February 2001 a Predator fired a Hellfire missile for the first time, armed Predators flew their
+first missions over Afghanistan that October, and in December 2002 an Iraqi MiG-25 shot one down in
+the first air combat between a drone and a manned aircraft.
+
+It is built like a powered sailplane, with a long, thin wing, a tail of two surfaces angled down in
+an inverted V, and a pusher propeller turned by a 115 hp Rotax 914, a turbocharged four-cylinder that
+also powers light aircraft and gyroplanes. It could fly 400 nm to a target, circle overhead for 14
+hours and fly home. The US Air Force took its last Predator in 2011 and retired the type in March
+2018 in favour of the larger MQ-9 Reaper; as of 2026 a few remain in service elsewhere.
+"""
+
+[facts]
+"First flight" = "July 1994"
+"Built" = "360"
+"Endurance" = "14 hours on station, 400 nm from base"
+"Ceiling" = "25,000 ft"
+"Engine" = "Rotax 914F, 115 hp"

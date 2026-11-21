@@ -1,0 +1,30 @@
+name = "Grumman G-44 Widgeon"
+types = ["G44"]
+production = [1941, 1955]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Grumman_G-44_Widgeon",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-G.htm",
+]
+
+text = """
+A smaller Goose meant for private owners, which first flew in 1940 and went to war instead: the US
+Navy and Coast Guard flew it as the J4F, and the Royal Navy at first called it the Gosling. On 1
+August 1942 a Coast Guard Widgeon attacked a U-boat off the coast of Louisiana, and its pilot,
+Henry White, was credited with sinking U-166 and awarded the Distinguished Flying Cross. When the
+wreck of U-166 was found in 2001, it lay near the steamer Robert E. Lee, and the sinking, two
+days before White's attack, is now credited to the ship's escort, the patrol craft PC-566. His
+target was probably U-171, which escaped undamaged and was sunk four months later in the Bay of
+Biscay.
+
+After the war Grumman gave it a new hull that handled better on the water, as the G-44A, and
+delivered the last on 13 January 1949; 41 more were built in France as the SCAN 30, most of which
+ended up in the United States. The originals have 200-hp Ranger L-440s, inverted six-cylinder
+engines, and McKinnon of Sandy, Oregon, turned more than 70 into Super Widgeons with 270-hp
+Lycoming flat-sixes, three-bladed propellers and bigger windows.
+"""
+
+[facts]
+"First flight" = "1940"
+"Built" = "317, including 41 SCAN 30s built in France"
+"Engines" = "2 × Ranger L-440, 200 hp"

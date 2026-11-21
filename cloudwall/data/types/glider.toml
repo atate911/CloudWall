@@ -1,0 +1,53 @@
+name = "Glider"
+types = ["GLID", "GLIM"]
+checked = "2026-11"
+sources = [
+  "https://www.icao.int/operational-safety/doc-8643-aircraft-type-designators/special-designators",
+  "https://www.icao.int/operational-safety/doc-8643-aircraft-type-designators/motorglider-cleanup",
+  "https://www.icao.int/sites/default/files/publications/Doc8643/Motorglider-cleanup-stage-1.pdf",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+  "https://en.wikipedia.org/wiki/Glider_(sailplane)",
+  "https://en.wikipedia.org/wiki/Lift_(soaring)",
+  "https://en.wikipedia.org/wiki/Motor_glider",
+  "https://en.wikipedia.org/wiki/Perlan_Project",
+  "https://www.airbus.com/en/newsroom/press-releases/2018-09-airbus-perlan-mission-ii-glider-soars-to-76000-feet-to-break-own",
+  "https://en.wikipedia.org/wiki/Klaus_Ohlmann",
+  "https://fai.org/page/igc-records",
+  "https://en.wikipedia.org/wiki/FLARM",
+]
+
+text = """
+A glider is always sinking through the air around it, and stays up by finding air that rises faster.
+Thermals, columns of air warmed over sunlit ground and often capped by a cumulus cloud, are the
+commonest, rising at several metres a second on a good day: the glider circles tightly in one, as a
+hawk does, then glides straight to the next. Wind blowing against a ridge is forced up its face, and
+pilots run along mountain chains in it, while downwind of mountains a strong, steady wind can set up
+standing waves, marked by lens-shaped clouds, that climb far higher than the peaks. To get up in the
+first place, a glider is towed behind a light aircraft on a rope about 60 m long, or launched by a
+winch reeling in a kilometre of cable, which can throw it 900 to 3,000 ft into the air.
+
+Performance is measured as glide ratio, the distance covered for each unit of height lost. A Grunau
+Baby of the 1930s managed 17:1; today's 18 m sailplanes of glass and carbon fibre do better than
+50:1, and the Eta, with 30.9 m of span, better than 70:1. In competition they carry water ballast in
+the wings to fly faster between thermals, and dump it before landing. In January 2003 Klaus Ohlmann
+flew 3,009 km in one flight of just over 15 hours, riding the wave along the Andes, and in 2018 the
+pressurised Perlan 2 climbed in waves into the stratosphere over Patagonia to more than 74,000 ft,
+above the U-2 spy plane's recorded best. Many gliders carry FLARM, a collision warning made for them,
+instead of the ADS-B a display like this one picks up, so not every glider aloft shows here.
+"""
+
+[facts]
+"Best glide" = "over 70:1 (Eta); 38–52:1 for most 15–18 m sailplanes"
+"Winch launch" = "900–3,000 ft"
+"Altitude record" = "74,334 ft (22,657 m), Perlan 2, September 2018"
+"Distance record" = "3,009 km, Klaus Ohlmann, January 2003"
+
+[variants.GLIM]
+name = "Motorglider"
+more = """
+Since October 2025 ICAO has filed sailplanes with an engine or propeller that folds or retracts under
+GLIM. A self-launcher raises its propeller on a mast that swings up out of the fuselage and climbs
+away on its own. A sustainer has to be launched like any glider and uses its engine, a small jet on
+some, an electric motor turning a propeller that folds against the nose on others, to keep going when
+the lift runs out. Touring motorgliders, whose propellers stay out, aren't included.
+"""

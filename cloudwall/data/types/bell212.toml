@@ -1,0 +1,73 @@
+name = "Bell UH-1 Huey family"
+types = ["UH1", "B212", "B412"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Bell_UH-1_Iroquois",
+  "https://en.wikipedia.org/wiki/Bell_204/205",
+  "https://en.wikipedia.org/wiki/Bell_212",
+  "https://en.wikipedia.org/wiki/Bell_UH-1N_Twin_Huey",
+  "https://en.wikipedia.org/wiki/Bell_412",
+  "https://en.wikipedia.org/wiki/Bell_CH-146_Griffon",
+  "https://en.wikipedia.org/wiki/List_of_most-produced_rotorcraft",
+  "https://en.wikipedia.org/wiki/Blade%E2%80%93vortex_interaction",
+  "https://en.wikipedia.org/wiki/Helicopter_rotor",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+]
+
+text = """
+The family begins with the Bell 204, which first flew in October 1956 as the Army's XH-40 and became
+the first turbine-powered helicopter in US military service. The Army named it the Iroquois, but its
+first designation, HU-1, gave it the name everyone used, and Bell cast "Huey" into its pedals. Hueys
+went to Vietnam in 1962 with an Army air ambulance unit; 7,013 served there, 3,305 were destroyed,
+and troops jumping from an open-sided Huey became the image of the war. More than 16,000 Iroquois
+were built, more than any other Western helicopter, and the family is still being built.
+"""
+
+[variants.UH1]
+name = "Bell UH-1 Iroquois (Huey)"
+more = """
+The 204, the Army's UH-1A to C, and the stretched 205, its UH-1D and H and the civil 205A-1, have a
+single Lycoming T53 turboshaft. Their two-bladed, semi-rigid rotor, 48 ft across on the 205, carries
+over the Bell 47's design: blades pre-coned and slung under the teetering hinge, steadied by a
+stabilizer bar. On a UH-1H the two big blades turn at 324 rpm, and the slap of each blade meeting
+the vortex shed by the one ahead is the deep "Huey thump", loudest as it descends or turns. The US
+Army retired its last active-duty Hueys in 2005, but civil 205s and ex-military UH-1Hs still fight
+fires, lift loads and spray crops.
+"""
+[variants.UH1.facts]
+"First flight" = "October 1956 (XH-40)"
+"Built" = "over 16,000"
+"Engine" = "Lycoming T53, 700–1,400 shp"
+"Main rotor" = "2 blades, 48 ft (14.6 m) across (205, UH-1H)"
+
+[variants.B212]
+name = "Bell 212 (UH-1N Twin Huey)"
+production = [1970, 1998]
+more = """
+The 212 began with Canada's request in 1968 for a Huey 205 with two engines, for safety. Its Pratt &
+Whitney Canada PT6T Twin-Pac is two PT6 turbines side by side driving one gearbox, 1,800 shp between
+them; if one stops, the other can give 900 shp for half an hour and keep it cruising at full weight.
+The US services bought 294 as the UH-1N, and the civil 212 became a workhorse of offshore oil and
+logging and, in 1977, the first helicopter certified to fly on instruments with a single pilot. It
+kept the two-bladed rotor and its thump. The last was delivered in 1998.
+"""
+[variants.B212.facts]
+"Engines" = "Pratt & Whitney Canada PT6T Twin-Pac, 1,800 shp"
+"Sling load" = "5,000 lb (2,268 kg)"
+"Main rotor" = "2 blades, 48 ft (14.6 m) across"
+
+[variants.B412]
+name = "Bell 412"
+production = [1981]
+more = """
+The 412 is a 212 with a four-bladed composite rotor, two feet smaller across, in place of the
+two-bladed one, and its four blades tell the two apart at a glance. It first flew in August 1979 and
+is still in production; Subaru builds the latest version in Japan, as the 412EPX and as the UH-2 for
+Japan's army. More than 1,300 had been delivered by 2022, to police, fire and rescue services,
+offshore operators and air forces, and Canada's military flies it as the CH-146 Griffon.
+"""
+[variants.B412.facts]
+"First flight" = "August 1979"
+"Engines" = "Pratt & Whitney Canada PT6T Twin-Pac"
+"Main rotor" = "4 composite blades, 46 ft (14.0 m) across"
+"Built" = "over 1,300 by 2022"

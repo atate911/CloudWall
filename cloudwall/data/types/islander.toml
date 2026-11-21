@@ -1,0 +1,62 @@
+name = "Britten-Norman Islander"
+types = ["BN2P", "BN2T", "TRIS"]
+production = [1967]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Britten-Norman_BN-2_Islander",
+  "https://en.wikipedia.org/wiki/Britten-Norman_Trislander",
+  "https://en.wikipedia.org/wiki/Westray_to_Papa_Westray_flight",
+  "https://www.guinnessworldrecords.com/world-records/63191-shortest-domestic-scheduled-flight",
+  "https://nms.ac.uk/explore-our-collections/stories/science-and-technology/britten-norman-islander",
+  "https://aviationweek.com/business-aviation/aircraft-propulsion/first-uk-manufactured-bn-islander-more-50-years-unveiled",
+  "https://www.airwaysmag.com/new-post/britten-norman-trislanders-first-flight",
+  "https://skybrary.aero/index.php/BN2P",
+  "https://skybrary.aero/aircraft/bn2t",
+  "https://skybrary.aero/aircraft/tris",
+]
+
+text = """
+John Britten and Desmond Norman, whose firm on the Isle of Wight converted and flew agricultural
+aircraft, saw that the new commuter airlines valued seats over speed or range, and designed the
+Islander to carry a big load cheaply in and out of rough strips. A large, lightly loaded wing lets
+it lift more than other aircraft of its power and price. To make it cheap to build, the wing and
+tail keep the same chord and thickness from root to tip, every rib in the wing is the same, and the
+fuselage is a plain box on fixed landing gear. It first flew on 13 June 1965 and was at the Paris
+Air Show four days later.
+
+In 1974 its sales passed the record of 548 orders for a British multi-engined commercial aircraft.
+More than 1,200 have been built, over 500 of them in Romania, and in 2023 production returned to
+Bembridge. It is the aircraft of island hops: Loganair's Islander between Westray and Papa
+Westray in Orkney, 1.7 miles and two minutes on the timetable, is the shortest scheduled flight in
+the world.
+"""
+
+[facts]
+"First flight" = "June 1965"
+"Built" = "over 1,200"
+"Engines" = "2 × Lycoming O-540 or IO-540, 260 or 300 hp"
+"Max takeoff weight" = "6,600 lb (2,994 kg), BN-2B"
+
+[variants.BN2T]
+name = "Britten-Norman BN-2T Turbine Islander"
+more = """
+The Turbine Islander, in service from 1981, replaces the piston engines with a pair of Allison 250
+turboprops. The British Army flew it for reconnaissance and photography over Northern Ireland.
+"""
+[variants.BN2T.facts]
+"Engines" = "2 × Allison 250-B17C turboprops, 320 shp"
+
+[variants.TRIS]
+name = "Britten-Norman Trislander"
+production = [1971, 1982]
+more = """
+The Trislander stretches the Islander to 18 seats and puts a third engine on the centreline, high
+on a lengthened fin. The prototype first flew on 11 September 1970 and was at the Farnborough show
+the same day. About 80 were built, until 1982, and Aurigny flew them between the Channel Islands
+for more than 40 years, until 2017; one of its fleet is now at the Imperial War Museum, Duxford.
+"""
+[variants.TRIS.facts]
+"First flight" = "September 1970"
+"Built" = "80"
+"Engines" = "3 × Lycoming O-540, 260 hp"
+"Max takeoff weight" = "10,000 lb (4,536 kg)"

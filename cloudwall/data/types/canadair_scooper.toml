@@ -1,0 +1,51 @@
+name = "Canadair CL-215 and CL-415"
+types = ["CL2P", "CL2T"]
+production = [1969, 2015]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Canadair_CL-215",
+  "https://en.wikipedia.org/wiki/Canadair_CL-415",
+  "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_R-2800_Double_Wasp",
+  "https://thecanadianencyclopedia.ca/en/article/canadair-cl-215",
+  "https://www.fireengineering.com/technical-rescue/planes-scoop-to-reload-for-water-drops/",
+  "https://skybrary.aero/aircraft-model/cl-415",
+  "https://skybrary.aero/aircraft-model/cl-215t",
+  "https://www.flightglobal.com/airframers/de-havilland-now-producing-first-dhc-515-with-2028-in-service-goal/160026.article",
+  "https://aviationweek.com/business-aviation/aircraft-propulsion/dhc-515-program-hits-major-assembly-milestones",
+]
+
+text = """
+The first aircraft designed from the outset to fight fires with water. Quebec wanted a replacement
+for the Canso flying boats it used as water bombers, and Canadair's answer, the CL-215, first flew
+on 23 October 1967 with two Pratt & Whitney R-2800s, the radial of the Hellcat and the Corsair. It
+reloads without stopping: the pilot settles it onto a lake or the sea, skims along on the hull
+with scoops lowered into the water, and climbs away full. The later CL-415 takes on 6,140 litres
+in a run of about 12 seconds and 410 m, can take a partial load from a smaller stretch of water or
+turn while it scoops, and can mix foam into the load before dropping it on the fire.
+
+The first CL-215 went to France's Sécurité Civile in 1969, and 125 were built for 11 countries
+until 1990. The CL-415 followed from 1994, with winglets and Pratt & Whitney Canada PW123
+turboprops mounted closer to the fuselage, and older aircraft re-engined with the same turboprops
+became CL-215Ts. Bombardier closed the line in October 2015 after 95 CL-415s. Viking Air bought the
+programme in 2016 and in 2022 relaunched it as the De Havilland Canada DHC-515; as of 2026 the
+first was being assembled in Calgary, for Greece, one of six European countries buying 22 through
+an EU-backed order.
+"""
+
+[facts]
+"First flight" = "October 1967 (CL-215); December 1993 (CL-415)"
+"Built" = "125 CL-215s, 95 CL-415s"
+
+[variants.CL2P]
+name = "Canadair CL-215"
+production = [1969, 1990]
+[variants.CL2P.facts]
+"Water load" = "5,450 L (1,440 US gal)"
+"Engines" = "2 × Pratt & Whitney R-2800 Double Wasp radials"
+
+[variants.CL2T]
+name = "Canadair CL-415, or CL-215T conversion"
+production = [1994, 2015]
+[variants.CL2T.facts]
+"Water load" = "6,140 L (1,620 US gal), CL-415"
+"Engines" = "2 × Pratt & Whitney Canada PW123AF turboprops, 2,380 hp"

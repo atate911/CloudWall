@@ -127,6 +127,9 @@ class BrowserTest(unittest.TestCase):
         f = self.scenario("follow")
         self.assertEqual((f["view"], f["followed"], f["released"]), ("now", f["picked"], True))
         self.assertGreaterEqual(f["track"], 1)                               # the selected aircraft's track is drawn
+        ab = f["about"]                                                      # its drawing opens the panel about its type
+        self.assertTrue(ab["type"] and ab["name"] and ab["pinned"])
+        self.assertGreaterEqual(ab["lines"], 1)                              # with what the logbook knows of it
 
     def test_the_radars_switches_the_night_chart_and_the_place_menu(self):
         c = self.scenario("controls")

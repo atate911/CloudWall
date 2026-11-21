@@ -1,0 +1,28 @@
+name = "General Atomics MQ-9 Reaper"
+types = ["Q9"]
+production = [2002]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/General_Atomics_MQ-9_Reaper",
+]
+
+text = """
+General Atomics scaled the Predator up into the Predator B, with a longer wing and a 950 shp Garrett
+TPE331 turboprop in place of the Predator's 115 hp piston engine. The extra power lets it carry
+fifteen times the weapons and cruise at about three times the speed, and on a 66 ft wing it can stay
+up for 30 hours on a surveillance mission, or 23 fully armed. The Air Force named it Reaper and
+fielded it in 2007 as its first hunter-killer drone, built to watch a target for hours and then
+strike it, flown by a pilot and a sensor operator in a ground control station.
+
+It flies at home too. US Customs and Border Protection patrols the borders with it, and NASA's
+Reaper, Ikhana, surveyed the California wildfires of 2007 and filmed the Orion capsule's descent on
+its first test flight in 2014. About 575 had been built as of 2026, and dozens have been lost over
+Yemen and Iran.
+"""
+
+[facts]
+"First flight" = "February 2001"
+"Built" = "about 575 (as of 2026)"
+"Endurance" = "30 hours; 23 fully armed"
+"Max payload" = "3,800 lb (1,724 kg)"
+"Engine" = "Garrett TPE331 turboprop, 950 shp"

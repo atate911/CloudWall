@@ -1,0 +1,35 @@
+name = "Bell Boeing V-22 Osprey"
+types = ["V22"]
+production = [1999]
+checked = "2026-11"
+sources = [
+  "https://www.boeing.com/defense/military-rotorcraft/v-22-osprey",
+  "https://en.wikipedia.org/wiki/Bell_Boeing_V-22_Osprey",
+]
+
+text = """
+On each wingtip sits a nacelle holding a Rolls-Royce turboshaft, its gearbox and a three-bladed
+proprotor 38 ft across. For takeoff and landing the nacelles stand upright and it flies as a
+helicopter; once airborne they swing forward through 90 degrees, in as little as 12 seconds, and it
+cruises like a turboprop, while tilting them part way, up to 45 degrees, lets it make short rolling
+takeoffs. A driveshaft through the wing links the two sides so either engine can turn both rotors,
+though it generally cannot hover on one. Folding to fit aboard ships shaped much of it: the rotors
+fold in 90 seconds and the whole wing swivels to lie along the fuselage, and the rotors are 5 ft
+smaller than would suit an aircraft of its size, which loads them heavily and blasts the ground below
+with a downwash of over 80 knots, stronger than hurricane force.
+
+The failed attempt to rescue the American hostages in Iran in 1980 showed the need for an aircraft
+that could land like a helicopter and travel like an aeroplane, and Bell and Boeing answered with an
+enlarged version of Bell's XV-15. It first flew in 1989, outlasted Defense Secretary Dick Cheney's
+efforts to cancel it because Congress kept funding it, and was grounded after two crashes in 2000
+that killed 23 Marines. It entered Marine Corps service in 2007, and the Air Force, the Navy and
+Japan have followed; a fatal Air Force crash off Japan in November 2023 grounded it again until March 2024. In
+aeroplane mode it looks like a stubby turboprop with propellers far too big for it.
+"""
+
+[facts]
+"First flight" = "March 1989"
+"Nacelle tilt" = "90° in as little as 12 seconds"
+"Rotor diameter" = "38 ft"
+"Max takeoff weight" = "52,600 lb (23,859 kg), vertical"
+"Engines" = "2 × Rolls-Royce AE 1107C, 6,150 shp"

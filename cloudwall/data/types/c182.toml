@@ -1,0 +1,51 @@
+name = "Cessna 182 Skylane"
+types = ["C182", "C82S", "C82R", "C82T"]
+production = [1956]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_182_Skylane",
+  "https://en.wikipedia.org/wiki/Cessna_180_Skywagon",
+  "https://en.wikipedia.org/wiki/Cessna_172",
+  "https://www.faa.gov/documentLibrary/media/Order/FAA_Order_JO_7360.1K_Aircraft_Type_Designators.pdf",
+  "https://doc8643.com/aircraft/C82S",
+]
+
+text = """
+The 182 is to the 180 what the 172 is to the 170: the same airframe on a nosewheel, introduced in
+1956. It has the 172's wing planform and its 174 sq ft of area, but where a 172 has a four-cylinder
+engine the 182 has a 230 hp six, a Continental O-470 until 1986 and a fuel-injected Lycoming IO-540
+since production restarted in 1997, turning a constant-speed propeller. With that power it lifts far
+more: its maximum takeoff weight has grown from 2,550 lb in 1956, what a 172S is allowed today, to
+3,100 lb. The deluxe version of 1958 was the first called the Skylane, a name every 182 has carried
+since 1976.
+
+Skydiving operators fly it with the passenger seats out, an upward-opening door and a big step
+outside it, and the Civil Air Patrol flies it on search and rescue. The turbocharged T182 came in
+1981, and from 1978 to 1986 there was also the Skylane RG, its wheels raised by an electrically
+driven hydraulic pump, which cruised at 156 knots at 7,500 ft on 75% power. From below it is hard to
+tell from a 172; it is nearly two feet longer, with a bigger nose for its six-cylinder engine.
+"""
+
+[facts]
+"First flight" = "September 1955"
+"Engine" = "230 hp: Continental O-470 to 1986, Lycoming IO-540 since 1997"
+"Max takeoff weight" = "3,100 lb (1,406 kg)"
+
+[variants.C82S]
+name = "Cessna T182 Turbo Skylane"
+production = [1981]
+[variants.C82S.facts]
+"Engine" = "Lycoming O-540 or TIO-540, turbocharged, 235 hp"
+
+[variants.C82R]
+name = "Cessna R182 Skylane RG"
+production = [1978, 1986]
+[variants.C82R.facts]
+"Engine" = "Lycoming O-540, 235 hp"
+"Cruise" = "156 kt at 7,500 ft, 75% power (1978)"
+
+[variants.C82T]
+name = "Cessna TR182 Turbo Skylane RG"
+production = [1978, 1986]
+[variants.C82T.facts]
+"Engine" = "Lycoming O-540, turbocharged, 235 hp"

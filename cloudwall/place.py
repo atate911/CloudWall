@@ -13,7 +13,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import aircraft, airports, config, contrails, sources, tfr, weather
+from . import about, aircraft, airports, config, contrails, seats, sources, tfr, weather
 from .activity import Activity
 from .enrich import Enricher
 from .shared import Shared
@@ -83,6 +83,17 @@ class Place:
         for row in book["types"] + book["types_today"] + book["recent"]:
             row.update(aircraft.shape(row.get("type")))
         return book
+
+    def about_type(self, type_code, hexid=None):
+        """The panel a tap on a type opens: its write-up and facts (about.py), what's needed to draw
+        it, its usual seats, and what this place's logbook knows of it; with hexid, of that
+        airframe too. A type with no write-up yet still has the rest."""
+        e = about.entry(type_code) or {}
+        return dict(aircraft.shape(type_code), type=type_code,
+                    name=e.get("name") or self.store.type_name(type_code), family=e.get("family"),
+                    text=e.get("text", []), facts=e.get("facts", []), production=e.get("production"),
+                    icon=aircraft.icon(type_code), cwt=aircraft.wake(type_code), seats=seats.seats(None, type_code),
+                    seen=self.store.type_seen(type_code), airframe=self.store.airframe_seen(hexid) if hexid else None)
 
     # -- its threads ------------------------------------------------------------------------
     def stop(self):

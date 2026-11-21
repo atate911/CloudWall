@@ -1,0 +1,33 @@
+name = "Douglas DC-6"
+types = ["DC6"]
+production = [1946, 1958]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Douglas_DC-6",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://en.wikipedia.org/wiki/Lockheed_Constellation",
+  "https://en.wikipedia.org/wiki/Everts_Air",
+]
+
+text = """
+The DC-6 turned the wartime C-54 into a postwar airliner. Douglas lengthened it by 80 inches,
+pressurised the cabin, which could be held at 5,000 ft while the aircraft flew at 20,000, and fitted
+2,400 hp Pratt & Whitney R-2800 Double Wasps, making it about 90 mph faster than the DC-4 and able to
+fly 850 miles farther with more payload. It was built to beat the Lockheed Constellation, which has
+three tail fins to the DC-6's one. A string of fires in flight grounded the fleet for four months
+in 1947, until the cause was traced to a fuel vent beside the air intake for the cabin cooling
+turbine, and the stretched DC-6B that followed came to be regarded as the finest piston airliner of
+all for reliability, economy and handling.
+
+Harry Truman's first presidential aircraft was a DC-6, the Independence, and Pan Am used DC-6Bs to
+start tourist-class flights across the Atlantic in 1952. Douglas built 704. Their simpler engines let
+them outlast the faster DC-7 that followed, carrying freight and dropping water on fires long after
+the airlines let them go. In Alaska, Everts Air Cargo of Fairbanks still had four in 2025, flying
+freight and fuel to remote strips, and in Europe the Flying Bulls fly a DC-6B that once carried
+Yugoslavia's President Tito.
+"""
+
+[facts]
+"First flight" = "February 1946"
+"Built" = "704, 167 of them military"
+"Engines" = "4 × Pratt & Whitney R-2800 Double Wasp, 2,400–2,500 hp"

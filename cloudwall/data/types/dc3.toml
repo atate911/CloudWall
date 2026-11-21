@@ -1,0 +1,37 @@
+name = "Douglas DC-3"
+types = ["DC3", "DC3T"]
+production = [1936, 1945]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Douglas_DC-3",
+  "https://airandspace.si.edu/collection-objects/douglas-dc-3/nasm_A19530075000",
+  "https://key.aero/article/life-and-times-dc-3-most-flying-hours",
+  "https://webarchive.library.unt.edu/eot2008/20080917110505/http://centennialofflight.gov/essay/Aerospace/Northrop/Aero40.htm",
+  "https://www.globalsecurity.org/military/systems/ground/m35.htm",
+  "https://en.wikipedia.org/wiki/Basler_BT-67",
+]
+
+text = """
+It first flew on 17 December 1935, 32 years to the day after the Wright brothers. Its wing was built
+on Jack Northrop's multi-cellular principle: many small spanwise boxes of stressed skin instead of
+one heavy spar. That gave it a structure so strong and so tolerant of damage that one airframe has
+now flown more than 91,000 hours. With 21 seats and two radials of 1,000 to 1,200 hp, cruising near
+150 knots, it was the first airliner that could make money from passengers alone, without a
+government mail contract to keep it afloat.
+
+The war turned it into the C-47 Skytrain, and with the copies built under licence in the Soviet Union
+and Japan, 16,079 were made in all. Eisenhower counted the C-47, with the bulldozer, the jeep and the
+2½-ton truck, among the equipment most vital to the Allies' success in Africa and Europe. It's easy
+to know overhead from its two big round engines and their slow, steady drone; on the ground it sits
+tail-down on a small wheel under the tail. Eight decades after the last was built, a few still earn
+a living. Basler rebuilds them with Pratt & Whitney PT6 turboprops and a fuselage a metre longer,
+and some fly cargo in Antarctica.
+"""
+
+[facts]
+"Built" = "16,079 in all, 607 of them as airliners"
+"Engines" = "2 × Wright Cyclone or Pratt & Whitney Twin Wasp radials, 1,000–1,200 hp"
+
+[variants.DC3T]
+name = "Basler BT-67"
+production = [1990]

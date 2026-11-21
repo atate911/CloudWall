@@ -1,0 +1,67 @@
+name = "Beechcraft Baron"
+types = ["BE55", "BE56", "BE58"]
+production = [1961]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Beechcraft_Baron",
+  "https://en.wikipedia.org/wiki/Beechcraft_Travel_Air",
+  "https://en.wikipedia.org/wiki/Beechcraft_Duke",
+  "https://www.aopa.org/news-and-media/all-news/2025/november/21/textron-halts-bonanza-baron-lines",
+  "https://www.ainonline.com/aviation-news/general-aviation/2025-11-21/textron-end-new-baron-and-bonanza-production",
+  "https://avweb.com/aviation-news/textron-to-sunset-baron-bonanza/",
+  "https://www.aopa.org/news-and-media/all-news/2010/december/pilot/hawker-beechcraft-baron-g58-the-baron-turns-50",
+  "https://www.aopa.org/go-fly/aircraft-and-ownership/aircraft-fact-sheets/beechcraft-baron",
+  "https://www.aopa.org/news-and-media/all-news/1996/september/pilot/used-airplane-report",
+]
+
+text = """
+Beech made the Baron from its Travel Air, itself a Bonanza with two engines, giving it six-cylinder
+Continentals in streamlined nacelles and the swept fin of the Debonair to take on the Piper Aztec
+and the latest Cessna 310. The prototype first flew on 29 February 1960 and Barons were built for
+more than six decades from 1961, over 7,000 of them. In November 2025 Textron Aviation, Beechcraft's
+owner, said it would build no more once its last orders were filled; in 2024 it had delivered just
+two.
+
+The short-bodied 55 seats up to six, but reaching the third row means climbing past the second, and
+with all six seats full it easily goes beyond its aft centre-of-gravity limit, so many owners use
+the back as a baggage hold. The Baron 58 of 1969 fixed both: Beech stretched the cabin 10 inches,
+moved the fuselage forward on the wing and added double doors at the back, behind club seats in the
+middle row. It is the one charter and cargo operators prefer, and the easiest to pick out, with four
+windows down each side where the 55 has three.
+"""
+
+[facts]
+"First flight" = "February 1960"
+"Built" = "7,011 by the end of 2025"
+
+[variants.BE55]
+name = "Beechcraft Baron 55"
+production = [1961, 1983]
+more = """
+The US Army trained instrument pilots on 65 Baron 55s it called the T-42A Cochise.
+"""
+[variants.BE55.facts]
+"Built" = "3,651"
+"Engines" = "2 × Continental IO-470 or IO-520, 260 to 285 hp"
+
+[variants.BE56]
+name = "Beechcraft Baron 56TC"
+production = [1967, 1971]
+more = """
+The 56TC is a strengthened Baron 55 with turbocharged 380 hp Lycoming TIO-541s, the engine of
+Beech's pressurised Duke.
+"""
+[variants.BE56.facts]
+"Built" = "94"
+"Engines" = "2 × Lycoming TIO-541, 380 hp, turbocharged"
+
+[variants.BE58]
+name = "Beechcraft Baron 58"
+production = [1969]
+more = """
+The pressurised 58P and the turbocharged 58TC, built from 1976 to the mid-1980s, share its
+designator. Since 2005 it has been built as the G58, with a Garmin G1000 glass cockpit.
+"""
+[variants.BE58.facts]
+"Built" = "3,191 by the end of 2025, with the 58P and 58TC"
+"Engines" = "2 × Continental IO-550, 300 hp (G58)"

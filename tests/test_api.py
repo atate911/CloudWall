@@ -270,6 +270,18 @@ class ShapeTest(unittest.TestCase):
         self.held("flyover", book["recent"])
         self.assertEqual(book["recent"][0]["track"], 280)       # logged where it was closest, and which way it flew
 
+    def test_a_type(self):
+        get = self.serve()
+        logged = get("/api/type?type=b739&hex=a1")              # the one that came overhead above, with a write-up
+        unwritten = get("/api/type?type=ZZZZ")                   # neither written about nor ever logged
+        self.held("type", [logged, unwritten])
+        self.held("type.seen", [logged["seen"], unwritten["seen"]])
+        self.assertEqual((logged["type"], logged["name"], logged["family"], logged["seen"]["rank"], logged["airframe"]["n"]),
+                         ("B739", "Boeing 737-900", "Boeing 737 Next Generation", 1, 1))
+        self.assertTrue(logged["text"] and logged["facts"] and logged["production"])
+        self.assertEqual((unwritten["name"], unwritten["family"], unwritten["text"], unwritten["facts"], unwritten["production"],
+                          unwritten["airframe"], unwritten["seen"]["n"]), (None, None, [], [], None, None, 0))
+
 
 if __name__ == "__main__":
     unittest.main()

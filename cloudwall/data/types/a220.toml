@@ -1,0 +1,48 @@
+name = "Airbus A220"
+types = ["BCS1", "BCS3"]
+production = [2016]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_A220",
+  "https://www.aircraft.airbus.com/en/aircraft/a220",
+  "https://www.aircraft.airbus.com/en/aircraft/a220/a220-100",
+  "https://www.aircraft.airbus.com/en/aircraft/a220/a220-300",
+  "https://aircraft.airbus.com/en/newsroom/stories/2025-08-a-geared-propulsion-system-to-deliver-industry-leading-efficiency",
+  "https://www.airbus.com/en/newsroom/press-releases/2019-12-air-canada-takes-delivery-of-its-first-a220",
+  "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_PW1000G",
+  "https://www.euronews.com/business/2017/10/17/airbus-ties-up-majority-stake-in-bombardier-project",
+  "https://www.bloomberg.com/news/articles/2018-01-26/boeing-unharmed-by-bombardier-jet-imports-u-s-panel-decides",
+  "https://www.madeinalabama.com/2025/07/airbus-delivers-100th-a220-from-mobile-facility-marking-milestone-for-alabamas-aerospace-industry/",
+  "https://commons.wikimedia.org/wiki/File:Airbus_A220-300.jpg",
+  "https://commons.wikimedia.org/wiki/File:Bombardier_CS100_and_CS300_3-view_comparison.jpg",
+]
+
+text = """
+Bombardier designed it from a clean sheet as the CSeries, its first step beyond regional jets: wings
+of carbon composite built in Belfast, a fuselage of aluminium-lithium, fly-by-wire with sidesticks,
+and Pratt & Whitney's PW1500G geared turbofan, whose gearbox lets the big fan turn about a third as
+fast as the turbine driving it. That makes it one of the quietest jets of its size. Seats run five
+abreast, two on one side and three on the other, so most rows have one middle seat instead of two,
+and they are wider than in any other narrowbody's economy cabin.
+
+In 2017 Boeing objected to Delta's order, and the US Commerce Department proposed duties of nearly
+300% on the aircraft. Before the International Trade Commission ruled against Boeing in January
+2018, Bombardier had already agreed to hand control of the programme to Airbus for a token sum.
+Airbus renamed it the A220 and opened a second assembly line in Mobile, Alabama, where many of the
+A220s flying in the US are built. From the ground, look for engines that seem too big for the
+aircraft, slung well forward under a wing that ends in a small, upswept winglet.
+"""
+
+[facts]
+"Entered service" = "July 2016"
+"Engines" = "2 × Pratt & Whitney PW1500G"
+
+[variants.BCS1]
+name = "Airbus A220-100"
+[variants.BCS1.facts]
+"Max takeoff weight" = "up to 63,700 kg (140,400 lb)"
+
+[variants.BCS3]
+name = "Airbus A220-300"
+[variants.BCS3.facts]
+"Max takeoff weight" = "up to 70,900 kg (156,300 lb)"

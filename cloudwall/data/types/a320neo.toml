@@ -1,0 +1,60 @@
+name = "Airbus A320neo family"
+types = ["A19N", "A20N", "A21N"]
+production = [2016]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_A320neo_family",
+  "https://en.wikipedia.org/wiki/Airbus_A320_family",
+  "https://www.aircraft.airbus.com/en/aircraft/a320-family/a319neo",
+  "https://www.aircraft.airbus.com/en/aircraft/a320-family/a320neo",
+  "https://www.aircraft.airbus.com/en/aircraft/a320-family/a321neo",
+  "https://www.aircraft.airbus.com/en/aircraft/a320-family/a321xlr",
+  "https://en.wikipedia.org/wiki/Pratt_%26_Whitney_PW1000G",
+  "https://en.wikipedia.org/wiki/CFM_International_LEAP",
+  "https://en.wikipedia.org/wiki/CFM_International_CFM56",
+  "https://en.wikipedia.org/wiki/IAE_V2500",
+  "https://www.govinfo.gov/content/pkg/FR-2024-03-27/pdf/2024-06419.pdf",
+  "https://www.transportation.gov/regulations/federal-register-documents/2022-26435",
+  "https://lufthansagroup.com/en/focus-areas/aircraft-related-hardware/vortex-generator.html",
+]
+
+text = """
+"Neo" stands for new engine option, and the engines are most of the story: Pratt & Whitney's geared
+PW1100G or CFM's LEAP-1A, with fans of about 2 m against the older A320's 1.6 to 1.7 m, pushing
+eleven to twelve and a half times as much air around the core as through it. With the sharklets, the
+tall curved winglets the family now carries, they cut fuel burn by around 15%, or 20% a seat in the
+denser cabins Airbus offers with it. The Pratt engine puts a gearbox between fan and turbine so each
+can turn at its best speed; from 2023 contaminated powdered metal in its turbine discs kept hundreds
+of neos on the ground for inspection.
+
+From below, the engines fill noticeably more of the space under the wing than an older A320's, and
+the neo doesn't whistle on approach as the early ones did. Together with the original family it has
+outsold every other airliner, the 737 included, passing it in orders in 2019 and in deliveries in
+2025.
+"""
+
+[facts]
+"Entered service" = "January 2016"
+"Engines" = "2 × Pratt & Whitney PW1100G or CFM LEAP-1A"
+
+[variants.A19N]
+name = "Airbus A319neo"
+[variants.A19N.facts]
+"Range" = "3,700 nm (6,850 km)"
+"Max takeoff weight" = "up to 75,500 kg (166,400 lb)"
+
+[variants.A20N]
+name = "Airbus A320neo"
+[variants.A20N.facts]
+"Range" = "3,400 nm (6,300 km)"
+"Max takeoff weight" = "up to 79,000 kg (174,200 lb)"
+
+[variants.A21N]
+name = "Airbus A321neo"
+more = """
+The A321neo is the family's best seller, and its long-range versions take it across the Atlantic.
+The XLR carries an extra fuel tank built into the fuselage and reaches about 8,700 km.
+"""
+[variants.A21N.facts]
+"Range" = "4,000 nm (7,400 km); XLR 4,700 nm (8,700 km)"
+"Max takeoff weight" = "up to 97,000 kg (213,800 lb); XLR 101,500 kg (223,800 lb)"

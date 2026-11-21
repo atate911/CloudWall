@@ -1,0 +1,46 @@
+name = "Boeing 757"
+types = ["B752", "B753"]
+production = [1982, 2005]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_757",
+  "https://www.boeing.com/content/dam/boeing/v2/airports/acaps/757_Rev_H.pdf",
+  "https://www.faa.gov/documentLibrary/media/Order/JO_7110.126A_Consolidated_Wake_Turbulence_Separation_Standard_FINAL_SIGNED_508.pdf",
+  "https://www.faa.gov/documentLibrary/media/Order/7110.65BB_Chg_2_dtd_1-22-26.pdf",
+  "https://beatofhawaii.com/hawaii-travel-was-forever-changed-by-boeing-757",
+]
+
+text = """
+The 757 was built for power. Its two engines, Rolls-Royce RB211s or Pratt & Whitney PW2000s, give it
+more thrust for its weight than the jets it competed with, so it climbs out steeply and can use
+short, hot or high runways that would limit other jets of its size. Airlines prized it for routes
+too long for a 737 and too thin for a widebody: across the Atlantic from mid-sized cities, or to
+Hawaii from the West Coast. Production ended in 2004 after 1,050 were built. Nothing matched it
+until Airbus's long-range A321s, so airlines have kept flying it for decades.
+
+Its wake is part of its story. In the early 1990s, smaller aircraft following close behind 757s were
+upset by the vortices off its wings, and some crashed, so controllers began spacing aircraft further
+behind it than behind others of its weight; under today's FAA wake categories it still has one to
+itself. From the ground it is easy to know by its long, slender fuselage on tall landing gear. It
+shares a cockpit and a pilot rating with the larger 767, and the US Air Force flies it as the C-32,
+often as Air Force Two.
+"""
+
+[facts]
+"Built" = "1,050"
+"Engines" = "2 × Rolls-Royce RB211-535 or Pratt & Whitney PW2000"
+
+[variants.B752]
+name = "Boeing 757-200"
+[variants.B752.facts]
+"Range" = "up to 3,900 nm (7,220 km)"
+"Max takeoff weight" = "up to 115,700 kg (255,000 lb)"
+
+[variants.B753]
+name = "Boeing 757-300"
+more = """
+The -300 is 7 m longer, and at 54.4 m it is the longest single-aisle twinjet ever built. Only 55
+were made.
+"""
+[variants.B753.facts]
+"Max takeoff weight" = "up to 122,400 kg (269,800 lb)"

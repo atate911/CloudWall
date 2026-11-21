@@ -1,0 +1,35 @@
+name = "Cirrus SF50 Vision Jet"
+types = ["SF50"]
+production = [2016]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cirrus_Vision_SF50",
+  "https://en.wikipedia.org/wiki/Cirrus_Airframe_Parachute_System",
+  "https://en.wikipedia.org/wiki/Williams_FJ33",
+  "https://www.avweb.com/avwebflash/news/Collier-Trophy-Goes-To-Cirrus-Jet-230563-1.html",
+  "https://gama.aero/wp-content/uploads/GAMA_2019Databook_ForWebFinal-2020-02-19.pdf",
+]
+
+text = """
+Cirrus set out in 2006 to build what it called the slowest, lowest and cheapest jet available, a
+step up for owners of its SR22 piston singles, for under $1 million. The prototype flew from Duluth
+in July 2008, but in the recession that followed the money ran short and the work slowed; co-founder
+Alan Klapmeier tried and failed to buy the project, and left, while his brother Dale stayed. It was
+rescued when the Chinese firm CAIGA bought Cirrus in 2011 and paid to finish it. Certified in
+October 2016, at about twice the price first promised, it was the first single-engine civil jet to
+be type-certified, and it won the Collier Trophy for 2017.
+
+Its one Williams FJ33 turbofan sits on top of the fuselage, exhausting between the two fins of a
+V-tail, on an airframe of carbon fibre. Like Cirrus's piston singles it carries a parachute for the
+whole aircraft, packed here in the nose, and since 2020 it has offered Garmin's Safe Return, the
+first emergency autoland on a jet: a passenger presses a button in the cabin ceiling and the
+aircraft picks the nearest suitable airport, flies there, lands and stops. It flies low and slow for
+a jet, no higher than 31,000 ft and no faster than Mach 0.53, and approaches at speeds close to an
+SR22's. From 2018 through 2024 it was the most-delivered business jet in the world every year.
+"""
+
+[facts]
+"First flight" = "July 2008"
+"Engine" = "Williams FJ33-5A"
+"Cruise" = "311 kt (G2)"
+"Ceiling" = "31,000 ft"

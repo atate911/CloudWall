@@ -1,0 +1,54 @@
+name = "Embraer E-Jet E2"
+types = ["E290", "E295"]
+production = [2018]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Embraer_E-Jet_E2_family",
+  "https://www.embraer.com/e-jets-e2/en/",
+  "https://www.embraer.com/media/e5whgknk/e190-e2_spec.pdf",
+  "https://www.embraer.com/media/ue1bdfnq/e195-e2-spec-1.pdf",
+  "https://www.embraer.com/media/vmsjxvk5/e-jets-e2_apm_e-jetse2.pdf",
+  "https://www.flightglobal.com/news/articles/analysis-with-e2-series-embraer-closes-the-loop-449700/",
+  "https://aviationweek.com/commercial-aviation/embraer-s-e2-advances-e-jet-without-sacrificing-commonality",
+  "https://www.flightglobal.com/air-transport/e195-e2-secures-steep-approach-clearance-for-london-city-airport/155779.article",
+  "https://www.schiphol.nl/en/schiphol-as-a-neighbour/blog/did-that-plane-just-make-a-whale-sound/",
+]
+
+text = """
+The E2 keeps the first E-Jets' fuselage cross-section and much of their cockpit, so a pilot moves
+across in two and a half days without a full flight simulator, but three-quarters of its parts are
+new. Its Pratt & Whitney PW1900G is a geared turbofan: a gearbox lets the 185 cm fan turn slower
+than the turbine driving it, and it pushes about twelve times as much air around the core as through
+it. The engines are 66 cm wider than the CF34s they replace, so the landing gear is taller. The new
+wing spans 33.7 m on the E190-E2 against the E190's 28.7 m and has simpler single-slotted flaps, and
+closed-loop fly-by-wire let Embraer shrink the tail. In flight tests the E190-E2 burned 17.3% less
+fuel than the E190: 11 points from the engines, 4.8 from the wing and 1.5 from the smaller tail.
+
+The E195-E2 is three seat rows longer than the E195, with a longer wingtip, and since November 2023
+it has been the largest aircraft cleared for London City's steep approach. On takeoff and landing
+its combustion chambers can resonate, with a sound Amsterdam's Schiphol airport has compared to a
+whale's call; it does no harm, and Embraer has said it will redesign the combustor. Widerøe flew the
+first E2 into service, an E190-E2, between Bergen and Tromsø in April 2018. Tell an E2 from the
+first E-Jets by its long, slender wing, which ends in a raked tip instead of a winglet, and its
+bigger engines.
+"""
+
+[facts]
+"First flight" = "May 2016 (E190-E2)"
+"Engines" = "2 × Pratt & Whitney PW1900G"
+
+[variants.E290]
+name = "Embraer E190-E2"
+[variants.E290.facts]
+"First flight" = "May 2016"
+"Entered service" = "April 2018"
+"Range" = "2,950 nm (5,463 km)"
+"Max takeoff weight" = "56,400 kg (124,340 lb)"
+
+[variants.E295]
+name = "Embraer E195-E2"
+production = [2019]
+[variants.E295.facts]
+"First flight" = "March 2017"
+"Range" = "up to 3,000 nm (5,556 km)"
+"Max takeoff weight" = "up to 62,500 kg (137,789 lb)"

@@ -1,0 +1,35 @@
+name = "Guimbal Cabri G2"
+types = ["G2CA"]
+production = [2008]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Guimbal_Cabri_G2",
+  "https://en.wikipedia.org/wiki/Fenestron",
+  "https://en.wikipedia.org/wiki/Airbus_Helicopters_VSR700",
+  "https://en.wikipedia.org/wiki/Robinson_R22",
+  "https://en.wikipedia.org/wiki/Ground_resonance",
+]
+
+text = """
+A two-seat piston trainer built the way turbine helicopters are. Bruno Guimbal designed it on his
+own while an engineer at Eurocopter, where he worked on the Dauphin and the EC120, and gave it what
+piston helicopters lacked: a Fenestron, the shrouded tail fan of the bigger Eurocopters, which also
+makes it quieter than its rivals; a composite monocoque fuselage; three composite rotor blades with
+no fixed life; and a crash-resistant fuel system, which makes it the only piston helicopter to meet
+the FAA's full standard for one. Its Lycoming O-360 is derated from 180 hp to 145 hp continuous,
+and its skids sit on elastomeric mounts to damp ground resonance, a rocking between an articulated
+rotor and the landing gear that can tear a helicopter apart on the ground.
+
+Eurocopter backed it, and the first prototype flew in April 1992; Airbus later built its VSR700
+naval drone from it. Guimbal left Eurocopter in 2000 to set up his own company at Aix-en-Provence
+and see the Cabri through certification, which EASA granted in December 2007, the first for a new
+two-seat piston helicopter in more than 30 years. Deliveries began in 2008 and passed 300 by 2022,
+most of them to flight schools. Tell it from a Robinson R22, the other small trainer, by the ring of
+the Fenestron in its tail and its three blades to the Robinson's two.
+"""
+
+[facts]
+"First flight" = "April 1992 (prototype)"
+"Engine" = "Lycoming O-360, derated to 145 hp"
+"Max takeoff weight" = "700 kg (1,543 lb)"
+"Built at" = "Aix-en-Provence, France"

@@ -1,0 +1,38 @@
+name = "Kaman K-MAX"
+types = ["KMAX"]
+production = [1994, 2023]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Kaman_K-MAX",
+  "https://en.wikipedia.org/wiki/Intermeshing-rotor_helicopter",
+  "https://en.wikipedia.org/wiki/Kaman_HH-43_Huskie",
+  "https://en.wikipedia.org/wiki/Kaman_Corporation",
+  "https://en.wikipedia.org/wiki/Anton_Flettner",
+  "https://en.wikipedia.org/wiki/Charles_Kaman",
+]
+
+text = """
+A flying crane with one seat and two rotors. The rotors sit side by side on masts splayed 25 degrees
+apart and turn in opposite directions, their blades passing between each other like the beaters of
+an egg whisk, geared together so they never touch. Their torques cancel, so none of the engine's
+power goes to a tail rotor, which in a conventional helicopter can take 10 to 25 percent of it. It
+can carry 6,000 lb on its hook, more than the 5,145 lb it weighs empty and almost twice what a Bell
+205 lifts with a version of the same Honeywell T53. It was the first helicopter designed and
+certified specifically for repeated lifting of slung loads: a narrow wedge of a fuselage with
+bulging side windows, so the pilot can look straight down at what hangs below.
+
+The layout came from Anton Flettner, who built intermeshing-rotor helicopters for the German navy
+during the war and became Kaman's chief designer after it; Kaman's HH-43 Huskie used it first. The K-MAX flew
+in December 1991. Its blades are built on Sitka spruce spars, chosen for wood's tolerance of damage
+and fatigue, and are pitched by flaps on their trailing edges, worked by rods running up through the
+masts, so it needs no hydraulics. Kaman built 38 before stopping in 2003, restarted the line in 2017
+for loggers and firefighters, and closed it again in 2023. Two unmanned K-MAXes hauled supplies for
+the US Marines in Afghanistan from 2011 to 2014, flying mostly at night.
+"""
+
+[facts]
+"First flight" = "December 1991"
+"Sling load" = "6,000 lb (2,722 kg)"
+"Empty weight" = "5,145 lb (2,334 kg)"
+"Engine" = "Honeywell T53-17"
+"Built" = "38 in its first run, 1991–2003"

@@ -1,0 +1,34 @@
+name = "Piper PA-34 Seneca"
+types = ["PA34"]
+production = [1971, 2019]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Piper_PA-34_Seneca",
+  "https://en.wikipedia.org/wiki/Piper_PA-32_Cherokee_Six",
+  "https://en.wikipedia.org/wiki/PZL_M-20_Mewa",
+  "https://www.faa.gov/air_traffic/publications/atpubs/cnt/5-2-P.htm",
+  "https://cfapps.icao.int/doc8643/8643_List3.cfm?mfc=PIPER",
+]
+
+text = """
+Piper built the Seneca by putting an engine on each wing of its six-seat Cherokee Six; the first
+proof-of-concept aircraft kept its nose engine as well and flew as a trimotor. From the first
+production Seneca of 1971 the two engines turn in opposite directions, the right one an "L" model
+built to turn the other way, so the aircraft handles alike whichever one fails. Pilots complained
+about that first model's handling, and the Seneca II of 1975 answered with bigger, balanced
+ailerons, an anti-servo tab on the rudder and a bobweight in the pitch controls, and swapped the 200
+hp Lycomings for turbocharged six-cylinder Continentals that let it cruise high. The Seneca III of
+1981 raised them to 220 hp, and the IV and the intercooled V followed in the 1990s.
+
+It flies charter, private and business trips and multi-engine training, and from the ground it looks
+like a Cherokee Six with the engine moved from its nose to its wings. Embraer built 680 under
+licence in Brazil, some for the Brazilian Air Force as the U-7, and on the other side of the Iron
+Curtain PZL-Mielec bought a licence in 1978 and built a few dozen in Poland as the M-20 Mewa, some
+for the Polish air ambulance service. Piper built 5,037 before ending production in 2019.
+"""
+
+[facts]
+"First flight" = "April 1967"
+"Built" = "5,037 by Piper"
+"Engines" = "2 × Continental TSIO-360, 220 hp, turbocharged (Seneca III to V)"
+"Max takeoff weight" = "4,750 lb (2,150 kg), Seneca III to V"

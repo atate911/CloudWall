@@ -1,0 +1,31 @@
+name = "Cessna Citation Longitude"
+types = ["C700"]
+production = [2019]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_Citation_Longitude",
+  "https://en.wikipedia.org/wiki/Cessna_Citation_Latitude",
+  "https://rgl.faa.gov/Regulatory_and_Guidance_Library/rgMakeModel.nsf/0/7fa0b9b88f759b5f862587eb00538203/$FILE/T00015WI%20Rev%208.pdf",
+  "https://txtav.com/en/newsroom/2019/09/cessna-citation-longitude-business-jet-receives-faa-type-certification",
+  "https://www.flightglobal.com/business-aviation/netjets-takes-delivery-of-its-first-citation-longitude/136006.article",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Cessna's largest jet takes the Latitude's round, flat-floored fuselage, strengthened and stretched
+by a row of seats, and sets it on a new wing swept at about 28°, with winglets, and a T-tail; wing
+and tail resemble the Hawker 4000's. The engines are Honeywell HTF7700Ls of 7,665 lb thrust each, in
+place of the French Snecma Silvercrest it was first meant to have, and they carry it 3,500 nm.
+
+Announced in 2012 for service in 2017, it first flew in October 2016, but the testing needed for
+certification doubled, and the FAA certified it only in September 2019, after 6,000 hours of flight
+tests and a 31,000 nm tour round the world. NetJets took its first on the last day of that year, and
+the 100th was delivered in May 2023. Next to a Latitude it is longer, with a more sharply swept wing
+and the tailplane on top of the fin.
+"""
+
+[facts]
+"First flight" = "October 2016"
+"Range" = "3,500 nm (6,482 km)"
+"Max takeoff weight" = "39,500 lb (17,917 kg)"
+"Engines" = "2 × Honeywell HTF7700L, 7,665 lb thrust"

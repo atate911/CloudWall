@@ -1,0 +1,56 @@
+name = "Embraer Phenom 100 and 300"
+types = ["E50P", "E55P"]
+production = [2008]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Embraer_Phenom_100",
+  "https://en.wikipedia.org/wiki/Embraer_Phenom_300",
+  "https://www.aerospacemanufacturinganddesign.com/news/embraer-phenom-300-series-is-best-selling-light-jet-14th-consecutive-year",
+  "https://www.asdnews.com/news/aerospace/2026/02/18/phenom-300-series-dominates-global-light-jet-market-14-consecutive-years",
+  "https://www.ntsb.gov/investigations/AccidentReports/Reports/AAR1601.pdf",
+  "https://www.flightglobal.com/news/articles/flight-test-phenom-100-building-on-a-legacy-322207/",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Embraer's two light jets have a good deal in common: a cabin styled by BMW's DesignworksUSA studio,
+an all-composite T-tail, trailing-link main gear that soaks up firm landings, brakes controlled
+electrically, by wire, and certification to be flown by a single pilot. Since 2016 all of them have
+been assembled in Melbourne, Florida. Tell them apart by the wing: straight on the Phenom 100, swept
+and tipped with winglets on the larger 300.
+"""
+
+[facts]
+"First flight" = "July 2007"
+"Engines" = "2 × Pratt & Whitney Canada PW617F, 1,695 lb thrust"
+"Range" = "1,178 nm (2,182 km)"
+
+[variants.E50P]
+name = "Embraer Phenom 100"
+more = """
+Embraer delivered 97 Phenom 100s in 2009 and 100 in 2010, its first two full years, then demand fell
+away; since 2014 it has built between six and nineteen a year, about 440 in all by 2026. If an
+engine fails on takeoff, the other automatically gives more thrust. The Royal Air Force trains
+aircrew on five, as the Phenom T1. In 2014 one crashed into a house at Gaithersburg, Maryland,
+killing six; the NTSB found that the pilot had not turned on the ice protection, and asked for
+single-pilot jets to warn when it is needed.
+"""
+[variants.E50P.facts]
+"Built" = "about 440"
+
+[variants.E55P]
+name = "Embraer Phenom 300"
+production = [2009]
+more = """
+The 300 began as a stretched 100 and became nearly a new design, with a swept wing carrying
+spoilers, PW535 engines of twice the thrust and a structure built for higher altitudes, where its
+cabin is held at 6,600 ft at 45,000 ft. It has no thrust reversers, relying on anti-skid brakes, and
+still uses London City's short runway. By GAMA's delivery figures it has been the best-selling light
+jet every year from 2012 to 2025, and more than 900 had been delivered by the end of 2025.
+"""
+[variants.E55P.facts]
+"First flight" = "April 2008"
+"Engines" = "2 × Pratt & Whitney Canada PW535E, 3,478 lb thrust (300E)"
+"Range" = "2,010 nm (3,723 km), 300E"
+"Top speed" = "Mach 0.80 (300E)"
+"Built" = "over 900"

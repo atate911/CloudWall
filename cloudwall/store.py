@@ -143,6 +143,29 @@ class Store:
         with self.lock:
             return [dict(r) for r in self.db.execute(sql, args).fetchall()]
 
+    def type_seen(self, type_code):
+        """A type in the logbook: how often it has come over (n, of all flyovers), when first and
+        last, how many different airframes, its rank among the types logged (1: the most often;
+        types with equal counts share a rank), and the airlines that fly it here most, at most 3."""
+        r = self.query("SELECT COUNT(*) AS n, MIN(ts) AS first, MAX(ts) AS last, COUNT(DISTINCT hex) AS airframes "
+                       "FROM sightings WHERE type=?", (type_code,))[0]
+        counts = [c["n"] for c in self.query("SELECT COUNT(*) AS n FROM sightings WHERE type IS NOT NULL GROUP BY type")]
+        airlines = self.query("SELECT airline_icao AS icao, MAX(airline) AS name, COUNT(*) AS n FROM sightings "
+                              "WHERE type=? AND airline_icao IS NOT NULL GROUP BY airline_icao ORDER BY n DESC LIMIT 3",
+                              (type_code,))
+        return dict(r, of=self.count("1"), rank=1 + sum(c > r["n"] for c in counts) if r["n"] else None,
+                    types=len(counts), airlines=airlines)
+
+    def airframe_seen(self, hexid):
+        """One airframe in the logbook: how many times it has come over, and when first."""
+        return self.query("SELECT COUNT(*) AS n, MIN(ts) AS first FROM sightings WHERE hex=?", (hexid,))[0]
+
+    def type_name(self, type_code):
+        """The name a type was last logged under ("Boeing 737 MAX 9"), or None."""
+        rows = self.query("SELECT type_name FROM sightings WHERE type=? AND type_name IS NOT NULL ORDER BY ts DESC LIMIT 1",
+                          (type_code,))
+        return rows[0]["type_name"] if rows else None
+
     def logbook(self, day):
         def rec(col, order, where="1"):
             rows = self.query(

@@ -1,0 +1,65 @@
+name = "McDonnell Douglas F/A-18 Hornet"
+types = ["F18H", "F18", "F18S"]
+production = [1980, 2000]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/McDonnell_Douglas_F/A-18_Hornet",
+  "https://en.wikipedia.org/wiki/Boeing_F/A-18E/F_Super_Hornet",
+  "https://en.wikipedia.org/wiki/Boeing_EA-18G_Growler",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing-Chronology.pdf",
+  "https://www.boeing.com/defense/fighters-and-bombers/fa-18-super-hornet-and-ea-18-growler",
+  "https://www.history.navy.mil/content/history/museums/nnam/explore/collections/aircraft/f/f-a-18-hornet--tactical-.html",
+  "https://www.doc8643.com/aircraft/F18S",
+  "https://skybrary.aero/aircraft/f18h",
+]
+
+text = """
+The Hornet began as the loser of the Air Force's lightweight fighter contest: the Navy doubted that
+a single-engined jet on narrow gear like the winning YF-16 would suit carriers, so in 1975 it chose
+Northrop's twin-engined YF-17, and McDonnell Douglas rebuilt it with a stronger airframe for
+catapults and arrested landings, wider gear, folding wings and more fuel. It was the first
+production fighter with digital fly-by-wire. The Navy first planned separate F-18 fighter and A-18
+attack versions, but multifunction displays let one aircraft switch roles at the press of a button,
+and from 1984 it was officially the F/A-18. On the first day of the Gulf War in 1991, two Hornets
+on their way to bomb an Iraqi airfield with four 2,000 lb bombs each were warned of MiG-21s ahead,
+shot both down within 40 seconds of their appearing on radar and flew on to drop their bombs.
+
+Long strakes run forward from the wing roots beside the cockpit, and the vortices they shed keep
+the Hornet controllable at high angles of attack; with its twin fins canted outward, they give it
+its look. The Blue Angels flew Hornets from 1986 until they moved to the Super Hornet at the end of
+2020. The US Navy retired its last in 2019, but as of 2026 the Marine Corps and the air forces of
+Canada, Finland, Spain, Switzerland and others still fly them.
+"""
+
+[variants.F18H]
+[variants.F18H.facts]
+"First flight" = "November 1978"
+"Built" = "1,480"
+"Top speed" = "Mach 1.8"
+"Max takeoff weight" = "51,900 lb (23,500 kg), F/A-18C/D"
+"Engines" = "2 × GE F404"
+
+[variants.F18]
+[variants.F18.facts]
+"First flight" = "November 1978"
+"Built" = "1,480"
+"Top speed" = "Mach 1.8"
+"Max takeoff weight" = "51,900 lb (23,500 kg), F/A-18C/D"
+"Engines" = "2 × GE F404"
+
+[variants.F18S]
+name = "Boeing F/A-18E/F Super Hornet and EA-18G Growler"
+production = [1999]
+more = """
+The Super Hornet kept the old name to sell it to Congress as a low-risk upgrade, but it is largely
+a new aircraft, bigger, with a quarter more wing area, a third more fuel inside and GE F414 engines
+giving 35% more thrust, and the Navy calls it the Rhino to keep the two apart on the radio. Tell it from the Hornet
+by its bigger, rectangular intakes. With a refuelling pod under its belly it serves as the carrier
+air wing's tanker, and the EA-18G Growler, its two-seat electronic-attack version, carries jamming
+gear in the space where the gun was and receiver pods in place of the wingtip missiles.
+"""
+[variants.F18S.facts]
+"First flight" = "November 1995"
+"Max takeoff weight" = "66,000 lb (29,900 kg)"
+"Engines" = "2 × GE F414"

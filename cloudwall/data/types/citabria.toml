@@ -1,0 +1,63 @@
+name = "Champion Citabria"
+types = ["CH7A", "CH7B", "BL8"]
+checked = "2026-11"
+sources = [
+  "https://cfapps.icao.int/doc8643/reports/Part3-By%20Model%20Number_Name.pdf",
+  "https://en.wikipedia.org/wiki/American_Champion_Citabria",
+  "https://en.wikipedia.org/wiki/Aeronca_Champion",
+  "https://en.wikipedia.org/wiki/American_Champion_Decathlon",
+  "https://en.wikipedia.org/wiki/American_Champion_Scout",
+  "https://en.wikipedia.org/wiki/American_Champion_Aircraft",
+]
+
+text = """
+Its name is "airbatic" spelled backwards, and when Champion Aircraft brought it out in 1964 it was
+the only aeroplane in production in the US certified for aerobatics, if only to +5 and −2 g. Champion
+had bought the Aeronca Champ, the post-war rival to the Piper Cub, in 1954, and the Citabria kept its
+build: two seats in tandem under a strut-braced high wing, a tailwheel, and a fuselage of welded
+steel tube, triangular in section as Aeronca's had been since the C-2 of the late 1920s, given its
+outer shape by wooden formers and longerons under the fabric. Tell it from the Champ, and from a Cub,
+by its squared-off rudder, wingtips and rear windows. The tailwheel and the aerobatic rating made it
+a favourite trainer, and many still tow gliders.
+
+The 7GCAA and 7GCBC, the second with flaps and a foot more span, followed the first 7ECA in 1965 with
+150 hp, and the 7KCAB of 1968 added fuel injection, a small header tank and an inverted oil system so
+it could stay upside down. Even that can't fly outside manoeuvres, which need more negative g than a
+Citabria can take, and the 8KCAB Decathlon answered with a stronger airframe and a semi-symmetrical
+wing section, stressed to +6 and −5 g. Bellanca, which took over Champion, added the Scout, a bush
+and towing version with longer wings and flaps. Production stopped as Bellanca went under around 1980;
+American Champion, of Rochester, Wisconsin, bought the designs and has built them again since 1990.
+"""
+
+[facts]
+"Aerobatic limits" = "+5 g, −2 g (Citabria)"
+
+[variants.CH7A]
+name = "Aeronca Champ or Citabria 7ECA"
+production = [1945]
+more = """
+CH7A also covers the Citabria's parent, the Aeronca 7 Champion, which first flew in 1944 and sold by
+the thousand to flight schools teaching veterans on the GI Bill: over 7,200 of the 65 hp 7AC were
+built from 1945 to 1948. Unlike the Cub, it is flown solo from the front seat, with a far better
+view.
+"""
+[variants.CH7A.facts]
+"First flight" = "April 1944 (Aeronca 7AC)"
+"Engine" = "Continental A-65, 65 hp (7AC); Lycoming O-235, 115 hp (7ECA)"
+
+[variants.CH7B]
+name = "Citabria 7GCAA, 7GCBC or 7KCAB"
+production = [1965]
+[variants.CH7B.facts]
+"Engine" = "Lycoming O-320 or IO-320, 150–160 hp"
+
+[variants.BL8]
+name = "Decathlon or Scout"
+more = """
+The Decathlon, built from 1976 as the 180 hp Super Decathlon, is still a popular first aerobatic
+aircraft. The Scout, from 1974, works as a bush plane, crop sprayer, glider tug and banner tower, on
+wheels, floats or skis.
+"""
+[variants.BL8.facts]
+"Aerobatic limits" = "+6 g, −5 g (Decathlon)"
+"Engine" = "Lycoming AEIO-360, 180 hp (Super Decathlon); O-360, 180 hp (Scout)"

@@ -1,0 +1,49 @@
+name = "Robinson helicopters"
+types = ["R22", "R44", "R66"]
+production = [1979]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Robinson_R22",
+  "https://en.wikipedia.org/wiki/Robinson_R44",
+  "https://en.wikipedia.org/wiki/Robinson_R66",
+  "https://en.wikipedia.org/wiki/Robinson_Helicopter_Company",
+  "https://robinsonheli.com/robinson-helicopter-company-timeline/",
+  "https://shop.robinsonheli.com/news/robinson-celebrates-50-years/",
+  "https://www.aopa.org/news-and-media/all-news/2001/may/pilot/waypoints-(5)",
+  "https://backend.ainonline.com/aviation-news/business-aviation/2025-08-28/robinson-helicopter-celebrates-r22-50th-anniversary",
+  "https://verticalmag.com/features/robinson-delivers-first-r66-html/",
+  "https://www.law.cornell.edu/cfr/text/14/appendix-Special_Federal_Aviation_Regulation_No_73",
+]
+
+text = """
+Frank Robinson set out to build a helicopter cheap enough for people to learn on and own, and the
+two-seat R22, from 1979, and four-seat R44, from 1993, each became the world's best-selling civil
+helicopter. They have a two-bladed teetering rotor, a light airframe and a T-shaped cyclic that
+swings between the two front seats, so either pilot can fly. The rotor's design makes low-g
+manoeuvres dangerous, risking mast bumping, and anyone flying an R22 or R44 in the US must first
+complete special ground training.
+
+The R66 adds a Rolls-Royce turbine and a fifth seat. From the ground they are small and light, with a
+bubble cabin, a thin tail boom and the slap of a two-bladed rotor.
+"""
+
+[facts]
+"Built at" = "Torrance, California"
+
+[variants.R22]
+name = "Robinson R22"
+[variants.R22.facts]
+"First flight" = "August 1975"
+
+[variants.R44]
+name = "Robinson R44"
+production = [1993]
+[variants.R44.facts]
+"First flight" = "March 1990"
+
+[variants.R66]
+name = "Robinson R66"
+production = [2010]
+[variants.R66.facts]
+"First flight" = "November 2007"
+"Engine" = "Rolls-Royce RR300"

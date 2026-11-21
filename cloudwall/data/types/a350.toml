@@ -1,0 +1,48 @@
+name = "Airbus A350"
+types = ["A359", "A35K"]
+production = [2014]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Airbus_A350",
+  "https://en.wikipedia.org/wiki/Boeing_787_Dreamliner",
+  "https://en.wikipedia.org/wiki/2024_Haneda_Airport_runway_collision",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+Airbus's answer to the 787 is 53 percent carbon composite, against 19 percent aluminium and
+aluminium-lithium and 14 percent titanium, the titanium mostly in the landing gear and engine
+pylons. Where Boeing winds each 787 fuselage section as a one-piece barrel, Airbus builds the A350's
+from carbon-fibre skin panels fastened to carbon-fibre frames. The fuselage is 5.97 m across, wider
+than an A330's, for nine abreast in economy, and composite lets the cabin be held at 6,000 ft or
+below. Both models have a carbon wing spanning 64.75 m, whose flaps shift in cruise to change its
+camber and spread its load for the least fuel burn, and the only engine offered is the Rolls-Royce
+Trent XWB, with a fan three metres across.
+
+The -1000 is 7 m longer and nearly 40 tonnes heavier at its maximum weight, so it rides on six-wheel
+main bogies where the -900 has four wheels a side, the surest way to tell them apart from below.
+Both have winglets that curve up over the last 4.4 m of the wing, and a nose and six-pane windscreen
+derived from the A380's, ringed in black paint, the "raccoon mask" that picks out an A350 at a
+glance. Singapore Airlines flies -900ULRs nonstop from Singapore to New York, about 15,300 km. In
+January 2024 a Japan Airlines A350 burned out at Tokyo Haneda after hitting a coast guard aircraft
+as it landed; all 379 people aboard got out, but five of the six on the other aircraft died.
+"""
+
+[facts]
+"First flight" = "June 2013"
+"Engines" = "2 × Rolls-Royce Trent XWB"
+
+[variants.A359]
+name = "Airbus A350-900"
+[variants.A359.facts]
+"Range" = "8,500 nm (15,750 km); 9,700 nm for the -900ULR"
+"Max takeoff weight" = "up to 283,000 kg (623,900 lb)"
+"Engines" = "2 × Rolls-Royce Trent XWB-84, 84,000 lb thrust"
+
+[variants.A35K]
+name = "Airbus A350-1000"
+production = [2018]
+[variants.A35K.facts]
+"First flight" = "November 2016"
+"Range" = "up to 9,000 nm (16,700 km)"
+"Engines" = "2 × Rolls-Royce Trent XWB-97, 97,000 lb thrust"

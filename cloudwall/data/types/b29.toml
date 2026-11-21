@@ -1,0 +1,35 @@
+name = "Boeing B-29 Superfortress"
+types = ["B29"]
+production = [1943, 1946]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_B-29_Superfortress",
+  "https://en.wikipedia.org/wiki/FIFI_(aircraft)",
+  "https://en.wikipedia.org/wiki/Doc_(aircraft)",
+]
+
+text = """
+The most expensive weapons programme of the Second World War, at $3 billion against the Manhattan
+Project's $1.9 billion, and the aircraft that dropped the atomic bombs on Hiroshima and Nagasaki. It
+was the first Allied production bomber to carry its crew pressurised: the compartments fore and aft
+were sealed, the bomb bays between them were not, and a long tunnel over the bays let the crew crawl
+from one to the other. Its four remote-controlled gun turrets were aimed from sighting stations
+through analogue computers that allowed for lead, airspeed and gravity, and one gunner could take
+over another's turrets. The 2,200 hp Wright R-3350 radials gave constant trouble at first; an engine
+fire brought down the second prototype in Seattle in 1943, killing the Boeing test pilot Edmund
+Allen, his crew and twenty workers in the meat-packing plant it hit.
+
+3,970 were built, and the Soviet Union reverse-engineered four that had diverted to its territory
+during the war, and were never returned, into the Tupolev Tu-4. As of 2026 two still fly. FIFI,
+owned by the Commemorative Air Force in Dallas, was rescued in 1971 from a Navy bombing range at
+China Lake in the California desert, and Doc flew again from Wichita in 2016, for the first time in
+60 years. Overhead it shows a long, slim fuselage, a 141 ft wing and four big radials, with
+Plexiglas gunners' blisters along its sides.
+"""
+
+[facts]
+"First flight" = "September 1942"
+"Built" = "3,970"
+"Crew" = "11"
+"Still flying" = "2, FIFI and Doc (as of 2026)"
+"Engines" = "4 × Wright R-3350 Duplex-Cyclone, 2,200 hp, turbosupercharged"
