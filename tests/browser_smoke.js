@@ -225,12 +225,19 @@ const SCENARIOS = {
     page = await open(browser, "kiosk", "/kiosk", errors);
     out.kioskLine = await count(page, "#next-line .tl-e");
     await page.close();
-    // positions 40 s old: traffic faded, a note of how old, countdowns stopped
-    page = await open(browser, "desktop", "/", errors, (state) => { state.status.updated = state.now - 40; });
+    // the feed stalls: the server answers with the same positions, 25 s old and getting older; the
+    // traffic fades, a note says how old, and the countdowns stop (each redraw agreeing)
+    let frozen = null, frozenAt = 0;
+    page = await open(browser, "desktop", "/", errors, (state) => {
+      if (!frozen) { frozen = JSON.stringify(Object.assign(state, { status: { ...state.status, updated: state.now - 25 } })); frozenAt = Date.now(); }
+      const again = JSON.parse(frozen);
+      for (const k of Object.keys(state)) delete state[k];
+      Object.assign(state, again, { now: again.now + (Date.now() - frozenAt) / 1000 });
+    });
     await page.waitForTimeout(1200);
     out.old = await page.evaluate(async () => {
       const t = document.querySelector("#mini-board [data-until]"), was = t && t.textContent;
-      await new Promise((r) => setTimeout(r, 2100));
+      await new Promise((r) => setTimeout(r, 4300));         // two more answers from the server
       return { stale: document.body.classList.contains("stale"), note: document.getElementById("link").textContent,
         stopped: !t || t.textContent === was };
     });

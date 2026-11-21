@@ -65,6 +65,14 @@ def make_server(cfg, places, charts=None, logos=None):
         def log_message(self, *a):
             pass
 
+        def handle_one_request(self):
+            # a screen that goes away mid-answer (a tab closed, a page reloaded while a file was on its
+            # way) is no fault of anyone's: the connection is done, with nothing to log
+            try:
+                super().handle_one_request()
+            except (BrokenPipeError, ConnectionResetError):
+                self.close_connection = True
+
         def _send(self, code, body, ctype="application/json"):
             if not isinstance(body, bytes):
                 body = json.dumps(body).encode()

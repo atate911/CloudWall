@@ -1,5 +1,5 @@
 "use strict";
-import { $, esc, store, phone, api, runwayList, degF, since } from "./util.js";
+import { $, esc, store, phone, api, runwayList, degF, since, dataAge, COUNT_STOP_S } from "./util.js";
 import { updateSky, sky } from "./sky.js";
 import { drawScope, mapReach, flashCraft } from "./scope.js";
 import { loadMap } from "./map.js";
@@ -296,9 +296,8 @@ function render() {
 
 // Positions more than 20 s old (the feed has stopped, or CloudWall isn't answering): aircraft fade,
 // countdowns stop, and a note says how old they are, until fresh data comes or the screen clears at a minute.
-const OLD_S = 20;
 function markStale() {
-  const age = since(state), old = age > OLD_S && (state.aircraft.length > 0 || !!state.hero);
+  const age = dataAge(state), old = age > COUNT_STOP_S && (state.aircraft.length > 0 || !!state.hero);
   const words = `Not updating: positions ${Math.round(age)} s old`;
   document.body.classList.toggle("stale", old);
   // the header's offline chip says it (the wall panel, without chips, has its own note)
