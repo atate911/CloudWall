@@ -1,0 +1,46 @@
+name = "Boeing 727"
+types = ["B721", "B722"]
+production = [1963, 1984]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_727",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://en.wikipedia.org/wiki/D._B._Cooper",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+The 727 was a compromise between three airlines. United wanted four engines for the climb out of
+high-altitude Denver, American wanted two for economy, and Eastern wanted three for its flights over
+water to the Caribbean, at a time when twins had to stay within an hour of an airport. Boeing put
+all three at the back, one on each side of the rear fuselage and the third inside it, fed through an
+S-shaped duct from an intake at the foot of the fin, under a T-tail. With nothing hanging from the
+wing, it could line the whole span with high-lift devices, Krueger flaps and slats ahead and
+triple-slotted flaps behind, and the 727 used runways shorter than earlier jets needed.
+
+It was meant for small airports, so it carried its own auxiliary power unit, the first on a Boeing
+jetliner, and a stair that folded down from the belly under the tail, which on early 727s could be
+lowered in flight. The CIA used it to drop agents and supplies in Vietnam, and in 1971 a hijacker
+known as D. B. Cooper took $200,000 in ransom and jumped from it into the night over southwest
+Washington; he was never found. After copycats, the FAA required the Cooper vane, a spring-loaded
+paddle that the airflow swings into place to keep the stair shut in the air.
+
+Boeing planned to build 250 and built 1,832 at Renton, more than any other jetliner until the 737
+passed it in the early 1990s. The last went to Federal Express in 1984, the last scheduled passenger
+flight was in Iran in January 2019, and as of 2026 a handful still fly, almost all as freighters.
+"""
+
+[facts]
+"First flight" = "February 1963"
+"Built" = "1,832"
+"Engines" = "3 × Pratt & Whitney JT8D"
+
+[variants.B721]
+name = "Boeing 727-100"
+production = [1963, 1972]
+[variants.B721.facts]
+"Built" = "572"
+
+[variants.B722]
+name = "Boeing 727-200"
+production = [1967, 1984]

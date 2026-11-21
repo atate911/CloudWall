@@ -20,7 +20,7 @@ Arriels and Arriuses and Pratt & Whitney Canada PW206s and PW207s.
 Argentina's army took three to the Falklands in 1982. A Harrier destroyed one on the ground, and the
 British captured the other two and flew them in support of the SAS until 2009. Belgium's order for
 46 in 1988 ended in a bribery scandal that forced Willy Claes to resign as NATO's secretary general
-in 1995. From the ground it is a slender, sharp-nosed twin with four blades and, on most, no skids;
+in 1995. From the ground it is a slender, elegant twin with four blades and, on most, no skids;
 the bigger AW139 has five blades, and the single-engined AW119 sits on skids.
 """
 
@@ -34,16 +34,16 @@ name = "Agusta / Leonardo AW119 Koala"
 production = [2000]
 text = """
 The A109 with one engine, as the A109 was first conceived, and skids instead of wheels, for
-operators who would rather have a single's running costs than a twin's redundancy. It keeps the A109's cockpit and cabin for
-about half the price, and the cabin is wide: three abreast in the back, or two stretchers where most
-helicopters its size take one. Its Pratt & Whitney Canada PT6B-37A sits where the A109's two engines
+operators who would rather have a single's running costs than a twin's redundancy. It keeps the
+A109's cockpit and cabin for about half the price, and the cabin is wide: three abreast in the back,
+or two stretchers where most helicopters its size take one. Its Pratt & Whitney Canada PT6B-37A sits where the A109's two engines
 do, and its main gearbox can run for 30 minutes without oil.
 
 It flew in 1995 but reached customers only in 2000, after Agusta swapped its Turbomeca Arriel for the
 PT6B. Final assembly later moved to Philadelphia, and in 2020 the US Navy chose it to replace the
-TH-57, a Bell 206, as its training helicopter: the TH-73A Thrasher, first delivered in 2021,
-with up to 130 planned. Tell it from the A109 by the skids, though the twin-engined AW109 Trekker
-has them too.
+TH-57, a Bell 206, as its training helicopter: the TH-73A Thrasher, first delivered in 2021, with up
+to 130 planned. Tell it from the A109 by the skids, though the twin-engined AW109 Trekker has them
+too.
 """
 [variants.A119.facts]
 "First flight" = "February 1995"

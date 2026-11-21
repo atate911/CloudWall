@@ -1,0 +1,49 @@
+name = "Mil Mi-8 and Mi-17"
+types = ["MI8", "MI14"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Mil_Mi-8",
+  "https://en.wikipedia.org/wiki/Mil_Mi-17",
+  "https://en.wikipedia.org/wiki/Mil_Mi-14",
+  "https://www.rhc.aero/en/about",
+  "https://skybrary.aero/aircraft/mi8",
+]
+
+text = """
+Mikhail Mil's bureau flew the first prototype in 1961, with one engine; the second engine, wanted
+for safety, came the next year, and a later prototype traded the four-bladed rotor for five blades
+to cut vibration, as every Mi-8 since has had. The cabin takes 24 troops or 12 stretchers and
+opens at the back through clamshell doors, on some later models a ramp. It has been built at Kazan
+and Ulan-Ude, and under licence in China, and flown by armed forces and civil operators in dozens
+of countries; its maker calls the Mi-8 and Mi-17 the most widely operated helicopter in history.
+
+The second generation, the Mi-8M series that Russia exports as the Mi-17, took the more powerful
+Klimov TV3-117 engines, rotors and transmission developed for the Mi-14, and moved the tail rotor
+from the right side of the tail to the left, where its blades rise into the main rotor's
+downwash, which gives the pilot more yaw control. That is the quickest way to tell them apart: an
+Mi-17 has its tail rotor on the left, dust shields in front of its engine intakes, and oval
+exhausts where the Mi-8's are round.
+"""
+
+[facts]
+"Engines" = "2 × Klimov TV2-117 (Mi-8); TV3-117 or VK-2500 (Mi-17)"
+"Max takeoff weight" = "13,000 kg (28,660 lb), Mi-17"
+"Max payload" = "4,000 kg (8,800 lb) in the cabin"
+
+[variants.MI8]
+name = "Mil Mi-8 or Mi-17"
+
+[variants.MI14]
+name = "Mil Mi-14"
+production = [1973, 1986]
+more = """
+The Mi-14 is the Mi-8's amphibious cousin, built for the Soviet Navy to hunt submarines from bases
+on shore. It has a boat hull like the Sea King's, a search radar under the nose, a watertight
+weapons bay for a torpedo or depth charges, and landing gear that retracts, the first on any
+Soviet helicopter, its main wheels folding into sponsons at the back. It first flew in 1967 and
+entered service in 1976, and Kazan built them from 1973 to 1986.
+"""
+[variants.MI14.facts]
+"First flight" = "August 1967"
+"Engines" = "2 × Klimov TV3-117MT"
+"Max takeoff weight" = "14,000 kg (30,865 lb)"

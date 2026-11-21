@@ -1,0 +1,52 @@
+name = "Sikorsky CH-53"
+types = ["H53", "H53S"]
+production = [1966]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Sikorsky_CH-53_Sea_Stallion",
+  "https://en.wikipedia.org/wiki/Sikorsky_CH-53E_Super_Stallion",
+  "https://en.wikipedia.org/wiki/Sikorsky_CH-53K_King_Stallion",
+  "https://en.wikipedia.org/wiki/Sikorsky_S-61R",
+  "https://en.wikipedia.org/wiki/Operation_Rooster_53",
+  "https://skybrary.aero/aircraft/h53s",
+]
+
+text = """
+For the Marines' heavy-lift competition of 1962, Sikorsky scaled up its S-61R, rear ramp and all,
+and gave it two General Electric T64 engines and the rotor and drive system of the S-64 Skycrane.
+The CH-53 Sea Stallion first flew in October 1964 and reached the Marines in 1966, and in Vietnam
+it recovered more downed aircraft than the Skycrane did. On the night of 26 December 1969, during
+the War of Attrition, two Israeli CH-53s crossed the Red Sea to Ras Gharib in Egypt, where
+paratroopers had taken apart a new Soviet P-12 radar station, and carried it back to Sinai. The
+four-ton radar was more than one CH-53 could lift: it had to land short, and another relayed the
+radar the rest of the way.
+
+West Germany's army received 110 CH-53Gs, built under licence by VFW-Fokker, between 1971 and 1975,
+and in 2022 Germany chose Chinooks to replace them. Israel chose the CH-53K to replace its own,
+which it calls the Yas'ur. Iran's navy added to its RH-53Ds five that the US Navy abandoned in Iran
+in 1980, during the failed attempt to rescue the American hostages.
+"""
+
+[facts]
+"First flight" = "October 1964"
+"Engines" = "2 × General Electric T64"
+
+[variants.H53]
+name = "Sikorsky CH-53 Sea Stallion"
+production = [1966, 1978]
+
+[variants.H53S]
+name = "Sikorsky CH-53E Super Stallion or CH-53K King Stallion"
+production = [1981]
+more = """
+The CH-53E Super Stallion, first flown in 1974 and in service from 1981, added a third engine and a
+seventh rotor blade, and its tail rotor is tilted 20° so that it gives some lift in the hover as
+well as countering the torque, with a tailplane set high on the opposite side. It can lift 36,000
+lb on its hook. The CH-53K King Stallion, delivered from 2018, has three GE T408s of 7,500 shp
+each, fly-by-wire controls, composite blades and a cabin a foot wider, room for two standard cargo
+pallets. It is the largest and heaviest helicopter in the US military.
+"""
+[variants.H53S.facts]
+"First flight" = "March 1974 (CH-53E); October 2015 (CH-53K)"
+"Engines" = "3 × GE T64 (CH-53E); 3 × GE T408, 7,500 shp (CH-53K)"
+"Sling load" = "36,000 lb (16,330 kg)"

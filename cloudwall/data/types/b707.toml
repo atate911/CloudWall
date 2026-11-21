@@ -1,0 +1,53 @@
+name = "Boeing 707 and 720"
+types = ["B701", "B703", "B720"]
+production = [1958, 1978]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_707",
+  "https://en.wikipedia.org/wiki/Boeing_720",
+  "https://en.wikipedia.org/wiki/Boeing_367-80",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+  "https://www.skybrary.aero/index.php/B701",
+]
+
+text = """
+In 1952 Boeing's board put $16 million of the company's own money, nearly all it had earned since
+the war, into a jet prototype, the 367-80. The Dash 80 led to the Air Force's KC-135 and, as a
+separate design, the 707, whose cabin was widened to 148 inches so airlines could seat six abreast
+and match the DC-8; the 727, 737 and 757 kept that cross-section. In 1955 test pilot Tex Johnston
+barrel-rolled the prototype in a demonstration over Lake Washington, and was told not to do it
+again. Pan Am flew the first 707 service, New York to Paris with a fuel stop at Gander, in October
+1958, and within a few years jets had taken the long-distance traveller from ships and trains.
+
+Its wing, swept back 35 degrees, brought Dutch roll, a rocking mix of yaw and roll, to pilots raised
+on straight-winged propliners; on one acceptance flight a trainee made it so violent that three
+engines tore off a new Braniff 707. A taller fin, a boosted rudder and, on early models, a fin under
+the tail tamed it. From the ground it is almost the twin of the DC-8, but its wing is swept further
+back. Boeing built 856 707s, the last few as military airframes; airline passenger service ended in
+Iran in 2013, and the last civil 707, a cargo flight, crashed there in 2019.
+"""
+
+[facts]
+"First flight" = "December 1957"
+"Built" = "856 707s and 154 720s"
+"Engines" = "4 × Pratt & Whitney JT3C or JT4A turbojets; JT3D turbofans from 1961"
+
+[variants.B701]
+name = "Boeing 707-120"
+production = [1958, 1969]
+
+[variants.B703]
+name = "Boeing 707-320"
+production = [1959, 1978]
+[variants.B703.facts]
+"Range" = "up to 5,000 nm (9,300 km), -320B"
+"Max takeoff weight" = "335,000 lb (152,000 kg), -320C"
+
+[variants.B720]
+name = "Boeing 720"
+production = [1960, 1967]
+more = """
+The 720 is the 707 cut down for shorter routes and runways: 2.7 m shorter than the 707-120, lighter,
+with changes to the wing. 154 were built before the 727 took over the job.
+"""

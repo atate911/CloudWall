@@ -1,0 +1,56 @@
+name = "Boeing 737 Classic"
+types = ["B733", "B734", "B735"]
+production = [1984, 2000]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Boeing_737_Classic",
+  "https://en.wikipedia.org/wiki/Boeing_737",
+  "https://en.wikipedia.org/wiki/Boeing_737_rudder_issues",
+  "https://en.wikipedia.org/wiki/USAir_Flight_427",
+  "https://en.wikipedia.org/wiki/List_of_aircraft_type_designators",
+]
+
+text = """
+The Classic put a high-bypass engine under the 737's low wing, and its nacelles show what that took.
+The CFM56-3, of the family that had just re-engined the KC-135, had a far bigger fan than the old
+JT8D, so Boeing and CFM made the fan smaller, hung the engine ahead of the wing rather than beneath
+it, and moved the gearbox and accessories from the bottom of the casing to the side. The intake came
+out flat along the bottom, the "hamster pouch" the 737NG kept, and the engines were about 25% more
+efficient than the -200's. Tell a Classic from the earlier 737s by those fat engines and a fillet
+running forward from the base of the fin, and from the NG by its smaller wing. Boeing delivered
+1,988 between 1984 and 2000, far more than all the earlier 737s together.
+
+It was also the first 737 with a speed trim system, which moves the stabiliser by itself at low speed
+and high thrust; the MAX's MCAS grew out of it. And it kept the single rudder of the -200, driven by
+one hydraulic unit whose servo valve, a four-year NTSB investigation found, could jam and push the
+rudder the wrong way. That brought down a United -200 at Colorado Springs in 1991 and a USAir -300
+near Pittsburgh in 1994, 157 lives in all; an Eastwind -200 that survived two rudder reversals in
+1996 helped find the cause, and every 737 had a new valve by 2002.
+"""
+
+[facts]
+"First flight" = "February 1984"
+"Built" = "1,988"
+"Engines" = "2 × CFM56-3"
+
+[variants.B733]
+name = "Boeing 737-300"
+production = [1984, 1999]
+[variants.B733.facts]
+"Built" = "1,113"
+
+[variants.B734]
+name = "Boeing 737-400"
+production = [1988, 2000]
+more = """
+The -400 is 3 m longer than the -300, with a bumper under the tail against scrapes on takeoff. Many
+retired -300s and -400s were converted into freighters.
+"""
+[variants.B734.facts]
+"Built" = "486"
+
+[variants.B735]
+name = "Boeing 737-500"
+production = [1990, 1999]
+[variants.B735.facts]
+"Built" = "389"

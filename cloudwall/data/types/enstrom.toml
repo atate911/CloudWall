@@ -18,10 +18,10 @@ cuts drag and leaves the head clean, and most of the piston models since the F-2
 turbocharged Lycoming HIO-360.
 
 F. Lee Bailey, the criminal defence lawyer, bought the company in 1971, soon had it building more
-than a hundred helicopters a year, and brought out the 280 Shark, a streamlined F-28, which sold at
-once. Later owners included Victor Kiam and the Segway's inventor Dean Kamen, and from 2013 a Chinese
-investor. Enstrom went bankrupt in January 2022, was bought that May, and flew its first new
-helicopter in January 2023. The 280FX is the one with fins at the ends of its tailplane.
+than a hundred helicopters a year, and brought out the 280 Shark, a streamlined F-28 that sold at
+once; its 280FX version is the one with fins at the ends of the tailplane. Later owners included
+Victor Kiam, Dean Kamen, who developed the Segway, and from 2013 a Chinese investor. Enstrom went
+bankrupt in January 2022, was bought that May, and flew its first new helicopter in January 2023.
 """
 
 [facts]
@@ -37,12 +37,12 @@ name = "Enstrom F-28 and 280 Shark"
 name = "Enstrom 480"
 production = [1993]
 more = """
-The 480 began as the TH-28, Enstrom's bid for a new US Army training helicopter in the late 1980s: a
-280 with a bigger cabin and a Rolls-Royce (Allison) 250 turbine. The Army didn't buy it, but Enstrom
-put it on sale in 1993, and Japan's ground forces train on it. The engine can make 420 shp but is
-held to 305, so it keeps all of that up to 13,000 ft on a standard day, and the rotor and hub weigh
-300 lb, enough stored energy to make an autorotation uneventful. Unusually for a helicopter, the
-pilot sits on the left.
+The 480 began as the TH-28, Enstrom's entry when the US Army wanted a new turbine training
+helicopter: a 280 with a bigger cabin and a Rolls-Royce (Allison) 250 turbine. The Army didn't buy
+it, but Enstrom put it on sale in 1993, and Japan's ground forces train on it. The engine can make
+420 shp but is held to 305, so it has its full rated power up to 13,000 ft on a standard day, and
+the rotor and hub weigh 300 lb, enough stored energy to make an autorotation uneventful. Unusually
+for a helicopter, the pilot sits on the left.
 """
 [variants.EN48.facts]
 "First flight" = "October 1989"
