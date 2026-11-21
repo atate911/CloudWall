@@ -4,30 +4,37 @@ production = [1988, 2021]
 checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/Airbus_A320_family",
+  "https://www.aircraft.airbus.com/en/aircraft/a320-family",
+  "https://www.aircraft.airbus.com/en/aircraft/a320-family/a320neo",
+  "https://www.boeing.com/content/dam/boeing/v2/airports/acaps/737_RevA.pdf",
+  "https://worldairlinenews.com/2014/07/11/airbus-introduces-air-flow-deflectors-on-the-a320-family/",
+  "https://lufthansagroup.com/en/focus-areas/aircraft-related-hardware/vortex-generator.html",
 ]
 
 text = """
-The A320 was the first airliner flown entirely by digital fly-by-wire with a sidestick. When it
-entered service in 1988 the control column was gone, and its computers kept the aircraft inside its
-limits whatever the pilot asked of the stick. Every Airbus since has been flown the same way, so a
-pilot qualified on one moves to another with a short course. The family runs from the 31 m A318 to
-the 44.5 m A321 on one cockpit and much the same wing, and its cabin is about 17 cm wider than a
-737's, which is why its seats are usually a little roomier.
+The A320 was the first airliner with all-digital fly-by-wire controls and a sidestick. When it
+entered service in 1988 the control column was gone, and in normal law its computers kept the
+aircraft inside its limits whatever the pilot asked of the stick. Every airliner Airbus has designed
+since has been flown the same way, so a pilot qualified on one moves to another with a short course.
+The family runs from the 31 m A318 to the 44.5 m A321 on one cockpit and much the same wing, and its
+cabin is about 16 cm wider than a 737's, which is why its seats are usually a little roomier.
 
 Next to a 737 it has a rounder, blunter nose and longer landing gear, so it stands higher off the
-ground. Older ones whistle on approach: a cavity in a fuel-vent cover under each wing sings like a
-blown bottle, a sound Airbus has since quietened with a small vortex generator fitted ahead of it.
-Most have small triangular fences above and below each wingtip; the last ones built have sharklets,
-the tall curved winglets of the neo.
+ground. Older ones whistle on approach: the opening for a fuel-tank over-pressure valve under each
+wing sings like a blown bottle, a sound Airbus has since quietened with a small vortex generator
+fitted ahead of it. Most have small triangular fences above and below each wingtip; many later ones
+have sharklets, the tall curved winglets of the neo.
 """
 
 [facts]
 "First flight" = "February 1987"
 "Engines" = "2 × CFM56-5 or IAE V2500"
-"Cabin width" = "3.70 m, against a 737's 3.53 m"
+"Cabin width" = "3.70 m, against a 737's 3.54 m"
 
 [variants.A318]
 name = "Airbus A318"
+[variants.A318.facts]
+"Engines" = "2 × CFM56-5B or Pratt & Whitney PW6000"
 
 [variants.A319]
 name = "Airbus A319"

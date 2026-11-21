@@ -1,24 +1,31 @@
 name = "Bombardier CRJ"
 types = ["CRJ1", "CRJ2", "CRJ7", "CRJ9", "CRJX"]
-production = [1992, 2020]
+production = [1992, 2021]
 checked = "2026-11"
 sources = [
+  "https://en.wikipedia.org/wiki/Bombardier_CRJ",
   "https://en.wikipedia.org/wiki/Bombardier_CRJ100/200",
   "https://en.wikipedia.org/wiki/Bombardier_CRJ700_series",
+  "https://en.wikipedia.org/wiki/Regional_jet",
+  "https://customer.aero.bombardier.com/webd/BAG/CustSite/BRAD/RACSDocument.nsf/51aae8b2b3bfdf6685256c300045ff31/ec63f8639ff3ab9d85257c1500635bd8/$FILE/ATT1ES4H.pdf/CRJ200APMR8.pdf",
+  "https://customer.aero.bombardier.com/webd/BAG/CustSite/BRAD/RACSDocument.nsf/51aae8b2b3bfdf6685256c300045ff31/ec63f8639ff3ab9d85257c1500635bd8/$FILE/ATTE8Q23.pdf/CRJ700APMR15.pdf",
+  "https://customer.aero.bombardier.com/webd/BAG/CustSite/BRAD/RACSDocument.nsf/51aae8b2b3bfdf6685256c300045ff31/ec63f8639ff3ab9d85257c1500635bd8/$FILE/ATTQF1EY.pdf/CRJ900APMR11.pdf",
+  "https://customer.aero.bombardier.com/webd/BAG/CustSite/BRAD/RACSDocument.nsf/51aae8b2b3bfdf6685256c300045ff31/ec63f8639ff3ab9d85257c1500635bd8/$FILE/ATT82VLY.pdf/CRJ1000APMR8.pdf",
+  "https://www.aa.com/i18n/travel-info/baggage/carry-on-baggage.jsp",
 ]
 
 text = """
 Bombardier made the first CRJ by stretching its Challenger business jet into a 50-seat airliner, and
-grew it in turn into the 70-seat CRJ700, the 76-to-90-seat CRJ900 and the 104-seat CRJ1000. The family
-keeps the business jet's slim fuselage, four abreast in a cabin not much over six feet tall, and its
-two GE CF34 engines mounted on the tail below a T-tail. That keeps the wing clean and the cabin
-ahead of the engines quiet, but leaves overhead bins too small for most roller bags, which is why
-carry-ons are so often left at the aircraft's door to be loaded below.
+grew it in turn into the CRJ700 of up to 78 seats, the CRJ900 of up to 90 and the CRJ1000 of up to
+104. The family keeps the business jet's slim fuselage, four abreast in a cabin not much over six
+feet tall, and its two GE CF34 engines mounted on the tail below a T-tail. That keeps the wing clean
+and the cabin ahead of the engines quiet, but leaves overhead bins too small for most roller bags,
+which is why carry-ons are so often left at the aircraft's door to be loaded below.
 
-It started the regional-jet era in the 1990s, when airlines found they could fly a jet on routes
-that had only ever seen turboprops, and nearly 2,000 were built. Mitsubishi bought the programme in
-2020 to support the fleet, and closed the line. Tell it from an E175 by its engines, on the tail
-rather than under the wing, and by its long, narrow, pencil-like fuselage.
+It led the regional-jet boom of the 1990s, when airlines found a jet could take over routes flown by
+turboprops, and 1,945 were built. Mitsubishi bought the programme in 2020 to support the fleet, and
+the last one was delivered in February 2021. Tell it from an E175 by its engines, on the tail rather
+than under the wing, and by its long, narrow, pencil-like fuselage.
 """
 
 [facts]
@@ -27,15 +34,23 @@ rather than under the wing, and by its long, narrow, pencil-like fuselage.
 
 [variants.CRJ1]
 name = "Bombardier CRJ100"
+[variants.CRJ1.facts]
+"Max takeoff weight" = "up to 24,041 kg"
 
 [variants.CRJ2]
 name = "Bombardier CRJ200"
+[variants.CRJ2.facts]
+"Max takeoff weight" = "up to 24,041 kg"
 
 [variants.CRJ7]
 name = "Bombardier CRJ700"
 
 [variants.CRJ9]
 name = "Bombardier CRJ900"
+[variants.CRJ9.facts]
+"Max takeoff weight" = "up to 38,329 kg"
 
 [variants.CRJX]
 name = "Bombardier CRJ1000"
+[variants.CRJX.facts]
+"Max takeoff weight" = "up to 41,640 kg"
