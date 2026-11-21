@@ -948,7 +948,8 @@ class AboutTest(unittest.TestCase):
         st = Store(":memory:")
         for i, (t, hexid, airline) in enumerate([("B39M", "a1", "ASA"), ("B39M", "a1", "ASA"), ("B39M", "a2", "UAL"),
                                                  ("E75L", "a3", "QXE"), ("E75L", "a4", "QXE"), ("C172", "a5", None)]):
-            st.add_sighting(ts=1000 + i, day="2026-11-21", hex=hexid, type=t, airline_icao=airline, airline=airline and airline.title())
+            st.add_sighting(ts=1000 + i, day="2026-11-21", hex=hexid, type=t, airline_icao=airline, airline=airline and airline.title(),
+                            type_name={"C172": "Cessna 172S Skyhawk"}.get(t))
         seen = st.type_seen("B39M")
         self.assertEqual({k: seen[k] for k in ("n", "of", "first", "last", "airframes", "rank", "types")},
                          {"n": 3, "of": 6, "first": 1000, "last": 1002, "airframes": 2, "rank": 1, "types": 3})
@@ -957,6 +958,8 @@ class AboutTest(unittest.TestCase):
         self.assertEqual((st.type_seen("A388")["n"], st.type_seen("A388")["rank"]), (0, None))
         self.assertEqual(st.airframe_seen("a1"), {"n": 2, "first": 1000})
         self.assertEqual(st.airframe_seen("ffffff"), {"n": 0, "first": None})
+        # the name a type without a write-up is shown by: the one it was last logged under
+        self.assertEqual((st.type_name("C172"), st.type_name("B39M"), st.type_name("A388")), ("Cessna 172S Skyhawk", None, None))
 
 
 class LiveFirstTest(unittest.TestCase):

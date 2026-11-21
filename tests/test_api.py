@@ -272,13 +272,15 @@ class ShapeTest(unittest.TestCase):
 
     def test_a_type(self):
         get = self.serve()
-        logged = get("/api/type?type=b739&hex=a1")              # the one that came overhead above, no write-up
-        written = get("/api/type?type=B39M")                     # one with a write-up, never logged here
-        self.held("type", [logged, written])
-        self.held("type.seen", [logged["seen"], written["seen"]])
-        self.assertEqual((logged["type"], logged["name"], logged["text"], logged["seen"]["rank"]), ("B739", "Boeing 737-990ER", [], 1))
-        self.assertEqual((logged["airframe"]["n"], written["airframe"], written["seen"]["n"]), (1, None, 0))
-        self.assertTrue(written["text"] and written["facts"] and written["family"])
+        logged = get("/api/type?type=b739&hex=a1")              # the one that came overhead above, with a write-up
+        unwritten = get("/api/type?type=ZZZZ")                   # neither written about nor ever logged
+        self.held("type", [logged, unwritten])
+        self.held("type.seen", [logged["seen"], unwritten["seen"]])
+        self.assertEqual((logged["type"], logged["name"], logged["family"], logged["seen"]["rank"], logged["airframe"]["n"]),
+                         ("B739", "Boeing 737-900", "Boeing 737 Next Generation", 1, 1))
+        self.assertTrue(logged["text"] and logged["facts"] and logged["production"])
+        self.assertEqual((unwritten["name"], unwritten["family"], unwritten["text"], unwritten["facts"], unwritten["production"],
+                          unwritten["airframe"], unwritten["seen"]["n"]), (None, None, [], [], None, None, 0))
 
 
 if __name__ == "__main__":
