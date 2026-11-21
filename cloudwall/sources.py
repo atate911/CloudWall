@@ -257,6 +257,8 @@ class Demo:
         if kind in ("arr", "dep"):
             # on a runway's extended centreline: arrivals from the edge of the range, departures from the runway's end
             offset = rwy[0] + self.rng.uniform(-0.04, 0.04)
+            if kind == "arr":
+                along = min(along, rwy[1] - 1.5)      # short of the threshold: the demo starts with one placed past it
             if kind == "dep":
                 along = rwy[2] + max(0.0, along + 11) * 0.6
         pad = None

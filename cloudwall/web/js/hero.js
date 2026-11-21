@@ -1,5 +1,5 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, since, runwayList } from "./util.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, since, dataAge, runwayList } from "./util.js";
 import { plate, kindPlate, renderLineup, drawn, typeInfo } from "./plate.js";
 import { flap, roll } from "./fx.js";
 import { map, tileLayout } from "./map.js";
@@ -141,7 +141,8 @@ function showHero(el, a, state) {
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
   $("h-pin").hidden = !state.pinned;
   // a followed flight the feed has left out for a moment: its position is CloudWall's estimate
-  const est = a.coasting ? Math.round(Date.now() / 1000 - a.coasting) : null;
+  // (by the server's clock, plus the time since it answered: this screen's clock may not agree with it)
+  const est = a.coasting ? Math.round((state.status.updated || state.now) - a.coasting + dataAge(state)) : null;
   $("h-est").hidden = est == null;
   if (est != null) $("h-est").textContent = `Position estimated: last report ${Math.max(1, est)} s ago`;
 

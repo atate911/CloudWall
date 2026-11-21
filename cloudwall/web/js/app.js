@@ -306,7 +306,8 @@ function markStale() {
   // the header's offline chip says it (the wall panel, without chips, has its own note)
   if (KIOSK) { $("stale-note").hidden = !old; if (old) $("stale-note").textContent = words; }
   else if (old) { $("link").hidden = false; $("link").textContent = words; }
-  else { $("link").textContent = "Flight data offline"; $("link").hidden = state.status.ok || !state.status.source; }
+  // (shown too while CloudWall itself isn't answering, whatever its last answer said of the feed)
+  else { $("link").textContent = "Flight data offline"; $("link").hidden = !pollFailed && (state.status.ok || !state.status.source); }
   return old;
 }
 
@@ -371,6 +372,7 @@ function applyFresh() {
 // and radar that can't be trusted are worse than an empty sky marked offline.
 const STALE_S = 60;
 let lastAnswer = Date.now();
+let pollFailed = false;       // the last request for the state got no answer
 function dropStale() {
   if (!state || document.hidden || Date.now() - lastAnswer < STALE_S * 1000) return;
   if (!state.status.ok && !state.aircraft.length && !state.hero) return;      // already cleared
@@ -396,6 +398,7 @@ async function poll() {
     shownSeq = seq;
     state = s;
     lastAnswer = Date.now();
+    pollFailed = false;
     // Positions are as old as the server's last update from the feed, not as new as this answer
     // (the feed is read every 5 s, this is asked every 2). Time is counted from when they were
     // reported, so aircraft glide on from where they are instead of stepping back each time the
@@ -415,7 +418,7 @@ async function poll() {
     }
     lastOverhead = over;
     render();
-  } catch (e) { if (seq >= shownSeq) $("link").hidden = false; }
+  } catch (e) { if (seq >= shownSeq) { pollFailed = true; if (state) markStale(); else $("link").hidden = false; } }
 }
 // A logo that doesn't exist (404) leaves the colour swatch showing in its place.
 document.addEventListener("error", (e) => {

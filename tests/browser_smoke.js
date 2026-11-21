@@ -382,6 +382,14 @@ const SCENARIOS = {
     await page.route("**/api/**", (route) => route.abort());
     await page.waitForFunction(() => !document.getElementById("link").hidden, null, { timeout: 8000 });
     out.chipAfter = await text(page, "#link");
+    // and goes on saying so: the once-a-second tick mustn't take the chip away between requests
+    out.chipStays = await page.evaluate(async () => {
+      for (let i = 0; i < 60; i++) {
+        if (document.getElementById("link").hidden) return false;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      return true;
+    });
     await page.close();
     // requests that fail are the point of this one: only anything else counts against it
     errors.push(...mine.filter((e) => !/Failed to load resource|ERR_FAILED/.test(e)));
