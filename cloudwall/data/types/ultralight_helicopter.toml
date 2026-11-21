@@ -16,18 +16,18 @@ sources = [
 text = """
 UHEL is ICAO's code for the lightest helicopters, those certified to take off at no more than 454 kg
 (1,000 lb). That rules out even the Robinson R22, about as small as factory-built helicopters get,
-which can weigh 1,370 lb at takeoff, and leaves a scattering of designs, most of them kits
-finished by their owners. The single-seat Mosquito, designed in Canada, is a helicopter pared to the
-minimum: in its open-cockpit form, a seat with no windshield beneath a two-bladed rotor, a 64 hp
-two-stroke engine and a 5 US gallon tank, built to the empty weight that the US Part 103 rules allow
-an ultralight, so there it can be flown without a pilot's licence.
+which can weigh 1,370 lb at takeoff, and leaves a scattering of designs, most of them kits finished
+by their owners. The single-seat Mosquito, designed in Canada, is a helicopter pared to the minimum:
+in its open-cockpit form, a seat with no windshield beneath a two-bladed rotor, a 64 hp two-stroke
+engine and a 5 US gallon tank, built to the empty weight that the US Part 103 rules allow an
+ultralight, so there it can be flown without a pilot's licence.
 
 In Europe several two-seaters are built to a 450 kg microlight limit, among them the Heli-Sport
 CH-7, an Argentine design by Augusto Cicaré made in Italy, of which about 335 had been built by
-2009, and Belgium's Dynali H3, side by side under a bubble canopy with a Rotax 912. Italy's Konner K1
-goes further, with a 250 hp turbine and a hybrid back-up system that can feed 90 hp to the main gearbox
-if the engine fails, to help the pilot into autorotation. Light as they are, they ask what any
-helicopter does: constant small corrections to hover, and a quick drop of the collective if the
+2009, and Belgium's Dynali H3, side by side under a bubble canopy with a Rotax 912. Italy's Konner
+K1 goes further, with a 250 hp turbine and a hybrid back-up system that can feed 90 hp to the main
+gearbox if the engine fails, to help the pilot into autorotation. Light as they are, they ask what
+any helicopter does: constant small corrections to hover, and a quick drop of the collective if the
 engine stops.
 """
 

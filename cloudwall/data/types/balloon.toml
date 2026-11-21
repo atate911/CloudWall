@@ -16,12 +16,12 @@ sources = [
 
 text = """
 A balloon travels with the wind and at its speed, so it can't be steered. All the pilot controls is
-height, climbing or sinking into a layer of air moving the way they want to go, and the wind usually
-turns as it rises. At Albuquerque, home of the world's largest balloon festival, northerly winds near
-the ground and southerly winds above them can carry a balloon south, up, back north and down to land
-near where it started. Most flights are in the first couple of hours after sunrise or the last before
-sunset, when the air is stable: by mid-morning the sun's heating stirs up thermals and gusts, and they
-die away again towards evening.
+height, climbing or sinking into a layer of air moving the way they want to go, and the wind's
+direction usually changes with height. At Albuquerque, home of the world's largest balloon festival,
+northerly winds near the ground and southerly winds above them can carry a balloon south, up, back
+north and down to land near where it started. Most flights are in the first couple of hours after
+sunrise or the last before sunset, when the air is stable: by mid-morning the sun's heating stirs up
+thermals and gusts, and they die away again towards evening.
 
 A hot-air balloon is lifted by heat alone. Liquid propane from cylinders in the basket feeds burners
 of 2 to 3 megawatts each, heating the air in a nylon envelope to as much as 120 °C, with
@@ -32,10 +32,10 @@ fly envelopes six times that, with more than two dozen aboard, and a chase crew 
 collect them wherever they land.
 
 Gas balloons, filled with hydrogen or helium, climb by dropping ballast and descend by letting gas
-out, and can stay up for days. The Gordon Bennett Cup, first flown from Paris in 1906, is still a race
-to land farthest from the start, and Breitling Orbiter 3, a hybrid of the two kinds, made the first
-nonstop balloon flight around the world in 1999, in just under 20 days. Few balloons broadcast ADS-B,
-which the US, for one, doesn't require of them, so one that appears here is doing so by choice.
+out, and can stay up for days. The Gordon Bennett Cup, first flown from Paris in 1906, is still a
+race to land farthest from the start, and Breitling Orbiter 3, a hybrid of the two kinds, made the
+first nonstop balloon flight around the world in 1999, in just under 20 days. The US, for one,
+doesn't require balloons to broadcast ADS-B, so one that appears here is doing so by choice.
 """
 
 [facts]
