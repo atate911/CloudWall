@@ -209,6 +209,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | `logbook.js` | The Logbook tab. |
 | `places.js` | The place in the header and the desktop's menu of places. |
 | `weather.js` | The Weather tab and the weather slide. |
+| `timeline.js` | The next few minutes: who comes over the house, who lands, a medical helicopter reaching its hospital, as Simple's line of the next three and Detailed's ten-minute axis (`tickTimeline` moves it every second and keeps its labels apart). |
 | `scope.js` | The radar (chart and ATC styles) and the Map view (the flights on a satellite or street map, in words): a static layer rebuilt on each update and one persistent SVG group per aircraft, moved every frame. Labels are placed on each update (`placeLabels`); every frame, the map's fixed names fade where traffic covers them (`giveWay`). |
 | `parts.js` | What several displays are made of: the logo tile, badges, a flight number as boards set it, "Landing at ...", records. |
 | `map.js` | The ground under the displays: map tiles around home, the hand-drawn map, runways. |

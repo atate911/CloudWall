@@ -1,7 +1,7 @@
 "use strict";
-import { $, esc, store, phone, api, runwayList, degF } from "./util.js";
+import { $, esc, store, phone, api, runwayList, degF, since } from "./util.js";
 import { updateSky, sky } from "./sky.js";
-import { drawScope, mapReach } from "./scope.js";
+import { drawScope, mapReach, flashCraft } from "./scope.js";
 import { loadMap } from "./map.js";
 import { renderHero, tickHero, nextSlide, forgetHero } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
@@ -14,6 +14,7 @@ import { loadLog } from "./logbook.js";
 import { renderPlace, placeMenu } from "./places.js";
 import { refresh } from "./fresh.js";
 import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture, notables, keepFocus, queueMore } from "./situation.js";
+import { lineHtml, axisHtml, tickTimeline } from "./timeline.js";
 
 // Kiosk mode (/kiosk, or ?mode=kiosk): the across-the-room display. Otherwise the desktop view.
 const KIOSK = /\/kiosk\/?$/.test(location.pathname) || new URLSearchParams(location.search).get("mode") === "kiosk";
@@ -194,8 +195,12 @@ function renderToggles() {
 let allOpen = false;
 function renderPicture(dens) {
   const easy = dens === "simple", ph = phone();
-  if (!KIOSK) renderInto($("strip"), stripHtml(state, { short: easy }) + (ph ? densSeg(dens) : ""));
-  else if (!easy) renderInto($("strip"), stripHtml(state, { short: true, notes: false }));     // over the radar
+  // the next few minutes beside the headline: in words in Simple, along a ten-minute axis in Detailed
+  if (!KIOSK) { renderInto($("strip"), stripHtml(state, { short: easy, after: easy ? lineHtml(state) : axisHtml(state) }) + (ph ? densSeg(dens) : "")); tickTimeline($("strip"), state); }
+  else {
+    renderInto($("next-line"), lineHtml(state, 3));                   // the wall panel: across its header, read from the room
+    if (!easy) renderInto($("strip"), stripHtml(state, { short: true, notes: false }));      // over the radar
+  }
   if (easy && KIOSK) { renderInto($("side"), `<section class="k-sit">${stripHtml(state, { short: true, notes: 2 })}</section>` + sideHtml(state, { queue: 3, notes: 2 })); fitSide($("side")); }
   else if (easy && ph === "side") renderInto($("side"), sideHtml(state, { compact: true }));      // sideways: all in one column beside the radar
   else if (easy && ph) { renderInto($("side"), sideHtml(state, { compact: true, notes: 0 })); renderInto($("notes"), notesHtml(state)); }
@@ -283,6 +288,81 @@ function render() {
     drawScopeNow(); if (!KIOSK) renderMiniBoard(state);
   }
   if (view === "board") keepFocus($("board"), () => { $("board").innerHTML = boardHtml(state); });
+  noticeNew();
+  applyFresh();
+  markStale();
+  if (KIOSK) hush();
+}
+
+// Positions more than 20 s old (the feed has stopped, or CloudWall isn't answering): aircraft fade,
+// countdowns stop, and a note says how old they are, until fresh data comes or the screen clears at a minute.
+const OLD_S = 20;
+function markStale() {
+  const age = since(state), old = age > OLD_S && (state.aircraft.length > 0 || !!state.hero);
+  const words = `Not updating: positions ${Math.round(age)} s old`;
+  document.body.classList.toggle("stale", old);
+  // the header's offline chip says it (the wall panel, without chips, has its own note)
+  if (KIOSK) { $("stale-note").hidden = !old; if (old) $("stale-note").textContent = words; }
+  else if (old) { $("link").hidden = false; $("link").textContent = words; }
+  else { $("link").textContent = "Flight data offline"; $("link").hidden = state.status.ok || !state.status.source; }
+  return old;
+}
+
+// The wall panel's quiet hours ([kiosk] quiet, "23:00-06:30"): only a dim clock and what's next.
+// It wakes while something is overhead or due over the house within a minute, for an emergency,
+// and for two minutes when something new is worth a look or the panel is tapped.
+const WAKE_S = 120;
+let wokeAt = 0;
+function quietNow(d = new Date()) {
+  const m = /^\s*(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})\s*$/.exec(qs.get("quiet") || (state && state.kiosk && state.kiosk.quiet) || "");
+  if (!m) return false;
+  const a = +m[1] * 60 + +m[2], b = +m[3] * 60 + +m[4], t = d.getHours() * 60 + d.getMinutes();
+  return a <= b ? t >= a && t < b : t >= a || t < b;
+}
+function hush() {
+  let on = !!state && quietNow() && !emergencies().length && Date.now() - wokeAt > WAKE_S * 1000;
+  if (on) {
+    const R = state.tracking.overhead_nm, t = since(state);
+    on = !picture(state).air.some((a) => a.dist <= R || (a.cpa_s - t > 0 && a.cpa_s - t < 60 && a.cpa_nm <= R));
+  }
+  document.body.classList.toggle("hush", on);
+}
+function wake() { wokeAt = Date.now(); hush(); }
+
+// Something new worth a look, or a new aircraft next over the house: its radar icon and its rows
+// glow softly once, for about three seconds, then go still; no sound. The rows are redrawn every
+// update, so each redraw picks the glow up where it had got to. An aircraft glows at most once in
+// ten minutes, and nothing glows for what was already there when the page opened.
+const FRESH_MS = 3000, REFLASH_MS = 10 * 60 * 1000;
+const fresh = new Map(), flashedAt = new Map();
+let seenNotable = null, lastNext = null;
+function noticeNew() {
+  const now = Date.now(), next = (state.hero || state.next || {}).hex || null;
+  const notable = new Set(picture(state).air.filter((a) => a.notable && a.notable !== "emergency").map((a) => a.hex));
+  if (seenNotable) {
+    const flash = (hex) => {
+      if (now - (flashedAt.get(hex) || 0) < REFLASH_MS) return;
+      flashedAt.set(hex, now); fresh.set(hex, now); flashCraft(hex);
+    };
+    for (const hex of notable) if (!seenNotable.has(hex)) { flash(hex); if (KIOSK) wokeAt = now; }     // and the wall panel wakes
+    if (next && next !== lastNext) flash(next);
+  }
+  seenNotable = notable; lastNext = next;
+}
+function applyFresh() {
+  const now = Date.now();
+  for (const e of document.querySelectorAll(":is(main, header) .fresh[data-hex]:not(.craft)")) {
+    if (!fresh.has(e.dataset.hex)) { e.classList.remove("fresh"); e.style.animationDelay = ""; }
+  }
+  for (const [hex, t0] of fresh) {
+    const gone = now - t0;
+    if (gone > FRESH_MS) { fresh.delete(hex); continue; }
+    for (const e of document.querySelectorAll(`main [data-hex="${CSS.escape(hex)}"]:not(.craft), header [data-hex="${CSS.escape(hex)}"]`)) {
+      if (e.classList.contains("fresh")) continue;
+      e.style.animationDelay = `-${gone}ms`;
+      e.classList.add("fresh");
+    }
+  }
 }
 // When CloudWall itself stops answering (the server is down, the network gone), the last positions
 // are shown for a minute, as the server does with a silent feed, and then cleared: a flight card
@@ -341,6 +421,8 @@ document.addEventListener("error", (e) => {
   if (t instanceof HTMLImageElement && t.classList.contains("logo") && !t.id) t.closest(".logo-tile").remove();
 }, true);
 // a flight in a list, the landing queue or "worth a look": follow it on this screen
+// a tap on the hushed wall panel wakes it, and does nothing else
+document.addEventListener("click", (e) => { if (document.body.classList.contains("hush")) { e.stopImmediatePropagation(); e.preventDefault(); wake(); } }, true);
 document.addEventListener("click", (e) => {
   const b = e.target.closest(".mb-row, .tr[data-hex], .q-row[data-hex], .n-row[data-hex]");
   if (b && !b.closest("#board")) { pin(b.dataset.hex); return; }
@@ -388,8 +470,11 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) { la
 setInterval(() => {
   if (KIOSK && myPin && Date.now() - lastTouch > KIOSK_PIN_S * 1000) pin(null);
   dropStale();
-  if (!state || view !== "now") return;
+  if (!state) return;
+  if (markStale()) return;          // old data: the countdowns stop with it
+  if (view !== "now") return;
   tickCounts($("view-now"), state);
+  if (KIOSK) { tickCounts($("next-line"), state); hush(); } else tickTimeline($("strip"), state);
   if (emergencies().length) { renderEmergency($("hero"), state, emergencies(), !KIOSK); return; }
   if (!cardShown()) return;
   const elapsed = (Date.now() - stateAt) / 1000;

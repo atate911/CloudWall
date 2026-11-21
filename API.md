@@ -43,7 +43,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `airport` | always | Its airport: `icao`, `iata`, `name`, `city`, `lat`, `lon`, `elevation_ft`; `runways` (each `name`, `ends` as two `[lat, lon]`, `length_ft`); `others`, the small fields nearby (`code`, `icao`, `name`, `city`, `lat`, `lon`, `elevation_ft`, `runways`); `airspace` (Class B, C and its own D: `id`, `class`, `floor`, `ceiling`, `label`, `rings`); `navaids` (`ident`, `name`, `type`, `lat`, `lon`); `helipads`, the hospital helipads out past the radar's longest range (`code`, `name`, `short`, `city`, `lat`, `lon`, `elevation_ft`; the US only). |
 | `tracking` | always | The `[tracking]` settings in force: `radius_nm`, `overhead_nm`, `max_overhead_alt_ft`, `poll_seconds`, `when_idle`, `idle_after_seconds`. |
 | `ranges` | always | The ranges a radar can ask for, in nm: the tracking radius, then the longer ones. |
-| `kiosk` | always | The `[kiosk]` settings: `place`, `view` (`radar` or `map`), `radar`, `tracks`, `range_nm`, `density` (`simple` or `detailed`). |
+| `kiosk` | always | The `[kiosk]` settings: `place`, `view` (`radar` or `map`), `radar`, `tracks`, `range_nm`, `density` (`simple` or `detailed`), `quiet` (the panel's quiet hours, "23:00-06:30", or ""). |
 | `aircraft` | always | Every aircraft within the tracking radius, nearest first: [aircraft](#an-aircraft). |
 | `beyond` | always | Aircraft in the air past the tracking radius, there only while a longer `range` is asked for. They are for the radar alone: never looked up, never on the card. |
 | `hero` | always | The aircraft on the flight card: the one this screen follows, else the one overhead; else null. An [aircraft](#an-aircraft) with its track. |

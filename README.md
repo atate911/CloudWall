@@ -12,12 +12,25 @@ airframe photos from [planespotters.net](https://www.planespotters.net), weather
 
 Every screen reads the traffic the same way. Each aircraft is coloured by what it is doing,
 **arriving** (blue), **departing** (green), **flying locally** (orange: no flight plan, or to and
-from a small field) or **passing over** (slate), arrivals are numbered in landing order, and the
+from a small field) or **passing over** (slate; the four checked to stand out on the radar by day and
+night and to stay apart for colour-blind eyes), arrivals are numbered in landing order, and the
 selected aircraft wears a magenta ring. Across the top, a headline ("12 aircraft within 15 nm") and
 a phrase for each group, led by its icon and count, say what is going on and are the key to the
 colours at once: "3 coming in from the east to land on 28L and 28R, about 2 minutes apart",
 "2 climbing out to the northwest", "2 F-15s heard, with no position". Simple says them short
 ("3 landing at PDX", "2 departing") and leaves the rest to the panel beside it.
+
+**The next few minutes.** Beside the headline, what happens next, on one line of time: who comes
+over the house, who lands and when, and a medical helicopter reaching its hospital. Simple says the
+next three in words, each counting down ("0:25 AS 2162 over the house · 1:40 AS 2162 lands at
+PDX"); Detailed draws them along a ten-minute axis that moves with the clock, each a mark in its
+colour (an arrival's landing number, the medical cross) and a label. The wall panel says the next
+ones across its header, to read from the room. Something new, worth a look or next over the house,
+glows once: a soft ring round it on the radar and its rows in the lists, for about three seconds,
+then still, with no sound. When the positions are more than 20 seconds old (the feed has stopped, or
+CloudWall isn't answering), the traffic fades, the countdowns stop and the header says how old they
+are; at a minute the screen clears. A flight a screen follows that the feed leaves out for a moment
+is carried on along its track, faded, its card marked "Position estimated".
 
 **Simple or Detailed.** A switch in the header (on a phone, under the headline) sets how much each
 screen draws. *Simple* shows what someone in the house wants to know right now: the next aircraft
@@ -266,7 +279,7 @@ board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk 
 |---|---|---|
 | `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, sound and night buttons. On screens 1200 px wide and up, Detailed adds a live list of every aircraft grouped by what it is doing, with the side view along the runways under it; click a flight to follow it. The arrow on the divider between the radar and the list hides or shows the list, and dragging the divider gives the radar more or less room (double-click it for the usual width); the flight card keeps its size, and each screen remembers its setting. |
 | `http://<server>:5050/` on a phone | A phone in the hand | The same tabs and switches, laid out for a phone. Upright, the page scrolls: the flight card at full width, then a square radar with its switches above and below it, the tabs along the foot and the status line held at the top. The Board becomes a two-line list (flight, route and when it's overhead; airline, type, altitude and speed), and Weather and Logbook stack into one column. Turned sideways, the card and radar sit side by side. Tapping a blip on the radar brings its flight card into view. |
-| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Built to read from across the room. Simple (the default): the headline and counts, the next aircraft over the house, the landing queue and what's worth a look beside the radar (on the 7.5" panel the queue shortens to make room for what's worth a look, and says how many more are behind it). Detailed: one big card (flight number, airline logo, route, altitude, speed and time until overhead) with the landing queue under it, beside the radar with every aircraft labelled and the headline over it (or the Map view, `[kiosk] view = "map"`). No tabs, buttons or small print. When the sky is empty it rotates every 12 seconds between the next flight, the weather with a windsock, and today's count. Tap the card to skip ahead. Tap a blip to show that flight; it goes back to what's overhead after 90 seconds untouched, or when the card is tapped. |
+| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Built to read from across the room. Across the header, what's next (the next aircraft over the house, the next landings) with a countdown each. Simple (the default): the headline and counts, the next aircraft over the house, the landing queue and what's worth a look beside the radar (on the 7.5" panel the queue shortens to make room for what's worth a look, and says how many more are behind it). Detailed: one big card (flight number, airline logo, route, altitude, speed and time until overhead) with the landing queue under it, beside the radar with every aircraft labelled and the headline over it (or the Map view, `[kiosk] view = "map"`). No tabs, buttons or small print. When the sky is empty it rotates every 12 seconds between the next flight, the weather with a windsock, and today's count. Tap the card to skip ahead. Tap a blip to show that flight; it goes back to what's overhead after 90 seconds untouched, or when the card is tapped. `[kiosk] quiet = "23:00-06:30"` sets quiet hours: only a dim clock and what's next, on near-black, waking while something is overhead or due over the house within a minute, for an emergency, and for two minutes when something new is worth a look or the panel is tapped. |
 
 The phone layout is chosen by screen size (up to 700 px wide, or 500 px tall when turned sideways),
 so it follows the phone as it turns and also suits a narrow desktop window. `?mode=phone` forces it and

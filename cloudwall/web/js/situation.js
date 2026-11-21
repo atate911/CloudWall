@@ -200,7 +200,7 @@ export function stripHtml(state, opts = {}) {
   // the icon, the count and the first word keep together when a line wraps
   const ph = s.phrases.map((x) => { const [w, ...rest] = x.text.split(" ");
     return `<span class="ph${x.covered ? " covered" : ""}"${x.covered ? " hidden" : ""}><span class="ph-k">${x.cat === "heard" ? heardIcon() : catIcon(x.cat)}<b>${x.n}</b> ${esc(w)}</span> ${esc(rest.join(" "))}</span>`; });
-  return `<div class="sit"><h1>${esc(s.head)}</h1>${ph.length ? `<p class="pic${opts.short ? " short" : ""}">${ph.join(" ")}</p>` : ""}</div>`;
+  return `<div class="sit"><h1>${esc(s.head)}</h1>${opts.after || ""}${ph.length ? `<p class="pic${opts.short ? " short" : ""}">${ph.join(" ")}</p>` : ""}</div>`;
 }
 
 // ---- Detailed: every aircraft, grouped by what it is doing ----

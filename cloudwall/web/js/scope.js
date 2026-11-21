@@ -59,6 +59,7 @@ const CHAR_W = 3.35;                          // estimated label width per chara
 // aircraft is still more than a speck. Labels and lines make room for them.
 const ICON_UNIT_PX = 2.5, ICON_BOOST_MAX = 1.5;
 let placeBoxes = [];        // where the place names sit, so aircraft labels can avoid them
+const MOVE_ON_S = 30;       // how long aircraft are moved on from their last reports
 // The chart style's fixed names (range rings, the airport, airfields, towns, flight restrictions,
 // the approach course, a hospital) give way to traffic: while an aircraft or its label is over one, it fades
 // out. Measured as drawn.
@@ -598,6 +599,7 @@ function craftFor(svg, hex) {
   const vec = el("line", { class: "vec" }, g);                         // where it will be in a minute
   const leader = el("line", { class: "leader" }, g);                   // ATC style: target to data block
   // the chart style's icon is set for its kind of aircraft as it's placed; a change of style rebuilds every craft
+  const glow = el("circle", { class: "glow" }, g);                     // a soft ring, once, for something new
   const icon = el("path", { class: "blip", d: opt.atc ? OCTAGON : "" }, g);
   // a medical flight's mark: a white cross on a blue square, upright at the icon's upper left (chart style and Map view)
   const med = el("g", { class: "med", style: "display:none" }, g);
@@ -616,10 +618,23 @@ function craftFor(svg, hex) {
   // the chart style's track, while it is the selected aircraft: runs of one altitude band,
   // rebuilt on each update, and the stretch from its last point to the aircraft, moved every frame
   const trk = el("g", { class: "trk" }, svg.querySelector("#s-trails")), segs = el("g", {}, trk), tail = el("line", {}, trk);
-  c = { g, icon, med, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, ring, seqring, tl, tlSegs, tlEnd, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""], act: null, pri: 9, hide: false };
+  c = { g, glow, icon, med, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, ring, seqring, tl, tlSegs, tlEnd, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""], act: null, pri: 9, hide: false };
   live.set(hex, c);
   requestAnimationFrame(() => g.classList.remove("entering"));
   return c;
+}
+
+// Something new: a ring round the aircraft swells and fades twice, then it's still (the page's own glow
+// for its rows runs alongside).
+export function flashCraft(hex) {
+  const c = live.get(hex);
+  if (!c) return;
+  c.glow.setAttribute("r", ((c.reach || 4.5) + 2.5).toFixed(2));
+  c.g.classList.remove("fresh");
+  void c.g.getBBox();
+  c.g.classList.add("fresh");
+  clearTimeout(c.freshTimer);
+  c.freshTimer = setTimeout(() => c.g.classList.remove("fresh"), 3200);
 }
 
 function dropCraft(hex) {
@@ -839,7 +854,9 @@ function mapShape(svg) {
 // ---- entry point: called every animation frame ----
 export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   ensureLayers(svg);
-  const dt = (now - stateAt) / 1000, frameDt = lastFrame ? Math.min(1, (now - lastFrame) / 1000) : 1;
+  // aircraft glide on from their last reports, but not for ever: past half a minute with nothing new
+  // they stop where they are (and fade: the page marks the data old) rather than fly on confidently
+  const dt = Math.min(MOVE_ON_S, (now - stateAt) / 1000), frameDt = lastFrame ? Math.min(1, (now - lastFrame) / 1000) : 1;
   lastFrame = now;
   opt = { atc: !!options.atc && mode === "radar", map: mode === "map", tracks: options.tracks !== false,
     range: options.range || state.tracking.radius_nm, mapStyle: options.mapStyle || "sat", simple: !!options.simple };
@@ -922,6 +939,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       c.vec.style.display = "";
     } else c.vec.style.display = "none";
     c.g.classList.toggle("hero", isHero);
+    c.g.classList.toggle("coasting", !!a.coasting);      // a followed flight the feed left out: where it should be, faded
     c.trk.classList.toggle("hero", isHero);
     c.hist.classList.toggle("hero", isHero);
     // what it is doing, which colours it, and how much its label matters when room is short

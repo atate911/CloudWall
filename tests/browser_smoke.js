@@ -210,6 +210,49 @@ const SCENARIOS = {
     return out;
   },
 
+  // the next few minutes, old data, an estimated position, and the wall panel's quiet hours
+  async glance(browser, errors) {
+    const out = {};
+    // Detailed: the ten-minute axis beside the headline; Simple: the next three in words
+    let page = await open(browser, "desktop", "/?density=detailed", errors);
+    await page.waitForTimeout(1500);
+    out.axis = await page.evaluate(() => ({ marks: document.querySelectorAll("#strip .tl.axis .tl-ev").length,
+      inside: [...document.querySelectorAll("#strip .tl.axis .tl-ev")].every((e) => { const t = e.closest(".tl-track").getBoundingClientRect(), r = e.getBoundingClientRect(); return r.left >= t.left - 1 && r.left <= t.right + 1; }) }));
+    await page.close();
+    page = await open(browser, "desktop", "/?density=simple", errors);
+    out.line = await page.evaluate(() => [...document.querySelectorAll("#strip .tl.line .tl-e")].map((e) => e.textContent.trim()));
+    await page.close();
+    page = await open(browser, "kiosk", "/kiosk", errors);
+    out.kioskLine = await count(page, "#next-line .tl-e");
+    await page.close();
+    // positions 40 s old: traffic faded, a note of how old, countdowns stopped
+    page = await open(browser, "desktop", "/", errors, (state) => { state.status.updated = state.now - 40; });
+    await page.waitForTimeout(1200);
+    out.old = await page.evaluate(async () => {
+      const t = document.querySelector("#mini-board [data-until]"), was = t && t.textContent;
+      await new Promise((r) => setTimeout(r, 2100));
+      return { stale: document.body.classList.contains("stale"), note: document.getElementById("link").textContent,
+        stopped: !t || t.textContent === was };
+    });
+    await page.close();
+    // a followed flight the feed left out for a moment: faded on the radar, "position estimated" on its card
+    page = await open(browser, "desktop", "/", errors, (state) => { if (state.hero) state.hero.coasting = state.now - 12; const a = state.hero && state.aircraft.find((x) => x.hex === state.hero.hex); if (a) a.coasting = state.now - 12; });
+    await page.waitForTimeout(1200);
+    out.estimated = await page.evaluate(() => ({ chip: document.getElementById("h-est") && !document.getElementById("h-est").hidden ? document.getElementById("h-est").textContent : "",
+      faded: !!document.querySelector("#s-craft g.craft.hero.coasting") }));
+    await page.close();
+    // quiet hours with nothing near: the dim clock; a tap wakes it
+    page = await open(browser, "kiosk", "/kiosk?quiet=00:00-23:59", errors, (state) => {
+      state.aircraft = state.aircraft.filter((a) => a.dist > 3 && !(a.cpa_s > 0 && a.cpa_s < 90 && a.cpa_nm <= state.tracking.overhead_nm)); });
+    await page.waitForTimeout(1500);
+    out.hushed = await page.evaluate(() => document.body.classList.contains("hush"));
+    await page.mouse.click(500, 300);
+    await page.waitForTimeout(500);
+    out.woken = await page.evaluate(() => !document.body.classList.contains("hush"));
+    await page.close();
+    return out;
+  },
+
   // a phone: the page stacked, the board as two lines a flight
   async phone(browser, errors) {
     const page = await open(browser, "phone", "/", errors), out = {};

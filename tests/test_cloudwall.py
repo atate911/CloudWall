@@ -1299,7 +1299,7 @@ class ServerTest(unittest.TestCase):
             self.assertEqual(t.fetch_radius(), 15)
         self.assertEqual(s["ranges"], [15, 20, 30])
         self.assertEqual(s["kiosk"], {"place": "", "view": "radar", "radar": "chart", "tracks": True, "range_nm": 0,
-                                      "density": "simple"})
+                                      "density": "simple", "quiet": ""})
         self.get(base + "/api/state?range=30")
         self.assertEqual(t.fetch_radius(), 30)
         self.get(base + "/api/state?range=30&square=1")             # the ATC style's square screen
@@ -2132,3 +2132,13 @@ class MedicalTest(unittest.TestCase):
         life = next(a for a in t.snapshot()["aircraft"] if a.get("callsign") == "LIFE3")
         self.assertEqual((life["medical"], life["notable"], life["hospital"]["state"]), (True, "medical", "heading"))
         self.assertGreater(life["hospital"]["eta_s"], 60)
+
+
+class KioskQuietTest(unittest.TestCase):
+    def test_quiet_hours_are_checked(self):
+        for ok in ("", "23:00-06:30", "0:00 - 7:15", "22:30-23:45"):
+            self.assertTrue(config.check("kiosk", {"quiet": ok}), ok)
+        for bad in ("11pm-6am", "23:00", "25:00-06:00", "23:00-6:60"):
+            with self.assertRaises(ValueError, msg=bad):
+                config.check("kiosk", {"quiet": bad})
+        self.assertEqual(config.DEFAULTS["kiosk"]["quiet"], "")

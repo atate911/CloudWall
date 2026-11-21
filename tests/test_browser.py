@@ -175,6 +175,18 @@ class BrowserTest(unittest.TestCase):
         self.assertNotIn("map", k["scope"])                                  # the radar unless [kiosk] view says map
         self.assertGreaterEqual(k["onScope"], 1)
 
+    def test_the_next_minutes_old_data_and_quiet_hours(self):
+        g = self.scenario("glance")
+        self.assertGreaterEqual(g["axis"]["marks"], 1)                       # the demo's arrivals, along the ten-minute axis
+        self.assertTrue(g["axis"]["inside"])
+        self.assertTrue(1 <= len(g["line"]) <= 3 and all(any(w in e for w in ("lands", "over the house", " at ")) for e in g["line"]))
+        self.assertGreaterEqual(g["kioskLine"], 1)                           # across the wall panel's header
+        self.assertEqual((g["old"]["stale"], g["old"]["stopped"]), (True, True))
+        self.assertRegex(g["old"]["note"], r"Not updating: positions \d+ s old")
+        self.assertRegex(g["estimated"]["chip"], r"Position estimated: last report \d+ s ago")
+        self.assertTrue(g["estimated"]["faded"])
+        self.assertEqual((g["hushed"], g["woken"]), (True, True))
+
     def test_the_wall_panel_on_the_map(self):
         self.assertGreaterEqual(self.scenario("kioskMap")["onMap"], 1)
 

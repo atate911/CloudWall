@@ -25,7 +25,7 @@ const SKELETON = `
     <div class="flaps flight" id="h-flight"></div>
     <div class="airline"><div class="logo-tile" id="h-logo" hidden><img class="logo" id="h-logo-img" alt=""></div><span id="h-airline"></span><small id="h-sub"></small></div>
   </div>
-  <div class="tags"><div class="badges" id="h-badges"></div><div class="pin-chip" id="h-pin" hidden>Pinned: tap the card to release</div></div>
+  <div class="tags"><div class="badges" id="h-badges"></div><div class="pin-chip" id="h-pin" hidden>Pinned: tap the card to release</div><div class="est-chip" id="h-est" hidden></div></div>
   <div class="h-route" id="h-route"></div>
   <div class="metrics">
     <div class="metric"><div class="label">Altitude</div><div class="v"><span id="h-alt"></span> <small>ft</small> <span id="h-arrow"></span></div><div class="s" id="h-vrate"></div></div>
@@ -140,6 +140,10 @@ function showHero(el, a, state) {
   const bh = badges(a.medical ? ["MEDICAL", ...(a.badges || []).filter((b) => b !== "MEDICAL")] : a.badges);
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
   $("h-pin").hidden = !state.pinned;
+  // a followed flight the feed has left out for a moment: its position is CloudWall's estimate
+  const est = a.coasting ? Math.round(Date.now() / 1000 - a.coasting) : null;
+  $("h-est").hidden = est == null;
+  if (est != null) $("h-est").textContent = `Position estimated: last report ${Math.max(1, est)} s ago`;
 
   const inferred = a.local_inferred && a.local !== "local" && (!r || !r.plausible);
   const h = a.hospital, med = a.medical ? `med:${h ? [h.code, h.state, h.eta_s == null ? "" : Math.round((h.eta_s - since(state)) / 60)].join(":") : ""}|` : "";
