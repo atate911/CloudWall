@@ -5,19 +5,24 @@ checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/Airbus_A330",
   "https://en.wikipedia.org/wiki/Airbus_A330neo",
+  "https://en.wikipedia.org/wiki/Airbus_A330_MRTT",
+  "https://en.wikipedia.org/wiki/List_of_Airbus_A330_orders_and_deliveries",
+  "https://en.wikipedia.org/wiki/Boeing_767",
+  "https://www.airbus.com/sites/g/files/jlcbta136/files/2025-11/Airbus-A330-Family-Facts-and-Figures-%20November-2025.pdf",
 ]
 
 text = """
 Airbus designed the A330 and the four-engined A340 together, on one wing, one fuselage and one
-cockpit, and made the twin first a regional widebody and then, as engines and rules allowed, an
-ocean-crosser. Its flight deck is the A320's, enlarged, so pilots move between the two on a short
-course. Seats run eight abreast in economy, two, four and two, so a couple by the window never
-has a stranger beside them.
+cockpit, and aimed the twin at busy medium-range routes; it became an ocean-crosser as its record in
+service won it approval, step by step, to fly further from a diversion airport. Its flight deck is
+laid out like the A320's, so pilots move between the two on a short course. Seats usually run eight
+abreast in economy, two, four and two, so a couple by the window never has a stranger beside them.
 
-The A330neo, from 2018, has Rolls-Royce Trent 7000 engines, its only option, and a new wing nearly 4
-m longer with curved sharklets in place of the older ones' angled winglets. The A330 MRTT tanker
-flies for many air forces. Tell an A330 from a 777 by its main gear, four wheels on each leg instead
-of six, and from a 767 by its wider, longer body and the winglets every one carries.
+The A330neo, from 2018, has Rolls-Royce Trent 7000 engines, its only option, and curved sharklets in
+place of the older ones' angled winglets, which widen its span by 3.7 m to 64 m. The A330 MRTT
+tanker flies for many air forces. Tell an A330 from a 777 by its main gear, four wheels on each leg
+instead of six, and from a 767 by its wider body and bigger wing, which on every A330 ends in a
+winglet.
 """
 
 [facts]
@@ -26,9 +31,15 @@ of six, and from a 767 by its wider, longer body and the winglets every one carr
 
 [variants.A332]
 name = "Airbus A330-200"
+[variants.A332.facts]
+"Range" = "7,250 nm (13,450 km)"
+"Max takeoff weight" = "up to 242,000 kg"
 
 [variants.A333]
 name = "Airbus A330-300"
+[variants.A333.facts]
+"Range" = "6,350 nm (11,750 km)"
+"Max takeoff weight" = "up to 242,000 kg"
 
 [variants.A338]
 name = "Airbus A330-800"
