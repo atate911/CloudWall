@@ -1,0 +1,32 @@
+name = "Douglas DC-4 and C-54 Skymaster"
+types = ["DC4"]
+production = [1942, 1947]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Douglas_DC-4",
+  "https://en.wikipedia.org/wiki/Douglas_C-54_Skymaster",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://en.wikipedia.org/wiki/Berlin_Blockade",
+  "https://en.wikipedia.org/wiki/Gail_Halvorsen",
+  "https://en.wikipedia.org/wiki/Aviation_Traders_Carvair",
+]
+
+text = """
+The DC-4 was an airliner the war took over before any airline could fly it. Douglas designed it with
+five US airlines, but after Pearl Harbor the Army Air Forces took over their orders, and nearly all
+were built as C-54 Skymaster transports, which flew a million miles a month across the North
+Atlantic. It had the tricycle landing gear the DC-3 lacked, so it sits level on the ground, but its
+cabin was never pressurised. A specially fitted C-54, nicknamed the Sacred Cow, became the first
+presidential aircraft, ordered for Franklin Roosevelt.
+
+In the Berlin Airlift of 1948–49, 330 DC-4s and C-54s flew food and coal into the blockaded city, one
+of them piloted by Gail Halvorsen, who dropped sweets to the children below on parachutes made from
+handkerchiefs. After the war hundreds of surplus C-54s became airliners and freighters alongside the
+79 DC-4s Douglas built new, and Freddie Laker gave 21 a raised cockpit and a nose that swung open so
+cars could be driven aboard, as the Carvair. A few survive, among them a C-54 that tours as a flying
+museum of the airlift.
+"""
+
+[facts]
+"First flight" = "February 1942"
+"Engines" = "4 × Pratt & Whitney R-2000 Twin Wasp, 1,450 hp"

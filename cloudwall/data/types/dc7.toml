@@ -1,0 +1,31 @@
+name = "Douglas DC-7"
+types = ["DC7"]
+production = [1953, 1958]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Douglas_DC-7",
+  "https://www.boeing.com/content/dam/boeing/v2/company/history/pdf/Boeing_Products.pdf",
+  "https://en.wikipedia.org/wiki/Wright_R-3350_Duplex-Cyclone",
+  "https://en.wikipedia.org/wiki/1956_Grand_Canyon_mid-air_collision",
+]
+
+text = """
+American Airlines wanted to fly coast to coast nonstop in under eight hours, the most a crew could
+then fly in a day, and its president, C. R. Smith, got Douglas to build the DC-7 by ordering 25 for
+$40 million, enough to cover the development. It was a stretched DC-6 with Wright R-3350
+Turbo-Compound engines, which ran their exhaust through turbines geared back to the crankshaft for
+extra power. Run hard to keep the schedules, those turbines overheated and failed, and engine
+failures and diversions were frequent. The DC-7C "Seven Seas" of 1956 added a section at each wing
+root, which held more fuel and moved the engines further from the cabin, and with it Pan Am began
+flying the Atlantic westbound nonstop, against the prevailing wind, with some regularity.
+
+The jets arrived within a few years, and airlines that had both kept their DC-6s longer. Douglas
+built 338, and the last known to be flying, an Erickson Aero Tanker fire bomber, made its final
+flight in October 2020. In 1956 a United DC-7 collided with a TWA Constellation over the Grand
+Canyon, killing 128; the outcry helped bring the Federal Aviation Act of 1958, which created the FAA.
+"""
+
+[facts]
+"First flight" = "May 1953"
+"Built" = "338"
+"Engines" = "4 × Wright R-3350 Turbo-Compound, up to 3,400 hp (DC-7C)"
