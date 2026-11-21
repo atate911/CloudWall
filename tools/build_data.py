@@ -7,6 +7,7 @@
     python3 tools/build_data.py airspace [package.tgz]     # Class B, C and D airspace (FAA NASR, public domain)
     python3 tools/build_data.py navaids [package.tgz]      # VOR and TACAN stations (FAA NASR, public domain)
     python3 tools/build_data.py borders [folder]           # borders and cities (Natural Earth, public domain)
+    python3 tools/build_data.py helipads [package.tgz]     # US hospital helipads (FAA NASR, public domain)
 
 Without a file each downloads its source. Every output is limited to what CloudWall uses:
 
@@ -27,6 +28,10 @@ Without a file each downloads its source. Every output is limited to what CloudW
   ceiling of each area and a point inside it for its label. Drawn on the ATC-style radar.
 - navaids: the VOR, VOR/DME, VORTAC and TACAN stations in the FAA's NASR data, from the
   @squawk/navaid-data npm package (MIT); not NDBs, DMEs or VOR test facilities.
+- helipads: the open heliports in the FAA's NASR data whose names say they serve a hospital (a
+  hospital, medical centre, health system, clinic or ER), from the @squawk/airport-data npm
+  package (MIT). Names are tidied from the FAA's capitals and abbreviations ("ST VINCENT MED CTR"
+  -> "St. Vincent Medical Center"), with a short form for the radar ("OHSU"). The US only.
 - borders: for the flight card's route map (cloudwall/web/maps/world.json), Natural Earth's 1:50m
   country borders on land and state and province lines (the US, Canada, Australia, Brazil and a
   few more), simplified to about 2 km, and its populated places (the larger cities and the
@@ -38,6 +43,7 @@ import gzip
 import io
 import json
 import math
+import re
 import sys
 import tarfile
 import urllib.request
@@ -159,6 +165,73 @@ def navaids(arg):
            "Rebuild with: python3 tools/build_data.py navaids"], out)
 
 
+# A hospital's heliport, by its name. The FAA abbreviates freely: "MED CTR", "RGNL", "HOSP", "HLTH".
+HOSPITAL = re.compile(r"\b(HOSP|HOSPITALS?|MEDICAL|MED|MEDCTR|HEALTH|HEALTHCARE|HLTH|CLINIC|TRAUMA|CHILDREN'?S|"
+                      r"INFIRMARY|EMERG|EMERGENCY|ER|SANITARIUM|CANCER|REHAB|MERCY|UPMC|AVERA|KAISER|SINAI|MAYO)\b")
+# the FAA's abbreviations, spelled out; and words that are the heliport's, not the hospital's name
+SPELL = {"HOSP": "Hospital", "MED": "Medical", "CTR": "Center", "CNTR": "Center", "MEDCTR": "Medical Center",
+         "MEML": "Memorial", "MEM": "Memorial", "RGNL": "Regional", "REGL": "Regional", "REG": "Regional",
+         "HLTH": "Health", "UNIV": "University", "CNTY": "County", "CO": "County", "ST": "St.", "MT": "Mount",
+         "FT": "Fort", "SCH": "School", "HTS": "Heights", "N": "North", "S": "South", "E": "East", "W": "West"}
+DROP = {"HELIPORT", "HELIPAD", "HELISTOP", "HELIPORTS", "EMERG", "EMERGENCY", "ROOFTOP", "ROOF", "PAD", "HELI"}
+KEEP_CAPS = {"UF", "UC", "UCLA", "UCSF", "UCSD", "UCI", "USC", "VA", "UAB", "UNC", "UVA", "OHSU", "LSU", "MUSC", "NYU",
+             "SSM", "HCA", "CHI", "ER", "UPMC", "UT", "UW", "UNM", "OU", "II", "III", "IV", "US", "SW", "NW", "NE", "SE"}
+SMALL = {"OF", "AND", "THE", "AT", "IN", "FOR", "ON"}
+TRAILING = ("Regional Medical Center", "Medical Center", "Hospital", "Health Center", "Health System", "Healthcare")
+
+
+def tidy_name(raw):
+    """'ST VINCENT HOSPITAL & MEDICAL CENTER' -> 'St. Vincent Hospital & Medical Center'."""
+    words = []
+    for w in raw.replace(",", " ").replace("-", " - ").split():
+        if w in DROP or (w.startswith("#") and w[1:].isdigit()):
+            continue
+        if w in SPELL and not (w in ("N", "S", "E", "W", "CO") and not words):
+            words.append(SPELL[w])
+        elif w in KEEP_CAPS:
+            words.append(w)
+        elif w in SMALL and words and words[-1] != "-":
+            words.append(w.lower())
+        elif w.startswith("MC") and len(w) > 3:
+            words.append("Mc" + w[2:].capitalize())
+        else:
+            cap = lambda part: "'".join(p.capitalize() if i == 0 else p.lower() for i, p in enumerate(part.split("'")))
+            words.append("/".join(cap(part) for part in w.split("/")))
+    name = " ".join(words).replace(" - ", "-").strip(" -")
+    return " ".join(name.split())
+
+
+def short_name(name):
+    """The radar's label: 'Emanuel Hospital' -> 'Emanuel', 'Oregon Health Sciences University' -> 'OHSU'."""
+    s = name
+    for t in TRAILING:
+        if s.endswith(" " + t) and len(s) > len(t) + 3:
+            s = s[: -len(t) - 1]
+            break
+    words = s.split()
+    if len(words) >= 3 and words[-1] == "University":     # a university's hospital goes by its initials, as OHSU does
+        return "".join(w[0] for w in words if w not in ("of", "and", "the", "&") and w[0].isalnum()).upper()
+    return s
+
+
+def helipads(arg):
+    data = npm_data(arg, "airport-data", "0.9.2", "airports.json.gz")
+    out = []
+    for r in data["records"]:
+        if r["facilityType"] != "HELIPORT" or r.get("status") != "OPEN" or not HOSPITAL.search(r["name"]):
+            continue
+        name = tidy_name(r["name"])
+        out.append([r["faaId"], name, short_name(name), tidy_name(r.get("city") or ""), r.get("state") or "",
+                    f"{r['lat']:.5f}", f"{r['lon']:.5f}", round(r["elevationFt"]) if r.get("elevationFt") is not None else ""])
+    out.sort()
+    write("helipads.csv", ["code", "name", "short", "city", "state", "lat", "lon", "elevation_ft"],
+          [f"Hospital helipads: the open heliports in the FAA's NASR data (cycle {data['meta']['nasrCycleDate']}, public",
+           "domain) whose names say they serve a hospital, as packaged by the @squawk/airport-data npm package (MIT).",
+           "Names are the FAA's, tidied; short is the radar's label. CloudWall says which one a medical helicopter is",
+           "heading for, landing at or has left, and draws them on the radar. Add or rename lines for your own area.",
+           "Rebuild with: python3 tools/build_data.py helipads"], out)
+
+
 def rows(path):
     with open(path, newline="", encoding="utf-8") as f:
         return list(csv.DictReader(line for line in f if not line.startswith("#")))
@@ -278,7 +351,8 @@ def borders(arg):
 
 
 if __name__ == "__main__":
-    jobs = {"borders": borders, "runways": runways, "airline": airline, "zips": zips, "cwt": cwt, "airspace": airspace, "navaids": navaids}
+    jobs = {"borders": borders, "runways": runways, "airline": airline, "zips": zips, "cwt": cwt, "airspace": airspace, "navaids": navaids,
+            "helipads": helipads}
     if len(sys.argv) < 2 or sys.argv[1] not in jobs:
         raise SystemExit(__doc__)
     jobs[sys.argv[1]](sys.argv[2] if len(sys.argv) > 2 else None)

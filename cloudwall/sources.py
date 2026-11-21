@@ -182,7 +182,8 @@ DEMO_FLIGHTS = [
     ("ANA178", "NH178", "All Nippon Airways", "B77W", "Boeing 777-381ER", "JA792A", "NRT", "ORD", "over"),
     ("ASA67", "AS67", "Alaska Airlines", "B38M", "Boeing 737 MAX 8", "N802AK", "SEA", "LAX", "over"),
     (None, None, None, "C172", "Cessna 172S Skyhawk", "N751SP", None, None, "ga"),
-    ("LIFE3", None, "Life Flight Network", "EC35", "Eurocopter EC135", "N135LF", None, None, "heli"),
+    # an air ambulance, flying in to a hospital's helipad near home, and out again after a while
+    ("LIFE3", None, "Life Flight Network", "EC35", "Eurocopter EC135", "N135LF", None, None, "medevac"),
     # one of each of the radar's other kinds: a regional jet, a four-engined heavy, a business jet and a turboprop
     ("SKW3486", "OO3486", "SkyWest Airlines", "CRJ9", "Bombardier CRJ900LR", "N914SK", "SEA", "PDX", "arr"),
     ("GTI8315", "5Y8315", "Atlas Air", "B744", "Boeing 747-400F", "N415MC", "PDX", "ANC", "dep"),
@@ -216,6 +217,7 @@ class Demo:
     def __init__(self, seed=7):
         self.rng = random.Random(seed)
         self.active = []
+        self.liftoff = None       # (when, helipad, hex): the air ambulance on a hospital's helipad, to leave again
         self.last = None
         self.next_spawn = 0
         self.routes = {}
@@ -227,12 +229,12 @@ class Demo:
                 self.routes[f[0]] = {"flight": f[1], "airline": f[2],
                                      "origin": _airport(f[6]), "dest": _airport(f[7])}
 
-    def _spawn(self, lat, lon, along=None, radius_nm=15):
-        flying = {a["hex"] for a in self.active}
+    def _spawn(self, lat, lon, along=None, radius_nm=15, idx=None):
+        flying = {a["hex"] for a in self.active} | ({self.liftoff[2]} if self.liftoff else set())     # or on a helipad
         free = [i for i in range(len(DEMO_FLIGHTS)) if f"a{i:05x}" not in flying]   # one not already in the air
         if not free:
             return
-        idx = self.rng.choice(free)
+        idx = self.rng.choice(free) if idx is None or idx not in free else idx
         hexid = f"a{idx:05x}"
         cs, _, _, typ, _, reg, _, _, kind = DEMO_FLIGHTS[idx]
         profile = {
@@ -240,6 +242,7 @@ class Demo:
             "over": (self.rng.choice([165, 345]), 455, 36000, 0, "A5"),
             "ga": (self.rng.uniform(0, 360), 105, 2800, 0, "A1"),
             "heli": (self.rng.uniform(0, 360), 120, 1400, 0, "A7"),
+            "medevac": (0, 120, 1400, 0, "A7"),
             "balloon": (self.rng.uniform(0, 360), 9, 1800, 0, "B2"),
             "glider": (self.rng.uniform(0, 360), 52, 4200, 0, "B1"),
         }[kind]
@@ -256,26 +259,92 @@ class Demo:
             offset = rwy[0] + self.rng.uniform(-0.04, 0.04)
             if kind == "dep":
                 along = rwy[2] + max(0.0, along + 11) * 0.6
+        pad = None
+        if kind == "medevac":
+            pad = self._helipad(lat, lon)
+            if pad:                 # in from 9 nm out, on a line that passes near home, straight to the helipad
+                pe, pn = self._xy(lat, lon, pad)
+                b = self._approach(lat, lon, pad)
+                se, sn = pe + 9 * math.sin(b), pn + 9 * math.cos(b)
+                track = math.degrees(math.atan2(pe - se, pn - sn)) % 360
+                along, offset = self._frame(se, sn, track)
+                pad = dict(pad, along=self._frame(pe, pn, track)[0])
+            else:                   # no helipads known here: an ordinary helicopter
+                kind, track = "heli", self.rng.uniform(0, 360)
         self.active.append({
             "hex": hexid, "callsign": cs or reg, "reg": reg, "type": typ, "category": cat,
             "track": track, "gs": gs, "alt0": alt, "vrate": vrate, "squawk": "1200" if kind == "ga" else "".join(self.rng.choice("01234567") for _ in range(4)),
-            "along": along, "offset": offset, "kind": kind, "rwy": rwy,
+            "along": along, "offset": offset, "kind": kind, "rwy": rwy, "pad": pad,
         })
+
+    @staticmethod
+    def _xy(lat, lon, p):
+        """Where a point is from home, in nm east and north."""
+        return (p["lon"] - lon) * 60 * math.cos(math.radians(lat)), (p["lat"] - lat) * 60
+
+    @staticmethod
+    def _frame(e, n, track):
+        """A point east and north of home as (along, offset) for a line flown on this track."""
+        t = math.radians(track)
+        return e * math.sin(t) + n * math.cos(t), e * math.cos(t) - n * math.sin(t)
+
+    def _helipad(self, lat, lon):
+        """The hospital helipad nearest 6 nm from home, for the air ambulance to fly to."""
+        from .airports import helipads_near
+        pads = [p for p in helipads_near(lat, lon, 12) if haversine_nm(lat, lon, p["lat"], p["lon"]) > 2]
+        return min(pads, key=lambda p: abs(haversine_nm(lat, lon, p["lat"], p["lon"]) - 6)) if pads else None
+
+    def _approach(self, lat, lon, pad):
+        """The direction the air ambulance comes in from (radians, from the helipad): from near home's
+        side, on a line that passes no other hospital's helipad, so where it's going is clear."""
+        from .airports import helipads_near
+        pe, pn = self._xy(lat, lon, pad)
+        others = [self._xy(lat, lon, p) for p in helipads_near(lat, lon, 25) if p["code"] != pad["code"]]
+        home_side = math.atan2(-pe, -pn)
+        for off in (40, -40, 70, -70, 100, -100, 140, -140, 180):
+            b = home_side + math.radians(off)
+            se, sn = pe + 9 * math.sin(b), pn + 9 * math.cos(b)
+            dx, dy = pe - se, pn - sn
+            def miss(q):           # how near a helipad comes to the line flown in, or its extension past the helipad, nm
+                t = max(0.0, min(3.5, ((q[0] - se) * dx + (q[1] - sn) * dy) / (dx * dx + dy * dy)))
+                return math.hypot(se + t * dx - q[0], sn + t * dy - q[1])
+            if all(miss(q) > 1.2 for q in others):
+                return b
+        return home_side + math.radians(40)
+
+    def _lift_off(self, lat, lon):
+        """The air ambulance leaves the helipad it landed on, climbing away to the north-west or south-east."""
+        _, pad, hexid = self.liftoff
+        self.liftoff = None
+        cs, _, _, typ, _, reg, _, _, _ = DEMO_FLIGHTS[int(hexid[1:], 16)]
+        track = self.rng.choice([315, 135]) + self.rng.uniform(-20, 20)
+        pe, pn = self._xy(lat, lon, pad)
+        along, offset = self._frame(pe, pn, track)
+        self.active.append({
+            "hex": hexid, "callsign": cs or reg, "reg": reg, "type": typ, "category": "A7", "track": track, "gs": 110,
+            "alt0": 1400, "vrate": 900, "squawk": "4721", "along": along, "offset": offset, "kind": "medevac_out",
+            "rwy": DEMO_RUNWAYS[0], "pad": dict(pad, along=along)})
 
     def fetch(self, lat, lon, radius_nm):
         now = time.time()
         if self.last is None:
             for along in (-11, -5, -1.5, 6):
                 self._spawn(lat, lon, along)
+            # and the air ambulance, on its way to a hospital
+            self._spawn(lat, lon, idx=next(i for i, f in enumerate(DEMO_FLIGHTS) if f[8] == "medevac"))
             self.last = now
         dt = now - self.last
         self.last = now
         if now >= self.next_spawn:
             self._spawn(lat, lon, radius_nm=radius_nm)
             self.next_spawn = now + self.rng.uniform(25, 60)
+        if self.liftoff and now >= self.liftoff[0]:
+            self._lift_off(lat, lon)
         out = []
         for a in self.active:
             a["along"] += a["gs"] * dt / 3600
+            if a["kind"] == "medevac":           # down on the helipad, not past it
+                a["along"] = min(a["along"], a["pad"]["along"])
             t = math.radians(a["track"])
             # along-track unit vector (east, north) and its right-hand normal
             e = a["along"] * math.sin(t) + a["offset"] * math.cos(t)
@@ -288,9 +357,17 @@ class Demo:
                 vrate = -round(a["gs"] * GLIDE_FT_PER_NM / 60)
             elif a["kind"] == "dep":
                 alt = 400 + a["vrate"] * ((a["along"] - a["rwy"][2]) / a["gs"] * 60)
+            elif a["kind"] == "medevac":    # level, then down over the last 2 nm to the helipad
+                to_go = a["pad"]["along"] - a["along"]
+                alt = a["pad"]["elevation_ft"] + 100 + 1300 * min(1.0, max(0.0, to_go / 2))
+                vrate = -round(a["gs"] * 650 / 60) if to_go < 2 else 0
+            elif a["kind"] == "medevac_out":   # climbing from the helipad to 1,400 ft
+                climbed = a["vrate"] * ((a["along"] - a["pad"]["along"]) / a["gs"] * 60)
+                alt = min(1400.0, a["pad"]["elevation_ft"] + 100 + climbed)
+                vrate = a["vrate"] if alt < 1400 else 0
             else:
                 alt = a["alt0"] + a["vrate"] * (a["along"] / a["gs"] * 60)
-            alt = max(300, min(41000, alt))
+            alt = max(300 if a["kind"] not in ("medevac", "medevac_out") else 0, min(41000, alt))
             info = DEMO_FLIGHTS[int(a["hex"][1:], 16)]
             alt_target = (3000 if a["kind"] == "arr" else 15000 if a["kind"] == "dep" else None)
             out.append({
@@ -304,6 +381,11 @@ class Demo:
                 "lon": lon + e / (60 * math.cos(math.radians(lat))),
                 "squawk": a["squawk"], "category": a["category"], "military": False,
             })
-        # gone past the range, or landed
-        self.active = [a for a in self.active if abs(a["along"]) <= radius_nm and not (a["kind"] == "arr" and a["along"] > a["rwy"][1])]
+        # gone past the range, or landed (the air ambulance to leave its helipad again after a while)
+        for a in self.active:
+            if a["kind"] == "medevac" and a["along"] >= a["pad"]["along"] and not self.liftoff:
+                self.liftoff = (now + 40, a["pad"], a["hex"])
+        self.active = [a for a in self.active if abs(a["along"]) <= radius_nm and not (a["kind"] == "arr" and a["along"] > a["rwy"][1])
+                       and not (a["kind"] == "medevac" and a["along"] >= a["pad"]["along"])
+                       and not (a["kind"] == "medevac_out" and a["along"] - a["pad"]["along"] > 12)]
         return out

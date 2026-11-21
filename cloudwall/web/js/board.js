@@ -3,7 +3,7 @@
 // next for each; a two-line version of it for a phone; and the grouped traffic list beside the radar.
 import { $, esc, num, mmss, ident, altText, phone, since } from "./util.js";
 import { boardFlight, shortType, heardGroups } from "./parts.js";
-import { picture, stripHtml, listHtml, catIcon, kind, where, dir8, until, flightName, overheadSoon, keepFocus } from "./situation.js";
+import { picture, stripHtml, listHtml, catIcon, kind, where, dir8, until, flightName, overheadSoon, keepFocus, medIcon, hospitalShort } from "./situation.js";
 import { profileHtml } from "./profile.js";
 
 const plausible = (a) => (a.route && a.route.plausible ? a.route : null);
@@ -18,14 +18,23 @@ function nextHtml(a, state, arr) {
     return `<span class="bs"><span class="bs1"><span class="seq">${a.seq}</span>${esc(a.rwy || "")}, lands in <b data-until="${a.lands_s}">${until(a.lands_s - t)}</b></span>` +
       `<small>${ahead ? `${mmss(a.gap_s)} behind ${esc(flightName(ahead))}` : "next to land"}${soon ? `; over the house in ${mmss(Math.max(0, a.cpa_s - t))}` : ""}</small></span>`;
   }
+  const h = a.hospital;
+  if (h && h.state === "left") return `<span class="bs"><span class="bs1">Just lifted off from ${esc(h.short)}</span><small>${esc(h.name)}${h.city ? `, ${esc(h.city)}` : ""}</small></span>`;
+  if (h && h.eta_s != null) {          // a medical helicopter: when it gets to the hospital, counting down
+    return `<span class="bs"><span class="bs1">${h.state === "landing" ? "Landing at" : "At"} ${esc(h.short)} in <b data-until="${h.eta_s}">${until(h.eta_s - t)}</b></span>` +
+      `<small>${esc(h.name)}${soon ? `; over the house in ${mmss(Math.max(0, a.cpa_s - t))}` : ""}</small></span>`;
+  }
   if (a.activity === "dep") return `<span class="bs"><span class="bs1">Climbing out ${esc(dir8(a.track))}</span><small>${a.dist.toFixed(1)} nm ${esc(dir8(a.brg))} of home${soon ? `; over the house in ${mmss(Math.max(0, a.cpa_s - t))}` : ""}</small></span>`;
   if (soon) return `<span class="bs"><span class="bs1">Over the house in ${overIn}</span><small>${a.cpa_nm.toFixed(1)} nm from it at the closest</small></span>`;
   return `<span class="bs"><span class="bs1">Heading ${esc(dir8(a.track))}</span><small>${a.dist.toFixed(1)} nm ${esc(dir8(a.brg))} of home</small></span>`;
 }
 function routeHtml(a, state) {
   const r = plausible(a);
-  if (a.activity === "loc") { const w = where(a, state, { town: true }); return `${esc(kind(a)[0].toUpperCase() + kind(a).slice(1))}${w ? `<small>${esc(w)}</small>` : ""}`; }
-  if (r) return `<b>${esc(r.origin.iata)}</b> <span class="b-to">to</span> <b>${esc(r.dest.iata)}</b><small>${esc(city(r.origin))} to ${esc(city(r.dest))}</small>`;
+  if (a.activity === "loc") {
+    const w = a.hospital ? hospitalShort(a.hospital) : where(a, state, { town: true });
+    return `${a.medical ? medIcon(14) : ""}${esc(kind(a)[0].toUpperCase() + kind(a).slice(1))}${w ? `<small>${esc(w[0].toUpperCase() + w.slice(1))}</small>` : ""}`;
+  }
+  if (r) return `${a.medical ? medIcon(14) : ""}<b>${esc(r.origin.iata)}</b> <span class="b-to">to</span> <b>${esc(r.dest.iata)}</b><small>${esc(city(r.origin))} to ${esc(city(r.dest))}</small>`;
   return `<span class="dim">${a.activity === "arr" ? `Landing at ${esc(state.airport.iata)}` : a.activity === "dep" ? `Just took off from ${esc(state.airport.iata)}` : "—"}</span>`;
 }
 
@@ -73,7 +82,7 @@ function phoneBoardHtml(state) {
     return `<button class="pb-row${a.hex === heroHex ? " hero" : ""}" data-hex="${esc(a.hex)}">
       <span class="pb-k">${a.activity === "arr" && a.seq ? `<span class="seq">${a.seq}</span>` : catIcon(a.activity || "pass", a, 18)}</span>
       <span class="pb-id">${esc(boardFlight(ident(a)))}</span>
-      <span class="pb-rt">${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}` : `<span class="dim">${esc(a.activity === "loc" ? kind(a)[0].toUpperCase() + kind(a).slice(1) : a.activity === "arr" ? "Landing" : a.activity === "dep" ? "Just took off" : "")}</span>`}</span>
+      <span class="pb-rt">${a.medical ? medIcon(13) : ""}${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}` : `<span class="dim">${esc(a.activity === "loc" ? (a.hospital ? `${kind(a)[0].toUpperCase() + kind(a).slice(1)}, ${hospitalShort(a.hospital)}` : kind(a)[0].toUpperCase() + kind(a).slice(1)) : a.activity === "arr" ? "Landing" : a.activity === "dep" ? "Just took off" : "")}</span>`}</span>
       <span class="pb-when${soon || a.seq ? " soon" : ""}">${when}</span>
       <span class="pb-l2"><span class="pb-sub">${logo}${name ? `<span class="pb-name">${esc(name)}</span>` : ""}${a.type ? `<span class="pb-type">${esc(a.type)}</span>` : ""}</span>
       <span class="pb-data">${altText(a)}<small> ft</small>${arrowOf(a)}<span class="pb-gs">${num(a.gs)}<small> kt</small></span></span></span></button>`;

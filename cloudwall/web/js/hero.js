@@ -7,6 +7,7 @@ import { weatherSlide } from "./weather.js";
 import { showLogo, badges, boardFlight, localPlace, localWords, recordsHtml, heardGroups } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
 import { mappable, drawRouteMap, moveRouteMap } from "./routemap.js";
+import { medIcon, hospitalLine } from "./situation.js";
 
 // Play the entrance animation once for freshly inserted content.
 function enter(el) {
@@ -44,6 +45,11 @@ function routeHtml(a, state) {
   if (a.route_pending && !r) {
     const prov = (state.live_routes && state.live_routes.label) || "the flight data service";
     return `<div class="noroute pending">Looking up route…<small>Asking ${esc(prov)} where this flight is going</small></div>`;
+  }
+  if (a.medical && (!r || !r.plausible)) {
+    // a medical flight: the hospital it's going to, or has just left, when that's known
+    return `<div class="noroute med">${medIcon(22)}<span>${esc(a.hospital ? hospitalLine(a.hospital, state) : `${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}, no flight plan filed`)}` +
+      `<small>${esc([a.hospital ? (a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance") : "", a.type_name || a.type || ""].filter(Boolean).join(", "))}</small></span></div>`;
   }
   if (a.local === "local") {
     return `<div class="noroute">${esc(localWords(a, state))}<small>${esc(a.type_name || a.type || "Light aircraft")}, low over the field: training or sightseeing, most likely</small></div>`;
@@ -131,12 +137,13 @@ function showHero(el, a, state) {
   // the server's airline agrees with the logo and the flight number (a partner's flight under the airline you'd book)
   $("h-airline").textContent = a.airline || (r && r.airline) || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
   $("h-sub").innerHTML = [a.operated_by ? `Operated by ${a.operated_by}` : null, a.callsign !== id ? a.callsign : null].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("");
-  const bh = badges(a.badges);
+  const bh = badges(a.medical ? ["MEDICAL", ...(a.badges || []).filter((b) => b !== "MEDICAL")] : a.badges);
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
   $("h-pin").hidden = !state.pinned;
 
   const inferred = a.local_inferred && a.local !== "local" && (!r || !r.plausible);
-  const key = (a.route_pending && !r ? "pending|" : "") + (inferred ? "inferred:" + a.local + "|" : "") + (r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || ""));
+  const h = a.hospital, med = a.medical ? `med:${h ? [h.code, h.state, h.eta_s == null ? "" : Math.round((h.eta_s - since(state)) / 60)].join(":") : ""}|` : "";
+  const key = med + (a.route_pending && !r ? "pending|" : "") + (inferred ? "inferred:" + a.local + "|" : "") + (r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || ""));
   if (key !== cur.routeKey) {
     cur.routeKey = key;
     $("h-route").innerHTML = routeHtml(a, state);

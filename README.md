@@ -21,8 +21,9 @@ colours at once: "3 coming in from the east to land on 28L and 28R, about 2 minu
 
 **Simple or Detailed.** A switch in the header (on a phone, under the headline) sets how much each
 screen draws. *Simple* shows what someone in the house wants to know right now: the next aircraft
-over the house, the landing queue with a countdown for each, and what's worth a look (military
-traffic, a rare type, a balloon or glider, jets heard with no position). Its radar numbers the
+over the house, the landing queue with a countdown for each, and what's worth a look (a medical
+flight and the hospital it's going to, military traffic, a rare type, a balloon or glider, jets heard
+with no position). Its radar numbers the
 arrivals, names the selected aircraft and anything worth a look, and leaves the rest unlabelled;
 when the sky is empty it shows the flight card's quiet-sky slides. *Detailed* adds everything an
 enthusiast reads the situation from: the flight card, every aircraft labelled with its altitude
@@ -70,6 +71,16 @@ screen remembers its own choice, `?density=simple` or `detailed` sets it in the 
   in magenta, strongest near the ground and fading with height in steps at 2,000, 5,000, 10,000,
   18,000 and 28,000 ft. CloudWall keeps every aircraft's track, so one you tap shows all of it at
   once. The radar has a compass bezel with bearings, and on the desktop a key in the corner.
+  A medical flight carries a white cross on a deep blue square beside its icon (the shape, not
+  the blue, sets it apart from the arrivals), on the radar, the Map view, the lists and the
+  board, and a MEDICAL tag on its card. CloudWall knows one by its transponder's lifeguard status,
+  an air ambulance's operator or callsign (Life Flight Network, Air Methods, MERCY1), or a
+  helicopter seen landing at or lifting off from a hospital's helipad. A medical helicopter's
+  hospital is named when it's clear: the helipad it's landing at or has just left, or the one it's
+  pointed straight at with no other on its line ("heading for Emanuel Hospital, there in about 4
+  minutes"; the board counts down to it). Detailed marks the hospital helipads as charts mark
+  heliports, an H in a circle; the one in use is drawn in the medical blue with its name, in Simple
+  too.
   Labels keep clear of each other, the compass and the edge, and when a busy sky leaves no room,
   the least important go first (an arrival keeps its landing number, in a ring); the map's own
   names (towns, range rings, the airport, airfields) give way instead, fading while an aircraft
@@ -173,7 +184,9 @@ and which airports have airline service from OurAirports (public domain); ZIP co
 Census Bureau's 2025 ZIP code areas (public domain); aircraft types' wake categories, for the
 ATC radar's data blocks, from openScope's aircraft data (MIT licence); Class B, C and D airspace
 and the VOR and TACAN stations, for the ATC radar's video map, from the FAA's NASR data (public
-domain) as packaged by the `@squawk/airspace-data` and `@squawk/navaid-data` npm packages (MIT).
+domain) as packaged by the `@squawk/airspace-data` and `@squawk/navaid-data` npm packages (MIT);
+hospital helipads (the US only) from the same NASR data as packaged by `@squawk/airport-data` (MIT),
+with the FAA's names tidied, in `cloudwall/data/helipads.csv` (add or rename lines for your area).
 `python3 tools/build_data.py` rebuilds them.
 For an airport the tables don't cover, give its `iata`, `city`, `lat` and `lon` too.
 

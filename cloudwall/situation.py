@@ -2,14 +2,14 @@
 arriving at the place's airport, departing from it, flying locally, or passing over on its way
 somewhere else. Arrivals are put in landing order, each with the runway it is lining up for, about
 when it lands and how far behind the one ahead it is. And anything worth a look (military, a rare
-type, a balloon) is marked as such.
+type, a balloon, a medical flight) is marked as such, and a medical helicopter's hospital (medical.py).
 
 Every screen draws these the same way, in the same four colours: the radar, the lists, the Board,
 the wall panel and the phone.
 """
 import math
 
-from . import aircraft, geo
+from . import aircraft, geo, medical
 
 # Kinds of aircraft that, with no published route to say otherwise, are flying locally: sightseeing,
 # training, a medical or news helicopter, a balloon. (A turboprop with no route and no VFR code is
@@ -43,10 +43,12 @@ def activity(a, iata):
 
 
 def notable(a):
-    """Why this aircraft is worth a look, or None: an emergency, military, a rare type, or a kind
-    seldom seen (a balloon, a glider, a twin-rotor helicopter)."""
+    """Why this aircraft is worth a look, or None: an emergency, a medical flight, military, a rare
+    type, or a kind seldom seen (a balloon, a glider, a twin-rotor helicopter)."""
     if a.get("emergency"):
         return "emergency"
+    if a.get("medical"):
+        return "medical"
     if a.get("military"):
         return "military"
     if aircraft.rare(a.get("type")):
@@ -131,6 +133,7 @@ def describe(aircraft_list, airport, flow):
     """Mark every airborne aircraft with what it is doing, and the arrivals with their landing order."""
     iata = airport.get("iata")
     arrivals = []
+    medical.mark(aircraft_list, airport.get("helipads") or [])
     for a in aircraft_list:
         if a.get("on_ground"):
             continue

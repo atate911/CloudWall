@@ -7,7 +7,7 @@ import { $, esc, num, mmss, ident, since, degF } from "./util.js";
 import { boardFlight, showLogo, localWords, heardGroups } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
 import { flap } from "./fx.js";
-import { queueHtml, renderInto } from "./situation.js";
+import { queueHtml, renderInto, medIcon, hospitalWords, arrival } from "./situation.js";
 import { windRose, runwayHeadings, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
 
 const SLIDE_SECONDS = 12;
@@ -23,6 +23,11 @@ function routeBlock(a, state) {
       <div class="k-arrow" aria-hidden="true"><svg viewBox="0 0 100 20" preserveAspectRatio="none"><line x1="2" y1="10" x2="92" y2="10"/><polygon points="98,10 88,4 88,16"/></svg></div>
       <div class="k-apt r ${r.dest.iata === here.iata ? "local" : ""}"><span>${esc(r.dest.city || "")}</span><b>${esc(r.dest.iata)}</b></div>
     </div>`;
+  }
+  if (a.medical) {         // a medical flight: the hospital it's going to, or has just left
+    const what = a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance";
+    const h = a.hospital, w = h ? hospitalWords(h, { short: true }) : what, soon = h && h.state !== "left" ? arrival(h, state) : "";
+    return `<div class="k-note big k-med">${medIcon(40)}<span>${esc(w[0].toUpperCase() + w.slice(1))}${soon || h ? `<small>${esc(soon ? `There ${soon}` : h.name)}</small>` : ""}</span></div>`;
   }
   if (a.local) return `<div class="k-note big">${esc(localWords(a, state))}</div>`;
   return `<div class="k-note big">${esc(a.type_name || a.type || "Unknown aircraft")}</div>`;
@@ -49,7 +54,9 @@ function showPlane(el, a, state) {
   }
   flap($("k-flight"), boardFlight(ident(a)));
   $("k-airline").textContent = a.airline || (a.route && a.route.airline) || (a.private_owner ? "" : a.owner || "");
-  const key = JSON.stringify([a.route && [a.route.origin.iata, a.route.dest.iata, a.route.plausible], a.local, a.route_pending, a.type_name]);
+  const h = a.hospital;
+  const key = JSON.stringify([a.route && [a.route.origin.iata, a.route.dest.iata, a.route.plausible], a.local, a.route_pending, a.type_name, !!a.medical,
+    h && [h.code, h.state, h.eta_s == null ? null : Math.round((h.eta_s - since(state)) / 60)]]);
   if (key !== cur.routeKey) { cur.routeKey = key; $("k-route").innerHTML = routeBlock(a, state); }
   const v = a.vrate || 0;
   $("k-alt").innerHTML = `${a.on_ground ? "0" : num(a.alt)}${v > 300 ? '<i class="up">▲</i>' : v < -300 ? '<i class="down">▼</i>' : ""}`;

@@ -92,10 +92,11 @@ function nickname(a) {
 // What it is, for a sentence: "helicopter", "hot-air balloon", "Cessna 172 Skyhawk", "Army Chinook"
 export function kind(a) {
   if (a.military) return `${milWho(a)} ${nickname(a)}`;
+  // a medical flight, as the server made it out (medical.py): by its transponder, operator or callsign, or a hospital's helipad
+  if (a.medical) return a.icon === "heli" || a.icon === "tandem" ? "medical helicopter" : "air ambulance";
   const o = `${a.owner || ""} ${a.operated_by || ""} ${a.callsign || ""}`;
   switch (a.icon) {
-    case "heli": return /life ?flight|mercy|medic|ambulance|life ?line|air ?care|air ?med/i.test(o) ? "medical helicopter"
-      : /police|sheriff|patrol/i.test(o) ? "police helicopter" : /news|\btv\b|broadcast/i.test(o) ? "news helicopter" : "helicopter";
+    case "heli": return /police|sheriff|patrol/i.test(o) ? "police helicopter" : /news|\btv\b|broadcast/i.test(o) ? "news helicopter" : "helicopter";
     case "tandem": return "twin-rotor helicopter";
     case "balloon": return "hot-air balloon";
     case "glider": case "airship": case "ultralight": case "seaplane": case "drone": case "tiltrotor": return a.icon;
@@ -168,6 +169,29 @@ export function catIcon(cat, a = null, size = 16) {
   const rot = a ? (ic.upright ? 0 : a.track || 0) : { arr: 299, dep: 119, pass: 165, loc: 60 }[cat] || 0;
   return `<svg class="ci c-${cat}" width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" aria-hidden="true"><path d="${ic.d}" transform="rotate(${rot}) scale(${k.toFixed(3)})"/></svg>`;
 }
+// A medical flight's mark: a white cross on a deep blue square, the same on the radar, in the lists and
+// on the card. Its shape carries the meaning, so it isn't taken for an arrival's blue.
+export const MED_CROSS = "M-.5,-1.75H.5V-.5H1.75V.5H.5V1.75H-.5V.5H-1.75V-.5H-.5Z";
+export const medIcon = (size = 16) => `<svg class="ci med" width="${size}" height="${size}" viewBox="-3 -3 6 6" aria-label="medical flight" role="img"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" rx="1.1"/><path d="${MED_CROSS}"/></svg>`;
+// Where a medical helicopter is going, in words: "heading for Emanuel Hospital", "landing at OHSU"
+export function hospitalWords(h, { short = false } = {}) {
+  return `${h.state === "landing" ? "landing at" : h.state === "left" ? "just lifted off from" : "heading for"} ${short ? h.short : h.name}`;
+}
+// The whole of it, for a card: "Heading for Emanuel Hospital, there in about 4 minutes"
+export function hospitalLine(h, state) {
+  const w = hospitalWords(h), soon = h.state !== "left" ? arrival(h, state) : "";
+  return w[0].toUpperCase() + w.slice(1) + (soon ? `${h.state === "landing" ? "" : ", there"} ${soon}` : "");
+}
+// The same, short, for a list or a label: "to Emanuel", "landing at Emanuel", "left Emanuel"
+export const hospitalShort = (h) => `${h.state === "landing" ? "landing at" : h.state === "left" ? "left" : "to"} ${h.short}`;
+// How soon it gets there, as it stands: "in under a minute", "in about 4 minutes"
+export function arrival(h, state) {
+  if (h.eta_s == null) return "";
+  const m = Math.round((h.eta_s - since(state)) / 60);
+  return m < 1 ? "in under a minute" : m === 1 ? "in about a minute" : `in about ${m} minutes`;
+}
+// "LIFE FLIGHT NETWORK LLC" -> "Life Flight Network"
+const tidyOwner = (o) => String(o).replace(/[,.]?\s+(LLC|INC|CORP|CO|LTD|LP|L\.L\.C)\.?$/i, "").replace(/\b([A-Z])([A-Z']+)\b/g, (m, a, b) => a + b.toLowerCase());
 const heardIcon = (size = 16) => `<svg class="ci heard" width="${size}" height="${size}" viewBox="${-size / 2} ${-size / 2} ${size} ${size}" aria-hidden="true"><path d="${iconFor("fighter").d}" transform="scale(${((size * 0.44) / iconFor("fighter").r).toFixed(3)})"/></svg>`;
 // The strip across the top: the headline, and the phrases under it (short, in Simple). A phrase
 // "Worth a look" covers is there but hidden, as .ph.covered.
@@ -196,7 +220,9 @@ function rowHtml(a, state, heroHex, multi) {
   } else {
     const soon = overheadSoon(a, state);
     lead = catIcon(a.activity || "pass", a);
-    detail = a.activity === "loc" ? esc(cap(kind(a))) : `${r ? `${esc(r.origin.iata || city(r.origin))}–${esc(r.dest.iata || city(r.dest))}` : "en route"}${ty}`;
+    // a medical helicopter's cross and helicopter say what it is: the row has room for where it's going
+    detail = a.activity === "loc" ? `${a.medical ? medIcon(13) : ""}${esc(a.hospital ? cap(hospitalShort(a.hospital)) : cap(kind(a)))}`
+      : `${a.medical ? medIcon(13) : ""}${r ? `${esc(r.origin.iata || city(r.origin))}–${esc(r.dest.iata || city(r.dest))}` : "en route"}${ty}`;
     right = `<span class="alt">${num(a.alt)}${arr}</span>` +
       (soon ? `<span class="when soon"><b data-oh="${a.cpa_s}">${mmss(Math.max(0, a.cpa_s - since(state)))}</b><small>overhead</small></span>`
         : `<span class="when"><b>${a.dist.toFixed(1)}</b><small>nm ${esc(a.compass)}</small></span>`);
@@ -225,6 +251,7 @@ function doing(a, state) {
   if (a.activity === "arr") return `${what}${r ? ` from ${city(r.origin)}` : ""}, landing ${a.seq ? ORD[a.seq] || `#${a.seq}` : ""} at ${here}`.replace("  ", " ");
   if (a.activity === "dep") return `${what}${r ? ` to ${city(r.dest)}, climbing out` : `, just took off from ${here}`}`;
   if (a.activity === "loc") {      // the distance is in the figures beside: only a town here
+    if (a.hospital) return `${cap(kind(a))}, ${hospitalWords(a.hospital, { short: true })}`;      // how soon: the figure beside
     const w = where(a, state, { town: true });
     return a.local_field && a.local ? `${what}, ${a.local === "arriving" ? "landing at" : a.local === "departing" ? "just took off from" : "flying around"} ${a.local_field.name}` : `${cap(kind(a))}${w ? `, ${w}` : ""}`;
   }
@@ -240,7 +267,9 @@ function overHtml(state, { compact = false } = {}) {
   // coming over the house: a countdown; else where it is, and whether it is overhead or has passed
   const coming = a.cpa_s > 0 && a.cpa_nm <= state.tracking.overhead_nm && a.cpa_s - t > 5;
   const label = state.pinned ? "Selected" : coming ? "Over the house next" : a.dist < 1 ? "Overhead now" : a.cpa_s - t <= 5 ? "Just passed" : "Nearest now";
+  const h = a.hospital, toHosp = !coming && h && h.state !== "left" && h.eta_s != null;
   const first = coming ? `<div><b data-oh="${a.cpa_s}">${mmss(Math.max(0, a.cpa_s - t))}</b><span>overhead in</span></div>`
+    : toHosp ? `<div><b data-until="${h.eta_s}">${until(h.eta_s - t)}</b><span>to ${esc(h.short)}</span></div>`        // a medical helicopter: how soon it's there
     : `<div><b>${a.dist.toFixed(1)}<small> nm</small></b><span>${a.dist < 0.3 ? "right overhead" : `to the ${dir8(a.brg)}`}</span></div>`;
   return `<section class="ss-over${compact ? " compact" : ""}"><div class="so-head"><span class="label">${label}</span>${state.pinned ? '<button class="so-let" data-let>Back to overhead</button>' : ""}</div>
     <div class="so-id"><div class="flaps so-flight" data-hex="${esc(a.hex)}" data-flight="${esc(flightName(a))}"></div>${state.logos && a.airline_iata ? `<span class="logo-tile"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(a.airline || "")}"></span>` : ""}</div>
@@ -261,11 +290,15 @@ export const queueMore = (n) => `and ${n2w(n)} more behind them`;
 // Worth a look: what's out of the ordinary right now, at most three: military, a rare type, a
 // balloon or glider, and military jets heard with no position. Emergencies have the whole screen.
 export function notables(state) {
-  const order = { military: 0, rare: 1, unusual: 2 }, out = [];
+  const order = { medical: 0, military: 1, rare: 2, unusual: 3 }, out = [];
   const list = picture(state).air.filter((a) => a.notable && a.notable !== "emergency").sort((a, b) => order[a.notable] - order[b.notable] || a.dist - b.dist);
   for (const a of list) {
     const k = kind(a), heading = `${a.icon === "balloon" ? "drifting" : "heading"} ${dir8(a.track)}`;
-    if (a.notable === "military") out.push({ a, text: `${k}, ${where(a, state)}`, sub: `${a.type_name || a.type || ""}, ${num(a.alt)} ft, ${heading}` });
+    if (a.notable === "medical") {        // where it's going, when that's known: the hospital, and how soon
+      const h = a.hospital, soon = h && h.state !== "left" ? arrival(h, state) : "";
+      out.push({ a, medical: true, text: `${cap(withArticle(k))} ${h ? hospitalWords(h) : where(a, state)}`,
+        sub: [flightName(a) + (a.operated_by || a.owner ? ` (${tidyOwner(a.operated_by || a.owner)})` : ""), `${num(a.alt)} ft`, soon ? `there ${soon}` : heading].join(", ") });
+    } else if (a.notable === "military") out.push({ a, text: `${k}, ${a.hospital ? hospitalWords(a.hospital) : where(a, state)}`, sub: `${a.type_name || a.type || ""}, ${num(a.alt)} ft, ${heading}` });
     else if (a.notable === "rare") out.push({ a, text: `A rare ${shortType(a.type_name) || a.type}, ${where(a, state)}`, sub: `${flightName(a)}${a.airline ? ` (${a.airline})` : ""}, ${num(a.alt)} ft, ${heading}` });
     else out.push({ a, text: `${cap(withArticle(k))} ${where(a, state)}`, sub: `${num(a.alt)} ft, ${heading}` });
   }
@@ -281,7 +314,7 @@ export function notesHtml(state, max = 3) {
   const n = notables(state).slice(0, max);
   if (!n.length) return "";
   return `<section class="ss-note"><div class="label">Worth a look</div>${n.map((x) => `<${x.a ? `button data-hex="${esc(x.a.hex)}"` : "div"} class="n-row${x.heard ? " heard" : ""}">` +
-    `${x.heard ? heardIcon(18) : catIcon(x.a.activity || "pass", x.a, 18)}<span><b>${esc(x.text)}</b><small>${esc(x.sub)}</small></span></${x.a ? "button" : "div"}>`).join("")}</section>`;
+    `${x.heard ? heardIcon(18) : x.medical ? medIcon(18) : catIcon(x.a.activity || "pass", x.a, 18)}<span><b>${esc(x.text)}</b><small>${esc(x.sub)}</small></span></${x.a ? "button" : "div"}>`).join("")}</section>`;
 }
 // The simple side: everything at once (the desktop, the wall panel), or split around the radar (a phone).
 export function sideHtml(state, { compact = false, queue = 4, notes = 3 } = {}) {

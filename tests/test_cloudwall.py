@@ -2041,3 +2041,94 @@ class ReferenceTablesTest(unittest.TestCase):
         self.assertEqual([(t["type"], t["shape"], t["length"]) for t in book["types"]], [("B37M", "narrow", 35.6)])
         self.assertEqual((book["recent"][0]["shape"], book["types_today"][0]["known"]), ("narrow", True))
         self.assertIn("RARE TYPE", book["recent"][0]["badges"])        # the 737 MAX 7's flag, from the same table
+
+
+class MedicalTest(unittest.TestCase):
+    """Medical flights (medical.py): by transponder, operator or callsign, or a hospital's helipad;
+    and the helipad a helicopter is heading for, landing at or has just left."""
+    EMANUEL = {"code": "7OR5", "name": "Emanuel Hospital", "short": "Emanuel", "city": "Portland",
+               "lat": 45.54348, "lon": -122.67087, "elevation_ft": 163}
+    OHSU = {"code": "9OR6", "name": "Oregon Health Sciences University", "short": "OHSU", "city": "Portland",
+            "lat": 45.49916, "lon": -122.68517, "elevation_ft": 621}
+
+    def setUp(self):
+        from cloudwall import medical
+        self.m = medical
+        medical._said.clear()
+
+    def heli(self, pad, nm, from_deg, **kw):
+        """A helicopter nm from a helipad, out along a bearing from it, flying straight at it."""
+        lat = pad["lat"] + nm * math.cos(math.radians(from_deg)) / 60
+        lon = pad["lon"] + nm * math.sin(math.radians(from_deg)) / (60 * math.cos(math.radians(pad["lat"])))
+        return dict({"hex": "h1", "callsign": "N123AB", "icon": "heli", "on_ground": False, "lat": lat, "lon": lon,
+                     "track": (from_deg + 180) % 360, "gs": 120, "vrate": 0, "alt": 1500, "military": False}, **kw)
+
+    def test_by_transponder_operator_or_callsign(self):
+        yes = [{"emergency_status": "lifeguard"}, {"owner": "LIFE FLIGHT NETWORK LLC"}, {"owner_op": "Air Methods Corp"},
+               {"callsign": "MERCY12"}, {"owner": "Legacy Emanuel Hospital"}, {"operated_by": "PHI Air Medical"}]
+        no = [{"callsign": "REACH123"}, {"owner": "KGW News"}, {"callsign": "N123AB"},
+              {"emergency_status": "lifeguard", "military": True}]      # the Army's are military, said as such
+        self.assertEqual([self.m.by_name(a) for a in yes], [True] * len(yes))
+        self.assertEqual([self.m.by_name(a) for a in no], [False] * len(no))
+
+    def test_heading_for_a_hospital(self):
+        a = self.heli(self.EMANUEL, 6, 90)                      # from the east, nothing else on its line
+        h = self.m.hospital(a, [self.EMANUEL, self.OHSU], medical=True)
+        self.assertEqual((h["code"], h["state"], h["short"]), ("7OR5", "heading", "Emanuel"))
+        self.assertAlmostEqual(h["eta_s"], 180, delta=5)
+        self.assertIsNone(self.m.hospital(dict(a, hex="h2"), [self.EMANUEL, self.OHSU], medical=False))   # only a medical one is said to
+
+    def test_two_helipads_on_its_line_say_nothing(self):
+        # from the north-north-east, OHSU lies on the same line beyond Emanuel: it could be going to either
+        a = self.heli(self.EMANUEL, 4, 13)
+        self.assertIsNone(self.m.hospital(a, [self.EMANUEL, self.OHSU], medical=True))
+
+    def test_landing_and_lifting_off_make_it_medical(self):
+        landing = self.heli(self.EMANUEL, 1.0, 90, alt=700, vrate=-700)
+        left = dict(self.heli(self.EMANUEL, 0.8, 270, alt=650, vrate=800), hex="h2", track=270)      # climbing away west
+        plain = dict(self.heli(self.EMANUEL, 9, 0, alt=1500), hex="h3", track=90)                    # nowhere near
+        self.m.mark([landing, left, plain], [self.EMANUEL, self.OHSU])
+        self.assertEqual((landing["hospital"]["state"], landing.get("medical")), ("landing", True))
+        self.assertEqual((left["hospital"]["state"], left.get("medical")), ("left", True))
+        self.assertNotIn("hospital", plain)
+        self.assertNotIn("medical", plain)
+        from cloudwall import situation
+        self.assertEqual(situation.notable(landing), "medical")
+
+    def test_not_landing_on_a_helipad_up_a_hill(self):
+        # low over the river, descending, 2 nm short of OHSU on its hill (621 ft): not landing there
+        a = self.heli(self.OHSU, 2.0, 60, alt=250, vrate=-400)
+        h = self.m.hospital(a, [self.OHSU], medical=True)
+        self.assertNotEqual((h or {}).get("state"), "landing")
+
+    def test_helipads_near_home(self):
+        from cloudwall import airports
+        near = {p["code"]: p for p in airports.helipads_near(45.52, -122.68, 5)}
+        self.assertEqual((near["9OR6"]["short"], near["7OR5"]["name"]), ("OHSU", "Emanuel Hospital"))
+        self.assertTrue(all(isinstance(p["lat"], float) and isinstance(p["elevation_ft"], int) for p in near.values()))
+
+    def test_names_tidied_from_the_faa(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("build_data", Path(__file__).resolve().parent.parent / "tools" / "build_data.py")
+        bd = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bd)
+        self.assertEqual([bd.tidy_name(n) for n in ("ST VINCENT HOSPITAL & MEDICAL CENTER", "OREGON HEALTH SCIENCES UNIVERSITY EMERG",
+                                                       "GRINNELL RGNL MEDICAL CENTER", "ST JOSEPH'S HOSPITAL", "MEML HOSPITAL-THE WOODLANDS")],
+                         ["St. Vincent Hospital & Medical Center", "Oregon Health Sciences University", "Grinnell Regional Medical Center",
+                          "St. Joseph's Hospital", "Memorial Hospital-The Woodlands"])
+        self.assertEqual([bd.short_name(n) for n in ("Emanuel Hospital", "Oregon Health Sciences University", "Doctors Memorial Hospital",
+                                                        "Providence St. Vincent Medical Center")],
+                         ["Emanuel", "OHSU", "Doctors Memorial", "Providence St. Vincent"])
+        self.assertIsNone(bd.HOSPITAL.search("ROSE QUARTER"))
+        self.assertTrue(bd.HOSPITAL.search("BAPTIST HLTH LEXINGTON") and bd.HOSPITAL.search("UPMC EAST"))
+
+    def test_demo_air_ambulance(self):
+        """The demo's air ambulance flies to a hospital's helipad, and the tracker says so."""
+        demo = sources.Demo()
+        store = Store(":memory:")
+        t = Tracker(config.load(), store, Enricher(store, demo=demo))
+        home = config.DEFAULTS["home"]
+        t.update(demo.fetch(home["lat"], home["lon"], 15), "demo")
+        life = next(a for a in t.snapshot()["aircraft"] if a.get("callsign") == "LIFE3")
+        self.assertEqual((life["medical"], life["notable"], life["hospital"]["state"]), (True, "medical", "heading"))
+        self.assertGreater(life["hospital"]["eta_s"], 60)

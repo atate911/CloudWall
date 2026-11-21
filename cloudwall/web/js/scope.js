@@ -11,7 +11,7 @@ import { esc, num, ident, projected, offset, clamp } from "./util.js";
 import { map, tileLayout, runwaysFor } from "./map.js";
 import { iconFor } from "./icons.js";
 import { plainName, boardFlight } from "./parts.js";
-import { kind } from "./situation.js";
+import { kind, MED_CROSS, hospitalShort } from "./situation.js";
 
 // Drawing options from the page: atc draws the radar like an air traffic control screen;
 // tracks shows the selected aircraft's past track (all of it; its history dots in the ATC style),
@@ -60,9 +60,9 @@ const CHAR_W = 3.35;                          // estimated label width per chara
 const ICON_UNIT_PX = 2.5, ICON_BOOST_MAX = 1.5;
 let placeBoxes = [];        // where the place names sit, so aircraft labels can avoid them
 // The chart style's fixed names (range rings, the airport, airfields, towns, flight restrictions,
-// the approach course) give way to traffic: while an aircraft or its label is over one, it fades
+// the approach course, a hospital) give way to traffic: while an aircraft or its label is over one, it fades
 // out. Measured as drawn.
-const YIELDING = ".ring-label, .apt-label, .field-label, .place, .tfr-label, .final-label";
+const YIELDING = ".ring-label, .apt-label, .field-label, .place, .tfr-label, .final-label, .helipad-label, .helipad:not(.dest)";
 let yielders = [];
 
 // The selected aircraft's whole track is drawn in its colour, strongest near the ground and fading
@@ -245,6 +245,7 @@ function plainLine(a, state) {
   const r = a.route && a.route.plausible ? a.route : null, here = state.airport.iata;
   let where = "";
   if (r) where = r.dest.iata === here || a.local === "arriving" ? `from ${city(r.origin)}` : `to ${city(r.dest)}`;
+  else if (a.hospital) where = hospitalShort(a.hospital);
   else if (a.local === "arriving") where = "landing";
   else if (a.local === "departing") where = "just took off";
   const alt = a.alt == null ? "" : `${Math.round(a.alt / 100) * 100 >= 1000 ? (Math.round(a.alt / 100) * 100).toLocaleString("en-US") : Math.max(0, Math.round(a.alt / 50) * 50)} ft`;
@@ -257,7 +258,7 @@ function simpleLabel(a, isHero) {
   const v = a.vrate || 0, trend = v > 300 ? " ↑" : v < -300 ? " ↓" : "";
   if (isHero || a.notable === "emergency") return { text: boardFlight(ident(a)), sub: a.alt == null ? "" : `${num(a.alt)} ft${trend}` };
   if (a.activity === "arr" && a.seq) return { text: String(a.seq), sub: "", seq: true };
-  if (a.notable) { const k = kind(a); return { text: k[0].toUpperCase() + k.slice(1), sub: "" }; }
+  if (a.notable) { const k = kind(a); return { text: k[0].toUpperCase() + k.slice(1), sub: a.hospital ? hospitalShort(a.hospital) : "" }; }
   return { text: "", sub: "" };
 }
 // A short track as segments, fading with age: the oldest faint, the newest strongest.
@@ -379,7 +380,7 @@ function radarStatic(state) {
   for (let r = step; r < R - 0.01; r += step) rings.push(r);
   rings.push(R);
   const bm = (state.charts && state.charts.map) || state.basemap, based = !!(bm && bm.enabled);
-  let s = `<g clip-path="url(#scope-clip)">${mapLayer(home, k, based, based && CHART_STYLES.has(bm.style))}${runwayLayer(state, k)}${tfrLayer(state, k)}${fieldsLayer(state, k)}</g>`;
+  let s = `<g clip-path="url(#scope-clip)">${mapLayer(home, k, based, based && CHART_STYLES.has(bm.style))}${runwayLayer(state, k)}${tfrLayer(state, k)}${fieldsLayer(state, k)}${helipadLayer(state, k)}</g>`;
   s += SPOKES(rings[0] * k);
   for (const r of rings) {
     s += `<circle class="ring" r="${r * k}"/>${ringLabel(r * k, Math.round(r) + " nm")}`;
@@ -419,6 +420,14 @@ function mapStatic(state) {
       `<path d="M0,-1.8L.45,-.5L1.9,.3V.8L.45,.35V1.1L.9,1.5V1.8L0,1.55L-.9,1.8V1.5L-.45,1.1V.35L-1.9,.8V.3L-.45,-.5Z"/></g>` +
       `<text class="map-label" x="${(ax + 4).toFixed(1)}" y="${(ay + 1.7).toFixed(1)}">${esc(name)}</text>`;
     placeBoxes.push({ x0: ax - 3, x1: ax + 5 + name.length * 3, y0: ay - 4, y1: ay + 4 });
+  }
+  // the hospital a medical helicopter is going to, or has just left
+  for (const h of hospitalsInUse(state).values()) {
+    const o = offset(home, h), hx = o.x * k, hy = -o.y * k;
+    if (!inView(hx, hy)) continue;
+    s += `<g class="map-hosp" transform="translate(${hx.toFixed(1)},${hy.toFixed(1)})"><rect x="-2.6" y="-2.6" width="5.2" height="5.2" rx="1.1"/><path d="${H_MARK}"/></g>` +
+      `<text class="map-label" x="${(hx + 4).toFixed(1)}" y="${(hy + 1.7).toFixed(1)}">${esc(h.name)}</text>`;
+    placeBoxes.push({ x0: hx - 3, x1: hx + 5 + h.name.length * 3, y0: hy - 4, y1: hy + 4 });
   }
   // the note sits just above the buttons along the foot of the panel
   const note = `Live flights within ${miles} miles of home`, foot = UI.reduce((y, b) => (b.y1 >= MY - 0.5 ? Math.min(y, b.y0) : y), MY);
@@ -467,6 +476,31 @@ function fieldsLayer(state, k) {
     s += `</g><text class="field-label" x="${x.toFixed(1)}" y="${(y + 7.9).toFixed(1)}" text-anchor="middle">${esc(f.code)}</text>`;
     // aircraft labels steer around the airfield and its code, as they do around place names
     placeBoxes.push({ x0: o.x * k - 5, x1: o.x * k + 5, y0: -o.y * k - 2.5, y1: -o.y * k + 8.5, soft: true });
+  }
+  return s;
+}
+
+// The hospital helipads nearby, as charts mark heliports: an H in a circle (Detailed). One a medical
+// helicopter is heading for, landing at or has just left is drawn in the medical blue with its name,
+// in Simple too, so you can see where it's going.
+function hospitalsInUse(state) {
+  const out = new Map();
+  for (const a of state.aircraft) if (a.hospital && !a.on_ground) out.set(a.hospital.code, a.hospital);
+  return out;
+}
+const H_MARK = "M-.85,-1.1V1.1M.85,-1.1V1.1M-.85,0H.85";
+function helipadLayer(state, k) {
+  let s = "";
+  const used = hospitalsInUse(state);
+  for (const p of state.airport.helipads || []) {
+    const o = offset(state.home, p), x = o.x * k, y = -o.y * k, dest = used.has(p.code);
+    if (Math.hypot(x, y) > 96) continue;
+    s += `<g class="helipad${dest ? " dest" : ""}" transform="translate(${x.toFixed(1)},${y.toFixed(1)})"><circle r="2.1"/><path d="${H_MARK}"/></g>`;
+    placeBoxes.push({ x0: x - 2.5, x1: x + 2.5, y0: y - 2.5, y1: y + 2.5, soft: true });
+    if (dest) {
+      s += `<text class="helipad-label" x="${x.toFixed(1)}" y="${(y + 7.4).toFixed(1)}" text-anchor="middle">${esc(p.short)}</text>`;
+      placeBoxes.push({ x0: x - p.short.length * 1.6, x1: x + p.short.length * 1.6, y0: y + 3, y1: y + 8.5, soft: true });
+    }
   }
   return s;
 }
@@ -565,6 +599,10 @@ function craftFor(svg, hex) {
   const leader = el("line", { class: "leader" }, g);                   // ATC style: target to data block
   // the chart style's icon is set for its kind of aircraft as it's placed; a change of style rebuilds every craft
   const icon = el("path", { class: "blip", d: opt.atc ? OCTAGON : "" }, g);
+  // a medical flight's mark: a white cross on a blue square, upright at the icon's upper left (chart style and Map view)
+  const med = el("g", { class: "med", style: "display:none" }, g);
+  el("rect", { x: -2.6, y: -2.6, width: 5.2, height: 5.2, rx: 1.1 }, med);
+  el("path", { d: MED_CROSS }, med);
   // ATC style: the position symbol on the target, a letter, or a drawn * or +
   const pos = el("text", { class: "pos", "text-anchor": "middle", dy: "0.36em" }, g), sym = el("path", { class: "sym" }, g);
   const hist = el("g", { class: "hist" }, svg.querySelector("#s-trails"));
@@ -578,7 +616,7 @@ function craftFor(svg, hex) {
   // the chart style's track, while it is the selected aircraft: runs of one altitude band,
   // rebuilt on each update, and the stretch from its last point to the aircraft, moved every frame
   const trk = el("g", { class: "trk" }, svg.querySelector("#s-trails")), segs = el("g", {}, trk), tail = el("line", {}, trk);
-  c = { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, ring, seqring, tl, tlSegs, tlEnd, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""], act: null, pri: 9, hide: false };
+  c = { g, icon, med, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, ring, seqring, tl, tlSegs, tlEnd, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""], act: null, pri: 9, hide: false };
   live.set(hex, c);
   requestAnimationFrame(() => g.classList.remove("entering"));
   return c;
@@ -655,6 +693,7 @@ function placeLabels(heroHex) {
     { x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
   const all = [...live.values()].filter((c) => c.x != null), r = (c) => (opt.atc ? 3 : Math.max(3.5, c.reach || 4.5));
   const blips = all.map((c) => ({ x0: c.x - r(c), x1: c.x + r(c), y0: c.y - r(c), y1: c.y + r(c), c }));
+  for (const c of all) if (c.medOn) blips.push({ x0: c.x + c.medX - c.medR, x1: c.x + c.medX + c.medR, y0: c.y + c.medY - c.medR, y1: c.y + c.medY + c.medR, c: null });
   for (const c of all) for (const f of [0.4, 0.7, 1]) {
     const x = c.x + c.vx * f, y = c.y + c.vy * f;
     if (Math.hypot(c.vx, c.vy) * f > 5) blips.push({ x0: x - 2, x1: x + 2, y0: y - 2, y1: y + 2, c: null });   // its own line too
@@ -865,6 +904,13 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       // a balloon stays upright whichever way it drifts
       c.icon.setAttribute("transform", `rotate(${c.ic.upright ? 0 : c.rot.toFixed(1)}) scale(${size})`);
     }
+    const medOn = !opt.atc && !!a.medical;
+    if (medOn !== !!c.medOn) { c.medOn = medOn; c.med.style.display = medOn ? "" : "none"; }
+    if (medOn) {             // off the icon's upper left corner, as large as the icon is boosted; never turned
+      const s = 0.95 * boost, d = (c.reach || 4.5) * 0.62 + 1.1;
+      c.medX = -d; c.medY = -d; c.medR = 2.6 * s;
+      c.med.setAttribute("transform", `translate(${(-d).toFixed(2)},${(-d).toFixed(2)}) scale(${s.toFixed(2)})`);
+    }
     // the lead line: one minute ahead at its ground speed, from the nose (the ATC style's
     // predicted track line, from the target), on the radar only
     const lead = opt.tracks && !opt.map && a.gs && a.track != null ? (a.gs / 60) * k : 0;
@@ -912,7 +958,8 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       // runway or a departure's destination
       const r = a.route && a.route.plausible ? a.route : null;
       text = ident(a);
-      c.subs = [p.sub + (a.activity === "arr" && a.rwy ? ` ${a.rwy}${a.seq ? ` #${a.seq}` : ""}` : a.activity === "dep" && r && r.dest.iata ? ` ${r.dest.iata}` : "")];
+      c.subs = [p.sub + (a.activity === "arr" && a.rwy ? ` ${a.rwy}${a.seq ? ` #${a.seq}` : ""}` : a.activity === "dep" && r && r.dest.iata ? ` ${r.dest.iata}`
+        : a.hospital ? ` ${a.hospital.state === "left" ? "from" : "to"} ${a.hospital.short}` : "")];
       c.full = { text, sub: c.subs[0] };
       // an arrival whose whole label found no room keeps its landing number until the next update
       if (c.fallback && c.seqNum) { text = String(c.seqNum); c.subs = [""]; seqtag = true; }
@@ -965,14 +1012,16 @@ function measureYielders(svg) {
   const was = new Set(yielders.filter((y) => y.off).map((y) => y.key)), els = [...svg.querySelectorAll(`#s-static :is(${YIELDING})`)];
   yielders = [];
   for (const e of els) {
-    const key = `${e.getAttribute("class")}|${e.textContent}|${e.getAttribute("x")}|${e.getAttribute("y")}`, off = was.has(key);
+    const key = `${e.getAttribute("class")}|${e.textContent}|${e.getAttribute("x")}|${e.getAttribute("y")}|${e.getAttribute("transform")}`, off = was.has(key);
     if (off) e.classList.add("yield");
     yielders.push({ e, key, off });
   }
   for (const y of yielders) {
     let b;
     try { b = y.e.getBBox(); } catch (err) { b = null; }       // not laid out yet
-    y.box = b && b.width ? { x0: b.x - 0.5, x1: b.x + b.width + 0.5, y0: b.y, y1: b.y + b.height, soft: true } : null;
+    // a mark placed by its transform (a helipad) measures in its own space: move it to where it's drawn
+    const t = y.e.transform && y.e.transform.baseVal.numberOfItems ? y.e.transform.baseVal.consolidate().matrix : { e: 0, f: 0 };
+    y.box = b && b.width ? { x0: b.x + t.e - 0.5, x1: b.x + t.e + b.width + 0.5, y0: b.y + t.f, y1: b.y + t.f + b.height, soft: true } : null;
     if (y.box) placeBoxes.push(y.box);
   }
   yielders = yielders.filter((y) => y.box);

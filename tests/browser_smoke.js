@@ -58,6 +58,13 @@ const SCENARIOS = {
     out.groups = await count(page, "#mini-board .gh");
     out.profile = await count(page, "#mini-board svg.profile");
     out.phrases = await count(page, "#strip .pic .ph");
+    // the demo's air ambulance: its cross on the radar, the hospital helipads, the one it's heading for named
+    out.medical = await page.evaluate(() => ({
+      badges: [...document.querySelectorAll("#s-craft g.craft .med")].filter((g) => g.style.display !== "none").length,
+      helipads: document.querySelectorAll("#s-static .helipad").length,
+      named: [...document.querySelectorAll("#s-static .helipad-label")].map((t) => t.textContent),
+      listed: document.querySelectorAll("#mini-board .tr .ci.med").length,
+    }));
     // the keyboard's place: a row of the list with the focus keeps it through the list's redraws
     out.focus = await page.evaluate(async () => {
       const row = document.querySelector("#mini-board .tr[data-hex]");
@@ -71,6 +78,7 @@ const SCENARIOS = {
     await page.click('#dens-seg button[data-dens="simple"]');
     await page.waitForFunction(() => document.body.classList.contains("d-simple"));
     await page.waitForTimeout(2500);
+    out.medicalNote = await page.evaluate(() => [...document.querySelectorAll("#side .ss-note .n-row")].filter((r) => r.querySelector(".ci.med")).map((r) => r.querySelector("b").textContent));
     out.simple = { side: await page.evaluate(() => getComputedStyle(document.getElementById("side")).display !== "none" || document.body.classList.contains("sky-quiet")),
       card: await page.evaluate(() => getComputedStyle(document.getElementById("hero")).display !== "none"),
       radar: await page.evaluate(() => document.getElementById("radar").classList.contains("simple")) };

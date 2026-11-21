@@ -244,6 +244,9 @@ def complete_airport(ap, home, radius_nm):
         ap["airspace"] = airports.airspace_near(home["lat"], home["lon"], own=ap["iata"])
     if "navaids" not in ap:
         ap["navaids"] = airports.navaids_near(home["lat"], home["lon"])
+    # hospital helipads: where medical helicopters are going, out past the radar's longest range
+    if "helipads" not in ap:
+        ap["helipads"] = airports.helipads_near(home["lat"], home["lon"], max(30, radius_nm + 15))
     return ap
 
 

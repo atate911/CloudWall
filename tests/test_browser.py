@@ -107,6 +107,10 @@ class BrowserTest(unittest.TestCase):
         self.assertGreaterEqual(d["groups"], 1)                              # the list, grouped by what each is doing
         self.assertEqual(d["profile"], 1)                                    # and the side view under it
         self.assertGreaterEqual(d["phrases"], 1)                             # each group in a phrase that is the key too
+        med = d["medical"]                                                   # the demo's air ambulance, on its way to a hospital
+        self.assertEqual((med["badges"], len(med["named"]), med["listed"]), (1, 1, 1))
+        self.assertGreaterEqual(med["helipads"], 3)                          # the hospital helipads around home
+        self.assertTrue(d["medicalNote"] and d["medicalNote"][0].startswith("A medical helicopter heading for"))
         self.assertEqual(d["focus"], {"same": True, "redrawn": True})        # the keyboard keeps its place in the list
         self.assertTrue(d["simple"]["side"] and d["simple"]["radar"])        # Simple: the side panel, the simpler radar
         self.assertGreaterEqual(d["boardRows"], 1)

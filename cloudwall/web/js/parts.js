@@ -14,6 +14,7 @@ export function showLogo(tile, img, state, code, nameEl) {
 }
 
 function badgeClass(b) {
+  if (b === "MEDICAL") return "med";
   if (/EMERGENCY|HIJACK|RADIO|MILITARY/.test(b)) return "hot";
   if (/^NEW/.test(b)) return "new";
   if (/RARE/.test(b)) return "rare";
@@ -72,6 +73,7 @@ const KIND_WORDS = { light: "Small plane", twin: "Small plane", ultralight: "Sma
   turboprop: "Propeller plane", bizjet: "Private jet", heli: "Helicopter", gyro: "Gyrocopter", fighter: "Military jet",
   tandem: "Military helicopter", tiltrotor: "Military aircraft", balloon: "Balloon", airship: "Airship", drone: "Drone" };
 export function plainName(a) {
+  if (a.medical) return a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance";
   if (a.airline) {
     const short = a.airline.replace(/\s+(Air ?Lines|Airlines|Airways|Air|Aviation)$/i, "");
     const num = /^[A-Z0-9]{2,3}?(\d{1,4}[A-Z]?)$/.exec((a.flight || ident(a) || "").replace(/\s/g, ""));

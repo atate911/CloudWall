@@ -40,7 +40,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `place` | always | The id of the place this answer is for. |
 | `places` | always | Every place being watched: `id`, `name`, `icao`, `iata`, `city`, `zip`, and `added` (true if it was set up from a screen, and so can be removed). |
 | `home` | always | The place itself: `name`, `lat`, `lon`, `elevation_ft` (and `zip` if it was set by one). |
-| `airport` | always | Its airport: `icao`, `iata`, `name`, `city`, `lat`, `lon`, `elevation_ft`; `runways` (each `name`, `ends` as two `[lat, lon]`, `length_ft`); `others`, the small fields nearby (`code`, `icao`, `name`, `city`, `lat`, `lon`, `elevation_ft`, `runways`); `airspace` (Class B, C and its own D: `id`, `class`, `floor`, `ceiling`, `label`, `rings`); `navaids` (`ident`, `name`, `type`, `lat`, `lon`). |
+| `airport` | always | Its airport: `icao`, `iata`, `name`, `city`, `lat`, `lon`, `elevation_ft`; `runways` (each `name`, `ends` as two `[lat, lon]`, `length_ft`); `others`, the small fields nearby (`code`, `icao`, `name`, `city`, `lat`, `lon`, `elevation_ft`, `runways`); `airspace` (Class B, C and its own D: `id`, `class`, `floor`, `ceiling`, `label`, `rings`); `navaids` (`ident`, `name`, `type`, `lat`, `lon`); `helipads`, the hospital helipads out past the radar's longest range (`code`, `name`, `short`, `city`, `lat`, `lon`, `elevation_ft`; the US only). |
 | `tracking` | always | The `[tracking]` settings in force: `radius_nm`, `overhead_nm`, `max_overhead_alt_ft`, `poll_seconds`, `when_idle`, `idle_after_seconds`. |
 | `ranges` | always | The ranges a radar can ask for, in nm: the tracking radius, then the longer ones. |
 | `kiosk` | always | The `[kiosk]` settings: `place`, `view` (`radar` or `map`), `radar`, `tracks`, `range_nm`, `density` (`simple` or `detailed`). |
@@ -116,7 +116,9 @@ One record for each aircraft, built up in three steps. Every record has the firs
 | `colors` | for an airline CloudWall has colours for | Its livery: `[main, accent]`, each "#rrggbb". |
 | `contrail` | in the air, within the tracking radius | "persistent" or "short" if it is likely leaving a contrail, else null. |
 | `activity` | in the air | What it is doing: "arr" (arriving at the place's airport), "dep" (departing it), "loc" (flying locally: no flight plan, or to and from a small field nearby) or "pass" (passing over). Every screen colours it by this. |
-| `notable` | when it is worth a look | Why: "emergency", "military", "rare" (a rare type) or "unusual" (a balloon, airship, glider, gyrocopter or twin-rotor helicopter). |
+| `notable` | when it is worth a look | Why: "emergency", "medical", "military", "rare" (a rare type) or "unusual" (a balloon, airship, glider, gyrocopter or twin-rotor helicopter). |
+| `medical` | for a medical flight | True: its transponder's lifeguard status, an air ambulance's operator or callsign, or a helicopter landing at or lifting off from a hospital's helipad. |
+| `hospital` | when a helicopter's hospital is clear | The helipad it is landing at, has just lifted off from or (a medical one) is heading for: `code`, `name`, `short`, `city`, `lat`, `lon`, `state` ("landing", "left" or "heading"), `dist_nm`, and `eta_s` (seconds to get there, from `now`) unless it has left. |
 | `tail` | in the air | Its last two minutes as reported, `[lat, lon]` oldest first, at most 16 points: the radar's short track behind it. |
 | `coasting` | while the feed has lost it | A followed flight the feed left out is carried on along its track for up to 30 s: since when. Its position is then an estimate. |
 
@@ -156,7 +158,7 @@ appears a few seconds after the aircraft does.
 <!-- shape: aircraft.other -->
 | Key | Present | What it is |
 |---|---|---|
-| `badges` | once it has come overhead | What is notable about the flyover: "NEW TYPE", "NEW AIRLINE", "RARE TYPE", "HEAVY", "HELICOPTER", "MILITARY", "3rd VISIT", an emergency. |
+| `badges` | once it has come overhead | What is notable about the flyover: "NEW TYPE", "NEW AIRLINE", "RARE TYPE", "HEAVY", "HELICOPTER", "MILITARY", "MEDICAL", "3rd VISIT", an emergency. |
 | `emergency_code` | in `emergency` | "7500", "7600" or "7700". |
 | `emergency_title` | in `emergency` | "Emergency", "Radio failure" or "Hijack code". |
 | `emergency_meaning` | in `emergency` | A sentence on what the code means. |

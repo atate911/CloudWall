@@ -51,6 +51,8 @@ class Logbook:
             b.append(a["emergency"])
         if a.get("military"):
             b.append("MILITARY")
+        if a.get("medical"):
+            b.append("MEDICAL")
         if aircraft.rare(a.get("type")):
             b.append("RARE TYPE")
         if a.get("category") == "A5":
