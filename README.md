@@ -36,14 +36,29 @@ is carried on along its track, faded, its card marked "Position estimated".
 screen draws. *Simple* shows what someone in the house wants to know right now: the next aircraft
 over the house, the landing queue with a countdown for each, and what's worth a look (a medical
 flight and the hospital it's going to, military traffic, a rare type, a balloon or glider, jets heard
-with no position). Its radar numbers the
+with no position). Beside the countdown, a small picture says where to look: the
+house, the sky from the horizon to straight up, and a line of sight to the aircraft at the angle to
+raise your eyes by, with which way to face in words ("look northwest, low"). Each row of the landing queue has a line along its foot
+that runs down with its countdown, ten minutes across, so landings bunched together or far apart
+show at a glance. Its radar numbers the
 arrivals, names the selected aircraft and anything worth a look, and leaves the rest unlabelled;
 when the sky is empty it shows the flight card's quiet-sky slides. *Detailed* adds everything an
 enthusiast reads the situation from: the flight card, every aircraft labelled with its altitude
 and its runway or destination, a short fading track behind each, the final approach courses ticked
 every mile, a list of every aircraft grouped by what it is doing (arrivals with their runway, time
 to touchdown and gap to the one ahead), and a side view along the runways showing who is stacked
-over whom on the 3° approach; on the wall panel, the big flight card with the landing queue under
+over whom, with the 3° approach drawn while the selected aircraft is an arrival: heights to scale up to 6,000 ft, with the rest of the sky pressed
+together above a double line (so a flight passing at 36,000 ft sits above one at 14,000), each
+aircraft tipped the way it is climbing or descending, the cloud layers at their heights, a dotted
+line standing over home, and the selected aircraft on a line to the ground under it. To find an
+aircraft from one view in another, point at it: on the radar, in the list, on the side view or on
+the timeline, it is ringed on the radar and the side view (and named there) and its row is tinted;
+a click on it in the side view selects it, as on the radar. The wall panel's Detailed shows the
+side view too, enlarged to read from the room: under the flight card, in the landing queue's place
+(the header says the next landings), or, on a panel much wider than tall such as 1280×400, in a
+third column past the radar with the queue kept. There a tap does the finding: tap an aircraft on
+the radar or the side view and it is selected, ringed in magenta on both, with its flight card
+beside them; tap the card to go back to what's overhead. On the wall panel, the big flight card with the landing queue under
 it. The desktop starts Detailed, a phone and the wall panel Simple; each
 screen remembers its own choice, `?density=simple` or `detailed` sets it in the address, and
 `[kiosk] density` sets the wall panel's.
@@ -52,7 +67,8 @@ screen remembers its own choice, `?density=simple` or `detailed` sets it in the 
   departure board shows it (with "operated by" for regional partners), the airline's logo,
   the route with distance flown and to go, the departure and arrival times under the airports
   and the flight time between them, altitude and climb or descent rate (with the
-  altitude the autopilot is heading for, when it reports one), speed, distance and heading,
+  altitude the autopilot is heading for, when it reports one), speed, distance and how high up
+  to look ("2.3 mi NW, 13° up"), heading,
   and a photo of the airframe beside when it passes the house, the aircraft type,
   registration and build year, and what the autopilot is doing. The departure time comes from
   a paid route provider (see below); without one, the card shows an estimated arrival only.

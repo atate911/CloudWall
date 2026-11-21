@@ -13,7 +13,7 @@
 const { chromium, devices } = require("playwright");
 
 const BASE = process.argv[2];
-const SIZES = { desktop: { viewport: { width: 1600, height: 950 } }, kiosk: { viewport: { width: 1024, height: 600 } },
+const SIZES = { desktop: { viewport: { width: 1600, height: 950 } }, kiosk: { viewport: { width: 1024, height: 600 } }, panel: { viewport: { width: 1280, height: 400 }, hasTouch: true },
   wide: { viewport: { width: 2000, height: 730 } }, phone: { ...devices["iPhone 13"] } };
 
 async function open(browser, size, path, errors, tamper, before) {
@@ -181,11 +181,27 @@ const SCENARIOS = {
       || !!document.querySelector("#side .ss-note .n-row.heard"));
     out.sideFits = await page.evaluate(() => { const s = document.getElementById("side"); return s.scrollHeight <= s.clientHeight + 1; });
     await page.close();
-    // detailed: the flight card, the landing queue under it, and the situation over the radar
-    page = await open(browser, "kiosk", "/kiosk?density=detailed", errors);
-    out.card = await count(page, "#hero .k-card");
+    // detailed, on a panel much wider than tall: the flight card with the landing queue under it, the
+    // radar, and the side view past it; a tap on an aircraft in the side view selects it in both
+    page = await open(browser, "panel", "/kiosk?density=detailed", errors);
     await page.waitForSelector("#hero .k-q .q-row", { timeout: 8000 }).catch(() => {});
     out.queue = await count(page, "#hero .k-q .q-row");
+    await page.waitForSelector("#k-prof .pf-craft:not(.sel)", { timeout: 8000 }).catch(() => {});
+    out.wideSide = await count(page, "#k-prof svg.profile");
+    const tap = await page.evaluate(() => { const e = document.querySelector("#k-prof .pf-craft:not(.sel) .pf-hit"); if (!e) return null;
+      const r = e.getBoundingClientRect(); return { hex: e.parentNode.dataset.hex, x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+    if (tap) {
+      await page.touchscreen.tap(tap.x, tap.y);
+      await page.waitForSelector(`#k-prof .pf-craft.sel[data-hex="${tap.hex}"]`, { timeout: 8000 }).catch(() => {});
+      out.tapped = await page.evaluate((hex) => !!document.querySelector(`#k-prof .pf-craft.sel[data-hex="${hex}"]`) && !!document.querySelector(`#radar .craft.hero[data-hex="${hex}"]`), tap.hex);
+    }
+    await page.close();
+    // detailed, on any other panel: the flight card, the side view under it in the queue's place, and the situation over the radar
+    page = await open(browser, "kiosk", "/kiosk?density=detailed", errors);
+    out.card = await count(page, "#hero .k-card");
+    await page.waitForSelector("#k-prof svg.profile", { timeout: 8000 }).catch(() => {});
+    out.sideView = await count(page, "#k-prof svg.profile");
+    out.cardFits = await page.evaluate(() => { const h = document.getElementById("hero"); return h.scrollHeight <= h.clientHeight + 1; });
     out.strip = await page.evaluate(() => getComputedStyle(document.getElementById("strip")).display !== "none" && !!document.querySelector("#strip h1"));
     // every label shown on the radar has been placed, and inside it (the wall panel's type is large)
     out.labelsInside = await page.evaluate(() => {
