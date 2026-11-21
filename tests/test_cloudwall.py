@@ -866,6 +866,9 @@ class ChartsTest(unittest.TestCase):
         self.assertTrue({"Seattle", "Denver", "Chicago", "Tokyo", "London"} <= set(names))
         self.assertEqual(names["Washington, D.C."][5], 1)                   # a capital
         self.assertAlmostEqual(names["Denver"][2], 39.74, delta=0.1)
+        self.assertTrue({"Eugene", "Medford", "Redding"} <= set(names))       # the towns between, for a route along the coast
+        self.assertLess(names["Denver"][6], names["Medford"][6])             # ranked: a city is named on a map a town isn't
+        self.assertTrue(all(c[6] <= 67 for c in w["cities"]))
 
     def test_the_route_map_covers_the_whole_world_at_low_zooms_only(self):
         import tempfile

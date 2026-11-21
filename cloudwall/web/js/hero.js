@@ -6,7 +6,7 @@ import { map, tileLayout } from "./map.js";
 import { weatherSlide } from "./weather.js";
 import { showLogo, badges, boardFlight, localPlace, localWords, recordsHtml, heardGroups } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
-import { mappable, drawRouteMap, moveRouteMap } from "./routemap.js";
+import { mappable, drawRouteMap, moveRouteMap, routeScale, routeHeight } from "./routemap.js";
 import { medIcon, hospitalLine } from "./situation.js";
 
 // Play the entrance animation once for freshly inserted content.
@@ -156,20 +156,22 @@ function showHero(el, a, state) {
   const inferred = a.local_inferred && a.local !== "local" && (!r || !r.plausible);
   const h = a.hospital, med = a.medical ? `med:${h ? [h.code, h.state, h.eta_s == null ? "" : Math.round((h.eta_s - since(state)) / 60)].join(":") : ""}|` : "";
   const key = med + (a.route_pending && !r ? "pending|" : "") + (inferred ? "inferred:" + a.local + "|" : "") + (r ? [r.flight, r.origin.iata, r.dest.iata, r.plausible].join("|") : "none:" + (a.type_name || a.type || ""));
+  let drawMap = false;
   if (key !== cur.routeKey) {
     cur.routeKey = key;
+    el.querySelector(".h-bottom > .rmap")?.remove();    // the last route's map, if it stood beside the facts
     $("h-route").innerHTML = routeHtml(a, state);
-    el.classList.toggle("mapped", !!$("h-map"));        // before the map is drawn, so it has its size
+    el.classList.toggle("mapped", !!$("h-map"));
     if (inferred) {
       const here = localPlace(a, state).iata;
       flap($(a.local === "arriving" ? "h-dest" : "h-orig"), here);
     } else if (r) { flap($("h-orig"), r.origin.iata || "???"); flap($("h-dest"), r.dest.iata || "???"); }
-    if ($("h-map")) drawRouteMap($("h-map"), r, worldLayer(state), state.airport.iata);
+    drawMap = !!$("h-map");     // once the card is filled in and the map has its place (below)
   }
   if (r && !inferred) {
     // no progress figure (far airport's position unknown): show the route without a position
     const known = r.progress != null;
-    if ($("h-map")) moveRouteMap($("h-map"), known ? r.progress : null);
+    if ($("h-map") && !drawMap) moveRouteMap($("h-map"), known ? r.progress : null);
     if ($("h-prog")) {        // how far along: the line between the codes, flown in magenta
       $("h-prog").classList.toggle("unknown", !known);
       $("h-prog").style.setProperty("--p", `${(clamp(r.progress ?? 0, 0, 1) * 100).toFixed(1)}%`);
@@ -241,23 +243,72 @@ function showHero(el, a, state) {
   cur.state = state;
   el.classList.toggle("mapped", !!$("h-map"));
   fitCard(el);
+  if (drawMap) {
+    drawRouteMap($("h-map"), r, worldLayer(state), state.airport.iata);
+    moveRouteMap($("h-map"), r.progress ?? null);
+  }
   if (!el._fit) { el._fit = new ResizeObserver(() => { if (el.classList.contains("hero-card")) fitCard(el); }); el._fit.observe(el); }
 }
 
 // The desktop card is as tall as its row. One picture takes the room the words leave: the route map,
-// or, with no map, the aircraft's drawing (or photo) across the card. When the row is too short for
-// everything, things give way in turn, never running into each other: the spacing tightens, the map
-// goes (the drawing takes the stage), then the drawing goes and the facts stand alone in a row.
+// or, with no map, the aircraft's drawing (or photo) across the card. The map has three places, and
+// takes the one that shows the route biggest, keeping the drawing when that costs the route little:
+//   across: under the airports, the drawing beside the facts below it (a card with the height for it);
+//   wide:   under the airports, taking the drawing's room too, the facts in a row under it (a route
+//           running east and west on a card too short for a strip of map to show much);
+//   beside: beside the facts, in the drawing's place, the drawing over the facts (a route running
+//           north and south, which a wide strip would show as a short line in its middle).
+// When the row is too short for everything, things give way in turn, never running into each other:
+// the spacing tightens, then the map goes (the drawing takes the stage) or, beside the facts, the
+// drawing goes first; last, the facts stand alone in a row.
 const FITS = ["fit-tight", "fit-nomap", "fit-noplate"];
+const STEPS = { across: FITS, wide: ["fit-tight", "fit-nomap"], beside: ["fit-tight", "fit-noplate", "fit-nomap"] };
 function fitCard(el) {
-  if (phone() || !el.classList.contains("hero-card")) return;
-  el.classList.remove(...FITS);
-  const over = () => el.scrollHeight > el.clientHeight + 1;
-  for (const f of FITS) {
-    if (!over()) break;
-    if (f === "fit-nomap" && !el.classList.contains("mapped")) continue;
-    el.classList.add(f);
+  if (!el.classList.contains("hero-card")) return;
+  const map = $("h-map"), r = cur.a && cur.a.route;
+  if (phone()) {
+    // a phone's card scrolls: its map as tall as the route needs, within reason, a north-south route
+    // in a taller map than an east-west one
+    placeMap(el, map, "across");
+    el.classList.remove(...FITS);
+    if (map && map.clientWidth) map.style.height = `${Math.round(clamp(routeHeight(r, map.clientWidth), 176, Math.min(420, innerHeight * 0.55)))}px`;
+    return;
   }
+  if (map) map.style.height = "";
+  const fit = (how) => {
+    placeMap(el, map, how);
+    el.classList.remove(...FITS);
+    if (how === "wide") el.classList.add("fit-noplate");
+    const over = () => el.scrollHeight > el.clientHeight + 1;
+    for (const f of STEPS[how]) {
+      if (!over()) break;
+      if (f === "fit-nomap" && !map) continue;
+      el.classList.add(f);
+    }
+    return map && !el.classList.contains("fit-nomap") ? routeScale(r, map.clientWidth, map.clientHeight) : 0;
+  };
+  if (!map) { fit("across"); return; }
+  // decided again only when the route, the card's size or the room its words take changes (a line
+  // more, a photo, the page's fonts arriving), so it doesn't flip back and forth from one update to
+  // the next or start the map's animation over
+  const words = [".h-id", ".metrics"].map((q) => el.querySelector(q)?.offsetHeight).join(",");
+  const key = `${cur.routeKey}|${el.clientWidth}x${el.clientHeight}|${words}|${$("h-facts").childElementCount}|${!!el.querySelector(".media.has-photo")}`;
+  if (el._mapKey !== key) {
+    el._mapKey = key;
+    const s = { across: fit("across"), beside: fit("beside"), wide: fit("wide") }, best = Math.max(s.across, s.beside, s.wide);
+    el._mapAt = ["across", "beside", "wide"].find((how) => s[how] >= best * 0.85);
+  }
+  fit(el._mapAt);
+}
+
+// Put the route map in its place: at the foot of the route (across, wide) or beside the facts.
+function placeMap(el, map, how) {
+  const bottom = el.querySelector(".h-bottom"), route = el.querySelector(".route.mapped");
+  el.classList.toggle("map-beside", !!map && how === "beside");
+  el.classList.toggle("map-wide", !!map && how === "wide");
+  if (!map || !bottom || !route) return;
+  const home = how === "beside" ? bottom : route;
+  if (map.parentElement !== home) home === bottom ? bottom.prepend(map) : route.append(map);
 }
 
 // A photo's credit: its photographer and a link to its page on planespotters.net, in the

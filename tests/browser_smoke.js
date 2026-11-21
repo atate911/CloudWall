@@ -376,6 +376,42 @@ const SCENARIOS = {
     return out;
   },
 
+  // the route map's shape follows the route's: one running north and south has its map upright beside
+  // the facts, the route reaching most of its height; one running east and west has it across the
+  // card; on a phone the map is as tall as its route needs. No place's name runs into another, or
+  // into an airport's code, or off the map.
+  async routeShape(browser, errors) {
+    const apt = (iata, lat, lon) => ({ iata, city: iata, lat, lon });
+    const SEA = apt("SEA", 47.45, -122.31), LAX = apt("LAX", 33.94, -118.41), PDX = apt("PDX", 45.59, -122.6), JFK = apt("JFK", 40.64, -73.78), DEN = apt("DEN", 39.86, -104.67);
+    const pin = (origin, dest) => (state) => {
+      state.charts.layers.world = { enabled: true, style: "satellite", attribution: "Test imagery", zooms: [0, 6], layer: "world" };
+      state.emergency = [];
+      const a = state.hero || state.aircraft.find((x) => !x.on_ground) || state.aircraft[0];
+      Object.assign(a, { local: null, local_inferred: false, route_pending: false, medical: false, hospital: null,
+        route: { flight: "XX1", airline: "Test", plausible: true, progress: 0.4, origin, dest, flown_nm: 300, left_nm: 400 } });
+      state.hero = a;
+    };
+    const out = {};
+    for (const [name, size, o, d] of [["north", "desktop", SEA, LAX], ["east", "desktop", PDX, JFK], ["phoneNorth", "phone", SEA, LAX], ["phoneEast", "phone", DEN, PDX]]) {
+      const page = await open(browser, size, "/?density=detailed", errors, pin(o, d), fakeTiles());
+      await page.waitForSelector("#h-map svg.rm .rm-border", { state: "attached" });
+      await page.waitForTimeout(600);
+      out[name] = await page.evaluate(() => {
+        const m = document.getElementById("h-map"), box = m.getBoundingClientRect(), path = m.querySelector(".rm-todo").getBoundingClientRect();
+        const labels = [...m.querySelectorAll(".rm-place, .rm-code")].map((t) => t.getBoundingClientRect());
+        let clash = 0, outside = 0;
+        labels.forEach((a, i) => {
+          if (a.left < box.left - 1 || a.right > box.right + 1 || a.top < box.top - 1 || a.bottom > box.bottom + 1) outside++;
+          for (const b of labels.slice(i + 1)) if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) clash++;
+        });
+        return { beside: document.getElementById("hero").classList.contains("map-beside"), w: Math.round(box.width), h: Math.round(box.height),
+          fillW: +(path.width / box.width).toFixed(2), fillH: +(path.height / box.height).toFixed(2), places: labels.length - 2, clash, outside };
+      });
+      await page.close();
+    }
+    return out;
+  },
+
   // the server stops answering: the page says so
   async offline(browser, errors) {
     const mine = [], page = await open(browser, "desktop", "/", mine), out = {};

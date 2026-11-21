@@ -1725,10 +1725,21 @@ html.desk:not(.phone) .route.mapped > .rmap { height: auto; }
 .route.unsure .prog { opacity: .35; }
 /* the picture's least worthwhile size is honoured (min-height), so a card short of room overflows and
    fitCard knows to let something go, rather than squeezing one part under the next */
-html.desk:not(.phone) .hero-card.mapped:not(.fit-nomap) > .h-route { flex: 1 1 auto; min-height: auto; display: flex; flex-direction: column; }
-html.desk:not(.phone) .hero-card.mapped:not(.fit-nomap) > .h-route > .route.mapped { flex: 1 1 auto; grid-template-rows: auto auto auto minmax(6.5rem, 1fr); }
-/* with the map: the drawing beside the facts, as tall as the drawing */
-html.desk:not(.phone) .hero-card.mapped:not(.fit-nomap) .h-bottom .media { max-height: 15rem; }
+html.desk:not(.phone) .hero-card.mapped:not(.fit-nomap, .map-beside) > .h-route { flex: 1 1 auto; min-height: auto; display: flex; flex-direction: column; }
+html.desk:not(.phone) .hero-card.mapped:not(.fit-nomap, .map-beside) > .h-route > .route.mapped { flex: 1 1 auto; grid-template-rows: auto auto auto minmax(6.5rem, 1fr); }
+/* with the map across: the drawing beside the facts, as tall as the drawing */
+html.desk:not(.phone) .hero-card.mapped:not(.fit-nomap, .map-beside) .h-bottom .media { max-height: 15rem; }
+/* with the map beside the facts (a route running north and south): the map takes the drawing's place
+   and the room, the drawing stands over the facts, as tall as there's room for */
+html.desk:not(.phone) .hero-card.map-beside .route.mapped { grid-template-rows: auto auto auto; }
+html.desk:not(.phone) .hero-card.map-beside:not(.fit-nomap) > .h-bottom { flex: 1 1 auto; min-height: auto; display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(15rem, 1fr); grid-template-rows: minmax(0, 1fr) auto; column-gap: 1.6rem; row-gap: 1rem; align-items: stretch;
+  max-height: 76cqi; }      /* the map no taller than about half as tall again as it's wide: any more room goes above the figures */
+html.desk:not(.phone) .hero-card.map-beside > .h-bottom > .rmap { grid-column: 1; grid-row: 1 / -1; height: auto; min-height: 10rem; margin: 0; }
+/* the drawing's sheet at the top, no deeper than a drafting sheet's proportions, the facts at the foot */
+html.desk:not(.phone) .hero-card.map-beside .h-bottom .media { grid-column: 2; grid-row: 1; aspect-ratio: auto; height: 100%; min-height: 6.5rem; max-height: 30cqi; align-self: start; }
+html.desk:not(.phone) .hero-card.map-beside .h-bottom .facts { grid-column: 2; grid-row: 2; align-content: end; }
+html.desk:not(.phone) .hero-card.map-beside.fit-noplate .h-bottom .facts { grid-row: 1 / -1; align-content: center; }
 /* no map: the drawing takes the room, across the card, no taller than it is wide (and a half) */
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) > .h-bottom { flex: 1 1 auto; min-height: auto; display: flex; flex-direction: column; align-items: stretch; gap: 1rem;
   max-height: calc(66cqi + 6rem); }      /* the drawing's cap and the facts under it: any more room goes above the figures */
@@ -1740,13 +1751,13 @@ html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate)
 /* across the card the sheet is wide: its margins by the room, not as a share of its width (which in
    a wide, short sheet would leave the drawing no height at all) */
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) .h-bottom .sil-box { padding: .9rem 2rem; }
-html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap, .fit-noplate) #h-facts { grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); column-gap: 1.4rem; row-gap: .9rem; align-content: start; }
-html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap, .fit-noplate) #h-facts > div { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap, .fit-noplate:not(.map-beside)) #h-facts { grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); column-gap: 1.4rem; row-gap: .9rem; align-content: start; }
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap, .fit-noplate:not(.map-beside)) #h-facts > div { display: flex; flex-direction: column; gap: .25rem; min-width: 0; }
 html.desk:not(.phone) .hero-card.fit-nomap .rmap { display: none; }
 html.desk:not(.phone) .hero-card.fit-nomap .route.mapped { grid-template-rows: auto auto auto; }
 html.desk:not(.phone) .hero-card.fit-nomap > .h-route { flex: none; }
 html.desk:not(.phone) .hero-card.fit-noplate .h-bottom .media { display: none; }
-html.desk:not(.phone) .hero-card.fit-noplate > .h-bottom { flex: none; min-height: 0; display: block; }
+html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) > .h-bottom { flex: none; min-height: 0; display: block; }
 html.desk:not(.phone) .hero-card.fit-tight { gap: .75rem; padding-top: 1rem; padding-bottom: 1rem; }
 html.desk:not(.phone) .hero-card.fit-tight .apt { font-size: min(2.3rem, 7cqi); }
 html.desk:not(.phone) .hero-card.fit-tight .metric { padding-top: .5rem; padding-bottom: .55rem; }
