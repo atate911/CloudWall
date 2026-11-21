@@ -170,27 +170,40 @@ const SCENARIOS = {
 
   // the wall panel
   async kiosk(browser, errors) {
-    // simple, as it starts: the counts, the landing queue and the next aircraft over the house beside the radar
+    // the smallest lettering on the screen, as a share of its height: the page's own text (the map's
+    // credit apart, and a landing number in its ring, which the radar repeats), and the radar's labels
+    const smallest = (page) => page.evaluate(() => {
+      const H = innerHeight, out = { html: 1, radar: 1, where: "" };
+      for (const e of document.querySelectorAll("body *")) {
+        if (e.closest("svg, .attrib, .seq") || !e.offsetParent) continue;
+        if (![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+        const f = parseFloat(getComputedStyle(e).fontSize) / H;
+        if (f < out.html) { out.html = f; out.where = `${e.className || e.tagName}: ${e.textContent.trim().slice(0, 30)}`; }
+      }
+      const svg = document.getElementById("radar"), k = Math.min(svg.clientWidth, svg.clientHeight) / 224;
+      for (const t of svg.querySelectorAll("#s-craft :is(.tag, .tag-sub), .compass, .apt-label")) {
+        if (!t.textContent || t.style.display === "none" || getComputedStyle(t).display === "none") continue;
+        out.radar = Math.min(out.radar, (parseFloat(getComputedStyle(t).fontSize) * k) / H);
+      }
+      return out;
+    });
+    // simple, as it starts: the card, the radar and over it how many aircraft are about
     let page = await open(browser, "kiosk", "/kiosk", errors);
     const out = {};
     out.layout = await page.evaluate(() => document.documentElement.className);
     out.scope = await page.evaluate(() => document.getElementById("scope").className);
     out.simple = await page.evaluate(() => document.body.classList.contains("d-simple"));
-    out.side = await count(page, "#side .k-sit h1");
+    out.card = await count(page, "#hero .k-card");
     out.onScope = await count(page, "#s-craft g.craft");
     out.tabsShown = await page.evaluate(() => getComputedStyle(document.querySelector("nav")).display !== "none");
-    // the demo's fighters heard with no position are said, in the line at the top or worth a look,
-    // whatever the side had to leave out to fit; and the side fits
-    out.heardSaid = await page.evaluate(() => [...document.querySelectorAll("#side .k-sit .ph")].some((p) => !p.hidden && p.querySelector(".ci.heard"))
-      || !!document.querySelector("#side .ss-note .n-row.heard"));
-    out.sideFits = await page.evaluate(() => { const s = document.getElementById("side"); return s.scrollHeight <= s.clientHeight + 1; });
+    out.caption = await page.evaluate(() => [...document.querySelectorAll("#k-cap > *")].map((e) => e.textContent));
+    out.smallest = await smallest(page);
     await page.close();
-    // detailed: the flight card, the landing queue under it, and the situation over the radar
+    // detailed: the same card, every aircraft labelled on the radar, and the same floor
     page = await open(browser, "kiosk", "/kiosk?density=detailed", errors);
-    out.card = await count(page, "#hero .k-card");
-    await page.waitForSelector("#hero .k-q .q-row", { timeout: 8000 }).catch(() => {});
-    out.queue = await count(page, "#hero .k-q .q-row");
-    out.strip = await page.evaluate(() => getComputedStyle(document.getElementById("strip")).display !== "none" && !!document.querySelector("#strip h1"));
+    out.detailedCard = await count(page, "#hero .k-card");
+    out.queue = await count(page, "#hero .q-row");
+    out.detailedSmallest = await smallest(page);
     // every label shown on the radar has been placed, and inside it (the wall panel's type is large)
     out.labelsInside = await page.evaluate(() => {
       const svg = document.getElementById("radar"), r = svg.getBoundingClientRect(), bad = [];
@@ -200,6 +213,18 @@ const SCENARIOS = {
         if (t.getAttribute("x") == null || q.left < r.left - 2 || q.right > r.right + 2 || q.top < r.top - 2 || q.bottom > r.bottom + 2) bad.push(t.textContent);
       }
       return bad;
+    });
+    await page.close();
+    // an airliner with a route: its own side elevation rides the line between the airports
+    page = await open(browser, "kiosk", "/kiosk", errors, (state) => {
+      const a = state.aircraft.find((x) => x.route && x.route.plausible && x.known && !x.on_ground);
+      if (a) { state.hero = a; state.emergency = []; }
+    });
+    out.routeCraft = await page.evaluate(() => {
+      const line = document.querySelector("#hero .k-line"), c = line && line.querySelector(".k-craft svg");
+      if (!c) return null;
+      const l = line.getBoundingClientRect(), r = c.getBoundingClientRect();
+      return { inside: r.left >= l.left - 1 && r.right <= l.right + 1, share: r.width / l.width };
     });
     await page.close();
     return out;

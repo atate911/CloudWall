@@ -18,7 +18,7 @@ import { kind, MED_CROSS, hospitalShort } from "./situation.js";
 // the others' last two minutes and the one-minute lines; range is how far out the radar shows, in nm
 // (the tracking radius, or longer); simple draws only what someone in the house wants to know: the
 // landing order as numbers, the selected aircraft and anything worth a look by name, no other labels.
-let opt = { atc: false, map: false, tracks: true, range: 15, mapStyle: "sat", simple: false };
+let opt = { atc: false, map: false, tracks: true, range: 15, mapStyle: "sat", simple: false, wall: false };
 const RAD = Math.PI / 180;
 
 // ---- the ATC style: a STARS display, the FAA's terminal radar, drawn to its conventions ----
@@ -667,10 +667,10 @@ const CHART_CORNERS = [[7, -2.5, "start"], [7, 7.5, "start"], [-7, -2.5, "end"],
 const slotCount = () => (opt.atc ? DIRS.length : CHART_CORNERS.length);
 function slot(c, i) {
   if (!opt.atc) {             // further out beside a large icon (a heavy, the selected aircraft)
-    const [tx, ty, anchor] = CHART_CORNERS[i], out = Math.max(0, (c.reach || 0) - 6.5);
+    const [tx, ty, anchor] = CHART_CORNERS[i], out = Math.max(0, (c.reach || 0) - 6.5), k = c.k || 1;
     // a landing number's ring sits close in, just off the icon
-    if (c.seqtag) return { tx: Math.sign(tx) * Math.max(3.4, (c.reach || 4) * 0.8), ty: ty === -2.5 ? -1.4 : ty === 7.5 ? 7.6 : 3.2, anchor };
-    return { tx: tx + Math.sign(tx) * out, ty, anchor };
+    if (c.seqtag) return { tx: Math.sign(tx) * Math.max(3.4, (c.reach || 4) * 0.8), ty: (ty === -2.5 ? -1.4 : ty === 7.5 ? 7.6 : 3.2) * k, anchor };
+    return { tx: tx * k + Math.sign(tx) * out, ty: ty * k, anchor };
   }
   const d = DIRS[i], ex = d.ux * c.lead, ey = d.uy * c.lead;
   return { d, ex, ey, tx: ex + (d.right ? -c.gap : c.gap), ty: ey, anchor: d.right ? "end" : "start" };
@@ -701,11 +701,13 @@ function measure(c) {
     w = Math.max(c.tag.getComputedTextLength(), (sub * Math.max(...c.subs.map((t) => t.length))) / now);
   } catch (e) { /* not laid out yet */ }
   c.w = (w || c.text.length * CHAR_W) + 1;
-  c.up = 3.2 + fs(c.tag, 5) * 0.75;         // cap height above the callsign's baseline
-  c.down = c.subs[0] ? 3.3 + fs(c.sub, 4.2) * 0.25 : fs(c.tag, 5) * 0.25 - 3.2;     // descent below the last line's baseline
+  // the offsets are drawn for labels up to 8 px; larger lettering (the wall panel's) spreads them in step
+  const k = c.k = Math.max(1, fs(c.tag, 5) / 8);
+  c.up = 3.2 * k + fs(c.tag, 5) * 0.75;         // cap height above the callsign's baseline
+  c.down = c.subs[0] ? 3.3 * k + fs(c.sub, 4.2) * 0.25 : fs(c.tag, 5) * 0.25 - 3.2 * k;     // descent below the last line's baseline
   if (c.seqtag) {           // a landing number in its ring, the ring's centre level with the first line's middle
     c.ringR = fs(c.tag, 4.4) * 0.62 + 0.9;
-    c.w = 2 * c.ringR; c.up = 3.2 + c.ringR; c.down = c.ringR - 3.2;
+    c.w = 2 * c.ringR; c.up = 3.2 * k + c.ringR; c.down = c.ringR - 3.2 * k;
   }
 }
 function labelBox(c, i) {
@@ -761,7 +763,8 @@ function placeLabels(heroHex) {
     const textHit = placed.reduce((n, p) => n + (p.soft ? 0 : overlap(b, p)), 0), iconHit = blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
     const off = Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0) + (square() ? Math.max(0, b.y1 - edgeY) + Math.max(0, -edgeY - b.y0) : 0);
     const key = c.act === "arr" || c.act === "dep";          // arrivals and departures may sit over an icon
-    c.hide = !opt.atc && !opt.map && c.hex !== heroHex && !c.seqtag && (textHit > 0.03 * area || (!key && iconHit > 0.25 * area) || off > 1.5);
+    // (the Map view labels everything, except on the wall panel, whose large lettering can't)
+    c.hide = !opt.atc && (!opt.map || opt.wall) && c.hex !== heroHex && !c.seqtag && (textHit > 0.03 * area || (!key && iconHit > 0.25 * area) || off > 1.5);
     // an arrival keeps its landing number, in its ring as Simple draws it, so the landing queue and
     // the list still find it on the radar (until the next update puts its whole label back)
     if (c.hide && c.seqNum && c.full) {
@@ -791,12 +794,12 @@ function applyLabel(c) {
   const s = slot(c, c.slot);
   const put = (e, y) => { e.setAttribute("x", s.tx.toFixed(2)); e.setAttribute("y", y.toFixed(2)); e.setAttribute("text-anchor", s.anchor); };
   if (c.seqtag) {
-    const R = c.ringR, cx = s.anchor === "start" ? s.tx + R : s.tx - R, cy = s.ty - 3.2;
+    const R = c.ringR, cx = s.anchor === "start" ? s.tx + R : s.tx - R, cy = s.ty - 3.2 * (c.k || 1);
     c.seqring.setAttribute("cx", cx.toFixed(2)); c.seqring.setAttribute("cy", cy.toFixed(2)); c.seqring.setAttribute("r", R.toFixed(2));
     c.tag.setAttribute("x", cx.toFixed(2)); c.tag.setAttribute("y", (cy + R * 0.42).toFixed(2)); c.tag.setAttribute("text-anchor", "middle");
     return;
   }
-  if (!opt.atc) { put(c.tag, s.ty - 3.2); put(c.sub, s.ty + 3.3); return; }
+  if (!opt.atc) { const k = c.k || 1; put(c.tag, s.ty - 3.2 * k); put(c.sub, s.ty + 3.3 * k); return; }
   // the leader ends level with the block's first line (an LDB's altitude), and lines step down
   // a character height at a time; it starts at the target's edge
   const f = c.fs, base = s.ty + f * 0.36;
@@ -876,7 +879,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   const dt = Math.min(MOVE_ON_S, (now - stateAt) / 1000), frameDt = lastFrame ? Math.min(1, (now - lastFrame) / 1000) : 1;
   lastFrame = now;
   opt = { atc: !!options.atc && mode === "radar", map: mode === "map", tracks: options.tracks !== false,
-    range: options.range || state.tracking.radius_nm, mapStyle: options.mapStyle || "sat", simple: !!options.simple };
+    range: options.range || state.tracking.radius_nm, mapStyle: options.mapStyle || "sat", simple: !!options.simple, wall: !!options.wall };
   svg.classList.toggle("simple", opt.simple && !opt.atc && !opt.map);
   if (!opt.map && svg.getAttribute("viewBox") !== SQUARE_BOX) { svg.setAttribute("viewBox", SQUARE_BOX); MX = MY = SQ; UI = []; }
   const shape = opt.map ? mapShape(svg) : "";
@@ -989,6 +992,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       text = plainName(a); c.subs = [p.sub];               // the Map view's label, in words
     } else if (opt.simple) {
       ({ text, sub: c.subs[0], seq: seqtag } = simpleLabel(a, isHero || a.hex === nextHex)); c.subs.length = 1;
+      if (opt.wall && isHero) c.subs[0] = "";              // the wall panel's card gives its altitude, large
     } else {
       // the chart style's label: the flight, then the altitude and its trend, and an arrival's
       // runway or a departure's destination

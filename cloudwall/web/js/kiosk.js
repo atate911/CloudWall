@@ -1,42 +1,77 @@
-// Kiosk mode: a glanceable board for a 7–13" screen across the room.
-// Only a few things, very large: who's overhead, where it's going, how high and fast,
-// and when it passes. When the sky is quiet, a slow rotation of large slides. In Detailed, the
-// landing queue under them, numbered as on the radar beside it.
-// Sizes are in vh so the same design reads the same on 1024×600 and 1920×1080 panels.
+// Kiosk mode: the wall panel, a 7–13" screen read from across the room, made to sit in a room
+// like a piece of furniture. One aircraft at a time, very large: the one over the house, its
+// airline, its type, where it's going (its own side elevation riding the route line, at its place
+// along the way), how high and fast it is, and when it passes. Beside it the radar, and over the
+// radar how many aircraft are about. When the sky is quiet, a slow rotation of large slides.
+// Sizes are in vh, with nothing under 4vh but the map's credit, so the same design reads the same
+// on 1024×600 and 1920×1080 panels and every word of it reads from the sofa.
 import { $, esc, num, mmss, ident, since, degF } from "./util.js";
-import { boardFlight, showLogo, localWords, heardGroups } from "./parts.js";
+import { boardFlight, showLogo, localWords, heardGroups, shortType } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
 import { flap } from "./fx.js";
-import { queueHtml, renderInto, medIcon, hospitalWords, arrival } from "./situation.js";
+import { medIcon, hospitalWords, arrival, situation, dir8, where } from "./situation.js";
 import { windRose, runwayHeadings, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
+import { drawing } from "./silhouette.js";
+import { typeInfo, kindPlate } from "./plate.js";
 
 const SLIDE_SECONDS = 12;
 let cur = { hex: null }, slide = 0, slideAt = Date.now(), shownKey = null;
 
 // ---------- a plane overhead ----------
+// The aircraft's own side elevation, facing right as the route reads: null for a kind of aircraft
+// with no drawing (a glider or balloon of a type not in the table).
+function craft(a) {
+  const info = typeInfo(a);
+  if (!info.shape) return null;
+  const d = drawing(info.type, info.shape, info.length, info.name);
+  return d.svg ? { svg: d.svg, ar: d.w / d.h } : null;
+}
+// Where it is and which way it's going, for an aircraft with no route: "Over Vancouver, heading
+// east" or "14 nm north of home, heading south"
+function whereWords(a, state) {
+  const w = a.dist != null ? where(a, state) : "", head = a.track != null && (a.gs || 0) > 15 ? `heading ${dir8(a.track)}` : "";
+  const s = [w, head].filter(Boolean).join(", ");
+  return s ? s[0].toUpperCase() + s.slice(1) : "";
+}
+// How far along its route it is, 0 to 1, or null when the route doesn't say
+function progressOf(r) {
+  if (r.progress != null) return Math.max(0, Math.min(1, r.progress));
+  return r.flown_nm != null && r.left_nm != null ? r.flown_nm / Math.max(1, r.flown_nm + r.left_nm) : null;
+}
 function routeBlock(a, state) {
-  const r = a.route, here = state.airport;
-  if (a.route_pending && !r) return `<div class="k-note">Looking up route…</div>`;
+  const r = a.route, here = state.airport, d = craft(a);
+  // with no side elevation (a glider, a balloon), the aircraft's outline from the radar instead
+  const drawn = (cls = "") => (d ? `<span class="k-craft ${cls}" style="--ar:${d.ar.toFixed(3)}">${d.svg}</span>`
+    : cls ? `<span class="k-craft kind ${cls}" style="--ar:1">${kindPlate(a.icon || "light")}</span>` : "");
+  if (a.route_pending && !r) return `<div class="k-alone">${drawn("big")}<div class="k-note">Looking up its route</div></div>`;
   if (r && r.plausible) {
+    const p = progressOf(r);
+    // the line flown so far is solid, the rest to go dotted, and the aircraft where it is between them
     return `<div class="k-route">
       <div class="k-apt ${r.origin.iata === here.iata ? "local" : ""}"><span>${esc(r.origin.city || "")}</span><b>${esc(r.origin.iata)}</b></div>
-      <div class="k-arrow" aria-hidden="true"><svg viewBox="0 0 100 20" preserveAspectRatio="none"><line x1="2" y1="10" x2="92" y2="10"/><polygon points="98,10 88,4 88,16"/></svg></div>
+      <div class="k-line${p == null ? " nop" : ""}" style="--p:${(p ?? 0.5).toFixed(3)}" aria-hidden="true"><i class="k-flown"></i><i class="k-togo"></i>${drawn()}</div>
       <div class="k-apt r ${r.dest.iata === here.iata ? "local" : ""}"><span>${esc(r.dest.city || "")}</span><b>${esc(r.dest.iata)}</b></div>
     </div>`;
   }
   if (a.medical) {         // a medical flight: the hospital it's going to, or has just left
     const what = a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance";
     const h = a.hospital, w = h ? hospitalWords(h, { short: true }) : what, soon = h && h.state !== "left" ? arrival(h, state) : "";
-    return `<div class="k-note big k-med">${medIcon(40)}<span>${esc(w[0].toUpperCase() + w.slice(1))}${soon || h ? `<small>${esc(soon ? `There ${soon}` : h.name)}</small>` : ""}</span></div>`;
+    return `<div class="k-alone">${drawn("big")}<div class="k-note k-med">${medIcon(40)}<span>${esc(w[0].toUpperCase() + w.slice(1))}${soon || h ? `<small>${esc(soon ? `There ${soon}` : h.name)}</small>` : ""}</span></div></div>`;
   }
-  if (a.local) return `<div class="k-note big">${esc(localWords(a, state))}</div>`;
-  return `<div class="k-note big">${esc(a.type_name || a.type || "Unknown aircraft")}</div>`;
+  const said = a.local ? localWords(a, state) : whereWords(a, state);
+  return `<div class="k-alone">${drawn("big")}${said ? `<div class="k-note">${esc(said)}</div>` : ""}</div>`;
 }
+
+// The aircraft in words, under its flight number: its type, as an enthusiast names it
+const typeWords = (a) => shortType(a.type_name) || a.type || "Unknown aircraft";
 
 function planeHtml() {
   return `<div class="k-card k-plane">
-    <div class="k-id"><div class="flaps k-flight" id="k-flight"></div>
-      <div class="k-who"><div class="logo-tile" id="k-logo" hidden><img class="logo" id="k-logo-img" alt=""></div><span id="k-airline"></span></div></div>
+    <div class="k-head">
+      <div class="k-id"><div class="flaps k-flight" id="k-flight"></div>
+        <div class="k-who"><div class="logo-tile" id="k-logo" hidden><img class="logo" id="k-logo-img" alt=""></div><span id="k-airline"></span></div></div>
+      <div class="k-type" id="k-type"></div>
+    </div>
     <div id="k-route"></div>
     <div class="k-read">
       <div><b id="k-alt"></b><span id="k-alt-l">feet</span></div>
@@ -53,13 +88,18 @@ function showPlane(el, a, state) {
     showLogo($("k-logo"), $("k-logo-img"), state, a.airline_iata, $("k-airline"));
   }
   flap($("k-flight"), boardFlight(ident(a)));
+  $("k-flight").style.setProperty("--n", boardFlight(ident(a)).length);
   $("k-airline").textContent = a.airline || (a.route && a.route.airline) || (a.private_owner ? "" : a.owner || "");
+  $("k-type").textContent = typeWords(a);
   const h = a.hospital;
-  const key = JSON.stringify([a.route && [a.route.origin.iata, a.route.dest.iata, a.route.plausible], a.local, a.route_pending, a.type_name, !!a.medical,
-    h && [h.code, h.state, h.eta_s == null ? null : Math.round((h.eta_s - since(state)) / 60)]]);
+  const p = a.route && progressOf(a.route);
+  const key = JSON.stringify([a.route && [a.route.origin.iata, a.route.dest.iata, a.route.plausible, p == null ? null : Math.round(p * 200)], a.local, a.route_pending, a.type_name, a.type, !!a.medical,
+    h && [h.code, h.state, h.eta_s == null ? null : Math.round((h.eta_s - since(state)) / 60)],
+    !(a.route && a.route.plausible) && !a.local && !a.medical ? whereWords(a, state) : null]);
   if (key !== cur.routeKey) { cur.routeKey = key; $("k-route").innerHTML = routeBlock(a, state); }
   const v = a.vrate || 0;
   $("k-alt").innerHTML = `${a.on_ground ? "0" : num(a.alt)}${v > 300 ? '<i class="up">▲</i>' : v < -300 ? '<i class="down">▼</i>' : ""}`;
+  $("k-alt-l").textContent = a.on_ground ? "on the ground" : v > 300 ? "feet, climbing" : v < -300 ? "feet, descending" : "feet";
   $("k-gs").textContent = num(a.gs);
   updateWhen(a, since(state));
   cur.a = a;
@@ -75,7 +115,14 @@ function updateWhen(a, elapsed) {
   const left = a.cpa_s - elapsed;
   $("k-when").textContent = left > 5 ? mmss(left) : a.dist < 1.5 ? "Now" : "Passed";
   $("k-when").classList.toggle("word", !(left > 5));   // a word in place of a time is set smaller, to fit
-  $("k-when-l").textContent = left > 5 ? "overhead in" : a.dist < 1.5 ? "look up" : "heading away";
+  // once it has gone by, where to look for it
+  $("k-when-l").textContent = left > 5 ? "overhead in" : a.dist < 1.5 ? "look up" : a.dist != null ? `${num(a.dist)} nm ${dir8(a.brg)}` : "heading away";
+}
+
+// Over the radar: how many aircraft are about, and the ones heard with no position to show
+export function kioskCaption(state) {
+  const s = situation(state, { short: true, notes: 0 }), heard = s.phrases.find((x) => x.cat === "heard");
+  return `<b>${esc(s.head)}</b>${heard ? `<span>${heard.n} ${esc(heard.text)}, no position</span>` : ""}`;
 }
 
 // ---------- quiet sky ----------
@@ -165,32 +212,30 @@ function showIdle(el, state) {
   else if (kind === "airspace") el.innerHTML = airspaceHtml(state);
   else {
     el.innerHTML = weatherSlideHtml(wx, state);
-    const box = $("k-rose"), size = Math.floor(Math.min(box.clientWidth, box.clientHeight));
-    box.innerHTML = windRose(size, wx.now.wind, runwayHeadings(state));
+    // drawn at a fixed size and scaled to its box, so its lettering grows with it
+    $("k-rose").innerHTML = windRose(250, wx.now.wind, runwayHeadings(state));
   }
   el.firstElementChild.classList.add("k-enter");
 }
 
-// The card has two parts: the plane or the slides ("k-body"), and under them, in Detailed, the
-// landing queue ("k-q"). Something else drawn in the card (the emergency) is replaced by them again.
-function parts(el) {
-  let body = el.querySelector(":scope > .k-body");
-  if (!body) {
-    el.innerHTML = `<div class="k-body"></div><div class="k-q"></div>`;
-    body = el.firstElementChild;
+// The card: the plane or the slides, in "k-body". Something else drawn in the card (the emergency)
+// is replaced by it again.
+function body(el) {
+  let b = el.querySelector(":scope > .k-body");
+  if (!b) {
+    el.innerHTML = `<div class="k-body"></div>`;
+    b = el.firstElementChild;
     forgetKiosk();
   }
-  return { body, q: el.querySelector(":scope > .k-q") };
+  return b;
 }
-export function renderKiosk(el, state, { queue = false } = {}) {
-  const { body, q } = parts(el);
-  renderInto(q, queue ? queueHtml(state, 3) : "");
-  if (state.hero) showPlane(body, state.hero, state);
-  else { cur.a = null; showIdle(body, state); }
+export function renderKiosk(el, state) {
+  if (state.hero) showPlane(body(el), state.hero, state);
+  else { cur.a = null; showIdle(body(el), state); }
 }
 export function tickKiosk(elapsed, state) {
   if (cur.a && $("k-when")) updateWhen(cur.a, elapsed);
-  else if (state) showIdle(parts($("hero")).body, state);
+  else if (state) showIdle(body($("hero")), state);
 }
 export function kioskNext() { slide++; slideAt = Date.now(); shownKey = null; }
 

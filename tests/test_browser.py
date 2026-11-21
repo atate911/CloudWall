@@ -183,11 +183,16 @@ class BrowserTest(unittest.TestCase):
     def test_the_wall_panel(self):
         k = self.scenario("kiosk")
         self.assertIn("kiosk", k["layout"])
-        self.assertEqual((k["simple"], k["side"], k["card"], k["tabsShown"]), (True, 1, 1, False))
-        self.assertTrue(k["heardSaid"] and k["sideFits"])                     # heard aircraft said, however the side is trimmed
-        self.assertTrue(k["strip"])                                          # Detailed: the situation over the radar
+        self.assertEqual((k["simple"], k["card"], k["tabsShown"]), (True, 1, False))   # the card in Simple too
+        self.assertRegex(k["caption"][0], r"aircraft within \d+ nm|Nothing on the radar|quiet spell")
+        self.assertTrue(any("heard" in c for c in k["caption"][1:]))         # the demo's fighters, said over the radar
+        # read from across the room: nothing on the page under 4% of the screen's height, the radar's labels near it
+        for s in (k["smallest"], k["detailedSmallest"]):
+            self.assertGreaterEqual(s["html"], 0.0395, s["where"])
+            self.assertGreaterEqual(s["radar"], 0.034)
+        self.assertEqual((k["detailedCard"], k["queue"]), (1, 0))             # Detailed: the same card, no list under it
         self.assertEqual(k["labelsInside"], [])                              # every radar label placed, and inside the radar
-        self.assertGreaterEqual(k["queue"], 1)                               # and the demo's arrivals under the card
+        self.assertTrue(k["routeCraft"] and k["routeCraft"]["inside"] and 0.2 < k["routeCraft"]["share"] < 0.7, k["routeCraft"])
         self.assertNotIn("map", k["scope"])                                  # the radar unless [kiosk] view says map
         self.assertGreaterEqual(k["onScope"], 1)
 

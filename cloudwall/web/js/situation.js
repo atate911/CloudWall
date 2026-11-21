@@ -129,7 +129,7 @@ const arrow = (a) => ((a.vrate || 0) > 300 ? "â†‘" : (a.vrate || 0) < -300 ? "â†
 // it short ("3 landing at PDX", "2 departing", "1 flying locally"), leaving the rest to the landing
 // queue and to what's worth a look beside it. Aircraft heard with no position are left to "Worth a
 // look" where that is shown beside the strip ("notes": true, or how many of its rows are shown):
-// their phrase is still made, marked covered, for when the page has to trim that row (fitSide).
+// their phrase is still made, marked covered.
 export function situation(state, { short = false, notes = short } = {}) {
   const p = picture(state), g = p.groups, n = p.air.length, R = state.tracking.radius_nm, out = [];
   const add = (cat, count, text, covered = false) => out.push({ cat, n: count, text, covered });
