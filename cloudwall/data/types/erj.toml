@@ -27,11 +27,11 @@ carry no winglets.
 
 The ERJ 145 entered service with Continental Express in April 1997, and Embraer then shrank it
 rather than stretching it. The 37-seat ERJ 135 is 3.54 m shorter and the 44-seat ERJ 140 1.42 m
-shorter; both share 95–96% of their parts with the 145, and pilots fly all three on one type
-rating. The ERJ 140 existed because pilot contracts at major US airlines limited how many 50-seaters
-their regional partners could fly, and American Eagle took most of them. The shorter models fly
-further: a full ERJ 135LR about 1,750 nm, an ERJ 145LR 1,550. Production ended in 2020, and as of
-2026 no ERJ airliner has been in an accident that killed anyone aboard.
+shorter; both share 95–96% of their parts with the 145, and pilots fly all three on one type rating.
+The ERJ 140 existed because pilot contracts at major US airlines limited how many 50-seaters their
+regional partners could fly, and American Eagle took most of them. The shorter models fly further: a
+full ERJ 135LR about 1,750 nm, an ERJ 145LR 1,550. Production ended in 2020, and as of 2026 no ERJ
+airliner has been in an accident that killed anyone aboard.
 """
 
 [facts]
@@ -53,8 +53,8 @@ name = "Embraer ERJ 145"
 [variants.E45X]
 name = "Embraer ERJ 145XR"
 more = """
-The XR, for extra-long range, added winglets, strakes and a fuel tank in the rear fuselage, with
-AE 3007A1E engines of 8,917 lb thrust, and cruises at Mach 0.80 where the others manage 0.78.
+The XR, for extra-long range, added winglets, strakes and a fuel tank in the rear fuselage, with AE
+3007A1E engines of 8,917 lb thrust, and cruises at Mach 0.80 where the others manage 0.78.
 ExpressJet, the airline that had launched the ERJ 145 as Continental Express, launched it too.
 """
 [variants.E45X.facts]

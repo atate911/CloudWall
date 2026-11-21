@@ -23,8 +23,8 @@ longer E175 share a wing and GE CF34-8E engines of some 14,000 lb thrust. The E1
 stretched further, with a wing more than a quarter larger in area, a bigger tailplane, stronger
 landing gear and CF34-10Es of some 20,000 lb. Each pair shares 95% of its parts, the whole family
 about 89%, and one type rating covers all four, so an airline can move its pilots between sizes as
-demand changes. All of them have fly-by-wire controls and the "double-bubble"
-fuselage, four abreast with no middle seat.
+demand changes. All of them have fly-by-wire controls and the "double-bubble" fuselage, four abreast
+with no middle seat.
 
 The E190 and E195 seat about as many as the first DC-9s and 737s, and Embraer aimed them at the gap
 between regional and mainline jets. JetBlue launched the E190 in 2003 with an order for 100, and in
@@ -43,8 +43,9 @@ name = "Embraer 170"
 production = [2004, 2018]
 more = """
 The E170 was the first E-Jet: LOT Polish Airlines flew the type's first revenue flight, Warsaw to
-Vienna, in March 2004, and retired its last E170 on the same route in October 2026. Only 191 were built, against more than
-1,000 E175s ordered, and with demand for 70-seat jets fading, Embraer gave it no E2 successor.
+Vienna, in March 2004, and retired its last E170 on the same route in October 2026. Only 191 were
+built, against more than 1,000 E175s ordered, and with demand for 70-seat jets fading, Embraer gave
+it no E2 successor.
 """
 [variants.E170.facts]
 "First flight" = "February 2002"
