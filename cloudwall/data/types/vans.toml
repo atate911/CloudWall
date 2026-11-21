@@ -119,10 +119,10 @@ Martinsburg, West Virginia.
 name = "Van's RV-8 or RV-8A"
 production = [1996]
 more = """
-Van's brought out this larger tandem two-seater in 1996 for pilots who wanted the RV-4's fighter-like seat on
-the centreline with more room: the front takes a pilot of up to 6 ft 7 in, and baggage bays ahead of
-and behind the cockpit help keep it in balance. Van's rates it the fastest RV, and many are painted
-in military colours.
+Van's brought out the RV-8, a larger tandem two-seater, in 1996 for pilots who wanted the RV-4's
+fighter-like seat on the centreline with more room: the front takes a pilot of up to 6 ft 7 in, and
+baggage bays ahead of and behind the cockpit help keep it in balance. Van's rates it the fastest RV,
+and many are painted in military colours.
 """
 [variants.RV8.facts]
 "Layout" = "two in tandem; tailwheel, or nosewheel on the RV-8A"
