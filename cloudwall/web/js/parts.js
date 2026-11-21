@@ -20,7 +20,9 @@ function badgeClass(b) {
   if (/RARE/.test(b)) return "rare";
   return "";
 }
-export const badges = (list) => (list || []).map((b) => `<span class="badge ${badgeClass(b)}">${esc(b)}</span>`).join("");
+// The server and the logbook keep tags in capitals ("NEW TYPE"); they're shown in sentence case ("New type").
+const tagWords = (b) => b.charAt(0) + b.slice(1).toLowerCase();
+export const badges = (list) => (list || []).map((b) => `<span class="badge ${badgeClass(b)}">${esc(tagWords(b))}</span>`).join("");
 
 // "AS508" -> "AS 508", the way departure boards set flight numbers
 export function boardFlight(f) {

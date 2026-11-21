@@ -14,7 +14,7 @@ export function events(state) {
   const out = [], here = state.airport.iata, t0 = since(state);
   for (const a of picture(state).air) {
     const who = flightName(a);
-    if (overheadSoon(a, state)) out.push({ t: a.cpa_s, kind: "over", a, text: `${who} over the house` });
+    if (overheadSoon(a, state)) out.push({ t: a.cpa_s, kind: "over", a, text: `${who} over the house`, short: `${who} overhead` });
     if (a.activity === "arr" && a.seq && a.lands_s != null) out.push({ t: a.lands_s, kind: "land", a, text: `${who} lands at ${here}`, short: `${who} lands` });
     const h = a.hospital;
     if (h && h.state !== "left" && h.eta_s != null) out.push({ t: h.eta_s, kind: "hosp", a, text: `${who} at ${h.short}` });
@@ -25,11 +25,13 @@ export function events(state) {
 const mark = (e) => (e.kind === "land" ? `<span class="seq">${e.a.seq}</span>` : e.kind === "hosp" ? medIcon(15) : catIcon(e.a.activity || "pass", e.a, 15));
 
 // Simple: "Next  0:25 AS 2162 over the house · 1:40 AS 2162 lands at PDX · 4:10 LIFE3 at Portland Adventist"
-export function lineHtml(state, max = 3) {
-  const ev = events(state).slice(0, max), t0 = since(state);
+// skip: an aircraft whose own pass over the house is already said elsewhere (the wall panel's card);
+// short: each event in its fewest words ("AS 67 overhead", "AS 2162 lands"), for the wall panel
+export function lineHtml(state, max = 3, { skip = null, short = false } = {}) {
+  const ev = events(state).filter((e) => !(skip && e.kind === "over" && e.a.hex === skip)).slice(0, max), t0 = since(state);
   if (!ev.length) return "";
   return `<div class="tl line"><span class="tl-k">Next</span>${ev.map((e) =>
-    `<span class="tl-e" data-hex="${esc(e.a.hex)}">${mark(e)}<b data-until="${e.t}">${until(e.t - t0)}</b> ${esc(e.text)}</span>`).join("")}</div>`;
+    `<span class="tl-e" data-hex="${esc(e.a.hex)}">${mark(e)}<b data-until="${e.t}">${until(e.t - t0)}</b> ${esc(short ? e.short || e.text : e.text)}</span>`).join("")}</div>`;
 }
 
 // Detailed: the ten-minute axis

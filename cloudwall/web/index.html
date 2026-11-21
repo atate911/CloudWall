@@ -27,8 +27,15 @@
     <button data-dens="simple" title="What's happening now: the next aircraft over the house, the landing queue, and anything worth a look">Simple</button>
     <button data-dens="detailed" title="Every aircraft labelled, grouped by what it is doing, with the flight card and the side view">Detailed</button>
   </div>
-  <button class="icon-btn" id="btn-sound" title="Chime when an aircraft comes overhead"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M3.5 9.2h3.6L12 5.2v13.6l-4.9-4H3.5z"/><g id="snd-on"><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18 6.6a7.6 7.6 0 0 1 0 10.8"/></g><g id="snd-off"><path d="M16 9.5l5 5M21 9.5l-5 5"/></g></svg><span id="snd-text">Sound</span></button>
-  <button class="icon-btn" id="btn-night" title="Night mode: auto follows the sun"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="fill" d="M19.5 14.6A7.8 7.8 0 1 1 9.4 4.5a6.2 6.2 0 0 0 10.1 10.1z"/></svg><span id="night-text">Auto</span></button>
+  <div class="settings">
+    <button class="icon-btn" id="btn-settings" aria-haspopup="true" aria-expanded="false" aria-controls="settings-menu" aria-label="Settings" title="Sound and night mode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h8.5M17.5 7H20M4 17h2.5M11.5 17H20"/><circle cx="15" cy="7" r="2.3"/><circle cx="9" cy="17" r="2.3"/></svg></button>
+    <div class="settings-menu" id="settings-menu" role="group" aria-label="Settings" hidden>
+      <div class="sm-set"><b id="sm-sound">Sound</b><small>A chime when an aircraft comes overhead</small>
+        <div class="seg choice" role="group" aria-labelledby="sm-sound"><button data-sound="off">Off</button><button data-sound="on">On</button></div></div>
+      <div class="sm-set"><b id="sm-night">Night mode</b><small>Auto turns it on at dusk and off at dawn</small>
+        <div class="seg choice" role="group" aria-labelledby="sm-night"><button data-night="auto">Auto</button><button data-night="on">On</button><button data-night="off">Off</button></div></div>
+    </div>
+  </div>
   <span class="stale-note" id="stale-note" role="status" hidden></span>
   <div class="clock" id="clock"></div>
 </header>
@@ -63,6 +70,7 @@
         <svg viewBox="0 0 10 16" aria-hidden="true"><path d="M3.5 3.5L7.5 8l-4 4.5"/></svg></button>
     </div>
     <div class="panel ss" id="notes"></div>
+    <div class="k-cap" id="k-cap" aria-live="off"></div>
     <div class="panel scroll" id="mini-board"></div>
     <button class="show-all" id="show-all" aria-controls="mini-board" aria-expanded="false"></button>
   </section>

@@ -87,7 +87,7 @@ function body(d, ctx) {
   const lines = [builtLine(ctx.year, d.production, ctx.reg), ...hereLines(d)].filter(Boolean);
   const rows = factRows(d, ctx);
   return `
-    <div class="ab-head"><span class="label">${esc(d.type)}${d.family && d.family !== name ? ` · ${esc(d.family)} family` : ""}</span>
+    <div class="ab-head"><span class="label"><code class="ab-code">${esc(d.type)}</code>${d.family && d.family !== name ? ` · ${esc(d.family)} family` : ""}</span>
       <button class="ab-close" id="ab-close" aria-label="Close">×</button></div>
     <h2 class="ab-name" id="ab-title">${esc(name)}</h2>
     <div class="ab-draw sil-box">${drawingHtml(d, ctx)}</div>
@@ -102,7 +102,7 @@ let asked = 0;
 export async function openAbout(type, ctx = {}) {
   const dlg = $("about"), n = ++asked;
   if (!dlg || !type) return;
-  dlg.innerHTML = `<div class="ab-in"><div class="ab-head"><span class="label">${esc(type)}</span>
+  dlg.innerHTML = `<div class="ab-in"><div class="ab-head"><span class="label"><code class="ab-code">${esc(type)}</code></span>
     <button class="ab-close" id="ab-close" aria-label="Close">×</button></div>
     <h2 class="ab-name" id="ab-title">${esc(ctx.name || type)}</h2><p class="dim">Looking it up…</p></div>`;
   if (!dlg.open) dlg.showModal();
@@ -113,7 +113,7 @@ export async function openAbout(type, ctx = {}) {
   } catch (e) { /* the server isn't answering: say so below */ }
   if (n !== asked || !dlg.open) return;                  // closed, or another type opened meanwhile
   dlg.querySelector(".ab-in").innerHTML = d ? body(d, ctx)
-    : `<div class="ab-head"><span class="label">${esc(type)}</span><button class="ab-close" id="ab-close" aria-label="Close">×</button></div>
+    : `<div class="ab-head"><span class="label"><code class="ab-code">${esc(type)}</code></span><button class="ab-close" id="ab-close" aria-label="Close">×</button></div>
        <h2 class="ab-name" id="ab-title">${esc(ctx.name || type)}</h2><p class="dim">CloudWall isn't answering. Try again in a moment.</p>`;
   dlg.querySelector(".ab-in").scrollTop = 0;
 }

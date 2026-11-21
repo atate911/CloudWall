@@ -149,6 +149,8 @@ class BrowserTest(unittest.TestCase):
         self.assertRegex(m["note"], r"within \d+ miles of home")
         self.assertTrue(c["backToRadar"])
         self.assertTrue(c["nightChanges"])
+        self.assertEqual(sorted(c["nightPressed"]), ["auto", "sound-off"])      # one choice pressed in each setting
+        self.assertTrue(c["settingsCloses"])
         self.assertGreaterEqual(c["places"], 1)
         self.assertIn("98683", c["located"]["where"])
         self.assertGreaterEqual(c["located"]["airports"], 2)                 # the closest major airport, and others
@@ -184,12 +186,18 @@ class BrowserTest(unittest.TestCase):
     def test_the_wall_panel(self):
         k = self.scenario("kiosk")
         self.assertIn("kiosk", k["layout"])
-        self.assertEqual((k["simple"], k["side"], k["card"], k["tabsShown"]), (True, 1, 1, False))
-        self.assertTrue(k["heardSaid"] and k["sideFits"])                     # heard aircraft said, however the side is trimmed
-        self.assertTrue(k["strip"])                                          # Detailed: the situation over the radar
+        self.assertEqual((k["simple"], k["card"], k["tabsShown"]), (True, 1, False))
+        self.assertEqual((k["scopeShown"], k["radarDrawn"]), (False, 0))   # the card alone, unless [kiosk] view says radar or map
+        self.assertRegex(k["caption"][0], r"aircraft within \d+ nm|Nothing on the radar|quiet spell")
+        self.assertTrue(any("heard" in c for c in k["caption"][1:]))         # the demo's fighters, said over the radar
+        # read from across the room: nothing on the page under 4% of the screen's height, the radar's labels near it
+        for s in (k["smallest"], k["detailedSmallest"]):
+            self.assertGreaterEqual(s["html"], 0.0395, s["where"])
+            self.assertGreaterEqual(s["radar"], 0.034)
+        self.assertEqual((k["detailedCard"], k["queue"]), (1, 0))             # with the radar: the same card, no list under it
         self.assertEqual(k["labelsInside"], [])                              # every radar label placed, and inside the radar
-        self.assertGreaterEqual(k["queue"], 1)                               # and the demo's arrivals under the card
-        self.assertNotIn("map", k["scope"])                                  # the radar unless [kiosk] view says map
+        self.assertTrue(k["routeCraft"] and k["routeCraft"]["inside"] and 0.2 < k["routeCraft"]["share"] < 0.7, k["routeCraft"])
+        self.assertNotIn("map", k["scope"])                                  # view = "radar": the radar, not the map
         self.assertGreaterEqual(k["onScope"], 1)
 
     def test_the_next_minutes_old_data_and_quiet_hours(self):
@@ -226,6 +234,12 @@ class BrowserTest(unittest.TestCase):
         # the next flight or a quiet sky, the fighters heard, the restriction and the weather, at least
         self.assertGreaterEqual(len(q["desktop"]), 4, q["desktop"])
         self.assertGreaterEqual(len(q["kiosk"]), 4, q["kiosk"])
+        r = q["radarSlide"]                                                  # the wall panel's card alone: the radar takes a turn
+        self.assertTrue(r["seen"] and r["shown"] and r["drawn"] >= 1, r)
+        self.assertRegex(r["words"], r"aircraft within \d+ nm|quiet spell")
+        self.assertTrue(r["hiddenAfter"])
+        s = q["sideSlide"]                                                   # and the side view, where a tap brings up a card
+        self.assertTrue(s["seen"] and s["craft"] and s["fits"] and s.get("tapped"), s)
 
     def test_an_emergency_takes_the_screen(self):
         e = self.scenario("emergency")

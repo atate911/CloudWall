@@ -18,7 +18,7 @@ import { kind, MED_CROSS, hospitalShort } from "./situation.js";
 // the others' last two minutes and the one-minute lines; range is how far out the radar shows, in nm
 // (the tracking radius, or longer); simple draws only what someone in the house wants to know: the
 // landing order as numbers, the selected aircraft and anything worth a look by name, no other labels.
-let opt = { atc: false, map: false, tracks: true, range: 15, mapStyle: "sat", simple: false };
+let opt = { atc: false, map: false, tracks: true, range: 15, mapStyle: "sat", simple: false, wall: false };
 const RAD = Math.PI / 180;
 
 // ---- the ATC style: a STARS display, the FAA's terminal radar, drawn to its conventions ----
@@ -142,7 +142,11 @@ function mapLayer(home, k, hasBasemap, charted = false) {
 }
 
 // Runways, and extended centrelines 12 nm out for the main direction (the longest runway and
-// its parallels), so a crosswind runway doesn't draw approach lines across the scope.
+// its parallels), so a crosswind runway doesn't draw approach lines across the scope. The chart
+// style draws them on the approach side only, for the runways in use, when it knows which way the
+// airport is landing (finalCourses): a line off the departure end would promise arrivals from a
+// side they aren't coming from. With the direction unknown, and in the ATC style, whose video map
+// shows both finals whichever is in use, they run out from both ends.
 function runwayLayer(state, k) {
   const home = state.home, rws = runwaysFor(state).map((r) => {
     const [a, b] = r.ends.map(([lat, lon]) => offset(home, { lat, lon }));
@@ -151,12 +155,13 @@ function runwayLayer(state, k) {
   });
   if (!rws.length) return "";
   const main = rws.reduce((m, r) => (r.len > m.len ? r : m)), far = 12;
+  const finals = opt.atc ? "" : finalCourses(state, k);
   let s = "", ticks = "";
   // the ATC style's video map marks each final approach course every mile (every 5 when that's
   // too close together to read), as terminal video maps do
   const every = k >= 4 ? 1 : 5;
   for (const r of rws) {
-    if (Math.abs(r.ux * main.ux + r.uy * main.uy) <= 0.985) continue;   // not within about 10° of the main direction
+    if (finals || Math.abs(r.ux * main.ux + r.uy * main.uy) <= 0.985) continue;   // not within about 10° of the main direction
     s += `<line class="approach" x1="${(r.a.x - r.ux * far) * k}" y1="${-(r.a.y - r.uy * far) * k}" x2="${(r.b.x + r.ux * far) * k}" y2="${-(r.b.y + r.uy * far) * k}"/>`;
     if (!opt.atc) continue;
     for (let d = every; d <= 10; d += every) {
@@ -167,7 +172,7 @@ function runwayLayer(state, k) {
     }
   }
   if (ticks) s += `<path class="approach-tick" d="${ticks}"/>`;
-  if (!opt.atc) s += finalCourses(state, k);
+  s += finals;
   for (const r of rws) s += `<line class="runway" x1="${r.a.x * k}" y1="${-r.a.y * k}" x2="${r.b.x * k}" y2="${-r.b.y * k}"/>`;
   return s;
 }
@@ -186,11 +191,12 @@ function finalCourses(state, k) {
     ends.push({ n, t, ux: (t.x - f.x) / len, uy: (t.y - f.y) / len });
   }
   if (!ends.length) return "";
-  let d = "", far = null;
+  let d = "", far = null, lines = "";
   for (const e of ends) {
     const x0 = e.t.x * k, y0 = -e.t.y * k, ux = e.ux, uy = -e.uy;
     // out to the disc's edge, at most 16 nm
     const b = x0 * ux + y0 * uy, L = Math.min(16 * k, -b + Math.sqrt(Math.max(0, b * b - (x0 * x0 + y0 * y0 - 99 * 99))));
+    lines += `<line class="approach" x1="${x0.toFixed(2)}" y1="${y0.toFixed(2)}" x2="${(x0 + ux * L).toFixed(2)}" y2="${(y0 + uy * L).toFixed(2)}"/>`;
     for (let m = 1; m * k <= L; m++) {
       const h = m % 5 ? 1 : 2, cx = x0 + ux * m * k, cy = y0 + uy * m * k;
       d += `M${(cx - uy * h).toFixed(2)},${(cy + ux * h).toFixed(2)}L${(cx + uy * h).toFixed(2)},${(cy - ux * h).toFixed(2)}`;
@@ -202,7 +208,7 @@ function finalCourses(state, k) {
   const same = ends.length > 1 && ends.every((e) => e.n.slice(0, -1) === ends[0].n.slice(0, -1));
   const label = same ? `${ends[0].n.slice(0, -1)}${ends.map((e) => e.n.slice(-1)).join("/")}` : ends.map((e) => e.n).join(" ");
   placeBoxes.push({ x0: far.x - 8, x1: far.x + 8, y0: far.y - 3, y1: far.y + 3 });
-  return `<path class="final-tick" d="${d}"/><text class="final-label" x="${far.x.toFixed(2)}" y="${(far.y + 1.5).toFixed(2)}" text-anchor="middle">${esc(label)}</text>`;
+  return `${lines}<path class="final-tick" d="${d}"/><text class="final-label" x="${far.x.toFixed(2)}" y="${(far.y + 1.5).toFixed(2)}" text-anchor="middle">${esc(label)}</text>`;
 }
 
 // Ring labels sit on the north-east diagonal, clear of the N/E letters and of most traffic.
@@ -667,10 +673,10 @@ const CHART_CORNERS = [[7, -2.5, "start"], [7, 7.5, "start"], [-7, -2.5, "end"],
 const slotCount = () => (opt.atc ? DIRS.length : CHART_CORNERS.length);
 function slot(c, i) {
   if (!opt.atc) {             // further out beside a large icon (a heavy, the selected aircraft)
-    const [tx, ty, anchor] = CHART_CORNERS[i], out = Math.max(0, (c.reach || 0) - 6.5);
+    const [tx, ty, anchor] = CHART_CORNERS[i], out = Math.max(0, (c.reach || 0) - 6.5), k = c.k || 1;
     // a landing number's ring sits close in, just off the icon
-    if (c.seqtag) return { tx: Math.sign(tx) * Math.max(3.4, (c.reach || 4) * 0.8), ty: ty === -2.5 ? -1.4 : ty === 7.5 ? 7.6 : 3.2, anchor };
-    return { tx: tx + Math.sign(tx) * out, ty, anchor };
+    if (c.seqtag) return { tx: Math.sign(tx) * Math.max(3.4, (c.reach || 4) * 0.8), ty: (ty === -2.5 ? -1.4 : ty === 7.5 ? 7.6 : 3.2) * k, anchor };
+    return { tx: tx * k + Math.sign(tx) * out, ty: ty * k, anchor };
   }
   const d = DIRS[i], ex = d.ux * c.lead, ey = d.uy * c.lead;
   return { d, ex, ey, tx: ex + (d.right ? -c.gap : c.gap), ty: ey, anchor: d.right ? "end" : "start" };
@@ -701,11 +707,13 @@ function measure(c) {
     w = Math.max(c.tag.getComputedTextLength(), (sub * Math.max(...c.subs.map((t) => t.length))) / now);
   } catch (e) { /* not laid out yet */ }
   c.w = (w || c.text.length * CHAR_W) + 1;
-  c.up = 3.2 + fs(c.tag, 5) * 0.75;         // cap height above the callsign's baseline
-  c.down = c.subs[0] ? 3.3 + fs(c.sub, 4.2) * 0.25 : fs(c.tag, 5) * 0.25 - 3.2;     // descent below the last line's baseline
+  // the offsets are drawn for labels up to 8 px; larger lettering (the wall panel's) spreads them in step
+  const k = c.k = Math.max(1, fs(c.tag, 5) / 8);
+  c.up = 3.2 * k + fs(c.tag, 5) * 0.75;         // cap height above the callsign's baseline
+  c.down = c.subs[0] ? 3.3 * k + fs(c.sub, 4.2) * 0.25 : fs(c.tag, 5) * 0.25 - 3.2 * k;     // descent below the last line's baseline
   if (c.seqtag) {           // a landing number in its ring, the ring's centre level with the first line's middle
     c.ringR = fs(c.tag, 4.4) * 0.62 + 0.9;
-    c.w = 2 * c.ringR; c.up = 3.2 + c.ringR; c.down = c.ringR - 3.2;
+    c.w = 2 * c.ringR; c.up = 3.2 * k + c.ringR; c.down = c.ringR - 3.2 * k;
   }
 }
 function labelBox(c, i) {
@@ -735,10 +743,13 @@ function placeLabels(heroHex) {
   const edge = opt.atc ? SQ - 9.5 : opt.map ? MX - 1.5 : 112;          // the ATC style keeps data blocks inside the compass
   const edgeY = opt.map ? MY - 1.5 : edge;
   const pick = (c) => {
+    // the chart style never leaves off the selected aircraft's label, so running off the edge, where
+    // it would be cut in half, costs it far more than sitting over a neighbour
+    const offCost = !opt.atc && !opt.map && c.hex === heroHex ? 400 : 20;
     const score = (i) => {
       const b = labelBox(c, i);
       let s = placed.reduce((n, p) => n + overlap(b, p), 0) + blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
-      s += (Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0)) * 20;
+      s += (Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0)) * offCost;
       if (square()) s += (Math.max(0, b.y1 - edgeY) + Math.max(0, -edgeY - b.y0)) * 20 + (opt.atc && i ? 1.5 : 0);
       return s - (i === c.slot ? 6 : 0);                                    // stickiness
     };
@@ -758,7 +769,8 @@ function placeLabels(heroHex) {
     const textHit = placed.reduce((n, p) => n + (p.soft ? 0 : overlap(b, p)), 0), iconHit = blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
     const off = Math.max(0, b.x1 - edge) + Math.max(0, -edge - b.x0) + (square() ? Math.max(0, b.y1 - edgeY) + Math.max(0, -edgeY - b.y0) : 0);
     const key = c.act === "arr" || c.act === "dep";          // arrivals and departures may sit over an icon
-    c.hide = !opt.atc && !opt.map && c.hex !== heroHex && !c.seqtag && (textHit > 0.03 * area || (!key && iconHit > 0.25 * area) || off > 1.5);
+    // (the Map view labels everything, except on the wall panel, whose large lettering can't)
+    c.hide = !opt.atc && (!opt.map || opt.wall) && c.hex !== heroHex && !c.seqtag && (textHit > 0.03 * area || (!key && iconHit > 0.25 * area) || off > 1.5);
     // an arrival keeps its landing number, in its ring as Simple draws it, so the landing queue and
     // the list still find it on the radar (until the next update puts its whole label back)
     if (c.hide && c.seqNum && c.full) {
@@ -788,12 +800,12 @@ function applyLabel(c) {
   const s = slot(c, c.slot);
   const put = (e, y) => { e.setAttribute("x", s.tx.toFixed(2)); e.setAttribute("y", y.toFixed(2)); e.setAttribute("text-anchor", s.anchor); };
   if (c.seqtag) {
-    const R = c.ringR, cx = s.anchor === "start" ? s.tx + R : s.tx - R, cy = s.ty - 3.2;
+    const R = c.ringR, cx = s.anchor === "start" ? s.tx + R : s.tx - R, cy = s.ty - 3.2 * (c.k || 1);
     c.seqring.setAttribute("cx", cx.toFixed(2)); c.seqring.setAttribute("cy", cy.toFixed(2)); c.seqring.setAttribute("r", R.toFixed(2));
     c.tag.setAttribute("x", cx.toFixed(2)); c.tag.setAttribute("y", (cy + R * 0.42).toFixed(2)); c.tag.setAttribute("text-anchor", "middle");
     return;
   }
-  if (!opt.atc) { put(c.tag, s.ty - 3.2); put(c.sub, s.ty + 3.3); return; }
+  if (!opt.atc) { const k = c.k || 1; put(c.tag, s.ty - 3.2 * k); put(c.sub, s.ty + 3.3 * k); return; }
   // the leader ends level with the block's first line (an LDB's altitude), and lines step down
   // a character height at a time; it starts at the target's edge
   const f = c.fs, base = s.ty + f * 0.36;
@@ -873,7 +885,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   const dt = Math.min(MOVE_ON_S, (now - stateAt) / 1000), frameDt = lastFrame ? Math.min(1, (now - lastFrame) / 1000) : 1;
   lastFrame = now;
   opt = { atc: !!options.atc && mode === "radar", map: mode === "map", tracks: options.tracks !== false,
-    range: options.range || state.tracking.radius_nm, mapStyle: options.mapStyle || "sat", simple: !!options.simple };
+    range: options.range || state.tracking.radius_nm, mapStyle: options.mapStyle || "sat", simple: !!options.simple, wall: !!options.wall };
   svg.classList.toggle("simple", opt.simple && !opt.atc && !opt.map);
   if (!opt.map && svg.getAttribute("viewBox") !== SQUARE_BOX) { svg.setAttribute("viewBox", SQUARE_BOX); MX = MY = SQ; UI = []; }
   const shape = opt.map ? mapShape(svg) : "";
@@ -986,6 +998,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       text = plainName(a); c.subs = [p.sub];               // the Map view's label, in words
     } else if (opt.simple) {
       ({ text, sub: c.subs[0], seq: seqtag } = simpleLabel(a, isHero || a.hex === nextHex)); c.subs.length = 1;
+      if (opt.wall && isHero) c.subs[0] = "";              // the wall panel's card gives its altitude, large
     } else {
       // the chart style's label: the flight, then the altitude and its trend, and an arrival's
       // runway or a departure's destination
