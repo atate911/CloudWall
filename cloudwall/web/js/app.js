@@ -11,6 +11,7 @@ import { renderKiosk, tickKiosk, kioskNext, forgetKiosk } from "./kiosk.js";
 import { nearbyDivider } from "./divider.js";
 import { boardHtml, renderMiniBoard } from "./board.js";
 import { loadLog } from "./logbook.js";
+import { openAbout, aboutContext } from "./about.js";
 import { renderPlace, placeMenu } from "./places.js";
 import { refresh } from "./fresh.js";
 import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture, notables, keepFocus, queueMore } from "./situation.js";
@@ -470,6 +471,9 @@ $("radar").addEventListener("click", (e) => {
 });
 $("hero").addEventListener("click", (e) => {
   if (!state || e.target.closest(".q-row")) return;          // the landing queue, on the wall panel: pinned above
+  // the button on the card's drawing: about the aircraft's type
+  const ab = !KIOSK && state.hero && e.target.closest("[data-about]");
+  if (ab) { openAbout(ab.dataset.about, aboutContext(state.hero)); return; }
   if (e.target.closest("#em-hide")) { emergencies().forEach((a) => hidden.add(emKey(a))); render(); return; }
   if (emergencies().length) return;
   if (KIOSK) { if (myPin) pin(null); else if (!state.hero) { kioskNext(); render(); } return; }

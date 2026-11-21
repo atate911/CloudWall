@@ -217,6 +217,12 @@ function showHero(el, a, state) {
     sil.innerHTML = plate(info, { note: isNew ? "New to your collection" : "" }) || kindPlate(a.icon);
     // the type designator in the sheet's corner, for types drawn from their own measurements
     if (drawn(info)) sil.dataset.code = info.type; else delete sil.dataset.code;
+    // a button in the drawing's corner opens the panel about its type (about.js), for any aircraft whose
+    // type is known: a button, not the whole drawing, which fills the card when there's no route to show,
+    // and a tap on the card lets a followed flight go. Not on the wall panel, read from across the room.
+    if (a.type && !document.body.classList.contains("kiosk")) {
+      sil.insertAdjacentHTML("beforeend", `<button class="about-btn" data-about="${esc(a.type)}" aria-label="About the ${esc(info.name || a.type)}">About this type ›</button>`);
+    }
   }
   renderFacts(a, state, since(state));
 

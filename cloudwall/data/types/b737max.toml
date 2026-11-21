@@ -1,0 +1,53 @@
+name = "Boeing 737 MAX"
+types = ["B37M", "B38M", "B39M", "B3XM"]
+production = [2017]
+checked = "2026-11"
+sources = [
+  "https://www.boeing.com/commercial/737max",
+  "https://www.boeing.com/commercial/737max/by-design",
+  "https://www.boeing.com/content/dam/boeing/v2/airports/acaps/737MAX_RevK.pdf",
+  "https://boeing.mediaroom.com/2013-10-29-Boeing-Continues-to-Improve-737-MAX-Performance",
+  "https://en.wikipedia.org/wiki/Boeing_737_MAX",
+  "https://www.ntsb.gov/Investigations/Pages/DCA24MA063.aspx",
+]
+
+text = """
+The fourth generation of a design that first flew in 1967, and still built on its fuselage
+cross-section. The MAX's LEAP-1B engines have 18 carbon-composite fan blades on a fan 176 cm across,
+where the 737NG's CFM56 had 24 titanium blades on a 155 cm fan. They push about nine times as much
+air around the core as through it, against the NG's five, and that is most of why a MAX burns about
+14% less fuel than a late 737NG. The 737 sits so low that Boeing had to mount the bigger engines
+further forward and higher, then lengthen the nose gear by 20 cm to keep them clear of the ground.
+
+Moving the engines changed how the nose pitches up at high angles of attack. Boeing countered that
+with software, MCAS, whose faults caused two crashes and a 20-month grounding from 2019. You can
+pick out a MAX by its winglets, split into one fin above the wingtip and one below, and by the
+saw-tooth rear edges on the engine nacelles.
+"""
+
+[facts]
+"First flight" = "January 2016"
+"Engines" = "2 × CFM LEAP-1B"
+
+[variants.B37M]
+name = "Boeing 737 MAX 7"
+
+[variants.B38M]
+name = "Boeing 737 MAX 8"
+[variants.B38M.facts]
+"Max takeoff weight" = "up to 82,600 kg"
+
+[variants.B39M]
+name = "Boeing 737 MAX 9"
+production = [2018]
+more = """
+Behind the wing on each side is a door plug, where high-density operators fit an extra emergency
+exit. Alaska 1282 lost one at nearly 15,000 ft in January 2024, a few minutes after taking off from
+Portland.
+"""
+[variants.B39M.facts]
+"Range" = "3,300 nm (6,110 km)"
+"Max takeoff weight" = "up to 88,300 kg"
+
+[variants.B3XM]
+name = "Boeing 737 MAX 10"

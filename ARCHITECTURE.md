@@ -68,6 +68,7 @@ It is layered, each layer using only those below it:
 | `sources.py` | Position feeds: `Feeds` (readsb-style JSON with failover), `normalise()` into CloudWall's aircraft shape, the military "heard, no position" feed, and `Demo` (simulated traffic). |
 | `weather.py`, `tfr.py`, `contrails.py` | Fetch and decode METAR/TAF, FAA flight restrictions, and the contrail forecast into plain values and words. |
 | `airlines.py`, `aircraft.py` | The two reference tables everything asks: airlines (`data/airlines.csv`: code, name, freight-only, colours) and aircraft types (`data/types.csv`: shape, length, rarity, radar icon; `data/cwt.csv`: wake category). `aircraft.icon()` also decides which kind of traffic an aircraft is drawn as on the radar. |
+| `about.py` | What's worth knowing about a type, for the panel a tap on one opens: a write-up, facts chosen for it and the years it was delivered, written by hand one file per family in `data/types/` (its README sets out the format and how they're written). Read once, at the start; a file with a problem is left out with a warning, and the tests list every problem. `tools/type_notes.py` says which types still want one, the most seen first. |
 | `airports.py`, `seats.py`, `geo.py` | The other bundled tables (airports, runways, ZIP codes, airspace, navaids, seats) and the geometry helpers. `tools/build_data.py` rebuilds the generated ones. |
 | `store.py` | SQLite: the `sightings` table (the logbook and its queries) and a `cache` table of JSON values by kind and key. One connection, one lock. `prune()` clears cached values past their use; each logbook notes the place it is kept at (`claim`, `another_places`). |
 | `tiles.py`, `charts.py`, `logos.py` | Disk-cached proxies: map and chart tiles (only around the watched places, except the route map's world layer at zoom 6 and out), and airline logos. |
@@ -192,7 +193,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 
 ```
  app                                         polling, the views, the radar's options, the wiring
- hero  kiosk  emergency  board  logbook  places  weather  scope    one display each
+ hero  kiosk  emergency  board  logbook  places  weather  scope  about    one display each
  parts  plate  icons  map  fresh  astro  sky  fx  divider          what several of them use
  silhouette  profiles  util                                        drawing and helpers
 ```
@@ -207,6 +208,7 @@ chosen by class names on `<html>`; the modules are the same for all three. They 
 | `situation.js` | The traffic picture in words and parts every screen shares: the strip's headline and a phrase for each group that doubles as the key (short in Simple), the grouped list, Simple's side panel (the next aircraft over the house, the landing queue, what's worth a look), and `renderInto`/`keepFocus`, which redraw a part of the page without losing the flap display or the keyboard's place. |
 | `profile.js` | The side view along the runways: height against distance along the approach, the arrivals numbered down the 3° glide path. |
 | `logbook.js` | The Logbook tab. |
+| `about.js` | About a type: the panel opened from the button on the card's drawing and from each type in the Logbook's collection, laid out from `/api/type`, with what is worked out from it in words (where this airframe's build year falls in the type's deliveries, how often the type and the airframe have come over). |
 | `places.js` | The place in the header and the desktop's menu of places. |
 | `weather.js` | The Weather tab and the weather slide. |
 | `timeline.js` | The next few minutes: who comes over the house, who lands, a medical helicopter reaching its hospital, as Simple's line of the next three and Detailed's ten-minute axis (`tickTimeline` moves it every second and keeps its labels apart). |
@@ -238,6 +240,8 @@ toward each new report. Countdowns use the same clock (`since(state)` in `util.j
 - **An aircraft type:** a line in `data/types.csv` and its family in the right `profiles/` file;
   `tests/test_silhouettes.py` checks the two agree. Its `icon` column names its radar icon where
   its shape doesn't (a light twin, a seaplane); a new kind of icon is drawn in `icons.js`.
+- **A type's write-up:** a file in `data/types/`, as its README says, every fact checked against a
+  source it lists; `python3 tools/type_notes.py --todo 10` gives the next ten to write.
 - **A chart layer:** an entry in `charts.FAA_LAYERS`; the page asks for it by name.
 - **Something several displays say the same way:** `parts.js`, not one of the displays.
 - **A setting:** its default in `config.DEFAULTS` (which is also what says what kind of value it

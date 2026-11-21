@@ -109,6 +109,13 @@ const SCENARIOS = {
     out.view = await page.evaluate(() => document.querySelector("nav button.active").dataset.view);
     out.followed = await page.evaluate(() => (document.querySelector("#s-craft g.craft.hero") || { dataset: {} }).dataset.hex);
     out.track = await count(page, "#s-trails .trk polyline, #s-trails .hist circle");
+    // a tap on its drawing opens the panel about its type, and the flight stays followed
+    await page.click("#h-sil .about-btn");
+    await page.waitForSelector("#about[open] .ab-here p", { timeout: 8000 });
+    out.about = await page.evaluate(() => ({ type: document.querySelector("#h-sil .about-btn").dataset.about, name: document.getElementById("ab-title").textContent.trim(),
+      lines: document.querySelectorAll("#about .ab-here p").length, pinned: !document.getElementById("h-pin").hidden }));
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => !document.getElementById("about").open, null, { timeout: 3000 });
     await page.click("#hero");
     await page.waitForFunction(() => !document.getElementById("h-pin") || document.getElementById("h-pin").hidden, null, { timeout: 8000 });
     out.released = true;

@@ -315,6 +315,49 @@ One for each pass overhead, however long it took.
 | `length` | always | Its type's length. |
 | `known` | always | Whether those are from the table of types. |
 
+## `GET /api/type`
+
+About one aircraft type, for the panel a tap on its drawing opens: its write-up and the facts chosen
+for it (from `cloudwall/data/types/`; empty for a type nobody has written about yet), what is needed
+to draw it, and what this place's logbook knows of it.
+
+| Parameter | Meaning |
+|---|---|
+| `type` | Its ICAO type designator ("B39M"). 400 with `error` if it isn't one. |
+| `hex` | Optional: the airframe tapped, for `airframe`. |
+
+<!-- shape: type -->
+| Key | Present | What it is |
+|---|---|---|
+| `type` | always | The type designator, upper case. |
+| `name` | always | Its name ("Boeing 737 MAX 9"): the write-up's, else the one it was last logged under; or null. |
+| `family` | always | The family the write-up covers ("Boeing 737 MAX"), or null without one. |
+| `text` | always | The write-up, as paragraphs of plain text; empty without one. |
+| `facts` | always | The facts chosen for the type, in order: each `[label, value]`, both text ("Range", "6,570 km"). |
+| `production` | always | The years it was delivered, `[first, last]`, last null while it is still built; or null. |
+| `shape` | always | Its shape, as on an aircraft. |
+| `length` | always | Its length. |
+| `known` | always | Whether those are from the table of types. |
+| `icon` | always | The kind of traffic the radar draws it as, as on an aircraft, or null. |
+| `cwt` | always | Its wake category, as on an aircraft, or null. |
+| `seats` | always | Its usual seats in North America, as `seats` on an aircraft (with `basis` "type"), or null. |
+| `seen` | always | The type in this place's logbook: [its sightings](#a-types-sightings). |
+| `airframe` | always | With `hex`: that airframe in the logbook, `n` (times it has come over) and `first` (when first, or null). Without, null. |
+
+### A type's sightings
+
+<!-- shape: type.seen -->
+| Key | Present | What it is |
+|---|---|---|
+| `n` | always | Flyovers of the type logged. |
+| `of` | always | Flyovers of every type logged. |
+| `first` | always | When it was first logged, or null. |
+| `last` | always | And last. |
+| `airframes` | always | How many different airframes. |
+| `rank` | always | Its place among the types logged by flyovers, 1 the most often (equal counts share a place); null if never logged. |
+| `types` | always | How many types have been logged. |
+| `airlines` | always | The airlines that have flown it over most, at most three: `icao`, `name`, `n`. |
+
 ## The rest
 
 | Request | Answer |

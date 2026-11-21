@@ -894,6 +894,71 @@ class WakeTest(unittest.TestCase):
         self.assertIsNone(aircraft.wake("NOPE"))
 
 
+class AboutTest(unittest.TestCase):
+    """The write-ups a tap on a type opens (cloudwall/data/types/), held to their format."""
+
+    def test_every_file_is_sound(self):
+        from cloudwall import about
+        self.assertEqual(about.problems(), [])
+        self.assertGreater(len(about.covered()), 0)
+
+    def test_a_variant_adds_to_its_family(self):
+        from cloudwall import about
+        nine, eight = about.entry("b39m"), about.entry("B38M")
+        self.assertEqual((nine["name"], nine["family"], eight["family"]), ("Boeing 737 MAX 9", "Boeing 737 MAX", "Boeing 737 MAX"))
+        self.assertEqual(nine["text"][:len(eight["text"])], eight["text"])          # the family's text, then its own
+        self.assertGreater(len(nine["text"]), len(eight["text"]))
+        self.assertEqual(nine["production"][1], None)                                 # still being built
+        self.assertTrue(all(isinstance(k, str) and isinstance(v, str) for k, v in nine["facts"]))
+        self.assertIsNone(about.entry("NOPE"))
+        self.assertIsNone(about.entry(None))
+
+    def test_what_is_wrong_is_said(self):
+        import tempfile
+        from cloudwall import about
+        good = 'name = "X"\ntypes = ["XA1", "XB2"]\nchecked = "2026-11"\nsources = ["https://example.com"]\ntext = "One.\\n\\nTwo."\n'
+        files = {
+            "good.toml": good,
+            "broken.toml": "name = ",
+            "typo.toml": good.replace('name = "X"', 'name = "Y"\nprodution = [1990]').replace("XA1", "YA1").replace("XB2", "YB2"),
+            "twice.toml": good.replace("XB2", "ZZ9"),                        # XA1 is good.toml's
+            "bare.toml": 'name = "Z"\ntypes = ["Z1"]\ntext = "Z."\n[facts]\nSeats = "180"\n[variants.Q9]\nname = "Q"\n',
+        }
+        with tempfile.TemporaryDirectory() as d:
+            for name, text in files.items():
+                Path(d, name).write_text(text)
+            real, about.FOLDER = about.FOLDER, Path(d)
+            try:
+                found = "\n".join(about.problems())
+                entries, _ = about._load()
+            finally:
+                about.FOLDER = real
+        for words in ("broken.toml: can't be read", "typo.toml: unknown key 'prodution'", "twice.toml: XA1 is already in good.toml",
+                      "bare.toml: needs sources", "bare.toml: needs checked", "bare.toml: seats come from", "bare.toml: variant Q9 isn't in its types"):
+            self.assertIn(words, found)
+        self.assertEqual(sorted(entries), ["XA1", "XB2", "ZZ9"])     # sound files count; one with a problem is left out
+        self.assertEqual(entries["XA1"]["text"], ["One.", "Two."])
+
+    def test_paragraphs(self):
+        from cloudwall.about import paragraphs
+        self.assertEqual(paragraphs("  First line\n wrapped here.\n\n\nSecond.\n"), ["First line wrapped here.", "Second."])
+        self.assertEqual(paragraphs(None), [])
+
+    def test_a_type_in_the_logbook(self):
+        st = Store(":memory:")
+        for i, (t, hexid, airline) in enumerate([("B39M", "a1", "ASA"), ("B39M", "a1", "ASA"), ("B39M", "a2", "UAL"),
+                                                 ("E75L", "a3", "QXE"), ("E75L", "a4", "QXE"), ("C172", "a5", None)]):
+            st.add_sighting(ts=1000 + i, day="2026-11-21", hex=hexid, type=t, airline_icao=airline, airline=airline and airline.title())
+        seen = st.type_seen("B39M")
+        self.assertEqual({k: seen[k] for k in ("n", "of", "first", "last", "airframes", "rank", "types")},
+                         {"n": 3, "of": 6, "first": 1000, "last": 1002, "airframes": 2, "rank": 1, "types": 3})
+        self.assertEqual([(a["icao"], a["n"]) for a in seen["airlines"]], [("ASA", 2), ("UAL", 1)])
+        self.assertEqual((st.type_seen("E75L")["rank"], st.type_seen("C172")["rank"]), (2, 3))
+        self.assertEqual((st.type_seen("A388")["n"], st.type_seen("A388")["rank"]), (0, None))
+        self.assertEqual(st.airframe_seen("a1"), {"n": 2, "first": 1000})
+        self.assertEqual(st.airframe_seen("ffffff"), {"n": 0, "first": None})
+
+
 class LiveFirstTest(unittest.TestCase):
     """With a live provider, routes come from the flight in the air, looked up early."""
 
@@ -1287,6 +1352,15 @@ class ServerTest(unittest.TestCase):
     def get(self, url):
         import urllib.request
         return urllib.request.urlopen(url, timeout=5).read()
+
+    def test_a_type_must_be_a_type(self):
+        import urllib.error
+        base, _ = self.serve(config.load())
+        self.assertEqual(json.loads(self.get(base + "/api/type?type=e75l&hex=NOT-HEX"))["airframe"], None)
+        for bad in ("", "?type=", "?type=B7%27;--", "?type=TOOLONG"):
+            with self.assertRaises(urllib.error.HTTPError) as e:
+                self.get(base + "/api/type" + bad)
+            self.assertEqual(e.exception.code, 400)
 
     def test_kiosk_and_desktop_serve_the_same_page(self):
         base, _ = self.serve(config.load())
