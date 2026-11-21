@@ -29,10 +29,10 @@ the Turbo Goose propjet.
 "First flight" = "May 1937"
 "Built" = "345"
 "Engines" = "2 × Pratt & Whitney R-985 Wasp Junior, 450 hp"
-"Max takeoff weight" = "8,000 lb (3,600 kg) (G-21A)"
+"Max takeoff weight" = "8,000 lb (3,600 kg), G-21A"
 
 [variants.G21T]
 name = "McKinnon Turbo Goose"
 [variants.G21T.facts]
 "Engines" = "2 × Pratt & Whitney Canada PT6A, 550 or 680 shp"
-"Max takeoff weight" = "12,500 lb (5,700 kg) (G-21G)"
+"Max takeoff weight" = "12,500 lb (5,700 kg), G-21G"

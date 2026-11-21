@@ -31,7 +31,7 @@ with turboprops to support its pearling.
 "First flight" = "April 1946"
 "Built" = "59"
 "Engines" = "2 × Pratt & Whitney R-1340 Wasp, 600 hp"
-"Max takeoff weight" = "12,750 lb (5,783 kg) (G-73)"
+"Max takeoff weight" = "12,750 lb (5,783 kg), G-73"
 
 [variants.G73T]
 name = "Grumman G-73T Turbo Mallard"

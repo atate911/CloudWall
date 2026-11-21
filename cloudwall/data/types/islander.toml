@@ -35,7 +35,7 @@ the world.
 "First flight" = "June 1965"
 "Built" = "over 1,200"
 "Engines" = "2 × Lycoming O-540 or IO-540, 260 or 300 hp"
-"Max takeoff weight" = "6,600 lb (2,994 kg) (BN-2B)"
+"Max takeoff weight" = "6,600 lb (2,994 kg), BN-2B"
 
 [variants.BN2T]
 name = "Britten-Norman BN-2T Turbine Islander"

@@ -47,5 +47,5 @@ production = [1969, 1990]
 name = "Canadair CL-415, or CL-215T conversion"
 production = [1994, 2015]
 [variants.CL2T.facts]
-"Water load" = "6,140 L (1,620 US gal) (CL-415)"
+"Water load" = "6,140 L (1,620 US gal), CL-415"
 "Engines" = "2 × Pratt & Whitney Canada PW123AF turboprops, 2,380 hp"

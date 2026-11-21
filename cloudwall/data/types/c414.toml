@@ -29,7 +29,7 @@ ones with plain wingtips are the later models. Cessna built both until 1985.
 [facts]
 "First flight" = "October 1965 (421)"
 "Engines" = "2 × Continental GTSIO-520, geared and turbocharged, 375 hp (421)"
-"Max takeoff weight" = "7,450 lb (3,379 kg) (421C)"
+"Max takeoff weight" = "7,450 lb (3,379 kg), 421C"
 "Built" = "about 1,900 (421)"
 
 [variants.C421]
@@ -42,7 +42,7 @@ production = [1968, 1985]
 [variants.C414.facts]
 "First flight" = "November 1968"
 "Engines" = "2 × Continental TSIO-520, turbocharged, 310 hp"
-"Max takeoff weight" = "6,750 lb (3,062 kg) (414A)"
+"Max takeoff weight" = "6,750 lb (3,062 kg), 414A"
 "Built" = "1,070"
 
 [variants.C411]

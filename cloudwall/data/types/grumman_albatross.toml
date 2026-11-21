@@ -28,8 +28,8 @@ and in 1997 one of them flew around the world in 73 days.
 "First flight" = "October 1947"
 "Built" = "466"
 "Engines" = "2 × Wright R-1820 Cyclone, 1,425 hp"
-"Max takeoff weight" = "37,500 lb (17,010 kg) (HU-16B)"
-"Range" = "2,480 nm (4,590 km) (HU-16B)"
+"Max takeoff weight" = "37,500 lb (17,010 kg), HU-16B"
+"Range" = "2,480 nm (4,590 km), HU-16B"
 
 [variants.U16]
 name = "Grumman HU-16 or G-111 Albatross"

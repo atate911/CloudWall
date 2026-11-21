@@ -36,11 +36,11 @@ name = "Lake LA-4 or Buccaneer"
 production = [1960, 1985]
 [variants.LA4.facts]
 "Engine" = "Lycoming IO-360, 200 hp (Buccaneer)"
-"Max takeoff weight" = "2,690 lb (1,220 kg) (Buccaneer)"
+"Max takeoff weight" = "2,690 lb (1,220 kg), Buccaneer"
 
 [variants.LA25]
 name = "Lake Renegade, Turbo Renegade or Seawolf"
 production = [1984, 2007]
 [variants.LA25.facts]
 "Engine" = "Lycoming IO-540, 250 hp; TIO-540, 270 hp (Turbo Renegade)"
-"Max takeoff weight" = "3,050 lb (1,383 kg) (LA-250)"
+"Max takeoff weight" = "3,050 lb (1,383 kg), LA-250"
