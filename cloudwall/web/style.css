@@ -264,8 +264,9 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .apt-when b i { font-style: normal; font-weight: 400; font-size: .75em; color: var(--slate); }
 .route.unsure .apt, .route.unsure .arc { opacity: .35; }
 /* the route on a real map: airports either side of the distance and flight time, the map below */
-.h-route:has(.mapped) { justify-content: stretch; flex: 1.5; }
-.route.mapped { row-gap: .9rem; flex: 1; min-height: 0; grid-template-rows: auto minmax(7rem, 15rem); align-content: center; }
+/* the route map and the card's foot share the room left over, 1.5 to 1; the map fills its share */
+.h-route:has(.mapped) { justify-content: stretch; flex: 1.5 1 0; min-height: 0; overflow: hidden; }
+.route.mapped { row-gap: .9rem; flex: 1; min-height: 0; grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
 .route.mapped > .arc-note { align-self: center; margin-top: 0; font-size: .8rem; }
 .rmap { grid-column: 1 / -1; align-self: stretch; position: relative; min-height: 0; overflow: hidden;
   border: 1px solid var(--rule); background: var(--disc); }
@@ -733,7 +734,7 @@ html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
    card's stays put). Not on the phone layout, which a short, wide window also takes. */
 @media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
   html.desk:not(.phone) #view-now { column-gap: 0;
-    grid-template-columns: minmax(0, 1.3fr) 1.4rem minmax(0, var(--scope-w, 1fr)) 1.4rem minmax(0, var(--mb-w, .85fr)); }
+    grid-template-columns: minmax(0, var(--card-w, 1.3fr)) 1.4rem minmax(0, var(--scope-w, 1fr)) 1.4rem minmax(0, var(--mb-w, .85fr)); }
   html.desk:not(.phone) #view-now.animate { transition: grid-template-columns .22s ease-out; }
   html.desk:not(.phone) #hero { grid-column: 1; }
   html.desk:not(.phone) #scope { grid-column: 3; }
@@ -1390,7 +1391,8 @@ html.phone #radar .helipad-label { font-size: 5.4px; }
 .tr.sel { background: color-mix(in srgb, var(--magenta) 8%, transparent); box-shadow: inset 2px 0 0 var(--magenta); }
 .t-empty { color: var(--slate); padding: 1rem 0; }
 .sheet-title { font: max(11px, .64rem) var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--slate); }
-.mb-prof { flex: none; display: flex; flex-direction: column; gap: .2rem; height: clamp(11rem, 32%, 16rem); padding-top: .6rem; border-top: 1px solid var(--rule); }
+/* the side view takes the room the list leaves, between its shortest and a height that still reads as one chart */
+.mb-prof { flex: 1 1 auto; display: flex; flex-direction: column; gap: .2rem; min-height: 11rem; max-height: 26rem; margin-top: .9rem; padding-top: .6rem; border-top: 1px solid var(--rule); }
 .prof-box { flex: 1; min-height: 0; }
 .profile { display: block; overflow: visible; }
 .el-grid { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 3; }
@@ -1463,7 +1465,7 @@ html.desk:not(.phone) #strip { display: flex; grid-column: 1 / -1; }
 html.desk:not(.phone) #view-now > :not(#strip) { grid-row: 2; }
 html.desk:not(.phone) body.d-detailed #mini-board { flex-direction: column; overflow: hidden; padding: .8rem 1rem .5rem; }
 html.desk:not(.phone) body.d-detailed #mini-board > * { min-width: 18rem; }
-html.desk:not(.phone) body.d-detailed .mb-list { flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
+html.desk:not(.phone) body.d-detailed .mb-list { flex: 0 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
 /* Detailed on a laptop (1200 px and up) keeps the third panel too, a little narrower */
 @media (min-width: 1200px) and (max-width: 1499.98px) and (min-aspect-ratio: 1/1) {
   html.desk:not(.phone) body.d-detailed #view-now { column-gap: 0;
@@ -1486,6 +1488,14 @@ html.desk:not(.phone) body.d-simple #side { display: flex; grid-column: 1; }
 html.desk:not(.phone) body.d-simple #scope { grid-column: 2; }
 html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #hero { display: block; grid-column: 1; }
 html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #side { display: none; }
+/* wide for its height: three columns, the radar between as wide as its disc and what's worth a look
+   past it, rather than a disc adrift in a wide column (two columns again when nothing is) */
+@media (min-width: 1500px) and (min-aspect-ratio: 19/10) {
+  html.desk:not(.phone) body.d-simple #view-now { grid-template-columns: minmax(0, 1fr) auto minmax(0, .78fr); }
+  html.desk:not(.phone) body.d-simple #view-now:has(#notes:empty) { grid-template-columns: minmax(0, 1fr) auto minmax(0, .5fr); }
+  html.desk:not(.phone) body.d-simple #scope { height: 100%; aspect-ratio: 1.02 / 1; }
+  html.desk:not(.phone) body.d-simple #notes:not(:empty) { display: flex; grid-column: 3; grid-row: 2; }
+}
 @media (max-aspect-ratio: 1/1) {
   html.desk:not(.phone) body.d-simple #view-now { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); }
   html.desk:not(.phone) body.d-simple #side { grid-column: 1; grid-row: 2; }
@@ -1623,7 +1633,6 @@ table.grouped td.rt b { font-weight: 700; } table.grouped .b-to { font: 400 .78r
 .tl-ev.flip .tl-lb { left: auto; right: -.2rem; }
 .tl-ev.nolabel .tl-lb { visibility: hidden; }
 .tl-ev.k-hosp .tl-lb { color: var(--ink); }
-.tl-none { position: absolute; left: 0; top: .95rem; font-size: .74rem; color: var(--slate); }
 @media (prefers-reduced-motion: reduce) { .tl-ev { transition: none; } }
 /* where it sits: beside the headline on a desk, under the phrases on a phone, across the wall panel's header */
 html:not(.phone):not(.kiosk) .sit { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 2.6rem; align-items: center; }
@@ -1675,3 +1684,36 @@ body.stale .tl-ev { opacity: .5; }
 #radar .craft.coasting .blip { stroke-dasharray: 1.2 1; }
 .est-chip { font-size: .68rem; color: var(--advisory); }
 .est-chip[hidden] { display: none; }
+
+/* ---- the desktop card on a short screen ---- */
+/* The card is as tall as its row. Its fixed parts keep their size, and when the row is short what
+   it holds gives way in turn: the route map shrinks, then goes; then the drawing goes and the facts
+   take the width. Nothing runs over anything else. */
+html.desk:not(.phone) .hero-card { container: card / size; }
+.hero-card > * { flex-shrink: 0; }
+.hero-card > .h-bottom { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+/* on the desktop the foot is whatever room is left: the drawing (or photo) scales to it */
+html.desk:not(.phone) .hero-card > .h-bottom { container: foot / size; flex: 1 1 0; }
+html.desk:not(.phone) .h-bottom .media { max-height: 100cqh; }
+.rmap { min-height: 0; }
+@container card (max-height: 700px) {
+  .hero-card { gap: .7rem; }
+  .route.mapped { row-gap: .6rem; }
+}
+@container card (max-height: 620px) {
+  .rmap { display: none; }
+  .route.mapped { grid-template-rows: auto; }
+  .h-route:has(.mapped) { flex: none; }
+  .apt { font-size: min(2.3rem, 7cqi); }
+  .apt-when { margin-top: .4rem; }
+}
+/* too little room left for a drawing worth the name: the facts alone, in two columns of pairs,
+   using the card's width rather than its height */
+@container foot (max-height: 10rem) {
+  .h-bottom .media { display: none; }
+  .h-bottom .facts { grid-column: 1 / -1; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); column-gap: 1.4rem; row-gap: .45rem; align-self: start; }
+}
+/* a list longer than its room scrolls, and fades at its foot to say so */
+.mb-list.more { mask-image: linear-gradient(to bottom, #000 calc(100% - 2.4rem), transparent); }
+/* nothing due: a quiet line beside the headline, where the axis would be */
+.tl.quiet { font-size: .8rem; color: var(--slate); }

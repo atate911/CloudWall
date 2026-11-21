@@ -187,6 +187,12 @@ class BrowserTest(unittest.TestCase):
         self.assertTrue(g["estimated"]["faded"])
         self.assertEqual((g["hushed"], g["woken"]), (True, True))
 
+    def test_a_wide_short_window(self):
+        w = self.scenario("wide")
+        self.assertEqual(w["card"], {"overlaps": [], "inside": True})        # the card's parts give way rather than collide
+        self.assertLess(w["radar"], 80)                                       # the radar's column hugs its disc
+        self.assertTrue(w["simple"]["notes"] and w["simple"]["rows"] >= 1)  # Simple: worth a look past the radar
+
     def test_the_wall_panel_on_the_map(self):
         self.assertGreaterEqual(self.scenario("kioskMap")["onMap"], 1)
 

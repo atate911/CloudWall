@@ -28,6 +28,8 @@ let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastOverhead = nu
 // the tab; released by tapping the card, or when the flight leaves the area. The wall panel, which
 // nobody stays beside, lets go by itself after a minute and a half untouched.
 const KIOSK_PIN_S = 90;
+// a desktop wide for its height: Simple puts what's worth a look in a third column, past the radar
+const WIDE = matchMedia("(min-width: 1500px) and (min-aspect-ratio: 19/10)");
 let myPin = null;
 try { myPin = sessionStorage.getItem("cloudwall.pin"); } catch (e) { /* no storage: just this visit */ }
 function pin(hex) {
@@ -204,7 +206,8 @@ function renderPicture(dens) {
   if (easy && KIOSK) { renderInto($("side"), `<section class="k-sit">${stripHtml(state, { short: true, notes: 2 })}</section>` + sideHtml(state, { queue: 3, notes: 2 })); fitSide($("side")); }
   else if (easy && ph === "side") renderInto($("side"), sideHtml(state, { compact: true }));      // sideways: all in one column beside the radar
   else if (easy && ph) { renderInto($("side"), sideHtml(state, { compact: true, notes: 0 })); renderInto($("notes"), notesHtml(state)); }
-  else if (easy) renderInto($("side"), sideHtml(state));
+  else if (easy && WIDE.matches) { renderInto($("side"), sideHtml(state, { notes: 0 })); renderInto($("notes"), notesHtml(state)); }   // a wide screen: worth a look on the radar's far side
+  else if (easy) { renderInto($("side"), sideHtml(state)); renderInto($("notes"), ""); }
   const n = picture(state).air.length;
   $("show-all").innerHTML = `${allOpen ? "Hide the list" : `Show all ${n} aircraft, grouped`}<span aria-hidden="true">${allOpen ? "⌃" : "⌄"}</span>`;
   $("show-all").setAttribute("aria-expanded", String(allOpen));

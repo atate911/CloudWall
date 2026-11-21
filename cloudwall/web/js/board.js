@@ -113,6 +113,8 @@ export function renderMiniBoard(state) {
   const top = list.scrollTop;
   keepFocus(list, () => { list.innerHTML = listHtml(state); });
   list.scrollTop = top;
+  if (!list._more) { list._more = () => list.classList.toggle("more", list.scrollTop + list.clientHeight < list.scrollHeight - 4); list.addEventListener("scroll", list._more, { passive: true }); }
+  list._more();
   const pb = prof.querySelector(".prof-box"), r = pb.getBoundingClientRect();
   pb.innerHTML = r.width > 50 && r.height > 50 ? profileHtml(state, Math.round(r.width), Math.round(r.height)) : "";
 }

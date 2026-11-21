@@ -14,7 +14,7 @@ const { chromium, devices } = require("playwright");
 
 const BASE = process.argv[2];
 const SIZES = { desktop: { viewport: { width: 1600, height: 950 } }, kiosk: { viewport: { width: 1024, height: 600 } },
-  phone: { ...devices["iPhone 13"] } };
+  wide: { viewport: { width: 2000, height: 730 } }, phone: { ...devices["iPhone 13"] } };
 
 async function open(browser, size, path, errors, tamper, before) {
   const page = await (await browser.newContext(SIZES[size])).newPage();
@@ -256,6 +256,35 @@ const SCENARIOS = {
     await page.mouse.click(500, 300);
     await page.waitForTimeout(500);
     out.woken = await page.evaluate(() => !document.body.classList.contains("hush"));
+    await page.close();
+    return out;
+  },
+
+  // a wide, short window: the card's parts never run into each other or out of it, the radar's
+  // column is as wide as its disc, and Simple puts what's worth a look in a third column
+  async wide(browser, errors) {
+    const out = {};
+    let page = await open(browser, "wide", "/?density=detailed", errors);
+    await page.evaluate(() => { const r = document.querySelector("#mini-board .tr[data-hex]"); if (r) r.click(); });   // a flight with a route
+    await page.waitForTimeout(2500);
+    out.card = await page.evaluate(() => {
+      const card = document.getElementById("hero").getBoundingClientRect(), parts = [...document.querySelectorAll("#hero > *")].filter((e) => e.offsetHeight);
+      const overlaps = [];
+      for (let i = 1; i < parts.length; i++) {
+        const a = parts[i - 1].getBoundingClientRect(), b = parts[i].getBoundingClientRect();
+        if (a.bottom > b.top + 1) overlaps.push(`${parts[i - 1].className} over ${parts[i].className}`);
+      }
+      const last = parts[parts.length - 1].getBoundingClientRect();
+      return { overlaps, inside: last.bottom <= card.bottom + 1 };
+    });
+    out.radar = await page.evaluate(() => { const s = document.getElementById("scope"), r = document.getElementById("radar");
+      const pad = parseFloat(getComputedStyle(s).paddingTop) + parseFloat(getComputedStyle(s).paddingBottom);
+      return Math.round(s.clientWidth - (s.clientHeight - pad)); });          // spare width beside the disc, px
+    await page.close();
+    page = await open(browser, "wide", "/?density=simple", errors);
+    await page.waitForTimeout(1500);
+    out.simple = await page.evaluate(() => { const n = document.getElementById("notes"), s = document.getElementById("scope");
+      return { notes: n.offsetWidth > 0 && n.getBoundingClientRect().left > s.getBoundingClientRect().right, rows: n.querySelectorAll(".n-row").length }; });
     await page.close();
     return out;
   },
