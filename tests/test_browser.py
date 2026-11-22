@@ -188,7 +188,7 @@ class BrowserTest(unittest.TestCase):
         self.assertIn("kiosk", k["layout"])
         self.assertEqual((k["simple"], k["card"], k["tabsShown"]), (True, 1, False))
         self.assertEqual((k["scopeShown"], k["radarDrawn"]), (False, 0))   # the card alone, unless [kiosk] view says radar or map
-        self.assertRegex(k["caption"][0], r"aircraft within \d+ nm|Nothing on the radar|quiet spell")
+        self.assertRegex(k["caption"][0], r"aircraft within \d+ (?:nm|miles)|Nothing on the radar|quiet spell")
         self.assertTrue(any("heard" in c for c in k["caption"][1:]))         # the demo's fighters, said over the radar
         # read from across the room: nothing on the page under 4% of the screen's height, the radar's labels near it
         for s in (k["smallest"], k["detailedSmallest"]):

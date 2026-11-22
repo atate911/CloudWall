@@ -941,6 +941,19 @@ body.night .k-who .logo-tile { height: min(9vh, 10cqi); padding: .8vh 1.4vh; bor
 .card-only .k-alone { flex-direction: row; align-items: center; gap: 6vh; }
 .card-only .k-craft.big { --h: min(17vh, calc(45cqw / var(--ar))); flex: none; }
 .card-only .k-alone .k-note { font-size: 6vh; }
+/* Simple, for whoever is in the room: the cities by name, large, over a route line that runs the
+   width of the card with the aircraft drawn larger on it; the airports' codes small at its ends,
+   and the flight number a size down to make the room */
+.kiosk .d-simple .k-apt span { font: 700 min(7.5vh, 6.6cqi)/1.1 var(--sans); letter-spacing: -.01em; color: var(--ink); }
+.kiosk .d-simple .k-apt.local span { color: var(--blue); }
+.kiosk .d-simple .k-apt b { font: 700 5vh/1 var(--mono); letter-spacing: 0; color: var(--slate); }
+.kiosk .d-simple .k-route { row-gap: 1vh; }
+.kiosk .d-simple.card-only .k-flight { font-size: min(12vh, calc(104cqi / var(--n, 6))); }
+.kiosk .d-simple.card-only .k-line { height: 13vh; }
+.kiosk .d-simple.card-only .k-craft { --h: min(14vh, calc(40cqw / var(--ar))); }
+.kiosk .d-simple.card-only .k-card { gap: 2vh; }
+/* beside the radar there's no room for the picture of where to look: the words say it */
+.kiosk body:not(.card-only) .k-look i { display: none; }
 .k-line i { position: absolute; top: 50%; height: 0; transform: translateY(-50%); }
 .k-flown { left: 0; width: calc(var(--p) * 100%); border-top: .5vh solid var(--magenta); }
 .k-togo { left: calc(var(--p) * 100%); right: 2vh; border-top: .5vh dotted color-mix(in srgb, var(--magenta) 60%, transparent); }

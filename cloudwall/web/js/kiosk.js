@@ -6,7 +6,7 @@
 // When the sky is quiet, a slow rotation of large slides.
 // Sizes are in vh, with nothing under 4vh but the map's credit, so the same design reads the same
 // on 1024×600 and 1920×1080 panels and every word of it reads from the sofa.
-import { $, esc, num, mmss, ident, since, degF } from "./util.js";
+import { $, esc, num, mmss, ident, since, degF, seatWords } from "./util.js";
 import { boardFlight, showLogo, localWords, heardGroups, shortType } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
 import { flap } from "./fx.js";
@@ -17,6 +17,10 @@ import { typeInfo, kindPlate } from "./plate.js";
 import { profileHtml, profileFrom } from "./profile.js";
 
 const SLIDE_SECONDS = 12;
+// Simple is for whoever is in the room, a visitor included: miles and miles an hour, the cities by
+// name, how many seats. Detailed is the enthusiast's: knots, nautical miles, the airports' codes.
+const plain = () => document.body.classList.contains("d-simple");
+const miles = (nm) => Math.round(nm * 1.15078);
 let cur = { hex: null }, slide = 0, slideAt = Date.now(), shownKey = null, radarSlide = false;
 
 // ---------- a plane overhead ----------
@@ -40,8 +44,9 @@ function whereWords(a, state) {
 const clockAt = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 function routeFoot(r) {
   const arrives = r.landed || r.eta || r.eta_est;
-  const dist = r.flown_nm != null && r.left_nm != null ? `${num(r.flown_nm)} nm flown, ${num(r.left_nm)} to go`
-    : r.left_nm != null ? `${num(r.left_nm)} nm to go` : "";
+  const d = plain() ? (nm) => num(miles(nm)) : num, u = plain() ? "miles" : "nm";
+  const dist = r.flown_nm != null && r.left_nm != null ? `${d(r.flown_nm)} ${u} flown, ${d(r.left_nm)} to go`
+    : r.left_nm != null ? `${d(r.left_nm)} ${u} to go` : "";
   return `<div class="k-foot"><span>${r.departed ? `Left ${esc(clockAt(r.departed))}` : ""}</span><span>${esc(dist)}</span>` +
     `<span>${arrives ? `${r.landed ? "Landed" : "Arrives"} ${!r.landed && !r.eta ? "about " : ""}${esc(clockAt(arrives))}` : ""}</span></div>`;
 }
@@ -76,7 +81,11 @@ function routeBlock(a, state) {
 }
 
 // The aircraft in words, under its flight number: its type, as an enthusiast names it
-const typeWords = (a) => shortType(a.type_name) || a.type || "Unknown aircraft";
+// (in Simple, with how many it seats, which says how big it is to someone who doesn't know the type)
+function typeWords(a) {
+  const t = shortType(a.type_name) || a.type || "Unknown aircraft", seats = plain() && seatWords(a.seats);
+  return seats ? `${t} · ${seats}` : t;
+}
 
 function planeHtml() {
   return `<div class="k-card k-plane">
@@ -107,7 +116,7 @@ function showPlane(el, a, state) {
   const h = a.hospital;
   const p = a.route && progressOf(a.route);
   const key = JSON.stringify([a.route && [a.route.origin.iata, a.route.dest.iata, a.route.plausible, p == null ? null : Math.round(p * 200),
-    a.route.flown_nm, a.route.eta || a.route.eta_est, a.route.departed], a.local, a.route_pending, a.type_name, a.type, !!a.medical,
+    a.route.flown_nm, a.route.eta || a.route.eta_est, a.route.departed], plain(), a.local, a.route_pending, a.type_name, a.type, !!a.medical,
     h && [h.code, h.state, h.eta_s == null ? null : Math.round((h.eta_s - since(state)) / 60)],
     !(a.route && a.route.plausible) && !a.local && !a.medical ? whereWords(a, state) : null]);
   if (key !== cur.routeKey) { cur.routeKey = key; $("k-route").innerHTML = routeBlock(a, state); }
@@ -115,9 +124,8 @@ function showPlane(el, a, state) {
   $("k-alt").innerHTML = `${a.on_ground ? "0" : num(a.alt)}${v > 300 ? '<i class="up">▲</i>' : v < -300 ? '<i class="down">▼</i>' : ""}`;
   $("k-alt-l").textContent = a.on_ground ? "on the ground" : v > 300 ? "feet, climbing" : v < -300 ? "feet, descending" : "feet";
   // Simple is for whoever is in the room: miles an hour. Detailed keeps the pilot's knots.
-  const plain = document.body.classList.contains("d-simple");
-  $("k-gs").textContent = a.gs == null ? "–" : num(plain ? Math.round(a.gs * 1.15078) : a.gs);
-  $("k-gs-l").textContent = plain ? "mph" : "knots";
+  $("k-gs").textContent = a.gs == null ? "–" : num(plain() ? miles(a.gs) : a.gs);
+  $("k-gs-l").textContent = plain() ? "mph" : "knots";
   cur.a = a; cur.state = state;
   updateWhen(a, since(state));
 }
@@ -143,7 +151,8 @@ function updateWhen(a, elapsed) {
 // Over the radar: how many aircraft are about, and the ones heard with no position to show
 export function kioskCaption(state) {
   const s = situation(state, { short: true, notes: 0 }), heard = s.phrases.find((x) => x.cat === "heard");
-  return `<b>${esc(s.head)}</b>${heard ? `<span>${heard.n} ${esc(heard.text)}, no position</span>` : ""}`;
+  const head = plain() ? s.head.replace(/(\d+) nm\b/, (_, n) => `${miles(+n)} miles`) : s.head;
+  return `<b>${esc(head)}</b>${heard ? `<span>${heard.n} ${esc(heard.text)}, no position</span>` : ""}`;
 }
 
 // ---------- quiet sky ----------
