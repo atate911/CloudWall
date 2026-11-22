@@ -91,6 +91,10 @@ in the address, and `[kiosk] density` sets the wall panel's.
   in the middle of a wide strip; one running east and west goes across the card, taking the
   drawing's room too when the card is short; on a phone the map is as tall as its route needs.
   On a short screen the map gives way first, then the drawing.
+  On a card wide for its height (the traffic list hidden, or the card's divider dragged out) the
+  route sits beside the flight number rather than under it, the facts go in three columns, and each
+  figure's cell carries a small picture of it: the aircraft's height since it came in range as a
+  line, the house with the angle to raise your eyes by, and its heading on a compass.
 - **Radar / Map** – beside the card, a radar scope over a street map, or the Map view: the
   same flights on an everyday map for anyone, satellite photos with roads and place names (or a
   street map), filling the panel, every aircraft labelled in words ("Delta 178", "to Denver ·

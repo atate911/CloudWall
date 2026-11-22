@@ -2007,6 +2007,25 @@ html.desk:not(.phone) .hero-card.map-beside .h-bottom .plate { width: min(calc((
 }
 html.desk:not(.phone) .hero-card.map-beside .h-bottom .media { grid-column: 2; grid-row: 1; aspect-ratio: auto; height: 100%; min-height: 6.5rem; max-height: 30cqi; align-self: start; }
 html.desk:not(.phone) .hero-card.map-beside .h-bottom .facts { grid-column: 2; grid-row: 2; align-content: end; }
+/* a wide card: the route beside the flight number rather than under it, in the room that was empty
+   to its right, which gives the map and the drawing below that much more height; and in each
+   figure's cell a small picture of it (hero.js: the height's line, the angle to look, the compass) */
+.m-g { display: none; }
+html.desk:not(.phone) .hero-card.card-wide:is(.map-beside, .fit-nomap, :not(.mapped)) { display: grid; grid-template-columns: fit-content(46%) minmax(0, 1fr); column-gap: 4rem;
+  grid-template-rows: auto auto minmax(min-content, 1fr); }
+html.desk:not(.phone) .hero-card.card-wide:is(.map-beside, .fit-nomap, :not(.mapped)) > .h-id { grid-column: 1; grid-row: 1; }
+html.desk:not(.phone) .hero-card.card-wide:is(.map-beside, .fit-nomap, :not(.mapped)) > .h-route { grid-column: 2; grid-row: 1; align-self: center; }
+html.desk:not(.phone) .hero-card.card-wide:is(.map-beside, .fit-nomap, :not(.mapped)) > .metrics { grid-column: 1 / -1; grid-row: 2; margin-top: 0; }
+html.desk:not(.phone) .hero-card.card-wide:is(.map-beside, .fit-nomap, :not(.mapped)) > .h-bottom { grid-column: 1 / -1; grid-row: 3; }
+html.desk:not(.phone) .hero-card.card-wide .metric { position: relative; }
+html.desk:not(.phone) .hero-card.card-wide .m-g { display: block; position: absolute; right: 1.2rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.m-g svg { display: block; height: 2.9rem; width: auto; overflow: visible; }
+.m-g .spark { height: 2.2rem; }
+.spark path { fill: none; stroke: var(--ink-2); stroke-width: 1.4; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.spark circle { fill: var(--magenta); }
+.dial circle { fill: none; stroke: var(--rule); stroke-width: 1; }
+.dial .dl-n { stroke: var(--ink); stroke-width: 1.6; } .dial .dl-t { stroke: var(--slate); stroke-width: .8; }
+.dial .dl-a { fill: var(--ink-2); }
 /* no map: the drawing takes the room, across the card, no taller than it is wide (and a half) */
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) > .h-bottom { flex: 1 1 auto; min-height: auto; display: flex; flex-direction: column; align-items: stretch; gap: 1rem;
   max-height: calc(66cqi + 6rem); }      /* the drawing's cap and the facts under it: any more room goes above the figures */
