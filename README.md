@@ -93,11 +93,11 @@ in the address, and `[kiosk] density` sets the wall panel's.
   On a short screen the map gives way first, then the drawing.
   On a card wide for its height (the traffic list hidden, or the card's divider dragged out) the
   route sits beside the flight number rather than under it, the facts go in three columns, and each
-  figure's cell carries a small picture of it: the aircraft's altitude along its track as a
-  line, the house with the angle to raise your eyes by, and its heading on a compass.
-  The flight comes before the aircraft: with no map to draw (a light aircraft, a helicopter, a card
-  too short for one) the drawing keeps to a sheet's size and beside it is a chart of the aircraft's
-  altitude and its ground speed along its track, the highest and lowest of each marked; and where a card can't show both
+  figure's cell carries a small picture of it: the aircraft's altitude and its ground speed along
+  its track as lines, the house with the angle to raise your eyes by, and its heading on a compass.
+  The flight comes before the aircraft: a card with no map to draw (a light aircraft, a helicopter)
+  carries those small pictures under its figures at any width, with the ground speed's line beside
+  the altitude's, and its drawing keeps to a sheet's size; and where a card can't show both
   the map and the drawing, or could keep the drawing only by squeezing the map to a strip, the map stays.
 - **Radar / Map** – beside the card, a radar scope over a street map, or the Map view: the
   same flights on an everyday map for anyone, satellite photos with roads and place names (or a
