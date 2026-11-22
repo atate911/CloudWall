@@ -346,7 +346,10 @@ function fitCard(el) {
       el.classList.add(f);
     }
     const plate = !el.classList.contains("fit-noplate") && !!el.querySelector(".h-bottom .media .plate");
-    return { map: map && !el.classList.contains("fit-nomap") ? routeScale(r, map.clientWidth, map.clientHeight) : 0, plate };
+    // (a map squeezed under its least worthwhile height doesn't count as shown beside the drawing)
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const shown = map && !el.classList.contains("fit-nomap");
+    return { map: shown ? routeScale(r, map.clientWidth, map.clientHeight) : 0, plate: plate && (!shown || map.clientHeight >= 7 * rem) };
   };
   if (!map) { fit("across"); return; }
   // decided again only when the route, the card's size or the room its words take changes (a line
@@ -360,7 +363,10 @@ function fitCard(el) {
     // route largest); where none can, the flight comes before the aircraft: the one that draws the
     // route largest, with or without the drawing
     const s = { across: fit("across"), beside: fit("beside"), wide: fit("wide") }, hows = ["across", "beside", "wide"];
-    const both = hows.filter((how) => s[how].plate && s[how].map > 0);
+    // (a layout that keeps the drawing by squeezing the map to a strip is no gain: it must draw the
+    // route at least three fifths the size the best layout would)
+    const most = Math.max(...hows.map((how) => s[how].map));
+    const both = hows.filter((how) => s[how].plate && s[how].map > 0 && s[how].map >= most * 0.6);
     const from = both.length ? both : hows, best = Math.max(...from.map((how) => s[how].map));
     el._mapAt = from.find((how) => s[how].map >= best * 0.85);
   }
