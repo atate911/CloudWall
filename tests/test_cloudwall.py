@@ -1619,8 +1619,7 @@ class PathTest(unittest.TestCase):
         self.assertEqual(s["hero"]["hex"], "a1")
         self.assertEqual(len(s["hero"]["trail"]), 30)                 # its recent positions, for the history dots
         path = [list(q) for q in s["hero"]["path"]]
-        self.assertEqual(path[0][:3], [round(t.home["lat"] + 10 / 60, 4), round(t.home["lon"], 4), 80])
-        self.assertEqual(len(path[0]), 4)                             # and its ground speed there, in knots (or none)
+        self.assertEqual(path[0], [round(t.home["lat"] + 10 / 60, 4), round(t.home["lon"], 4), 80])
         self.assertTrue(8 <= len(path) <= 14)                         # a point every 0.15 nm or 300 ft
         self.assertIn(path[-1][2], range(60, 63))                     # it followed the descent to about 6,050 ft
         t.update([plane("a1", "ASA1", 8.0, alt=None)], "test")        # no altitude: the last one carries on

@@ -22,7 +22,7 @@ class Tracks:
     def __init__(self, radius_nm, store):
         self.radius_nm, self.store = radius_nm, store
         self.trails = {}          # hex -> deque of (lat, lon), every update
-        self.paths = {}           # hex -> deque of (lat, lon, alt in hundreds of ft, ground speed in kt), since it came in range
+        self.paths = {}           # hex -> deque of (lat, lon, alt in hundreds of ft), since it came in range
         self.heat_day = time.strftime("%Y-%m-%d")
         self.heat = {tuple(map(int, k.split(","))): v for k, v in
                      (store.cache_get("heat", self.heat_day, 2 * 86400)[1] or {}).items()}
@@ -31,7 +31,7 @@ class Tracks:
 
     def remember(self, airborne, now, beyond=()):
         """Each aircraft's recent positions (the ATC style's history dots) and its whole path since
-        it came in range or took off, with its altitude and ground speed, and a coarse all-day grid for the traffic
+        it came in range or took off, with its altitude, and a coarse all-day grid for the traffic
         heatmap. The radar draws only the selected aircraft's track, but every one's is kept, so one
         that is tapped shows all of it at once. Aircraft beyond the tracking radius (shown only on a
         radar set to a longer range) get trails and paths but stay off the heatmap."""
@@ -50,8 +50,7 @@ class Tracks:
             alt = round(a["alt"] / 100) if a.get("alt") is not None else (path[-1][2] if path else 0)
             if (not path or abs(alt - path[-1][2]) * 100 >= PATH_CLIMB_FT
                     or geo.haversine_nm(path[-1][0], path[-1][1], a["lat"], a["lon"]) >= PATH_STEP_NM):
-                gs = a.get("gs")
-                path.append((round(a["lat"], 4), round(a["lon"], 4), alt, round(gs) if gs is not None else None))
+                path.append((round(a["lat"], 4), round(a["lon"], 4), alt))
         for a in airborne:
             if a.get("coasting"):
                 continue

@@ -31,10 +31,10 @@ const SKELETON = `
   </div>
   <div class="h-route" id="h-route"></div>
   <div class="metrics">
-    <div class="metric"><div class="label">Altitude</div><div class="v"><span id="h-alt"></span> <small>ft</small> <span id="h-arrow"></span></div><div class="s" id="h-vrate"></div><i class="m-g" id="g-alt"></i></div>
-    <div class="metric"><div class="label">Speed</div><div class="v"><span id="h-gs"></span> <small>kt</small></div><div class="s" id="h-mph"></div><i class="m-g" id="g-spd"></i></div>
-    <div class="metric"><div class="label">Distance</div><div class="v"><span id="h-dist"></span> <small>nm</small></div><div class="s" id="h-dist2"></div><i class="m-g" id="g-dist"></i></div>
-    <div class="metric"><div class="label">Heading</div><div class="v" id="h-hdg"></div><div class="s" id="h-phase"></div><i class="m-g" id="g-hdg"></i></div>
+    <div class="metric"><div class="label">Altitude</div><div class="v"><span id="h-alt"></span> <small>ft</small> <span id="h-arrow"></span></div><div class="s" id="h-vrate"></div></div>
+    <div class="metric"><div class="label">Speed</div><div class="v"><span id="h-gs"></span> <small>kt</small></div><div class="s" id="h-mph"></div></div>
+    <div class="metric"><div class="label">Distance</div><div class="v"><span id="h-dist"></span> <small>nm</small></div><div class="s" id="h-dist2"></div></div>
+    <div class="metric"><div class="label">Heading</div><div class="v" id="h-hdg"></div><div class="s" id="h-phase"></div></div>
   </div>
   <div class="h-bottom">
     <div class="media" id="h-media"><div class="sil-box" id="h-sil"></div></div>
@@ -209,13 +209,6 @@ function showHero(el, a, state) {
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
   $("h-phase").textContent = a.local ? localWords(a, state)
     : a.track == null ? "" : `Toward the ${POINTS[Math.round(a.track / 22.5) % 16]}`;
-  // on a wide card, a small picture in each figure's cell: its altitude since it came in range, the
-  // angle up to look, and the way it's heading on a compass
-  glyph("g-alt", spark(a.path, 2, 10, "alt", "Its altitude along its track", (v) => `${num(v * 100)} ft`));
-  glyph("g-spd", spark(a.path, 3, 40, "spd", "Its ground speed along its track", (v) => `${num(v)} kt`));
-  glyph("g-dist", look ? look.svg : "");
-  glyph("g-hdg", a.track == null ? "" : `<svg class="dial" viewBox="-12 -12 24 24" role="img" aria-label="Heading ${Math.round(a.track)} degrees"><circle r="10.5"/>` +
-    `<path class="dl-n" d="M0,-10.5V-7.6"/><path class="dl-t" d="M10.5,0H8.6M-10.5,0H-8.6M0,10.5V8.6"/><path class="dl-a" transform="rotate(${Math.round(a.track)})" d="M0,-7.2L3.4,4.6L0,2.6L-3.4,4.6Z"/></svg>`);
 
   const sil = $("h-sil");
   // the type plate: the side elevation with its length, under the photo once one arrives
@@ -278,25 +271,8 @@ function showHero(el, a, state) {
 // drawing goes first; last, the facts stand alone in a row.
 const FITS = ["fit-tight", "fit-nomap", "fit-noplate"];
 const STEPS = { across: FITS, wide: ["fit-tight", "fit-nomap"], beside: ["fit-tight", "fit-noplate", "fit-nomap"] };
-const glyph = (id, html) => { const e = $(id); if (e && e._html !== html) e.innerHTML = e._html = html; };
-// One of the figures along the aircraft's path (its altitude, in hundreds of feet, or its ground
-// speed), as a small line ending in a dot where it is now; nothing until there is enough of it to
-// show a shape. least: the smallest span drawn to the full height, so a level flight is a level line.
-function spark(path, at, least, cls, label, say) {
-  const vals = (path || []).map((p) => p[at]).filter((x) => x != null);
-  if (vals.length < 4) return "";
-  const lo = Math.min(...vals), hi = Math.max(...vals), span = Math.max(hi - lo, least), mid = (hi + lo) / 2, W = 64, H = 24;
-  const pts = vals.map((v, i) => [(i / (vals.length - 1)) * (W - 4) + 1, H / 2 - ((v - mid) / span) * (H - 6)]);
-  const [x, y] = pts[pts.length - 1];
-  // where the line starts, in words before it, so its shape has a scale: the figure beside it is where it ends
-  const from = hi - lo < least / 4 ? `<small class="sp-from">steady</small>` : `<small class="sp-from">from <b>${say(vals[0])}</b></small>`;
-  return `${from}<svg class="spark ${cls}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}, ${say(lo)} to ${say(hi)}">` +
-    `<path d="M${pts.map((p) => p.map((n) => n.toFixed(1)).join(",")).join("L")}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2"/></svg>`;
-}
 function fitCard(el) {
   if (!el.classList.contains("hero-card")) return;
-  // a card wide for its height (the list hidden, or its divider dragged out) lays its parts side by side
-  el.classList.toggle("card-wide", !phone() && el.clientWidth >= 58 * parseFloat(getComputedStyle(document.documentElement).fontSize));
   const map = $("h-map"), r = cur.a && cur.a.route;
   if (phone()) {
     // a phone's card scrolls: its map as tall as the route needs, within reason, a north-south route
@@ -317,11 +293,7 @@ function fitCard(el) {
       if (f === "fit-nomap" && !map) continue;
       el.classList.add(f);
     }
-    const plate = !el.classList.contains("fit-noplate") && !!el.querySelector(".h-bottom .media .plate");
-    // (a map squeezed under its least worthwhile height doesn't count as shown beside the drawing)
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    const shown = map && !el.classList.contains("fit-nomap");
-    return { map: shown ? routeScale(r, map.clientWidth, map.clientHeight) : 0, plate: plate && (!shown || map.clientHeight >= 7 * rem) };
+    return map && !el.classList.contains("fit-nomap") ? routeScale(r, map.clientWidth, map.clientHeight) : 0;
   };
   if (!map) { fit("across"); return; }
   // decided again only when the route, the card's size or the room its words take changes (a line
@@ -331,16 +303,8 @@ function fitCard(el) {
   const key = `${cur.routeKey}|${el.clientWidth}x${el.clientHeight}|${words}|${$("h-facts").childElementCount}|${!!el.querySelector(".media.has-photo")}`;
   if (el._mapKey !== key) {
     el._mapKey = key;
-    // the layouts that show the aircraft's drawing with the map come first (the one that draws the
-    // route largest); where none can, the flight comes before the aircraft: the one that draws the
-    // route largest, with or without the drawing
-    const s = { across: fit("across"), beside: fit("beside"), wide: fit("wide") }, hows = ["across", "beside", "wide"];
-    // (a layout that keeps the drawing by squeezing the map to a strip is no gain: it must draw the
-    // route at least seven tenths the size the best layout would)
-    const most = Math.max(...hows.map((how) => s[how].map));
-    const both = hows.filter((how) => s[how].plate && s[how].map > 0 && s[how].map >= most * 0.72);
-    const from = both.length ? both : hows, best = Math.max(...from.map((how) => s[how].map));
-    el._mapAt = from.find((how) => s[how].map >= best * 0.85);
+    const s = { across: fit("across"), beside: fit("beside"), wide: fit("wide") }, best = Math.max(s.across, s.beside, s.wide);
+    el._mapAt = ["across", "beside", "wide"].find((how) => s[how] >= best * 0.85);
   }
   fit(el._mapAt);
 }

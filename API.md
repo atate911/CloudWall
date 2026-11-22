@@ -167,7 +167,7 @@ appears a few seconds after the aircraft does.
 | `rwy` | with `seq` | The runway it is lining up for: one in use when the flow is known, else the one whose approach suits it best. |
 | `lands_s` | with `seq` | Seconds until it lands, about: along the final approach when it is on it, else by way of joining it 6 nm out. |
 | `gap_s` | with `seq` | Seconds after the one ahead of it lands; null for the first. |
-| `path` | on `hero` | Where it has been since it came in range: `[lat, lon, altitude in hundreds of feet, ground speed in knots or null]`, a point each time it moved 0.15 nm or 300 ft. |
+| `path` | on `hero` | Where it has been since it came in range: `[lat, lon, altitude in hundreds of feet]`, a point each time it moved 0.15 nm or 300 ft. |
 | `trail` | on `hero` | Its last positions as reported, `[lat, lon]`, `trail_s` apart. |
 
 ### A route
