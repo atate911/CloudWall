@@ -17,7 +17,7 @@ function enter(el) {
 }
 
 let cur = { hex: null, routeKey: null, cpa0: 0, photo: null };
-let slide = 0, slideAt = Date.now(), slideShown = -1;
+let slide = 0, slideAt = Date.now(), slideShown = -1, refit = false;
 const SLIDE_SECONDS = 14;
 
 const SKELETON = `
@@ -553,8 +553,9 @@ function showIdle(el, state) {
   if (Date.now() - slideAt > SLIDE_SECONDS * 1000) { slide++; slideAt = Date.now(); }
   slide %= slides.length;
   const kind = slides[slide], dots = slides.length > 1 ? `<div class="dots">${slides.map((_, i) => `<i class="${i === slide ? "on" : ""}"></i>`).join("")}</div>` : "";
-  const changed = slideShown !== slide;
-  if (changed) { el.className = "panel idle-card"; enter(el); }
+  const changed = slideShown !== slide, resized = refit;
+  refit = false;
+  if (changed && !resized) { el.className = "panel idle-card"; enter(el); }
   if (kind === "quiet") {
     quietSlide(el, state, dots, changed);
     slideShown = slide;
@@ -603,6 +604,10 @@ function fleetToday(L) {
 export function nextSlide() { slide++; slideAt = Date.now(); }
 // Something else drew in the card (the emergency takeover): rebuild from scratch next time.
 export function forgetHero() { cur = { hex: undefined }; }
+// The card changed size (a divider dragged, the window): the quiet-sky slide on it, drawn once to
+// its size (the heatmap, the fleet, the weather), is drawn again at the next render, in place. The
+// flight card fits itself (fitCard) and its route map redraws itself.
+export function heroResized() { if (slideShown >= 0) { slideShown = -1; refit = true; } }
 
 function militaryHtml(heard, city) {
   const groups = heardGroups(heard);
