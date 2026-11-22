@@ -145,6 +145,17 @@ const SCENARIOS = {
     await page.mouse.dblclick(m2.x, m2.y);
     await page.waitForTimeout(400);                       // the columns ease back
     out.reset = await widths();
+    // dragged as far as it goes, it stops where the radar's row of buttons still fits
+    const m3 = await middle();
+    await page.mouse.move(m3.x, m3.y);
+    await page.mouse.down();
+    await page.mouse.move(m3.x + 900, m3.y, { steps: 8 });
+    await page.mouse.up();
+    out.toolsFit = await page.evaluate(() => {
+      const scope = document.getElementById("scope").getBoundingClientRect();
+      return [...document.querySelectorAll("#scope .scope-tools > *")].filter((e) => e.offsetWidth)
+        .every((e) => e.getBoundingClientRect().right <= scope.right + 0.5 && e.getBoundingClientRect().left >= scope.left - 0.5);
+    });
     await page.close();
     return out;
   },

@@ -38,6 +38,13 @@ export function paneDividers(shown) {
   let share = clamp(+store("nearbyShare") || DEFAULT, 0.1, PAIR - 0.1), open = store("nearby") !== "closed", hideTimer = null, drawn = false;
   let lay = null, left = null;      // the layout, and the card's width in it as a % of the row (null: as the stylesheet has it)
   const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  // the radar's narrowest: MIN_RADAR, or as wide as the row of buttons along its foot (range, style,
+  // tracks), which can't wrap, whichever is wider
+  function minRadar() {
+    const tools = document.querySelector("#scope .scope-tools"), shown = tools ? [...tools.children].filter((c) => c.offsetWidth) : [];
+    const gap = tools ? parseFloat(getComputedStyle(tools).columnGap) || 0 : 0;
+    return Math.max(MIN_RADAR * rem(), shown.reduce((w, c) => w + c.offsetWidth, 0) + gap * Math.max(0, shown.length - 1) + 0.8 * rem());
+  }
   // the room the radar and the list share, in px: from the radar's left edge to the grid's right, less the divider
   const pairPx = () => grid.getBoundingClientRect().right - $("scope").getBoundingClientRect().left - bar.offsetWidth;
 
@@ -81,7 +88,12 @@ export function paneDividers(shown) {
     if (f !== 1) grid.style.setProperty("--mb-w", `${(m * f).toFixed(3)}fr`);
   }
   // again whenever the room changes: the window, or the strip above growing a line (the panel's height)
-  const refit = new ResizeObserver(() => { relayout(); if (!grid.classList.contains("dragging")) fit(open ? share : 0); });
+  const refit = new ResizeObserver(() => {
+    relayout();
+    if (grid.classList.contains("dragging")) return;
+    keepRadar();
+    fit(open ? share : 0);
+  });
   refit.observe(grid);
   refit.observe($("scope"));
 
@@ -94,7 +106,7 @@ export function paneDividers(shown) {
     const r = rem(), room = pairPx();
     if (px < (MIN_LIST * r) / 2 || room <= 0) { open = false; return; }
     open = true;
-    share = (PAIR * clamp(px, MIN_LIST * r, Math.max(MIN_LIST * r, room - MIN_RADAR * r))) / room;
+    share = (PAIR * clamp(px, MIN_LIST * r, Math.max(MIN_LIST * r, room - minRadar()))) / room;
   }
 
   btn.addEventListener("click", () => { open = !open; apply(true); save(); });
@@ -162,6 +174,16 @@ export function paneDividers(shown) {
     left = saved > 0 && saved < 100 ? saved : null;
     showLeft();
   }
+  // a window narrowed under a card width dragged to: the card gives way before the radar goes
+  // narrower than its narrowest
+  function keepRadar() {
+    if (left == null || !lay) return;
+    const short = minRadar() - $("scope").getBoundingClientRect().width;
+    if (short > 1) {
+      left = (Math.max(minLeft(), leftPx() - short) / box().width) * 100;
+      showLeft();
+    }
+  }
   // the card `px` wide, between its narrowest and as wide as leaves the radar its narrowest (max),
   // with the list kept `list` wide
   function setLeft(px, max, list) {
@@ -170,7 +192,7 @@ export function paneDividers(shown) {
     if (list) { setList(list); apply(false); } else fit(open ? share : 0);
   }
   // the widest it can go: as far as leaves the radar its narrowest, the list keeping its width
-  const most = () => leftPx() + $("scope").getBoundingClientRect().width - MIN_RADAR * rem();
+  const most = () => leftPx() + $("scope").getBoundingClientRect().width - minRadar();
   cbar.addEventListener("pointerdown", (e) => {
     if (e.button !== 0 || !lay) return;
     e.preventDefault();

@@ -3,7 +3,7 @@ import { $, esc, store, phone, api, runwayList, degF, since, dataAge, COUNT_STOP
 import { updateSky } from "./sky.js";
 import { drawScope, mapReach, flashCraft } from "./scope.js";
 import { loadMap } from "./map.js";
-import { renderHero, tickHero, nextSlide, forgetHero } from "./hero.js";
+import { renderHero, tickHero, nextSlide, forgetHero, heroResized } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
 import { chime, soundOn, setSound } from "./fx.js";
 import { renderWeatherTab } from "./weather.js";
@@ -174,6 +174,32 @@ async function loadWeather(draw) {
 }
 let resizeTimer = null;
 addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (view === "wx") loadWeather(true); }, 250); });
+// The Overhead view's panels changed size (a divider dragged, the window, the strip above gaining a
+// line): what is drawn to their size (the radar and its labels, the side view under the list, the
+// card's quiet-sky slides) is drawn again once it settles, rather than at the next update. On the
+// desktop only, where the grid sets the panels' sizes: on a phone they take their contents' height,
+// and drawing them again would change it.
+const panelSizes = new Map();
+let panelTimer = null, cardMoved = false;
+const panelsResized = new ResizeObserver((entries) => {
+  if (KIOSK || phone()) return;
+  let moved = false;
+  for (const e of entries) {
+    const w = Math.round(e.contentRect.width), h = Math.round(e.contentRect.height), was = panelSizes.get(e.target);
+    panelSizes.set(e.target, [w, h]);
+    if (was && (was[0] !== w || was[1] !== h)) { moved = true; if (e.target.id === "hero" || e.target.id === "side") cardMoved = true; }
+  }
+  if (!moved) return;
+  clearTimeout(panelTimer);
+  panelTimer = setTimeout(() => {
+    if (!state || view !== "now") return;
+    if (cardMoved) heroResized();
+    cardMoved = false;
+    scopeLabel = "";                                 // the radar's labels placed afresh for its new size
+    render();
+  }, 150);
+});
+["hero", "side", "scope", "mini-board"].forEach((id) => panelsResized.observe($(id)));
 setInterval(() => { if (!document.hidden) loadWeather(view === "wx"); }, 60000);
 
 // ---------- chrome ----------

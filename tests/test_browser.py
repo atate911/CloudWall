@@ -139,6 +139,7 @@ class BrowserTest(unittest.TestCase):
         self.assertAlmostEqual(a["mini-board"], b["mini-board"], delta=2)   # and the list keeps its width
         self.assertAlmostEqual(d["reloaded"]["hero"], a["hero"], delta=2)   # remembered
         self.assertAlmostEqual(d["reset"]["hero"], b["hero"], delta=3)      # a double-click puts it back
+        self.assertTrue(d["toolsFit"])                                       # and it never squeezes the radar's buttons off it
 
     def test_the_radars_switches_the_night_chart_and_the_place_menu(self):
         c = self.scenario("controls")
