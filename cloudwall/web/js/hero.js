@@ -291,7 +291,7 @@ function altSpark(path) {
   const lo = Math.min(...alts), hi = Math.max(...alts), span = Math.max(hi - lo, 10), W = 64, H = 24;
   const pts = alts.map((v, i) => [(i / (alts.length - 1)) * (W - 4) + 1, H - 3 - ((v - lo) / span) * (H - 6)]);
   const [x, y] = pts[pts.length - 1];
-  return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Its altitude since it came in range, ${num(lo * 100)} to ${num(hi * 100)} ft">` +
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Its altitude along its track, ${num(lo * 100)} to ${num(hi * 100)} ft">` +
     `<path d="M${pts.map((p) => p.map((n) => n.toFixed(1)).join(",")).join("L")}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2"/></svg>`;
 }
 // The same as a chart, for the room beside the drawing when the card has no map: its altitude
@@ -315,7 +315,7 @@ function flightProfile(path) {
   };
   const alt = series(pts.map((p) => p[2]), 10, (v) => `${num(v * 100)} ft`, "alt");
   const spd = series(pts.map((p) => p[3] ?? null), 40, (v) => `${num(v)} kt`, "spd");
-  return `<div class="ap-head"><span class="label">${spd ? "Altitude and speed" : "Altitude"} since it came in range</span>` +
+  return `<div class="ap-head"><span class="label">${spd ? "Altitude and speed" : "Altitude"} along its track</span>` +
     (spd ? `<span class="ap-key"><i class="alt"></i>Altitude<i class="spd"></i>Ground speed</span>` : "") + `</div>` +
     `<div class="ap-plot${spd ? " two" : ""}" role="img" aria-label="Altitude ${alt.words}${spd ? `; speed ${spd.words}` : ""}">${alt.labels}${spd ? spd.labels : ""}` +
     `<div class="ap-draw"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="ap-area" d="M0,100L${alt.line.join("L")}L100,100Z"/>` +
