@@ -221,7 +221,7 @@ sentence case; the rule is stated at the top of `style.css`. The modules are lay
 | `fresh.js` | One copy for the page of what changes slowly (weather, logbook, heatmap), fetched at most once a minute whoever asks. |
 | `plate.js`, `silhouette.js`, `profiles.js`, `profiles/*.js` | Aircraft side elevations drawn from measurements, the type plates and the fleet line-up. |
 | `icons.js` | The chart-style radar's top-down icons, one for each kind of traffic. Which kind an aircraft is comes on its record. |
-| `astro.js`, `sky.js`, `fx.js`, `divider.js`, `util.js` | Sun and moon; day and night; split-flap and rolling-number effects and chimes; the traffic list's divider (which also holds the radar's column to its disc on a wide, short window); DOM, formatting and geometry helpers. |
+| `astro.js`, `sky.js`, `fx.js`, `divider.js`, `util.js` | Sun and moon; day and night; split-flap and rolling-number effects and chimes; the Overhead view's two dividers, beside the card and beside the traffic list (which also hold the radar's column to its disc on a wide, short window); DOM, formatting and geometry helpers. |
 
 Between updates the page moves aircraft itself: each position is dead-reckoned from the time
 the feed reported it (the server's `status.updated`, not the time the page fetched it) and eased

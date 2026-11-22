@@ -125,6 +125,30 @@ const SCENARIOS = {
     return out;
   },
 
+  // the divider between the card and the radar: dragged, the card widens, the radar gives way and the
+  // list beside it keeps its width; the card's width is remembered, and a double-click puts it back
+  async cardDivider(browser, errors) {
+    const page = await open(browser, "desktop", "/?density=detailed", errors), out = {};
+    const widths = () => page.evaluate(() => Object.fromEntries(["hero", "scope", "mini-board"].map((id) => [id, Math.round(document.getElementById(id).getBoundingClientRect().width)])));
+    const middle = async () => { const r = await page.locator("#card-split").boundingBox(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; };
+    out.before = await widths();
+    const m = await middle();
+    await page.mouse.move(m.x, m.y);
+    await page.mouse.down();
+    await page.mouse.move(m.x + 100, m.y, { steps: 5 });
+    await page.mouse.up();
+    out.after = await widths();
+    await page.reload();
+    await page.waitForSelector("#s-craft g.craft", { state: "attached", timeout: 15000 });
+    out.reloaded = await widths();
+    const m2 = await middle();
+    await page.mouse.dblclick(m2.x, m2.y);
+    await page.waitForTimeout(400);                       // the columns ease back
+    out.reset = await widths();
+    await page.close();
+    return out;
+  },
+
   // the radar's switches, the night chart, and the place menu
   async controls(browser, errors) {
     const tiles = [], page = await open(browser, "desktop", "/", errors, null, fakeTiles(tiles)), out = {};

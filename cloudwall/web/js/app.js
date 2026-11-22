@@ -8,7 +8,7 @@ import { renderEmergency } from "./emergency.js";
 import { chime, soundOn, setSound } from "./fx.js";
 import { renderWeatherTab } from "./weather.js";
 import { renderKiosk, tickKiosk, kioskNext, forgetKiosk, kioskCaption } from "./kiosk.js";
-import { nearbyDivider } from "./divider.js";
+import { paneDividers } from "./divider.js";
 import { boardHtml, renderMiniBoard } from "./board.js";
 import { loadLog } from "./logbook.js";
 import { openAbout, aboutContext } from "./about.js";
@@ -85,7 +85,7 @@ function emergencies() {
   return ((state && state.emergency) || []).filter((a) => !hidden.has(emKey(a)));
 }
 
-if (!KIOSK) nearbyDivider(() => { if (state && view === "now") renderMiniBoard(state); });
+if (!KIOSK) paneDividers(() => { if (state && view === "now") renderMiniBoard(state); });
 placeMenu(() => state);
 
 // ---------- scope: the radar, or the Map view (the flights on a plain satellite or street map) ----------
