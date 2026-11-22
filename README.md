@@ -95,6 +95,10 @@ in the address, and `[kiosk] density` sets the wall panel's.
   route sits beside the flight number rather than under it, the facts go in three columns, and each
   figure's cell carries a small picture of it: the aircraft's height since it came in range as a
   line, the house with the angle to raise your eyes by, and its heading on a compass.
+  The flight comes before the aircraft: with no map to draw (a light aircraft, a helicopter, a card
+  too short for one) the drawing keeps to a sheet's size and beside it is a chart of the aircraft's
+  height since it came in range, its highest and lowest marked; and where a card can't show both
+  the map and the drawing, the map stays.
 - **Radar / Map** – beside the card, a radar scope over a street map, or the Map view: the
   same flights on an everyday map for anyone, satellite photos with roads and place names (or a
   street map), filling the panel, every aircraft labelled in words ("Delta 178", "to Denver ·

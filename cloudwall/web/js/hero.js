@@ -37,6 +37,7 @@ const SKELETON = `
     <div class="metric"><div class="label">Heading</div><div class="v" id="h-hdg"></div><div class="s" id="h-phase"></div><i class="m-g" id="g-hdg"></i></div>
   </div>
   <div class="h-bottom">
+    <div class="alt-prof" id="h-prof" hidden></div>
     <div class="media" id="h-media"><div class="sil-box" id="h-sil"></div></div>
     <dl class="facts" id="h-facts"></dl>
   </div>`;
@@ -212,6 +213,10 @@ function showHero(el, a, state) {
   // on a wide card, a small picture in each figure's cell: its height since it came in range, the
   // angle up to look, and the way it's heading on a compass
   glyph("g-alt", altSpark(a.path));
+  // with no map to draw, the flight's own picture has the room beside the drawing: its height all the way in
+  const prof = altProfile(a.path);
+  glyph("h-prof", prof);
+  if ($("h-prof").hidden !== !prof) { $("h-prof").hidden = !prof; el._mapKey = null; }
   glyph("g-dist", look ? look.svg : "");
   glyph("g-hdg", a.track == null ? "" : `<svg class="dial" viewBox="-12 -12 24 24" role="img" aria-label="Heading ${Math.round(a.track)} degrees"><circle r="10.5"/>` +
     `<path class="dl-n" d="M0,-10.5V-7.6"/><path class="dl-t" d="M10.5,0H8.6M-10.5,0H-8.6M0,10.5V8.6"/><path class="dl-a" transform="rotate(${Math.round(a.track)})" d="M0,-7.2L3.4,4.6L0,2.6L-3.4,4.6Z"/></svg>`);
@@ -289,6 +294,19 @@ function altSpark(path) {
   return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Its height since it came in range, ${num(lo * 100)} to ${num(hi * 100)} ft">` +
     `<path d="M${pts.map((p) => p.map((n) => n.toFixed(1)).join(",")).join("L")}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2"/></svg>`;
 }
+// The same, as a chart with its highest and lowest marked, for the room beside the drawing when the
+// card has no map: the line is stretched to the plot, so its labels and the dot for now are HTML.
+function altProfile(path) {
+  const alts = (path || []).map((p) => p[2]).filter((x) => x != null);
+  if (alts.length < 4) return "";
+  const lo = Math.min(...alts), hi = Math.max(...alts), span = Math.max(hi - lo, 10);
+  const y = (v) => 10 + (1 - (v - lo) / span) * 80, pts = alts.map((v, i) => `${((i / (alts.length - 1)) * 100).toFixed(1)},${y(v).toFixed(1)}`);
+  const ft = (v) => `${num(v * 100)} ft`, flat = hi - lo < 3;
+  return `<div class="label">Height since it came in range</div><div class="ap-plot" role="img" aria-label="${flat ? `Level at ${ft(hi)}` : `From ${ft(alts[0])} to ${ft(alts[alts.length - 1])}, between ${ft(lo)} and ${ft(hi)}`}">` +
+    `<span class="ap-y" style="top:${y(hi).toFixed(1)}%">${ft(hi)}</span>${flat ? "" : `<span class="ap-y" style="top:${y(lo).toFixed(1)}%">${ft(lo)}</span>`}` +
+    `<div class="ap-draw"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="ap-area" d="M0,100L${pts.join("L")}L100,100Z"/><path class="ap-line" d="M${pts.join("L")}"/></svg>` +
+    `<i class="ap-now" style="top:${y(alts[alts.length - 1]).toFixed(1)}%"></i></div></div>`;
+}
 function fitCard(el) {
   if (!el.classList.contains("hero-card")) return;
   // a card wide for its height (the list hidden, or its divider dragged out) lays its parts side by side
@@ -324,12 +342,12 @@ function fitCard(el) {
   const key = `${cur.routeKey}|${el.clientWidth}x${el.clientHeight}|${words}|${$("h-facts").childElementCount}|${!!el.querySelector(".media.has-photo")}`;
   if (el._mapKey !== key) {
     el._mapKey = key;
-    // the aircraft's drawing is kept wherever it can be: the layouts that show it with the map come
-    // first (the one that draws the route largest), then one that shows it alone, and only a card
-    // with no drawing to show goes by the map alone
+    // the layouts that show the aircraft's drawing with the map come first (the one that draws the
+    // route largest); where none can, the flight comes before the aircraft: the one that draws the
+    // route largest, with or without the drawing
     const s = { across: fit("across"), beside: fit("beside"), wide: fit("wide") }, hows = ["across", "beside", "wide"];
-    const both = hows.filter((how) => s[how].plate && s[how].map > 0), alone = hows.filter((how) => s[how].plate);
-    const from = both.length ? both : alone.length ? alone.slice(0, 1) : hows, best = Math.max(...from.map((how) => s[how].map));
+    const both = hows.filter((how) => s[how].plate && s[how].map > 0);
+    const from = both.length ? both : hows, best = Math.max(...from.map((how) => s[how].map));
     el._mapAt = from.find((how) => s[how].map >= best * 0.85);
   }
   fit(el._mapAt);

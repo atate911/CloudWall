@@ -2028,8 +2028,35 @@ html.desk:not(.phone) .hero-card.card-wide .m-g { display: block; position: abso
 .dial .dl-a { fill: var(--ink-2); }
 /* no map: the drawing takes the room, across the card, no taller than it is wide (and a half) */
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) > .h-bottom { flex: 1 1 auto; min-height: auto; display: flex; flex-direction: column; align-items: stretch; gap: 1rem;
-  max-height: calc(66cqi + 6rem); }      /* the drawing's cap and the facts under it: any more room goes above the figures */
-html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) .h-bottom .media { aspect-ratio: auto; flex: 1 1 auto; height: auto; min-height: 6.5rem; max-height: 66cqi; }
+  max-height: calc(min(66cqi, 13rem) + 6rem); align-self: start; width: 100%; }      /* the drawing's cap and the facts under it: any more room goes above the figures */
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) .h-bottom .media { aspect-ratio: auto; flex: 1 1 auto; height: auto; min-height: 6.5rem; max-height: min(66cqi, 13rem); }
+/* the flight before the aircraft: the drawing keeps to a sheet's size rather than taking all the
+   room, and beside it, once there is enough of it to draw, the flight's height since it came in
+   range (hero.js, altProfile) */
+.alt-prof { display: none; }
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) { display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: minmax(6.5rem, 13rem) auto; column-gap: 1.6rem; row-gap: 1rem; }
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom > .alt-prof:not([hidden]) { display: flex; flex-direction: column; gap: .4rem; grid-column: 1; grid-row: 1; min-height: 0; }
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) > .media { grid-column: 2; grid-row: 1; height: 100%; }
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) > .facts { grid-column: 1 / -1; grid-row: 2; }
+/* beside the chart the sheet is small: the drawing takes more of its width than its share by size alone */
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) .plate { width: min(calc((.45 + .55 * var(--w)) * 100cqw), calc((100cqh - 2.4rem) * var(--ar))); }
+.ap-plot { flex: 1; min-height: 0; position: relative; padding-left: 4.6rem; border-bottom: 1px solid var(--rule); }
+.ap-y { position: absolute; left: 0; transform: translateY(-50%); font-size: .72rem; color: var(--slate); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ap-draw { position: relative; height: 100%; margin-right: .5rem; }
+.ap-draw svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
+.ap-area { fill: color-mix(in srgb, var(--blue) 12%, transparent); }
+.ap-line { fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.ap-now { position: absolute; right: 0; width: .6rem; height: .6rem; margin: -.3rem -.3rem 0 0; border-radius: 50%; background: var(--magenta); box-shadow: 0 0 0 2px var(--sheet); }
+/* on a wide card the figures are the card's subject: set a size up, their pictures with them */
+html.desk:not(.phone) .hero-card.card-wide .metric { padding-top: .9rem; padding-bottom: .95rem; }
+html.desk:not(.phone) .hero-card.card-wide .metric .v { font-size: 2.4rem; }
+html.desk:not(.phone) .hero-card.card-wide .metric .s { font-size: .82rem; }
+html.desk:not(.phone) .hero-card.card-wide .m-g svg { height: 3.4rem; }
+html.desk:not(.phone) .hero-card.card-wide .m-g .spark { height: 2.2rem; }
+/* and the chart of its height takes the room a wide card has under them */
+html.desk:not(.phone) .hero-card.card-wide:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) { max-height: 28rem; align-self: stretch; grid-template-rows: minmax(6.5rem, 1fr) auto; }
+html.desk:not(.phone) .hero-card.card-wide:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) > .media { height: 13rem; max-height: 100%; align-self: center; }
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) .h-bottom .facts { flex: none; }
 /* a kind of aircraft with no drawing of its own (a glider, a balloon) shows only its mark: worth the
    room only when there's plenty of it */
