@@ -288,7 +288,9 @@ function spark(path, at, least, cls, label, say) {
   const lo = Math.min(...vals), hi = Math.max(...vals), span = Math.max(hi - lo, least), mid = (hi + lo) / 2, W = 64, H = 24;
   const pts = vals.map((v, i) => [(i / (vals.length - 1)) * (W - 4) + 1, H / 2 - ((v - mid) / span) * (H - 6)]);
   const [x, y] = pts[pts.length - 1];
-  return `<svg class="spark ${cls}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}, ${say(lo)} to ${say(hi)}">` +
+  // where the line starts, in words before it, so its shape has a scale: the figure beside it is where it ends
+  const from = hi - lo < least / 4 ? `<small class="sp-from">steady</small>` : `<small class="sp-from">from <b>${say(vals[0])}</b></small>`;
+  return `${from}<svg class="spark ${cls}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}, ${say(lo)} to ${say(hi)}">` +
     `<path d="M${pts.map((p) => p.map((n) => n.toFixed(1)).join(",")).join("L")}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2"/></svg>`;
 }
 function fitCard(el) {
@@ -334,9 +336,9 @@ function fitCard(el) {
     // route largest, with or without the drawing
     const s = { across: fit("across"), beside: fit("beside"), wide: fit("wide") }, hows = ["across", "beside", "wide"];
     // (a layout that keeps the drawing by squeezing the map to a strip is no gain: it must draw the
-    // route at least three fifths the size the best layout would)
+    // route at least seven tenths the size the best layout would)
     const most = Math.max(...hows.map((how) => s[how].map));
-    const both = hows.filter((how) => s[how].plate && s[how].map > 0 && s[how].map >= most * 0.6);
+    const both = hows.filter((how) => s[how].plate && s[how].map > 0 && s[how].map >= most * 0.72);
     const from = both.length ? both : hows, best = Math.max(...from.map((how) => s[how].map));
     el._mapAt = from.find((how) => s[how].map >= best * 0.85);
   }

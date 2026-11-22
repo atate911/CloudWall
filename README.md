@@ -92,13 +92,14 @@ in the address, and `[kiosk] density` sets the wall panel's.
   drawing's room too when the card is short; on a phone the map is as tall as its route needs.
   On a short screen the map gives way first, then the drawing.
   On a card wide for its height (the traffic list hidden, or the card's divider dragged out) the
-  route sits beside the flight number rather than under it, the facts go in three columns, and each
-  figure's cell carries a small picture of it: the aircraft's altitude and its ground speed along
-  its track as lines, the house with the angle to raise your eyes by, and its heading on a compass.
-  The flight comes before the aircraft: a card with no map to draw (a light aircraft, a helicopter)
-  carries those small pictures under its figures at any width, with the ground speed's line beside
-  the altitude's, and its drawing keeps to a sheet's size; and where a card can't show both
-  the map and the drawing, or could keep the drawing only by squeezing the map to a strip, the map stays.
+  route sits beside the flight number rather than under it and the facts go in three columns; with
+  no map to draw (a light aircraft, a helicopter) the wide card is two halves, who it is and the
+  aircraft's drawing on the left, its figures two by two and large on the right. Where there is
+  room (a wide card, or any card with no map) each figure carries a small picture of it: the
+  altitude and the ground speed along its track as lines, each led by the value it started from
+  ("from 800 ft"), the house with the angle to raise your eyes by, and the heading on a compass.
+  Where a card can't show both the map and the drawing, or could keep the drawing only by
+  squeezing the map, the map stays.
 - **Radar / Map** – beside the card, a radar scope over a street map, or the Map view: the
   same flights on an everyday map for anyone, satellite photos with roads and place names (or a
   street map), filling the panel, every aircraft labelled in words ("Delta 178", "to Denver ·
