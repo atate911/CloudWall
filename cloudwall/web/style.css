@@ -952,6 +952,18 @@ body.night .k-who .logo-tile { height: min(9vh, 10cqi); padding: .8vh 1.4vh; bor
 .kiosk .d-simple.card-only .k-line { height: 13vh; }
 .kiosk .d-simple.card-only .k-craft { --h: min(14vh, calc(40cqw / var(--ar))); }
 .kiosk .d-simple.card-only .k-card { gap: 2vh; }
+/* an airline's flight, in Simple: the airline's name is the headline, beside its logo, and the
+   flight number is said small with the type under it */
+.kiosk .k-plane.by-airline .k-flight { display: none; }
+.kiosk .k-plane.by-airline .k-head { display: flex; flex-direction: column; gap: .6vh; }
+.kiosk .k-plane.by-airline .k-id { display: flex; align-items: center; justify-content: flex-start; align-self: stretch; }
+.kiosk .k-plane.by-airline .k-who { flex-direction: row; align-items: center; gap: 3vh; align-self: auto; min-width: 0; max-width: 100%; }
+.kiosk .k-plane.by-airline .k-who .logo-tile { height: min(9.6vh, 11cqi); flex: none; }
+.kiosk .k-plane.by-airline .k-who .logo-tile img { max-width: 22cqi; }
+.kiosk .k-plane.by-airline #k-airline { display: block; font: 700 min(9.6vh, calc(140cqi / var(--n, 15)))/1 var(--sans); letter-spacing: -.02em; color: var(--ink); }
+.kiosk .k-plane.by-airline .k-type { margin-top: 0; }
+/* beside the radar the line under it is longer than the card is wide: it takes a second line */
+.kiosk body:not(.card-only) .k-plane.by-airline .k-type { white-space: normal; }
 /* beside the radar there's no room for the picture of where to look: the words say it */
 .kiosk body:not(.card-only) .k-look i { display: none; }
 .k-line i { position: absolute; top: 50%; height: 0; transform: translateY(-50%); }

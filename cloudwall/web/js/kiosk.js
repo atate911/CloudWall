@@ -84,7 +84,14 @@ function routeBlock(a, state) {
 // (in Simple, with how many it seats, which says how big it is to someone who doesn't know the type)
 function typeWords(a) {
   const t = shortType(a.type_name) || a.type || "Unknown aircraft", seats = plain() && seatWords(a.seats);
-  return seats ? `${t} · ${seats}` : t;
+  return [byAirline(a) ? `Flight ${byAirline(a)}` : null, t, seats].filter(Boolean).join(" · ");
+}
+// Simple leads an airline's flight with the airline's name, which a visitor knows, and says its
+// number small beside the type: the number ("2162"), or null for anything else (a light aircraft's
+// registration, a military callsign), which keeps its flight number or registration as the headline.
+function byAirline(a) {
+  const m = plain() && a.airline && /^[A-Z0-9]{2} (\d{1,4}[A-Z]?)$/.exec(boardFlight(ident(a)) || "");
+  return m ? m[1] : null;
 }
 
 function planeHtml() {
@@ -112,6 +119,8 @@ function showPlane(el, a, state) {
   flap($("k-flight"), boardFlight(ident(a)));
   $("k-flight").style.setProperty("--n", boardFlight(ident(a)).length);
   $("k-airline").textContent = a.airline || (a.route && a.route.airline) || (a.private_owner ? "" : a.owner || "");
+  el.querySelector(".k-plane").classList.toggle("by-airline", !!byAirline(a));
+  $("k-airline").style.setProperty("--n", Math.max(8, $("k-airline").textContent.length));
   $("k-type").textContent = typeWords(a);
   const h = a.hospital;
   const p = a.route && progressOf(a.route);
@@ -152,7 +161,8 @@ function updateWhen(a, elapsed) {
 export function kioskCaption(state) {
   const s = situation(state, { short: true, notes: 0 }), heard = s.phrases.find((x) => x.cat === "heard");
   const head = plain() ? s.head.replace(/(\d+) nm\b/, (_, n) => `${miles(+n)} miles`) : s.head;
-  return `<b>${esc(head)}</b>${heard ? `<span>${heard.n} ${esc(heard.text)}, no position</span>` : ""}`;
+  // "no position" is the transponder's way of putting it; to the room they are somewhere near, unseen
+  return `<b>${esc(head)}</b>${heard ? `<span>${heard.n} ${esc(heard.text)}${plain() ? " nearby, out of sight" : ", no position"}</span>` : ""}`;
 }
 
 // ---------- quiet sky ----------
