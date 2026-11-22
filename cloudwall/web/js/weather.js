@@ -346,17 +346,35 @@ const dayClock = (ms) => {
 const dateOnly = (ms) => new Date(ms).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
 const hm = (ms) => `${Math.floor(ms / 3600000)} h ${Math.round((ms % 3600000) / 60000)} min`;
 
+// The day as a bar, midnight to midnight: night, twilight and daylight in their places, a mark
+// for now, and the sunrise and sunset under where they fall. Empty when the sun doesn't both
+// rise and set today (the far north in summer and winter): the times are listed instead.
+function dayBar(k) {
+  if (!(k.dawn && k.sunrise && k.sunset && k.dusk)) return "";
+  const DAY = 86400000, d0 = new Date().setHours(0, 0, 0, 0);
+  const pos = (ms) => ((((ms - d0) % DAY) + DAY) % DAY) / DAY * 100;
+  // a band from a to b, in two pieces when it runs past midnight
+  const band = (cls, a, b) => (pos(a) <= pos(b) ? [[pos(a), pos(b)]] : [[pos(a), 100], [0, pos(b)]])
+    .map(([x, y]) => `<i class="${cls}" style="left:${x.toFixed(2)}%;width:${(y - x).toFixed(2)}%"></i>`).join("");
+  const hm12 = (ms) => clock(ms / 1000);
+  const lab = (name, ms) => `<span style="left:${Math.max(10, Math.min(90, pos(ms))).toFixed(1)}%"><small>${name}</small><b>${hm12(ms)}</b></span>`;
+  return `<div class="daybar" role="img" aria-label="Sunrise ${hm12(k.sunrise)}, sunset ${hm12(k.sunset)}">
+      <div class="db-bar">${band("db-tw", k.dawn, k.sunrise)}${band("db-day", k.sunrise, k.sunset)}${band("db-tw", k.sunset, k.dusk)}<i class="db-now" style="left:${pos(Date.now()).toFixed(2)}%"></i></div>
+      <div class="db-labs">${lab("Sunrise", k.sunrise)}${lab("Sunset", k.sunset)}</div></div>
+    <p class="dim">First light ${hm12(k.dawn)}, last light ${hm12(k.dusk)}${k.daylight ? `; ${hm(k.daylight)} of daylight` : ""}</p>`;
+}
+
 export function sunMoonPanel(k) {
   const t = (ms) => (ms ? dayClock(ms) : "–");
   return `<h2>Sun and moon</h2>
     <div class="sm">
-      <dl class="sm-sun">
+      ${dayBar(k) || `<dl class="sm-sun">
         <div><dt>First light</dt><dd>${t(k.dawn)}</dd></div>
         <div><dt>Sunrise</dt><dd>${t(k.sunrise)}</dd></div>
         <div><dt>Sunset</dt><dd>${t(k.sunset)}</dd></div>
         <div><dt>Last light</dt><dd>${t(k.dusk)}</dd></div>
       </dl>
-      <p class="dim">${k.daylight ? `${hm(k.daylight)} of daylight` : ""}</p>
+      <p class="dim">${k.daylight ? `${hm(k.daylight)} of daylight` : ""}</p>`}
       <div class="sm-moon">${moonSvg(84, k.phase, k.lit)}
         <div><b>${esc(k.phaseName)}</b><span>${Math.round(k.lit * 100)}% lit${k.moonUp ? ", up now" : ""}</span>
           <span>${[k.moonrise ? `Rises ${t(k.moonrise)}` : null, k.moonset ? `sets ${t(k.moonset)}` : null].filter(Boolean).join(", ")}</span>

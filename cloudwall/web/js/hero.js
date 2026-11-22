@@ -607,7 +607,10 @@ export function forgetHero() { cur = { hex: undefined }; }
 function militaryHtml(heard, city) {
   const groups = heardGroups(heard);
   const lines = groups.map((g) => `<div class="mil-row"><b>${g.n > 1 ? `${g.n} × ` : ""}${esc(g.name)}</b><span>${g.alts.length ? `around ${num(Math.min(...g.alts))}${g.alts.length > 1 && Math.max(...g.alts) - Math.min(...g.alts) > 400 ? `–${num(Math.max(...g.alts))}` : ""} ft` : "altitude unknown"}</span></div>`).join("");
-  return `<div class="dim">Heard nearby, position unknown</div><h1>Military jets up</h1>${lines}
+  // what to look for: the first of them that has a drawing
+  const g = groups.find((x) => drawn({ type: x.code }));
+  const pic = g ? `<div class="mil-plate sil-box">${plate({ type: g.code, shape: "fighter", length: null, known: true, name: g.name }, { share: 0.72, dim: false })}</div>` : "";
+  return `<div class="dim">Heard nearby, position unknown</div><h1>Military jets up</h1>${pic}${lines}
     <p class="dim">Their transponders send altitude but no position, so receivers near ${esc(city || "here")} can hear them without placing them on the map. Look and listen: they're usually within a few dozen miles.</p>`;
 }
 

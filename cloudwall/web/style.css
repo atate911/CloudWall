@@ -694,7 +694,7 @@ body.night { --cat-VFR: #3f9a63; --cat-MVFR: #5589dc; --cat-IFR: #d95a49; --cat-
 .wx-head h1 { font-size: 1.5rem; letter-spacing: -.01em; }
 .wx-head .sum { font-size: 1rem; margin: .3rem 0 .25rem; line-height: 1.4; }
 .wx-head .dim { font-size: .76rem; }
-.wx-read { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 1.2rem 0 1rem; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.wx-read { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 1.2rem 0 1rem; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
 .wx-read > div { padding: .65rem 0 .7rem .9rem; min-width: 0; }
 .wx-read > div:first-child { padding-left: 0; }
 .wx-read > div + div { border-left: 1px solid var(--rule); }
@@ -796,7 +796,7 @@ html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
    card's stays put). Not on the phone layout, which a short, wide window also takes. */
 @media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
   html.desk:not(.phone) #view-now { column-gap: 0;
-    grid-template-columns: minmax(0, var(--card-w, 1.3fr)) 1.4rem minmax(0, var(--scope-w, 1fr)) 1.4rem minmax(0, var(--mb-w, .85fr)); }
+    grid-template-columns: minmax(0, var(--card-w, 1.15fr)) 1.4rem minmax(0, var(--scope-w, 1.15fr)) 1.4rem minmax(0, var(--mb-w, .85fr)); }
   html.desk:not(.phone) #view-now.animate { transition: grid-template-columns .22s ease-out; }
   html.desk:not(.phone) #hero { grid-column: 1; }
   html.desk:not(.phone) #scope { grid-column: 3; }
@@ -967,8 +967,13 @@ body.night .k-who .logo-tile { height: min(9vh, 10cqi); padding: .8vh 1.4vh; bor
 .k-read > div { display: flex; flex-direction: column; min-width: 0; }
 .k-read b { font: 700 1em/1 var(--sans); font-variant-numeric: tabular-nums; letter-spacing: -.02em; white-space: nowrap; }
 .k-read b i { font-style: normal; font-size: .52em; margin-left: .12em; vertical-align: .6em; }
+.k-look { display: flex; align-items: flex-end; gap: .22em; }
+.k-look i:empty { display: none; }
+.k-look .sky { height: .92em; width: 1.08em; }
+.kiosk .k-look .sk-house { fill: var(--bg, transparent); }
 .k-read b.word { font-size: .72em; line-height: 1.39; letter-spacing: -.01em; }
-.k-read span { font: 4.2vh var(--sans); color: var(--slate); margin-top: 1.2vh; white-space: nowrap; }
+/* a caption wider than its figure takes a second line rather than running into the next one */
+.k-read span { font: 4.2vh/1.15 var(--sans); color: var(--slate); margin-top: 1.2vh; }
 
 /* the quiet-sky slides, at the same scale */
 .k-slide { justify-content: center; gap: 3vh; }
@@ -1083,6 +1088,15 @@ body.emergency #scope:not(.atc) #radar :is(.heard-note, .tfr-label) { fill: var(
 .wx-more .dim { font-size: .8rem; color: var(--slate); line-height: 1.45; }
 .sm-sun { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; margin-bottom: .3rem; }
 .sm-sun dd { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* the day as a bar: night, twilight, daylight, and a mark for now */
+.daybar { margin: .2rem 0 .5rem; }
+.db-bar { position: relative; height: 1.1rem; background: #22304d; border: 1px solid var(--rule); border-radius: 2px; }
+.db-bar i { position: absolute; top: 0; bottom: 0; }
+.db-tw { background: #8f8463; } .db-day { background: #ecc85e; }
+.db-bar .db-now { top: -.3rem; bottom: -.3rem; width: 2px; margin-left: -1px; background: var(--ink); box-shadow: 0 0 0 1.5px var(--sheet); }
+.db-labs { position: relative; height: 2.5rem; margin-top: .45rem; }
+.db-labs span { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; white-space: nowrap; }
+.db-labs small { font-size: .74rem; color: var(--slate); } .db-labs b { font-size: 1rem; font-variant-numeric: tabular-nums; }
 .sm-moon { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
 .sm-moon > div { display: flex; flex-direction: column; gap: .15rem; font-size: .9rem; }
 .sm-moon b { font-size: 1.15rem; }
@@ -1090,10 +1104,10 @@ body.emergency #scope:not(.atc) #radar :is(.heard-note, .tfr-label) { fill: var(
 .moon .moon-dark { fill: color-mix(in srgb, var(--ink) 18%, var(--sheet)); }
 .moon .moon-lit { fill: #efe9d2; stroke: color-mix(in srgb, var(--ink) 25%, transparent); stroke-width: .5; }
 body.night .moon .moon-lit { fill: #f3eedb; }
-table.ct { width: 100%; border-collapse: collapse; font-size: .85rem; font-variant-numeric: tabular-nums; margin-bottom: .6rem; }
+table.ct { width: 100%; border-collapse: collapse; font-size: .8rem; font-variant-numeric: tabular-nums; margin-bottom: .6rem; }
 table.ct th { padding: 0 .4rem .3rem 0; }
 table.ct th small { font-size: inherit; }
-table.ct td { padding: .28rem .4rem .28rem 0; border-top: 1px solid var(--rule); white-space: nowrap; }
+table.ct td { font-size: inherit; padding: .28rem .4rem .28rem 0; border-top: 1px solid var(--rule); white-space: nowrap; }
 .ct-bar { display: inline-block; width: 1.6rem; height: .5rem; border-radius: .25rem; margin-right: .45rem; vertical-align: .05rem; background: transparent; border: 1px solid var(--rule); }
 .ct-short .ct-bar { background: repeating-linear-gradient(90deg, var(--blue) 0 3px, transparent 3px 6px); border-color: var(--blue); }
 .ct-persistent .ct-bar { background: var(--blue); border-color: var(--blue); }
@@ -1109,9 +1123,20 @@ table.ct td { padding: .28rem .4rem .28rem 0; border-top: 1px solid var(--rule);
 .tfr-item summary { cursor: pointer; color: var(--blue); }
 .notam { font: .72rem/1.45 var(--mono); color: var(--ink-2); max-height: 12rem; overflow: auto; margin-top: .3rem; overflow-wrap: anywhere; }
 @media (max-aspect-ratio: 1/1) { .wx-more { grid-template-columns: 1fr; } }
+/* a desk: the sun, the contrails and the airspace go under the report, in the room the taller
+   column of charts leaves beside it, rather than below the fold with that room left empty */
+@media (min-width: 1200px) and (min-aspect-ratio: 1/1) {
+  html.desk:not(.phone) .wx-grid { grid-template-rows: auto minmax(0, 1fr); row-gap: 1.6rem; }
+  html.desk:not(.phone) .wx-now { grid-column: 1; grid-row: 1; }
+  html.desk:not(.phone) .wx-trend { grid-column: 2; grid-row: 1 / span 2; }
+  html.desk:not(.phone) .wx-more { grid-column: 1; grid-row: 2; align-self: start; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 2rem; row-gap: 1.4rem; }
+  html.desk:not(.phone) .wx-more .panel-airspace { grid-column: 1 / -1; }
+  html.desk:not(.phone) .wx-more .sm-sun { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: .6rem; }
+}
 @media (max-width: 1100px) and (min-aspect-ratio: 1/1) { .wx-more { grid-template-columns: 1fr 1fr; } .wx-more .panel-airspace { grid-column: 1 / -1; } }
 
 /* ===================== idle slides and board ===================== */
+.mil-plate { flex: 0 1 11rem; height: auto; min-height: 5rem; padding: .6rem 0; justify-content: flex-start; }
 .mil-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 1.15rem; padding: .5rem 0; border-top: 1px solid var(--rule); }
 .mil-row span { color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .k-dim { color: var(--slate); }
@@ -1493,8 +1518,9 @@ html.phone #radar .helipad-label { font-size: 5.4px; }
 .strip { display: none; align-items: center; gap: 2rem; min-width: 0; }
 .sit { flex: 1; min-width: 0; }
 .sit h1 { font-size: 1.3rem; letter-spacing: -.01em; line-height: 1.2; }
-.pic { font-size: .95rem; line-height: 1.5; color: var(--ink-2); margin-top: .25rem; }
-.ph { margin-right: 1.5em; }
+.pic { font-size: .95rem; line-height: 1.5; color: var(--ink-2); margin-top: .25rem; text-wrap: balance; }
+/* a phrase keeps to one line while it can: the wrap falls between phrases, not inside one */
+.ph { display: inline-block; max-width: 100%; margin-right: 1.5em; }
 .ph:last-child, .ph:has(+ .ph[hidden]:last-child) { margin-right: 0; }
 .ph-k { white-space: nowrap; }
 .ph-k .ci { vertical-align: -.16em; margin-right: .35em; }
@@ -1565,14 +1591,14 @@ html.phone .so-nums { gap: 1rem; } html.phone .so-nums > div + div { padding-lef
 
 /* ---- Detailed: every aircraft, grouped by what it is doing; the side view under it ---- */
 .tlist { display: flex; flex-direction: column; }
-.gh { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-top: .55rem; padding-bottom: .2rem; }
+.gh { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: .8rem; padding-bottom: .3rem; }
 .gh:first-child { margin-top: 0; }
 .gl { display: inline-flex; align-items: center; gap: .45rem; font: 700 max(11px, .82rem) var(--sans); color: var(--ink-2); white-space: nowrap; }
 .gl b { color: var(--slate); font-weight: 400; margin-left: .15rem; }
 .gn { font-size: .78rem; color: var(--slate); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gh.heard .gl { color: var(--advisory); }
 .tr { display: grid; grid-template-columns: 1.4rem 4.6rem minmax(0, 1fr) 4rem 3.2rem; align-items: center; column-gap: .5rem; width: 100%; text-align: left;
-  padding: .26rem .25rem; border-top: 1px solid var(--rule); font-size: .82rem; }
+  padding: .38rem .25rem; border-top: 1px solid var(--rule); font-size: .82rem; }
 .tr .lead { display: grid; place-items: center; }
 .tr .fl { font: 700 .88rem var(--mono); white-space: nowrap; }
 /* a long detail ("Twin-rotor helicopter", "To Portland Adventist") takes a second line rather than being cut off */
@@ -1679,7 +1705,10 @@ html.desk:not(.phone) body.d-detailed .mb-list { flex: 0 1 auto; min-height: 0; 
 /* Detailed on a laptop (1200 px and up) keeps the third panel too, a little narrower */
 @media (min-width: 1200px) and (max-width: 1499.98px) and (min-aspect-ratio: 1/1) {
   html.desk:not(.phone) body.d-detailed #view-now { column-gap: 0;
-    grid-template-columns: minmax(0, 1.3fr) 1rem minmax(0, var(--scope-w, 1fr)) 1rem minmax(0, var(--mb-w, .85fr)); }
+    grid-template-columns: minmax(0, 1.2fr) 1rem minmax(0, var(--scope-w, 1.15fr)) 1rem minmax(0, var(--mb-w, .85fr)); }
+  /* less height to share between the list and the side view: the rows sit closer */
+  html.desk:not(.phone) body.d-detailed .tr { padding-top: .24rem; padding-bottom: .24rem; }
+  html.desk:not(.phone) body.d-detailed .gh { margin-top: .5rem; padding-bottom: .15rem; }
   html.desk:not(.phone) body.d-detailed #hero { grid-column: 1; }
   html.desk:not(.phone) body.d-detailed #scope { grid-column: 3; }
   html.desk:not(.phone) body.d-detailed .pane-split { grid-column: 4; display: flex; }
@@ -1696,6 +1725,13 @@ html.desk:not(.phone) body.d-simple #view-now { grid-template-columns: minmax(0,
 html.desk:not(.phone) body.d-simple :is(#hero, #mini-board, .pane-split) { display: none; }
 html.desk:not(.phone) body.d-simple #side { display: flex; grid-column: 1; }
 html.desk:not(.phone) body.d-simple #scope { grid-column: 2; }
+/* the aircraft's drawing goes across the panel, over its figures, and takes the room the lists
+   under it leave: large on a quiet day, small when the queue is long */
+html.desk:not(.phone) #side .ss-over:not(.compact, .quiet) { flex: 1 1 auto; min-height: 0; }
+html.desk:not(.phone) #side :is(.ss-queue, .ss-note) { flex: none; }
+html.desk:not(.phone) #side .so-row:has(.so-plate) { flex: 1 1 auto; min-height: 0; flex-direction: column; align-items: stretch; gap: 1rem; }
+html.desk:not(.phone) #side .so-plate { flex: 1 1 4rem; height: auto; min-height: 3.5rem; max-height: 13rem; justify-content: center; padding: .4rem 8%; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+html.desk:not(.phone) #side .so-row:has(.so-plate) .so-nums { justify-content: space-between; }
 html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #hero { display: block; grid-column: 1; }
 html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #side { display: none; }
 /* wide for its height: three columns, the radar between as wide as its disc and what's worth a look
@@ -1782,17 +1818,17 @@ table.grouped td.rt b { font-weight: 700; } table.grouped .b-to { font: 400 .78r
 .tl .seq { width: 1.05rem; height: 1.05rem; font-size: .62rem; border-width: 1.3px; }
 /* Detailed: a ten-minute axis, two rows of labels over it, the minutes under it */
 .tl.axis { min-width: 0; }
-.tl-track { position: relative; height: 3.05rem; margin-right: .4rem; }
-.tl-track::before { content: ""; position: absolute; left: 0; right: 0; top: 2.15rem; border-top: 1px solid var(--rule); }
-.tl-tick { position: absolute; top: 2.38rem; font: .68rem var(--sans); font-variant-numeric: tabular-nums; color: var(--slate); transform: translateX(-50%); white-space: nowrap; }
-.tl-tick::before { content: ""; position: absolute; left: 50%; top: -.33rem; height: .3rem; border-left: 1px solid var(--rule); }
+.tl-track { position: relative; height: 3.7rem; margin-right: .4rem; }
+.tl-track::before { content: ""; position: absolute; left: 0; right: 0; top: 2.5rem; border-top: 1px solid var(--rule); }
+.tl-tick { position: absolute; top: 3rem; font: .68rem var(--sans); font-variant-numeric: tabular-nums; color: var(--slate); transform: translateX(-50%); white-space: nowrap; }
+.tl-tick::before { content: ""; position: absolute; left: 50%; top: -.5rem; height: .3rem; border-left: 1px solid var(--rule); }
 .tl-tick.start { transform: none; } .tl-tick.start::before { left: 0; }
 .tl-tick.end { transform: translateX(-100%); } .tl-tick.end::before { left: 100%; }
-.tl-ev { position: absolute; top: 0; left: 0; width: 0; height: 2.15rem; transition: left 1s linear; }
-.tl-mk { position: absolute; left: 0; top: 2.15rem; transform: translate(-50%, -50%); display: grid; place-items: center;
+.tl-ev { position: absolute; top: 0; left: 0; width: 0; height: 2.5rem; transition: left 1s linear; }
+.tl-mk { position: absolute; left: 0; top: 2.5rem; transform: translate(-50%, -50%); display: grid; place-items: center;
   background: var(--paper); border-radius: 99px; padding: 1px; }
 .tl-mk .ci { display: block; }
-.tl-lb { position: absolute; left: -.2rem; top: .98rem; font-size: .74rem; color: var(--ink-2); white-space: nowrap; line-height: 1; }
+.tl-lb { position: absolute; left: -.2rem; top: 1.02rem; font-size: .74rem; color: var(--ink-2); white-space: nowrap; line-height: 1; }
 .tl-ev.lane1 .tl-lb { top: .05rem; }
 .tl-ev.flip .tl-lb { left: auto; right: -.2rem; }
 .tl-ev.nolabel .tl-lb { visibility: hidden; }

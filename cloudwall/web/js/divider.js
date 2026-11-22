@@ -5,13 +5,13 @@
 // as its panel is tall, so its column is held to that and the card and the list share what's left.
 import { $, clamp, store } from "./util.js";
 
-const PAIR = 1.85;            // the radar's and the list's columns together, in the grid's fr (the card has 1.3)
+const PAIR = 2;               // the radar's and the list's columns together, in the grid's fr (the card has 1.15)
 const DEFAULT = 0.85;         // the list's share of them, to begin with
 const MIN_LIST = 13;          // the list's narrowest, in rem; dragged to half that, it closes
 const MIN_RADAR = 18;         // and the radar's narrowest
 const STEP = 2;               // rem per arrow key
 const ANIMATE_MS = 220;       // as the stylesheet's transition
-const CARD = 1.3;             // the card's column, in fr
+const CARD = 1.15;            // the card's column, in fr
 const RADAR_ASPECT = 1.04;    // the radar's drawing at its widest, for its height: the disc, and a little room either side
 
 export function nearbyDivider(shown) {

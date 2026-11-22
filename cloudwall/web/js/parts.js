@@ -63,7 +63,7 @@ export const milType = (code) => (/^[A-Z]{1,2}\d{1,3}[A-Z]?$/.test(code || "") ?
 export function heardGroups(heard) {
   const by = new Map();
   for (const a of heard) {
-    const k = a.desc || milType(a.type), g = by.get(k) || { name: k, type: milType(a.type), n: 0, alts: [] };
+    const k = a.desc || milType(a.type), g = by.get(k) || { name: k, type: milType(a.type), code: a.type, n: 0, alts: [] };
     g.n++; if (a.alt != null) g.alts.push(a.alt); by.set(k, g);
   }
   return [...by.values()];

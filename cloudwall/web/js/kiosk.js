@@ -10,7 +10,7 @@ import { $, esc, num, mmss, ident, since, degF } from "./util.js";
 import { boardFlight, showLogo, localWords, heardGroups, shortType } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
 import { flap } from "./fx.js";
-import { medIcon, hospitalWords, arrival, situation, dir8, where, stripHtml, picture } from "./situation.js";
+import { medIcon, hospitalWords, arrival, situation, dir8, where, stripHtml, picture, skyLook } from "./situation.js";
 import { windRose, runwayHeadings, skyWords, sunMoonLine, tfrAlt, tfrWhen } from "./weather.js";
 import { drawing } from "./silhouette.js";
 import { typeInfo, kindPlate } from "./plate.js";
@@ -88,8 +88,8 @@ function planeHtml() {
     <div id="k-route"></div>
     <div class="k-read">
       <div><b id="k-alt"></b><span id="k-alt-l">feet</span></div>
-      <div><b id="k-gs"></b><span>knots</span></div>
-      <div><b id="k-when"></b><span id="k-when-l">overhead in</span></div>
+      <div><b id="k-gs"></b><span id="k-gs-l">knots</span></div>
+      <div><div class="k-look"><i id="k-sky"></i><b id="k-when"></b></div><span id="k-when-l">overhead in</span></div>
     </div>
   </div>`;
 }
@@ -114,9 +114,12 @@ function showPlane(el, a, state) {
   const v = a.vrate || 0;
   $("k-alt").innerHTML = `${a.on_ground ? "0" : num(a.alt)}${v > 300 ? '<i class="up">▲</i>' : v < -300 ? '<i class="down">▼</i>' : ""}`;
   $("k-alt-l").textContent = a.on_ground ? "on the ground" : v > 300 ? "feet, climbing" : v < -300 ? "feet, descending" : "feet";
-  $("k-gs").textContent = num(a.gs);
+  // Simple is for whoever is in the room: miles an hour. Detailed keeps the pilot's knots.
+  const plain = document.body.classList.contains("d-simple");
+  $("k-gs").textContent = a.gs == null ? "–" : num(plain ? Math.round(a.gs * 1.15078) : a.gs);
+  $("k-gs-l").textContent = plain ? "mph" : "knots";
+  cur.a = a; cur.state = state;
   updateWhen(a, since(state));
-  cur.a = a;
 }
 
 // across the room, "Wind 300° 6 kt" reads faster than the sentence on the Weather tab
@@ -130,7 +133,11 @@ function updateWhen(a, elapsed) {
   $("k-when").textContent = left > 5 ? mmss(left) : a.dist < 1.5 ? "Now" : "Passed";
   $("k-when").classList.toggle("word", !(left > 5));   // a word in place of a time is set smaller, to fit
   // once it has gone by, where to look for it
-  $("k-when-l").textContent = left > 5 ? "overhead in" : a.dist < 1.5 ? "look up" : a.dist != null ? `${num(a.dist)} nm ${dir8(a.brg)}` : "heading away";
+  // where to look for it: a small picture of the house and the angle up from the horizon, and
+  // once it is here or has gone by, the same in words ("look southwest, low")
+  const look = cur.state && skyLook(a, cur.state), sky = $("k-sky");
+  if (sky && sky._html !== (look ? look.svg : "")) { sky._html = look ? look.svg : ""; sky.innerHTML = sky._html; }
+  $("k-when-l").textContent = left > 5 ? "overhead in" : look ? look.words : a.dist < 1.5 ? "look up" : a.dist != null ? `${num(a.dist)} nm ${dir8(a.brg)}` : "heading away";
 }
 
 // Over the radar: how many aircraft are about, and the ones heard with no position to show
