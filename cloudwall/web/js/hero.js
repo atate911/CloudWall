@@ -210,11 +210,11 @@ function showHero(el, a, state) {
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
   $("h-phase").textContent = a.local ? localWords(a, state)
     : a.track == null ? "" : `Toward the ${POINTS[Math.round(a.track / 22.5) % 16]}`;
-  // on a wide card, a small picture in each figure's cell: its height since it came in range, the
+  // on a wide card, a small picture in each figure's cell: its altitude since it came in range, the
   // angle up to look, and the way it's heading on a compass
   glyph("g-alt", altSpark(a.path));
-  // with no map to draw, the flight's own picture has the room beside the drawing: its height all the way in
-  const prof = altProfile(a.path);
+  // with no map to draw, the flight's own picture has the room beside the drawing: its altitude and speed all the way in
+  const prof = flightProfile(a.path);
   glyph("h-prof", prof);
   if ($("h-prof").hidden !== !prof) { $("h-prof").hidden = !prof; el._mapKey = null; }
   glyph("g-dist", look ? look.svg : "");
@@ -283,7 +283,7 @@ function showHero(el, a, state) {
 const FITS = ["fit-tight", "fit-nomap", "fit-noplate"];
 const STEPS = { across: FITS, wide: ["fit-tight", "fit-nomap"], beside: ["fit-tight", "fit-noplate", "fit-nomap"] };
 const glyph = (id, html) => { const e = $(id); if (e && e._html !== html) e.innerHTML = e._html = html; };
-// The aircraft's height along its path since it came in range (hundreds of feet), as a small line
+// The aircraft's altitude along its path since it came in range (hundreds of feet), as a small line
 // ending in a dot where it is now; nothing until there is enough of it to show a shape.
 function altSpark(path) {
   const alts = (path || []).map((p) => p[2]).filter((x) => x != null);
@@ -291,21 +291,35 @@ function altSpark(path) {
   const lo = Math.min(...alts), hi = Math.max(...alts), span = Math.max(hi - lo, 10), W = 64, H = 24;
   const pts = alts.map((v, i) => [(i / (alts.length - 1)) * (W - 4) + 1, H - 3 - ((v - lo) / span) * (H - 6)]);
   const [x, y] = pts[pts.length - 1];
-  return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Its height since it came in range, ${num(lo * 100)} to ${num(hi * 100)} ft">` +
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Its altitude since it came in range, ${num(lo * 100)} to ${num(hi * 100)} ft">` +
     `<path d="M${pts.map((p) => p.map((n) => n.toFixed(1)).join(",")).join("L")}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2"/></svg>`;
 }
-// The same, as a chart with its highest and lowest marked, for the room beside the drawing when the
-// card has no map: the line is stretched to the plot, so its labels and the dot for now are HTML.
-function altProfile(path) {
-  const alts = (path || []).map((p) => p[2]).filter((x) => x != null);
-  if (alts.length < 4) return "";
-  const lo = Math.min(...alts), hi = Math.max(...alts), span = Math.max(hi - lo, 10);
-  const y = (v) => 10 + (1 - (v - lo) / span) * 80, pts = alts.map((v, i) => `${((i / (alts.length - 1)) * 100).toFixed(1)},${y(v).toFixed(1)}`);
-  const ft = (v) => `${num(v * 100)} ft`, flat = hi - lo < 3;
-  return `<div class="label">Height since it came in range</div><div class="ap-plot" role="img" aria-label="${flat ? `Level at ${ft(hi)}` : `From ${ft(alts[0])} to ${ft(alts[alts.length - 1])}, between ${ft(lo)} and ${ft(hi)}`}">` +
-    `<span class="ap-y" style="top:${y(hi).toFixed(1)}%">${ft(hi)}</span>${flat ? "" : `<span class="ap-y" style="top:${y(lo).toFixed(1)}%">${ft(lo)}</span>`}` +
-    `<div class="ap-draw"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="ap-area" d="M0,100L${pts.join("L")}L100,100Z"/><path class="ap-line" d="M${pts.join("L")}"/></svg>` +
-    `<i class="ap-now" style="top:${y(alts[alts.length - 1]).toFixed(1)}%"></i></div></div>`;
+// The same as a chart, for the room beside the drawing when the card has no map: its altitude
+// (filled, read on the left) and its speed over the ground (a line, read on the right) since it
+// came in range, each with its highest and lowest marked. The lines are stretched to the plot, so
+// their labels and the dots for now are HTML.
+function flightProfile(path) {
+  const pts = (path || []).filter((p) => p[2] != null);
+  if (pts.length < 4) return "";
+  const X = (i) => ((i / (pts.length - 1)) * 100).toFixed(1);
+  // one series: its values (some may be missing), the least span worth drawing, and its unit
+  const series = (vals, least, unit, cls) => {
+    const have = vals.filter((v) => v != null);
+    if (have.length < 4) return null;
+    const lo = Math.min(...have), hi = Math.max(...have), span = Math.max(hi - lo, least), mid = (hi + lo) / 2;
+    const y = (v) => 50 - ((v - mid) / span) * 80, flat = hi - lo < least / 4;
+    const line = vals.map((v, i) => (v == null ? null : `${X(i)},${y(v).toFixed(1)}`)).filter(Boolean);
+    const last = have[have.length - 1], lab = (v) => `<span class="ap-y ${cls}" style="top:${y(v).toFixed(1)}%">${unit(v)}</span>`;
+    return { line, labels: flat ? lab(last) : lab(hi) + lab(lo), now: `<i class="ap-now ${cls}" style="top:${y(last).toFixed(1)}%"></i>`,
+      words: flat ? `steady at ${unit(last)}` : `from ${unit(have[0])} to ${unit(last)}` };
+  };
+  const alt = series(pts.map((p) => p[2]), 10, (v) => `${num(v * 100)} ft`, "alt");
+  const spd = series(pts.map((p) => p[3] ?? null), 40, (v) => `${num(v)} kt`, "spd");
+  return `<div class="ap-head"><span class="label">${spd ? "Altitude and speed" : "Altitude"} since it came in range</span>` +
+    (spd ? `<span class="ap-key"><i class="alt"></i>Altitude<i class="spd"></i>Ground speed</span>` : "") + `</div>` +
+    `<div class="ap-plot${spd ? " two" : ""}" role="img" aria-label="Altitude ${alt.words}${spd ? `; speed ${spd.words}` : ""}">${alt.labels}${spd ? spd.labels : ""}` +
+    `<div class="ap-draw"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="ap-area" d="M0,100L${alt.line.join("L")}L100,100Z"/>` +
+    `<path class="ap-line" d="M${alt.line.join("L")}"/>${spd ? `<path class="ap-line spd" d="M${spd.line.join("L")}"/>` : ""}</svg>${alt.now}${spd ? spd.now : ""}</div></div>`;
 }
 function fitCard(el) {
   if (!el.classList.contains("hero-card")) return;

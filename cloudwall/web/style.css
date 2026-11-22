@@ -2031,8 +2031,8 @@ html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) > .h-bottom { fle
   max-height: calc(min(66cqi, 13rem) + 6rem); align-self: start; width: 100%; }      /* the drawing's cap and the facts under it: any more room goes above the figures */
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) .h-bottom .media { aspect-ratio: auto; flex: 1 1 auto; height: auto; min-height: 6.5rem; max-height: min(66cqi, 13rem); }
 /* the flight before the aircraft: the drawing keeps to a sheet's size rather than taking all the
-   room, and beside it, once there is enough of it to draw, the flight's height since it came in
-   range (hero.js, altProfile) */
+   room, and beside it, once there is enough of it to draw, the flight's altitude and speed since it
+   came in range (hero.js, flightProfile) */
 .alt-prof { display: none; }
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) { display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: minmax(6.5rem, 13rem) auto; column-gap: 1.6rem; row-gap: 1rem; }
@@ -2041,7 +2041,15 @@ html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate)
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) > .facts { grid-column: 1 / -1; grid-row: 2; }
 /* beside the chart the sheet is small: the drawing takes more of its width than its share by size alone */
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) .plate { width: min(calc((.45 + .55 * var(--w)) * 100cqw), calc((100cqh - 2.4rem) * var(--ar))); }
+.ap-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+.ap-key { font-size: .72rem; color: var(--ink-2); white-space: nowrap; }
+.ap-key i { display: inline-block; width: 1rem; height: 0; border-top: 2px solid var(--ink-2); vertical-align: .22rem; margin: 0 .35rem 0 .9rem; }
+.ap-key i.spd { border-top-color: var(--c-dep); }
 .ap-plot { flex: 1; min-height: 0; position: relative; padding-left: 4.6rem; border-bottom: 1px solid var(--rule); }
+.ap-plot.two { padding-right: 3.6rem; }
+.ap-y.spd { left: auto; right: 0; color: var(--c-dep); }
+.ap-line.spd { stroke: var(--c-dep); }
+.ap-now.spd { background: var(--c-dep); }
 .ap-y { position: absolute; left: 0; transform: translateY(-50%); font-size: .72rem; color: var(--slate); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ap-draw { position: relative; height: 100%; margin-right: .5rem; }
 .ap-draw svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; }
