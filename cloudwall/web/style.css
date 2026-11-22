@@ -2035,10 +2035,12 @@ html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) .h-bottom .media 
    came in range (hero.js, flightProfile) */
 .alt-prof { display: none; }
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) { display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: minmax(6.5rem, 13rem) auto; column-gap: 1.6rem; row-gap: 1rem; }
-html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom > .alt-prof:not([hidden]) { display: flex; flex-direction: column; gap: .4rem; grid-column: 1; grid-row: 1; min-height: 0; }
-html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) > .media { grid-column: 2; grid-row: 1; height: 100%; }
-html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) > .facts { grid-column: 1 / -1; grid-row: 2; }
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(6rem, 1fr) auto; column-gap: 1.6rem; row-gap: 1.1rem; }
+/* the chart runs the width of the card, a wide, shallow strip as a line along a track reads best; the
+   drawing's sheet and the facts share the row under it */
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom > .alt-prof:not([hidden]) { display: flex; flex-direction: column; gap: .4rem; grid-column: 1 / -1; grid-row: 1; min-height: 0; }
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) > .media { grid-column: 1; grid-row: 2; height: 9.5rem; align-self: center; }
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) > .facts { grid-column: 2; grid-row: 2; align-content: center; }
 /* beside the chart the sheet is small: the drawing takes more of its width than its share by size alone */
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) .plate { width: min(calc((.45 + .55 * var(--w)) * 100cqw), calc((100cqh - 2.4rem) * var(--ar))); }
 .ap-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
@@ -2063,8 +2065,8 @@ html.desk:not(.phone) .hero-card.card-wide .metric .s { font-size: .82rem; }
 html.desk:not(.phone) .hero-card.card-wide .m-g svg { height: 3.4rem; }
 html.desk:not(.phone) .hero-card.card-wide .m-g .spark { height: 2.2rem; }
 /* and the chart takes the room the card has under them, the drawing's sheet beside it */
-html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) { max-height: 28rem; align-self: stretch; grid-template-rows: minmax(6.5rem, 1fr) auto; }
-html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) > .media { height: 13rem; max-height: 100%; align-self: center; }
+html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap):not(.fit-noplate) > .h-bottom:has(.alt-prof:not([hidden])) { max-height: 24rem; align-self: stretch; }
+
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) .h-bottom .facts { flex: none; }
 /* a kind of aircraft with no drawing of its own (a glider, a balloon) shows only its mark: worth the
    room only when there's plenty of it */
