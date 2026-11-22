@@ -7,7 +7,7 @@
 // Sizes are in vh, with nothing under 4vh but the map's credit, so the same design reads the same
 // on 1024×600 and 1920×1080 panels and every word of it reads from the sofa.
 import { $, esc, num, mmss, ident, since, degF, seatWords } from "./util.js";
-import { boardFlight, showLogo, localWords, heardGroups, shortType } from "./parts.js";
+import { boardFlight, showLogo, localWords, heardGroups, shortType, plainName } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
 import { flap } from "./fx.js";
 import { medIcon, hospitalWords, arrival, situation, dir8, where, stripHtml, picture, skyLook } from "./situation.js";
@@ -36,7 +36,8 @@ function craft(a) {
 // east" or "14 nm north of home, heading south"
 function whereWords(a, state) {
   const w = a.dist != null ? where(a, state) : "", head = a.track != null && (a.gs || 0) > 15 ? `heading ${dir8(a.track)}` : "";
-  const s = [w, head].filter(Boolean).join(", ");
+  let s = [w, head].filter(Boolean).join(", ");
+  if (plain()) s = s.replace(/(\d+(?:\.\d+)?) nm\b/, (_, n) => { const m = +n * 1.15078; return `${m < 10 ? m.toFixed(1) : Math.round(m)} mile${m.toFixed(1) === "1.0" ? "" : "s"}`; });
   return s ? s[0].toUpperCase() + s.slice(1) : "";
 }
 // Under the route, when the card has the whole screen: when it left, how far it has come and has to
@@ -47,7 +48,10 @@ function routeFoot(r) {
   const d = plain() ? (nm) => num(miles(nm)) : num, u = plain() ? "miles" : "nm";
   const dist = r.flown_nm != null && r.left_nm != null ? `${d(r.flown_nm)} ${u} flown, ${d(r.left_nm)} to go`
     : r.left_nm != null ? `${d(r.left_nm)} ${u} to go` : "";
-  return `<div class="k-foot"><span>${r.departed ? `Left ${esc(clockAt(r.departed))}` : ""}</span><span>${esc(dist)}</span>` +
+  // in Simple the line starts at the card's left edge, under the city it left: with no departure
+  // time to put there, how far it has come is
+  const left = r.departed ? `Left ${clockAt(r.departed)}` : "", lone = plain() && !left;
+  return `<div class="k-foot"><span>${esc(lone ? dist : left)}</span><span>${esc(lone ? "" : dist)}</span>` +
     `<span>${arrives ? `${r.landed ? "Landed" : "Arrives"} ${!r.landed && !r.eta ? "about " : ""}${esc(clockAt(arrives))}` : ""}</span></div>`;
 }
 // How far along its route it is, 0 to 1, or null when the route doesn't say
@@ -84,14 +88,16 @@ function routeBlock(a, state) {
 // (in Simple, with how many it seats, which says how big it is to someone who doesn't know the type)
 function typeWords(a) {
   const t = shortType(a.type_name) || a.type || "Unknown aircraft", seats = plain() && seatWords(a.seats);
-  return [byAirline(a) ? `Flight ${byAirline(a)}` : null, t, seats].filter(Boolean).join(" · ");
+  return [plain() ? flightWords(a) : null, t, seats].filter(Boolean).join(" · ");
 }
-// Simple leads an airline's flight with the airline's name, which a visitor knows, and says its
-// number small beside the type: the number ("2162"), or null for anything else (a light aircraft's
-// registration, a military callsign), which keeps its flight number or registration as the headline.
-function byAirline(a) {
-  const m = plain() && a.airline && /^[A-Z0-9]{2} (\d{1,4}[A-Z]?)$/.exec(boardFlight(ident(a)) || "");
-  return m ? m[1] : null;
+// Simple leads with what a visitor would call it: an airline's flight by the airline's name
+// ("Alaska Airlines"), anything else by what it is ("Small plane", "Medical helicopter",
+// "Military jet"), as the Map view names it. Its flight number, registration or callsign is said
+// small under that, with the type.
+const leadName = (a) => a.airline || plainName(a);
+function flightWords(a) {
+  const f = boardFlight(ident(a)) || "", m = a.airline && /^[A-Z0-9]{2} (\d{1,4}[A-Z]?)$/.exec(f);
+  return m ? `Flight ${m[1]}` : f;
 }
 
 function planeHtml() {
@@ -118,8 +124,8 @@ function showPlane(el, a, state) {
   }
   flap($("k-flight"), boardFlight(ident(a)));
   $("k-flight").style.setProperty("--n", boardFlight(ident(a)).length);
-  $("k-airline").textContent = a.airline || (a.route && a.route.airline) || (a.private_owner ? "" : a.owner || "");
-  el.querySelector(".k-plane").classList.toggle("by-airline", !!byAirline(a));
+  $("k-airline").textContent = plain() ? leadName(a) : a.airline || (a.route && a.route.airline) || (a.private_owner ? "" : a.owner || "");
+  el.querySelector(".k-plane").classList.toggle("by-name", plain());
   $("k-airline").style.setProperty("--n", Math.max(8, $("k-airline").textContent.length));
   $("k-type").textContent = typeWords(a);
   const h = a.hospital;
@@ -170,9 +176,12 @@ function nextSlideHtml(n, state) {
   const r = n.route && n.route.plausible ? n.route : null;
   return `<div class="k-card k-slide">
     <div class="k-kicker">Next overhead</div>
-    <div class="k-row"><div class="k-big code">${esc(boardFlight(ident(n)))}</div><div class="k-count"><b id="k-next">${mmss(Math.max(0, n.cpa_s - since(state)))}</b><span>to go</span></div></div>
+    ${plain() ? `<div class="k-row"><div class="k-big name" style="--n:${Math.max(8, leadName(n).length)}">${esc(leadName(n))}</div><div class="k-count"><b id="k-next">${mmss(Math.max(0, n.cpa_s - since(state)))}</b><span>to go</span></div></div>
+    ${r ? `<div class="k-mid">${esc(r.origin.city || r.origin.iata)} <i>to</i> ${esc(r.dest.city || r.dest.iata)}</div>` : ""}
+    <div class="k-small">${esc([flightWords(n), shortType(n.type_name) || n.type, seatWords(n.seats)].filter(Boolean).join(" · "))}</div>`
+    : `<div class="k-row"><div class="k-big code">${esc(boardFlight(ident(n)))}</div><div class="k-count"><b id="k-next">${mmss(Math.max(0, n.cpa_s - since(state)))}</b><span>to go</span></div></div>
     <div class="k-mid">${r ? `${esc(r.origin.iata)} <i>to</i> ${esc(r.dest.iata)}` : esc(n.type_name || n.type || "")}</div>
-    <div class="k-small">${esc([n.airline, r && n.type_name].filter(Boolean).join(", "))}</div>
+    <div class="k-small">${esc([n.airline, r && n.type_name].filter(Boolean).join(", "))}</div>`}
   </div>`;
 }
 
@@ -205,7 +214,7 @@ function militaryHtml(state) {
   const g = heardGroups(state.heard);
   const n = g.reduce((t, x) => t + x.n, 0), alts = state.heard.map((a) => a.alt).filter((x) => x != null);
   return `<div class="k-card k-slide">
-    <div class="k-kicker">Heard nearby, position unknown</div>
+    <div class="k-kicker">${plain() ? "Heard nearby, out of sight" : "Heard nearby, position unknown"}</div>
     <div class="k-big quiet">${n > 1 ? `${n} × ` : ""}${esc(g.length === 1 ? g[0].type : "military jets")}</div>
     <div class="k-small">${esc(g.map((x) => x.name).join(", "))}${alts.length ? `<br>around ${num(Math.min(...alts))} ft` : ""}<br><span class="k-dim">Their transponders send no position, so they can't be placed on the map</span></div>
   </div>`;

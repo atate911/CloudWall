@@ -10,10 +10,11 @@ const SPAN_S = 600;              // the axis: now to ten minutes ahead
 const AHEAD_S = 900;             // the line: anything in the next fifteen
 
 // What happens next, soonest first: {t (seconds from the state's time), kind, a, text}
-export function events(state) {
+// name: how each aircraft is called (the wall panel's Simple says "Alaska 2162", as the Map view does)
+export function events(state, name = flightName) {
   const out = [], here = state.airport.iata, t0 = since(state);
   for (const a of picture(state).air) {
-    const who = flightName(a);
+    const who = name(a);
     if (overheadSoon(a, state)) out.push({ t: a.cpa_s, kind: "over", a, text: `${who} over the house`, short: `${who} overhead` });
     if (a.activity === "arr" && a.seq && a.lands_s != null) out.push({ t: a.lands_s, kind: "land", a, text: `${who} lands at ${here}`, short: `${who} lands` });
     const h = a.hospital;
@@ -27,8 +28,8 @@ const mark = (e) => (e.kind === "land" ? `<span class="seq">${e.a.seq}</span>` :
 // Simple: "Next  0:25 AS 2162 over the house · 1:40 AS 2162 lands at PDX · 4:10 LIFE3 at Portland Adventist"
 // skip: an aircraft whose own pass over the house is already said elsewhere (the wall panel's card);
 // short: each event in its fewest words ("AS 67 overhead", "AS 2162 lands"), for the wall panel
-export function lineHtml(state, max = 3, { skip = null, short = false } = {}) {
-  const ev = events(state).filter((e) => !(skip && e.kind === "over" && e.a.hex === skip)).slice(0, max), t0 = since(state);
+export function lineHtml(state, max = 3, { skip = null, short = false, name = flightName } = {}) {
+  const ev = events(state, name).filter((e) => !(skip && e.kind === "over" && e.a.hex === skip)).slice(0, max), t0 = since(state);
   if (!ev.length) return "";
   return `<div class="tl line"><span class="tl-k">Next</span>${ev.map((e) =>
     `<span class="tl-e" data-hex="${esc(e.a.hex)}">${mark(e)}<b data-until="${e.t}">${until(e.t - t0)}</b> ${esc(short ? e.short || e.text : e.text)}</span>`).join("")}</div>`;

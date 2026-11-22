@@ -10,6 +10,7 @@ import { renderWeatherTab } from "./weather.js";
 import { renderKiosk, tickKiosk, kioskNext, forgetKiosk, kioskCaption } from "./kiosk.js";
 import { nearbyDivider } from "./divider.js";
 import { boardHtml, renderMiniBoard } from "./board.js";
+import { plainName } from "./parts.js";
 import { loadLog } from "./logbook.js";
 import { openAbout, aboutContext } from "./about.js";
 import { renderPlace, placeMenu } from "./places.js";
@@ -209,7 +210,7 @@ function renderPicture(dens) {
   if (KIOSK) {
     // the wall panel: what's next after the aircraft on its card across the header, and over the
     // radar how many aircraft are about; the card is the rest
-    renderInto($("next-line"), lineHtml(state, 2, { skip: state.hero && state.hero.hex, short: true }));
+    renderInto($("next-line"), lineHtml(state, 2, { skip: state.hero && state.hero.hex, short: true, name: easy ? plainName : undefined }));
     renderInto($("k-cap"), kioskCaption(state));
     return;
   }

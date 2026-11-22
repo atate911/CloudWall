@@ -952,18 +952,19 @@ body.night .k-who .logo-tile { height: min(9vh, 10cqi); padding: .8vh 1.4vh; bor
 .kiosk .d-simple.card-only .k-line { height: 13vh; }
 .kiosk .d-simple.card-only .k-craft { --h: min(14vh, calc(40cqw / var(--ar))); }
 .kiosk .d-simple.card-only .k-card { gap: 2vh; }
-/* an airline's flight, in Simple: the airline's name is the headline, beside its logo, and the
-   flight number is said small with the type under it */
-.kiosk .k-plane.by-airline .k-flight { display: none; }
-.kiosk .k-plane.by-airline .k-head { display: flex; flex-direction: column; gap: .6vh; }
-.kiosk .k-plane.by-airline .k-id { display: flex; align-items: center; justify-content: flex-start; align-self: stretch; }
-.kiosk .k-plane.by-airline .k-who { flex-direction: row; align-items: center; gap: 3vh; align-self: auto; min-width: 0; max-width: 100%; }
-.kiosk .k-plane.by-airline .k-who .logo-tile { height: min(9.6vh, 11cqi); flex: none; }
-.kiosk .k-plane.by-airline .k-who .logo-tile img { max-width: 22cqi; }
-.kiosk .k-plane.by-airline #k-airline { display: block; font: 700 min(9.6vh, calc(140cqi / var(--n, 15)))/1 var(--sans); letter-spacing: -.02em; color: var(--ink); }
-.kiosk .k-plane.by-airline .k-type { margin-top: 0; }
+/* Simple: the headline is what a visitor would call it (an airline's name beside its logo, or
+   "Small plane", "Medical helicopter"), and its flight number or registration is said small
+   with the type under it */
+.kiosk .k-plane.by-name .k-flight { display: none; }
+.kiosk .k-plane.by-name .k-head { display: flex; flex-direction: column; gap: .6vh; }
+.kiosk .k-plane.by-name .k-id { display: flex; align-items: center; justify-content: flex-start; align-self: stretch; }
+.kiosk .k-plane.by-name .k-who { flex-direction: row; align-items: center; gap: 3vh; align-self: auto; min-width: 0; max-width: 100%; }
+.kiosk .k-plane.by-name .k-who .logo-tile { height: min(9.6vh, 11cqi); flex: none; }
+.kiosk .k-plane.by-name .k-who .logo-tile img { max-width: 22cqi; }
+.kiosk .k-plane.by-name #k-airline { display: block; font: 700 min(9.6vh, calc(140cqi / var(--n, 15)))/1 var(--sans); letter-spacing: -.02em; color: var(--ink); }
+.kiosk .k-plane.by-name .k-type { margin-top: 0; }
 /* beside the radar the line under it is longer than the card is wide: it takes a second line */
-.kiosk body:not(.card-only) .k-plane.by-airline .k-type { white-space: normal; }
+.kiosk body:not(.card-only) .k-plane.by-name .k-type { white-space: normal; }
 /* beside the radar there's no room for the picture of where to look: the words say it */
 .kiosk body:not(.card-only) .k-look i { display: none; }
 .k-line i { position: absolute; top: 50%; height: 0; transform: translateY(-50%); }
@@ -1025,6 +1026,7 @@ body.night .k-who .logo-tile { height: min(9vh, 10cqi); padding: .8vh 1.4vh; bor
 .k-rose .rose-dir, .k-rose .rose-rwy-label { font-size: 21px; }
 .k-rose .rose-speed { font-size: 23px; }
 .k-row .k-big { font-size: 12vh; white-space: nowrap; }
+.k-row .k-big.name { font-size: min(11vh, calc(128vw / var(--n, 15))); min-width: 0; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; }
 
 /* the radar, for the room: the aircraft and their labels large, and the small print left off
    (bearings, ring distances, town names, small airfields, helipads other than one a medical flight
@@ -1870,7 +1872,7 @@ html.phone.land .sit > .tl { display: none; }
 .next-line { display: none; }
 .kiosk .next-line { display: block; flex: 1; min-width: 0; align-self: center; }
 /* one line, of whole events: one that doesn't fit wraps out of sight, and the first shortens if it must */
-.kiosk .next-line .tl.line { font-size: 4.6vh; column-gap: 4vh; row-gap: 2vh; height: 1.45em; overflow: hidden; justify-content: center; align-items: center; }
+.kiosk .next-line .tl.line { font-size: 4.3vh; column-gap: 3.4vh; row-gap: 2vh; height: 1.45em; overflow: hidden; justify-content: center; align-items: center; }
 .kiosk .next-line .tl-k + .tl-e { display: block; min-width: 0; max-width: calc(100% - 4em); overflow: hidden; text-overflow: ellipsis; }
 .kiosk .next-line .tl-k + .tl-e > :is(.ci, .seq) { display: inline-grid; vertical-align: -.1em; margin-right: .3em; }
 .kiosk .next-line .tl-k { font-size: 4.2vh; }
