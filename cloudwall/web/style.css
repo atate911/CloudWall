@@ -790,13 +790,16 @@ body.night .sock-mouth { fill: #7d3615; }
 /* sized for arm's length: a 1920-wide monitor shows more, not bigger */
 html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
 @media (max-aspect-ratio: 1/1) { html.desk { font-size: clamp(12px, 2.1vw, 18px); } }
-#mini-board, .pane-split { display: none; }
+#mini-board, .pane-split, .col-split { display: none; }
 /* wide enough for a third panel: the traffic list, behind a divider that hides it or, dragged,
    gives the radar more or less room (divider.js sets the radar's and the list's columns; the
-   card's stays put). Not on the phone layout, which a short, wide window also takes. */
+   card's stays put). Between the card and the radar, a second divider sets the card's width
+   (--left-w, a share of the row, when one has been dragged). Not on the phone layout, which a
+   short, wide window also takes. */
 @media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
   html.desk:not(.phone) #view-now { column-gap: 0;
-    grid-template-columns: minmax(0, var(--card-w, 1.3fr)) 1.4rem minmax(0, var(--scope-w, 1fr)) 1.4rem minmax(0, var(--mb-w, .85fr)); }
+    grid-template-columns: minmax(0, var(--left-w, var(--card-w, 1.3fr))) 1.4rem minmax(0, var(--scope-w, 1fr)) 1.4rem minmax(0, var(--mb-w, .85fr)); }
+  html.desk:not(.phone) .col-split { grid-column: 2; display: flex; }
   html.desk:not(.phone) #view-now.animate { transition: grid-template-columns .22s ease-out; }
   html.desk:not(.phone) #hero { grid-column: 1; }
   html.desk:not(.phone) #scope { grid-column: 3; }
@@ -808,11 +811,17 @@ html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
 }
 /* the divider: a hairline down the gutter, darker when it can be taken hold of, with a tab on it
    whose arrow points the way the list will go */
-.pane-split { position: relative; justify-content: center; align-items: center; cursor: col-resize; touch-action: none; outline: none; }
-.pane-split::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1px dashed var(--rule); }
-.pane-split:hover::before, .pane-split:focus-visible::before, .dragging .pane-split::before { border-left: 1px solid var(--ink-2); }
+.pane-split, .col-split { position: relative; justify-content: center; align-items: center; cursor: col-resize; touch-action: none; outline: none; }
+:is(.pane-split, .col-split)::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1px dashed var(--rule); }
+:is(.pane-split, .col-split):is(:hover, :focus-visible, .held)::before { border-left: 1px solid var(--ink-2); }
 .dragging, .dragging * { cursor: col-resize !important; }
-.dragging #radar, .dragging #mini-board { pointer-events: none; }
+.dragging :is(#radar, #mini-board, #hero, #side) { pointer-events: none; }
+/* the card's divider hides nothing, so its tab is a grip rather than an arrow */
+.cs-grip { position: relative; width: .7rem; height: 2.6rem; background: var(--sheet); border: 1px solid var(--frame);
+  background-image: linear-gradient(90deg, transparent 30%, var(--slate) 30% calc(30% + 1px), transparent 0 calc(70% - 1px), var(--slate) 0 70%, transparent 0);
+  background-size: 100% 60%; background-position: center; background-repeat: no-repeat; }
+.col-split:is(:hover, :focus-visible, .held) .cs-grip { border-color: var(--ink-2); }
+.col-split:focus-visible .cs-grip { outline: 2px solid var(--blue); outline-offset: 2px; }
 .ps-toggle { position: relative; width: 1.15rem; height: 3.2rem; display: grid; place-items: center; cursor: pointer;
   background: var(--sheet); border: 1px solid var(--frame); color: var(--slate); }
 .ps-toggle:hover, .pane-split:focus-visible .ps-toggle { color: var(--ink); border-color: var(--ink-2); }
@@ -840,7 +849,7 @@ html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
    credit. The scale: 4.2vh labels, 5vh words, 11vh figures and airport codes, 17vh the flight. */
 html.kiosk body { grid-template-rows: auto 1fr; }
 .kiosk nav, .kiosk .chips, .kiosk .settings, .kiosk .seg, .kiosk #mini-board, .kiosk #side, .kiosk #notes, .kiosk #strip,
-.kiosk .pane-split, .kiosk .show-all, .kiosk #radar :is(.legend, .status) { display: none !important; }
+.kiosk .pane-split, .kiosk .col-split, .kiosk .show-all, .kiosk #radar :is(.legend, .status) { display: none !important; }
 /* the sheet's corner marks, at the screen's corners */
 html.kiosk body::after { content: ""; position: fixed; inset: 1.8vh; pointer-events: none; z-index: 30; --mark: 3.2vh; --mw: 2px;
   background:
@@ -1679,35 +1688,49 @@ html.desk:not(.phone) body.d-detailed .mb-list { flex: 0 1 auto; min-height: 0; 
 /* Detailed on a laptop (1200 px and up) keeps the third panel too, a little narrower */
 @media (min-width: 1200px) and (max-width: 1499.98px) and (min-aspect-ratio: 1/1) {
   html.desk:not(.phone) body.d-detailed #view-now { column-gap: 0;
-    grid-template-columns: minmax(0, 1.3fr) 1rem minmax(0, var(--scope-w, 1fr)) 1rem minmax(0, var(--mb-w, .85fr)); }
+    grid-template-columns: minmax(0, var(--left-w, 1.3fr)) 1rem minmax(0, var(--scope-w, 1fr)) 1rem minmax(0, var(--mb-w, .85fr)); }
   html.desk:not(.phone) body.d-detailed #hero { grid-column: 1; }
+  html.desk:not(.phone) body.d-detailed .col-split { grid-column: 2; display: flex; }
   html.desk:not(.phone) body.d-detailed #scope { grid-column: 3; }
   html.desk:not(.phone) body.d-detailed .pane-split { grid-column: 4; display: flex; }
   html.desk:not(.phone) body.d-detailed #mini-board { grid-column: 5; display: flex; }
   html.desk:not(.phone) body.d-detailed #view-now.nearby-closed #mini-board { display: none; }
   html.desk:not(.phone) body.d-detailed #mini-board > * { min-width: 15rem; }
 }
+/* Detailed on a narrower window: the card and the radar, with the divider between */
+@media (max-width: 1199.98px) and (min-aspect-ratio: 1/1) {
+  html.desk:not(.phone) body.d-detailed #view-now { column-gap: 0; grid-template-columns: minmax(0, var(--left-w, 1.55fr)) 1.4rem minmax(0, 1fr); }
+  html.desk:not(.phone) body.d-detailed #hero { grid-column: 1; }
+  html.desk:not(.phone) body.d-detailed .col-split { grid-column: 2; display: flex; }
+  html.desk:not(.phone) body.d-detailed #scope { grid-column: 3; }
+}
+@media (max-width: 1100px) and (min-aspect-ratio: 1/1) {
+  html.desk:not(.phone) body.d-detailed #view-now { grid-template-columns: minmax(0, var(--left-w, 1.3fr)) 1rem minmax(0, 1fr); }
+}
 @media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
   html.desk:not(.phone) body.d-detailed #mini-board { display: flex; }
   html.desk:not(.phone) body.d-detailed #view-now.nearby-closed #mini-board { display: none; }
 }
 /* Simple: the side panel takes the flight card's place, beside the radar */
-html.desk:not(.phone) body.d-simple #view-now { grid-template-columns: minmax(0, .95fr) minmax(0, 1.2fr); column-gap: 1.6rem; }
+html.desk:not(.phone) body.d-simple #view-now { grid-template-columns: minmax(0, var(--left-w, .95fr)) 1.6rem minmax(0, 1.2fr); column-gap: 0; }
 html.desk:not(.phone) body.d-simple :is(#hero, #mini-board, .pane-split) { display: none; }
 html.desk:not(.phone) body.d-simple #side { display: flex; grid-column: 1; }
-html.desk:not(.phone) body.d-simple #scope { grid-column: 2; }
+html.desk:not(.phone) body.d-simple .col-split { display: flex; grid-column: 2; }
+html.desk:not(.phone) body.d-simple #scope { grid-column: 3; }
 html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #hero { display: block; grid-column: 1; }
 html.desk:not(.phone) body.d-simple:is(.emergency, .sky-quiet) #side { display: none; }
 /* wide for its height: three columns, the radar between as wide as its disc and what's worth a look
    past it, rather than a disc adrift in a wide column (two columns again when nothing is) */
 @media (min-width: 1500px) and (min-aspect-ratio: 19/10) {
-  html.desk:not(.phone) body.d-simple #view-now { grid-template-columns: minmax(0, 1fr) auto minmax(0, .78fr); }
+  html.desk:not(.phone) body.d-simple #view-now { grid-template-columns: minmax(0, 1fr) auto minmax(0, .78fr); column-gap: 1.6rem; }
+  html.desk:not(.phone) body.d-simple .col-split { display: none; }
   html.desk:not(.phone) body.d-simple #view-now:has(#notes:empty) { grid-template-columns: minmax(0, 1fr) auto minmax(0, .5fr); }
-  html.desk:not(.phone) body.d-simple #scope { height: 100%; aspect-ratio: 1.02 / 1; }
+  html.desk:not(.phone) body.d-simple #scope { height: 100%; aspect-ratio: 1.02 / 1; grid-column: 2; }
   html.desk:not(.phone) body.d-simple #notes:not(:empty) { display: flex; grid-column: 3; grid-row: 2; }
 }
 @media (max-aspect-ratio: 1/1) {
   html.desk:not(.phone) body.d-simple #view-now { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); }
+  html.desk:not(.phone) body.d-simple .col-split { display: none; }
   html.desk:not(.phone) body.d-simple #side { grid-column: 1; grid-row: 2; }
   html.desk:not(.phone) body.d-simple #scope { grid-column: 1; grid-row: 3; }
   html.desk:not(.phone) #view-now > #scope { grid-row: 3; }

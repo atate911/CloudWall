@@ -2032,7 +2032,9 @@ class SharedTest(unittest.TestCase):
             {"properties": {"NOTAM_KEY": "6/1111-1-FDC-F", "TITLE": "Camas, WA"}, "geometry": {"type": "Polygon", "coordinates": [ring]}}]}
         shared.tfrs.fetch_text = lambda url, timeout: TFRTest.XML
         home, cabin = {"lat": 45.59, "lon": -122.47}, {"lat": 44.06, "lon": -121.31}
-        self.assertEqual([len(shared.restrictions(p, 30)) for p in (home, cabin, home)], [1, 0, 1])
+        from unittest import mock
+        with mock.patch("cloudwall.tfr.time.time", return_value=1e9):  # as the other restriction tests: before TFRTest.XML's dates, not after them
+            self.assertEqual([len(shared.restrictions(p, 30)) for p in (home, cabin, home)], [1, 0, 1])
         real, weather.fetch_all = weather.fetch_all, lambda icao: asked.append(icao) or ({"station": icao}, {})
         try:
             for _ in range(2):                                          # two places with the same airport
