@@ -1986,9 +1986,27 @@ html.desk:not(.phone) .hero-card.map-beside:not(.fit-nomap) > .h-bottom { flex: 
   max-height: 76cqi; }      /* the map no taller than about half as tall again as it's wide: any more room goes above the figures */
 html.desk:not(.phone) .hero-card.map-beside > .h-bottom > .rmap { grid-column: 1; grid-row: 1 / -1; height: auto; min-height: 10rem; margin: 0; }
 /* the drawing's sheet at the top, no deeper than a drafting sheet's proportions, the facts at the foot */
+/* the plate's box here is wide and short, and the drawing is the point of it: its margins are set
+   in rem, not as a share of its width (which, top and bottom, would leave the drawing a sliver of
+   the height); the link to the type's page moves to the top right, over the nose, where the
+   drawing is lowest, with the type code before it; and the note under the length ("New to your
+   collection", which the card's badge says too) is left out */
+html.desk:not(.phone) .hero-card.map-beside .h-bottom .sil-box { padding: .6rem 4% .5rem; }
+html.desk:not(.phone) .hero-card.map-beside .h-bottom .sil-box .about-btn { left: auto; right: .55rem; }
+html.desk:not(.phone) .hero-card.map-beside .h-bottom .sil-box[data-code]::before { right: auto; left: .65rem; top: auto; bottom: .45rem; }
+html.desk:not(.phone) .hero-card.map-beside .h-bottom .plate-note { display: none; }
+/* in so small a sheet the drawing takes more of the width than its share by size alone (a Cessna
+   a little over half of it, a 777 all of it), still the larger aircraft the larger drawing */
+html.desk:not(.phone) .hero-card.map-beside .h-bottom .plate { width: min(calc((.45 + .55 * var(--w)) * 100cqw), calc((100cqh - 1.3rem) * var(--ar))); }
+/* a wide card: the facts in columns, label over value, rather than a list down a wide column, so
+   the drawing over them has most of the height */
+@container card (min-width: 56rem) {
+  html.desk:not(.phone) .hero-card.map-beside:not(.fit-noplate) #h-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 1.4rem; row-gap: .8rem; }
+  html.desk:not(.phone) .hero-card.map-beside:not(.fit-noplate) #h-facts > div { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+  html.desk:not(.phone) .hero-card.map-beside:not(.fit-noplate) .h-bottom .media { max-height: none; }
+}
 html.desk:not(.phone) .hero-card.map-beside .h-bottom .media { grid-column: 2; grid-row: 1; aspect-ratio: auto; height: 100%; min-height: 6.5rem; max-height: 30cqi; align-self: start; }
 html.desk:not(.phone) .hero-card.map-beside .h-bottom .facts { grid-column: 2; grid-row: 2; align-content: end; }
-html.desk:not(.phone) .hero-card.map-beside.fit-noplate .h-bottom .facts { grid-row: 1 / -1; align-content: center; }
 /* no map: the drawing takes the room, across the card, no taller than it is wide (and a half) */
 html.desk:not(.phone) .hero-card:is(:not(.mapped), .fit-nomap) > .h-bottom { flex: 1 1 auto; min-height: auto; display: flex; flex-direction: column; align-items: stretch; gap: 1rem;
   max-height: calc(66cqi + 6rem); }      /* the drawing's cap and the facts under it: any more room goes above the figures */

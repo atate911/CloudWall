@@ -293,7 +293,8 @@ function fitCard(el) {
       if (f === "fit-nomap" && !map) continue;
       el.classList.add(f);
     }
-    return map && !el.classList.contains("fit-nomap") ? routeScale(r, map.clientWidth, map.clientHeight) : 0;
+    const plate = !el.classList.contains("fit-noplate") && !!el.querySelector(".h-bottom .media .plate");
+    return { map: map && !el.classList.contains("fit-nomap") ? routeScale(r, map.clientWidth, map.clientHeight) : 0, plate };
   };
   if (!map) { fit("across"); return; }
   // decided again only when the route, the card's size or the room its words take changes (a line
@@ -303,8 +304,13 @@ function fitCard(el) {
   const key = `${cur.routeKey}|${el.clientWidth}x${el.clientHeight}|${words}|${$("h-facts").childElementCount}|${!!el.querySelector(".media.has-photo")}`;
   if (el._mapKey !== key) {
     el._mapKey = key;
-    const s = { across: fit("across"), beside: fit("beside"), wide: fit("wide") }, best = Math.max(s.across, s.beside, s.wide);
-    el._mapAt = ["across", "beside", "wide"].find((how) => s[how] >= best * 0.85);
+    // the aircraft's drawing is kept wherever it can be: the layouts that show it with the map come
+    // first (the one that draws the route largest), then one that shows it alone, and only a card
+    // with no drawing to show goes by the map alone
+    const s = { across: fit("across"), beside: fit("beside"), wide: fit("wide") }, hows = ["across", "beside", "wide"];
+    const both = hows.filter((how) => s[how].plate && s[how].map > 0), alone = hows.filter((how) => s[how].plate);
+    const from = both.length ? both : alone.length ? alone.slice(0, 1) : hows, best = Math.max(...from.map((how) => s[how].map));
+    el._mapAt = from.find((how) => s[how].map >= best * 0.85);
   }
   fit(el._mapAt);
 }
