@@ -15,7 +15,7 @@ const F = {};
 //   lines   [s, z] polylines drawn as thin lines (rudder hinge, panel joints)
 //   struts  [[s, z] bottom, [s, z] top, width at bottom, width at top]
 //   gear    {leg: [[s, z] top, [s, z] bottom], w: [w0, w1], at: [s, z] axle, r, spat: {f, a, t, b}}
-//           spat: reach ahead of / behind the axle, top above / bottom below it
+//           spat: reach ahead of / behind the axle, top above / bottom below it; or {pts}: its traced outline
 //   draw    extra functions (kit) => void, drawn last
 
 // A tapered leg or strut from [s0, z0] to [s1, z1], w0 / w1 wide (metres, along s).
@@ -26,6 +26,7 @@ const leg = (sk, [s0, z0], [s1, z1], w0 = 0.08, w1 = w0) =>
 function wheel(sk, s, z, r, spat) {
   sk.ellipse("tire", s, z, r, r);
   if (!spat) { sk.ellipse("hub", s, z, r * 0.42, r * 0.42); return; }
+  if (spat.pts) { sk.smooth("pant", spat.pts); return; }   // an outline traced off the type's drawing
   const { f, a, t, b } = spat;
   sk.smooth("pant", [[s - f, z + 0.02], [s - f * 0.72, z + t * 0.8], [s - f * 0.15, z + t], [s + a * 0.45, z + t * 0.82],
     [s + a, z + t * 0.12, "c"], [s + a * 0.5, z - b * 0.82], [s - f * 0.25, z - b], [s - f * 0.8, z - b * 0.62]]);
@@ -62,7 +63,7 @@ function stretch(f, at, ds, more = {}) {
     parts: {
       ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [mv(a), mv(b), w0, w1]),
-      gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(mv), at: g.at && mv(g.at) })),
+      gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(mv), at: g.at && mv(g.at), spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
     },
     ...more,
   };
@@ -81,7 +82,7 @@ function scale(f, k, more = {}) {
     parts: {
       ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [pt(a), pt(b), w0, w1]),
-      gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(pt), at: g.at && pt(g.at), r: g.r * k })),
+      gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(pt), at: g.at && pt(g.at), r: g.r * k, spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
     },
     ...more,
   };
@@ -143,8 +144,13 @@ F.c172 = {
       [[1.676, 0.889], [1.744, 0.862], [1.835, 0.843], [1.949, 0.833], [2.05, 0.833]]],
     struts: [[[2.05, 0.08], [2.2, 1.27], 0.12, 0.1]],
     gear: [
-      { leg: [[2.95, 0.06], [2.9, -0.2]], w: [0.1, 0.07], at: [2.89, -0.22], r: 0.2, spat: { f: 0.48, a: 0.65, t: 0.24, b: 0.12 } },
-      { leg: [[1.27, 0.01], [1.24, -0.39]], w: [0.07, 0.06], at: [1.24, -0.39], r: 0.175, spat: { f: 0.4, a: 0.5, t: 0.19, b: 0.13 } },
+      // the wheel fairings as the 3-view draws them: pointed in front, the tail higher and rounded
+      { leg: [[2.95, 0.06], [2.9, -0.2]], w: [0.1, 0.07], at: [2.89, -0.22], r: 0.2, spat: { pts: [[2.418, -0.181, "c"], [2.447, -0.136],
+        [2.515, -0.087], [2.574, -0.052], [2.701, -0.005], [2.837, 0.024], [2.993, 0.026], [3.208, 0.01], [3.364, -0.025], [3.491, -0.052],
+        [3.517, -0.084], [3.497, -0.136], [3.296, -0.224], [3.189, -0.255], [2.896, -0.267], [2.701, -0.273], [2.525, -0.238], [2.447, -0.201]] } },
+      { leg: [[1.27, 0.01], [1.24, -0.39]], w: [0.07, 0.06], at: [1.24, -0.39], r: 0.175, spat: { pts: [[0.846, -0.341, "c"], [0.866, -0.312],
+        [1.051, -0.214], [1.129, -0.185], [1.334, -0.185], [1.549, -0.244], [1.725, -0.312], [1.739, -0.346], [1.656, -0.419], [1.549, -0.449],
+        [1.373, -0.462], [1.08, -0.449], [0.944, -0.415], [0.866, -0.366]] } },
     ],
     // as the 3-view draws them: the cowl's inlet lip and the small hook on the lower cowl, the access
     // door (its top edge is the cowl line), the strut-foot fairing, the step on the main leg, the nose
