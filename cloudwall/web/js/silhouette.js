@@ -366,7 +366,9 @@ function draw(f) {
   // tailplane
   if (f.stab) {
     const t = f.stab, z = t.z === "T" ? finTop - (t.drop ?? 0.1) : t.fz != null ? lerp(finAt.zr, finTop, t.fz) : t.z * D;
-    surface(sk, "stab", { root: t.root ?? 0.3, ...t, le: L - t.le, z, t: [t.thick ?? 0.1, 0.08] });
+    // or its side view as traced off the type's drawing, like wingSide
+    if (f.stabSide) for (const [cls, pts, closed = true] of f.stabSide) sk.smooth(cls, pts, closed);
+    else surface(sk, "stab", { root: t.root ?? 0.3, ...t, le: L - t.le, z, t: [t.thick ?? 0.1, 0.08] });
     if (t.z === "T" && t.bullet) {
       const [bl, bd] = t.bullet, s0 = finAt.tipLE - bl * 0.25;
       sk.smooth("fin", [[s0, z + 0.05], [s0 + bl * 0.25, z + bd], [s0 + bl, z + bd * 0.6], [s0 + bl * 1.05, z - 0.05, "c"], [s0 + bl * 0.4, z - bd * 0.3]]);
