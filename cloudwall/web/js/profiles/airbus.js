@@ -31,6 +31,10 @@ const fence = (k) => {
     P(0.75, -0.5, "c"), P(0.52, -0.27), P(0.32, -0.07)]);
 };
 
+// Antennas and probes, as the AC's "Antennas and Probes Location" figure (2-11-0) draws them; the
+// list format is described at aerials() in silhouette.js.
+const aerials = (list) => (k) => k.aerials(list);
+
 // ---------- Airbus A320 family ----------
 const A320_NOSE = {
   tip: 0.324,
@@ -71,6 +75,42 @@ const PW1100G = { kind: "fan", at: [0.26], fwd: 3.67, drop: 1.69, len: 4.95, dia
 // sharklet (AC fig. 2-2-0-991-009): 2.43 m tall, blended into the tip, raked tip chord 0.5 m
 const SHARKLET = { h: 2.38, sweep: 32, top: 0.3, base: 0.41, blend: 0.9 };
 const WIN = { z: 0.662, pitch: 0.533, w: 0.23, h: 0.33 };
+// A320 fig. 2-11-0-991-003 (A320-200 and A320neo): a schematic, not to scale, so its stations are
+// placed between door 1, the overwing exits, door 4 and the two ends; the crown and belly antennas
+// from whichever of its two side views draws them, the probes on this (right) side from the right
+// view. Spine: GPS 1 and 2, VHF 1, ATC 4, ATC 3, TCAS top, ADF, VHF 3, the ELT; belly: DME 1, ATC 1
+// and 2, DME 2, TCAS bottom, the marker, VHF 2 and the two pairs of radio-altimeter antennas;
+// side: the emergency static probe, pitot probe 2, the TAT probe, the static probes and AOA sensor 2;
+// the HF antenna in the fin fillet and the VOR antenna in the fin tip. The two fin panels are given
+// from the tail-cone end, as the fin is (it is the same on the A319, A320 and A321).
+const A320_FIN_PANELS = [
+  ["panel", [[-7.02, 4.03], [-5.76, 5.43], [-5.68, 5.37], [-6.94, 3.97]]],
+  ["panel", [[-1.76, 9.64], [-1.76, 9.78], [-1.14, 9.78], [-1.14, 9.64]]],
+];
+const A320_AERIALS = [
+  ["flat", 4.15, 4.33, 0.07, 1], ["flat", 4.48, 4.67, 0.07, 1], ["blade", 5.14, 5.49, 0.4, 1], ["stub", 6.27, 6.46, 0.12, 1],
+  ["stub", 7.48, 7.72, 0.12, 1], ["dome", 7.91, 8.29, 0.11, 1], ["dome", 17.14, 17.77, 0.13, 1], ["blade", 21.66, 22.15, 0.44, 1],
+  ["blade", 28.62, 28.97, 0.21, 1],
+  ["dome", 2.07, 2.34, 0.09, -1], ["flat", 5.91, 6.09, 0.08, -1], ["stub", 6.14, 6.38, 0.12, -1], ["dome", 6.71, 6.86, 0.12, -1],
+  ["dome", 7.94, 8.29, 0.15, -1], ["flat", 9.75, 10.18, 0.1, -1], ["blade", 21.42, 21.76, 0.31, -1], ["flat", 23.26, 23.4, 0.08, -1],
+  ["flat", 23.89, 24.03, 0.08, -1], ["flat", 25.0, 25.17, 0.08, -1], ["flat", 25.53, 25.7, 0.08, -1],
+  ["port", 2.09, 1.5, 0.05], ["port", 2.06, 0.27, 0.05], ["port", 2.66, 0.93, 0.05], ["port", 6.62, 0.13, 0.04], ["port", 6.85, 0.13, 0.04],
+  ["port", 8.64, 1.71, 0.06],
+  ...A320_FIN_PANELS,
+];
+// A319 fig. 2-11-0-991-002 (A319-100 and A319neo), placed the same way: the same antennas and probes
+// at the A319's own stations.
+const A319_AERIALS = [
+  ["flat", 3.91, 4.15, 0.07, 1], ["flat", 4.33, 4.58, 0.07, 1], ["blade", 5.19, 5.56, 0.28, 1], ["stub", 6.33, 6.58, 0.1, 1],
+  ["stub", 6.61, 6.79, 0.1, 1], ["dome", 8.39, 8.89, 0.16, 1], ["dome", 15.2, 15.52, 0.12, 1], ["blade", 19.69, 20.08, 0.36, 1],
+  ["blade", 24.35, 24.55, 0.18, 1],
+  ["dome", 1.95, 2.2, 0.08, -1], ["stub", 5.74, 5.96, 0.1, -1], ["stub", 6.11, 6.3, 0.08, -1], ["dome", 6.91, 7.16, 0.1, -1],
+  ["flat", 7.41, 7.84, 0.08, -1], ["dome", 8.52, 9.01, 0.15, -1], ["blade", 20.16, 20.39, 0.36, -1], ["flat", 21.29, 21.44, 0.06, -1],
+  ["flat", 21.93, 22.08, 0.06, -1], ["flat", 22.92, 23.07, 0.06, -1], ["flat", 23.44, 23.6, 0.06, -1],
+  ["port", 1.81, 1.66, 0.05], ["port", 2.23, 0.96, 0.05], ["port", 2.88, 1.16, 0.05], ["port", 6.12, 0.42, 0.04], ["port", 6.3, 0.42, 0.04],
+  ["port", 7.49, 2.42, 0.06],
+  ...A320_FIN_PANELS,
+];
 const row = (from, to, pitch = WIN.pitch) => ({ ...WIN, from, to, pitch });
 
 // References: Airbus "A320 Aircraft Characteristics - Airport and Maintenance Planning" (AC, Jul
@@ -90,7 +130,7 @@ F.a320 = {
   eng: V2500,
   fin: { le: 7.73, cr: 5.44, ct: 1.76, h: 5.82, sweep: 41.3, fillet: [1.55, 0.95] },
   stab: { le: 5.39, z: 0.703, span: 12.45, root: 1.1, cr: 3.4, ct: 1.24, sweep: 34, dih: 6.5 },
-  extras: [seam(A320_FAIRING)],
+  extras: [seam(A320_FAIRING), aerials(A320_AERIALS)],
   overlays: [canoes(A320_FTF), fence],
 };
 // A320neo: PW1100G (Spirit's fleet outnumbers Frontier's partly LEAP-1A one) and sharklets
@@ -99,16 +139,28 @@ F.a20n = { ...F.a320, eng: PW1100G, tip: SHARKLET, overlays: [canoes(A320_FTF)] 
 // A319: 1.60 m shorter ahead of the wing and 2.13 m behind; one pair of overwing exits (the aft
 // one; the forward pair is optional). CFM56-5B, as on most US A319s (American, Delta, Allegiant).
 const A319 = {
-  fwd: 0.43, eng: CFM56,
+  fwd: 0.43, eng: CFM56, extras: [seam(A320_FAIRING), aerials(A319_AERIALS)],
   doors: [[5.04, 0.81], [8.16, 1.82, "C"], [2.28, 0.51, "E", "w"], [-13.28, 1.82, "C"], [-8.03, 0.81]],
 };
+// A318 fig. 2-11-0 (A318-100), placed the same way; the VOR antenna sits in its taller fin tip
+const A318_AERIALS = [
+  ["flat", 4.39, 4.56, 0.07, 1], ["flat", 4.65, 4.81, 0.07, 1], ["blade", 5.48, 5.84, 0.26, 1], ["stub", 6.46, 6.77, 0.1, 1],
+  ["stub", 6.48, 6.61, 0.1, 1], ["dome", 7.54, 8.04, 0.18, 1], ["dome", 14.64, 15.3, 0.12, 1], ["blade", 19.59, 19.92, 0.38, 1],
+  ["blade", 22.06, 22.26, 0.15, 1],
+  ["stub", 6.1, 6.35, 0.1, -1], ["stub", 6.17, 6.33, 0.08, -1], ["dome", 6.94, 7.16, 0.09, -1], ["dome", 7.54, 7.93, 0.14, -1],
+  ["flat", 8.58, 9.02, 0.09, -1], ["blade", 18.87, 19.03, 0.3, -1], ["flat", 19.42, 19.57, 0.06, -1], ["flat", 20.01, 20.15, 0.06, -1],
+  ["flat", 20.76, 20.9, 0.06, -1], ["flat", 21.37, 21.5, 0.06, -1],
+  ["port", 2.69, 1.48, 0.05], ["port", 3.14, 0.43, 0.05], ["port", 3.57, 0.99, 0.05], ["port", 6.39, 0.43, 0.04], ["port", 6.68, 0.43, 0.04],
+  ["port", 7.73, 2.08, 0.06],
+  A320_FIN_PANELS[0], ["panel", [[-2.13, 10.15], [-2.13, 10.25], [-1.59, 10.25], [-1.59, 10.15]]],
+];
 // A318: a further 0.79 m shorter ahead of the wing, 1.6 m behind it; fin 0.75 m taller (an
 // extension above the rudder). CFM56-5B.
 const A318 = {
   fwd: 0.39, eng: CFM56, fairAft: 1.2,
   doors: [[5.04, 0.81], [7.89, 1.82, "C"], [2.27, 0.51, "E", "w"], [-12.47, 1.82, "C"], [-8.03, 0.81]],
   fin: { ...F.a320.fin, h: 6.57, ct: 1.5, rudder: 0 },
-  extras: [seam(A320_FAIRING), (k) => {
+  extras: [seam(A320_FAIRING), aerials(A318_AERIALS), (k) => {
     // rudder hinge line, stopping where the fin-tip extension starts, then across to the trailing edge
     const t = k.f.fin, s0 = k.L - t.le, sw = k.tan(t.sweep), zt = k.D + t.h, zx = zt - 0.78;
     const tipLE = s0 + (zt - k.top(s0)) * sw, a = s0 + t.cr * 0.7, za = k.top(a), te = s0 + t.cr, zte = k.top(te) - 0.4;
@@ -116,6 +168,24 @@ const A318 = {
     k.sk.poly("hl", [[a, za], [at(a, za, tipLE + t.ct * 0.7, zt), zx], [at(te, zte, tipLE + t.ct, zt), zx]], false);
   }],
 };
+// A321 fig. 2-11-0-991-004 (A321-100, A321-200 and A321neo), from Airbus's "A321 Aircraft
+// Characteristics - Airport and Maintenance Planning" (Rev Mar 01/22; Hawaii DOT's copy, Airbus's own
+// being out of reach), placed as the A320's: a schematic drawn near to scale (its door spacings agree
+// with the 2-7-0 stations within 0.1 m), so stations come from its two side views by interpolation
+// between the nose, doors 1 to 4 and the tail-cone end; crown and belly from the left view, the probes
+// on this (right) side and ATC 3, ATC 2 and the ADF from the right view. Where the two views draw a
+// pair at one station (ATC 3 and 4 on the crown, ATC 1 and 2 underneath), only this side's is drawn.
+// The neo shares the fuselage, so the ACF door layout doesn't move them.
+const A321_AERIALS = [
+  ["flat", 4.05, 4.4, 0.07, 1], ["flat", 4.46, 4.71, 0.07, 1], ["blade", 5.18, 5.9, 0.4, 1], ["stub", 6.53, 6.94, 0.12, 1],
+  ["dome", 8.47, 9.07, 0.11, 1], ["dome", 21.51, 22.23, 0.13, 1], ["blade", 28.6, 29.11, 0.44, 1], ["blade", 34.93, 35.31, 0.21, 1],
+  ["dome", 1.96, 2.28, 0.09, -1], ["stub", 5.93, 6.25, 0.12, -1], ["dome", 7.12, 7.37, 0.12, -1], ["dome", 8.47, 9.07, 0.15, -1],
+  ["flat", 10.73, 11.27, 0.1, -1], ["blade", 27.88, 28.45, 0.31, -1], ["flat", 29.65, 29.81, 0.08, -1], ["flat", 30.22, 30.44, 0.08, -1],
+  ["flat", 31.29, 31.51, 0.08, -1], ["flat", 31.86, 32.08, 0.08, -1],
+  ["port", 1.68, 1.56, 0.05], ["port", 3.0, 1.4, 0.05], ["port", 2.48, 0.71, 0.05], ["port", 6.53, 0.49, 0.04], ["port", 6.82, 0.49, 0.04],
+  ["port", 7.73, 1.84, 0.06],
+  ...A320_FIN_PANELS,
+];
 // A321: 4.27 m plug ahead of the wing, 2.67 m behind; four door pairs, doors 2 and 3 the smaller
 // 0.76 x 1.52 m type (drawn here, the renderer's doors are 1.85 m tall). IAE V2500 (American,
 // JetBlue, Spirit) and sharklets, as most US A321ceos were delivered.
@@ -123,7 +193,7 @@ const A321 = {
   fwd: 0.614, eng: V2500, tip: SHARKLET, overlays: [canoes(A320_FTF)],
   doors: [[5.02, 0.81], [8.16, 1.82, "C"], [-14.89, 1.82, "C"], [-7.93, 0.81]],
   win: [row(6.23, 12.7), row(14.74, 17.95), row(18.73, 19.53, 0.79), row(20.18, 23.4), row(26.07, -9.96)],
-  extras: [seam(A320_FAIRING), hatch(13.84, 0.76, 1.52), hatch(-19.72, 0.76, 1.52)],
+  extras: [seam(A320_FAIRING), hatch(13.84, 0.76, 1.52), hatch(-19.72, 0.76, 1.52), aerials(A321_AERIALS)],
 };
 // A321neo ACF (Airbus Cabin Flex, nearly all US A321neos): door 1, two pairs of overwing exits,
 // a 0.76 x 1.52 m door 3 behind the wing, door 4. PW1100G (Delta, United, JetBlue, Spirit).
@@ -131,7 +201,7 @@ const A21N = {
   fwd: 0.614, eng: PW1100G, tip: SHARKLET, overlays: [canoes(A320_FTF)],
   doors: [[5.04, 0.81], [8.56, 1.82, "C"], [1.43, 0.51, "E", "w"], [2.28, 0.51, "E", "w"], [-14.49, 1.82, "C"], [-8.04, 0.81]],
   win: [row(6.2, 25.6), row(28.14, -9.96)],
-  extras: [seam(A320_FAIRING), hatch(-17.69, 0.76, 1.52)],
+  extras: [seam(A320_FAIRING), hatch(-17.69, 0.76, 1.52), aerials(A321_AERIALS)],
 };
 
 // ---------- Airbus A220 (Bombardier CSeries) ----------

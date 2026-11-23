@@ -233,6 +233,25 @@ const A380_TAIL = {
 };
 const A380_WIN = { z: 0.456, pitch: 0.635, w: 0.25, h: 0.36 };
 const A380_UWIN = { z: 0.779, pitch: 0.64, w: 0.25, h: 0.34, upper: true };
+// Antennas and probes, from A380 AC fig. 2-11-0-991-001 (A380-800; its side views are drawn to the
+// door stations' scale): on the spine GPS 1 and 2, TCAS top 1 and 2, VHF 1, the SATCOM radome, the two
+// ADFs, VHF 3 and the ELT; on the belly VHF 2, the marker, the DME and TCAS bottom antennas and the
+// three pairs of radio-altimeter antennas; on this side the standby static, SSA, ISP and MFP probes
+// and the ice detector; the HF antenna in the fin's leading edge and the VOR antenna in the fin tip.
+// Format: aerials() in silhouette.js.
+const A380_AERIALS = [
+  ["dome", 8.77, 9.02, 0.05, 1], ["dome", 9.06, 9.31, 0.05, 1], ["dome", 11.38, 11.71, 0.08, 1], ["dome", 13.29, 13.62, 0.08, 1],
+  ["blade", 14.88, 15.5, 0.58, 1], ["flat", 17.06, 18.83, 0.25, 1], ["dome", 28.69, 28.98, 0.06, 1], ["dome", 30.1, 30.4, 0.06, 1],
+  ["blade", 30.92, 31.33, 0.65, 1], ["blade", 51.85, 52.27, 0.5, 1],
+  ["dome", 8.15, 8.52, 0.1, -1], ["dome", 11.1, 11.48, 0.1, -1], ["dome", 12.04, 12.42, 0.1, -1], ["dome", 13.02, 13.4, 0.1, -1],
+  ["blade", 16.19, 16.48, 0.25, -1], ["flat", 16.81, 17.23, 0.1, -1],
+  ["dome", 46.92, 47.21, 0.05, -1], ["dome", 47.65, 47.94, 0.05, -1], ["dome", 48.42, 48.71, 0.05, -1], ["dome", 49.1, 49.4, 0.05, -1],
+  ["dome", 50.04, 50.33, 0.05, -1], ["dome", 50.67, 50.96, 0.05, -1],
+  ["port", 1.44, 4.59, 0.07], ["port", 2.69, 3.53, 0.07], ["port", 3.58, 3.8, 0.07], ["port", 3.58, 3.42, 0.07], ["port", 3.96, 4.53, 0.07],
+  ["port", 9.38, 1.2, 0.07], ["port", 9.46, 0.95, 0.07], ["port", 9.62, 1.2, 0.07],
+  ["panel", [[-14.69, 8.74], [-13.59, 10.09], [-13.34, 9.88], [-14.44, 8.53]]],
+  ["panel", [[-1.09, 21.15], [-1.09, 21.4], [-0.36, 21.4], [-0.36, 21.15]]],
+];
 F.a388 = {
   kind: "quad", L0: 70.4, over: 2.33, D: 8.57, W: 7.14, fwd: 0.5, fair: 0.064, fairAft: 1.45,
   nose: A380_NOSE, tail: A380_TAIL, frame: 0.05, floor: 0.321, upper: 0.613,
@@ -242,7 +261,7 @@ F.a388 = {
   doors: [[6.32, 1.07, "D", undefined, 1.95], [16.5, 1.07, "D", undefined, 1.95], [32.68, 1.07, "D", undefined, 1.95],
     [44.74, 1.07, "D", undefined, 1.95], [53.63, 1.07, "D", undefined, 1.95],
     [20.94, 1.07, "U", undefined, 2.0], [40.3, 1.07, "U", undefined, 2.0], [49.19, 1.07, "U", undefined, 2.0]],
-  extras: [openings([[11.73, 2.7, 0.75, 1.7], [48.07, 2.7, 0.8, 1.7], [51.09, 1.0, 1.25, 0.8]])],
+  extras: [openings([[11.73, 2.7, 0.75, 1.7], [48.07, 2.7, 0.8, 1.7], [51.09, 1.0, 1.25, 0.8]]), (k) => k.aerials(A380_AERIALS)],
   win: [{ ...A380_WIN, from: 7.96, to: 14.3 }, { ...A380_WIN, from: 18.13, to: 51.74 },
     { ...A380_UWIN, from: 13.04, to: 19.38 }, { ...A380_UWIN, from: 22.55, to: 38.73 }, { ...A380_UWIN, from: 41.9, to: 47.61 },
     { ...A380_UWIN, from: 50.79, to: 53.01 }],

@@ -42,7 +42,7 @@ class Sketch {
       if (b) return unit(P[at(i)], P[at(i + 1)]);
       return unit(P[at(i - 1)], P[at(i + 1)]);
     };
-    const f = (v) => +v.toFixed(2);
+    const f = (v) => +v.toFixed(3);
     let d = `M${f(P[0][0])},${f(P[0][1])}`;
     for (let i = 0; i < (closed ? n : n - 1); i++) {
       const a = P[i], b = P[at(i + 1)];
@@ -56,12 +56,12 @@ class Sketch {
   path(cls, d, extra = "") { this.out.push(`<path class="${cls}" d="${d}"${extra}/>`); return d; }
   smooth(cls, pts, closed = true, extra = "") { return this.path(cls, this.curve(pts, closed), extra); }
   poly(cls, pts, closed = true) {
-    return this.path(cls, "M" + pts.map(([s, z]) => this.xy(s, z).map((v) => +v.toFixed(2)).join(",")).join("L") + (closed ? "Z" : ""));
+    return this.path(cls, "M" + pts.map(([s, z]) => this.xy(s, z).map((v) => +v.toFixed(3)).join(",")).join("L") + (closed ? "Z" : ""));
   }
   ellipse(cls, s, z, rx, ry) {
     const [x, y] = this.xy(s, z);
     this.xy(s - rx, z - ry); this.xy(s + rx, z + ry);
-    this.out.push(`<ellipse class="${cls}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" rx="${rx.toFixed(3)}" ry="${ry.toFixed(3)}"/>`);
+    this.out.push(`<ellipse class="${cls}" cx="${x.toFixed(3)}" cy="${y.toFixed(3)}" rx="${rx.toFixed(3)}" ry="${ry.toFixed(3)}"/>`);
   }
 }
 
@@ -277,14 +277,40 @@ function inset(pts, d) {
   });
 }
 
+// Antennas and probes as the airport-planning documents' "Antennas and Probes Location" figures draw
+// them. Stations s from the nose tip (s < 0: from the tail-cone end), metres. On the spine (dir 1) or
+// the belly (dir -1), sitting on the fuselage line:
+//   ["blade", s0, s1, h, dir]  a swept blade on a base from s0 to s1, its tip raked aft
+//   ["dome", s0, s1, h, dir]   a low radome;  ["flat", s0, s1, h, dir] a flush plate antenna
+//   ["stub", s0, s1, h, dir]   a short mast with a cap (the ATC transponder antennas)
+// On the side: ["port", s, z, r] a probe or sensor seen face-on (pitot, static, AOA, TAT), and
+// ["panel", [[s, z]...]] a flush dielectric panel's outline (HF in the fin, VOR in the fin tip).
+function aerials(k, list) {
+  const { sk, at, top, bottom } = k;
+  for (const [kind, ...a] of list) {
+    if (kind === "port") { const [s, z, r] = a; sk.ellipse("inlet", at(s), z, r, r); continue; }
+    if (kind === "panel") { sk.poly("hl", a[0].map(([s, z]) => [at(s), z])); continue; }
+    const [s0, s1, h, dir] = a, A = at(s0), B = at(s1), c = B - A, m = (A + B) / 2;
+    const up = (s, dz) => [s, (dir > 0 ? top(s) : bottom(s)) - dir * 0.02 + dir * dz];
+    if (kind === "blade") sk.poly("strut", [up(A, 0), up(A + 0.84 * c, h), up(B + 0.15 * c, h), up(B, 0)]);
+    else if (kind === "flat") sk.poly("strut", [up(A, 0), up(A, h), up(B, h), up(B, 0)]);
+    else if (kind === "dome") sk.smooth("strut", [[...up(A, 0), "c"], up(A + 0.2 * c, h * 0.8), up(m, h), up(B - 0.2 * c, h * 0.8), [...up(B, 0), "c"]]);
+    else if (kind === "stub") {
+      sk.poly("strut", [up(m - 0.025, 0), up(m - 0.025, h * 0.7), up(m + 0.025, h * 0.7), up(m + 0.025, 0)]);
+      sk.poly("strut", [up(A, h * 0.7), up(A, h), up(B, h), up(B, h * 0.7)]);
+    }
+  }
+}
+
 // ---------- the drawing ----------
 // The kit handed to a profile's extras/overlays functions:
 //   sk          the sketch: sk.smooth(cls, [[s, z, flags]...]), sk.poly(cls, pts, closed), sk.ellipse(cls, s, z, rx, ry)
 //   f, D, L     the resolved profile, fuselage height, fuselage length (nose to tail-cone end)
-//   top(s)      height of the fuselage's upper edge at station s;  at(s): s < 0 counts from the tail end
+//   top(s), bottom(s)  height of the fuselage's upper / lower edge at station s;  at(s): s < 0 counts from the tail end
 //   sec(e)      the wing section at span fraction e {le, c, z, y} (null before the wing is drawn)
 //   fan(sk, s0, zc, spec), prop(sk, s, z, d, blades), propNacelle(sk, s0, zc, spec, q), pylon(sk, q, s0, zc, spec)
 //   surface(sk, cls, wingSpec) draws a lifting surface and returns its sec(); upper/lower(q, x) section heights
+//   aerials(list) draws antennas and probes (see aerials() above)
 //   shaded(pts, cls) draws a smooth closed shape in the fuselage colour with its shading; gradient: the shading's id
 // Classes: hull fin stab wing wl nac pyl core plug inlet glass win door hl ftf disc blade rotor strut skid tire hub pant fen
 
@@ -294,7 +320,7 @@ function draw(f) {
   const w = f.wing && { root: f.W / 2, ...f.wing, le: f.wing.le + stretch * (f.fwd ?? 0.5), z: f.wing.z * D };
   const fair = w && f.belly ? { points: f.belly.map(([s, z]) => [w.le + s, z]) }
     : w && f.fair !== 0 ? [w.le - (f.fairFwd ?? 0.18) * w.cr, w.le + (f.fairAft ?? 1.15) * w.cr, (f.fair ?? 0.05) * D] : null;
-  const H = hull(f, fair), top = edge(H, true);
+  const H = hull(f, fair), top = edge(H, true), bottom = edge(H, false);
   const at = (s) => (s < 0 ? L + s : s);
 
   // fin and the centre engine sit behind the near side of the fuselage
@@ -332,7 +358,8 @@ function draw(f) {
   // one-off parts a profile draws itself; see kit below
   // shaded(pts): a fuselage-coloured shape with the fuselage's shading (fairings, bulges)
   const shaded = (pts, cls = "hull") => { const d = sk.smooth(cls, pts); sk.path("shade", d, ` fill="url(#${id})"`); return d; };
-  const kit = { sk, f, D, L, top, at, sec: null, fan, prop, propNacelle, surface, pylon, upper, lower, tan, lerp, shaded, gradient: id };
+  const kit = { sk, f, D, L, top, bottom, at, sec: null, fan, prop, propNacelle, surface, pylon, upper, lower, tan, lerp, shaded, gradient: id };
+  kit.aerials = (list) => aerials(kit, list);
   for (const extra of f.extras || []) extra(kit);
 
   // doors, cabin windows and the flight deck glazing
@@ -366,7 +393,9 @@ function draw(f) {
   // tailplane
   if (f.stab) {
     const t = f.stab, z = t.z === "T" ? finTop - (t.drop ?? 0.1) : t.fz != null ? lerp(finAt.zr, finTop, t.fz) : t.z * D;
-    surface(sk, "stab", { root: t.root ?? 0.3, ...t, le: L - t.le, z, t: [t.thick ?? 0.1, 0.08] });
+    // or its side view as traced off the type's drawing, like wingSide
+    if (f.stabSide) for (const [cls, pts, closed = true] of f.stabSide) sk.smooth(cls, pts, closed);
+    else surface(sk, "stab", { root: t.root ?? 0.3, ...t, le: L - t.le, z, t: [t.thick ?? 0.1, 0.08] });
     if (t.z === "T" && t.bullet) {
       const [bl, bd] = t.bullet, s0 = finAt.tipLE - bl * 0.25;
       sk.smooth("fin", [[s0, z + 0.05], [s0 + bl * 0.25, z + bd], [s0 + bl, z + bd * 0.6], [s0 + bl * 1.05, z - 0.05, "c"], [s0 + bl * 0.4, z - bd * 0.3]]);
@@ -376,7 +405,12 @@ function draw(f) {
   // wing, its tips, the flap track fairings, then the engines in front of it
   let sec = null;
   if (w) {
-    sec = kit.sec = surface(sk, "wing", w);
+    // a family may give the wing's side view as traced off its drawing: [cls, [[s, z, flag]...], closed?]
+    // parts drawn instead of the computed one (the planform still places struts, engines and tips)
+    if (f.wingSide) {
+      sec = kit.sec = planform(w);
+      for (const [cls, pts, closed = true] of f.wingSide) sk.smooth(cls, pts, closed);
+    } else sec = kit.sec = surface(sk, "wing", w);
     for (const spec of f.ftf || []) {
       // a span fraction, or [span fraction, start, end, depth] in shares of the local chord
       const [e, x0, x1, dp] = Array.isArray(spec) ? spec : [spec, 0.62, 1.12, f.ftfDepth ?? 0.045];

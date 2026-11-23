@@ -36,6 +36,30 @@ const plugDoor = (s, w, z0, h) => ({ sk, at }) => {
   sk.out.push(`<rect class="door" x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w}" height="${h}" rx="0.2"/>`);
 };
 
+// The radome's joint with the fuselage: a seam across the nose s metres aft of the tip, as the
+// ACAP's side view draws it, run between the nose's upper and lower outlines.
+const noseAt = (pts, x) => {
+  for (let i = 1; i < pts.length; i++) {
+    const [a, za] = pts[i - 1], [b, zb] = pts[i];
+    if (x >= a && x <= b) return za + ((zb - za) * (x - a)) / (b - a);
+  }
+  return null;
+};
+const radomeJoint = (s) => ({ sk, f, D }) => {
+  const zt = noseAt([[0, f.nose.tip], ...f.nose.top], s / D), zb = noseAt([[0, f.nose.tip], ...f.nose.bot], s / D);
+  if (zt != null && zb != null) sk.poly("hl", [[s, zt * D - 0.06], [s, zb * D + 0.06]], false);
+};
+// Probes on the right side at the stations the ACAP's sensor table gives: [kind, s aft of the nose,
+// z above the keel] (the tables give heights from the entry door's sill). Their size is nominal:
+// pitot a short tube pointing forward from its base, aoa a vane trailing aft, port a flush static port.
+const probes = (list) => ({ sk }) => {
+  for (const [kind, s, z] of list) {
+    if (kind === "pitot") sk.poly("strut", [[s + 0.05, z - 0.03], [s - 0.17, z - 0.013], [s - 0.17, z + 0.013], [s + 0.05, z + 0.03]]);
+    else if (kind === "aoa") sk.poly("strut", [[s - 0.03, z - 0.025], [s + 0.11, z - 0.012], [s + 0.12, z + 0.035], [s + 0.02, z + 0.03]]);
+    else sk.ellipse("hl", s, z, 0.05, 0.05);
+  }
+};
+
 // ---------- Boeing 737 NG and MAX ----------
 // References: 737NG ACAP D6-58325-7 Rev C, fig. 2.2.5 (737-800) for the fuselage, nose, tail cone,
 // wing and CFM56-7 nacelle; fig. 2.2.6 (737-800W) and table 2.3.3 for the blended winglet;
@@ -84,6 +108,11 @@ F.b737ng = {
   eng: { kind: "fan", at: [0.187], fwd: 3.07, drop: 0.44, len: 4.74, dia: 1.95, style: "flat", fx: 0.66, cx: 0.83, pylon: false },
   fin: { le: 38.02 - 31.64, ...B737_FIN },
   stab: { le: 38.02 - 34.35, ...B737_STAB },
+  // the radome joint 0.96 m aft of the nose (fig. 2.2.5), and the right-side probes of fig. 2.7.3 (the
+  // MAX ACAP's door-clearance figure gives the same): primary and alternate pitot-static probes and
+  // the angle-of-attack vane, all 1.57 m aft of the nose, 0.38 m above, 0.08 m above and 0.15 m below
+  // the entry door's sill (1.46 m above the keel)
+  extras: [radomeJoint(0.96), probes([["pitot", 1.57, 1.84], ["pitot", 1.57, 1.54], ["aoa", 1.57, 1.31]])],
 };
 // Blended winglet (737-700W/-800W/-900ERW), from fig. 2.2.6 and table 2.3.3: top 1.2 m above the
 // crown (winglet tip 6.76 m, fuselage top 5.56 m above the ground), 2.44 m of blade above its blend.
@@ -133,6 +162,7 @@ F.b737cl = {
   eng: { kind: "fan", at: [0.234], fwd: 3.53, drop: 0.73, len: 4.95, dia: 2.1, style: "flat", fx: 0.636, cx: 0.81, pylon: false },
   fin: { le: 6.29, cr: 5.36, ct: 1.46, h: 6.17, sweep: 40.4, fillet: [2.66, 1.41, "l"], cap: 0.1 },
   stab: { le: 4.62, z: 0.78, span: 12.7, root: 0.8, cr: 3.88, ct: 2.1, sweep: 32.5, dih: 7 },
+  extras: [],   // the NG's radome joint and probes are from the NG ACAP, not checked against the Classic's
 };
 
 // A wing-to-body fairing that shows on the side of the fuselage above the wing root: outline
@@ -284,10 +314,10 @@ export const types = {
   B736: ["b737ng", { fwd: 0.547, fairAft: 1.0, doors: ngDoors([2.92], -6.14, 7.13) }],
   B737: ["b737ngw", { fwd: 0.511, doors: ngDoors([2.92]) }],
   B738: "b737ngw",
-  B739: ["b737ngw", { fwd: 0.586, win: midExitWin(-13.94, 6.13, -8.14), extras: [plugDoor(-13.94, 0.69, 1.52, 1.24)] }],
+  B739: ["b737ngw", { fwd: 0.586, win: midExitWin(-13.94, 6.13, -8.14), extras: [...F.b737ng.extras, plugDoor(-13.94, 0.69, 1.52, 1.24)] }],
   B37M: ["b737max", { fwd: 0.57 }],
   B38M: "b737max",
-  B39M: ["b737max", { fwd: 0.579, win: midExitWin(-14.95, 6.13, -9.07), extras: [plugDoor(-14.95, 0.69, 1.52, 1.24)] }],
+  B39M: ["b737max", { fwd: 0.579, win: midExitWin(-14.95, 6.13, -9.07), extras: [...F.b737ng.extras, plugDoor(-14.95, 0.69, 1.52, 1.24)] }],
   B712: "b712",
   P8: "p8",
   MD82: "md80", MD83: "md80", MD88: "md80",
@@ -296,5 +326,5 @@ export const types = {
   B753: ["b757", { doors: b757Doors([2.46, 3.29]), extras: [...F.b757.extras, plugDoor(-18.05, 0.8, 1.6, 1.45)],
     win: [{ z: 0.623, from: 6.24, to: -18.6, pitch: 0.517, w: 0.3, h: 0.37 }, { z: 0.623, from: -16.33, to: -11.85, pitch: 0.517, w: 0.3, h: 0.37 },
       { z: 0.623, from: -6.72, to: -6.72, w: 0.3, h: 0.37 }] }],
-  B3XM: ["b737max", { fwd: 0.6, win: midExitWin(-15.19, 6.13, -9.07), extras: [plugDoor(-15.19, 0.69, 1.52, 1.24)] }],
+  B3XM: ["b737max", { fwd: 0.6, win: midExitWin(-15.19, 6.13, -9.07), extras: [...F.b737ng.extras, plugDoor(-15.19, 0.69, 1.52, 1.24)] }],
 };
