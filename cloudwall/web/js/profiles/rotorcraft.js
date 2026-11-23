@@ -319,6 +319,19 @@ F.as50 = {
     ]),
   ],
   overlays: [
+    // the Starflex rotor head as the AS355 silhouette draws it: the star's legs, centre post and base
+    // under the bar of the blade sleeves (with their slots) and the dome cap; and the small fitting on
+    // the fin top
+    paint([
+      ["strut", box(3.188, 3.426, 2.189, 2.235)], ["strut", box(3.097, 3.516, 2.234, 2.306)], ["strut", box(3.239, 3.354, 2.235, 2.531)],
+      ["strut", [[3.064, 2.531, "c"], [3.122, 2.531, "c"], [3.162, 2.305, "c"], [3.104, 2.305, "c"]]],
+      ["strut", [[3.49, 2.532, "c"], [3.548, 2.532, "c"], [3.51, 2.306, "c"], [3.452, 2.306, "c"]]],
+      ["hub", box(2.852, 3.992, 2.53, 2.681)],
+      ["hl", box(2.929, 3.045, 2.556, 2.582)], ["hl", box(2.929, 3.045, 2.62, 2.646)],
+      ["hl", box(3.567, 3.915, 2.558, 2.584)], ["hl", box(3.567, 3.915, 2.622, 2.649)],
+      ["hub", [[3.012, 2.698, "c"], [3.115, 2.737], [3.309, 2.763], [3.502, 2.738], [3.592, 2.699, "cl"]]],
+      ["strut", [[10.692, 2.686, "c"], [10.698, 2.737], [10.724, 2.744], [10.737, 2.686, "c"]]],
+    ]),
     skids({ z: -0.55, t: 0.09, aft: 4.57, fwd: 1.95, toe: [1.64, -0.3], legs: [[2.57, 0.0, 2.57, 0.11], [4.04, 0.13, 4.04, 0.11]] }),
     // starboard tail rotor, then the stabiliser with its tip fin in front of it
     tail(9.58, 1.37, 1.86, 2, 85),
