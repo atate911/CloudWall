@@ -75,6 +75,17 @@ const traced = (parts) => (k) => {
     else sk.poly("hl", pts, false);
   }
 };
+// Traced off CSP C-020 fig. 00-02-02 Figure 5 sheet 1 (the figure the outline was measured from; fitted
+// with its 2.0 deg ground attitude): the radome joint and the avionics door under the windscreen, the
+// fin's leading-edge strip and the joint below it, the access door and the joint on the tail cone.
+const CRJ_TRACED = [
+["n", "hl", [[0.659,1.126], [0.638,0.091]]],
+["n", "door", [[0.745,1.148,"c"], [1.265,1.399,"c"], [1.252,0.242,"c"], [0.745,0.38,"c"]]],
+["t", "hl", [[31.716,4.577], [30.58,3.371]]],
+["t", "hl", [[32.08,4.517], [31.169,3.474], [30.864,3.081], [30.885,2.983], [30.581,2.639], [30.378,2.378]]],
+["t", "door", [[31.552,1.73,"c"], [32.597,1.648,"c"], [32.581,1.137,"c"], [31.353,0.859,"c"]]],
+["t", "hl", [[30.69,0.71], [31.713,2.213]]]
+];
 const CRJ9_EXTRAS = [hatch(10.12, 1.07, 0.03, 0.47), hatch(12.96, 1.06, 0.03, 0.47), hatch(-7.31, 1.1, 0.74, 0.84),
   dorsal([[4.75, 0], [4.75, 2.86, "c"], [4.5, 2.97], [3.77, 3.03], [3.32, 3.2], [2.97, 3.47]]),
   cap([[1.27, 5.05, "c"], [0.75, 5.5], [0.3, 5.65], [-1.0, 5.52], [-1.75, 5.3], [-1.98, 5.08, "c"], [-1.0, 4.79], [0.3, 4.8]]),
@@ -92,7 +103,7 @@ F.crj9 = {
   frame: 0.035,
   floor: 0.227,
   doors: [[4.74, 0.93], [1.6, 0.51, "E", "w"], [2.64, 0.51, "E", "w"]],
-  extras: CRJ9_EXTRAS,
+  extras: [...CRJ9_EXTRAS, traced(CRJ_TRACED)],
   overlays: [exhaust(0.78, 0.58, 0.12)],
   win: [{ z: 0.656, from: 5.8, to: -8.6, pitch: 0.789, w: 0.23, h: 0.31 }],
   wing: { le: 15.64, span: 23.0, cr: 4.93, kink: [0.36, 3.07], ct: 1.4, sweep: 30, dih: 2, z: 0.06, t: [0.12, 0.1] },
@@ -153,7 +164,7 @@ F.crj2 = {
 F.crj7 = {
   ...F.crj9,
   doors: [[4.74, 0.93], [1.6, 0.51, "E", "w"]],
-  extras: [CRJ9_EXTRAS[0], CRJ9_EXTRAS[2], CRJ9_EXTRAS[3], CRJ9_EXTRAS[4], CRJ9_EXTRAS[5]],
+  extras: [CRJ9_EXTRAS[0], CRJ9_EXTRAS[2], CRJ9_EXTRAS[3], CRJ9_EXTRAS[4], CRJ9_EXTRAS[5], traced(CRJ_TRACED)],
   wing: { ...F.crj9.wing, span: 21.4, kink: [0.39, 3.07], ct: 1.6 },
 };
 
