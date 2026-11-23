@@ -112,6 +112,15 @@ F.cl60 = {
   eng: { kind: "fan", aft: { s: 7.44, z: 0.75 }, len: 3.8, dia: 1.34, style: "long", fx: 0.86, plug: 0.5 },
   fin: { le: 3.99, cr: 3.85, ct: 2.16, h: 2.5, sweep: 43.5, fillet: [1.0, 0.25] },
   stab: { le: 1.39, z: "T", span: 7.0, root: 0.25, cr: 1.9, ct: 0.9, sweep: 38, dih: 0, bullet: [2.6, 0.22] },
+  // from the photo of Challenger 605 A7-CEB: the swept blades on the spine over the door and behind the
+  // cabin, the two low domes between them, the door handle and the round fitting under the door
+  extras: [({ sk, top }) => {
+    const t = (s) => top(s) - 0.02;
+    for (const [s, h] of [[5.08, 0.24], [10.2, 0.24]]) sk.poly("strut", [[s, t(s)], [s + 0.26, top(s) + h], [s + 0.36, top(s) + h + 0.02], [s + 0.2, t(s)]]);
+    for (const a of [6.56, 8.0]) sk.smooth("hull", [[a, t(a), "c"], [a + 0.06, top(a) + 0.05, ""], [a + 0.24, top(a) + 0.05, ""], [a + 0.3, t(a + 0.3), "c"]]);
+    sk.poly("door", [[4.4, 0.83], [4.73, 0.83]], false);
+    sk.ellipse("hub", 7.22, 0.6, 0.05, 0.05);
+  }],
 };
 
 // ---------- Bombardier Challenger 300/350 (CL30, CL35) ----------
