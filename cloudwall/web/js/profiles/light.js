@@ -948,35 +948,106 @@ F.da42 = {
 };
 
 // ---------- Diamond DA40 Diamond Star ----------
-// Published dimensions only (no usable side view reachable): 8.1 m (DA40 NG, types.csv),
-// height 1.97 m, span 11.6-11.9 m. The DA40 is the single-engine origin of the DA42 airframe:
-// the same canopy, slender tail boom, ventral fin and T-tail, drawn here from the DA42
-// outline with its 0.5 m longer twin's nose replaced by a short cowl and three-blade prop,
-// and the fixed spatted tricycle gear. Lower confidence.
-{
-  // the DA42 outline from the windscreen base over the tail and back along the belly to 1.8 m
-  const b = F.da42.body, i0 = b.findIndex((p) => p[0] === 2.0), i1 = b.findIndex((p, i) => i > 40 && p[0] === 1.8);
-  const top = b.slice(i0, i1 + 1), bot = [];
-  const mv = (pts) => pts.map(([q, z, fl]) => (fl ? [q - 0.5, z, fl] : [q - 0.5, z]));
-  F.da40 = {
-    ...F.da42, L0: 8.1, W: 1.15, eng: { kind: "none", nose: { s: 0.33, z: 0.6, d: 1.8, blades: 3 } },
-    body: [
-      [0, 0.6, "c"], [0.1, 0.66], [0.22, 0.7], [0.34, 0.72], [0.42, 0.74], [0.6, 0.77], [0.9, 0.81], [1.2, 0.84],
-      [1.3, 0.85], ...mv(top), ...mv(bot), [1.0, -0.02], [0.8, 0.02], [0.62, 0.14], [0.48, 0.3], [0.4, 0.45],
-      [0.34, 0.48], [0.22, 0.5], [0.1, 0.54],
+// Reference: Diamond DA 40 NG Airplane Flight Manual, Doc. 6.01.15-E (Rev. 0, 01-Apr-2010), section 1.7
+// "Three-view drawing" (page 1-18): the side view, turned upright, traced and scaled so the spinner
+// tip to the tailplane tip is the 8.1 m of types.csv (the AFM gives 8060 mm). z = 0 is the belly under
+// the wing. The DA40 was earlier drawn from a shortened DA42 outline, which missed this view by up to
+// 0.42 m at the tail; it is now its own family. From the AFM view: the spinner and the cowling with its
+// split line, aft seam, lower inlet lips, access door and the slot by the spinner; the canopy and the
+// rear window with their frames and the sill line; the wing root and flap as the side view shows them,
+// with the near winglet standing over the rear window; the swept fin with the fillet joint, the T-tail,
+// the rudder with its hinge and trim-tab notches, the ventral fin under the tail cone and its joint;
+// the fixed tricycle gear on its spring legs, with the wheel fairings.
+F.da40 = {
+  kind: "piston", L0: 8.1, over: 0, D: 1, W: 1.15,
+  body: [[0.0, 0.72, "c"], [0.069, 0.809], [0.098, 0.818], [0.137, 0.833], [0.172, 0.843], [0.24, 0.862], [0.309, 0.872], [0.392, 0.877, "c"],
+    [0.421, 0.892], [0.451, 0.902], [0.564, 0.911], [0.755, 0.916], [1.078, 0.907], [1.259, 0.897], [1.343, 0.892], [1.367, 0.892],
+    [1.416, 0.921, "c"], [1.519, 0.985], [1.705, 1.073], [1.842, 1.127], [1.97, 1.166], [2.141, 1.201], [2.239, 1.22], [2.357, 1.235],
+    [2.798, 1.22], [2.96, 1.205], [3.082, 1.191], [3.195, 1.176], [3.303, 1.161], [3.406, 1.142], [3.499, 1.122], [3.631, 1.093],
+    [3.763, 1.054], [3.847, 1.029], [3.94, 1.0], [4.018, 0.97], [4.092, 0.941], [4.214, 0.882], [4.297, 0.843], [4.425, 0.784],
+    [4.621, 0.701], [4.812, 0.627], [4.9, 0.598], [5.047, 0.559], [5.199, 0.534], [5.405, 0.51], [5.616, 0.485], [5.821, 0.461],
+    [6.027, 0.436], [6.238, 0.412], [6.444, 0.387], [6.556, 0.392], [6.61, 0.417], [6.645, 0.461, "l"], [7.144, 1.215], [7.159, 1.259],
+    [7.149, 1.328], [7.14, 1.362, "c"], [7.737, 1.362, "c"], [7.767, 1.343], [7.879, 1.323], [7.973, 1.308], [8.017, 1.303], [8.022, 1.289, "cl"],
+    [7.875, 0.26, "c"], [7.806, 0.216], [7.737, 0.176], [7.688, 0.147], [7.674, 0.132], [7.507, 0.118], [7.345, 0.108, "c"], [7.306, 0.083],
+    [7.169, 0.0, "c"], [6.85, 0.025], [6.581, 0.059], [6.277, 0.088], [6.013, 0.123], [5.503, 0.137], [4.988, 0.142], [4.675, 0.108],
+    [4.361, 0.078], [4.097, 0.044], [3.812, 0.015], [3.249, 0.0], [2.808, 0.0], [2.685, 0.0], [2.528, 0.025], [2.381, 0.034],
+    [2.239, 0.049], [2.014, 0.059], [1.877, 0.074], [1.715, 0.083], [1.622, 0.098], [1.519, 0.108], [1.377, 0.132], [1.259, 0.157],
+    [1.191, 0.172, "c"], [1.176, 0.069, "c"], [1.0, 0.078], [0.848, 0.088], [0.706, 0.098], [0.617, 0.108], [0.519, 0.132], [0.466, 0.152],
+    [0.436, 0.162], [0.377, 0.206], [0.368, 0.225, "l"], [0.368, 0.368], [0.377, 0.441], [0.387, 0.539], [0.363, 0.544], [0.323, 0.549],
+    [0.255, 0.564], [0.196, 0.583], [0.152, 0.598], [0.064, 0.642]],
+  // the canopy and the rear side window (the winglet stands over its lower edge)
+  glass: [[[1.446, 0.911, "c"], [1.583, 0.995], [1.779, 1.093], [2.024, 1.176], [2.171, 1.205], [2.367, 1.196], [2.509, 1.186], [2.577, 1.171, ""],
+    [2.617, 1.132, ""], [2.617, 1.063], [2.607, 0.965], [2.573, 0.828], [2.528, 0.735, ""], [2.489, 0.696, ""], [2.401, 0.671], [2.22, 0.662],
+    [1.965, 0.652], [1.808, 0.662], [1.74, 0.676, ""], [1.681, 0.711, "c"]],
+    [[2.788, 1.152, ""], [3.019, 1.137], [3.229, 1.103], [3.411, 1.068], [3.582, 1.034], [3.66, 1.019], [3.724, 0.98, ""], [3.749, 0.926, ""],
+    [3.734, 0.867, ""], [3.665, 0.818, ""], [3.494, 0.789], [3.322, 0.76], [3.151, 0.735], [2.955, 0.715], [2.818, 0.701, ""], [2.759, 0.72, ""],
+    [2.744, 0.794], [2.754, 1.014], [2.764, 1.112, ""]]],
+  frame: 0.02,
+  wing: { le: 2.254, root: 0.6, span: 11.63, cr: 1.45, ct: 0.8, sweep: 1, dih: 5, z: 0.3, t: [0.15, 0.12] },
+  // the wing as the AFM side view draws it: the root section with the fairing round its leading edge,
+  // the lower surface, the flap hinge and the flap's chord line
+  wingSide: [
+    ["wing", [[2.254, 0.515, "cl"], [3.161, 0.441, "cl"], [3.401, 0.074, "c"], [3.469, 0.059], [3.518, 0.044, "c"], [3.249, 0.044], [2.69, 0.044], [2.524, 0.059],
+      [2.318, 0.074], [2.176, 0.088], [2.107, 0.098], [2.034, 0.123], [2.019, 0.147], [2.038, 0.181], [2.083, 0.211], [2.161, 0.245, "cl"]]],
+    ["hl", [[2.151, 0.152], [2.239, 0.132], [2.362, 0.118], [2.592, 0.088], [2.891, 0.083], [3.195, 0.078], [3.42, 0.069]], false],
+    ["hl", [[2.979, 0.436], [3.166, 0.069]], false],
+    ["hl", [[3.072, 0.279], [3.264, 0.27]], false],
+  ],
+  eng: { kind: "none", nose: { s: 0.284, z: 0.72, d: 1.8, blades: 3 } },
+  parts: {
+    // the cowling's access door and the slot by the spinner
+    doors: [[[0.642, 0.711, "l"], [0.774, 0.706], [0.789, 0.691, "l"], [0.789, 0.598], [0.774, 0.583, "l"], [0.647, 0.588], [0.627, 0.603, "l"], [0.627, 0.691]],
+      [[0.431, 0.72, "c"], [0.446, 0.72, "c"], [0.446, 0.637, "c"], [0.436, 0.617, "c"], [0.426, 0.627, "c"]]],
+    // the spinner's back plate; the cowl split line, the cowling's aft seam and the lower inlet's two lips;
+    // the windscreen's outer frame, the sill under the canopy, the frames between the canopy and the rear
+    // window and round the rear window; the fin fillet's joint, the ventral fin's joint, the rudder hinge
+    // with its two trim-tab notches, the rudder's lower and upper edges; the nose leg's fittings
+    lines: [[[0.402, 0.862], [0.397, 0.72], [0.387, 0.544]],
+      [[0.412, 0.568], [0.72, 0.549], [1.049, 0.529], [1.348, 0.515], [1.548, 0.515], [1.612, 0.534]],
+      [[1.205, 0.51], [1.196, 0.343], [1.186, 0.196]],
+      [[0.431, 0.412], [0.495, 0.368], [0.593, 0.323], [0.681, 0.299], [0.809, 0.279], [1.063, 0.265], [1.181, 0.255]],
+      [[0.466, 0.323], [0.559, 0.279], [0.622, 0.255], [0.706, 0.23], [0.862, 0.216], [1.093, 0.201], [1.181, 0.191]],
+      [[1.397, 0.911], [1.519, 0.804], [1.642, 0.691], [1.73, 0.593]],
+      [[1.749, 0.583], [1.803, 0.564], [2.274, 0.559], [2.715, 0.568]],
+      [[2.769, 0.559], [3.166, 0.544]],
+      [[2.685, 1.161], [2.695, 1.063], [2.675, 0.97], [2.646, 0.862], [2.612, 0.75], [2.577, 0.681]],
+      [[2.695, 1.225], [2.72, 1.147], [2.72, 1.034], [2.695, 0.921], [2.671, 0.809], [2.646, 0.72], [2.636, 0.696], [2.671, 0.622],
+      [2.725, 0.593]],
+      [[3.798, 1.019], [3.807, 0.96], [3.798, 0.848], [3.788, 0.774], [3.778, 0.715], [3.744, 0.637]],
+      [[3.239, 0.583], [3.455, 0.564], [3.631, 0.568], [3.7, 0.598]],
+      [[6.179, 0.441], [6.468, 0.534], [6.752, 0.627]],
+      [[5.959, 0.142], [6.311, 0.137], [7.228, 0.127], [7.291, 0.123]],
+      [[7.336, 0.137], [7.345, 0.245], [7.38, 0.358], [7.424, 0.48], [7.463, 0.588], [7.507, 0.711], [7.546, 0.823], [7.566, 0.887],
+      [7.576, 0.941], [7.507, 0.98], [7.522, 1.019], [7.551, 1.024], [7.6, 1.005], [7.61, 1.024], [7.639, 1.103], [7.659, 1.152],
+      [7.679, 1.205], [7.698, 1.25], [7.718, 1.294], [7.732, 1.328], [7.737, 1.367]],
+      [[7.664, 1.127], [7.703, 1.127], [7.713, 1.161], [7.723, 1.201]],
+      [[7.34, 0.132], [7.674, 0.147]],
+      [[7.767, 1.318], [8.017, 1.284]],
+      [[1.083, 0.069], [1.083, 0.01]],
+      [[1.201, 0.069], [1.201, 0.044], [1.147, 0.015]],
+      [[1.132, -0.015], [1.24, 0.039]]],
+    gear: [
+      { leg: [[2.602, 0.083], [2.622, -0.078]], w: [0.162, 0.118], at: [2.646, -0.319], r: 0.211, spat: { pts: [[2.465, -0.118], [2.528, -0.088], [2.592, -0.078], [2.739, -0.083], [2.862, -0.118], [2.974, -0.152], [3.121, -0.206], [3.254, -0.255, "c"],
+        [3.254, -0.387, "c"], [3.077, -0.407], [2.916, -0.421], [2.734, -0.417], [2.646, -0.392], [2.612, -0.412], [2.43, -0.402], [2.381, -0.377],
+        [2.342, -0.333], [2.332, -0.299], [2.342, -0.255], [2.377, -0.191], [2.421, -0.147]] } },
+      { leg: [[1.083, -0.015], [0.75, -0.201]], w: [0.044, 0.039], at: [0.848, -0.348], r: 0.181, spat: { pts: [[1.22, -0.24, "c"], [1.103, -0.211], [0.98, -0.196], [0.843, -0.186], [0.76, -0.196], [0.691, -0.211], [0.617, -0.225], [0.564, -0.265],
+        [0.534, -0.314], [0.534, -0.368], [0.549, -0.387], [0.627, -0.412], [0.701, -0.431], [0.799, -0.431], [0.823, -0.402], [0.858, -0.431],
+        [0.995, -0.417], [1.117, -0.387], [1.215, -0.363], [1.235, -0.353, "c"]] } },
     ],
-    glass: F.da42.glass.map((g) => g.map(([q, z, fl]) => (fl != null ? [q - 0.5, z, fl] : [q - 0.5, z]))),
-    wing: { le: 2.05, root: 0.6, span: 11.8, cr: 1.45, ct: 0.75, sweep: 1, dih: 5, z: -0.02, t: [0.15, 0.12] },
-    parts: {
-      lines: [[[7.65, 1.48], [7.6, -0.1]]],
-      gear: [
-        { leg: [[2.55, -0.08], [2.75, -0.18]], w: [0.1, 0.07], at: [2.75, -0.2], r: 0.19, spat: { f: 0.36, a: 0.48, t: 0.24, b: 0.1 } },
-        { leg: [[0.92, -0.04], [0.85, -0.22]], w: [0.07, 0.06], at: [0.85, -0.24], r: 0.15, spat: { f: 0.3, a: 0.38, t: 0.2, b: 0.08 } },
-      ],
-    },
-  };
-  delete F.da40.eng.at;
-}
+    // the T-tail as the AFM draws it, with the elevator's horn line; the near winglet, filled without an
+    // edge where it stands on the wing root and outlined where the AFM draws it
+    draw: [({ sk }) => {
+      sk.smooth("stab", [[7.095, 1.426, "c"], [7.184, 1.45], [7.287, 1.465], [7.512, 1.465], [7.649, 1.45], [7.757, 1.436], [7.87, 1.421], [7.953, 1.416],
+        [8.1, 1.411, "c"], [7.963, 1.406], [7.865, 1.392], [7.742, 1.377], [7.634, 1.362], [7.492, 1.348], [7.252, 1.352], [7.149, 1.367],
+        [7.1, 1.387], [7.086, 1.406]]);
+      sk.poly("hl", [[7.786, 1.426], [7.786, 1.387]], false);
+      sk.smooth("wl", [[2.734, 0.588, "cl"], [3.117, 0.936], [3.2, 0.951], [3.308, 0.936], [3.371, 0.921, "cl"], [3.278, 0.691], [3.161, 0.441, "cl"], [2.955, 0.446],
+        [2.749, 0.451, "cl"]], true, ' style="stroke:none"');
+      sk.smooth("wl", [[2.734, 0.588, "cl"], [3.117, 0.936], [3.2, 0.951], [3.308, 0.936], [3.371, 0.921, "cl"], [3.278, 0.691], [3.161, 0.441, "c"]], false, ' style="fill:none"');
+    }],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
 
 // ---------- Cirrus SR20 / SR22 ----------
 // No three-view reachable: measured from the near-side-on photo File:Cirrus_SR22_G3_Turbo_
@@ -1025,6 +1096,14 @@ F.sr22 = {
 // swept fin with a long dorsal, ventral strakes under the tail cone, round cabin windows,
 // the airstair door behind the cockpit and the big cargo door aft (both on the left side;
 // shown as the type's signature), trailing-link gear retracted.
+// Windows, doors and detail follow the manufacturer's side view in Pilatus's "PC-12 PRO Just The
+// Facts" (2025), page 4 "Exterior View" (a 448 px rendering, about 3.4 cm a pixel, scaled by its
+// 14.40 m length; it fits the outline within a few cm at the nose, crown and fin). Against it the
+// photo-measured windscreen, cabin windows and doors sat 0.3-0.5 m too far forward and the windows
+// 0.1 m too low: they now follow the Pilatus view, as do the cowling seams, exhaust stack, vents,
+// dorsal antenna and rudder hinge.
+// a rounded-rectangle pane (glass corners are sharp unless flagged smooth)
+const pane12 = (...a) => rect(...a).map((p) => (p[2] ? p : [p[0], p[1], ""]));
 F.pc12 = {
   kind: "turboprop", L0: 14.4, over: 0, D: 1, W: 1.6,
   body: [
@@ -1034,18 +1113,27 @@ F.pc12 = {
     [12.6, 0.78], [12.3, 0.8], [11.2, 0.56], [10.0, 0.42], [8.8, 0.24], [7.5, 0.08], [6.0, -0.04], [4.5, -0.06],
     [3.0, 0.02], [2.4, 0.08], [1.89, 0.14], [1.05, 0.3], [0.6, 0.5], [0.39, 0.62], [0.2, 0.7], [0.1, 0.75],
   ],
-  glass: [[[2.55, 1.33], [3.0, 1.62, ""], [3.42, 1.8], [3.48, 1.25], [2.85, 1.22]]],
-  frame: 0.05,
-  win: [{ z: 1.25, from: 4.75, to: 6.15, pitch: 0.7, w: 0.3, h: 0.38 }, { z: 1.25, from: 7.4, to: 7.4, w: 0.3, h: 0.38 }],
+  // the cockpit side window, then the four cabin windows (rounded rectangles, unevenly spaced)
+  glass: [
+    [[2.8, 1.36, "c"], [3.24, 1.68, ""], [3.47, 1.71, ""], [3.77, 1.65, ""], [3.89, 1.53, ""], [3.89, 1.36, ""], [3.8, 1.17, ""],
+      [3.47, 1.15, ""], [3.13, 1.15, ""]],
+    pane12(4.89, 5.27, 1.07, 1.54, 0.09), pane12(5.51, 5.9, 1.07, 1.54, 0.09), pane12(6.3, 6.68, 1.07, 1.54, 0.09),
+    pane12(7.3, 7.68, 1.06, 1.53, 0.09),
+  ],
+  frame: 0.035,
   wing: { le: 4.2, root: 0.7, span: 16.28, cr: 2.25, ct: 1.0, sweep: 2, dih: 5, z: 0.12, t: [0.16, 0.12] },
   tip: { h: 0.35, sweep: 45, top: 0.25, base: 0.8 },
   eng: { kind: "none", nose: { s: 0.33, z: 0.81, d: 2.67, blades: 4 } },
   stab: { le: 2.36, z: 3.15, span: 5.2, root: 0.15, cr: 1.55, ct: 0.95, sweep: 30, dih: 0, thick: 0.1 },
   parts: {
-    doors: [rect(3.67, 4.45, 0.15, 1.72, 0.08), rect(6.54, 8.03, 0.36, 1.73, 0.1)],
-    lines: [[[12.4, 1.0], [13.15, 2.98]]],
+    // the airstair door (1.35 m high, its sill from the brochure's figure) and the cargo door
+    doors: [rect(4.12, 4.85, 0.46, 1.81, 0.08), rect(7.09, 8.53, 0.23, 1.74, 0.1)],
+    // the rudder hinge; the cowling's two seams
+    lines: [[[12.35, 0.92], [13.44, 2.9]], [[1.64, 1.22], [1.64, 0.22]], [[2.49, 1.29], [2.49, 0.08]]],
+    // the dorsal antenna on the cabin roof; the exhaust stack and two vents on the cowling
+    shapes: [["strut", [[7.9, 1.78, "c"], [8.29, 2.26, "c"], [8.39, 2.21, "c"], [8.09, 1.78, "c"]]]],
+    dots: [["inlet", 1.2, 0.81, 0.26, 0.15], ["inlet", 1.81, 0.74, 0.04], ["inlet", 2.3, 0.67, 0.05]],
     draw: [(k) => {
-      k.sk.ellipse("inlet", 0.93, 0.84, 0.15, 0.1);
       // ventral strake under the tail cone
       k.sk.smooth("fin", [[8.86, 0.3, "c"], [11.2, 0.41, "c"], [11.5, 0.86, "c"], [10.6, 0.5], [9.4, 0.36]]);
     }],
