@@ -406,7 +406,18 @@ F.c56x = {
 };
 F.c680 = {
   ...F.c56x, L0: 18.36, over: 0.99,
-  extras: [hatch(4.62, 0.75, 0.3, 1.5, 0.2)], overlays: [],
+  // from the side-on photo of Sovereign N94PC: the swept blade on the spine, two swept blades under
+  // the belly, the door handle, the round fitting low on the side and the beacon on the fin tip
+  extras: [hatch(4.62, 0.75, 0.3, 1.5, 0.2), ({ sk, top, bottom }) => {
+    sk.poly("strut", [[7.45, top(7.45) - 0.02], [7.71, top(7.71) + 0.22], [7.81, top(7.81) + 0.23], [7.66, top(7.66) - 0.02]]);
+    for (const s of [4.23, 7.42]) sk.poly("strut", [[s, bottom(s) + 0.02], [s + 0.12, bottom(s + 0.12) - 0.22], [s + 0.23, bottom(s + 0.23) - 0.25], [s + 0.16, bottom(s + 0.16) + 0.02]]);
+    sk.poly("door", [[4.61, 0.84], [4.61, 0.53]], false);
+    sk.ellipse("hub", 5.92, 0.27, 0.05, 0.05);
+  }],
+  overlays: [({ sk }) => {
+    const le = 18.36 - 3.32 + 2.41, zt = 1.84 + 2.41;   // fin tip leading edge (45 deg: tan = 1) and height
+    sk.ellipse("hub", le + 0.25 * 1.37, zt + 0.03, 0.06, 0.04);
+  }],
   win: [{ z: 0.7, from: 5.3, to: 10.05, pitch: 0.79, w: 0.26, h: 0.34 }],
   wing: { le: 7.9, root: 0.95, span: 22.04, cr: 3.2, ct: 1.15, sweep: 18, dih: 4, z: 0.08, t: [0.14, 0.11] },
   eng: { kind: "fan", aft: { s: 6.64, z: 0.72 }, len: 3.4, dia: 1.0, style: "long", fx: 0.88 },
