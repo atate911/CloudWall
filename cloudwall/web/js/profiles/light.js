@@ -16,7 +16,9 @@ const F = {};
 //   struts  [[s, z] bottom, [s, z] top, width at bottom, width at top]
 //   gear    {leg: [[s, z] top, [s, z] bottom], w: [w0, w1], at: [s, z] axle, r, spat: {f, a, t, b}}
 //           spat: reach ahead of / behind the axle, top above / bottom below it; or {pts}: its traced outline
-//   draw    extra functions (kit) => void, drawn last
+//   shapes  [cls, [[s, z, flag]...], closed?] smooth parts drawn last (fairings, inlets, rings), moved
+//           with the rest by stretch() and scale()
+//   draw    extra functions (kit) => void, drawn last (fixed coordinates: not moved by stretch or scale)
 
 // A tapered leg or strut from [s0, z0] to [s1, z1], w0 / w1 wide (metres, along s).
 const leg = (sk, [s0, z0], [s1, z1], w0 = 0.08, w1 = w0) =>
@@ -44,6 +46,7 @@ const OVERLAYS = [(k) => {
     if (g.leg) leg(k.sk, g.leg[0], g.leg[1], ...(g.w || []));
     if (g.at) wheel(k.sk, g.at[0], g.at[1], g.r, g.spat);
   }
+  for (const [cls, pts, closed = true] of p.shapes || []) k.sk.smooth(cls, pts, closed);
   for (const fn of p.draw || []) fn(k);
 }];
 
@@ -60,8 +63,10 @@ function stretch(f, at, ds, more = {}) {
   return {
     ...f, L0: f.L0 + ds, body: loop(f.body), glass: (f.glass || []).map(loop),
     wing: f.wing && { ...f.wing, le: f.wing.le > at ? f.wing.le + ds : f.wing.le },
+    wingSide: f.wingSide && f.wingSide.map(([cls, pts, closed]) => [cls, loop(pts), closed]),
     parts: {
       ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
+      shapes: (p.shapes || []).map(([cls, pts, closed]) => [cls, loop(pts), closed]),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [mv(a), mv(b), w0, w1]),
       gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(mv), at: g.at && mv(g.at), spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
     },
@@ -78,9 +83,11 @@ function scale(f, k, more = {}) {
   return {
     ...f, L0: f.L0 * k, over: (f.over || 0) * k, W: f.W * k, body: loop(f.body), glass: (f.glass || []).map(loop),
     wing: sc(f.wing, ["le", "root", "span", "cr", "ct", "z"]), stab: sc(f.stab, ["le", "z", "span", "root", "cr", "ct"]),
+    wingSide: f.wingSide && f.wingSide.map(([cls, pts, closed]) => [cls, loop(pts), closed]),
     eng: f.eng && { ...f.eng, nose: sc(f.eng.nose, ["s", "z", "d"]) },
     parts: {
       ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
+      shapes: (p.shapes || []).map(([cls, pts, closed]) => [cls, loop(pts), closed]),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [pt(a), pt(b), w0, w1]),
       gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(pt), at: g.at && pt(g.at), r: g.r * k, spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
     },
@@ -442,6 +449,15 @@ F.c208 = {
   ],
   frame: 0.04,
   wing: { le: 3.88, root: 0.8, span: 15.88, cr: 2.02, kink: [0.36, 2.02], ct: 1.25, sweep: 1, dih: 1.5, z: 1.9, t: [0.15, 0.12] },
+  // the wing as the 208's side view draws it: the lens over the roof, its root reaching down the cabin
+  // side to the window tops, with the tip's lower surface, a trailing-edge line and the fuel cap inside
+  wingSide: [
+    ["wing", [[3.946, 1.739, "c"], [4.122, 2.014], [4.372, 2.063], [4.998, 2.037], [5.223, 1.986], [5.397, 1.811], [5.522, 1.635, "c"],
+      [5.472, 1.523, "l"], [4.246, 1.501], [4.046, 1.564]]],
+    ["hl", [[4.122, 1.939], [4.622, 1.913], [5.072, 1.911]], false],
+    ["hl", [[4.872, 1.912], [5.046, 1.486]], false],
+    ["inlet", [[4.385, 1.976, "c"], [4.422, 2.026, "c"], [4.46, 1.976, "c"]]],
+  ],
   eng: { kind: "none", nose: { s: 0.47, z: 0.82, d: 2.5, blades: 3 } },
   stab: { le: 1.5, z: 1.5, span: 6.25, root: 0.4, cr: 1.35, ct: 0.9, sweep: 6, dih: 0, thick: 0.1 },
   parts: {
@@ -449,9 +465,18 @@ F.c208 = {
       [[2.98, 0.42, "c"], [3.95, 0.42, "c"], [3.95, 1.5, "c"], [3.4, 1.52, "c"], [2.98, 0.95, "c"]],
       rect(5.65, 6.92, 0.38, 1.62, 0.08), [[5.65, 1.0], [6.92, 1.0]],
       rect(2.8, 3.6, -0.22, 0.02, 0.06), rect(3.8, 4.55, -0.22, 0.02, 0.06), rect(5.15, 5.95, -0.22, 0.02, 0.06),
+      // from the 208 side view: the fairing ahead of the wing root, over the windscreen
+      [[3.421, 1.816, "l"], [3.871, 1.815], [3.896, 1.764, "l"], [3.896, 1.739], [3.871, 1.714, "l"], [3.421, 1.716], [3.396, 1.766, "l"], [3.396, 1.791]],
     ],
     lines: [[[1.85, 0.07], [7.25, 0.18]], [[10.62, 1.05], [11.0, 3.3], [10.88, 3.32], [10.88, 3.8]]],
     struts: [[[4.05, 0.3], [3.98, 1.86], 0.15, 0.13]],
+    // from the 208 side view: the strut's top and foot fittings, the two hinges on the crew door's front edge
+    shapes: [
+      ["pant", [[3.871, 1.589], [3.996, 1.639], [4.321, 1.601], [4.371, 1.538], [4.246, 1.501], [3.971, 1.514]]],
+      ["pant", [[3.968, 0.438], [4.168, 0.525], [4.368, 0.437], [4.168, 0.35]]],
+      ["door", [[2.88, 1.016], [2.98, 1.054], [3.08, 1.016], [2.98, 0.979]]],
+      ["door", [[2.88, 0.491], [2.98, 0.528], [3.08, 0.49], [2.98, 0.453]]],
+    ],
     gear: [
       { leg: [[4.78, 0.2], [4.72, -0.42]], w: [0.14, 0.09], at: [4.72, -0.45], r: 0.26 },
       { leg: [[1.33, 0.1], [1.28, -0.46]], w: [0.09, 0.07], at: [1.28, -0.48], r: 0.2 },
@@ -499,9 +524,26 @@ F.pa28 = {
   wing: { le: 1.82, root: 0.6, span: 10.67, cr: 1.75, kink: [0.42, 1.55], ct: 1.07, sweep: 5, dih: 7, z: 0.06, t: [0.15, 0.12] },
   eng: { kind: "none", nose: { s: 0.33, z: 0.48, d: 1.93, blades: 2 } },
   stab: { le: 0.82, z: 0.61, span: 3.92, root: 0.25, cr: 0.78, ct: 0.76, sweep: 0, dih: 0, thick: 0.1 },
+  // the wing as the 3-view draws it: the tip aerofoil high on the dihedral, its leading and trailing
+  // edges running down to the root, the root aerofoil with its forward fillet; inside, the tip's lower
+  // surface, the root's upper line along the fuselage side and the end of the flap
+  wingSide: [
+    ["wing", [[1.802, 0.107, "c"], [1.947, 0.141], [2.085, 0.162, "l"], [2.085, 0.307, "l"], [2.321, 0.665], [2.445, 0.72], [2.721, 0.74],
+      [2.997, 0.712], [3.204, 0.664], [3.39, 0.608, "cl"], [3.652, 0.291, "cl"], [3.665, -0.02, "cl"], [2.306, -0.039], [2.03, -0.011], [1.857, 0.024]]],
+    ["hl", [[2.321, 0.665], [2.41, 0.596], [2.721, 0.547], [2.997, 0.554], [3.238, 0.581], [3.39, 0.608]], false],
+    ["hl", [[2.085, 0.307], [2.444, 0.244], [2.996, 0.236], [3.341, 0.27], [3.652, 0.291]], false],
+    ["hl", [[2.085, 0.134], [2.582, 0.044], [2.996, 0.029], [3.341, 0.056]], false],
+    ["hl", [[3.224, 0.56, "c"], [3.341, 0.284, "c"], [3.355, -0.02]], false],
+  ],
   parts: {
     doors: [[[1.86, 0.62, "c"], [2.13, 1.13, "c"], [2.78, 1.13, "c"], [2.78, 0.62, "c"]]],
-    lines: [[[6.66, 0.4], [6.66, 0.8], [6.98, 2.0]]],
+    // stabilator pivot and rudder hinge; from the 3-view: the cowl's top seam, split line and aft seam,
+    // the fin-tip cap
+    lines: [[[6.66, 0.4], [6.66, 0.8], [6.98, 2.0]],
+      [[0.361, 0.682], [0.809, 0.723]], [[0.388, 0.406], [1.368, 0.377]], [[1.396, 0.791], [1.347, 0.377], [1.319, -0.051]],
+      [[6.705, 2.039], [7.229, 1.983]]],
+    // the cowl's inlet lip, traced from the 3-view
+    draw: [({ sk }) => sk.smooth("hl", [[0.34, 0.64], [0.388, 0.585], [0.416, 0.489], [0.388, 0.413], [0.346, 0.378]], false)],
     gear: [
       { leg: [[2.9, -0.03], [2.95, -0.3]], w: [0.14, 0.1], at: [2.98, -0.38], r: 0.21, spat: { f: 0.36, a: 0.5, t: 0.26, b: 0.1 } },
       { leg: [[0.98, -0.02], [1.0, -0.48]], w: [0.08, 0.07], at: [1.0, -0.52], r: 0.19, spat: { f: 0.32, a: 0.42, t: 0.24, b: 0.1 } },
@@ -540,9 +582,30 @@ const PA46 = {
   wing: { le: 2.73, root: 0.65, span: 13.11, cr: 1.57, ct: 0.9, sweep: 1.8, dih: 4.5, z: 0.05, t: [0.15, 0.12] },
   eng: { kind: "none", nose: { s: 0.38, z: 0.475, d: 2.03, blades: 3 } },
   stab: { le: 1.38, z: 0.79, span: 4.42, root: 0.25, cr: 0.9, ct: 0.6, sweep: 8, dih: 0, thick: 0.1 },
+  // the wing as the 3-view draws it: the tip aerofoil, the leading edge running down the dihedral, the
+  // trailing edge to the root, with the tip's lower surface and the flap's edge and end inside
+  wingSide: [
+    ["wing", [[2.931, 0.516], [2.973, 0.566], [3.056, 0.591], [3.346, 0.591], [3.596, 0.567], [3.845, 0.534, "cl"], [4.211, 0.044, "c"],
+      [4.011, 0.011], [3.679, -0.048], [3.347, -0.073, "l"], [3.015, -0.057], [2.816, -0.007], [2.741, 0.059], [2.766, 0.159, "l"]]],
+    ["hl", [[2.931, 0.516], [3.014, 0.475], [3.347, 0.467], [3.679, 0.492], [3.845, 0.534]], false],
+    ["hl", [[3.679, 0.492, "c"], [3.853, 0.193, "c"], [4.011, -0.014]], false],
+    ["hl", [[3.853, 0.193], [4.053, 0.218]], false],
+  ],
   parts: {
-    doors: [rect(4.26, 4.96, 0.0, 1.14, 0.07), [[4.26, 0.56], [4.96, 0.56]]],
-    lines: [[[7.42, 1.0], [8.27, 2.47]]],
+    // cabin door with its split; from the 3-view, the forward baggage door with its handle
+    doors: [rect(4.26, 4.96, 0.0, 1.14, 0.07), [[4.26, 0.56], [4.96, 0.56]],
+      [[1.611, 0.739, "l"], [2.026, 0.739], [2.076, 0.69, "l"], [2.076, 0.158], [2.027, 0.108, "l"], [1.611, 0.108], [1.562, 0.158, "l"], [1.561, 0.689]]],
+    // rudder hinge; from the 3-view: the cowl's nose-ring seam, the baggage door handle, the rudder's top
+    // and foot
+    lines: [[[7.42, 1.0], [8.27, 2.47]], [[0.581, 0.655], [0.582, 0.156]], [[1.852, 0.216], [1.836, 0.158]],
+      [[7.928, 2.506], [8.26, 2.49]], [[7.44, 1.061], [7.465, 1.011], [7.913, 0.995]]],
+    // from the 3-view: the D-shaped inlet in the nose ring, the box it draws under the nose, the loop
+    // under the tail cone
+    shapes: [
+      ["inlet", [[0.481, 0.588, "cl"], [0.54, 0.588], [0.581, 0.505], [0.565, 0.439], [0.49, 0.422, "cl"]]],
+      ["pant", [[1.03, -0.02, "cl"], [1.03, -0.225], [1.055, -0.242, "l"], [2.069, -0.24], [2.093, -0.216, "l"], [2.093, -0.02, "cl"]]],
+      ["hl", [[7.582, 0.638], [7.706, 0.555], [7.814, 0.538], [7.872, 0.596]], false],
+    ],
   },
   extras: EXTRAS, overlays: OVERLAYS,
 };
@@ -550,7 +613,9 @@ F.pa46 = scale(PA46, 8.8 / 8.66);
 F.p46t = stretch(F.pa46, 1.0, 0.2, {
   kind: "turboprop", eng: { kind: "none", nose: { s: 0.39, z: 0.483, d: 2.06, blades: 4 } },
 });
-F.p46t.parts = { ...F.p46t.parts, draw: [(k) => k.sk.ellipse("inlet", 1.05, 0.5, 0.11, 0.08)] };
+// the box under the nose is from the piston 310P's 3-view, so the turbine keeps only the other parts
+F.p46t.parts = { ...F.p46t.parts, shapes: F.p46t.parts.shapes.filter(([cls]) => cls !== "pant"),
+  draw: [(k) => k.sk.ellipse("inlet", 1.05, 0.5, 0.11, 0.08)] };
 
 // ---------- Beechcraft A36 / G36 Bonanza ----------
 // Reference: Beechcraft A36 Bonanza 3-view (Wikimedia Commons,
