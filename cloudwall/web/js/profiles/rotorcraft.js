@@ -197,10 +197,22 @@ F.b06 = {
       ["hl", [[3.07, 1.84], [3.05, 1.32]], false],
       ...[4.42, 4.49, 4.56].map((s) => ["inlet", [[s, 1.57, "c"], [s + 0.035, 1.58, "c"], [s + 0.035, 1.38, "c"], [s, 1.38, "c"]]]),
       ["stab", aerofoil(6.54, 6.96, 1.27, 0.06, 0.02)],
+      // from the 3-view: the engine cowling's front seam, the boom joint, the swashplate and its pitch link
+      ["hl", [[4.199, 1.783], [4.199, 1.302]], false],
+      ["hl", [[5.185, 1.446], [5.185, 0.941]], false],
+      ["strut", box(2.602, 2.814, 1.87, 1.947)], ["strut", box(2.718, 2.785, 1.947, 2.014)],
     ]),
   ],
   overlays: [
     skids({ z: -0.43, t: 0.1, aft: 3.5, fwd: 1.5, toe: [1.27, -0.3], legs: [[1.94, 0.0, 1.94, 0.15], [3.28, 0.04, 3.28, 0.15]] }),
+    paint([
+      // 3-view: the collar where the forward cross tube meets the belly, the saddle over the aft one
+      ["skid", [[1.857, -0.002], [1.929, 0.032], [2.006, 0.032], [2.073, -0.002, "c"], [2.03, -0.103], [1.948, -0.088], [1.871, -0.103, "c"]]],
+      ["skid", [[3.16, 0.07, "c"], [3.16, 0.08], [3.179, 0.148], [3.256, 0.181], [3.353, 0.176], [3.439, 0.138], [3.482, 0.09], [3.482, 0.07, "c"]]],
+      // the teetering rotor head as the 3-view draws it: the hub block between the two blade grips
+      ["hub", box(2.15, 2.564, 2.447, 2.601)], ["hub", box(2.843, 3.256, 2.447, 2.601)], ["hub", box(2.593, 2.795, 2.437, 2.639)],
+      ["hl", box(2.419, 2.554, 2.456, 2.581)], ["hl", box(2.862, 2.977, 2.456, 2.581)],
+    ]),
   ],
 };
 
