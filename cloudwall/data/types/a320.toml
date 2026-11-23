@@ -5,46 +5,133 @@ checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/US_Airways_Flight_1549",
   "https://en.wikipedia.org/wiki/Airbus_A320_family",
+  "https://en.wikipedia.org/wiki/Airbus_A318",
+  "https://en.wikipedia.org/wiki/Airbus_A319",
+  "https://en.wikipedia.org/wiki/Airbus_A321",
   "https://www.aircraft.airbus.com/en/aircraft/a320-family",
+  "https://www.aircraft.airbus.com/en/aircraft/a320-family/a319ceo",
+  "https://www.aircraft.airbus.com/en/aircraft/a320-family/a320ceo",
+  "https://www.aircraft.airbus.com/en/aircraft/a320-family/a321ceo",
   "https://www.aircraft.airbus.com/en/aircraft/a320-family/a320neo",
   "https://www.boeing.com/content/dam/boeing/v2/airports/acaps/737_RevA.pdf",
   "https://worldairlinenews.com/2014/07/11/airbus-introduces-air-flow-deflectors-on-the-a320-family/",
   "https://lufthansagroup.com/en/focus-areas/aircraft-related-hardware/vortex-generator.html",
+  "https://www.flightglobal.com/air-transport/tail-end-of-original-a320-family-line-nears-with-delta-deliveries/143861.article",
+  "https://www.bloomberg.com/news/articles/2013-03-11/airbus-double-shrink-a318-stumped-for-buyers-after-10-year-run",
 ]
 
-text = """
-The A320 was the first airliner with all-digital fly-by-wire controls and a sidestick. When it
-entered service in 1988 the control column was gone, and in normal law its computers kept the
-aircraft inside its limits whatever the pilot asked of the stick. Every airliner Airbus has designed
-since has been flown the same way, so a pilot qualified on one moves to another with a short course.
-The family runs from the 31 m A318 to the 44.5 m A321 on one cockpit and much the same wing, and its
-cabin is about 16 cm wider than a 737's, which is why its seats are usually a little roomier.
-
-Next to a 737 it has a rounder, blunter nose and longer landing gear, so it stands higher off the
-ground. Older ones whistle on approach: the opening for a fuel-tank over-pressure valve under each
-wing sings like a blown bottle, a sound Airbus has since quietened with a small vortex generator
-fitted ahead of it. Most have small triangular fences above and below each wingtip; many later ones
-have sharklets, the tall curved winglets of the neo.
-
-In January 2009 a US Airways A320 lost both engines to a flock of Canada geese climbing out of
-LaGuardia, and its crew ditched it in the Hudson River. All 155 aboard survived.
-"""
+# Each model has a write-up of its own, so the family has none.
 
 [facts]
 "First flight" = "February 1987"
 "Engines" = "2 × CFM56-5 or IAE V2500"
-"Cabin width" = "3.70 m, against a 737's 3.54 m"
 
 [variants.A318]
 name = "Airbus A318"
+production = [2003, 2015]
+text = """
+The "Baby Bus", the smallest Airbus airliner: an A319 shortened by a further 2.4 m, to 31.4 m, for
+about 107 seats. So short a body gives the rudder less leverage, so the fin was made some 80 cm
+taller, the surest way to tell it from an A319. It first flew in January 2002, into a market that
+had turned against it. Orders fell away after September 2001; the Pratt & Whitney PW6000 offered on
+it alone burned more fuel than promised; landing fees put it in the same class as larger aircraft;
+and Embraer's and Bombardier's regional jets were selling strongly. Airbus sold 80, a quarter of
+them as private and government jets.
+
+One thing it could do that its sisters could not was a steep approach. With software that raises
+some of the spoilers for drag it is certified to come down at 5.5 degrees where 3 is usual, which
+opened London City Airport to it, and from 2009 to 2020 British Airways flew A318s with 32
+business-class seats from there to New York. The runway was too short to leave with full tanks, so
+the westbound flight stopped at Shannon for fuel; eastbound it came home nonstop. As of 2026 Air
+France, once its biggest operator, is the last airline flying the type, and the A220 does its job.
+"""
 [variants.A318.facts]
+"First flight" = "January 2002"
+"Built" = "80"
 "Engines" = "2 × CFM56-5B or Pratt & Whitney PW6000"
+"Range" = "3,100 nm (5,750 km)"
+"Max takeoff weight" = "up to 68,000 kg (149,900 lb)"
 
 [variants.A319]
 name = "Airbus A319"
+production = [1996, 2021]
+text = """
+An A320 with seven fuselage frames taken out, four ahead of the wing and three behind, which makes
+it 3.7 m shorter at 33.8 m and, unusually for an airliner, shorter than its own wingspan. Airbus
+called the study the A320M-7 and built it at the urging of Steven Udvar-Hazy of the lessor ILFC,
+which became its first customer. It first flew in August 1995 and went into service with Swissair
+the following April. Pilots fly it on the same rating as an A320, by sidestick through the same
+fly-by-wire computers, with small software changes for the way the shorter aircraft handles.
+
+It keeps the A320's wing and nearly all of its fuel capacity, with the same engines turned down to
+suit its lighter weight, and that gives it the longest range of the original family, 3,750 nm. One
+flew 3,588 nm nonstop from Hamburg to Winnipeg on its delivery flight in January 1997, in nine
+hours. The same reach made it Airbus's corporate jet: with extra tanks in the hold an ACJ319 can
+carry eight passengers 6,000 nm, and more governments and private owners fly the A319 than any of
+its sisters.
+
+From the ground it is the A320's fin, wing and engines on a visibly shorter body, with one exit
+over each wing where an A320 has two. A few flown with more than 145 seats, easyJet's among them,
+keep both.
+"""
+[variants.A319.facts]
+"First flight" = "August 1995"
+"Built" = "1,484"
+"Range" = "3,750 nm (6,950 km)"
+"Max takeoff weight" = "up to 75,500 kg (166,400 lb)"
 
 [variants.A320]
 name = "Airbus A320"
+production = [1988, 2020]
+text = """
+The original, and the first airliner with all-digital fly-by-wire controls and a sidestick. When it
+entered service with Air France in April 1988 the control column was gone, and in normal law its
+computers kept the aircraft inside its limits whatever the pilot asked of the stick. Every airliner
+Airbus has designed since has been flown the same way, so a pilot qualified on one moves to another
+with a short course. The A318, A319 and A321 are this aircraft shortened or stretched, on one
+cockpit and much the same wing, and its cabin is about 16 cm wider than a 737's, which is why its
+seats are usually a little roomier.
+
+Next to a 737-800, its closest rival, it has a rounder, blunter nose and longer landing gear, so it
+stands higher off the ground. Older ones whistle on approach: the opening for a fuel-tank
+over-pressure valve under each wing sings like a blown bottle, a sound Airbus has since quietened
+with a small vortex generator fitted ahead of it. Most have small triangular fences above and below
+each wingtip, and many later ones have sharklets, the tall curved winglets of the neo. Only the
+first 21, the A320-100s, had bare wingtips and less fuel.
+
+In January 2009 a US Airways A320 lost both engines to a flock of Canada geese climbing out of
+LaGuardia, and its crew ditched it in the Hudson River. All 155 aboard survived.
+"""
+[variants.A320.facts]
+"Built" = "4,752"
+"Range" = "3,350 nm (6,200 km)"
+"Max takeoff weight" = "up to 78,000 kg (172,000 lb)"
+"Cabin width" = "3.70 m, against a 737's 3.54 m"
 
 [variants.A321]
 name = "Airbus A321"
+production = [1994, 2021]
+text = """
+The A320 stretched by 6.9 m, to 44.5 m, with one plug ahead of the wing and a shorter one behind.
+It was the first derivative, launched in 1988 as the A320 itself entered service, and the first
+Airbus assembled in Germany, at Hamburg, after an argument with the French over the cost of a second
+line. To lift the extra weight on the same wingspan it has double-slotted flaps, and because the
+longer cabin needed more ways out, the two small exits over each wing gave way to full doors ahead
+of the wing and behind it. Four doors along each side and none over the wing are the quickest way
+to know one.
+
+The first version, the A321-100, went to Lufthansa in January 1994 with no more fuel than an A320
+and so less range, and only about 90 were built. The -200 of 1997 added tanks in the rear hold and
+more powerful engines, taking the takeoff weight from 83 tonnes to 93.5, enough to cross the United
+States with a full cabin and to rival the Boeing 757. The last of 1,784, delivered to Delta from
+Mobile, Alabama in December 2021, was also the last of the original A320 family.
+
+Two makes of engine were offered across the family, and they are easy to tell apart from below.
+The CFM56 has a short cowl with the core's exhaust showing behind it; the IAE V2500 sits in one
+long, smooth nacelle from lip to tailpipe.
+"""
+[variants.A321.facts]
+"First flight" = "March 1993"
+"Built" = "1,784"
+"Range" = "3,200 nm (5,950 km)"
+"Max takeoff weight" = "up to 93,500 kg (206,100 lb)"

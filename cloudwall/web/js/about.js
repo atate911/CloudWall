@@ -87,7 +87,7 @@ function body(d, ctx) {
   const lines = [builtLine(ctx.year, d.production, ctx.reg), ...hereLines(d)].filter(Boolean);
   const rows = factRows(d, ctx);
   return `
-    <div class="ab-head"><span class="label"><code class="ab-code">${esc(d.type)}</code>${d.family && d.family !== name ? ` · ${esc(d.family)} family` : ""}</span>
+    <div class="ab-head"><span class="label"><code class="ab-code">${esc(d.type)}</code>${d.family && d.family !== name ? ` · ${esc(d.family.replace(/ family$/i, ""))} family` : ""}</span>
       <button class="ab-close" id="ab-close" aria-label="Close">×</button></div>
     <h2 class="ab-name" id="ab-title">${esc(name)}</h2>
     <div class="ab-draw sil-box">${drawingHtml(d, ctx)}</div>

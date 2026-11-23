@@ -14,24 +14,14 @@ sources = [
   "https://united.mediaroom.com/2014-02-19-United-Airlines-is-the-First-to-Fly-with-New-Fuel-Efficient-Split-Scimitar-Winglets",
   "https://news.alaskaair.com/newsroom/alaska-airlines-retrofitting-737-fleet-with-new-split-winglet/",
   "https://en.wikipedia.org/wiki/Boeing_P-8_Poseidon",
+  "https://en.wikipedia.org/wiki/Boeing_737_MAX",
+  "https://en.wikipedia.org/wiki/Boeing_E-7_Wedgetail",
+  "https://en.wikipedia.org/wiki/Southwest_Airlines_fleet",
+  "https://en.wikipedia.org/wiki/Airbus_A318",
+  "https://aircraftrecognitionguide.com/index.php/boeing-737",
 ]
 
-text = """
-The 737 Next Generation is the jet most of today's 737 fleets grew up on: launched in 1993, flown in
-1997, and built until the MAX took over, with more than 7,000 delivered, P-8s and business jets
-included. Boeing kept the 1960s fuselage cross-section and gave it a six-screen glass cockpit close
-enough to the Classic's for crews to fly both, and a new wing a quarter larger in area and holding
-about 30% more fuel, which lets it cruise at Mach 0.785 and climb to 41,000 ft. Its CFM56-7B engines
-sit in nacelles flattened along the bottom, the squashed oval Boeing first used on the 737 Classic
-to fit a bigger fan under such a low wing.
-
-Telling one from a MAX is harder than it used to be. Many NGs, Alaska's and United's among them,
-have been refitted with split scimitar winglets that look much like the MAX's, so look at the
-engines instead: an NG's nacelles end in a plain edge and its tail in a shorter cone, where a MAX
-has saw-tooth nacelles and a tail cone stretched further back and filled out above the elevators.
-The US Navy's P-8 Poseidon submarine hunter is built on the NG too, a 737-800 with the -900's
-stronger wing.
-"""
+# Each model has a write-up of its own, so the family has none.
 
 [facts]
 "First flight" = "February 1997"
@@ -40,28 +30,105 @@ stronger wing.
 
 [variants.B736]
 name = "Boeing 737-600"
+production = [1998, 2006]
+text = """
+The smallest of the Next Generation 737s and much the rarest, with 69 built against nearly 5,000 of
+the 737-800. It is the size of the 737-500 it replaced, 31.2 m, and was launched by SAS, which took
+the first in September 1998. A shrink keeps the wing, tail and engines of its bigger sisters, and
+the -600 shares all three with a 737-900 eleven metres longer. Airlines that wanted a small 737
+mostly bought the -700 instead, and the last -600 went to WestJet in 2006. Airbus fared little
+better with its own smallest model, the A318, selling 80.
+
+It is the one NG that never had winglets: Boeing didn't offer them, and WestJet, which planned to be
+the first to fit them, dropped the idea in 2006. That, a short body under the NG's tall fin and a
+single exit over each wing give it away. The rest is as on the others: the six-screen cockpit, the
+CFM56-7B engines in their flat-bottomed nacelles and the 41,000 ft ceiling.
+"""
 [variants.B736.facts]
+"First flight" = "January 1998"
+"Built" = "69"
 "Max takeoff weight" = "up to 65,544 kg (144,500 lb)"
 
 [variants.B737]
 name = "Boeing 737-700"
+text = """
+The first of the Next Generation 737s, the third generation of the design. Southwest launched the
+programme in November 1993 with an order for 63 and took the first in December 1997, and twenty
+years on about half of the thousand -700s flying were still Southwest's. Boeing had been pushed into
+it by the A320, after United, a loyal customer, bought the Airbus. Its answer kept the 1960s
+fuselage and gave it a new wing a quarter larger in area and holding about 30% more fuel, CFM56-7B
+engines and a six-screen glass cockpit close enough to the old one for crews to fly both. The result
+cruises at Mach 0.785, climbs to 41,000 ft and flies some 900 nm further than the 737s before it,
+enough to cross the United States.
+
+At 33.6 m it is about 6 m shorter than an -800, and the quick check is over the wing: one exit each
+side where the -800 and -900 have two. Most have blended winglets, 2.4 m tall, or the later split
+scimitar kind with a second blade pointing down. The same airframe flies under other names. The
+Boeing Business Jet is a -700 body on the -800's stronger wing and landing gear, with extra fuel
+tanks; the US Navy's C-40 Clipper is a -700 with a cargo door in its left side and seats that come
+out; and the E-7 Wedgetail early-warning aircraft, its radar in a fin standing on top of the
+fuselage, is one too.
+"""
 [variants.B737.facts]
 "Range" = "2,900 nm (5,370 km)"
 "Max takeoff weight" = "up to 70,080 kg (154,500 lb)"
 
 [variants.B738]
 name = "Boeing 737-800"
+production = [1998, 2020]
+text = """
+The Next Generation 737 that airlines bought in thousands: 4,989 were delivered between 1998 and
+2020, nearly three times as many as all the other NG airliners together, and it was long the most
+widely used single-aisle airliner in the world. It is the -700 stretched to 39.5 m for up to 189
+passengers, launched in 1994 to replace the 737-400, and it proved the right size for far more than
+that. US airlines bought it in place of their three-engined 727-200s, and after Boeing took over
+McDonnell Douglas and ended the MD-80 and MD-90 it filled that gap as well, burning about 80% of an
+MD-80's fuel with more passengers aboard. Ryanair built its fleet on it, with over 400.
+
+Like every NG it has the 1960s fuselage cross-section on a newer, larger wing, and CFM56-7B engines
+in nacelles flattened along the bottom, the squashed oval Boeing first used on the 737 Classic to
+fit a bigger fan under such a low wing. It is exactly as long as the MAX 8 that replaced it, so
+telling the two apart comes down to detail: an -800's nacelles end in a plain edge and its tail in a
+short cone, where a MAX has saw-tooth nacelles, a longer nose leg and a tail cone drawn further aft.
+Winglets no longer settle it, since many -800s, United's and Alaska's among them, have been refitted
+with split scimitar winglets much like the MAX's. Against its sisters, count the exits over the
+wing: two each side, where a -700 has one.
+
+Retired -800s are being rebuilt as freighters, with a large cargo door cut into the side, and fly
+for Amazon Air among others. The US Navy's P-8 Poseidon submarine hunter is an -800 with the -900's
+stronger wing, and the second Boeing Business Jet an -800 with extra tanks in the hold. The last
+passenger NG to be assembled, in December 2019, was an -800 for KLM.
+"""
 [variants.B738.facts]
+"First flight" = "July 1997"
+"Built" = "4,989 airliners"
 "Range" = "2,800 nm (5,190 km)"
 "Max takeoff weight" = "up to 79,010 kg (174,200 lb)"
 
 [variants.B739]
 name = "Boeing 737-900"
-more = """
-The -900 and -900ER are the longest NGs; the ER adds an extra pair of emergency exits behind the
-wing and a flat rear pressure bulkhead in place of the domed one, changes that let it seat up to
-220.
+production = [2001, 2019]
+text = """
+The longest Next Generation 737, at 42.1 m. Alaska Airlines launched it in 1997 and took the first
+in May 2001, but that original -900 was a stretch that couldn't use its length: it kept the -800's
+exits, which capped it at 189 seats however long the cabin, and the -800's fuel tanks and takeoff
+weight, so the extra metres cost it range. Only 52 were built.
+
+Nearly every -900 you see is the -900ER that followed in 2007, of which 505 were built. Boeing added
+a pair of exit doors behind the wing and replaced the domed rear pressure bulkhead with a flat one,
+which together raised the limit to 220 seats, and won the range back with winglets as standard and
+up to two extra fuel tanks in the hold. Launched the year after the last 757 was built, it covered
+part of that gap and answered the Airbus A321. An airline fitting 189 seats or fewer can have the
+extra doors replaced by plugs, an arrangement the MAX 9 inherited.
+
+From the ground, two exits over each wing and a fuselage noticeably long for its landing gear mark a
+-900, and the outline of a door between the wing and the rear door makes it an ER. The ER's tail
+skid extends further for landing, to guard that long rear fuselage against a scrape and let it
+approach more slowly. As on every NG, nacelles with a plain rear edge tell it from the MAX 9, which
+is all but the same length.
 """
 [variants.B739.facts]
+"First flight" = "August 2000"
+"Built" = "52, and 505 of the -900ER"
 "Range" = "2,700 nm (5,000 km), -900ER"
 "Max takeoff weight" = "up to 85,130 kg (187,700 lb), -900ER"
