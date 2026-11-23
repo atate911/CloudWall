@@ -119,6 +119,17 @@ const EC135_SEAMS = [
     ["hl", [[5.75, 1.62], [7.75, 1.6]], false],
     ["inlet", [[5.45, 1.9], [5.3, 2.02], [4.95, 2.05], [4.83, 1.95], [4.85, 1.72], [5.05, 1.62], [5.45, 1.78]]],
   ];
+// More of the 3-view's side view (EC135 only; the H145 drawn from it is not known to share them):
+// access panels on the cowling and the cabin side, the seam across the upper fin, the shroud line
+// under the fenestron, and the tail position light.
+const box = (s0, s1, z0, z1) => [[s0, z0, "c"], [s1, z0, "c"], [s1, z1, "c"], [s0, z1, "c"]];
+const EC135_DETAIL = [
+  ["hl", box(3.33, 3.552, 1.818, 1.906)], ["hl", box(3.944, 4.28, 1.489, 1.619)],
+  ["hl", box(2.961, 3.301, 0.777, 0.904)], ["hl", box(3.794, 3.977, 0.581, 0.715)],
+  ["hl", [[8.531, 2.298], [9.691, 2.298]], false],
+  ["hl", [[8.058, 1.253], [8.45, 1.074], [8.776, 0.96], [9.005, 0.862], [9.364, 0.894], [9.625, 1.009], [9.847, 1.218]], false],
+  ["strut", box(10.122, 10.167, 1.492, 1.616)], ["strut", box(10.167, 10.206, 1.518, 1.58)],
+];
 const EC135_ENDPLATE = [[8.07, 1.76, "c"], [7.73, 1.76, "c"], [7.51, 1.44, "c"], [7.86, 0.88, "c"], [8.18, 0.88, "c"], [8.05, 1.4]];
 F.ec35 = {
   kind: "heli", L0: 10.2, over: 2.0, D: 1, W: 1.5,
@@ -126,12 +137,17 @@ F.ec35 = {
   glass: EC135_GLASS,
   frame: 0.035,
   rotor: { s: 3.2, z: 2.65, mast: 0.15, d: 10.2 },
-  extras: [paint(EC135_SEAMS)],
+  extras: [paint(EC135_SEAMS), paint(EC135_DETAIL)],
   overlays: [
     skids({ z: -0.42, t: 0.09, aft: 3.85, fwd: 1.2, toe: [0.95, -0.2], legs: [[1.53, 0.06, 1.53, 0.12], [3.53, 0.02, 3.53, 0.12]] }),
+    // the long boarding step across the skid legs, and the dome over the rotor hub (3-view)
+    paint([["skid", [[1.143, -0.102, "c"], [3.683, -0.102, "c"], [3.703, -0.079], [3.683, -0.056, "c"], [1.143, -0.056, "c"], [1.123, -0.079]]],
+      ["hub", [[2.716, 2.667, "c"], [2.801, 2.746], [2.899, 2.804], [3.063, 2.873], [3.18, 2.886], [3.324, 2.857], [3.487, 2.785], [3.605, 2.706, "c"],
+        [3.454, 2.71, "l"], [2.801, 2.697, "l"]]]]),
     fenestron(9.11, 1.63, 0.56, 0.2),
-    // the horizontal stabiliser's starboard endplate
+    // the horizontal stabiliser's starboard endplate, with its position light (3-view)
     paint([["stab", EC135_ENDPLATE]]),
+    ({ sk }) => sk.ellipse("hl", 7.784, 1.407, 0.069, 0.025),
   ],
 };
 
@@ -181,10 +197,22 @@ F.b06 = {
       ["hl", [[3.07, 1.84], [3.05, 1.32]], false],
       ...[4.42, 4.49, 4.56].map((s) => ["inlet", [[s, 1.57, "c"], [s + 0.035, 1.58, "c"], [s + 0.035, 1.38, "c"], [s, 1.38, "c"]]]),
       ["stab", aerofoil(6.54, 6.96, 1.27, 0.06, 0.02)],
+      // from the 3-view: the engine cowling's front seam, the boom joint, the swashplate and its pitch link
+      ["hl", [[4.199, 1.783], [4.199, 1.302]], false],
+      ["hl", [[5.185, 1.446], [5.185, 0.941]], false],
+      ["strut", box(2.602, 2.814, 1.87, 1.947)], ["strut", box(2.718, 2.785, 1.947, 2.014)],
     ]),
   ],
   overlays: [
     skids({ z: -0.43, t: 0.1, aft: 3.5, fwd: 1.5, toe: [1.27, -0.3], legs: [[1.94, 0.0, 1.94, 0.15], [3.28, 0.04, 3.28, 0.15]] }),
+    paint([
+      // 3-view: the collar where the forward cross tube meets the belly, the saddle over the aft one
+      ["skid", [[1.857, -0.002], [1.929, 0.032], [2.006, 0.032], [2.073, -0.002, "c"], [2.03, -0.103], [1.948, -0.088], [1.871, -0.103, "c"]]],
+      ["skid", [[3.16, 0.07, "c"], [3.16, 0.08], [3.179, 0.148], [3.256, 0.181], [3.353, 0.176], [3.439, 0.138], [3.482, 0.09], [3.482, 0.07, "c"]]],
+      // the teetering rotor head as the 3-view draws it: the hub block between the two blade grips
+      ["hub", box(2.15, 2.564, 2.447, 2.601)], ["hub", box(2.843, 3.256, 2.447, 2.601)], ["hub", box(2.593, 2.795, 2.437, 2.639)],
+      ["hl", box(2.419, 2.554, 2.456, 2.581)], ["hl", box(2.862, 2.977, 2.456, 2.581)],
+    ]),
   ],
 };
 
@@ -232,10 +260,17 @@ F.b407 = {
       ["door", [[3.73, 1.24, "c"], [2.9, 1.24, "c"], [2.87, 0.1, "c"], [3.45, 0.1], [3.65, 0.25, "c"]]],
       ["hl", [[2.2, 1.34], [5.3, 1.34]], false],
       ["hl", [[3.2, 1.84], [3.2, 1.34]], false],
-      ...[1.5, 1.55, 1.6].map((z) => ["hl", [[3.86, z], [4.7, z]], false]),
+      // the five engine-air inlet grilles (3-view: five louvres each), the boom joint, the drive-shaft
+      // cover along the boom, and the door handles under the windows
+      ...[3.846, 4.046, 4.224, 4.398, 4.572].flatMap((s0) => [1.653, 1.611, 1.568, 1.526, 1.484].map((z) => ["hl", [[s0, z], [s0 + 0.128, z]], false])),
+      ["hl", [[5.423, 1.428], [5.432, 0.945]], false],
+      ["hl", [[5.422, 1.376], [9.023, 1.567]], false],
+      ...[1.836, 2.519, 3.397].map((s0) => ["door", [[s0, 0.49, "c"], [s0 + 0.108, 0.49, "c"], [s0 + 0.108, 0.522, "c"], [s0, 0.522, "c"]]]),
     ]),
   ],
   overlays: [
+    // the domed cap over the rotor hub (3-view)
+    paint([["hub", [[2.177, 2.555, "c"], [2.377, 2.66], [2.64, 2.696], [2.903, 2.685], [3.113, 2.632], [3.27, 2.553, "cl"]]]]),
     skids({ z: -0.38, t: 0.1, aft: 4.14, fwd: 1.5, toe: [1.31, -0.18], legs: [[1.95, 0.0, 1.86, 0.13], [3.92, 0.06, 3.72, 0.13]] }),
     // the stabiliser's starboard endplate fin
     paint([["stab", [[7.54, 1.81, "c"], [7.32, 1.81, "c"], [7.0, 1.42, "c"], [7.32, 0.94, "c"], [7.65, 0.94, "c"], [7.41, 1.42, "c"]]]]),
@@ -284,6 +319,19 @@ F.as50 = {
     ]),
   ],
   overlays: [
+    // the Starflex rotor head as the AS355 silhouette draws it: the star's legs, centre post and base
+    // under the bar of the blade sleeves (with their slots) and the dome cap; and the small fitting on
+    // the fin top
+    paint([
+      ["strut", box(3.188, 3.426, 2.189, 2.235)], ["strut", box(3.097, 3.516, 2.234, 2.306)], ["strut", box(3.239, 3.354, 2.235, 2.531)],
+      ["strut", [[3.064, 2.531, "c"], [3.122, 2.531, "c"], [3.162, 2.305, "c"], [3.104, 2.305, "c"]]],
+      ["strut", [[3.49, 2.532, "c"], [3.548, 2.532, "c"], [3.51, 2.306, "c"], [3.452, 2.306, "c"]]],
+      ["hub", box(2.852, 3.992, 2.53, 2.681)],
+      ["hl", box(2.929, 3.045, 2.556, 2.582)], ["hl", box(2.929, 3.045, 2.62, 2.646)],
+      ["hl", box(3.567, 3.915, 2.558, 2.584)], ["hl", box(3.567, 3.915, 2.622, 2.649)],
+      ["hub", [[3.012, 2.698, "c"], [3.115, 2.737], [3.309, 2.763], [3.502, 2.738], [3.592, 2.699, "cl"]]],
+      ["strut", [[10.692, 2.686, "c"], [10.698, 2.737], [10.724, 2.744], [10.737, 2.686, "c"]]],
+    ]),
     skids({ z: -0.55, t: 0.09, aft: 4.57, fwd: 1.95, toe: [1.64, -0.3], legs: [[2.57, 0.0, 2.57, 0.11], [4.04, 0.13, 4.04, 0.11]] }),
     // starboard tail rotor, then the stabiliser with its tip fin in front of it
     tail(9.58, 1.37, 1.86, 2, 85),
@@ -342,9 +390,19 @@ F.h60 = {
       // main gear drag beam and its step fairing
       ["strut", [[3.57, -0.17, "c"], [2.2, 0.17, "c"], [2.2, 0.08, "c"], [3.57, -0.25, "c"]]],
       ["fin", [[1.91, 0.22], [2.2, 0.36], [2.55, 0.33], [2.66, 0.2], [2.4, 0.07], [2.0, 0.1]]],
+      // more of the orthographic drawing: the wire-strike cutter ahead of the rotor pylon, the cabin
+      // door's lower track fairing, the drive-shaft cover along the boom and up the tail pylon, and the
+      // boom joint ahead of the pylon
+      ["strut", [[3.544, 2.65, "c"], [3.878, 2.409, "c"], [3.89, 2.425, "c"], [3.556, 2.666, "c"]]],
+      ["hl", [[5.512, 0.153, "c"], [6.335, 0.18], [6.576, 0.278], [6.915, 0.243, "c"], [6.625, 0.193], [6.262, 0.132], [5.513, 0.117, "c"]]],
+      ["hl", [[8.192, 1.614], [12.113, 1.023]], false],
+      ["hl", [[11.29, 1.141], [11.293, 0.258]], false],
+      ["hl", [[12.741, 1.382, "c"], [12.923, 1.231, "c"], [14.357, 2.797]], false],
     ]),
   ],
   overlays: [
+    // the elastomeric blade cuffs either side of the rotor hub (orthographic drawing)
+    ({ sk }) => { sk.ellipse("hub", 3.688, 2.965, 0.15, 0.13); sk.ellipse("hub", 5.164, 3.018, 0.15, 0.13); },
     // canted (20 degree) four-blade tail rotor on the starboard side of the pylon
     tail(14.62, 3.09, 3.35, 4, 45, 0.94),
     paint([["stab", aero(13.2, 1.2, 14.95, 0.98, 0.12)]]),
@@ -393,6 +451,13 @@ F.h47 = {
     ["hl", [[12.0, 4.25], [12.0, 3.0]], false],
     ["hl", [[14.9, 4.3], [14.9, 2.2], [15.53, 2.2]], false],
     ["hl", [[3.9, 2.52], [1.3, 2.62]], false],
+    // more of the 3-view (placed through its round windows): the forward pylon's panel seam, the panel
+    // line across the aft pylon, the seam from under the nacelle to the pylon's trailing edge, and the
+    // blade under the nose
+    ["hl", [[1.952, 3.08], [1.953, 2.46]], false],
+    ["hl", [[11.921, 3.245], [14.725, 3.323]], false],
+    ["hl", [[12.948, 2.196], [15.483, 1.813]], false],
+    ["strut", [[2.153, 0.119, "c"], [2.387, 0.113, "c"], [2.319, -0.161], [2.77, -0.266, "c"], [2.19, -0.252, "c"]]],
   ])],
   overlays: [
     hub(13.7, 4.75),
@@ -403,6 +468,9 @@ F.h47 = {
         [13.85, 2.7, "c"], [13.85, 2.22, "c"], [13.3, 2.2, "c"], [13.25, 2.18, "c"], [12.12, 2.15, "c"], [12.03, 1.98, "c"], [11.45, 2.04]]],
       ["core", [[11.33, 2.47, "c"], [11.5, 2.86], [11.95, 2.92, "c"], [11.95, 2.02, "c"], [11.5, 2.08]]],
       ["inlet", [[13.82, 2.68, "c"], [13.9, 2.6], [13.9, 2.32], [13.82, 2.24, "c"]]],
+      // the two small boxes under the nacelle (3-view)
+      ["hl", [[12.061, 1.961, "c"], [12.477, 1.961, "c"], [12.477, 2.144, "c"], [12.061, 2.144, "c"]]],
+      ["hl", [[12.472, 1.98, "c"], [12.851, 1.98, "c"], [12.851, 2.164, "c"], [12.472, 2.164, "c"]]],
     ]),
   ],
 };
