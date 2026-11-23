@@ -15,7 +15,9 @@ const F = {};
 //   lines   [s, z] polylines drawn as thin lines (rudder hinge, panel joints)
 //   struts  [[s, z] bottom, [s, z] top, width at bottom, width at top]
 //   gear    {leg: [[s, z] top, [s, z] bottom], w: [w0, w1], at: [s, z] axle, r, spat: {f, a, t, b}}
-//           spat: reach ahead of / behind the axle, top above / bottom below it; or {pts}: its traced outline
+//           spat: reach ahead of / behind the axle, top above / bottom below it; or {pts}: its traced outline;
+//           shapes: [class, pts, closed?] traced parts of that gear (leg fairings, springs, forks), drawn
+//           before its wheel, so they go with the gear when a variant swaps it
 //   shapes, marks  [class, [[s, z, flag]...], closed?] smooth parts drawn last, over the wing and glass
 //           (fairings, inlets, fittings, frames)
 //   dots    [class, s, z, rx, ry] small round parts drawn last (beacons, fuel caps)
@@ -46,6 +48,7 @@ const OVERLAYS = [(k) => {
   for (const [a, b, w0, w1] of p.struts || []) leg(k.sk, a, b, w0, w1);
   for (const g of p.gear || []) {
     if (g.leg) leg(k.sk, g.leg[0], g.leg[1], ...(g.w || []));
+    for (const [cls, pts, closed = true] of g.shapes || []) k.sk.smooth(cls, pts, closed);
     if (g.at) wheel(k.sk, g.at[0], g.at[1], g.r, g.spat);
   }
   for (const [cls, pts, closed = true] of p.shapes || []) k.sk.smooth(cls, pts, closed);
@@ -74,7 +77,8 @@ function stretch(f, at, ds, more = {}) {
       marks: (p.marks || []).map(([c, pts, cl]) => [c, loop(pts), cl]),
       dots: (p.dots || []).map(([c, s, z, rx, ry]) => [c, ...mv([s, z]), rx, ry]),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [mv(a), mv(b), w0, w1]),
-      gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(mv), at: g.at && mv(g.at), spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
+      gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(mv), at: g.at && mv(g.at), spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat,
+        shapes: g.shapes && g.shapes.map(([c, pts, cl]) => [c, loop(pts), cl]) })),
     },
     ...more,
   };
@@ -97,7 +101,8 @@ function scale(f, k, more = {}) {
       marks: (p.marks || []).map(([c, pts, cl]) => [c, loop(pts), cl]),
       dots: (p.dots || []).map(([c, s, z, rx, ry = rx]) => [c, s * k, z * k, rx * k, ry * k]),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [pt(a), pt(b), w0, w1]),
-      gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(pt), at: g.at && pt(g.at), r: g.r * k, spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
+      gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(pt), at: g.at && pt(g.at), r: g.r * k, spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat,
+        shapes: g.shapes && g.shapes.map(([c, pts, cl]) => [c, loop(pts), cl]) })),
     },
     ...more,
   };
@@ -1415,6 +1420,27 @@ const RV8_BODY = [
   [6.32, 0.44, "l"], [5.94, 0.355, "l"], [2.79, 0.017], [2.28, 0, "l"], [1.0, -0.005], [0.84, 0.014], [0.69, 0.057],
   [0.54, 0.122], [0.36, 0.25], [0.18, 0.303], [0.09, 0.345],
 ];
+// RV-8 gear from the CAD: the main leg's fairing with its intersection fairing and the wheel pant (the tyre
+// shows below it), and the tailwheel's spring and fork
+const RV8_GEAR = [
+  { at: [1.711, -0.591], r: 0.198, spat: { pts: [[1.713, -0.751], [1.653, -0.748], [1.596, -0.74], [1.543, -0.725], [1.496, -0.705],
+    [1.47, -0.689], [1.438, -0.662], [1.416, -0.633], [1.406, -0.602], [1.408, -0.57], [1.421, -0.539], [1.446, -0.51], [1.481, -0.484],
+    [1.525, -0.462], [1.558, -0.45], [1.613, -0.436], [1.671, -0.428], [1.711, -0.427], [1.788, -0.432], [1.839, -0.442],
+    [2.249, -0.557, "c"], [2.249, -0.614, "c"], [1.892, -0.721], [1.79, -0.745]] },
+    shapes: [["strut", [[1.649, -0.431, "c"], [1.643, -0.029, "c"], [1.681, -0.04], [1.754, -0.039, "c"], [1.802, -0.025, "c"], [1.773, -0.43, "c"]]],
+      ["pant", [[1.76, 0.027], [1.718, 0.033], [1.684, 0.033], [1.656, 0.029], [1.625, 0.019], [1.614, 0.011], [1.614, -0.001, "c"],
+        [1.647, -0.032], [1.681, -0.04], [1.754, -0.039], [1.774, -0.035], [1.886, 0.009, "c"]]]] },
+  { at: [6.323, 0.158], r: 0.076, shapes: [["strut", [[5.834, 0.349, "c"], [6.155, 0.249, "c"], [6.15, 0.234, "c"], [5.83, 0.327, "c"]]],
+    ["strut", [[6.205, 0.241, "c"], [6.237, 0.241, "c"], [6.237, 0.193, "c"], [6.205, 0.192, "c"]]],
+    ["strut", [[6.204, 0.189, "c"], [6.246, 0.189, "c"], [6.326, 0.17, "c"], [6.323, 0.145, "c"], [6.204, 0.144, "c"]]]] },
+];
+// Detail from Van's CAD three-views ("3 VIEW ALL RV.dwg", vansaircraft.com 3_VIEW_ALL.zip), drawn 1:1 in
+// inches: the RV-8 side view fits this outline within 2 cm (90 %, 3.6 cm at worst), so it is traced as is:
+// the cowl's inlet lips and face, the upper skin line, the firewall seam with the cowl's exit lip under
+// the belly, the windscreen base and frame, the canopy sill, skirt and aft frame, the wing root and the
+// tailplane as drawn (wingSide, stabSide), the elevator joint, the rudder hinge with its horn, the rudder's
+// top and lower edges, the main-leg fairing with its intersection fairing and wheel pant, and the tailwheel
+// spring and fork.
 F.rv8 = rv({
   L0: 6.4, W: 0.86, body: RV8_BODY,
   glass: [
@@ -1422,17 +1448,49 @@ F.rv8 = rv({
     pane(RV8_BODY, 2.18, 3.95, [[3.75, 0.86, ""], [3.5, 0.82], [2.18, 0.81]]),
   ],
   wing: { le: 1.71, root: 0.43, span: 7.32, cr: 1.47, ct: 1.47, sweep: 0, dih: 3.5, z: 0.09, t: [0.15, 0.135] },
+  wingSide: [["wing", [[2.505, 0.157], [2.301, 0.175], [2.091, 0.187], [1.966, 0.186], [1.875, 0.176], [1.808, 0.159], [1.759, 0.138],
+    [1.721, 0.108], [1.709, 0.091], [1.705, 0.079], [1.704, 0.067], [1.709, 0.054], [1.716, 0.046], [1.73, 0.037], [1.761, 0.027],
+    [1.845, 0.015], [1.978, -0.002], [2.095, -0.01], [2.431, -0.004], [2.796, 0.02], [3.169, 0.053, "c"], [3.158, 0.066], [3.084, 0.077]]]],
   eng: { kind: "none", nose: { s: 0.36, z: 0.435, d: 1.83, blades: 2 } },
   stab: { le: 1.21, z: 0.69, span: 3.0, root: 0.1, cr: 0.87, ct: 0.56, sweep: 12, dih: 0, thick: 0.1 },
+  stabSide: [["stab", [[5.16, 0.693], [5.165, 0.701], [5.192, 0.713], [5.273, 0.732], [5.354, 0.739], [5.521, 0.744], [5.66, 0.739],
+    [6.03, 0.702, "c"], [6.029, 0.695, "c"], [5.66, 0.653], [5.53, 0.646], [5.365, 0.648], [5.274, 0.655], [5.199, 0.671], [5.175, 0.679]]],
+    ["hl", [[5.659, 0.739], [5.659, 0.652]], false]],
   parts: {
-    lines: [hinge(5.85, 0.36, 1.72, 5.7, 1.8), [[0.36, 0.25], [0.36, 0.6]]],
-    gear: [wheelLeg([1.73, 0], [1.73, -0.42], [1.73, -0.59], 0.17, [0.08, 0.07], { f: 0.33, a: 0.53, t: 0.17, b: 0.13 }),
-      tailwheel([5.77, 0.35], [6.3, 0.16])],
+    lines: [
+      // rudder hinge and horn, the rudder's top and lower edges
+      [[5.833, 0.354], [5.834, 1.728], [5.673, 1.732], [5.674, 1.817]], [[5.671, 1.735], [6.124, 1.715]], [[5.931, 0.365], [6.316, 0.454]],
+      // cowl: inlet lips and face, upper skin line, firewall seam running into the exit lip under the belly
+      [[0.34, 0.524], [0.425, 0.58], [0.462, 0.596], [0.554, 0.627], [0.668, 0.655]],
+      [[0.34, 0.524], [0.356, 0.516], [0.364, 0.502], [0.365, 0.391], [0.355, 0.374], [0.341, 0.367]], [[0.34, 0.524], [0.341, 0.367]],
+      [[0.431, 0.255], [0.366, 0.322], [0.341, 0.367]], [[1.937, 0.861], [0.618, 0.674]],
+      [[1.197, 0.756], [1.224, 0.561], [1.228, -0.063], [0.931, 0.011]],
+      // windscreen base and frame, canopy sill and skirt
+      [[1.685, 0.825], [1.81, 0.793], [1.939, 0.781], [2.004, 0.782]], [[1.937, 0.861], [1.942, 0.836], [1.966, 0.813], [2.013, 0.795], [2.062, 0.786]],
+      [[2.004, 0.782], [3.422, 0.838]],
+      [[2.151, 0.788], [2.152, 0.65], [3.31, 0.656], [3.4, 0.716], [3.466, 0.745], [3.535, 0.764], [3.681, 0.788], [3.79, 0.814], [3.896, 0.847], [4.0, 0.888]],
+    ],
+    // the canopy's aft frame, over the glass
+    marks: [["hl", [[3.402, 0.837], [3.421, 0.91], [3.768, 0.892]], false],
+      ["hl", [[3.422, 0.838], [3.52, 0.845], [3.618, 0.858], [3.714, 0.878], [3.809, 0.904], [3.902, 0.935]], false]],
+    gear: RV8_GEAR,
   },
 });
+// RV-8A gear from the CAD: the raked main-leg fairing with its intersection fairing and pant, and the nose
+// leg's fairing and pant (the tyres show below the pants)
 F.rv8a = withGear(F.rv8, [
-  wheelLeg([2.09, -0.03], [2.25, -0.35], [2.33, -0.54], 0.17, [0.1, 0.08], { f: 0.3, a: 0.54, t: 0.19, b: 0.12 }),
-  wheelLeg([1.07, -0.02], [0.63, -0.49], [0.8, -0.63], 0.15, [0.06, 0.05], { f: 0.27, a: 0.4, t: 0.155, b: 0.1 }),
+  { at: [2.32, -0.545], r: 0.182, spat: { pts: [[2.859, -0.487, "c"], [2.449, -0.372], [2.398, -0.362], [2.301, -0.357], [2.242, -0.362],
+    [2.186, -0.374], [2.135, -0.391], [2.091, -0.413], [2.066, -0.43], [2.038, -0.458], [2.021, -0.488], [2.015, -0.52], [2.021, -0.552],
+    [2.039, -0.582], [2.067, -0.61], [2.106, -0.634], [2.152, -0.654], [2.205, -0.669], [2.303, -0.681], [2.4, -0.674], [2.451, -0.664],
+    [2.859, -0.545, "c"]] },
+    shapes: [["strut", [[2.191, -0.372, "c"], [2.013, -0.034, "c"], [2.173, -0.032, "c"], [2.3, -0.357, "c"]]],
+      ["pant", [[1.967, 0.013, "c"], [1.992, -0.011], [2.013, -0.034], [2.03, -0.043], [2.085, -0.046], [2.124, -0.046], [2.144, -0.042],
+        [2.173, -0.031], [2.264, 0.005, "c"], [2.15, 0.012], [2.05, 0.014]]]] },
+  { at: [0.8, -0.642], r: 0.14, spat: { pts: [[1.19, -0.583, "c"], [0.868, -0.493], [0.828, -0.485], [0.752, -0.481], [0.675, -0.491],
+    [0.597, -0.519], [0.567, -0.538], [0.545, -0.56], [0.531, -0.584], [0.527, -0.609], [0.532, -0.634], [0.545, -0.658], [0.568, -0.68],
+    [0.598, -0.699], [0.676, -0.726], [0.753, -0.735], [0.829, -0.731], [0.869, -0.722], [1.19, -0.629, "c"]] },
+    shapes: [["strut", [[1.028, -0.021, "c"], [0.601, -0.495], [0.592, -0.507], [0.585, -0.526, "c"], [0.63, -0.504, "c"], [0.638, -0.491],
+      [0.654, -0.486], [0.7, -0.476], [0.742, -0.472, "c"], [1.088, -0.087], [1.111, -0.07], [1.128, -0.061], [1.145, -0.055], [1.173, -0.051, "c"]]]] },
 ]);
 
 // RV-10: the four-seater: a cabin with a roof rather than a bubble, big gull-wing doors (the door window

@@ -20,6 +20,7 @@
 //            sweep (LE, deg), dih (deg), z (chord height at root, D), t [root, tip thickness], rake, bend}
 //   wingSide the wing's side view traced off the type's drawing, drawn instead of the one computed from
 //            `wing`: a list of [class, [[s, z, flag]...], closed?] parts (outline, then its inner lines)
+//   stabSide the same for the tailplane, drawn instead of the one computed from `stab`
 //   tip      wingtip device {type fence | (blade) h, sweep, top, base, blend, lo, loSweep, loTip}
 //   ftf      flap-track fairings: span fractions, or [e, start, end, depth] in shares of local chord
 //   eng      {kind fan|prop, at [span fractions], fwd (inlet ahead of local LE), drop (centre below
