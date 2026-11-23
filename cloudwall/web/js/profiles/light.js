@@ -1025,6 +1025,14 @@ F.sr22 = {
 // swept fin with a long dorsal, ventral strakes under the tail cone, round cabin windows,
 // the airstair door behind the cockpit and the big cargo door aft (both on the left side;
 // shown as the type's signature), trailing-link gear retracted.
+// Windows, doors and detail follow the manufacturer's side view in Pilatus's "PC-12 PRO Just The
+// Facts" (2025), page 4 "Exterior View" (a 448 px rendering, about 3.4 cm a pixel, scaled by its
+// 14.40 m length; it fits the outline within a few cm at the nose, crown and fin). Against it the
+// photo-measured windscreen, cabin windows and doors sat 0.3-0.5 m too far forward and the windows
+// 0.1 m too low: they now follow the Pilatus view, as do the cowling seams, exhaust stack, vents,
+// dorsal antenna and rudder hinge.
+// a rounded-rectangle pane (glass corners are sharp unless flagged smooth)
+const pane12 = (...a) => rect(...a).map((p) => (p[2] ? p : [p[0], p[1], ""]));
 F.pc12 = {
   kind: "turboprop", L0: 14.4, over: 0, D: 1, W: 1.6,
   body: [
@@ -1034,18 +1042,27 @@ F.pc12 = {
     [12.6, 0.78], [12.3, 0.8], [11.2, 0.56], [10.0, 0.42], [8.8, 0.24], [7.5, 0.08], [6.0, -0.04], [4.5, -0.06],
     [3.0, 0.02], [2.4, 0.08], [1.89, 0.14], [1.05, 0.3], [0.6, 0.5], [0.39, 0.62], [0.2, 0.7], [0.1, 0.75],
   ],
-  glass: [[[2.55, 1.33], [3.0, 1.62, ""], [3.42, 1.8], [3.48, 1.25], [2.85, 1.22]]],
-  frame: 0.05,
-  win: [{ z: 1.25, from: 4.75, to: 6.15, pitch: 0.7, w: 0.3, h: 0.38 }, { z: 1.25, from: 7.4, to: 7.4, w: 0.3, h: 0.38 }],
+  // the cockpit side window, then the four cabin windows (rounded rectangles, unevenly spaced)
+  glass: [
+    [[2.8, 1.36, "c"], [3.24, 1.68, ""], [3.47, 1.71, ""], [3.77, 1.65, ""], [3.89, 1.53, ""], [3.89, 1.36, ""], [3.8, 1.17, ""],
+      [3.47, 1.15, ""], [3.13, 1.15, ""]],
+    pane12(4.89, 5.27, 1.07, 1.54, 0.09), pane12(5.51, 5.9, 1.07, 1.54, 0.09), pane12(6.3, 6.68, 1.07, 1.54, 0.09),
+    pane12(7.3, 7.68, 1.06, 1.53, 0.09),
+  ],
+  frame: 0.035,
   wing: { le: 4.2, root: 0.7, span: 16.28, cr: 2.25, ct: 1.0, sweep: 2, dih: 5, z: 0.12, t: [0.16, 0.12] },
   tip: { h: 0.35, sweep: 45, top: 0.25, base: 0.8 },
   eng: { kind: "none", nose: { s: 0.33, z: 0.81, d: 2.67, blades: 4 } },
   stab: { le: 2.36, z: 3.15, span: 5.2, root: 0.15, cr: 1.55, ct: 0.95, sweep: 30, dih: 0, thick: 0.1 },
   parts: {
-    doors: [rect(3.67, 4.45, 0.15, 1.72, 0.08), rect(6.54, 8.03, 0.36, 1.73, 0.1)],
-    lines: [[[12.4, 1.0], [13.15, 2.98]]],
+    // the airstair door (1.35 m high, its sill from the brochure's figure) and the cargo door
+    doors: [rect(4.12, 4.85, 0.46, 1.81, 0.08), rect(7.09, 8.53, 0.23, 1.74, 0.1)],
+    // the rudder hinge; the cowling's two seams
+    lines: [[[12.35, 0.92], [13.44, 2.9]], [[1.64, 1.22], [1.64, 0.22]], [[2.49, 1.29], [2.49, 0.08]]],
+    // the dorsal antenna on the cabin roof; the exhaust stack and two vents on the cowling
+    shapes: [["strut", [[7.9, 1.78, "c"], [8.29, 2.26, "c"], [8.39, 2.21, "c"], [8.09, 1.78, "c"]]]],
+    dots: [["inlet", 1.2, 0.81, 0.26, 0.15], ["inlet", 1.81, 0.74, 0.04], ["inlet", 2.3, 0.67, 0.05]],
     draw: [(k) => {
-      k.sk.ellipse("inlet", 0.93, 0.84, 0.15, 0.1);
       // ventral strake under the tail cone
       k.sk.smooth("fin", [[8.86, 0.3, "c"], [11.2, 0.41, "c"], [11.5, 0.86, "c"], [10.6, 0.5], [9.4, 0.36]]);
     }],
