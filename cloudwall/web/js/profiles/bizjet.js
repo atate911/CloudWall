@@ -353,7 +353,29 @@ F.c56x = {
     [[1.6, 0.875], [1.88, 0.88], [1.88, 0.66], [1.6, 0.66]],
   ],
   frame: 0.035,
-  extras: [hatch(4.8, 0.7, 0.3, 1.5, 0.2)],
+  // from the side-on photo of XLS EC-K..: the small whip, two low domes and the swept blade on the
+  // spine, the door handle recess, the swept blade under the nose and the light under the belly, the
+  // ventral strake under the tail cone; on the fin the tip beacon, the cap seam and the small plate
+  extras: [hatch(4.8, 0.7, 0.3, 1.5, 0.2), ({ sk, top, bottom }) => {
+    const t = (s) => top(s) - 0.02, b = (s) => bottom(s) + 0.02;
+    sk.poly("strut", [[5.407, t(5.41)], [5.439, 1.896], [5.478, 1.899], [5.473, t(5.47)]]);
+    for (const [a, w] of [[6.093, 0.2], [6.661, 0.25]]) {
+      sk.smooth("hull", [[a, t(a), "c"], [a + w * 0.25, top(a) + 0.045, ""], [a + w * 0.75, top(a) + 0.045, ""], [a + w, t(a + w), "c"]]);
+    }
+    sk.poly("strut", [[7.519, t(7.52)], [7.699, 1.98], [7.816, 2.003], [7.689, t(7.69)]]);
+    sk.smooth("door", [[4.805, 0.96, "c"], [5.08, 0.983, "c"], [5.097, 0.786, "c"], [4.822, 0.763, "c"]]);
+    sk.poly("strut", [[2.444, b(2.44)], [2.627, -0.106], [2.857, -0.179], [2.785, -0.106], [2.549, b(2.55)]]);
+    sk.ellipse("hub", 5.825, bottom(5.825) - 0.03, 0.12, 0.04);
+    const v = [[13.26, 0], [14.61, 0], [14.64, -0.33], [13.81, -0.3]].map(([s, dz]) => [s, bottom(s) + 0.03 + dz, "c"]);
+    sk.smooth("fin", v);
+  }],
+  overlays: [({ sk }) => {
+    // the fin tip: leading edge at 15.3 - 1.77 + 1.91 tan 36 deg, chord 1.2, 1.91 m over the crown
+    const le = 15.3 - 1.77 + 1.91 * Math.tan((36 * Math.PI) / 180), zt = 1.84 + 1.91;
+    sk.ellipse("hub", le + 0.42 * 1.2, zt + 0.03, 0.05, 0.04);
+    sk.poly("hl", [[le + 0.21 * 1.2, zt], [le + 0.21 * 1.2, zt - 0.17], [le + 0.6 * 1.2, zt - 0.17]], false);
+    sk.smooth("door", [[15.22, 3.31, "c"], [15.384, 3.402, "c"], [15.613, 3.342, "c"], [15.397, 3.245, "c"]]);
+  }],
   win: [{ z: 0.69, from: 5.59, to: 8.9, pitch: 0.81, w: 0.26, h: 0.34 }],
   wing: { le: 6.6, root: 0.95, span: 17.17, cr: 2.7, ct: 1.15, sweep: 8, dih: 4, z: 0.08, t: [0.14, 0.11] },
   eng: { kind: "fan", aft: { s: 5.66, z: 0.77 }, len: 2.7, dia: 0.88, style: "long", fx: 0.88 },
@@ -362,7 +384,7 @@ F.c56x = {
 };
 F.c680 = {
   ...F.c56x, L0: 18.36, over: 0.99,
-  extras: [hatch(4.62, 0.75, 0.3, 1.5, 0.2)],
+  extras: [hatch(4.62, 0.75, 0.3, 1.5, 0.2)], overlays: [],
   win: [{ z: 0.7, from: 5.3, to: 10.05, pitch: 0.79, w: 0.26, h: 0.34 }],
   wing: { le: 7.9, root: 0.95, span: 22.04, cr: 3.2, ct: 1.15, sweep: 18, dih: 4, z: 0.08, t: [0.14, 0.11] },
   eng: { kind: "fan", aft: { s: 6.64, z: 0.72 }, len: 3.4, dia: 1.0, style: "long", fx: 0.88 },
