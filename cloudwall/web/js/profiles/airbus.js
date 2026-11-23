@@ -102,7 +102,12 @@ const WIN = { z: 0.662, pitch: 0.533, w: 0.23, h: 0.33 };
 // view. Spine: GPS 1 and 2, VHF 1, ATC 4, ATC 3, TCAS top, ADF, VHF 3, the ELT; belly: DME 1, ATC 1
 // and 2, DME 2, TCAS bottom, the marker, VHF 2 and the two pairs of radio-altimeter antennas;
 // side: the emergency static probe, pitot probe 2, the TAT probe, the static probes and AOA sensor 2;
-// the HF antenna in the fin fillet and the VOR antenna in the fin tip.
+// the HF antenna in the fin fillet and the VOR antenna in the fin tip. The two fin panels are given
+// from the tail-cone end, as the fin is (it is the same on the A319, A320 and A321).
+const A320_FIN_PANELS = [
+  ["panel", [[-7.02, 4.03], [-5.76, 5.43], [-5.68, 5.37], [-6.94, 3.97]]],
+  ["panel", [[-1.76, 9.64], [-1.76, 9.78], [-1.14, 9.78], [-1.14, 9.64]]],
+];
 const A320_AERIALS = [
   ["flat", 4.15, 4.33, 0.07, 1], ["flat", 4.48, 4.67, 0.07, 1], ["blade", 5.14, 5.49, 0.4, 1], ["stub", 6.27, 6.46, 0.12, 1],
   ["stub", 7.48, 7.72, 0.12, 1], ["dome", 7.91, 8.29, 0.11, 1], ["dome", 17.14, 17.77, 0.13, 1], ["blade", 21.66, 22.15, 0.44, 1],
@@ -112,8 +117,20 @@ const A320_AERIALS = [
   ["flat", 23.89, 24.03, 0.08, -1], ["flat", 25.0, 25.17, 0.08, -1], ["flat", 25.53, 25.7, 0.08, -1],
   ["port", 2.09, 1.5, 0.05], ["port", 2.06, 0.27, 0.05], ["port", 2.66, 0.93, 0.05], ["port", 6.62, 0.13, 0.04], ["port", 6.85, 0.13, 0.04],
   ["port", 8.64, 1.71, 0.06],
-  ["panel", [[30.55, 4.03], [31.81, 5.43], [31.89, 5.37], [30.63, 3.97]]],
-  ["panel", [[35.81, 9.64], [35.81, 9.78], [36.43, 9.78], [36.43, 9.64]]],
+  ...A320_FIN_PANELS,
+];
+// A319 fig. 2-11-0-991-002 (A319-100 and A319neo), placed the same way: the same antennas and probes
+// at the A319's own stations.
+const A319_AERIALS = [
+  ["flat", 3.91, 4.15, 0.07, 1], ["flat", 4.33, 4.58, 0.07, 1], ["blade", 5.19, 5.56, 0.28, 1], ["stub", 6.33, 6.58, 0.1, 1],
+  ["stub", 6.61, 6.79, 0.1, 1], ["dome", 8.39, 8.89, 0.16, 1], ["dome", 15.2, 15.52, 0.12, 1], ["blade", 19.69, 20.08, 0.36, 1],
+  ["blade", 24.35, 24.55, 0.18, 1],
+  ["dome", 1.95, 2.2, 0.08, -1], ["stub", 5.74, 5.96, 0.1, -1], ["stub", 6.11, 6.3, 0.08, -1], ["dome", 6.91, 7.16, 0.1, -1],
+  ["flat", 7.41, 7.84, 0.08, -1], ["dome", 8.52, 9.01, 0.15, -1], ["blade", 20.16, 20.39, 0.36, -1], ["flat", 21.29, 21.44, 0.06, -1],
+  ["flat", 21.93, 22.08, 0.06, -1], ["flat", 22.92, 23.07, 0.06, -1], ["flat", 23.44, 23.6, 0.06, -1],
+  ["port", 1.81, 1.66, 0.05], ["port", 2.23, 0.96, 0.05], ["port", 2.88, 1.16, 0.05], ["port", 6.12, 0.42, 0.04], ["port", 6.3, 0.42, 0.04],
+  ["port", 7.49, 2.42, 0.06],
+  ...A320_FIN_PANELS,
 ];
 const row = (from, to, pitch = WIN.pitch) => ({ ...WIN, from, to, pitch });
 
@@ -143,7 +160,7 @@ F.a20n = { ...F.a320, eng: PW1100G, tip: SHARKLET, overlays: [canoes(A320_FTF)] 
 // A319: 1.60 m shorter ahead of the wing and 2.13 m behind; one pair of overwing exits (the aft
 // one; the forward pair is optional). CFM56-5B, as on most US A319s (American, Delta, Allegiant).
 const A319 = {
-  fwd: 0.43, eng: CFM56, extras: [seam(A320_FAIRING)],
+  fwd: 0.43, eng: CFM56, extras: [seam(A320_FAIRING), aerials(A319_AERIALS)],
   doors: [[5.04, 0.81], [8.16, 1.82, "C"], [2.28, 0.51, "E", "w"], [-13.28, 1.82, "C"], [-8.03, 0.81]],
 };
 // A318: a further 0.79 m shorter ahead of the wing, 1.6 m behind it; fin 0.75 m taller (an
