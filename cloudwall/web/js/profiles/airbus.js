@@ -168,6 +168,24 @@ const A318 = {
     k.sk.poly("hl", [[a, za], [at(a, za, tipLE + t.ct * 0.7, zt), zx], [at(te, zte, tipLE + t.ct, zt), zx]], false);
   }],
 };
+// A321 fig. 2-11-0-991-004 (A321-100, A321-200 and A321neo), from Airbus's "A321 Aircraft
+// Characteristics - Airport and Maintenance Planning" (Rev Mar 01/22; Hawaii DOT's copy, Airbus's own
+// being out of reach), placed as the A320's: a schematic drawn near to scale (its door spacings agree
+// with the 2-7-0 stations within 0.1 m), so stations come from its two side views by interpolation
+// between the nose, doors 1 to 4 and the tail-cone end; crown and belly from the left view, the probes
+// on this (right) side and ATC 3, ATC 2 and the ADF from the right view. Where the two views draw a
+// pair at one station (ATC 3 and 4 on the crown, ATC 1 and 2 underneath), only this side's is drawn.
+// The neo shares the fuselage, so the ACF door layout doesn't move them.
+const A321_AERIALS = [
+  ["flat", 4.05, 4.4, 0.07, 1], ["flat", 4.46, 4.71, 0.07, 1], ["blade", 5.18, 5.9, 0.4, 1], ["stub", 6.53, 6.94, 0.12, 1],
+  ["dome", 8.47, 9.07, 0.11, 1], ["dome", 21.51, 22.23, 0.13, 1], ["blade", 28.6, 29.11, 0.44, 1], ["blade", 34.93, 35.31, 0.21, 1],
+  ["dome", 1.96, 2.28, 0.09, -1], ["stub", 5.93, 6.25, 0.12, -1], ["dome", 7.12, 7.37, 0.12, -1], ["dome", 8.47, 9.07, 0.15, -1],
+  ["flat", 10.73, 11.27, 0.1, -1], ["blade", 27.88, 28.45, 0.31, -1], ["flat", 29.65, 29.81, 0.08, -1], ["flat", 30.22, 30.44, 0.08, -1],
+  ["flat", 31.29, 31.51, 0.08, -1], ["flat", 31.86, 32.08, 0.08, -1],
+  ["port", 1.68, 1.56, 0.05], ["port", 3.0, 1.4, 0.05], ["port", 2.48, 0.71, 0.05], ["port", 6.53, 0.49, 0.04], ["port", 6.82, 0.49, 0.04],
+  ["port", 7.73, 1.84, 0.06],
+  ...A320_FIN_PANELS,
+];
 // A321: 4.27 m plug ahead of the wing, 2.67 m behind; four door pairs, doors 2 and 3 the smaller
 // 0.76 x 1.52 m type (drawn here, the renderer's doors are 1.85 m tall). IAE V2500 (American,
 // JetBlue, Spirit) and sharklets, as most US A321ceos were delivered.
@@ -175,7 +193,7 @@ const A321 = {
   fwd: 0.614, eng: V2500, tip: SHARKLET, overlays: [canoes(A320_FTF)],
   doors: [[5.02, 0.81], [8.16, 1.82, "C"], [-14.89, 1.82, "C"], [-7.93, 0.81]],
   win: [row(6.23, 12.7), row(14.74, 17.95), row(18.73, 19.53, 0.79), row(20.18, 23.4), row(26.07, -9.96)],
-  extras: [seam(A320_FAIRING), hatch(13.84, 0.76, 1.52), hatch(-19.72, 0.76, 1.52)],
+  extras: [seam(A320_FAIRING), hatch(13.84, 0.76, 1.52), hatch(-19.72, 0.76, 1.52), aerials(A321_AERIALS)],
 };
 // A321neo ACF (Airbus Cabin Flex, nearly all US A321neos): door 1, two pairs of overwing exits,
 // a 0.76 x 1.52 m door 3 behind the wing, door 4. PW1100G (Delta, United, JetBlue, Spirit).
@@ -183,7 +201,7 @@ const A21N = {
   fwd: 0.614, eng: PW1100G, tip: SHARKLET, overlays: [canoes(A320_FTF)],
   doors: [[5.04, 0.81], [8.56, 1.82, "C"], [1.43, 0.51, "E", "w"], [2.28, 0.51, "E", "w"], [-14.49, 1.82, "C"], [-8.04, 0.81]],
   win: [row(6.2, 25.6), row(28.14, -9.96)],
-  extras: [seam(A320_FAIRING), hatch(-17.69, 0.76, 1.52)],
+  extras: [seam(A320_FAIRING), hatch(-17.69, 0.76, 1.52), aerials(A321_AERIALS)],
 };
 
 // ---------- Airbus A220 (Bombardier CSeries) ----------
