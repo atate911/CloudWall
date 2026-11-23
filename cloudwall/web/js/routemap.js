@@ -197,7 +197,7 @@ function pickRegions(regions, toPx, path, W, H, taken, z, fs) {
   const n = clamp(Math.round((W * H) / 26000), 2, 6), out = [];
   const cands = [];
   for (const [name, kind, min, pts, iso] of regions) {
-    if (z < (kind ? Math.max(min / 10, 3.9) : min / 10 - 1.2)) continue;      // too far out to name it (states only once they can be told apart)
+    if (z < (kind ? Math.max(min / 10 - 0.9, 2.6) : min / 10 - 1.2)) continue;      // too far out to name it
     const size = kind ? fs * 0.92 : fs * 1.08, text = name.toUpperCase();
     const w = textWidth(text, size) + text.length * size * 0.14 + 6, h = size * 1.1;
     let best = null, cross = Infinity;      // cross: how near the route comes to the region (to any of its points)
@@ -205,7 +205,7 @@ function pickRegions(regions, toPx, path, W, H, taken, z, fs) {
       const [x, y] = toPx(pts[i], pts[i + 1]);
       if (x > -W && x < 2 * W && y > -H && y < 2 * H) for (let k = 0; k < path.length; k += 2) cross = Math.min(cross, Math.hypot(path[k][0] - x, path[k][1] - y));
       if (x < w / 2 + 4 || x > W - w / 2 - 4 || y < h + 2 || y > H - h - 2) continue;
-      const box = [x - w / 2, y - h * 0.8, x + w / 2, y + h * 0.45];
+      const box = [x - w / 2 - 5, y - h * 0.8 - 4, x + w / 2 + 5, y + h * 0.45 + 4];      // with a little air round it
       if (taken.some((t) => box[0] < t[2] && box[2] > t[0] && box[1] < t[3] && box[3] > t[1])) continue;
       let near = Infinity;
       for (let k = 0; k < path.length; k += 2) near = Math.min(near, Math.hypot(path[k][0] - x, Math.max(0, Math.abs(path[k][1] - y) - h)));
@@ -334,10 +334,11 @@ export function drawRouteMap(box, r, layer, here) {
     };
     const taken = [codeBox(ox, oy, dx, r.origin.iata || ""), codeBox(dx, dy, ox, r.dest.iata || "")];
     if (layer && layer.enabled) taken.push([W - layer.attribution.length * 4.3 - 12, H - 18, W, H]);   // the imagery credit
-    taken.push([0, H - 30, barPx + 22, H]);                                                             // the scale bar
+    taken.push([0, H - 30, barPx + 78, H]);                                                             // the scale bar, and its miles beside it
     // the cities first, which are where they are; then the states and countries, their names wide
     // and faint, wherever within each there is room left
     const cityList = pickCities(world.cities, toPx, pathPx, W, H, taken, Math.log2(s), fs);
+    for (const c of cityList) taken.push([c.x - 6, c.y - 6, c.x + 6, c.y + 6]);      // their dots too: no state's name across one
     const regions = pickRegions(world.regions || [], toPx, pathPx, W, H, taken, Math.log2(s), fs).map((g) =>
       `<text class="rm-region${g.kind ? "" : " country"}" x="${vx + g.x * px}" y="${vy + g.y * px}" text-anchor="middle" font-size="${g.size * px}" letter-spacing="${g.size * 0.14 * px}" stroke-width="${2.4 * px}">${esc(g.name)}</text>`).join("");
     const cities = cityList.map((c) => {
@@ -361,7 +362,7 @@ export function drawRouteMap(box, r, layer, here) {
       ${label(ox, oy, dx, r.origin.iata || "", cls(r.origin))}${label(dx, dy, ox, r.dest.iata || "", cls(r.dest))}
       <circle class="rm-ring" r="${10 * px}" stroke-width="${1.2 * px}"/>
       <g class="rm-craft"><path class="edge" d="M0,-8.5L5.6,6L0,3.2L-5.6,6Z" transform="translate(0 0.5) scale(1.42)"/><path class="body" d="M0,-8.5L5.6,6L0,3.2L-5.6,6Z"/></g>
-    </svg><div class="rm-scale" style="width:${barPx.toFixed(1)}px">${barNm.toLocaleString("en-US")} nm</div>${layer && layer.enabled ? `<div class="rm-credit">${esc(layer.attribution)}</div>` : ""}`;
+    </svg><div class="rm-scale" style="width:${barPx.toFixed(1)}px">${barNm.toLocaleString("en-US")} nm<i>${Math.round(barNm * 1.15078).toLocaleString("en-US")} mi</i></div>${layer && layer.enabled ? `<div class="rm-credit">${esc(layer.attribution)}</div>` : ""}`;
   box._rm.at = at;
   box._rm.px = px;
   moveRouteMap(box, box._rm.progress);

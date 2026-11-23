@@ -472,6 +472,7 @@ export function drawing(type, shape, length, name = "") {
   return { ...c, svg: c.svg.replace(/(id="|url\(#)(sil\d+)/g, `$1$2-${n}`) };
 }
 export const silhouette = (type, shape, length, name = "") => drawing(type, shape, length, name).svg;
-// Share of the available width a given aircraft should fill, so a 777 dwarfs a Cessna
-// while the Cessna stays recognisable.
-export const silhouetteScale = (lengthM) => 0.3 + 0.7 * Math.sqrt(Math.min(1, Math.max(0, (lengthM - 6) / 70)));
+// Share of the available width a given aircraft should fill: a 777 across its sheet and a Cessna
+// well over half of it, so the larger is still plainly the larger but the smaller isn't lost in an
+// empty sheet (the dimension line under each says how long it really is)
+export const silhouetteScale = (lengthM) => 0.58 + 0.42 * Math.sqrt(Math.min(1, Math.max(0, (lengthM - 6) / 70)));

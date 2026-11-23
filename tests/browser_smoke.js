@@ -519,6 +519,9 @@ const SCENARIOS = {
       return { head: el.querySelector("#h-type").textContent.replace("›", "").trim(), about: (el.querySelector("#h-type [data-about]") || { dataset: {} }).dataset.about || null,
         flight: shown("#h-flight") ? el.querySelector("#h-flight").dataset.text : null, sub: el.querySelector("#h-sub").textContent.trim(),
         facts: [...el.querySelectorAll("#h-facts dt")].map((d) => d.textContent), airports: apts.map((p) => p.words), rev: !!el.querySelector(".route.rev"),
+        // the aircraft riding the line between the airports: drawn, and which way it faces (-1: turned to fly leftwards)
+        rider: (() => { const r = el.querySelector(".prog .rider"); if (!r || !r.querySelector("svg")) return 0; const m = new DOMMatrix(getComputedStyle(r).transform); return m.a < 0 ? -1 : 1; })(),
+        logoRight: (() => { const l = el.querySelector("#h-logo"), h = el.querySelector("#h-type"); return l.hidden ? null : l.getBoundingClientRect().left > h.getBoundingClientRect().left + 40; })(),
         map: shown(".rmap"), drawing: shown("#h-media"), toggle: shown("#h-pic"), on: (el.querySelector("#h-pic .on") || { dataset: {} }).dataset.pic || null, overflow: el.scrollHeight - el.clientHeight };
     });
     const out = {};

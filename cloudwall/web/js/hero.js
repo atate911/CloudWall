@@ -1,6 +1,7 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
 import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, since, dataAge, runwayList, store } from "./util.js";
 import { plate, kindPlate, renderLineup, drawn, typeInfo } from "./plate.js";
+import { drawing } from "./silhouette.js";
 import { flap, roll } from "./fx.js";
 import { map, tileLayout } from "./map.js";
 import { weatherSlide } from "./weather.js";
@@ -25,10 +26,12 @@ const SKELETON = `
   <div class="h-kicker"><span class="label" id="h-why"></span><span class="pin-chip" id="h-pin" hidden>Tap the card to go back to what's overhead</span><span class="est-chip" id="h-est" hidden></span>
     <div class="seg pic" id="h-pic" role="group" aria-label="The card's picture" hidden><button data-pic="map" title="The route on a map">Route</button><button data-pic="plate" title="The aircraft's drawing, and its photo">Aircraft</button></div></div>
   <div class="h-top">
-    <div class="h-type" id="h-type"></div>
-    <div class="airline"><div class="logo-tile" id="h-logo" hidden><img class="logo" id="h-logo-img" alt=""></div>
-      <div class="h-who"><div class="flaps flight" id="h-flight"></div><span id="h-airline"></span><small id="h-sub"></small></div>
-      <div class="tags"><div class="badges" id="h-badges"></div></div></div>
+    <div class="h-what">
+      <div class="h-type" id="h-type"></div>
+      <div class="h-who"><div class="flaps flight" id="h-flight"></div><span id="h-airline"></span><small id="h-sub"></small>
+        <div class="tags"><div class="badges" id="h-badges"></div></div></div>
+    </div>
+    <div class="logo-tile" id="h-logo" hidden><img class="logo" id="h-logo-img" alt=""></div>
   </div>
   </div>
   <div class="h-route" id="h-route"></div>
@@ -94,16 +97,20 @@ function routeHtml(a, state) {
     // the headline above already says what it is and who flies it, so say something new here
     const [what, more] = a.squawk === "1200" ? ["Flying visually", "No flight plan: squawk 1200, the code for visual flight"]
       : a.callsign && a.callsign !== a.reg ? ["No published route", "Nothing on file for this flight"] : ["No flight plan on file", ""];
-    return `<div class="noroute">${esc(what)}${more ? `<small>${esc(more)}</small>` : ""}</div>`;
+    return `<div class="noroute quiet">${esc(what)}${more ? `<small>${esc(more)}</small>` : ""}</div>`;
   }
   const iata = state.airport.iata, rev = westbound(r);
   const left = aptHtml(rev ? r.dest : r.origin, rev, false, iata), right = aptHtml(rev ? r.origin : r.dest, !rev, true, iata);
   const cls = `${r.plausible ? "" : " unsure"}${rev ? " rev" : ""}`;
+  // the aircraft itself rides the line between them, in small: its own side elevation, facing the way
+  // it's going (an aircraft of no shape to draw, a balloon, keeps the dot)
+  const info = typeInfo(a), dr = info.shape ? drawing(info.type, info.shape, info.length, info.name) : null;
+  const rider = dr && dr.svg ? `<span class="rider" style="--ar:${(dr.w / dr.h).toFixed(3)}">${dr.svg}</span>` : "";
   if (worldLayer(state) && mappable(r)) {
     // the route on a real map: the airports either side of the distance and flight time, the map below
     return `<div class="route mapped${cls}">
     ${left}
-    <div class="prog" id="h-prog" aria-hidden="true"><i></i><b></b></div>
+    <div class="prog${rider ? " ridden" : ""}" id="h-prog" aria-hidden="true"><i></i>${rider || "<b></b>"}</div>
     <div class="arc-note"><div id="h-note"></div><div class="arc-time" id="h-dur"></div></div>
     ${right}
     <div class="rmap" id="h-map"></div>

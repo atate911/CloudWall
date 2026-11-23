@@ -179,7 +179,7 @@ class BrowserTest(unittest.TestCase):
         self.assertGreaterEqual(len(d["cities"]), 2)                         # a few places to find your way by
         self.assertNotIn("Tokyo", d["cities"])                               # not one the airport code already names
         self.assertTrue(set(d["regions"]) & {"JAPAN", "CANADA", "UNITED STATES"}, d["regions"])     # the countries it crosses, by name
-        self.assertRegex(d["scale"], r"^[\d,]+ nm$")                         # how far across the map is
+        self.assertRegex(d["scale"], r"^[\d,]+ nm[\d,]+ mi$")                # how far across the map is, in nautical miles and miles
         self.assertTrue(d["arrowAt"] and d["turned"])                        # which way it's going: an arrowhead at the destination, the aircraft pointing along the line
 
     def test_the_cards_head_its_airports_and_its_switch(self):
@@ -192,6 +192,8 @@ class BrowserTest(unittest.TestCase):
         # the airports as on a map: the western one on the left, whichever way the flight is going
         self.assertEqual((east["airports"], east["rev"]), (["From PDX", "To JFK"], False))
         self.assertEqual((west["airports"], west["rev"]), (["To PDX", "From JFK"], True))
+        # the aircraft's own drawing rides the line between them, facing the way it's going
+        self.assertEqual((east["rider"], west["rider"]), (1, -1))
         # no flight number: the registration stands in its place, and isn't said again among the facts
         private = c["private"]
         self.assertEqual((private["head"], private["flight"]), ("Boeing 737-800", "N3765"))

@@ -61,10 +61,10 @@ wall panel Simple; each screen remembers its own choice, `?density=simple` or `d
 in the address, and `[kiosk] density` sets the wall panel's.
 
 - **Overhead** – a flight card for the aircraft closest to overhead: what it is in the card's
-  biggest letters ("Boeing 737-800"), the airline's logo with the flight number beside it as a
-  departure board shows it (with "operated by" for regional partners; the flight is said once, its
-  radio callsign added only when that isn't the same number again, and an aircraft with no flight
-  number goes by its registration or callsign),
+  biggest letters ("Boeing 737-800"), under it the flight number as a departure board shows it
+  (with "operated by" for regional partners; the flight is said once, its radio callsign added
+  only when that isn't the same number again, and an aircraft with no flight number goes by its
+  registration or callsign), and the airline's logo large on the right,
   the route with distance flown and to go, the departure and arrival times under the airports
   and the flight time between them, altitude and climb or descent rate (with the
   altitude the autopilot is heading for, when it reports one), speed, distance and how high up
@@ -72,7 +72,8 @@ in the address, and `[kiosk] density` sets the wall panel's.
   and a photo of the airframe beside when it passes the house, its seats,
   registration and build year, and what the autopilot is doing. The two airports stand as on a
   map, the one further west on the left whichever way the flight is going, with "From" and "To"
-  over them and an arrowhead on the line between them. The departure time comes from
+  over them; on the line between them rides the aircraft itself, its own side elevation in small,
+  facing the way it's going, with an arrowhead at the destination's end. The departure time comes from
   a paid route provider (see below); without one, the card shows an estimated arrival only.
   The photo is of that very airframe (planespotters.net files photos by airframe, so a tail
   number that once belonged to another aircraft doesn't bring up its pictures), credited to its
@@ -104,9 +105,9 @@ in the address, and `[kiosk] density` sets the wall panel's.
   same flights on an everyday map for anyone, satellite photos with roads and place names (or a
   street map), filling the panel, every aircraft labelled in words ("Delta 178", "to Denver ·
   12,000 ft", "Small plane", "Helicopter"), with home and the airport marked and no rings,
-  codes or jargon. The map is turned down so that it sits behind the aircraft: the photographs
-  muted and darkened, their roads and names fainter, the street map paled with the aircraft drawn
-  dark on it; at night both are dark, the street map light-on-dark. The radar's own map, a faint
+  codes or jargon. The map is turned down so that it sits behind the aircraft, which are white
+  on both: the photographs muted and darkened, their roads and names fainter, the street map
+  greyed and darkened to match; at night both are darker still, the street map light-on-dark. The radar's own map, a faint
   print of the rivers and roads, stays visible at night too. The wall panel can show it too: `[kiosk] view = "map"`.
   Each aircraft is drawn as its kind, about its size, as flight-tracking maps draw traffic: a light
   aircraft or light twin, a turboprop, a business jet, a regional jet with its engines on the tail,
@@ -516,10 +517,9 @@ no requests (or, with `"log"`, only the slow position check).
   coast, or Tokyo across the date line) with room round each end to show where it lies. Which
   way it's going is drawn in: a ring where it set out from, the flown part in magenta, the
   aircraft where it is now, pointing along the route, the rest dashed to an arrowhead at the
-  destination. A bar in the corner says how far across the map is, in nautical miles.
-  Country borders, state and province lines and names are drawn over it: the states and
-  countries the route crosses, in faint capitals (states once the map is close enough to tell
-  them apart), and towns and cities of like importance for the map's scale (Natural Earth's own
+  destination. A bar in the corner says how far across the map is, in nautical miles and miles.
+  Country borders, state and province lines and names are drawn over it: the states, provinces
+  and countries the route crosses, in faint capitals, and towns and cities of like importance for the map's scale (Natural Earth's own
   ranking, so a town is named only where a map that close would name it), spaced out along the
   route like the stations on a line, then others either side of it to find your way by, each
   named on the side away from the route and never across it. A place of a few thousand people
