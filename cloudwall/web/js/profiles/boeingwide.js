@@ -1,6 +1,36 @@
 // Boeing and McDonnell Douglas widebodies. Format: see ../profiles.js.
 const F = {};
 
+// ---------- fittings from the ACAPs (as in boeing.js) ----------
+// The radome's joint with the fuselage: a seam across the nose s metres aft of the tip, as the
+// ACAP's side view draws it, run between the nose's upper and lower outlines.
+const noseAt = (pts, x) => {
+  for (let i = 1; i < pts.length; i++) {
+    const [a, za] = pts[i - 1], [b, zb] = pts[i];
+    if (x >= a && x <= b) return za + ((zb - za) * (x - a)) / (b - a);
+  }
+  return null;
+};
+const radomeJoint = (s) => ({ sk, f, D }) => {
+  const zt = noseAt([[0, f.nose.tip], ...f.nose.top], s / D), zb = noseAt([[0, f.nose.tip], ...f.nose.bot], s / D);
+  if (zt != null && zb != null) sk.poly("hl", [[s, zt * D - 0.06], [s, zb * D + 0.06]], false);
+};
+// Probes on the right side at the stations the ACAP's sensor table gives: [kind, s aft of the nose,
+// z above the keel] (the tables give heights from the entry door's sill). Their size is nominal:
+// pitot a short tube pointing forward from its base, aoa a vane trailing aft, port a flush static port.
+const probes = (list) => ({ sk }) => {
+  for (const [kind, s, z] of list) {
+    if (kind === "pitot") sk.poly("strut", [[s + 0.05, z - 0.03], [s - 0.17, z - 0.013], [s - 0.17, z + 0.013], [s + 0.05, z + 0.03]]);
+    else if (kind === "aoa") sk.poly("strut", [[s - 0.03, z - 0.025], [s + 0.11, z - 0.012], [s + 0.12, z + 0.035], [s + 0.02, z + 0.03]]);
+    else sk.ellipse("hl", s, z, 0.05, 0.05);
+  }
+};
+// A blade antenna on the crown s metres aft of the nose (its size is nominal).
+const crownAntenna = (s) => ({ sk, top }) => {
+  const z = top(s);
+  sk.poly("strut", [[s - 0.16, z - 0.03], [s + 0.04, z + 0.13], [s + 0.13, z + 0.13], [s + 0.17, z - 0.03]]);
+};
+
 // ---------- Boeing 747 ----------
 // Reference: 747-400 ACAP D6-58326-1 Rev F, fig. 2.3.1 (747-400 side view) and fig. 2.2.1 (plan view
 // for the wing and tailplane). D is the main fuselage height aft of the upper deck; the hump is part of
@@ -140,6 +170,11 @@ F.b763 = {
   eng: { kind: "fan", at: [0.254], fwd: 3.88, drop: 1.76, len: 6.6, dia: 2.54, fx: 0.495, cx: 0.935, pyFront: 0.25, pyLead: 0.5, pyTe: 0.7, pyAft: 1.3 },
   fin: { le: 9.52, cr: 7.07, ct: 2.56, h: 8.43, sweep: 44.35, fillet: [1.78, 1.95], round: 0.6 },
   stab: { le: 7.5, z: 0.623, span: 18.62, root: 1.0, cr: 6.07, ct: 1.75, sweep: 37.8, dih: 7 },
+  // the radome joint 1.12 m aft of the nose (fig. 2.3.2), and the right-side sensors of fig. 2.7.2:
+  // pitot-static probes 2.74 m aft of the nose, 0.30 m above and 0.15 m below the entry door's sill
+  // (2.24 m above the keel), the angle-of-attack vane 2.51 m aft and 0.05 m below it, and the flush
+  // static port 9.45 m aft and 1.52 m below it
+  extras: [radomeJoint(1.12), probes([["pitot", 2.74, 2.54], ["pitot", 2.74, 2.09], ["aoa", 2.51, 2.19], ["port", 9.45, 0.72]])],
 };
 
 // 767-200/-200ER: fig. 2.3.1 overlays the -300 outline at its own length; one pair of overwing exits, no L2
@@ -219,6 +254,8 @@ F.b77w = {
   eng: { kind: "fan", at: [0.222], fwd: 5.89, drop: 2.6, len: 7.8, dia: 3.66, fx: 0.667, cx: 0.846, pyFront: 0.35, pyLead: 0.6, pyTe: 0.6, pyAft: 1.05 },
   fin: { le: 11.81, cr: 7.99, ct: 2.55, h: 9.77, sweep: 44.4, fillet: [1.78, 0.95], round: 1.0 },
   stab: { le: 9.14, z: 0.64, span: 21.53, root: 1.3, cr: 6.5, ct: 2.1, sweep: 39, dih: 7.2 },
+  // the radome joint about 1.1 m aft of the nose, as fig. 2.3.2 draws it
+  extras: [radomeJoint(1.1)],
 };
 
 // 777-200/-200ER/-300 ACAP D6-58329 Rev E fig. 2.2.1 (777-200): the same fuselage, the original wing
@@ -282,6 +319,9 @@ F.b787 = {
   eng: { kind: "fan", at: [0.258], fwd: 5.81, drop: 2.17, len: 7.8, dia: 3.8, fx: 0.71, cx: 0.92, chev: true, pyFront: 0.4, pyLead: 0.5, pyTe: 0.55, pyAft: 1.0 },
   fin: { le: 11.03, cr: 7.21, ct: 2.37, h: 8.51, sweep: 44.7, fillet: [1.25, 1.25], round: 1.3 },
   stab: { le: 8.1, z: 0.62, span: 19.81, root: 1.3, cr: 5.68, ct: 1.6, sweep: 40.3, dih: 7 },
+  // the terminal wireless LAN unit's antenna on the crown centreline, 7.1 m aft of the nose on the
+  // -8, -9 and -10 (ground servicing tables 5.4.2-5.4.6)
+  extras: [crownAntenna(7.1)],
 };
 // 787-10: 5.48 m longer than the -9, 3.05 m of it ahead of the wing; aft cargo door moves with the wing
 F.b78x = { ...F.b787, fwd: 0.556, doors: [[6.3, 1.07], [11.0, 2.75, "C"], [-3.39, 1.07, "D", "w"], [13.68, 1.07, "D", "w"], [21.56, 2.75, "C", "w"], [-12.22, 1.07]] };
