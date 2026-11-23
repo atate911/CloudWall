@@ -450,7 +450,12 @@ F.c700 = {
     top: [[2.4, 1], [1.4, 0.96], [0.7, 0.88], [0.25, 0.78], [0, 0.72]],
     bot: [[3.3, 0], [2.4, 0.09], [1.7, 0.2], [1.1, 0.33], [0.6, 0.45], [0.2, 0.56], [0, 0.62]],
   },
-  extras: [hatch(4.86, 0.78, 0.24, 1.7, 0.25)], overlays: [],
+  // from the photo of Longitude N807QS (soft, from below): the swept blade on the spine and the swept
+  // blade under the belly ahead of the wing
+  extras: [hatch(4.86, 0.78, 0.24, 1.7, 0.25), ({ sk, top, bottom }) => {
+    sk.poly("strut", [[7.93, top(7.93) - 0.02], [8.16, top(8.16) + 0.23], [8.27, top(8.27) + 0.25], [8.13, top(8.13) - 0.02]]);
+    sk.poly("strut", [[6.64, bottom(6.64) + 0.02], [6.86, bottom(6.86) - 0.28], [6.98, bottom(6.98) - 0.31], [6.82, bottom(6.82) + 0.02]]);
+  }], overlays: [],
   win: [{ z: 0.62, from: 6.1, to: 10.6, pitch: 0.635, w: 0.29, h: 0.39 }],
   wing: { le: 9.1, root: 1.1, span: 21.01, cr: 4.2, ct: 1.15, sweep: 29, dih: 4, z: 0.07, t: [0.13, 0.1] },
   tip: { h: 1.0, sweep: 40, top: 0.3, base: 0.85, blend: 0.2 },
