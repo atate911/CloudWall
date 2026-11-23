@@ -513,6 +513,25 @@ F.be36 = stretch(BE36, 1.2, 0.27);
 // double "club" doors aft on the right: drawn as the 55 with a 0.26 m plug ahead of the wing
 // and the 58's window and door layout. Pointed baggage nose, wing-mounted IO-550 nacelles
 // with three-blade props, straight swept fin, retractable gear (drawn retracted).
+// From the D55 3-view, drawn over the renderer's nacelle: the cowl's front ring, upper cowl panel
+// (a double seam) and its aft seam, the cowl split, the oil-cooler bump on top, the cowl outlet's
+// lip and the exhaust stack below it.
+const BE55_NACELLE = [
+  ["hl", [[1.242, 0.708], [1.241, 0.333]], false], ["hl", [[1.317, 0.698], [1.316, 0.352]], false],
+  ["hl", [[1.336, 0.698], [2.36, 0.693]], false], ["hl", [[1.336, 0.67], [2.36, 0.665]], false],
+  ["hl", [[2.36, 0.693], [2.36, 0.553]], false], ["hl", [[1.335, 0.428], [2.13, 0.423]], false],
+  ["nac", [[2.122, 0.783, "c"], [2.132, 0.844], [2.165, 0.858], [2.291, 0.845], [2.347, 0.824], [2.403, 0.763, "c"]]],
+  ["hl", [[2.167, 0.348], [2.242, 0.349], [2.284, 0.413], [2.308, 0.44], [2.354, 0.447], [2.41, 0.393]], false],
+  ["inlet", [[2.13, 0.376, "c"], [2.195, 0.319], [2.269, 0.268], [2.4, 0.244], [2.634, 0.228, "c"], [2.615, 0.21], [2.4, 0.211],
+    [2.148, 0.221], [2.082, 0.254]]],
+];
+// the wing as the 3-view draws it: the root fillet rising from the nacelle, the trailing edge running
+// down to the root, the nacelle's lower aft fairing back to the fuselage; and the flap at the root
+const BE55_WING = [
+  ["wing", [[2.261, 0.403, "c"], [2.336, 0.543], [2.421, 0.674], [2.496, 0.739], [2.824, 0.765], [3.198, 0.75], [3.432, 0.716],
+    [3.506, 0.678, "l"], [4.299, 0.094, "c"], [3.943, 0.044], [3.531, 0.004], [2.825, 0.026], [2.493, 0.098], [2.166, 0.151, "c"]]],
+  ["hl", [[3.534, 0.603], [3.384, 0.576], [3.598, 0.35], [3.804, 0.386]], false],
+];
 const BE55 = {
   kind: "piston", L0: 8.83, over: 0, D: 1, W: 1.2,
   body: [
@@ -526,8 +545,25 @@ const BE55 = {
   ],
   frame: 0.035,
   wing: { le: 2.42, root: 0.6, span: 11.53, cr: 2.13, ct: 0.88, sweep: 4.2, dih: 6, z: 0.08, t: [0.15, 0.12] },
+  wingSide: BE55_WING,
   eng: { kind: "prop", at: [0.19], fwd: 1.6, drop: -0.28, len: 2.7, dia: 0.54, prop: 1.98, blades: 3, spinner: 0.13, tailZ: 0.3 },
   stab: { le: 1.98, z: 0.86, span: 4.86, root: 0.25, cr: 1.2, ct: 0.78, sweep: 8, dih: 0, thick: 0.1 },
+  parts: {
+    // the lens in the nose
+    doors: [[[0.174, 0.395, "c"], [0.427, 0.375, "c"], [0.426, 0.309, "c"], [0.202, 0.371, "c"]]],
+    // rudder hinge; the nose cap's seam and the nose baggage door's front edge; the dorsal fin's joint
+    // with the fuselage top and the plate at its foot; the fin's panel line; the rudder trim tab
+    lines: [[[7.7, 0.97], [8.2, 2.42], [8.05, 2.47], [8.05, 2.55]],
+      [[0.082, 0.592], [0.09, 0.358]], [[0.986, 0.877], [0.989, 0.559], [0.987, 0.232]],
+      [[4.978, 1.3], [5.259, 1.267], [5.82, 1.189], [6.661, 1.073], [7.662, 0.941]],
+      [[5.979, 1.155], [5.979, 1.23], [6.279, 1.238], [6.278, 1.154]],
+      [[7.066, 1.568], [7.842, 1.546]], [[8.498, 1.739], [8.321, 1.768], [8.14, 1.17], [8.336, 1.141]]],
+    // the nacelle's details; the fixed step behind the wing; the small dome on the cabin roof
+    marks: [...BE55_NACELLE,
+      ["strut", [[4.523, 0.046, "c"], [4.579, 0.046, "c"], [4.578, -0.16, "c"], [4.522, -0.16, "c"]]],
+      ["strut", [[4.438, -0.169, "c"], [4.55, -0.151], [4.653, -0.17, "c"], [4.597, -0.207], [4.484, -0.206]]],
+      ["hub", [[3.267, 1.435, "c"], [3.281, 1.482], [3.342, 1.5], [3.482, 1.495], [3.52, 1.471], [3.524, 1.434, "c"]]]],
+  },
   extras: EXTRAS, overlays: OVERLAYS,
 };
 F.be58 = stretch(BE55, 2.8, 0.26, {
@@ -538,14 +574,20 @@ F.be58 = stretch(BE55, 2.8, 0.26, {
     [[4.42, 0.82], [4.42, 1.22], [4.88, 1.2], [4.88, 0.82]],
     [[5.02, 0.84], [5.02, 1.18], [5.44, 1.15], [5.44, 0.86]],
   ],
-  parts: {
-    doors: [[[2.27, 0.55, "c"], [2.27, 0.9, "c"], [2.7, 1.35, "c"], [3.66, 1.37, "c"], [3.66, 0.55, "c"]],
-      rect(4.33, 4.94, 0.2, 1.3, 0.06), rect(4.96, 5.56, 0.24, 1.29, 0.06)],
-    lines: [[[7.96, 0.97], [8.46, 2.42], [8.31, 2.47], [8.31, 2.55]]],
-  },
 });
-// the plug is between windscreen and wing: the wing (and its nacelles) moves back with the tail
-F.be58.wing = { ...F.be58.wing, le: BE55.wing.le + 0.26 };
+F.be58.parts = {
+  ...F.be58.parts,
+  doors: [[[2.27, 0.55, "c"], [2.27, 0.9, "c"], [2.7, 1.35, "c"], [3.66, 1.37, "c"], [3.66, 0.55, "c"]],
+    rect(4.33, 4.94, 0.2, 1.3, 0.06), rect(4.96, 5.56, 0.24, 1.29, 0.06), ...F.be58.parts.doors],
+};
+// the plug is between windscreen and wing: the wing (and its nacelles) moves back with the tail, and
+// so do the nacelle's details and the wing's side view
+{
+  const back = (pts) => pts.map(([s, z, ...r]) => [s + 0.26, z, ...r]);
+  F.be58.wing = { ...F.be58.wing, le: BE55.wing.le + 0.26 };
+  F.be58.wingSide = BE55_WING.map(([c, pts, cl]) => [c, back(pts), cl]);
+  F.be58.parts.marks = [...BE55_NACELLE.map(([c, pts, cl]) => [c, back(pts), cl]), ...F.be58.parts.marks.slice(BE55_NACELLE.length)];
+}
 
 // ---------- Mooney M20 ----------
 // Reference: Mooney M20G Statesman 3-view (Wikimedia Commons,
