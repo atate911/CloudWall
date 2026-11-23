@@ -308,7 +308,20 @@ F.c25b = {
     [[1.76, 0.92], [2.04, 0.94], [2.04, 0.69], [1.76, 0.69]],
   ],
   frame: 0.03,
-  extras: [hatch(3.95, 0.53, 0.25, 1.24, 0.2)],
+  // from the side-on photo of CJ3 OM-LBG: the swept blade antenna and three low domes on the spine, the
+  // probe under the nose, the stub and the small fairing under the forward belly, the stub under the
+  // tail cone
+  extras: [hatch(3.95, 0.53, 0.25, 1.24, 0.2), ({ sk, top, bottom }) => {
+    const t = (s) => top(s) - 0.02, b = (s) => bottom(s) + 0.02;
+    sk.poly("strut", [[6.141, t(6.14)], [6.314, 1.78], [6.44, 1.82], [6.343, t(6.34)]]);
+    for (const a of [3.3, 3.527, 6.595]) {
+      sk.smooth("hull", [[a, t(a), "c"], [a + 0.037, top(a) + 0.065, ""], [a + 0.138, top(a) + 0.065, ""], [a + 0.17, t(a + 0.17), "c"]]);
+    }
+    sk.poly("strut", [[0.679, 0.164], [0.782, 0.014], [0.858, 0.003], [0.806, 0.153]]);
+    sk.poly("strut", [[2.537, b(2.54)], [2.551, -0.063], [2.627, -0.062], [2.625, b(2.63)]]);
+    sk.smooth("hull", [[3.535, b(3.54), "c"], [3.586, -0.074, ""], [3.839, -0.071, ""], [3.876, b(3.88), "c"]]);
+    sk.poly("strut", [[10.779, b(10.78)], [10.806, bottom(10.8) - 0.1], [10.882, bottom(10.88) - 0.1], [10.88, b(10.88)]]);
+  }],
   win: [{ z: 0.78, from: 3.93, to: -6.37, pitch: 0.507, w: 0.23, h: 0.28 }],
   wing: { le: 6.6, root: 0.8, span: 16.26, cr: 2.5, ct: 1.0, sweep: 3, dih: 4, z: 0.1, t: [0.14, 0.11] },
   eng: { kind: "fan", aft: { s: 4.43, z: 0.85 }, len: 2.3, dia: 0.72, style: "long", fx: 0.88 },
@@ -666,7 +679,7 @@ export const types = {
   GLEX: "glex", GL5T: "glex", GL7T: "gl7t",
   H25B: "h25b", G280: "g280",
   E545: "e550", E550: "e550",
-  C25A: ["c25b", { win: [{ z: 0.78, from: 3.93, to: 6.5, pitch: 0.507, w: 0.23, h: 0.28 }], wing: { le: 6.4, root: 0.8, span: 15.19, cr: 2.45, ct: 1.0, sweep: 3, dih: 4, z: 0.1, t: [0.14, 0.11] } }],
+  C25A: ["c25b", { extras: [hatch(3.95, 0.53, 0.25, 1.24, 0.2)], win: [{ z: 0.78, from: 3.93, to: 6.5, pitch: 0.507, w: 0.23, h: 0.28 }], wing: { le: 6.4, root: 0.8, span: 15.19, cr: 2.45, ct: 1.0, sweep: 3, dih: 4, z: 0.1, t: [0.14, 0.11] } }],
   C25B: "c25b",
   SF50: "sf50", E50P: "e50p", E55P: "e55p", PC24: "pc24",
   C56X: "c56x", C680: "c680", C68A: "c68a", C700: "c700",
