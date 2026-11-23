@@ -144,6 +144,22 @@ F.cl30 = {
   eng: { kind: "fan", aft: { s: 6.31, z: 0.81 }, len: 3.45, dia: 1.18, style: "long", fx: 0.88 },
   fin: { le: 2.95, cr: 2.85, ct: 2.3, h: 2.3, sweep: 36, fillet: [1.2, 0.2] },
   stab: { le: 1.12, z: "T", span: 7.6, root: 0.25, cr: 1.8, ct: 0.85, sweep: 33, dih: 0, bullet: [2.4, 0.2] },
+  // from the same photo of N535FX: the two blade antennas on the spine and the swept blade under the
+  // belly, the rain gutter over the door and the door handle, the two probes and the two lower access
+  // panels on the nose, and the round fitting on the wing-root fairing
+  extras: [({ sk, top, bottom }) => {
+    const t = (s) => top(s) - 0.02, b = (s) => bottom(s) + 0.02;
+    sk.poly("strut", [[5.809, t(5.81)], [6.108, 2.569], [6.258, 2.588], [6.164, t(6.16)]]);
+    sk.poly("strut", [[11.301, t(11.3)], [11.339, 2.55], [11.507, 2.569], [11.544, t(11.54)]]);
+    sk.poly("strut", [[4.67, b(4.67)], [4.875, -0.27], [5.044, -0.327], [4.913, b(4.91)]]);
+    sk.poly("hl", [[3.624, 2.121], [4.595, 2.121]], false);
+    sk.smooth("door", [[4.016, 0.57], [4.222, 0.57], [4.222, 0.365], [4.016, 0.365]].map((p) => [...p, "c"]));
+    sk.poly("door", [[1.606, 0.757], [1.887, 1.056], [2.073, 1.093]], false);
+    sk.poly("door", [[2.447, 1.317], [2.54, 1.429], [2.634, 1.448]], false);
+    sk.smooth("door", [[1.775, 0.458, "c"], [2.148, 0.458, "c"], [2.148, 0.14, "c"], [1.775, 0.14, "c"]]);
+    sk.smooth("door", [[2.54, 0.439, "c"], [2.895, 0.439, "c"], [2.895, 0.103, "c"], [2.54, 0.103, "c"]]);
+    sk.ellipse("hub", 7.416, 0.365, 0.07, 0.07);
+  }],
 };
 
 // ---------- Learjet 45/75 (LJ45, LJ75) ----------
