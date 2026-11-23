@@ -22,6 +22,10 @@ const nozzle = (z, r, len = 0.35) => (k) => {
   k.sk.ellipse("inlet", s + 0.02, z, 0.05, r * 0.85);
 };
 
+// Small parts traced off a type's drawing: [class, [[s, z, flag]...], closed?] in metres (s from the
+// nose tip, z above the keel), drawn as smooth shapes (antennas, fairings, doors, seams).
+const marks = (parts) => (k) => { for (const [cls, pts, closed = true] of parts) k.sk.smooth(cls, pts.map(([s, z, fl]) => [s, z, fl ?? "c"]), closed); };
+
 // ---------- Dassault Falcon 2000 (F2TH) and Falcon 900 (F900) ----------
 // No drawing reachable: Falcon 2000 proportions from the side-on photo of the Bulgarian Air Force
 // Falcon 2000 (Commons "Dassault Falcon 2000, Bulgaria - Air Force AN1929721.jpg"), scaled to the
@@ -408,7 +412,22 @@ F.e55p = {
     [[1.54, 0.86], [1.85, 0.86], [1.87, 0.78, ""], [1.85, 0.62], [1.54, 0.62]],
   ],
   frame: 0.035,
-  extras: [hatch(4.38, 0.67, 0.29, 1.3, 0.15)],
+  // from the brochure's side view: the two blade antennas and two low fairings on the spine, the swept
+  // blade and three stubs under the nose, the probe line on the nose side, the stub under the tail
+  // cone and the small panel on the fin
+  extras: [hatch(4.38, 0.67, 0.29, 1.3, 0.15), marks([
+    ["strut", [[4.286, 1.712], [4.371, 1.936], [4.626, 1.953], [4.626, 1.919], [4.439, 1.712]]],
+    ["strut", [[8.12, 1.723], [8.188, 1.987], [8.264, 2.013], [8.247, 1.927], [8.23, 1.723]]],
+    ["hull", [[5.368, 1.72], [5.419, 1.766, ""], [5.581, 1.766, ""], [5.632, 1.72]]],
+    ["hull", [[6.109, 1.72], [6.177, 1.783, ""], [6.33, 1.783, ""], [6.399, 1.72]]],
+    ["strut", [[3.417, 0.01], [3.519, -0.05], [3.638, -0.221], [3.808, -0.238], [3.808, -0.272], [3.604, -0.272], [3.468, -0.084]]],
+    ["strut", [[2.394, 0.02], [2.394, -0.06], [2.462, -0.06], [2.462, 0.02]]],
+    ["strut", [[2.675, 0.02], [2.675, -0.06], [2.743, -0.06], [2.743, 0.02]]],
+    ["strut", [[2.999, 0.02], [2.999, -0.06], [3.067, -0.06], [3.067, 0.02]]],
+    ["hl", [[2.275, 0.479], [2.488, 0.479]], false],
+    ["strut", [[11.783, 0.4], [11.8, 0.258], [11.885, 0.249], [11.885, 0.4]]],
+    ["inlet", [[13.121, 2.958], [13.317, 2.958], [13.334, 2.899], [13.138, 2.899]]],
+  ])],
   overlays: [ventral([[0.7, 1.0], [0.5, 0.74], [0.22, 0.74], [0.17, 1.05]])],
   win: [{ z: 0.7, from: 5.12, to: 7.2, pitch: 0.69, w: 0.3, h: 0.36 }, { z: 0.7, from: 8.25, to: 8.25, w: 0.3, h: 0.36 }],
   wing: { le: 6.1, root: 0.85, span: 15.91, cr: 2.7, ct: 1.0, sweep: 26, dih: 4, z: 0.04, t: [0.13, 0.1] },
