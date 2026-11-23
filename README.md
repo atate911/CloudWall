@@ -463,13 +463,19 @@ no requests (or, with `"log"`, only the slow position check).
   only your server and an API key never reaches the browser.
 - The flight card draws the flight's route on a real map too: the great circle between its
   airports over Esri's satellite imagery, framed to fit the trip (a hop to Seattle, a coast to
-  coast, or Tokyo across the date line), flown part in magenta and the aircraft where it is now.
-  Country borders, state and province lines and the places along the way are drawn over it:
-  towns and cities of like importance for the map's scale (Natural Earth's own ranking, so a town
-  is named only where a map that close would name it), spaced out along the route like the
-  stations on a line, then a few others around it to find your way by, each named on the side
-  away from the route and never across it. They come from Natural Earth (public domain), bundled
-  in `cloudwall/web/maps/world.json`.
+  coast, or Tokyo across the date line) with room round each end to show where it lies. Which
+  way it's going is drawn in: a ring where it set out from, the flown part in magenta, the
+  aircraft where it is now, pointing along the route, the rest dashed to an arrowhead at the
+  destination. A bar in the corner says how far across the map is, in nautical miles.
+  Country borders, state and province lines and names are drawn over it: the states and
+  countries the route crosses, in faint capitals (states once the map is close enough to tell
+  them apart), and towns and cities of like importance for the map's scale (Natural Earth's own
+  ranking, so a town is named only where a map that close would name it), spaced out along the
+  route like the stations on a line, then others either side of it to find your way by, each
+  named on the side away from the route and never across it. A place of a few thousand people
+  is named only where the map would otherwise have almost no names (an ocean, the far north):
+  Boise to Portland shows Bend, Salem and Pendleton, not the hamlet the line happens to cross.
+  They come from Natural Earth (public domain), bundled in `cloudwall/web/maps/world.json`.
   `[map] route` can be `light`, `dark`, `osm`, or `off` for the plain arc. Its tiles come from
   zoom 0 to 6 only, the one map CloudWall serves for the whole world, cached the same way.
 - The charts are the FAA Aeronautical Information Services' own tiled charts (public domain),

@@ -485,7 +485,12 @@ const SCENARIOS = {
         craftInside: dot.left >= box.left && dot.right <= box.right && dot.top >= box.top && dot.bottom <= box.bottom,
         codes: [...document.querySelectorAll("#h-map .rm-code")].map((t) => t.textContent),
         borders: (document.querySelector("#h-map .rm-border").getAttribute("d") || "").split("M").length - 1,
-        cities: [...document.querySelectorAll("#h-map .rm-place")].map((t) => t.textContent), credit: document.querySelector("#h-map .rm-credit").textContent };
+        cities: [...document.querySelectorAll("#h-map .rm-place")].map((t) => t.textContent), credit: document.querySelector("#h-map .rm-credit").textContent,
+        regions: [...document.querySelectorAll("#h-map .rm-region")].map((t) => t.textContent), scale: document.querySelector("#h-map .rm-scale").textContent,
+        // the arrowhead sits at the destination's end of the line, the aircraft's marker is turned along it
+        arrowAt: (() => { const a = document.querySelector("#h-map .rm-arrow").getBoundingClientRect(), to = document.querySelector("#h-map .rm-apt.to").getBoundingClientRect(), from = document.querySelector("#h-map .rm-apt.from").getBoundingClientRect();
+          const far = (r) => Math.hypot(a.left + a.width / 2 - (r.left + r.width / 2), a.top + a.height / 2 - (r.top + r.height / 2)); return far(to) < 20 && far(from) > 60; })(),
+        turned: /rotate\(/.test(document.querySelector("#h-map .rm-craft").getAttribute("transform") || "") };
     });
     await page.close();
     return out;
@@ -553,6 +558,7 @@ const SCENARIOS = {
   async routeShape(browser, errors) {
     const apt = (iata, lat, lon) => ({ iata, city: iata, lat, lon });
     const SEA = apt("SEA", 47.45, -122.31), LAX = apt("LAX", 33.94, -118.41), PDX = apt("PDX", 45.59, -122.6), JFK = apt("JFK", 40.64, -73.78), DEN = apt("DEN", 39.86, -104.67);
+    const BOI = apt("BOI", 43.56, -116.22);
     const pin = (origin, dest) => (state) => {
       state.charts.layers.world = { enabled: true, style: "satellite", attribution: "Test imagery", zooms: [0, 6], layer: "world" };
       state.emergency = [];
@@ -562,7 +568,7 @@ const SCENARIOS = {
       state.hero = a;
     };
     const out = {};
-    for (const [name, size, o, d] of [["north", "desktop", SEA, LAX], ["east", "desktop", PDX, JFK], ["phoneNorth", "phone", SEA, LAX], ["phoneEast", "phone", DEN, PDX]]) {
+    for (const [name, size, o, d] of [["north", "desktop", SEA, LAX], ["east", "desktop", PDX, JFK], ["phoneNorth", "phone", SEA, LAX], ["phoneEast", "phone", DEN, PDX], ["boise", "desktop", BOI, PDX]]) {
       const page = await open(browser, size, "/?density=detailed", errors, pin(o, d), fakeTiles());
       await page.waitForSelector("#h-map svg.rm .rm-border", { state: "attached" });
       await page.waitForTimeout(600);
@@ -575,7 +581,8 @@ const SCENARIOS = {
           for (const b of labels.slice(i + 1)) if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) clash++;
         });
         return { beside: document.getElementById("hero").classList.contains("map-beside"), w: Math.round(box.width), h: Math.round(box.height),
-          fillW: +(path.width / box.width).toFixed(2), fillH: +(path.height / box.height).toFixed(2), places: labels.length - 2, clash, outside };
+          fillW: +(path.width / box.width).toFixed(2), fillH: +(path.height / box.height).toFixed(2), places: labels.length - 2, clash, outside,
+          names: [...m.querySelectorAll(".rm-place")].map((t) => t.textContent), regions: [...m.querySelectorAll(".rm-region")].map((t) => t.textContent) };
       });
       await page.close();
     }

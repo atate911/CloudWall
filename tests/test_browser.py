@@ -178,6 +178,9 @@ class BrowserTest(unittest.TestCase):
         self.assertGreater(d["borders"], 5)                                  # country lines in view
         self.assertGreaterEqual(len(d["cities"]), 2)                         # a few places to find your way by
         self.assertNotIn("Tokyo", d["cities"])                               # not one the airport code already names
+        self.assertTrue(set(d["regions"]) & {"JAPAN", "CANADA", "UNITED STATES"}, d["regions"])     # the countries it crosses, by name
+        self.assertRegex(d["scale"], r"^[\d,]+ nm$")                         # how far across the map is
+        self.assertTrue(d["arrowAt"] and d["turned"])                        # which way it's going: an arrowhead at the destination, the aircraft pointing along the line
 
     def test_the_cards_head_its_airports_and_its_switch(self):
         c = self.scenario("cardHead")
@@ -217,10 +220,16 @@ class BrowserTest(unittest.TestCase):
         self.assertGreaterEqual(e["fillW"], 0.6)
         self.assertGreater(m["phoneNorth"]["h"], m["phoneEast"]["h"] + 60)  # a phone's map as tall as its route needs
         self.assertGreaterEqual(m["phoneNorth"]["fillH"], 0.6)
-        for k in ("north", "east", "phoneNorth", "phoneEast"):
+        for k in ("north", "east", "phoneNorth", "phoneEast", "boise"):
             v = m[k]
             self.assertGreaterEqual(v["places"], 1, k)                       # places along the way
             self.assertEqual((v["clash"], v["outside"]), (0, 0), k)          # no name on another, none off the map
+        # Boise to Portland: places anyone in the region knows, not the hamlet the line happens to cross,
+        # and the states by name
+        b = m["boise"]
+        self.assertNotIn("John Day", b["names"])
+        self.assertTrue(set(b["names"]) & {"Bend", "Salem", "Pendleton", "Eugene"}, b["names"])
+        self.assertIn("OREGON", b["regions"])
 
     def test_the_wall_panel(self):
         k = self.scenario("kiosk")

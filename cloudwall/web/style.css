@@ -358,12 +358,23 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 .rm-place { font-family: var(--sans); fill: rgb(255 255 255 / .92); stroke: rgb(0 0 0 / .6); paint-order: stroke; }
 .rm-apt { fill: #fff; stroke: #0b1320; }
 .rm-apt.local { fill: var(--blue); }
+/* where it set out from is a ring, where it's going a dot with the line's arrowhead at it */
+.rm-apt.from { fill: rgb(11 19 32 / .7); stroke: #fff; }
+.rm-apt.from.local { stroke: color-mix(in srgb, var(--blue) 55%, #fff); }
+.rm path.rm-arrow { fill: #fff; stroke: rgb(0 0 0 / .6); stroke-width: 1.4; paint-order: stroke; }
+/* the states and countries: wide, faint capitals under everything else */
+.rm-region { font-family: var(--sans); font-weight: 700; fill: rgb(255 255 255 / .5); stroke: rgb(0 0 0 / .32); paint-order: stroke; }
+.rm-region.country { fill: rgb(255 255 255 / .62); }
 .rm-code { font-family: var(--mono); font-weight: 700; fill: #fff; stroke: rgb(0 0 0 / .65); paint-order: stroke; letter-spacing: .04em; }
 .rm-code.local { fill: color-mix(in srgb, var(--blue) 55%, #fff); }
-.rm-craft { fill: var(--magenta); stroke: #fff; }
+.rm path.rm-craft { fill: var(--magenta); stroke: #fff; stroke-width: 1.5; }
 .rm-ring { fill: none; stroke: var(--magenta); opacity: .8; transform-box: fill-box; transform-origin: center; animation: rm-ping 2.4s ease-out infinite; }
 @keyframes rm-ping { from { transform: scale(.5); opacity: .9; } to { transform: scale(1.6); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .rm-ring { animation: none; } }
+/* how far across: a bar of a round number of nautical miles in the map's bottom left corner */
+.rm-scale { position: absolute; left: .5rem; bottom: .4rem; box-sizing: border-box; height: 1rem; border: solid rgb(255 255 255 / .9); border-width: 0 1.5px 1.5px;
+  font: 700 .58rem/.72rem var(--sans); color: rgb(255 255 255 / .95); text-align: center; white-space: nowrap; text-shadow: 0 0 2px #000, 0 0 3px #000; pointer-events: none;
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / .7)); }
 .rm-credit { position: absolute; right: .3rem; bottom: .2rem; font-size: .5rem; color: rgb(255 255 255 / .75);
   text-shadow: 0 0 3px #000; max-width: 70%; text-align: right; pointer-events: none; }
 

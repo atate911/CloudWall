@@ -36,8 +36,10 @@ Without a file each downloads its source. Every output is limited to what CloudW
   country borders on land and state and province lines (the US, Canada, Australia, Brazil and a
   few more), simplified to about 2 km, and its 1:10m populated places down to the regional towns
   (those Natural Earth would label by map zoom 6.7), each with that zoom: its rank, which keeps a
-  map's labels to places of like importance for its scale. Takes a folder holding the three
-  GeoJSON files, else downloads them from Natural Earth's repository.
+  map's labels to places of like importance for its scale. With them, the names of the countries
+  and of those states and provinces, each with a few points well inside it where a map of part of
+  it can set its name. Takes a folder holding the five GeoJSON files, else downloads them from
+  Natural Earth's repository.
 """
 import csv
 import gzip
@@ -314,7 +316,44 @@ def cwt(arg):
 
 NE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/{}.geojson"
 NE_FILES = {"country": "ne_50m_admin_0_boundary_lines_land", "state": "ne_50m_admin_1_states_provinces_lines",
-            "cities": "ne_10m_populated_places_simple"}
+            "cities": "ne_10m_populated_places_simple", "countries": "ne_50m_admin_0_countries", "states": "ne_50m_admin_1_states_provinces"}
+REGION_POINTS = 16      # at most this many places for a region's name, besides Natural Earth's own
+SHORT_NAMES = {"United States of America": "United States"}
+
+
+def name_points(rings, first):
+    """Where a map showing part of a region can set its name: Natural Earth's own label point, then
+    the points of a grid across the region that are well inside it (a third of the grid's step from
+    its edge, so a name stays clear of the border), on the finest grid that gives no more than
+    REGION_POINTS of them. rings: the region's outlines, each [[lat, lon], ...]."""
+    rings = [simplify(r, 0.05) for r in rings]
+    rings = [r for r in rings if len(r) >= 4]
+    boxes = [(min(p[0] for p in r), max(p[0] for p in r), min(p[1] for p in r), max(p[1] for p in r)) for r in rings]
+
+    def within(lat, lon):
+        return any(a <= lat <= b and c <= lon <= d and inside(lat, lon, r) for r, (a, b, c, d) in zip(rings, boxes))
+
+    best = []
+    for step in (12, 8, 6, 4, 3, 2, 1.5, 1, 0.75, 0.5):
+        m, pts = step / 3, []
+        for a, b, c, d in boxes:
+            lat = math.ceil(a / step) * step
+            while lat <= b:
+                lon = math.ceil(c / step) * step
+                while lon <= d:
+                    k = max(0.2, math.cos(math.radians(lat)))
+                    if (lat, lon) not in pts and all(within(lat + dy, lon + dx) for dy, dx in ((0, 0), (m, 0), (-m, 0), (0, m / k), (0, -m / k))):
+                        pts.append((lat, lon))
+                    lon += step
+                lat += step
+        if len(pts) > REGION_POINTS:
+            break
+        best = pts
+    out = [round(first[0], 2), round(first[1], 2)]
+    for lat, lon in best:
+        if abs(lat - first[0]) > 0.3 or abs(lon - first[1]) > 0.3:
+            out += [round(lat, 2), round(lon, 2)]
+    return out
 CITY_ZOOM = 6.7         # the places Natural Earth labels by this zoom: down to towns like Corvallis or Grants Pass
 
 
@@ -343,15 +382,36 @@ def borders(arg):
         cities.append([" ".join((p["name"] or p["nameascii"]).split()), p["iso_a2"], round(lat, 2), round(lon, 2),
                        max(1, round(p["pop_max"] / 1000)), 1 if capital else 0, round(p["min_zoom"] * 10)])
     cities.sort(key=lambda c: (c[6], -c[4]))
+
+    def rings(g):
+        polys = [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]
+        return [[[lat, lon] for lon, lat in poly[0]] for poly in polys]
+
+    regions = []
+    for f in load("countries")["features"]:
+        p = f["properties"]
+        if p.get("LABEL_X") is None or not p.get("NAME"):
+            continue
+        code = p.get("ISO_A2_EH") if p.get("ISO_A2_EH") not in (None, "-99") else p.get("ISO_A2")
+        regions.append([SHORT_NAMES.get(p["NAME"], p["NAME"]), 0, round((p.get("MIN_LABEL") or 3) * 10), name_points(rings(f["geometry"]), (p["LABEL_Y"], p["LABEL_X"])), code])
+    for f in load("states")["features"]:
+        p = f["properties"]
+        if p.get("latitude") is None or not p.get("name"):
+            continue
+        regions.append([p["name"], 1, round((p.get("min_label") or 3.5) * 10), name_points(rings(f["geometry"]), (p["latitude"], p["longitude"])), p.get("iso_a2")])
+    regions.sort(key=lambda r: (r[1], r[2], r[0]))
     out = Path(__file__).resolve().parent.parent / "cloudwall" / "web" / "maps" / "world.json"
     data = {"about": ["Country borders on land, state and province lines and the cities and towns, from Natural Earth",
                       "(naturalearthdata.com, public domain): lines 1:50m, simplified to about 2 km; places 1:10m.",
                       "Lines: [lat, lon, lat, lon, ...]. Cities: [name, country, lat, lon, population in thousands,",
                       "national capital 1 or 0, rank: the map zoom x 10 at which Natural Earth labels it], most",
-                      "important first. Rebuild with: python3 tools/build_data.py borders"],
-            "country": lines(load("country")), "state": lines(load("state")), "cities": cities}
+                      "important first. Regions: [name, 0 a country or 1 a state or province, the map zoom x 10 from",
+                      "which Natural Earth names it, [lat, lon, ...] points well inside it for its name, Natural",
+                      "Earth's own first, the country's ISO code (its own, or the one a state belongs to)].",
+                      "Rebuild with: python3 tools/build_data.py borders"],
+            "country": lines(load("country")), "state": lines(load("state")), "cities": cities, "regions": regions}
     out.write_text(json.dumps(data, separators=(",", ":")) + "\n")
-    print(f"{len(data['country'])} border lines, {len(data['state'])} state lines, {len(cities)} cities -> {out} "
+    print(f"{len(data['country'])} border lines, {len(data['state'])} state lines, {len(cities)} cities, {len(regions)} regions -> {out} "
           f"({out.stat().st_size // 1024} KB)")
 
 
