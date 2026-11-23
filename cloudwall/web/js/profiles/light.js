@@ -118,13 +118,33 @@ F.c172 = {
   eng: { kind: "none", nose: { s: 0.37, z: 0.625, d: 1.93, blades: 2 } },
   stab: { le: 1.75, z: 1.04, span: 3.45, root: 0.25, cr: 1.22, ct: 0.8, sweep: 9, dih: 0, thick: 0.09 },
   parts: {
-    doors: [rect(2.2, 3.08, 0.2, 1.22, 0.07)],
-    lines: [[[7.33, 0.76], [7.33, 1.1], [7.92, 2.31], [7.79, 2.39], [7.75, 2.5]]],
+    // cabin door with its handle and lock, baggage door with its handle, cowling access door
+    doors: [rect(2.2, 3.08, 0.2, 1.22, 0.07), rect(2.215, 2.345, 0.774, 0.808, 0.017), rect(2.915, 3.013, 0.752, 0.81, 0.02),
+      [[3.774, 0.889, "l"], [4.116, 0.889], [4.165, 0.84, "l"], [4.165, 0.332], [4.116, 0.288, "l"], [3.774, 0.259], [3.725, 0.303, "l"], [3.725, 0.84]],
+      rect(4.05, 4.118, 0.488, 0.518, 0.015)],
+    // rudder hinge; the nose cap, cowl split and the cowling's aft seam; dorsal fin to fin joint
+    lines: [[[7.33, 0.76], [7.33, 1.1], [7.92, 2.31], [7.79, 2.39], [7.75, 2.5]],
+      [[0.539, 0.801], [0.563, 0.635], [0.588, 0.391], [0.612, 0.205]], [[0.563, 0.63], [1.446, 0.63]],
+      [[1.446, 0.976], [1.446, 0.508], [1.412, 0.41], [1.368, 0.293], [1.363, 0.069]], [[6.585, 1.328], [6.634, 1.123]]],
     struts: [[[2.05, 0.08], [2.2, 1.27], 0.12, 0.1]],
     gear: [
       { leg: [[2.95, 0.06], [2.9, -0.2]], w: [0.1, 0.07], at: [2.89, -0.22], r: 0.2, spat: { f: 0.48, a: 0.65, t: 0.24, b: 0.12 } },
       { leg: [[1.27, 0.01], [1.24, -0.39]], w: [0.07, 0.06], at: [1.24, -0.39], r: 0.175, spat: { f: 0.4, a: 0.5, t: 0.19, b: 0.13 } },
     ],
+    // as the 3-view draws them: the cowl's inlet lip and the small hook on the lower cowl, the access
+    // door (its top edge is the cowl line), the strut-foot fairing, the step on the main leg, the nose
+    // leg's torque link, the fuel filler on the wing, the optional fin-tip beacon, the tail tie-down ring
+    draw: [({ sk }) => {
+      sk.smooth("hl", [[0.436, 0.703], [0.485, 0.635], [0.5, 0.576], [0.475, 0.527], [0.431, 0.498]], false);
+      sk.smooth("hl", [[0.768, 0.171], [0.802, 0.205], [0.841, 0.186], [0.846, 0.137], [0.807, 0.113]], false);
+      sk.smooth("door", [[1.051, 0.937, "l"], [1.051, 0.732], [1.08, 0.703, "l"], [1.305, 0.703], [1.334, 0.732, "l"], [1.334, 0.962]], false);
+      sk.ellipse("pant", 2.071, 0.093, 0.171, 0.063);
+      sk.smooth("strut", [[2.847, 0.039, "c"], [2.867, 0.152, "cl"], [3.032, 0.152, "c"], [3.003, 0.039, "cl"]]);
+      sk.poly("strut", [[1.198, -0.029], [1.315, -0.029], [1.363, -0.087], [1.403, -0.117], [1.393, -0.175], [1.285, -0.195], [1.198, -0.185], [1.188, -0.097]]);
+      sk.ellipse("inlet", 2.408, 1.523, 0.022, 0.02);
+      sk.ellipse("hub", 7.717, 2.489, 0.049, 0.063);
+      sk.ellipse("tire", 7.278, 0.713, 0.035, 0.035);
+    }],
   },
   extras: EXTRAS, overlays: OVERLAYS,
 };
