@@ -317,7 +317,7 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .apt { font-size: min(2.7rem, 8cqi); color: var(--ink); }
 .apt.unknown { font-size: .95rem; color: var(--slate); align-self: center; max-width: 8rem; line-height: 1.35; }
 /* the city, over its airport's code */
-.apt small { display: block; font: 400 .85rem var(--sans); color: var(--slate); margin-bottom: .3rem; max-width: 11rem;
+.apt small { display: block; font: 400 .85rem var(--sans); color: var(--slate); margin-bottom: .3rem; max-width: 13.5rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .apt.r { text-align: right; } .apt.r small { margin-left: auto; }
 .apt.local { color: var(--blue); }

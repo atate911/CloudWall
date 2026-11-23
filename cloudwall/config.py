@@ -7,7 +7,7 @@ import shutil
 import tomllib
 from pathlib import Path
 
-from . import airports, geo
+from . import access, airports, geo
 
 log = logging.getLogger("cloudwall")
 
@@ -62,7 +62,9 @@ DEFAULTS = {
     # quiet: hours when the panel shows only a dim clock and what's next ("23:00-06:30"; "" for none),
     # waking for something coming over the house, something new worth a look, an emergency or a tap.
     "kiosk": {"place": "", "view": "card", "radar": "chart", "tracks": True, "range_nm": 0, "density": "simple", "quiet": ""},
-    "server": {"host": "0.0.0.0", "port": 5050},
+    # key: with one set, CloudWall answers only under /k/<key>/ (access.py): a private link for
+    # reaching it from outside the house. Empty: open to whoever can reach it, as on a home network.
+    "server": {"host": "0.0.0.0", "port": 5050, "key": ""},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }
 
@@ -126,6 +128,8 @@ def check(section, values):
         raise ValueError(f'[kiosk] quiet must be a span of hours like "23:00-06:30", or "" for none, not {values["quiet"]!r}')
     if section == "server" and "port" in values and not (isinstance(values["port"], int) and 0 < values["port"] < 65536):
         raise ValueError(f"[server] port must be a whole number from 1 to 65535, not {values['port']!r}")
+    if section == "server" and access.problem(values.get("key", "")):
+        raise ValueError(f"[server] key {access.problem(values['key'])}")
     if section == "source" and "urls" in values and not (values["urls"] and all(isinstance(u, str) for u in values["urls"])):
         raise ValueError("[source] urls must be a list of at least one address, each in quotes")
     return True

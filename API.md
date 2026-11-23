@@ -8,6 +8,9 @@ is in each, key by key.
 a key added, dropped or renamed in the code fails the tests until this file says so. So the tables
 are what the server does, not what it once did.
 
+**A private link.** With `[server] key` set (see the README), every address below is under
+`/k/<key>/` (`/k/<key>/api/state`), and a request anywhere else is answered 401 and nothing more.
+
 **What can change.** A key may be added at any time, so ignore the ones you don't know. Taking a
 key away, or changing what one means, raises `api` in `/api/state` (it is `1` now).
 

@@ -1408,6 +1408,50 @@ class ServerTest(unittest.TestCase):
         for path in ("/kiosk", "/kiosk/"):
             self.assertEqual(self.get(base + path), home)
 
+    def test_a_private_link(self):
+        """With [server] key set, CloudWall answers only under /k/<key>/, and there as it always
+        does: the page, the wall panel, the API. A request without the key is told nothing, whatever
+        it asks for or tries to change. The key is the same typed without its hyphens or in capitals."""
+        import urllib.error
+        import urllib.request
+        cfg = config.load()
+        cfg["server"]["key"] = "tafo-kemi-luza-nobe"
+        base, places = self.serve(cfg)
+        opened, _ = self.serve(config.load())
+        home = self.get(opened + "/")
+        for key in ("tafo-kemi-luza-nobe", "tafokemiluzanobe", "TAFO-KEMI-LUZA-NOBE"):
+            self.assertEqual(self.get(f"{base}/k/{key}/"), home)
+            self.assertEqual(self.get(f"{base}/k/{key}/kiosk"), home)
+            self.assertIn("aircraft", json.loads(self.get(f"{base}/k/{key}/api/state?range=15")))
+        self.assertEqual(self.get(f"{base}/k/tafo-kemi-luza-nobe"), home)             # the closing slash is added for it
+        for path in ("/", "/kiosk", "/api/state", "/api/logbook", "/js/app.js", "/k/", "/k//", "/k/tafo-kemi-luza-nobx/",
+                     "/k/tafo-kemi/", "/k/wrong/api/state", "/x/k/tafo-kemi-luza-nobe/"):
+            with self.assertRaises(urllib.error.HTTPError, msg=path) as e:
+                self.get(base + path)
+            self.assertEqual(e.exception.code, 401, path)
+            self.assertNotIn(b"aircraft", e.exception.read())
+        for method, path in (("POST", "/api/places"), ("DELETE", "/api/places?id=home")):
+            req = urllib.request.Request(base + path, data=b'{"q": "97201"}', method=method, headers={"Content-Type": "application/json"})
+            with self.assertRaises(urllib.error.HTTPError) as e:
+                urllib.request.urlopen(req, timeout=5)
+            self.assertEqual(e.exception.code, 401, method)
+        self.assertEqual(len(places.summaries()), 1)                                    # nothing was added or removed
+
+    def test_a_key_worth_having(self):
+        from cloudwall import access
+        keys = {access.new_key() for _ in range(50)}
+        self.assertEqual(len(keys), 50)
+        for key in keys:
+            self.assertRegex(key, r"^([bdfghjkmnprstvz][aeiou]){2}(-([bdfghjkmnprstvz][aeiou]){2}){3}$")      # typed once, said aloud
+            self.assertIsNone(access.problem(key))
+        self.assertIsNone(access.problem(""))                                           # none set: open, as on a home network
+        for bad in ("short-key", "has spaces in the key", "slash/in/the/key/x", 12345678901234):
+            self.assertTrue(access.problem(bad), bad)
+        for bad in ("letmein", "a key with spaces"):
+            with self.assertRaises(ValueError):
+                config.check("server", {"key": bad})
+        self.assertEqual(access.admit("/k/Tafo-Kemi-Luza-Nobe/api/state?range=15", access.tidy("tafo-kemi-luza-nobe")), ("in", "/api/state?range=15"))
+
     def test_a_screen_asks_for_its_radar_range(self):
         base, places = self.serve(config.load())
         t = places["home"].tracker
