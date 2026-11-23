@@ -367,7 +367,11 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 .rm-region.country { fill: rgb(255 255 255 / .62); }
 .rm-code { font-family: var(--mono); font-weight: 700; fill: #fff; stroke: rgb(0 0 0 / .65); paint-order: stroke; letter-spacing: .04em; }
 .rm-code.local { fill: color-mix(in srgb, var(--blue) 55%, #fff); }
-.rm path.rm-craft { fill: var(--magenta); stroke: #fff; stroke-width: 1.5; }
+/* the aircraft: a dart in the route's magenta on a white one a little larger (two fills, not a fill
+   and its outline: an outline on a shape drawn this small comes out far too thick) */
+.rm .rm-craft path { stroke: none; }
+.rm .rm-craft .edge { fill: #fff; }
+.rm .rm-craft .body { fill: var(--magenta); }
 .rm-ring { fill: none; stroke: var(--magenta); opacity: .8; transform-box: fill-box; transform-origin: center; animation: rm-ping 2.4s ease-out infinite; }
 @keyframes rm-ping { from { transform: scale(.5); opacity: .9; } to { transform: scale(1.6); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .rm-ring { animation: none; } }

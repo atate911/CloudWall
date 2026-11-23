@@ -360,7 +360,7 @@ export function drawRouteMap(box, r, layer, here) {
       <circle class="rm-apt to ${cls(r.dest)}" cx="${dx}" cy="${dy}" r="${3.4 * px}" stroke-width="${1.4 * px}"/>
       ${label(ox, oy, dx, r.origin.iata || "", cls(r.origin))}${label(dx, dy, ox, r.dest.iata || "", cls(r.dest))}
       <circle class="rm-ring" r="${10 * px}" stroke-width="${1.2 * px}"/>
-      <path class="rm-craft" d="M0,-8.5L5.6,6L0,3.2L-5.6,6Z"/>
+      <g class="rm-craft"><path class="edge" d="M0,-8.5L5.6,6L0,3.2L-5.6,6Z" transform="translate(0 0.5) scale(1.42)"/><path class="body" d="M0,-8.5L5.6,6L0,3.2L-5.6,6Z"/></g>
     </svg><div class="rm-scale" style="width:${barPx.toFixed(1)}px">${barNm.toLocaleString("en-US")} nm</div>${layer && layer.enabled ? `<div class="rm-credit">${esc(layer.attribution)}</div>` : ""}`;
   box._rm.at = at;
   box._rm.px = px;
