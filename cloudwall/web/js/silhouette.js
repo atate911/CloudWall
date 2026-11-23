@@ -281,7 +281,7 @@ function inset(pts, d) {
 // The kit handed to a profile's extras/overlays functions:
 //   sk          the sketch: sk.smooth(cls, [[s, z, flags]...]), sk.poly(cls, pts, closed), sk.ellipse(cls, s, z, rx, ry)
 //   f, D, L     the resolved profile, fuselage height, fuselage length (nose to tail-cone end)
-//   top(s)      height of the fuselage's upper edge at station s;  at(s): s < 0 counts from the tail end
+//   top(s), bottom(s)  height of the fuselage's upper / lower edge at station s;  at(s): s < 0 counts from the tail end
 //   sec(e)      the wing section at span fraction e {le, c, z, y} (null before the wing is drawn)
 //   fan(sk, s0, zc, spec), prop(sk, s, z, d, blades), propNacelle(sk, s0, zc, spec, q), pylon(sk, q, s0, zc, spec)
 //   surface(sk, cls, wingSpec) draws a lifting surface and returns its sec(); upper/lower(q, x) section heights
@@ -294,7 +294,7 @@ function draw(f) {
   const w = f.wing && { root: f.W / 2, ...f.wing, le: f.wing.le + stretch * (f.fwd ?? 0.5), z: f.wing.z * D };
   const fair = w && f.belly ? { points: f.belly.map(([s, z]) => [w.le + s, z]) }
     : w && f.fair !== 0 ? [w.le - (f.fairFwd ?? 0.18) * w.cr, w.le + (f.fairAft ?? 1.15) * w.cr, (f.fair ?? 0.05) * D] : null;
-  const H = hull(f, fair), top = edge(H, true);
+  const H = hull(f, fair), top = edge(H, true), bottom = edge(H, false);
   const at = (s) => (s < 0 ? L + s : s);
 
   // fin and the centre engine sit behind the near side of the fuselage
@@ -332,7 +332,7 @@ function draw(f) {
   // one-off parts a profile draws itself; see kit below
   // shaded(pts): a fuselage-coloured shape with the fuselage's shading (fairings, bulges)
   const shaded = (pts, cls = "hull") => { const d = sk.smooth(cls, pts); sk.path("shade", d, ` fill="url(#${id})"`); return d; };
-  const kit = { sk, f, D, L, top, at, sec: null, fan, prop, propNacelle, surface, pylon, upper, lower, tan, lerp, shaded, gradient: id };
+  const kit = { sk, f, D, L, top, bottom, at, sec: null, fan, prop, propNacelle, surface, pylon, upper, lower, tan, lerp, shaded, gradient: id };
   for (const extra of f.extras || []) extra(kit);
 
   // doors, cabin windows and the flight deck glazing

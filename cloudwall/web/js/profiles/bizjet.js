@@ -595,8 +595,21 @@ F.glf5 = {
 
 // G450 photo (Commons VH-MBP/TC-KHB G450 set; TC-KHB side-on, scaled by the G550 window pitch):
 // door at 5.36 m, six windows 6.93-13.10 m, tail cone end 24.0 m; Tay nacelle 15.55 m.
+// From the GIV-SP 3-view (Commons "Gulfstream IV-SP 3-view line drawing.png"), placed on the outline's
+// own spine and belly since its cabin and nacelle stations differ from the photo the G450 follows: the
+// radome joint, the blade antennas on the spine and under the belly, the fairing panel on the side of
+// the tail cone, and the APU exhaust at its end.
+const G4_FITTINGS = ({ sk, top, bottom }) => {
+  sk.smooth("hl", [[1.345, 1.4], [1.324, 1.01], [1.303, 0.622], [1.198, 0.311]], false);
+  const t = top(5.7), b = bottom(8.0);
+  sk.poly("strut", [[5.506, t - 0.02], [5.926, t + 0.39], [6.074, t + 0.39], [5.821, t - 0.02]]);
+  sk.poly("strut", [[7.818, b + 0.02], [8.028, b - 0.43], [8.196, b - 0.43], [8.091, b + 0.02]]);
+  const lo = (s, dz) => [s, bottom(s) + dz];
+  sk.smooth("hl", [lo(19.12, 0.02), lo(19.27, 0.2), lo(19.8, 0.29), lo(20.53, 0.33), lo(20.91, 0.24), lo(20.97, 0.05)], false);
+};
 F.glf4 = {
   ...F.glf5, L0: 24.0, over: 3.23,
+  extras: [G4_FITTINGS, nozzle(1.63, 0.1, 0.25)],
   doors: [[5.36, 0.94]],
   win: [{ z: 0.56, from: 6.93, to: 13.1, pitch: 1.233, w: 0.7, h: 0.5 }],
   wing: { le: 10.0, root: 1.2, span: 23.72, cr: 5.6, kink: [0.25, 3.6], ct: 1.3, sweep: 31, dih: 1.5, z: 0.05, t: [0.13, 0.1] },
