@@ -280,6 +280,15 @@ F.b407 = {
       ["hl", [[5.423, 1.428], [5.432, 0.945]], false],
       ["hl", [[5.422, 1.376], [9.023, 1.567]], false],
       ...[1.836, 2.519, 3.397].map((s0) => ["door", [[s0, 0.49, "c"], [s0 + 0.108, 0.49, "c"], [s0 + 0.108, 0.522, "c"], [s0, 0.522, "c"]]]),
+      // from the side view in Bell's 407GXi Product Specifications ("Helicopter Dimensions", low skid
+      // gear): the baggage door just behind the rear cabin door, the access panel framing the inlet
+      // grilles with its three fasteners on the roof seam (Bell draws the grilles about 0.3 m further
+      // forward than the 3-view does; the frame is drawn round the 3-view's grilles), and the curved
+      // seam on the side of the transmission fairing
+      ["door", [[3.731, 0.767, "c"], [4.562, 0.909, "c"], [4.588, 0.398, "c"], [3.75, 0.244, "c"]]],
+      ["hl", [[3.792, 1.34], [3.778, 1.71]], false], ["hl", [[4.835, 1.34], [4.827, 1.62]], false],
+      ...[3.83, 4.3, 4.77].map((s) => ["strut", box(s - 0.012, s + 0.012, 1.35, 1.38)]),
+      ["hl", [[2.965, 1.81], [3.047, 1.743], [3.111, 1.645], [3.133, 1.566], [3.076, 1.494]], false],
     ]),
   ],
   overlays: [
@@ -288,6 +297,13 @@ F.b407 = {
     skids({ z: -0.38, t: 0.1, aft: 4.14, fwd: 1.5, toe: [1.31, -0.18], legs: [[1.95, 0.0, 1.86, 0.13], [3.92, 0.06, 3.72, 0.13]] }),
     // the stabiliser's starboard endplate fin
     paint([["stab", [[7.54, 1.81, "c"], [7.32, 1.81, "c"], [7.0, 1.42, "c"], [7.32, 0.94, "c"], [7.65, 0.94, "c"], [7.41, 1.42, "c"]]]]),
+    // from Bell's 407GXi specification side view: the saddles where the cross tubes meet the belly,
+    // the two fittings on top of the skid tube between the legs, the position light on the endplate
+    // and the light on top of the fin
+    paint([["skid", [[1.825, 0.0, "c"], [2.075, 0.0, "c"], [2.04, -0.075, "c"], [1.865, -0.075, "c"]]],
+      ["skid", [[3.81, 0.06, "c"], [4.03, 0.06, "c"], [3.99, -0.01, "c"], [3.85, -0.01, "c"]]],
+      ...[2.92, 3.33].map((s) => ["strut", box(s - 0.012, s + 0.012, -0.285, -0.235)])]),
+    ({ sk }) => { sk.ellipse("hl", 7.274, 1.366, 0.035, 0.025); sk.ellipse("hub", 9.66, 2.7, 0.035, 0.035); },
   ],
 };
 
