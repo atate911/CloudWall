@@ -485,8 +485,81 @@ const SCENARIOS = {
         craftInside: dot.left >= box.left && dot.right <= box.right && dot.top >= box.top && dot.bottom <= box.bottom,
         codes: [...document.querySelectorAll("#h-map .rm-code")].map((t) => t.textContent),
         borders: (document.querySelector("#h-map .rm-border").getAttribute("d") || "").split("M").length - 1,
-        cities: [...document.querySelectorAll("#h-map .rm-place")].map((t) => t.textContent), credit: document.querySelector("#h-map .rm-credit").textContent };
+        cities: [...document.querySelectorAll("#h-map .rm-place")].map((t) => t.textContent), credit: document.querySelector("#h-map .rm-credit").textContent,
+        regions: [...document.querySelectorAll("#h-map .rm-region")].map((t) => t.textContent), scale: document.querySelector("#h-map .rm-scale").textContent,
+        // the arrowhead sits at the destination's end of the line, the aircraft's marker is turned along it
+        arrowAt: (() => { const a = document.querySelector("#h-map .rm-arrow").getBoundingClientRect(), to = document.querySelector("#h-map .rm-apt.to").getBoundingClientRect(), from = document.querySelector("#h-map .rm-apt.from").getBoundingClientRect();
+          const far = (r) => Math.hypot(a.left + a.width / 2 - (r.left + r.width / 2), a.top + a.height / 2 - (r.top + r.height / 2)); return far(to) < 20 && far(from) > 60; })(),
+        turned: /rotate\(/.test(document.querySelector("#h-map .rm-craft").getAttribute("transform") || "") };
     });
+    await page.close();
+    return out;
+  },
+
+  // the flight card's head, its airports and its switch: the type is the headline and opens the panel
+  // about it, the flight is said once, the airports stand west to east whichever way it's going, and
+  // a card with room for one picture is switched between its route map and the aircraft's drawing
+  async cardHead(browser, errors) {
+    const apt = (iata, lat, lon) => ({ iata, city: iata, lat, lon });
+    const PDX = apt("PDX", 45.59, -122.6), JFK = apt("JFK", 40.64, -73.78);
+    const pin = (origin, dest, more) => (state) => {
+      state.charts.layers.world = { enabled: true, style: "satellite", attribution: "Test imagery", zooms: [0, 6], layer: "world" };
+      state.emergency = [];
+      const a = state.hero || state.aircraft.find((x) => !x.on_ground) || state.aircraft[0];
+      // the same card whichever of the demo's aircraft is overhead: its words, facts and badges fixed
+      Object.assign(a, { local: null, local_inferred: false, route_pending: false, medical: false, hospital: null, type: "B738", type_name: "Boeing 737-800",
+        flight_no: "DL178", callsign: "DAL178", reg: "N3765", operated_by: null, badges: [], airline: "Delta Air Lines", airline_iata: "DL", owner: null,
+        seats: null, modes: [], contrail: null, year: 2014, age: 12, photo: null, coasting: null, gs: 300, dist: 5, cpa_s: 100, cpa_nm: 1,
+        route: { flight: "DL178", airline: "Delta", plausible: true, progress: 0.4, origin, dest, flown_nm: 300, left_nm: 400 } }, more);
+      state.hero = a;
+    };
+    const read = (page) => page.evaluate(() => {
+      const el = document.getElementById("hero"), shown = (q) => { const e = el.querySelector(q); return !!e && !e.hidden && getComputedStyle(e).display !== "none" && e.getBoundingClientRect().height > 2; };
+      const apts = [...el.querySelectorAll(".route .apt")].map((e) => ({ x: e.querySelector(".flaps").getBoundingClientRect().left, words: e.querySelector("small").textContent.trim() })).sort((a, b) => a.x - b.x);
+      return { head: el.querySelector("#h-type").textContent.replace("›", "").trim(), about: (el.querySelector("#h-type [data-about]") || { dataset: {} }).dataset.about || null,
+        flight: shown("#h-flight") ? el.querySelector("#h-flight").dataset.text : null, sub: el.querySelector("#h-sub").textContent.trim(),
+        facts: [...el.querySelectorAll("#h-facts dt")].map((d) => d.textContent), airports: apts.map((p) => p.words), rev: !!el.querySelector(".route.rev"),
+        // the aircraft riding the line between the airports: drawn, and which way it faces (-1: turned to fly leftwards)
+        rider: (() => { const r = el.querySelector(".prog .rider"); if (!r || !r.querySelector("svg")) return 0; const m = new DOMMatrix(getComputedStyle(r).transform); return m.a < 0 ? -1 : 1; })(),
+        logoRight: (() => { const l = el.querySelector("#h-logo"), h = el.querySelector("#h-type"); return l.hidden ? null : l.getBoundingClientRect().left > h.getBoundingClientRect().left + 40; })(),
+        map: shown(".rmap"), drawing: shown("#h-media"), toggle: shown("#h-pic"), on: (el.querySelector("#h-pic .on") || { dataset: {} }).dataset.pic || null, overflow: el.scrollHeight - el.clientHeight };
+    });
+    const out = {};
+    const cases = [["east", "desktop", PDX, JFK, {}], ["west", "desktop", JFK, PDX, { callsign: "DAL21K" }],
+      ["private", "desktop", PDX, JFK, { flight_no: null, callsign: "N3765" }], ["untyped", "desktop", PDX, JFK, { type: null, type_name: null }]];
+    for (const [name, size, o, d, more] of cases) {
+      const page = await open(browser, size, "/?density=detailed", errors, pin(o, d, more), fakeTiles());
+      await page.waitForSelector("#h-map svg.rm", { state: "attached" });
+      await page.waitForTimeout(500);
+      out[name] = await read(page);
+      await page.close();
+    }
+    // a card with room for one picture: the map as it comes, the drawing in its place, and back. How
+    // short a window leaves room for only one depends on the browser and its fonts, so the window
+    // is made shorter step by step until the card gives a picture up and shows its switch
+    const page = await open(browser, "desktop", "/?density=detailed", errors, pin(PDX, JFK, {}), fakeTiles());
+    await page.waitForSelector("#h-map svg.rm", { state: "attached" });
+    out.switchAt = null;
+    for (let h = 950; h >= 420 && !out.switchAt; h -= 25) {
+      await page.setViewportSize({ width: 1600, height: h });
+      await page.waitForTimeout(300);
+      if (await page.locator("#h-pic").isVisible()) out.switchAt = h;
+    }
+    if (out.switchAt) {
+      await page.waitForTimeout(500);
+      out.one = await read(page);
+      await page.click("#h-pic [data-pic=plate]");
+      await page.waitForTimeout(1500);                    // through an update of the card: it stays as set
+      out.drawing = await read(page);
+      await page.click("#h-pic [data-pic=map]");
+      await page.waitForTimeout(300);
+      out.back = await read(page);
+    }
+    // the panel opened from the headline, with what it says of this aircraft and of its type apart
+    await page.click("#h-type [data-about]");
+    await page.waitForSelector("#about[open] .ab-here p", { timeout: 8000 });
+    out.panel = await page.evaluate(() => ({ title: document.getElementById("ab-title").textContent.trim(),
+      heads: [...document.querySelectorAll("#about .ab-here h3")].map((h) => h.textContent), lines: document.querySelectorAll("#about .ab-here p").length }));
     await page.close();
     return out;
   },
@@ -498,6 +571,7 @@ const SCENARIOS = {
   async routeShape(browser, errors) {
     const apt = (iata, lat, lon) => ({ iata, city: iata, lat, lon });
     const SEA = apt("SEA", 47.45, -122.31), LAX = apt("LAX", 33.94, -118.41), PDX = apt("PDX", 45.59, -122.6), JFK = apt("JFK", 40.64, -73.78), DEN = apt("DEN", 39.86, -104.67);
+    const BOI = apt("BOI", 43.56, -116.22);
     const pin = (origin, dest) => (state) => {
       state.charts.layers.world = { enabled: true, style: "satellite", attribution: "Test imagery", zooms: [0, 6], layer: "world" };
       state.emergency = [];
@@ -507,7 +581,7 @@ const SCENARIOS = {
       state.hero = a;
     };
     const out = {};
-    for (const [name, size, o, d] of [["north", "desktop", SEA, LAX], ["east", "desktop", PDX, JFK], ["phoneNorth", "phone", SEA, LAX], ["phoneEast", "phone", DEN, PDX]]) {
+    for (const [name, size, o, d] of [["north", "desktop", SEA, LAX], ["east", "desktop", PDX, JFK], ["phoneNorth", "phone", SEA, LAX], ["phoneEast", "phone", DEN, PDX], ["boise", "desktop", BOI, PDX]]) {
       const page = await open(browser, size, "/?density=detailed", errors, pin(o, d), fakeTiles());
       await page.waitForSelector("#h-map svg.rm .rm-border", { state: "attached" });
       await page.waitForTimeout(600);
@@ -520,7 +594,8 @@ const SCENARIOS = {
           for (const b of labels.slice(i + 1)) if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) clash++;
         });
         return { beside: document.getElementById("hero").classList.contains("map-beside"), w: Math.round(box.width), h: Math.round(box.height),
-          fillW: +(path.width / box.width).toFixed(2), fillH: +(path.height / box.height).toFixed(2), places: labels.length - 2, clash, outside };
+          fillW: +(path.width / box.width).toFixed(2), fillH: +(path.height / box.height).toFixed(2), places: labels.length - 2, clash, outside,
+          names: [...m.querySelectorAll(".rm-place")].map((t) => t.textContent), regions: [...m.querySelectorAll(".rm-region")].map((t) => t.textContent) };
       });
       await page.close();
     }

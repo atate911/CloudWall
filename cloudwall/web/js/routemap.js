@@ -1,6 +1,8 @@
 // The flight card's route map: real map tiles of the part of the world the flight crosses, with
 // the great-circle path between its airports drawn over them, the part already flown solid and
-// the rest dashed, and a dot where it is now. The tiles come from CloudWall's "world" layer
+// the rest dashed with an arrowhead at the destination, and the aircraft where it is now, pointing
+// the way it's going. The states and countries it shows are named, with the cities a map of its
+// scale would name, and a scale bar says how far across it is. The tiles come from CloudWall's "world" layer
 // (/tiles/world/z/x/y, zoom 0 to 6, cached on the server like the radar's map).
 //
 // Everything is drawn in Web Mercator "world units": the whole world is 256 units square at zoom
@@ -53,7 +55,7 @@ let world = null, worldLoading = null;
 function loadWorld() {
   if (!worldLoading) {
     worldLoading = fetch("maps/world.json").then((res) => (res.ok ? res.json() : null)).catch(() => null).then((w) => {
-      world = w || { country: [], state: [], cities: [] };
+      world = { country: [], state: [], cities: [], regions: [], ...(w || {}) };
       return world;
     });
   }
@@ -85,6 +87,8 @@ function borderPaths(lines, vx, vy, vw, vh) {
   return out;
 }
 
+const MINOR_K = 8;          // thousands of people: below this a place isn't named, unless the map has almost no names
+
 // Text widths in px, for laying out the labels before they're drawn.
 let ruler = null;
 function textWidth(text, px) {
@@ -99,18 +103,21 @@ function textWidth(text, px) {
 // The places named on the map. Which ones is decided by Natural Earth's rank (the map zoom it would
 // label a place at), so the map names places of like importance for its scale: a town is named only
 // where a map this close would name it, never beside a city left unnamed. Those along the route come
-// first, spaced out along it like the stops on a line, then a few others around it to find your way
-// by. None so near an airport that it says the same thing, none across the route, no two touching,
-// each label on the side of its dot away from the route.
+// first, spaced out along it like the stops on a line, then others either side of it to find your
+// way by, spread along its length so that each stretch of the flight has a name near it. A place of
+// a few thousand people (John Day, Oregon) means nothing to anyone not from there, however near the
+// line it lies: such places are named only where the map would otherwise have next to no names (an
+// ocean, the far north). None so near an airport that it says the same thing, none across the
+// route, no two touching, each label on the side of its dot away from the route.
 // Positions in screen px from the view's top left; `taken` holds boxes already in use (the airport
 // codes) as [left, top, right, bottom]; z is the map's zoom, fs the labels' size.
 function pickCities(cities, toPx, path, W, H, taken, z, fs) {
-  const EDGE = 3, n = clamp(Math.round((W * H) / 20000), 2, 8), corridor = Math.max(24, 0.1 * Math.min(W, H));
+  const EDGE = 3, n = clamp(Math.round((W * H) / 15000), 3, 9), corridor = Math.max(24, 0.1 * Math.min(W, H)), reach = Math.max(60, 0.55 * Math.min(W, H));
   const along = [0];         // how far along the route each of its points is
   for (let i = 1; i < path.length; i++) along.push(along[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
   const L = along[along.length - 1], [ax, ay] = path[0], [bx, by] = path[path.length - 1];
   const cands = [];
-  for (const [name, , lat, lon, pop, , rank = 50] of cities) {
+  for (const [name, , lat, lon, pop, capital, rank = 50] of cities) {
     const r = rank / 10;
     if (r > z + 2) continue;                    // too small a place for this scale, even on the route
     const [x, y] = toPx(lat, lon);
@@ -122,8 +129,11 @@ function pickCities(cities, toPx, path, W, H, taken, z, fs) {
       if (d < near) { near = d; k = i; }
     }
     const on = near <= corridor;
-    if (!on && r > z + 1.5) continue;            // away from the route, only what a map this size names (or nearly)
-    cands.push({ name, x, y, r, pop, on, at: along[k], away: near < 4 ? 0 : x >= path[k][0] ? 1 : -1 });
+    if (!on && (r > z + 1.5 || near > reach)) continue;      // away from the route, only what a map this size names (or nearly), and not far off in a corner
+    // which side of the route it lies on, as the flight sees it (for spreading the names either side)
+    const j = Math.min(k + 2, path.length - 1), i0 = Math.max(0, j - 4);
+    const side = Math.sign((path[j][0] - path[i0][0]) * (y - path[k][1]) - (path[j][1] - path[i0][1]) * (x - path[k][0])) || 1;
+    cands.push({ name, x, y, r, pop, on, at: along[k], side, minor: pop < MINOR_K && !capital, away: near < 4 ? 0 : x >= path[k][0] ? 1 : -1 });
   }
   // the route's own places count for more, by a step of zoom
   for (const c of cands) c.key = c.r - (c.on ? 1 : 0);
@@ -155,16 +165,18 @@ function pickCities(cities, toPx, path, W, H, taken, z, fs) {
   // stations on a line, and around it a few to find your way by; then smaller places along the route,
   // only where a long stretch has nothing bigger (an ocean, the far north, empty country), and not
   // beside an airport
-  const gap = Math.max(fs * 5, L / (clamp(Math.round(L / (fs * 10)), 1, n) + 1)), aroundMax = Math.max(2, Math.ceil(n / 3));
-  let around = 0;
+  const gap = Math.max(fs * 5, L / (clamp(Math.round(L / (fs * 10)), 1, n) + 1)), aroundMax = Math.max(2, Math.ceil(n * 0.6));
+  const beside = [];         // the places named off the route: how far along it, and on which side
   for (const c of cands) {
     if (picked.length >= n) break;
-    if (c.on ? c.r > z + 1 || stops.some((at) => Math.abs(at - c.at) < gap) : around >= aroundMax || c.r > z + 0.3) continue;
-    if (pick(c)) c.on ? stops.push(c.at) : around++;
+    if (c.minor) continue;
+    if (c.on ? c.r > z + 1 || stops.some((at) => Math.abs(at - c.at) < gap)
+      : beside.length >= aroundMax || c.r > z + 0.8 || beside.some((q) => q.side === c.side && Math.abs(q.at - c.at) < gap * 0.8)) continue;
+    if (pick(c)) c.on ? stops.push(c.at) : beside.push(c);
   }
   for (const c of cands) {
     if (picked.length >= n) break;
-    if (!c.on || c.r <= z + 1 || [...stops, 0, L].some((at) => Math.abs(at - c.at) < gap * 1.25)) continue;
+    if (c.minor || !c.on || c.r <= z + 1 || [...stops, 0, L].some((at) => Math.abs(at - c.at) < gap * 1.25)) continue;
     if (pick(c)) stops.push(c.at);
   }
   // a map with next to nothing named (an ocean crossing) takes a couple of lesser places around it
@@ -175,16 +187,67 @@ function pickCities(cities, toPx, path, W, H, taken, z, fs) {
   return picked;
 }
 
+// The states, provinces and countries named on the map: each where one of its name points (points
+// well inside it, from world.json) is in view with room for the name, clear of the route, the
+// airport codes and the names already set, and as near the middle of the view as that allows. Those
+// the route itself crosses or passes nearest come first (Greenland on the way from Amsterdam, before
+// a country off in a corner of the map). Countries are named from far out, states
+// and provinces once the map is close enough to tell them apart (Natural Earth's own zooms for each).
+function pickRegions(regions, toPx, path, W, H, taken, z, fs) {
+  const n = clamp(Math.round((W * H) / 26000), 2, 6), out = [];
+  const cands = [];
+  for (const [name, kind, min, pts, iso] of regions) {
+    if (z < (kind ? Math.max(min / 10 - 0.9, 2.6) : min / 10 - 1.2)) continue;      // too far out to name it
+    const size = kind ? fs * 0.92 : fs * 1.08, text = name.toUpperCase();
+    const w = textWidth(text, size) + text.length * size * 0.14 + 6, h = size * 1.1;
+    let best = null, cross = Infinity;      // cross: how near the route comes to the region (to any of its points)
+    for (let i = 0; i < pts.length; i += 2) {
+      const [x, y] = toPx(pts[i], pts[i + 1]);
+      if (x > -W && x < 2 * W && y > -H && y < 2 * H) for (let k = 0; k < path.length; k += 2) cross = Math.min(cross, Math.hypot(path[k][0] - x, path[k][1] - y));
+      if (x < w / 2 + 4 || x > W - w / 2 - 4 || y < h + 2 || y > H - h - 2) continue;
+      const box = [x - w / 2 - 5, y - h * 0.8 - 4, x + w / 2 + 5, y + h * 0.45 + 4];      // with a little air round it
+      if (taken.some((t) => box[0] < t[2] && box[2] > t[0] && box[1] < t[3] && box[3] > t[1])) continue;
+      let near = Infinity;
+      for (let k = 0; k < path.length; k += 2) near = Math.min(near, Math.hypot(path[k][0] - x, Math.max(0, Math.abs(path[k][1] - y) - h)));
+      if (path.some(([px, py]) => px > box[0] - 4 && px < box[2] + 4 && py > box[1] - 3 && py < box[3] + 3)) continue;      // nor across the route
+      const mid = Math.hypot(x - W / 2, y - H / 2) / Math.hypot(W, H);
+      if (!best || near * 0.02 + mid < best.key) best = { name: text, kind, iso, x, y, size, box, near, key: near * 0.02 + mid };
+    }
+    if (best) cands.push({ ...best, cross });
+  }
+  // states before countries (a map that names Oregon and Idaho needn't say they are in the United
+  // States), and of each those the route crosses or passes nearest first
+  cands.sort((a, b) => b.kind - a.kind || a.cross - b.cross || a.near - b.near);
+  for (const c of cands) {
+    if (out.length >= n) break;
+    if (!c.kind && out.some((o) => o.kind && o.iso === c.iso)) continue;
+    if (taken.some((t) => c.box[0] < t[2] && c.box[2] > t[0] && c.box[1] < t[3] && c.box[3] > t[1])) continue;
+    taken.push(c.box);
+    out.push(c);
+  }
+  return out;
+}
+
+// A round length for the map's scale bar, 40 to 110 px long at pxPerNm: [nm, px].
+function scaleBar(pxPerNm) {
+  let best = [1, pxPerNm];
+  for (const nm of [5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000]) {
+    if (nm * pxPerNm <= 110) best = [nm, nm * pxPerNm];
+  }
+  return best;
+}
+
 // How the map frames route r in a box W x H px: the path in world units and the scale (px per world
-// unit). Room is left around the path for the airport codes beside its ends and a little of the
-// country around it, and the map comes no closer than the tiles allow (zoom 6, a little enlarged)
+// unit). Room is left around the path for the airport codes beside its ends and enough of the
+// country around each of them to show where it lies (its coast, its neighbours, the next city), and the map comes no closer than the tiles allow (zoom 6, a little enlarged)
 // and goes no farther out than the whole world's height.
+const PAD_X = (W) => Math.max(52, 0.15 * W), PAD_Y = (H) => Math.max(26, 0.16 * H);
 function frame(r, W, H) {
   const at = greatCircle(r.origin, r.dest), full = pathPoints(at, 0, 1, 128);
   const xs = full.map((p) => p[0]), ys = full.map((p) => p[1]);
   const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
   const bw = Math.max(x1 - x0, 0.4), bh = Math.max(y1 - y0, 0.4);
-  const padX = Math.max(46, 0.11 * W), padY = Math.max(22, 0.12 * H);
+  const padX = PAD_X(W), padY = PAD_Y(H);
   let s = Math.min(Math.max(W - 2 * padX, W * 0.3) / bw, Math.max(H - 2 * padY, H * 0.3) / bh, 2 ** MAXZ * 1.7);
   s = Math.max(s, H / 256);
   // and not so far out that the continents repeat across a wide, short box, where the path still fits
@@ -200,9 +263,9 @@ export const routeScale = (r, W, H) => (W > 0 && H > 0 && mappable(r) ? frame(r,
 // width, with frame's room above and below (a phone's map is as tall as its route needs).
 export function routeHeight(r, W) {
   if (!(W > 0) || !mappable(r)) return 0;
-  const f = frame(r, W, 1e6), s = Math.min((W - 2 * Math.max(46, 0.11 * W)) / Math.max(f.x1 - f.x0, 0.4), 2 ** MAXZ * 1.7);
+  const f = frame(r, W, 1e6), s = Math.min((W - 2 * PAD_X(W)) / Math.max(f.x1 - f.x0, 0.4), 2 ** MAXZ * 1.7);
   const h = Math.max(f.y1 - f.y0, 0.4) * s;
-  return Math.max(h + 44, h / 0.76);
+  return Math.max(h + 52, h / 0.68);
 }
 
 // Draw the map for route r into box (an element with a size), on tile layer `layer` (the server's
@@ -246,7 +309,15 @@ export function drawRouteMap(box, r, layer, here) {
   };
   const cls = (p) => (p.iata && p.iata === here ? "local" : "");
 
-  // borders and cities, once world.json is here (drawn again when it arrives)
+  // how far across the map is: a bar of a round number of nautical miles, measured at its middle
+  const midLat = Math.atan(Math.sinh(Math.PI * (1 - (2 * cy) / 256))) / RAD;
+  const [barNm, barPx] = scaleBar((s * (256 / 360)) / 60 / Math.cos(midLat * RAD));
+  // which way it's going: an arrowhead on the line, its tip just short of the destination
+  const [qx, qy] = full[full.length - 4], al = Math.hypot(dx - qx, dy - qy) || 1, ux = (dx - qx) / al, uy = (dy - qy) / al;
+  const tipX = dx - ux * 6 * px, tipY = dy - uy * 6 * px, backX = tipX - ux * 10 * px, backY = tipY - uy * 10 * px;
+  const arrow = `M${tipX},${tipY}L${backX - uy * 4.6 * px},${backY + ux * 4.6 * px}L${backX + uy * 4.6 * px},${backY - ux * 4.6 * px}Z`;
+
+  // borders, names and cities, once world.json is here (drawn again when it arrives)
   let ground = "";
   if (!world) loadWorld().then(() => { if (box.isConnected && box._rm && box._rm.r === r) drawRouteMap(box, r, layer, here); });
   else {
@@ -263,12 +334,20 @@ export function drawRouteMap(box, r, layer, here) {
     };
     const taken = [codeBox(ox, oy, dx, r.origin.iata || ""), codeBox(dx, dy, ox, r.dest.iata || "")];
     if (layer && layer.enabled) taken.push([W - layer.attribution.length * 4.3 - 12, H - 18, W, H]);   // the imagery credit
-    const cities = pickCities(world.cities, toPx, pathPx, W, H, taken, Math.log2(s), fs).map((c) => {
+    taken.push([0, H - 30, barPx + 78, H]);                                                             // the scale bar, and its miles beside it
+    // the cities first, which are where they are; then the states and countries, their names wide
+    // and faint, wherever within each there is room left
+    const cityList = pickCities(world.cities, toPx, pathPx, W, H, taken, Math.log2(s), fs);
+    for (const c of cityList) taken.push([c.x - 6, c.y - 6, c.x + 6, c.y + 6]);      // their dots too: no state's name across one
+    const regions = pickRegions(world.regions || [], toPx, pathPx, W, H, taken, Math.log2(s), fs).map((g) =>
+      `<text class="rm-region${g.kind ? "" : " country"}" x="${vx + g.x * px}" y="${vy + g.y * px}" text-anchor="middle" font-size="${g.size * px}" letter-spacing="${g.size * 0.14 * px}" stroke-width="${2.4 * px}">${esc(g.name)}</text>`).join("");
+    const cities = cityList.map((c) => {
       const X = vx + c.x * px, Y = vy + c.y * px;
       return `<circle class="rm-city" cx="${X}" cy="${Y}" r="${fs * 0.19 * px}"/><text class="rm-place" x="${X + (c.right ? c.dx : -c.dx) * px}" y="${vy + c.base * px}" text-anchor="${c.right ? "start" : "end"}" font-size="${fs * px}" stroke-width="${2.6 * px}">${esc(c.name)}</text>`;
     }).join("");
     ground = `<path class="rm-state" d="${borderPaths(world.state, vx, vy, vw, vh)}"/>
       <path class="rm-border" d="${borderPaths(world.country, vx, vy, vw, vh)}"/>
+      <g class="rm-regions">${regions}</g>
       <g class="rm-cities">${cities}</g>`;
   }
   box.innerHTML = `<svg class="rm" viewBox="${vx} ${vy} ${vw} ${vh}" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
@@ -277,18 +356,20 @@ export function drawRouteMap(box, r, layer, here) {
       <path class="rm-halo" d="${d(full)}"/>
       <path class="rm-todo" d="${d(full)}"/>
       <path class="rm-done" d=""/>
-      <circle class="rm-apt ${cls(r.origin)}" cx="${ox}" cy="${oy}" r="${3.2 * px}" stroke-width="${1.4 * px}"/>
-      <circle class="rm-apt ${cls(r.dest)}" cx="${dx}" cy="${dy}" r="${3.2 * px}" stroke-width="${1.4 * px}"/>
+      <path class="rm-arrow" d="${arrow}"/>
+      <circle class="rm-apt from ${cls(r.origin)}" cx="${ox}" cy="${oy}" r="${3.4 * px}" stroke-width="${1.6 * px}"/>
+      <circle class="rm-apt to ${cls(r.dest)}" cx="${dx}" cy="${dy}" r="${3.4 * px}" stroke-width="${1.4 * px}"/>
       ${label(ox, oy, dx, r.origin.iata || "", cls(r.origin))}${label(dx, dy, ox, r.dest.iata || "", cls(r.dest))}
-      <circle class="rm-ring" r="${9 * px}" stroke-width="${1.2 * px}"/>
-      <circle class="rm-craft" r="${4 * px}" stroke-width="${1.5 * px}"/>
-    </svg>${layer && layer.enabled ? `<div class="rm-credit">${esc(layer.attribution)}</div>` : ""}`;
+      <circle class="rm-ring" r="${10 * px}" stroke-width="${1.2 * px}"/>
+      <g class="rm-craft"><path class="edge" d="M0,-8.5L5.6,6L0,3.2L-5.6,6Z" transform="translate(0 0.5) scale(1.42)"/><path class="body" d="M0,-8.5L5.6,6L0,3.2L-5.6,6Z"/></g>
+    </svg><div class="rm-scale" style="width:${barPx.toFixed(1)}px">${barNm.toLocaleString("en-US")} nm<i>${Math.round(barNm * 1.15078).toLocaleString("en-US")} mi</i></div>${layer && layer.enabled ? `<div class="rm-credit">${esc(layer.attribution)}</div>` : ""}`;
   box._rm.at = at;
+  box._rm.px = px;
   moveRouteMap(box, box._rm.progress);
 }
 
 // Move the aircraft to `progress` (0 at the origin, 1 at the destination; null when not known,
-// which leaves the whole route dashed with no aircraft on it).
+// which leaves the whole route dashed with no aircraft on it), turned to point along the route.
 export function moveRouteMap(box, progress) {
   const m = box._rm;
   if (!m) return;
@@ -306,5 +387,8 @@ export function moveRouteMap(box, progress) {
   const pts = pathPoints(m.at, 0, p, Math.max(2, Math.round(128 * p)));
   done.setAttribute("d", d(pts));
   const [x, y] = pts[pts.length - 1];
-  for (const c of [craft, ring]) { c.style.display = ""; c.setAttribute("cx", x); c.setAttribute("cy", y); }
+  const [[ax, ay], , [bx, by]] = pathPoints(m.at, Math.max(0, p - 0.01), Math.min(1, p + 0.01), 2);      // the route's direction here
+  craft.style.display = ring.style.display = "";
+  craft.setAttribute("transform", `translate(${x} ${y}) rotate(${(Math.atan2(bx - ax, ay - by) / RAD).toFixed(1)}) scale(${m.px})`);
+  ring.setAttribute("cx", x); ring.setAttribute("cy", y);
 }

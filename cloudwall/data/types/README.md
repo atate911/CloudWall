@@ -26,20 +26,28 @@ text = """
 The first paragraph. Lines may be wrapped anywhere; a blank line starts the next paragraph.
 
 The second.
-"""
+"""                                           # needed unless every type has a text of its own (below)
 
 [facts]                                       # in the order shown; only what's worth knowing of this type
 "Range" = "6,570 km"
 "Max takeoff weight" = "88,300 kg"
 
-[variants.B39M]                               # where one model differs from its family
-name = "Boeing 737 MAX 9"
+[variants.B753]                               # where one model differs from its family
+name = "Boeing 757-300"
 more = """A paragraph added after the family's text."""
 # text = """...""" instead replaces the family's text; production and facts work as above,
 # a variant's facts going over the family's and adding to them
-[variants.B39M.facts]
-"Range" = "6,110 km"
+[variants.B753.facts]
+"Max takeoff weight" = "up to 122,400 kg (269,800 lb)"
 ```
+
+A family whose models are each seen often enough to be worth telling apart gives every one a `text`
+of its own and leaves out the family's: the 737 Next Generation and MAX, the A320 and A320neo. Each
+of those is written to stand alone, about that model first (what it is for, what sets it apart from
+its sisters, how to tell it from them overhead), with its generation's story told once, on the model
+the others derive from (the 737-800, the MAX 8, the A320, the A320neo), and only a line of it on the
+rest. No paragraph is shared between two of them, and each has its own first flight and, where its
+deliveries differ from the family's, its own `production`.
 
 Seats are left out: they come from `data/seats.csv`, by airline, and the panel adds them, with the
 wake category from `data/cwt.csv`.

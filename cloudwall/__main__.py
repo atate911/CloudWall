@@ -2,7 +2,7 @@ import argparse
 import logging
 from pathlib import Path
 
-from . import __version__, config, sources
+from . import __version__, access, config, sources
 from .flightaware import FlightAware
 from .flightradar24 import Flightradar24
 from .server import make_server
@@ -23,12 +23,20 @@ def main():
     ap.add_argument("--host", help="address to listen on (default 0.0.0.0)")
     ap.add_argument("--port", type=int, help="port to listen on (default 5050)")
     ap.add_argument("--db", help="override the logbook database path")
+    ap.add_argument("--new-key", action="store_true",
+                    help="make a key for a private link (to reach CloudWall from outside the house) and exit")
     ap.add_argument("--init-config", action="store_true",
                     help="write a starter config file (to --config, or the user config dir) and exit")
     ap.add_argument("--version", action="version", version=f"cloudwall {__version__}")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
 
+    if args.new_key:
+        key = access.new_key()
+        print(f'{key}\n\nPut it in the config file, under [server]:\n\n    key = "{key}"\n\n'
+              f"and restart CloudWall. It then answers only at  <its address>/k/{key}/  (the wall panel at\n"
+              f".../k/{key}/kiosk): open that once on each screen and keep it as a bookmark or favourite.")
+        return
     if args.init_config:
         path, created = config.init(args.config)
         print(f"{'Wrote' if created else 'Already exists, left unchanged:'} {path}")
@@ -114,6 +122,8 @@ def main():
     log.info("radar map: %s; ATC radar chart: %s (cached in %s)", charts.map.style if charts.map.enabled else "off",
              charts.atc.style if charts.atc else "off", tiles_dir)
     log.info("config: %s", cfg["_path"] or "built-in defaults")
+    if cfg["server"]["key"]:
+        log.info("private: answering only under /k/%s/ (the wall panel at /k/%s/kiosk)", cfg["server"]["key"], cfg["server"]["key"])
     try:
         server.serve_forever()
     except KeyboardInterrupt:

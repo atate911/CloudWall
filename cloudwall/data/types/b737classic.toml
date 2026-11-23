@@ -36,6 +36,11 @@ near Pittsburgh in 1994, 157 lives in all; an Eastwind -200 that survived two ru
 [variants.B733]
 name = "Boeing 737-300"
 production = [1984, 1999]
+more = """
+The -300 was the first Classic and much the most numerous. Its prototype, the 1,001st 737 built,
+flew in February 1984, and USAir took the first that November. A few carry winglets fitted years
+later, which makes them -300SPs.
+"""
 [variants.B733.facts]
 "Built" = "1,113"
 
@@ -47,10 +52,18 @@ The -400 is 3 m longer than the -300, with a bumper under the tail against scrap
 retired -300s and -400s were converted into freighters.
 """
 [variants.B734.facts]
+"First flight" = "February 1988"
 "Built" = "486"
 
 [variants.B735]
 name = "Boeing 737-500"
 production = [1990, 1999]
+more = """
+The -500 is the shortest Classic, a 737-200 replacement with the new engines: 48 cm longer than a
+-200, for up to 140 passengers. Southwest launched it in 1987 and took the first in February 1990.
+Its small cabin sent it to the breakers sooner than the others, after about 21 years where a -300
+lasted 24, and nobody wanted one as a freighter.
+"""
 [variants.B735.facts]
+"First flight" = "June 1989"
 "Built" = "389"

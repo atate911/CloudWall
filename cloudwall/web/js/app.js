@@ -3,7 +3,7 @@ import { $, esc, store, phone, api, runwayList, degF, since, dataAge, COUNT_STOP
 import { updateSky } from "./sky.js";
 import { drawScope, mapReach, flashCraft } from "./scope.js";
 import { loadMap } from "./map.js";
-import { renderHero, tickHero, nextSlide, forgetHero, heroResized } from "./hero.js";
+import { renderHero, tickHero, nextSlide, forgetHero, heroResized, setPicture } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
 import { chime, soundOn, setSound } from "./fx.js";
 import { renderWeatherTab } from "./weather.js";
@@ -475,7 +475,10 @@ $("radar").addEventListener("click", (e) => {
 $("hero").addEventListener("click", (e) => {
   // an aircraft in the wall panel's side view: a tap selects it (the click handler above)
   if (!state || e.target.closest(".q-row, .pf-craft")) return;
-  // the button on the card's drawing: about the aircraft's type
+  // the switch in the card's corner: the route map, or the aircraft's drawing in its place
+  const pic = e.target.closest("[data-pic]");
+  if (pic) { setPicture(pic.dataset.pic); return; }
+  // the button on the card's drawing, and the type's name among the facts: about the aircraft's type
   const ab = !KIOSK && state.hero && e.target.closest("[data-about]");
   if (ab) { openAbout(ab.dataset.about, aboutContext(state.hero)); return; }
   if (e.target.closest("#em-hide")) { emergencies().forEach((a) => hidden.add(emKey(a))); render(); return; }

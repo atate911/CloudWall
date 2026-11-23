@@ -5,6 +5,8 @@ checked = "2026-11"
 sources = [
   "https://en.wikipedia.org/wiki/Airbus_A320neo_family",
   "https://en.wikipedia.org/wiki/Airbus_A320_family",
+  "https://en.wikipedia.org/wiki/Airbus_A321neo",
+  "https://en.wikipedia.org/wiki/Airbus_A319",
   "https://www.aircraft.airbus.com/en/aircraft/a320-family/a319neo",
   "https://www.aircraft.airbus.com/en/aircraft/a320-family/a320neo",
   "https://www.aircraft.airbus.com/en/aircraft/a320-family/a321neo",
@@ -18,43 +20,76 @@ sources = [
   "https://lufthansagroup.com/en/focus-areas/aircraft-related-hardware/vortex-generator.html",
 ]
 
-text = """
-"Neo" stands for new engine option, and the engines are most of the story: Pratt & Whitney's geared
-PW1100G or CFM's LEAP-1A, with fans of about 2 m against the older A320's 1.6 to 1.7 m, pushing
-eleven to twelve and a half times as much air around the core as through it. With the sharklets, the
-tall curved winglets the family now carries, they cut fuel burn by around 15%, or 20% a seat in the
-denser cabins Airbus offers with it. The Pratt engine puts a gearbox between fan and turbine so each
-can turn at its best speed; from 2023 contaminated powdered metal in its turbine discs kept hundreds
-of neos on the ground for inspection.
-
-From below, the engines fill noticeably more of the space under the wing than an older A320's, and
-the neo doesn't whistle on approach as the early ones did. Together with the original family it has
-outsold every other airliner, the 737 included, passing it in orders in 2019 and in deliveries in
-2025.
-"""
+# Each model has a write-up of its own, so the family has none.
 
 [facts]
-"Entered service" = "January 2016"
+"First flight" = "September 2014"
 "Engines" = "2 × Pratt & Whitney PW1100G or CFM LEAP-1A"
 
 [variants.A19N]
 name = "Airbus A319neo"
+production = [2019]
+text = """
+The neo almost nobody ordered. As of 2026 Airbus had sold fewer than 60, against more than 12,000
+of its two longer sisters: airlines that want about 140 seats now buy the A220, which Airbus took
+over from Bombardier and which was designed for that size where the A319 is cut down to it. It
+first flew in March 2017, and China Southern, the first airline to fly it, took delivery only in
+February 2022.
+
+It has the A320neo's wing and engines on a body 3.7 m shorter, which gives it more range than an
+A320neo, 3,700 nm. As a corporate jet, the ACJ319neo, it can carry eight passengers 6,750 nm, about
+15 hours in the air. To look at it is an A319, short with one exit over each wing, wearing
+sharklets and engines that seem a size too big for it: the same 2 m fans that power the 44.5 m
+A321neo.
+"""
 [variants.A19N.facts]
+"First flight" = "March 2017"
 "Range" = "3,700 nm (6,850 km)"
 "Max takeoff weight" = "up to 75,500 kg (166,400 lb)"
 
 [variants.A20N]
 name = "Airbus A320neo"
+text = """
+The first of the neos, in service with Lufthansa since January 2016, nearly 28 years after the
+original A320. "Neo" stands for new engine option, and the engines are most of the story: Pratt &
+Whitney's geared PW1100G or CFM's LEAP-1A, with fans of about 2 m against the older A320's 1.6 to
+1.7 m, pushing eleven to twelve and a half times as much air around the core as through it. With
+the sharklets, the tall curved winglets the family now carries, they cut fuel burn by around 15%,
+or 20% a seat in the denser cabins Airbus offers with it. The Pratt engine puts a gearbox between
+fan and turbine so each can turn at its best speed; from 2023 contaminated powdered metal in its
+turbine discs kept hundreds of neos on the ground for inspection.
+
+From below, the engines fill noticeably more of the space under the wing than an older A320's, and
+the neo doesn't whistle on approach as the early ones did. It is about half as loud at takeoff as
+the aircraft it replaces. Together with the original family it has outsold every other airliner,
+the 737 included, passing it in orders in 2019 and in deliveries in 2025.
+"""
 [variants.A20N.facts]
 "Range" = "3,400 nm (6,300 km)"
 "Max takeoff weight" = "up to 79,000 kg (174,200 lb)"
 
 [variants.A21N]
 name = "Airbus A321neo"
-more = """
-The A321neo is the family's best seller, and its long-range versions take it across the Atlantic.
-The XLR carries an extra fuel tank built into the fuselage and reaches about 8,700 km.
+production = [2017]
+text = """
+The A321 with the neo's engines and sharklets, and the most-ordered model of any airliner: in 2023
+it passed the record held by the 737-800, and it now outsells the A320neo the family is named for.
+It is 44.5 m long, as the old A321 was, and entered service in May 2017. The geared Pratt & Whitney
+PW1100G or CFM LEAP-1A under its wings, with fans about 2 m across, and the sharklets at its
+wingtips cut fuel burn by around 15%, and Airbus has spent much of that on range.
+
+The A321LR of 2018 carries up to three extra tanks in its holds and takes off at 97 tonnes, for
+4,000 nm, the first of the family with real transatlantic range. The XLR, in service since November
+2024, adds a large tank built into the rear fuselage and a stronger landing gear, weighs up to 101
+tonnes and reaches 4,700 nm. Between them they have taken over the long, thin routes the Boeing 757
+used to fly.
+
+Early neos kept the four doors each side of the older A321. Since 2018, and on every one built
+since 2020, the second door ahead of the wing gives way to two exits over it, as on an A320, and
+the third door moves further aft; an airline with fewer seats can have an exit or that door
+replaced by a plug. A long Airbus with huge engines and hatches over the wing is a recent A321neo.
 """
 [variants.A21N.facts]
+"First flight" = "February 2016"
 "Range" = "4,000 nm (7,400 km); XLR 4,700 nm (8,700 km)"
 "Max takeoff weight" = "up to 97,000 kg (213,800 lb); XLR 101,500 kg (223,800 lb)"

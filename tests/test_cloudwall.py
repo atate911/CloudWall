@@ -916,14 +916,32 @@ class AboutTest(unittest.TestCase):
 
     def test_a_variant_adds_to_its_family(self):
         from cloudwall import about
-        nine, eight = about.entry("b39m"), about.entry("B38M")
-        self.assertEqual((nine["name"], nine["family"], eight["family"]), ("Boeing 737 MAX 9", "Boeing 737 MAX", "Boeing 737 MAX"))
-        self.assertEqual(nine["text"][:len(eight["text"])], eight["text"])          # the family's text, then its own
-        self.assertGreater(len(nine["text"]), len(eight["text"]))
-        self.assertEqual(nine["production"][1], None)                                 # still being built
-        self.assertTrue(all(isinstance(k, str) and isinstance(v, str) for k, v in nine["facts"]))
+        long, short = about.entry("b753"), about.entry("B752")
+        self.assertEqual((long["name"], long["family"], short["family"]), ("Boeing 757-300", "Boeing 757", "Boeing 757"))
+        self.assertEqual(long["text"][:len(short["text"])], short["text"])          # the family's text, then its own
+        self.assertGreater(len(long["text"]), len(short["text"]))
+        self.assertEqual(long["production"], [1982, 2005])                            # its family's years
+        self.assertTrue(all(isinstance(k, str) and isinstance(v, str) for k, v in long["facts"]))
         self.assertIsNone(about.entry("NOPE"))
         self.assertIsNone(about.entry(None))
+
+    def test_the_737s_and_a320s_each_have_their_own_write_up(self):
+        """The models over the house every day don't share their family's page: each has a write-up
+        of its own, no paragraph of it its sister's, with its own first flight and delivery years."""
+        from cloudwall import about
+        families = {"Boeing 737 Next Generation": ("B736", "B737", "B738", "B739"), "Boeing 737 MAX": ("B37M", "B38M", "B39M", "B3XM"),
+                    "Airbus A320 family": ("A318", "A319", "A320", "A321"), "Airbus A320neo family": ("A19N", "A20N", "A21N")}
+        for family, codes in families.items():
+            entries = [about.entry(code) for code in codes]
+            self.assertEqual({e["family"] for e in entries}, {family})
+            written = [p for e in entries for p in e["text"]]
+            self.assertEqual(len(set(written)), len(written), family)
+            self.assertTrue(all(2 <= len(e["text"]) <= about.MAX_PARAGRAPHS for e in entries), family)
+            self.assertEqual(len({dict(e["facts"])["First flight"] for e in entries}), len(codes), family)
+        nine, eight = about.entry("b39m"), about.entry("B38M")
+        self.assertEqual((nine["name"], nine["production"], eight["production"]), ("Boeing 737 MAX 9", [2018, None], [2017, None]))
+        self.assertEqual(dict(nine["facts"])["Engines"], dict(eight["facts"])["Engines"])      # the family's facts, under its own
+        self.assertEqual(about.entry("A318")["production"], [2003, 2015])
 
     def test_what_is_wrong_is_said(self):
         import tempfile
@@ -935,6 +953,10 @@ class AboutTest(unittest.TestCase):
             "typo.toml": good.replace('name = "X"', 'name = "Y"\nprodution = [1990]').replace("XA1", "YA1").replace("XB2", "YB2"),
             "twice.toml": good.replace("XB2", "ZZ9"),                        # XA1 is good.toml's
             "bare.toml": 'name = "Z"\ntypes = ["Z1"]\ntext = "Z."\n[facts]\nSeats = "180"\n[variants.Q9]\nname = "Q"\n',
+            # a family whose types each have a text of their own needs none; with one that hasn't, it does
+            "own.toml": good.replace('text = "One.\\n\\nTwo."\n', "").replace("XA1", "WA1").replace("XB2", "WB2")
+                        + '[variants.WA1]\ntext = "A."\n[variants.WB2]\ntext = "B."\n',
+            "half.toml": good.replace('text = "One.\\n\\nTwo."\n', "").replace("XA1", "VA1").replace("XB2", "VB2") + '[variants.VA1]\ntext = "A."\n',
         }
         with tempfile.TemporaryDirectory() as d:
             for name, text in files.items():
@@ -946,10 +968,13 @@ class AboutTest(unittest.TestCase):
             finally:
                 about.FOLDER = real
         for words in ("broken.toml: can't be read", "typo.toml: unknown key 'prodution'", "twice.toml: XA1 is already in good.toml",
-                      "bare.toml: needs sources", "bare.toml: needs checked", "bare.toml: seats come from", "bare.toml: variant Q9 isn't in its types"):
+                      "bare.toml: needs sources", "bare.toml: needs checked", "bare.toml: seats come from", "bare.toml: variant Q9 isn't in its types",
+                      "half.toml: needs a text, or a text of its own for every one of its types"):
             self.assertIn(words, found)
-        self.assertEqual(sorted(entries), ["XA1", "XB2", "ZZ9"])     # sound files count; one with a problem is left out
+        self.assertNotIn("own.toml", found)
+        self.assertEqual(sorted(entries), ["WA1", "WB2", "XA1", "XB2", "ZZ9"])     # sound files count; one with a problem is left out
         self.assertEqual(entries["XA1"]["text"], ["One.", "Two."])
+        self.assertEqual((entries["WA1"]["text"], entries["WB2"]["text"]), (["A."], ["B."]))
 
     def test_paragraphs(self):
         from cloudwall.about import paragraphs
@@ -1382,6 +1407,50 @@ class ServerTest(unittest.TestCase):
         home = self.get(base + "/")
         for path in ("/kiosk", "/kiosk/"):
             self.assertEqual(self.get(base + path), home)
+
+    def test_a_private_link(self):
+        """With [server] key set, CloudWall answers only under /k/<key>/, and there as it always
+        does: the page, the wall panel, the API. A request without the key is told nothing, whatever
+        it asks for or tries to change. The key is the same typed without its hyphens or in capitals."""
+        import urllib.error
+        import urllib.request
+        cfg = config.load()
+        cfg["server"]["key"] = "tafo-kemi-luza-nobe"
+        base, places = self.serve(cfg)
+        opened, _ = self.serve(config.load())
+        home = self.get(opened + "/")
+        for key in ("tafo-kemi-luza-nobe", "tafokemiluzanobe", "TAFO-KEMI-LUZA-NOBE"):
+            self.assertEqual(self.get(f"{base}/k/{key}/"), home)
+            self.assertEqual(self.get(f"{base}/k/{key}/kiosk"), home)
+            self.assertIn("aircraft", json.loads(self.get(f"{base}/k/{key}/api/state?range=15")))
+        self.assertEqual(self.get(f"{base}/k/tafo-kemi-luza-nobe"), home)             # the closing slash is added for it
+        for path in ("/", "/kiosk", "/api/state", "/api/logbook", "/js/app.js", "/k/", "/k//", "/k/tafo-kemi-luza-nobx/",
+                     "/k/tafo-kemi/", "/k/wrong/api/state", "/x/k/tafo-kemi-luza-nobe/"):
+            with self.assertRaises(urllib.error.HTTPError, msg=path) as e:
+                self.get(base + path)
+            self.assertEqual(e.exception.code, 401, path)
+            self.assertNotIn(b"aircraft", e.exception.read())
+        for method, path in (("POST", "/api/places"), ("DELETE", "/api/places?id=home")):
+            req = urllib.request.Request(base + path, data=b'{"q": "97201"}', method=method, headers={"Content-Type": "application/json"})
+            with self.assertRaises(urllib.error.HTTPError) as e:
+                urllib.request.urlopen(req, timeout=5)
+            self.assertEqual(e.exception.code, 401, method)
+        self.assertEqual(len(places.summaries()), 1)                                    # nothing was added or removed
+
+    def test_a_key_worth_having(self):
+        from cloudwall import access
+        keys = {access.new_key() for _ in range(50)}
+        self.assertEqual(len(keys), 50)
+        for key in keys:
+            self.assertRegex(key, r"^([bdfghjkmnprstvz][aeiou]){2}(-([bdfghjkmnprstvz][aeiou]){2}){3}$")      # typed once, said aloud
+            self.assertIsNone(access.problem(key))
+        self.assertIsNone(access.problem(""))                                           # none set: open, as on a home network
+        for bad in ("short-key", "has spaces in the key", "slash/in/the/key/x", 12345678901234):
+            self.assertTrue(access.problem(bad), bad)
+        for bad in ("letmein", "a key with spaces"):
+            with self.assertRaises(ValueError):
+                config.check("server", {"key": bad})
+        self.assertEqual(access.admit("/k/Tafo-Kemi-Luza-Nobe/api/state?range=15", access.tidy("tafo-kemi-luza-nobe")), ("in", "/api/state?range=15"))
 
     def test_a_screen_asks_for_its_radar_range(self):
         base, places = self.serve(config.load())

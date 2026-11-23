@@ -1,6 +1,7 @@
 // The left-hand panel: the flight card for the aircraft overhead, or a rotating idle display.
-import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, since, dataAge, runwayList } from "./util.js";
+import { $, esc, num, mmss, ident, offset, clamp, tidyName, projected, azEl, POINTS, seatWords, phone, since, dataAge, runwayList, store } from "./util.js";
 import { plate, kindPlate, renderLineup, drawn, typeInfo } from "./plate.js";
+import { drawing } from "./silhouette.js";
 import { flap, roll } from "./fx.js";
 import { map, tileLayout } from "./map.js";
 import { weatherSlide } from "./weather.js";
@@ -22,12 +23,16 @@ const SLIDE_SECONDS = 14;
 
 const SKELETON = `
   <div class="h-id">
-  <div class="h-kicker"><span class="label" id="h-why"></span><span class="pin-chip" id="h-pin" hidden>Tap the card to go back to what's overhead</span><span class="est-chip" id="h-est" hidden></span></div>
+  <div class="h-kicker"><span class="label" id="h-why"></span><span class="pin-chip" id="h-pin" hidden>Tap the card to go back to what's overhead</span><span class="est-chip" id="h-est" hidden></span>
+    <div class="seg pic" id="h-pic" role="group" aria-label="The card's picture" hidden><button data-pic="map" title="The route on a map">Route</button><button data-pic="plate" title="The aircraft's drawing, and its photo">Aircraft</button></div></div>
   <div class="h-top">
-    <div class="flaps flight" id="h-flight"></div>
-    <div class="airline"><div class="logo-tile" id="h-logo" hidden><img class="logo" id="h-logo-img" alt=""></div><span id="h-airline"></span><small id="h-sub"></small></div>
+    <div class="h-what">
+      <div class="h-type" id="h-type"></div>
+      <div class="h-who"><div class="flaps flight" id="h-flight"></div><span id="h-airline"></span><small id="h-sub"></small>
+        <div class="tags"><div class="badges" id="h-badges"></div></div></div>
+    </div>
+    <div class="logo-tile" id="h-logo" hidden><img class="logo" id="h-logo-img" alt=""></div>
   </div>
-  <div class="tags"><div class="badges" id="h-badges"></div></div>
   </div>
   <div class="h-route" id="h-route"></div>
   <div class="metrics">
@@ -43,6 +48,26 @@ const SKELETON = `
 
 const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
+// The flight is said once. Its radio callsign is shown under it only when it says something the
+// flight number doesn't: BAW21K under BA 285, but not DAL178 under DL 178, nor QXE2162 under AS 2162
+// (the same number, and its operator is named in words beside it).
+const flightDigits = (s) => ((/(\d+[A-Z]*)$/.exec(String(s || "").replace(/\s/g, "")) || [])[1] || "").replace(/^0+/, "");
+const saysMore = (callsign, id) => !!callsign && callsign !== id && !(flightDigits(callsign) && flightDigits(callsign) === flightDigits(id));
+
+// The aircraft's type by name, the card's headline, as the way into the panel about it (about.js):
+// there whether the card has room for the drawing, with its own button, or not. Plain words on the
+// wall panel, read from across the room, and for an aircraft whose type has no code.
+const aboutLink = (a, words) => (a.type && !document.body.classList.contains("kiosk")
+  ? `<button class="about-link" data-about="${esc(a.type)}" title="About this type">${esc(words)}<i aria-hidden="true"> ›</i></button>` : esc(words));
+
+// The two airports stand as they would on a map: the one further west on the left, whichever way the
+// flight is going (the shorter way round the world, as the route's own map draws it), with "From" and
+// "To" over them and an arrowhead on the line for which way. With either's position unknown, the
+// origin on the left.
+const westbound = (r) => [r.origin, r.dest].every((p) => p && p.lon != null) && ((r.dest.lon - r.origin.lon + 540) % 360) - 180 < 0;
+const aptHtml = (p, to, right, here) => `<div class="apt${right ? " r" : ""}${p.iata === here ? " local" : ""}"><small>${to ? "To" : "From"} ${esc(p.city || p.name || "")}</small>` +
+  `<div class="flaps" id="${to ? "h-dest" : "h-orig"}"></div><div class="apt-when" id="${to ? "h-arr" : "h-dep"}"></div></div>`;
+
 function routeHtml(a, state) {
   const r = a.route, ap = localPlace(a, state);
   if (a.route_pending && !r) {
@@ -52,10 +77,10 @@ function routeHtml(a, state) {
   if (a.medical && (!r || !r.plausible)) {
     // a medical flight: the hospital it's going to, or has just left, when that's known
     return `<div class="noroute med">${medIcon(22)}<span>${esc(a.hospital ? hospitalLine(a.hospital, state) : `${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}, no flight plan filed`)}` +
-      `<small>${esc([a.hospital ? (a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance") : "", a.type_name || a.type || ""].filter(Boolean).join(", "))}</small></span></div>`;
+      `${a.hospital ? `<small>${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}</small>` : ""}</span></div>`;
   }
   if (a.local === "local") {
-    return `<div class="noroute">${esc(localWords(a, state))}<small>${esc(a.type_name || a.type || "Light aircraft")}, low over the field: training or sightseeing, most likely</small></div>`;
+    return `<div class="noroute">${esc(localWords(a, state))}<small>Low over the field: training or sightseeing, most likely</small></div>`;
   }
   if (a.local_inferred && (!r || !r.plausible)) {
     // the route database is wrong or silent, but the aircraft is clearly landing or leaving here
@@ -69,29 +94,38 @@ function routeHtml(a, state) {
     </div>`;
   }
   if (!r) {
-    // the headline above already says who flies it, so say something new here
-    const what = a.squawk === "1200" ? "Flying visually, no flight plan (squawk 1200)" : a.callsign && a.callsign !== a.reg ? "No published route for this flight" : "No flight plan on file";
-    return `<div class="noroute">${esc(a.type_name || a.type || "Unknown aircraft")}<small>${esc(what)}</small></div>`;
+    // the headline above already says what it is and who flies it, so say something new here
+    const [what, more] = a.squawk === "1200" ? ["Flying visually", "No flight plan: squawk 1200, the code for visual flight"]
+      : a.callsign && a.callsign !== a.reg ? ["No published route", "Nothing on file for this flight"] : ["No flight plan on file", ""];
+    return `<div class="noroute quiet">${esc(what)}${more ? `<small>${esc(more)}</small>` : ""}</div>`;
   }
-  const iata = state.airport.iata;
+  const iata = state.airport.iata, rev = westbound(r);
+  const left = aptHtml(rev ? r.dest : r.origin, rev, false, iata), right = aptHtml(rev ? r.origin : r.dest, !rev, true, iata);
+  const cls = `${r.plausible ? "" : " unsure"}${rev ? " rev" : ""}`;
+  // the aircraft itself rides the line between them, in small: its own side elevation, facing the way
+  // it's going (an aircraft of no shape to draw, a balloon, keeps the dot)
+  const info = typeInfo(a), dr = info.shape ? drawing(info.type, info.shape, info.length, info.name) : null;
+  const rider = dr && dr.svg ? `<span class="rider" style="--ar:${(dr.w / dr.h).toFixed(3)}">${dr.svg}</span>` : "";
   if (worldLayer(state) && mappable(r)) {
     // the route on a real map: the airports either side of the distance and flight time, the map below
-    return `<div class="route mapped ${r.plausible ? "" : "unsure"}">
-    <div class="apt ${r.origin.iata === iata ? "local" : ""}"><small>${esc(r.origin.city || r.origin.name || "")}</small><div class="flaps" id="h-orig"></div><div class="apt-when" id="h-dep"></div></div>
-    <div class="prog" id="h-prog" aria-hidden="true"><i></i><b></b></div>
+    return `<div class="route mapped${cls}">
+    ${left}
+    <div class="prog${rider ? " ridden" : ""}" id="h-prog" aria-hidden="true"><i></i>${rider || "<b></b>"}</div>
     <div class="arc-note"><div id="h-note"></div><div class="arc-time" id="h-dur"></div></div>
-    <div class="apt r ${r.dest.iata === iata ? "local" : ""}"><small>${esc(r.dest.city || r.dest.name || "")}</small><div class="flaps" id="h-dest"></div><div class="apt-when" id="h-arr"></div></div>
+    ${right}
     <div class="rmap" id="h-map"></div>
   </div>`;
   }
-  return `<div class="route ${r.plausible ? "" : "unsure"}">
-    <div class="apt ${r.origin.iata === iata ? "local" : ""}"><small>${esc(r.origin.city || r.origin.name || "")}</small><div class="flaps" id="h-orig"></div><div class="apt-when" id="h-dep"></div></div>
+  // with no map: an arc from the origin to the destination, drawn the other way round for a flight going west
+  return `<div class="route${cls}">
+    ${left}
     <div><svg class="arc" viewBox="0 0 200 40">
       <path d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--rule)" stroke-width="1"/>
       <path id="h-arc" d="M4,34 Q100,-22 196,34" fill="none" stroke="var(--magenta)" stroke-width="1.4" stroke-linecap="round" pathLength="1"/>
+      <path class="arc-head" d="M196,34 L188.4,33.1 L191.5,27.9 Z"/>
       <circle id="h-arc-dot" r="2.4" fill="var(--magenta)"/></svg>
       <div class="arc-note"><div id="h-note"></div><div class="arc-time" id="h-dur"></div></div></div>
-    <div class="apt r ${r.dest.iata === iata ? "local" : ""}"><small>${esc(r.dest.city || r.dest.name || "")}</small><div class="flaps" id="h-dest"></div><div class="apt-when" id="h-arr"></div></div>
+    ${right}
   </div>`;
 }
 
@@ -136,11 +170,21 @@ function showHero(el, a, state) {
   }
   const r = a.route;
   const id = ident(a), info = typeInfo(a);
-  flap($("h-flight"), boardFlight(id));
+  // what it is, in the card's biggest letters, and a tap on it opens the panel about the type; the
+  // flight stands beside the airline's logo. An aircraft of no known type is headed by its flight.
+  // (a flight number is spaced as the departure boards space it; a registration or a callsign stands as it is)
+  const called = a.flight_no ? boardFlight(id) : id;
+  const type = a.type_name || a.type || "", head = $("h-type"), headed = `${a.type || ""}|${type || called}`;
+  if (head.dataset.is !== headed) {
+    head.dataset.is = headed;
+    head.innerHTML = type ? aboutLink(a, type) : esc(called);
+  }
+  $("h-flight").hidden = !type;
+  flap($("h-flight"), type ? called : "");
   const ga = info.shape === "piston" || info.shape === "heli" || /^N\d/.test(a.callsign || "");
   // the server's airline agrees with the logo and the flight number (a partner's flight under the airline you'd book)
   $("h-airline").textContent = a.airline || (r && r.airline) || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
-  $("h-sub").innerHTML = [a.operated_by ? `Operated by ${a.operated_by}` : null, a.callsign !== id ? a.callsign : null].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("");
+  $("h-sub").innerHTML = [a.operated_by ? `Operated by ${a.operated_by}` : null, saysMore(a.callsign, id) ? a.callsign : null].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("");
   const bh = badges(a.medical ? ["MEDICAL", ...(a.badges || []).filter((b) => b !== "MEDICAL")] : a.badges);
   if ($("h-badges").innerHTML !== bh) $("h-badges").innerHTML = bh;
   $("h-pin").hidden = !state.pinned;
@@ -255,7 +299,13 @@ function showHero(el, a, state) {
     drawRouteMap($("h-map"), r, worldLayer(state), state.airport.iata);
     moveRouteMap($("h-map"), r.progress ?? null);
   }
-  if (!el._fit) { el._fit = new ResizeObserver(() => { if (el.classList.contains("hero-card")) fitCard(el); }); el._fit.observe(el); }
+  // fitted again when the card changes size, and when its words do within it (the page's fonts
+  // arriving, a line of the facts wrapping), which change the room left for the pictures
+  if (!el._fit) el._fit = new ResizeObserver(() => { if (el.classList.contains("hero-card")) fitCard(el); });
+  if (fresh) {
+    el._fit.disconnect();
+    for (const part of [el, el.querySelector(".h-id"), el.querySelector(".metrics"), $("h-facts")]) if (part) el._fit.observe(part);
+  }
 }
 
 // The desktop card is as tall as its row. One picture takes the room the words leave: the route map,
@@ -269,11 +319,17 @@ function showHero(el, a, state) {
 // When the row is too short for everything, things give way in turn, never running into each other:
 // the spacing tightens, then the map goes (the drawing takes the stage) or, beside the facts, the
 // drawing goes first; last, the facts stand alone in a row.
+// A card with room for only one of the two shows the map, and a switch in its corner (Route, Aircraft)
+// puts the drawing in the map's place: as it was last set on this screen, for every flight after.
 const FITS = ["fit-tight", "fit-nomap", "fit-noplate"];
 const STEPS = { across: FITS, wide: ["fit-tight", "fit-nomap"], beside: ["fit-tight", "fit-noplate", "fit-nomap"] };
-function fitCard(el) {
+const picture = () => (store("card") === "plate" ? "plate" : "map");
+function fitCard(el, again = false) {
   if (!el.classList.contains("hero-card")) return;
-  const map = $("h-map"), r = cur.a && cur.a.route;
+  const map = $("h-map"), r = cur.a && cur.a.route, sw = $("h-pic");
+  const over = () => el.scrollHeight > el.clientHeight + 1;
+  if (sw) sw.hidden = true;
+  el.classList.remove("pic-plate");
   if (phone()) {
     // a phone's card scrolls: its map as tall as the route needs, within reason, a north-south route
     // in a taller map than an east-west one
@@ -287,7 +343,6 @@ function fitCard(el) {
     placeMap(el, map, how);
     el.classList.remove(...FITS);
     if (how === "wide") el.classList.add("fit-noplate");
-    const over = () => el.scrollHeight > el.clientHeight + 1;
     for (const f of STEPS[how]) {
       if (!over()) break;
       if (f === "fit-nomap" && !map) continue;
@@ -305,8 +360,46 @@ function fitCard(el) {
     el._mapKey = key;
     const s = { across: fit("across"), beside: fit("beside"), wide: fit("wide") }, best = Math.max(s.across, s.beside, s.wide);
     el._mapAt = ["across", "beside", "wide"].find((how) => s[how] >= best * 0.85);
+    el._mapBest = best;
   }
-  fit(el._mapAt);
+  // The card's parts can go on settling after the place was chosen (the page's rows finding their
+  // heights, a line of the facts arriving) without any of the measures above changing: if the map
+  // has ended up much smaller than its place promised, choose again
+  if (fit(el._mapAt) < el._mapBest * 0.85 - 1e-6 && !again) { el._mapKey = null; fitCard(el, true); return; }
+  // the map alone, the drawing left out for want of room: the switch, and the drawing if it's set to
+  if (!sw || !el.classList.contains("fit-noplate") || el.classList.contains("fit-nomap") || document.body.classList.contains("kiosk")) return;
+  sw.hidden = false;
+  if (picture() === "plate") {
+    if (el._mapAt === "beside") el.classList.add("pic-plate");      // beside the facts, in the map's place
+    else {                                                           // across the card, as when there's no map
+      placeMap(el, map, "across");
+      el.classList.remove(...FITS);
+      el.classList.add("fit-nomap");
+      if (over()) el.classList.add("fit-tight");
+      if (over()) { fit(el._mapAt); sw.hidden = true; }      // no room for the drawing either: the map stays, with nothing to switch to
+    }
+  }
+  for (const b of sw.children) {
+    const on = !sw.hidden && b.dataset.pic === picture();
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", String(on));
+  }
+}
+
+// The page's fonts arrive after the card is first drawn and change the height of its lines, those
+// between the airports among them, which nothing else here measures: the card is fitted afresh.
+if (document.fonts && document.fonts.addEventListener) {
+  document.fonts.addEventListener("loadingdone", () => {
+    const el = $("hero");
+    if (el && el.classList.contains("hero-card")) { el._mapKey = null; fitCard(el); }
+  });
+}
+
+// The switch in the card's corner: the route map, or the aircraft's drawing in its place.
+export function setPicture(which) {
+  store("card", which === "plate" ? "plate" : "map");
+  const el = $("hero");
+  if (el) fitCard(el);
 }
 
 // Put the route map in its place: at the foot of the route (across, wide) or beside the facts.
@@ -344,12 +437,12 @@ function renderFacts(a, state, elapsed = 0) {
   const slow = (a.gs || 0) <= 40 || left > 1800;
   rows.push(["Overhead", left > 5 ? (slow ? `not for a while; ${a.cpa_nm.toFixed(1)} nm away at the closest` : `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away`)
     : a.dist < 1.5 ? "now" : "passed, heading away"]);
-  const type = a.type_name || a.type;
-  if (type && (r || a.local_inferred || a.route_pending)) rows.push(["Aircraft", type]);
   if (a.contrail) rows.push(["Contrail", a.contrail === "persistent" ? "Likely, long-lasting" : "Likely, short-lived"]);
   const seats = seatWords(a.seats);
   if (seats) rows.push(["Seats", seats]);
-  if (a.reg) rows.push(["Registration", a.age != null ? `${a.reg}, built ${a.year}` : a.reg]);
+  // an aircraft the card calls by its registration (no flight number or callsign) has it there already
+  if (a.reg && a.reg !== ident(a)) rows.push(["Registration", a.age != null ? `${a.reg}, built ${a.year}` : a.reg]);
+  else if (a.reg && a.age != null) rows.push(["Built", String(a.year)]);
   const modes = autopilotWords(a.modes);
   if (modes) rows.push(["Autopilot", modes]);
   const html = rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("");

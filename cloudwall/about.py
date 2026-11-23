@@ -2,7 +2,8 @@
 and the years it was delivered, for the panel a tap on a type opens.
 
 Written by hand, one TOML file per family in data/types/ (a 737 MAX file covers the -7, -8, -9
-and -10), with a variant's own name, lines and facts where they differ. data/types/README.md
+and -10), with a variant's own name, lines and facts where they differ, or a whole write-up of its
+own where each model is seen often enough to be told apart. data/types/README.md
 sets out the format and how the entries are written; tests/test_cloudwall.py holds every file to
 it. A file that can't be read is left out with a warning, rather than stopping CloudWall.
 """
@@ -42,8 +43,10 @@ def _file_problems(name, d):
     if not isinstance(types, list) or not types or not all(isinstance(t, str) and CODE.match(t) for t in types):
         say("types must be a list of ICAO type designators (B39M)")
         types = []
-    if not isinstance(d.get("text"), str) or not paragraphs(d.get("text")):
-        say("needs a text")
+    if "text" in d and (not isinstance(d["text"], str) or not paragraphs(d["text"])):
+        say("text must be text")
+    elif "text" not in d and not (types and all(_own_text(d, code) for code in types)):
+        say("needs a text, or a text of its own for every one of its types")
     if not isinstance(d.get("sources"), list) or not d["sources"] or \
             not all(isinstance(s, str) and s.startswith(("https://", "http://")) for s in d["sources"]):
         say("needs sources: the pages its facts were checked against")
@@ -78,6 +81,13 @@ def _file_problems(name, d):
     return out
 
 
+def _own_text(d, code):
+    """Whether a type has a whole write-up of its own, so that its family need not have one."""
+    variants = d.get("variants")
+    v = variants.get(code) if isinstance(variants, dict) else None
+    return isinstance(v, dict) and isinstance(v.get("text"), str) and bool(paragraphs(v["text"]))
+
+
 def _part_problems(d):
     """The facts and production years, of a family or of a variant."""
     out = []
@@ -96,7 +106,8 @@ def _part_problems(d):
 
 def _merge(d, code):
     """One type's entry from its family's file: the variant's name, text and production where it
-    has its own, its facts over the family's, and its `more` after the family's text."""
+    has its own, its facts over the family's, and its `more` after the family's text (a family
+    whose types all have their own text may have none)."""
     v = (d.get("variants") or {}).get(code) or {}
     text = paragraphs(v["text"]) if "text" in v else paragraphs(d.get("text")) + paragraphs(v.get("more"))
     facts = dict(d.get("facts") or {})

@@ -9,21 +9,14 @@ sources = [
   "https://boeing.mediaroom.com/2013-10-29-Boeing-Continues-to-Improve-737-MAX-Performance",
   "https://en.wikipedia.org/wiki/Boeing_737_MAX",
   "https://www.ntsb.gov/Investigations/Pages/DCA24MA063.aspx",
+  "https://en.wikipedia.org/wiki/Alaska_Airlines_Flight_1282",
+  "https://en.wikipedia.org/wiki/Maneuvering_Characteristics_Augmentation_System",
+  "https://en.wikipedia.org/wiki/Southwest_Airlines_fleet",
+  "https://avweb.com/aviation-news/faa-certifies-boeing-737-max-7/",
+  "https://investors.boeing.com/investors/news/press-release-details/2026/U-S--FAA-certifies-Boeing-737-10-largest-member-of-737-MAX-family/default.aspx",
 ]
 
-text = """
-The fourth generation of a design that first flew in 1967, and still built on its fuselage
-cross-section. The MAX's LEAP-1B engines have 18 carbon-composite fan blades on a fan 176 cm across,
-where the 737NG's CFM56 had 24 titanium blades on a 155 cm fan. They push about nine times as much
-air around the core as through it, against the NG's five, and that is most of why a MAX burns about
-14% less fuel than a late 737NG. The 737 sits so low that Boeing had to mount the bigger engines
-further forward and higher, then lengthen the nose gear by 20 cm to keep them clear of the ground.
-
-Moving the engines changed how the nose pitches up at high angles of attack. Boeing countered that
-with software, MCAS, whose faults caused two crashes and a 20-month grounding from 2019. You can
-pick out a MAX by its winglets, split into one fin above the wingtip and one below, and by the
-saw-tooth rear edges on the engine nacelles.
-"""
+# Each model has a write-up of its own, so the family has none.
 
 [facts]
 "First flight" = "January 2016"
@@ -31,23 +24,94 @@ saw-tooth rear edges on the engine nacelles.
 
 [variants.B37M]
 name = "Boeing 737 MAX 7"
+text = """
+The smallest MAX spent more than eight years between its first flight and its certificate.
+Southwest ordered it in 2013 to replace its 737-700s and expected the first in 2019. It flew in
+March 2018, and then the two MAX 8 crashes, a 2020 law that would have demanded a modern
+crew-alerting system until Congress exempted it, and a fault in the engine anti-ice system, which
+could overheat the composite inlet until it broke apart, each held it up in turn. The FAA certified
+it in August 2026.
+
+Rather than put new engines on the 737-700, Boeing redrew it in 2016 around the MAX 8's wing and
+landing gear and made it nearly 2 m longer than a -700, 35.6 m, for two more rows of seats, with
+two exits over each wing where the -700 has one. It flies furthest of the family, 3,800 nm, some
+900 nm beyond a -700. A short 737 with split winglets and saw-tooth nacelles can be nothing else,
+and the big engines look bigger still on so little fuselage.
+"""
+[variants.B37M.facts]
+"First flight" = "March 2018"
+"Range" = "3,800 nm (7,040 km)"
+"Max takeoff weight" = "up to 80,300 kg (177,000 lb)"
 
 [variants.B38M]
 name = "Boeing 737 MAX 8"
+text = """
+The first MAX and much the most common, the replacement for the 737-800 and exactly its length. It
+is the fourth generation of a design that first flew in 1967, still built on that fuselage
+cross-section. Its LEAP-1B engines have 18 carbon-composite fan blades on a fan 176 cm across,
+where the 737NG's CFM56 had 24 titanium blades on a 155 cm fan. They push about nine times as much
+air around the core as through it, against the NG's five, and that is most of why a MAX burns about
+14% less fuel than a late 737NG. The 737 sits so low that Boeing had to mount the bigger engines
+further forward and higher, then lengthen the nose gear by 20 cm to keep them clear of the ground.
+
+Moving the engines changed how the nose pitches up at high angles of attack. Boeing countered that
+with software, MCAS, which trimmed the nose down on the word of a single sensor and which it had not
+properly described to the airlines flying it. False readings set it off on a Lion Air MAX 8 in
+October 2018 and an Ethiopian one in March 2019, killing 346 people, and every MAX was grounded for
+20 months while the system was rewritten.
+
+You can pick out a MAX by its winglets, split into one fin above the wingtip and one below, and by
+the saw-tooth rear edges on the engine nacelles. Southwest was its launch customer, with an order
+for 150 in December 2011, though Malindo Air of Malaysia flew the first passengers in May 2017.
+Ryanair launched a denser version, the 737-8-200, with an extra exit door behind each wing so that
+the cabin can hold up to 210 seats.
+"""
 [variants.B38M.facts]
+"Range" = "3,500 nm (6,480 km)"
 "Max takeoff weight" = "up to 82,600 kg (182,200 lb)"
 
 [variants.B39M]
 name = "Boeing 737 MAX 9"
 production = [2018]
-more = """
-Behind the wing on each side is a door plug, where high-density operators fit an extra emergency
-exit. Alaska 1282 lost one at nearly 15,000 ft in January 2024, a few minutes after taking off from
-Portland.
+text = """
+The MAX stretched to about 42 m, the successor to the 737-900ER, with the MAX 8's LEAP-1B engines,
+split winglets and longer nose gear and some 15 more seats. It first flew in April 2017 and went
+into service the following March with Lion Air's Thai arm. It has never sold like its sisters:
+airlines wanting an aircraft this size mostly chose the Airbus A321neo, which outsold it five to
+one, and Boeing answered by stretching it again into the MAX 10. As of 2026 United and Alaska are
+the two US airlines flying it.
+
+Behind the wing on each side is an opening where high-density operators fit an extra emergency
+exit; most airlines have a door plug there instead. In January 2024 one blew out of Alaska flight
+1282 at nearly 15,000 ft, a few minutes after takeoff from Portland. The aircraft came back with a
+hole in its side and nobody seriously hurt, and the plug was found in a back garden in Cedar Mill,
+just west of the city. Investigators found that the four bolts meant to hold it had been taken out
+at Boeing's Renton factory so that rivets beside it could be repaired, and never put back. Every
+MAX 9 with plugs was grounded for inspection, and both airlines found loose bolts on others.
 """
 [variants.B39M.facts]
+"First flight" = "April 2017"
 "Range" = "3,300 nm (6,110 km)"
 "Max takeoff weight" = "up to 88,300 kg (194,700 lb)"
 
 [variants.B3XM]
 name = "Boeing 737 MAX 10"
+text = """
+The longest 737 ever built, 43.8 m and up to 230 seats, launched at the 2017 Paris Air Show because
+the Airbus A321neo was outselling the MAX 9 five to one. Boeing kept the stretch to 1.7 m so that
+the wing and engines could stay as they were, which left one problem: so long a body has too little
+room under its tail to raise the nose on takeoff. So a lever at the foot of each main landing gear
+leg swings down to stand the aircraft 24 cm taller as it lifts off, and a linkage borrowed from
+carrier aircraft shortens the leg again as it retracts, so that it still fits the wheel well of
+every 737 before it.
+
+It first flew in June 2021 and waited more than five years for its certificate, which the FAA
+issued in October 2026. Congress let it keep the 737's older crew-alerting system on condition that
+Boeing add a third angle-of-attack reading and a switch to silence a false stick shaker, both to be
+fitted to every other MAX afterwards. Like the MAX 9 it has an exit door, or a plug, behind each
+wing. As of 2026 United has the most on order.
+"""
+[variants.B3XM.facts]
+"First flight" = "June 2021"
+"Range" = "3,100 nm (5,740 km)"
+"Max takeoff weight" = "up to 89,800 kg (197,900 lb)"

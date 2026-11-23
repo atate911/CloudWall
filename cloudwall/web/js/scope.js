@@ -594,9 +594,10 @@ function ensureLayers(svg) {
   const hatch = el("pattern", { id: "tfr-hatch", width: 3, height: 3, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
   el("line", { x1: 0, y1: 0, x2: 0, y2: 3, class: "tfr-hatch-line" }, hatch);
   // The chart style's dark grey street map, recoloured as a chart: its dark water blue, its land
-  // pale, its roads paler still (by day); deep navy water and slate land by night.
+  // pale, its roads paler still (by day); by night the water near black, the land slate and the
+  // roads a shade lighter, as far apart as the day's so that the map doesn't sink into the dark.
   defs.insertAdjacentHTML("beforeend", chartTint("chart-tint", [182, 204, 220], [237, 240, 230], [252, 252, 248]) +
-    chartTint("chart-tint-night", [14, 34, 54], [24, 38, 54], [46, 62, 80]));
+    chartTint("chart-tint-night", [7, 18, 34], [28, 45, 63], [58, 77, 98]));
   el("g", { id: "s-bg" }, svg);
   el("g", { id: "s-base", "clip-path": "url(#scope-clip)" }, svg);
   for (const id of ["s-static", "s-trails", "s-craft"]) el("g", { id }, svg);

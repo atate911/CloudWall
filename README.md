@@ -60,25 +60,33 @@ aircraft that matter, Detailed labels every one. The desktop starts Detailed, a 
 wall panel Simple; each screen remembers its own choice, `?density=simple` or `detailed` sets it
 in the address, and `[kiosk] density` sets the wall panel's.
 
-- **Overhead** – a flight card for the aircraft closest to overhead: the flight number as a
-  departure board shows it (with "operated by" for regional partners), the airline's logo,
+- **Overhead** – a flight card for the aircraft closest to overhead: what it is in the card's
+  biggest letters ("Boeing 737-800"), under it the flight number as a departure board shows it
+  (with "operated by" for regional partners; the flight is said once, its radio callsign added
+  only when that isn't the same number again, and an aircraft with no flight number goes by its
+  registration or callsign), and the airline's logo large on the right,
   the route with distance flown and to go, the departure and arrival times under the airports
   and the flight time between them, altitude and climb or descent rate (with the
   altitude the autopilot is heading for, when it reports one), speed, distance and how high up
   to look ("2.3 mi NW, 13° up"), heading,
-  and a photo of the airframe beside when it passes the house, the aircraft type,
-  registration and build year, and what the autopilot is doing. The departure time comes from
+  and a photo of the airframe beside when it passes the house, its seats,
+  registration and build year, and what the autopilot is doing. The two airports stand as on a
+  map, the one further west on the left whichever way the flight is going, with "From" and "To"
+  over them; on the line between them rides the aircraft itself, its own side elevation in small,
+  facing the way it's going, with an arrowhead at the destination's end. The departure time comes from
   a paid route provider (see below); without one, the card shows an estimated arrival only.
   The photo is of that very airframe (planespotters.net files photos by airframe, so a tail
   number that once belonged to another aircraft doesn't bring up its pictures), credited to its
   photographer in its bottom right corner, with a link to the photo's page there.
   Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
-  dimension line with its length. With no photo, the plate fills the frame. *About this type*, in
-  the plate's corner, opens a page on the type, written for enthusiasts: for the types over the
+  dimension line with its length. With no photo, the plate fills the frame. A tap on the type's
+  name at the head of the card, or on *About this type* in the plate's corner, opens a page on the
+  type, written for enthusiasts: for the types over the
   house every day, what they're built from and why they look and fly as they do; for the rare
   visitors, their story; a few facts chosen for each type; its seats and wake category; where this
-  airframe's build year falls in the type's production run; and how often it and its type have
-  come over the house. A type nobody has written about yet still gets its drawing, its seats and
+  airframe's build year falls in the type's production run; and, under a heading each so that
+  one isn't read as the other, how often this aircraft has come over the house and how often its
+  type has, by how many different aircraft. A type nobody has written about yet still gets its drawing, its seats and
   wake category and what the logbook knows of it. The write-ups are in `cloudwall/data/types/`,
   one file a family, each fact checked against the sources it lists; they are read as CloudWall
   starts, so restart it after changing one.
@@ -90,12 +98,17 @@ in the address, and `[kiosk] density` sets the wall panel's.
   and south gets an upright map beside the facts, in the drawing's place, rather than a short line
   in the middle of a wide strip; one running east and west goes across the card, taking the
   drawing's room too when the card is short; on a phone the map is as tall as its route needs.
-  On a short screen the map gives way first, then the drawing.
+  On a short screen the map gives way first, then the drawing. A card with room for only one of
+  the two shows the map, and a switch in its corner (*Route*, *Aircraft*) puts the drawing in the
+  map's place; each screen remembers how it was last set.
 - **Radar / Map** – beside the card, a radar scope over a street map, or the Map view: the
   same flights on an everyday map for anyone, satellite photos with roads and place names (or a
   street map), filling the panel, every aircraft labelled in words ("Delta 178", "to Denver ·
   12,000 ft", "Small plane", "Helicopter"), with home and the airport marked and no rings,
-  codes or jargon. The wall panel can show it too: `[kiosk] view = "map"`.
+  codes or jargon. The map is turned down so that it sits behind the aircraft, which are white
+  on both: the photographs muted and darkened, their roads and names fainter, the street map
+  greyed and darkened to match; at night both are darker still, the street map light-on-dark. The radar's own map, a faint
+  print of the rivers and roads, stays visible at night too. The wall panel can show it too: `[kiosk] view = "map"`.
   Each aircraft is drawn as its kind, about its size, as flight-tracking maps draw traffic: a light
   aircraft or light twin, a turboprop, a business jet, a regional jet with its engines on the tail,
   an airliner, a heavy with two or four engines, a fighter, a seaplane, a glider, an ultralight, a
@@ -332,6 +345,56 @@ density = "simple" # the radar's labels: "simple" names the aircraft that matter
 
 The address can override these on any screen: `/kiosk?view=radar&radar=atc&tracks=off&range=20&density=detailed`.
 
+## Watching from outside the house: a private link
+
+CloudWall has no logins. On a home network that is as it should be, but put on the internet (to
+watch from a car's browser, or a phone away from home) it would show anyone who found the address
+where the house is, let them add and remove places, and spend any paid route lookups. A private
+link keeps it yours without a password to type each time: the key is part of the address, so a
+bookmark or a favourite carries it.
+
+1. Make a key, from CloudWall's folder:
+
+       .venv/bin/cloudwall --new-key
+
+   It prints one made to be typed once on a touchscreen and hard to guess: sixteen lower-case
+   letters in four groups you can say aloud, such as `tafo-kemi-luza-nobe`.
+
+2. Put it in the config file (`~/.config/cloudwall/config.toml`), under `[server]`, and restart
+   CloudWall (`make restart`):
+
+   ```toml
+   [server]
+   key = "tafo-kemi-luza-nobe"
+   ```
+
+3. Open CloudWall at its address followed by `/k/` and the key, once on each screen, and keep it
+   as a favourite or bookmark:
+
+   | Screen | Address |
+   |---|---|
+   | The page (a car, a PC, a phone) | `https://<your address>/k/tafo-kemi-luza-nobe/` |
+   | The wall panel | `http://<server>:5050/k/tafo-kemi-luza-nobe/kiosk` |
+
+   The key works typed with or without its hyphens, and in capitals or not.
+
+What to know:
+
+- **Every screen needs the link once a key is set**, the ones at home too. `deploy/kiosk.sh`
+  opens the wall panel: start it with `CLOUDWALL_URL=http://localhost:5050/k/<key>`. Any other
+  address, for the page or for its data, answers only "This CloudWall is private".
+- **Nothing expires.** The key travels in the address of everything the page asks for, so there
+  is no cookie to be cleared and nothing to sign in to again.
+- **Whatever put CloudWall on the internet** (a reverse proxy, a tunnel) should serve it over
+  HTTPS, so the key isn't sent in the clear, and no longer needs a password of its own for
+  CloudWall's address.
+- **Anyone who has the link has CloudWall.** To take it back, make a new key and restart; the old
+  link stops working at once.
+- **A key of your own** must be at least 12 letters and digits (letters, digits and hyphens
+  only). Take the key out of the config to go back to an open CloudWall.
+- Anything else that reads CloudWall's data (a Home Assistant card, a script) uses the same
+  prefix: `/k/<key>/api/state`.
+
 ## The ATC radar
 
 The ATC style draws the radar as a terminal controller sees it on STARS, the FAA's terminal
@@ -451,13 +514,18 @@ no requests (or, with `"log"`, only the slow position check).
   only your server and an API key never reaches the browser.
 - The flight card draws the flight's route on a real map too: the great circle between its
   airports over Esri's satellite imagery, framed to fit the trip (a hop to Seattle, a coast to
-  coast, or Tokyo across the date line), flown part in magenta and the aircraft where it is now.
-  Country borders, state and province lines and the places along the way are drawn over it:
-  towns and cities of like importance for the map's scale (Natural Earth's own ranking, so a town
-  is named only where a map that close would name it), spaced out along the route like the
-  stations on a line, then a few others around it to find your way by, each named on the side
-  away from the route and never across it. They come from Natural Earth (public domain), bundled
-  in `cloudwall/web/maps/world.json`.
+  coast, or Tokyo across the date line) with room round each end to show where it lies. Which
+  way it's going is drawn in: a ring where it set out from, the flown part in magenta, the
+  aircraft where it is now, pointing along the route, the rest dashed to an arrowhead at the
+  destination. A bar in the corner says how far across the map is, in nautical miles and miles.
+  Country borders, state and province lines and names are drawn over it: the states, provinces
+  and countries the route crosses, in faint capitals, and towns and cities of like importance for the map's scale (Natural Earth's own
+  ranking, so a town is named only where a map that close would name it), spaced out along the
+  route like the stations on a line, then others either side of it to find your way by, each
+  named on the side away from the route and never across it. A place of a few thousand people
+  is named only where the map would otherwise have almost no names (an ocean, the far north):
+  Boise to Portland shows Bend, Salem and Pendleton, not the hamlet the line happens to cross.
+  They come from Natural Earth (public domain), bundled in `cloudwall/web/maps/world.json`.
   `[map] route` can be `light`, `dark`, `osm`, or `off` for the plain arc. Its tiles come from
   zoom 0 to 6 only, the one map CloudWall serves for the whole world, cached the same way.
 - The charts are the FAA Aeronautical Information Services' own tiled charts (public domain),
@@ -502,6 +570,8 @@ no requests (or, with `"log"`, only the slow position check).
   under); Horizon, which only ever flies as Alaska, shows as Alaska, "operated by Horizon Air".
 - CloudWall has no logins: it is meant for a home network, not the open internet. It refuses
   requests to add or remove places that come from another site's page.
+- To watch it from outside the house without a password to type each time, give it a private
+  link: see [Watching from outside the house](#watching-from-outside-the-house-a-private-link).
 - Anything else on your network can read what the screens read: [API.md](API.md) lists every
   answer, key by key (a Home Assistant card or a widget needs only `/api/state`).
 - The logbook notes where each flyover's closest point was and which way it was flying, as well as

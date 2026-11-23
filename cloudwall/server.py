@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from . import about, airports
+from . import about, access, airports
 
 CODE = Path(__file__).resolve().parent
 WEB = CODE / "web"
@@ -19,6 +19,10 @@ MAX_BODY = 16 * 1024        # bytes: a place to set up is a few dozen
 # comes to mean something else, so that anything else reading it can tell; adding a key doesn't.
 API = 1
 log = logging.getLogger("cloudwall")
+# What a request without the key is told (access.py): that there is a key, and nothing else.
+PRIVATE = (b"<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>CloudWall</title>"
+           b"<body style='font:1.1rem system-ui,sans-serif;margin:18vh auto;max-width:26rem;padding:0 1.5rem;line-height:1.5'>"
+           b"<h1 style='font-size:1.4rem'>This CloudWall is private</h1><p>Open it with its own link, the one ending in its key.</p>")
 
 
 def code_stamp():
@@ -55,9 +59,11 @@ def make_server(cfg, places, charts=None, logos=None):
     """places: a place.Places; all the server asks of a place is its state, weather report,
     heatmap and logbook. Each screen says which place it shows with ?place=; without one,
     the kiosk (?kiosk=1) gets its configured place and any other screen the first. Screens can
-    also set up places (POST /api/places) and remove the ones they set up (DELETE)."""
+    also set up places (POST /api/places) and remove the ones they set up (DELETE). With
+    [server] key set, all of it is answered only under /k/<key>/ (access.py)."""
 
     code_changed = CodeWatch()
+    key = access.tidy(cfg["server"].get("key"))          # a private link: nothing is answered outside /k/<key>/
     # what the displays may draw with, the same for every place: the radar's map, the chart layers, logos
     display = {"basemap": charts.map.info() if charts else None, "charts": charts.info() if charts else None,
                "logos": bool(logos and logos.enabled)}
@@ -83,6 +89,25 @@ def make_server(cfg, places, charts=None, logos=None):
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
             self.wfile.write(body)
+
+        def _admitted(self):
+            """With a key set, only what is asked for under /k/<key>/ is answered, as if the prefix
+            weren't there; anything else is told nothing but that this CloudWall is private. Every
+            kind of request comes through here first."""
+            if not key:
+                return True
+            how, to = access.admit(self.path, key)
+            if how == "in":
+                self.path = to
+                return True
+            if how == "slash":
+                self.send_response(308)
+                self.send_header("Location", to)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return False
+            self._send(401, PRIVATE, "text/html; charset=utf-8")
+            return False
 
         def _place(self, q):
             return places.get((q.get("place") or [""])[0]) or (places.kiosk() if q.get("kiosk") else places.first)
@@ -112,6 +137,8 @@ def make_server(cfg, places, charts=None, logos=None):
             return urlsplit(origin).netloc not in ours
 
         def do_GET(self):
+            if not self._admitted():
+                return
             path = self.path.split("?")[0]
             q = parse_qs(urlsplit(self.path).query)
             if path == "/api/locate":
@@ -190,6 +217,8 @@ def make_server(cfg, places, charts=None, logos=None):
             self.wfile.write(data)
 
         def do_POST(self):
+            if not self._admitted():
+                return
             path = self.path.split("?")[0]
             if path != "/api/places":
                 return self._send(404, {"error": "not found"})
@@ -209,6 +238,8 @@ def make_server(cfg, places, charts=None, logos=None):
             return self._send(200, {"place": place.summary()})
 
         def do_DELETE(self):
+            if not self._admitted():
+                return
             q = parse_qs(urlsplit(self.path).query)
             if self.path.split("?")[0] != "/api/places":
                 return self._send(404, {"error": "not found"})

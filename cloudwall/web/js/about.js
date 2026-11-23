@@ -19,49 +19,62 @@ function day(ts) {
     : d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
-// Where this airframe's build year falls in its type's deliveries: "built in 2004, in the last year
-// of production". A year outside the run by more than one (the feed's year is sometimes wrong, or
-// the type code covers another model) says only the year.
-export function builtLine(year, production, reg) {
+const times = (n) => (n === 1 ? "once" : n === 2 ? "twice" : `${count(n)} times`);
+
+// What the panel says from the logbook is said of two things, each under its own heading so that one
+// isn't read as the other: this one aircraft (when the panel was opened from a flight), then every
+// aircraft of its type. "It has come over once before" beside "logged 187 times" is no contradiction
+// once the first is plainly the airframe's and the second the type's.
+
+// Where this airframe's build year falls in its type's deliveries: "It was built in 2004, in the last
+// year the type was made". A year outside the run by more than one (the feed's year is sometimes
+// wrong, or the type code covers another model) says only the year.
+export function builtLine(year, production) {
   if (!year) return "";
-  const who = `${reg ? `This one, ${reg},` : "This one"} was built in ${year}`;
+  const who = `It was built in ${year}`;
   const [first, last] = production || [];
   if (!first || year < first - 1 || (last && year > last + 1)) return `${who}.`;
-  if (last && year >= last && last - first >= 3) return `${who}, in the last year of production.`;
+  if (last && year >= last && last - first >= 3) return `${who}, in the last year the type was made.`;
   const into = year - first;
-  if (into <= 0) return `${who}, among the first delivered.`;
-  return `${who}, ${count(into)} year${into === 1 ? "" : "s"} into ${last ? `a production run that ended in ${last}` : "a production run that is still going"}.`;
+  if (into <= 0) return `${who}, among the first of the type delivered.`;
+  return `${who}, ${count(into)} year${into === 1 ? "" : "s"} into the type's production run, which ${last ? `ended in ${last}` : "is still going"}.`;
 }
 
 // This airframe over the house, from the logbook (the pass it is on now may not be logged yet)
 const firstTime = (af, now) => !af.n || (af.n === 1 && now - af.first < 3600);
 export function airframeLine(af, now = Date.now() / 1000) {
   if (!af) return "";
-  if (firstTime(af, now)) return "Its first time over the house.";
-  return af.n === 1 ? `Logged over the house once before, on ${day(af.first)}.` : `Logged over the house ${count(af.n)} times, first on ${day(af.first)}.`;
+  if (firstTime(af, now)) return "This is its first time over the house.";
+  return af.n === 1 ? `It has come over the house once before, on ${day(af.first)}.` : `It has been logged over the house ${times(af.n)}, first on ${day(af.first)}.`;
 }
 
-// The type over the house: how often, how it ranks, who flies it here
+// The type over the house, every aircraft of it together: how often and by how many different
+// aircraft, how it ranks, who flies it here
 export function typeLines(seen) {
-  if (!seen || !seen.n) return ["Not logged over the house before."];
-  if (seen.n === 1) return [`Logged over the house once, on ${day(seen.first)}.`];
-  const out = [`Logged ${count(seen.n)} times over the house since ${day(seen.first)}` +
-    (seen.rank === 1 ? ", the most common type here." : seen.rank <= 10 ? `, the ${ordinal(seen.rank)} most common type here.` : ".")];
-  // who flies it here, once there are enough to say
+  if (!seen || !seen.n) return ["None has been logged over the house before."];
+  if (seen.n === 1) return [`One has been logged over the house, on ${day(seen.first)}.`];
+  const frames = seen.airframes > 1 ? `, by ${count(seen.airframes)} different aircraft` : seen.airframes === 1 ? ", the same aircraft each time" : "";
+  const rank = seen.rank === 1 ? ": the most common type here" : seen.rank <= 10 ? `: the ${ordinal(seen.rank)} most common type here` : "";
+  const out = [`Logged over the house ${times(seen.n)} since ${day(seen.first)}${frames}${rank}.`];
+  // who flies it here, once there are enough to say: a share of the times logged, not of the aircraft
   const top = (seen.airlines || [])[0], share = top ? top.n / seen.n : 0, name = (a) => a.name || a.icao;
-  const who = seen.n < 5 ? "" : share === 1 ? `All flown here by ${name(top)}` : share >= 0.5 ? `Flown here mostly by ${name(top)} (${Math.round(share * 100)}%)`
-    : seen.airlines.length > 1 ? `Flown here by ${seen.airlines.slice(0, 2).map(name).join(" and ")}, among others` : "";
-  const frames = seen.airframes > 1 ? `${count(seen.airframes)} airframes in all` : "";
-  if (who || frames) out.push([who, frames].filter(Boolean).join(", ") + ".");
+  const who = seen.n < 5 ? "" : share === 1 ? `${name(top)} flew every one of those flights.` : share >= 0.5 ? `${name(top)} flew ${Math.round(share * 100)}% of those flights.`
+    : seen.airlines.length > 1 ? `${seen.airlines.slice(0, 2).map(name).join(" and ")} flew the most of those flights.` : "";
+  if (who) out.push(who);
   return out;
 }
 
-// What the logbook says: of this airframe (when the panel was opened for one) and of its type
-export function hereLines(d, now = Date.now() / 1000) {
+// What the logbook says, as headed groups of lines: of this aircraft (when the panel was opened for
+// one), with its build year, then of its type as a whole
+export function hereGroups(d, ctx = {}, now = Date.now() / 1000) {
   const af = d.airframe, seen = d.seen || {};
+  const one = `This aircraft${ctx.reg ? `, ${ctx.reg}` : ""}`, built = builtLine(ctx.year, d.production);
   // the first of its type, on its first visit: one line says both
-  if (af && firstTime(af, now) && (seen.n || 0) <= 1) return ["Its first time over the house, and the first of its type."];
-  return [airframeLine(af, now), ...typeLines(seen)].filter(Boolean);
+  if (af && firstTime(af, now) && (seen.n || 0) <= 1) {
+    return [{ head: one, lines: [built, "This is its first time over the house, and it is the first of its type logged here."].filter(Boolean) }];
+  }
+  const own = [built, airframeLine(af, now)].filter(Boolean);
+  return [...(own.length ? [{ head: one, lines: own }] : []), { head: own.length ? "The type as a whole" : "Over the house", lines: typeLines(seen) }];
 }
 
 const possessive = (name) => (/s$/i.test(name) ? `${name}'` : `${name}'s`);
@@ -84,16 +97,16 @@ function drawingHtml(d, ctx) {
 
 function body(d, ctx) {
   const name = d.name || ctx.name || d.type;
-  const lines = [builtLine(ctx.year, d.production, ctx.reg), ...hereLines(d)].filter(Boolean);
+  const here = hereGroups(d, ctx).map((g) => `<h3 class="label">${esc(g.head)}</h3>${g.lines.map((l) => `<p>${esc(l)}</p>`).join("")}`).join("");
   const rows = factRows(d, ctx);
   return `
-    <div class="ab-head"><span class="label"><code class="ab-code">${esc(d.type)}</code>${d.family && d.family !== name ? ` · ${esc(d.family)} family` : ""}</span>
+    <div class="ab-head"><span class="label"><code class="ab-code">${esc(d.type)}</code>${d.family && d.family !== name ? ` · ${esc(d.family.replace(/ family$/i, ""))} family` : ""}</span>
       <button class="ab-close" id="ab-close" aria-label="Close">×</button></div>
     <h2 class="ab-name" id="ab-title">${esc(name)}</h2>
     <div class="ab-draw sil-box">${drawingHtml(d, ctx)}</div>
     ${d.text.length ? `<div class="ab-text">${d.text.map((p) => `<p>${esc(p)}</p>`).join("")}</div>` : ""}
     ${rows.length ? `<dl class="facts ab-facts">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>` : ""}
-    <div class="ab-here">${lines.map((l) => `<p>${esc(l)}</p>`).join("")}</div>`;
+    <div class="ab-here">${here}</div>`;
 }
 
 let asked = 0;
