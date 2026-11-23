@@ -264,6 +264,18 @@ const EJ_GLASS = [
 const EJ_FIN = { le: 6.5, cr: 4.56, ct: 1.49, h: 5.1, sweep: 40.4, fillet: [0.63, 0.56], rudder: 0.66, round: 0.25 };
 const EJ_WIN = (to) => [{ z: 0.673, from: 6.25, to: 6.25, w: 0.33, h: 0.38 }, { z: 0.673, from: 7.42, to, pitch: 0.80, w: 0.33, h: 0.38 }];
 
+// The E-Jets' nose as APM-1901 Figure 2.1 (Rev. 24, 2024) draws it (heights rescaled as above): the
+// radome joint, the two probe ports and the port low on the nose, and the antenna under it.
+const EJ_NOSE_TRACED = [
+["n", "hl", [[0.599,1.466], [0.599,0.404]]],
+["n", "door", [[1.296,1.318,"l"], [1.369,1.318], [1.43,1.251,"l"], [1.43,1.184], [1.369,1.117,"l"], [1.296,1.117], [1.235,1.184,"l"], [1.235,1.251]]],
+["n", "door", [[1.577,1.641,"l"], [1.662,1.641], [1.723,1.574,"l"], [1.723,1.52], [1.662,1.453,"l"], [1.577,1.453], [1.516,1.52,"l"], [1.516,1.574]]],
+["n", "door", [[4.082,0.444,"l"], [4.144,0.444], [4.192,0.39,"l"], [4.192,0.323], [4.144,0.269,"l"], [4.082,0.269], [4.034,0.323,"l"], [4.034,0.39]]],
+["n", "hl", [[1.895,0.404], [2.261,0.417]]],
+["n", "hl", [[1.931,0.229], [2.237,0.202]]],
+["n", "hl", [[2.872,0.417], [2.946,0.35], [2.946,0.283], [2.872,0.215]]],
+["n", "hl", [[1.1,0.283], [1.406,0.269]]]
+];
 // E190 (ERJ 190-100): APM-1901 Figure 2.1 (side, plan and front views; heights rescaled as above):
 // overall 36.24 m, span over winglets 28.72 m, tailplane span 12.08 m. Wing with tall swept
 // winglets reaching the crown, CF34-10E under the wing, one overwing exit per side, L1/L2 doors.
@@ -274,7 +286,7 @@ F.e190 = {
   doors: [[5.19, 0.9], [-8.24, 0.78], [1.9, 0.5, "E", "w"]],
   win: EJ_WIN(-9.49),
   extras: [wingSeam([[-2.75, 0.05], [-2.4, 0.5], [-1.25, 0.95], [0.25, 1.1], [3.25, 1.12], [6.25, 1.05], [7.6, 0.92], [8.6, 0.6],
-    [8.85, 0.3], [8.3, 0.05]])],
+    [8.85, 0.3], [8.3, 0.05]]), traced(EJ_NOSE_TRACED)],
   wing: { le: 13.75, root: 1.505, span: 27.0, cr: 5.46, kink: [0.308, 3.59], ct: 1.55, sweep: 26.6, dih: 4.5, z: 0.209, t: [0.13, 0.1] },
   tip: { h: 1.61, sweep: 44, top: 0.3, base: 0.465, blend: 0.3 },
   ftf: [0.2, 0.42, 0.62],
