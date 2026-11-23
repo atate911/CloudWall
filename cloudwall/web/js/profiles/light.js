@@ -671,7 +671,21 @@ F.st75 = {
   eng: { kind: "none", nose: { s: 0.1, z: 0.47, d: 2.45, blades: 2 } },
   stab: { le: 1.8, z: 0.62, span: 3.81, root: 0.2, cr: 1.24, ct: 1.0, sweep: 3, dih: 0, thick: 0.08 },
   parts: {
-    lines: [[[6.72, 0.5], [6.72, 1.19], [6.39, 1.19], [6.39, 1.42]], [[2.98, 0.86], [3.48, 0.84]], [[3.78, 0.83], [4.3, 0.81]]],
+    lines: [[[6.72, 0.5], [6.72, 1.19], [6.39, 1.19], [6.39, 1.42]], [[2.98, 0.86], [3.48, 0.84]], [[3.78, 0.83], [4.3, 0.81]],
+      // from the general arrangement diagram: the engine ring's aft edge (two lines), the panel line
+      // along the side, the panel behind the rear cockpit, and the rudder's lower edge down to the tail cone
+      [[0.704, 0.88], [0.697, -0.05]], [[0.734, 0.88], [0.728, -0.05]],
+      [[0.763, 0.648], [2.505, 0.632], [4.385, 0.616]], [[3.649, 0.964], [3.646, 0.622]], [[4.387, 0.881], [4.385, 0.616]],
+      [[6.764, 0.492], [7.068, 0.111]]],
+    // the D-shaped port in the forward side panel, the small fitting under the panel line, the hand
+    // hold, the dome on the turtle deck, the rudder trim tab
+    doors: [[[0.774, 0.618, "c"], [0.773, 0.467, "c"], [0.869, 0.467], [0.918, 0.526], [0.876, 0.605]],
+      rect(3.905, 4.007, 0.643, 0.704, 0.02),
+      [[7.491, 0.738, "c"], [7.551, 0.75, "c"], [7.567, 0.455, "c"], [7.513, 0.438, "c"]]],
+    marks: [["hl", [[1.147, 0.633], [1.153, 0.603], [1.171, 0.591], [1.189, 0.603], [1.195, 0.633]], false],
+      ["hub", [[4.549, 0.86, "c"], [4.562, 0.896], [4.592, 0.919], [4.628, 0.907], [4.646, 0.871, "c"]]]],
+    // the ringed fitting at the top of the rudder's trailing edge
+    dots: [["hub", 7.306, 1.239, 0.09, 0.078], ["inlet", 7.306, 1.239, 0.036, 0.036]],
     struts: [
       // tailplane bracing
       [[6.42, 0.21], [6.57, 0.6], 0.04, 0.04], [[6.42, 0.21], [6.2, 0.6], 0.04, 0.04],
