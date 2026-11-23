@@ -38,6 +38,18 @@ const stacks = (s, z, l = 0.42, h = 0.2) => ({ sk, sec, f }) => {
   }
 };
 
+// Parts traced off a type's drawing: [class, points]. Classes: strut (a filled outline: antennas),
+// door (an outline), glassdoor (a pane), hl (a panel line), dot ([s, z, rx, ry]: a small dark port).
+const marks = (parts) => ({ sk }) => {
+  for (const [cls, p] of parts) {
+    if (cls === "dot") sk.ellipse("inlet", ...p);
+    else if (cls === "strut") sk.poly("strut", p);
+    else if (cls === "door") sk.smooth("door", p);
+    else if (cls === "glassdoor") sk.smooth("glass", p);
+    else sk.poly("hl", p, false);
+  }
+};
+
 // ---------- De Havilland Canada Dash 8-400 (Q400) ----------
 // Published dimensions (Wikipedia): length 32.81 m, span 28.42 m, height 8.34 m, fuselage 2.69 m,
 // propellers 4.11 m (six blades), main gear track 8.79 m (so the nacelles sit 4.4 m out). Station
@@ -136,6 +148,27 @@ F.b350 = {
 const atrSponson = ({ sk }) => {
   sk.smooth("hull", [[9.8, 0.35, "c"], [10.3, 0.85], [12.0, 1.0], [14.0, 0.75], [15.25, 0.2, "c"], [13.5, -0.18], [11.5, -0.2], [10.2, -0.08]]);
 };
+// Traced off the same Commons drawing's side view (47 mm a pixel): the radome joint and its latches,
+// the two nose ports, the antenna behind the flight deck, the exit with its window ahead of the
+// cabin windows, the blade antenna under the tail cone, the gear-bay door, vent and scoop on the
+// sponson, and the fin's stepped rudder hinge and trim-tab line.
+const ATR_TRACED = [
+["hl", [[0.54,1.236], [0.573,0.973], [0.573,0.385]]],
+["hl", [[0.573,0.761], [0.729,0.761]]],
+["hl", [[0.578,0.376], [0.705,0.376]]],
+["dot", [1.504,1.297,0.122,0.103]],
+["dot", [1.297,1.119,0.08,0.075]],
+["strut", [[3.422,2.585,"c"], [3.487,2.89,"c"], [3.6,2.89,"c"], [3.675,2.585,"c"]]],
+["door", [[5.922,2.091,"l"], [6.251,2.091], [6.345,1.998,"l"], [6.345,1.151], [6.251,1.058,"l"], [5.922,1.058], [5.828,1.151,"l"], [5.828,1.998]]],
+["glassdoor", [[6.087,1.81,"l"], [6.133,1.81], [6.204,1.739,"l"], [6.204,1.504], [6.133,1.433,"l"], [6.087,1.433], [6.016,1.504,"l"], [6.016,1.739]]],
+["strut", [[19.599,0.235,"c"], [19.787,0.024,"c"], [19.928,0.0,"c"], [19.834,0.211,"c"]]],
+["hl", [[12.056,0.211], [12.056,0.55], [12.088,0.611], [12.634,0.611], [12.652,0.588], [12.652,0.211], [12.878,0.188], [12.916,-0.155]]],
+["hl", [[11.915,0.155], [11.9,-0.165]]],
+["door", [[11.449,0.174,"l"], [11.506,0.174], [11.524,0.155,"l"], [11.524,-0.014], [11.506,-0.033,"l"], [11.449,-0.033], [11.43,-0.014,"l"], [11.43,0.155]]],
+["door", [[10.161,0.39,"c"], [10.443,0.418,"c"], [10.457,0.211,"c"]]],
+["hl", [[24.872,2.773], [24.919,2.867], [24.933,2.994], [24.745,3.088], [24.745,3.196], [25.483,4.864], [25.568,4.935], [25.591,5.109], [25.859,5.72], [25.897,5.748], [26.038,5.71]]],
+["hl", [[26.517,5.076], [25.709,2.585]]]
+];
 F.at72 = {
   kind: "turboprop", L0: 27.17, over: 0, D: 2.62, W: 2.87, fwd: 0.5, fair: 0, floor: 0.21,
   nose: {
@@ -159,7 +192,7 @@ F.at72 = {
   eng: { kind: "prop", at: [0.217], fwd: 2.8, drop: 0.45, len: 6.5, dia: 1.42, spinner: 0.08, tailZ: -0.1, belly: 0.95, prop: 3.93, blades: 4 },
   fin: { le: 4.41, cr: 3.2, ct: 2.15, h: 4.05, sweep: 27.7, rudder: 0.62 },
   stab: { le: 2.0, z: "T", drop: 0.6, span: 7.31, root: 0.2, cr: 1.6, ct: 1.0, sweep: 10, dih: 0 },
-  extras: [dorsal(-8.67, -3.2, 4.7, 0.9), atrSponson, door(4.33, 1.3, 0.45, 1.65)],
+  extras: [dorsal(-8.67, -3.2, 4.7, 0.9), atrSponson, door(4.33, 1.3, 0.45, 1.65), marks(ATR_TRACED)],
 };
 F.at76 = { ...F.at72, eng: { ...F.at72.eng, blades: 6 } };
 
