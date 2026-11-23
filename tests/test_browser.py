@@ -179,10 +179,39 @@ class BrowserTest(unittest.TestCase):
         self.assertGreaterEqual(len(d["cities"]), 2)                         # a few places to find your way by
         self.assertNotIn("Tokyo", d["cities"])                               # not one the airport code already names
 
+    def test_the_cards_head_its_airports_and_its_switch(self):
+        c = self.scenario("cardHead")
+        east, west = c["east"], c["west"]
+        # the type is the headline, and the way into the panel about it; the flight is said once
+        self.assertEqual((east["head"], east["about"], east["flight"], east["sub"]), ("Boeing 737-800", "B738", "DL 178", ""))
+        self.assertNotIn("Aircraft", east["facts"])                          # the headline says it
+        self.assertEqual(west["sub"], "DAL21K")                              # a callsign that isn't the flight number again is worth showing
+        # the airports as on a map: the western one on the left, whichever way the flight is going
+        self.assertEqual((east["airports"], east["rev"]), (["From PDX", "To JFK"], False))
+        self.assertEqual((west["airports"], west["rev"]), (["To PDX", "From JFK"], True))
+        # no flight number: the registration stands in its place, and isn't said again among the facts
+        private = c["private"]
+        self.assertEqual((private["head"], private["flight"]), ("Boeing 737-800", "N3765"))
+        self.assertNotIn("Registration", private["facts"])
+        # no type known: the flight heads the card, once
+        self.assertEqual((c["untyped"]["head"], c["untyped"]["about"], c["untyped"]["flight"]), ("DL 178", None, None))
+        for name in ("east", "west", "private", "untyped"):
+            self.assertLessEqual(c[name]["overflow"], 1, name)
+        # room for one picture: the map, the drawing in its place when the switch says so, and back
+        one, drawing, back = c["one"], c["drawing"], c["back"]
+        self.assertEqual((one["toggle"], one["map"], one["drawing"], one["on"]), (True, True, False, "map"))
+        self.assertEqual((drawing["toggle"], drawing["map"], drawing["drawing"], drawing["on"]), (True, False, True, "plate"))
+        self.assertEqual((back["map"], back["drawing"], back["on"]), (True, False, "map"))
+        self.assertLessEqual(max(one["overflow"], drawing["overflow"]), 1)
+        # the panel says what it knows of this aircraft and of its type under separate headings
+        self.assertEqual(c["panel"]["title"], "Boeing 737-800")
+        self.assertRegex(c["panel"]["heads"][0], "^This aircraft")
+        self.assertGreaterEqual(c["panel"]["lines"], 1)
+
     def test_the_route_maps_shape_follows_the_route(self):
         m = self.scenario("routeShape")
         n, e = m["north"], m["east"]
-        self.assertTrue(n["beside"] and n["h"] >= n["w"])                   # north and south: upright, beside the facts
+        self.assertTrue(n["beside"] and n["h"] >= 0.9 * n["w"])             # north and south: upright (or nearly, under a tall head), beside the facts
         self.assertGreaterEqual(n["fillH"], 0.6)                             # the route reaching most of its height
         self.assertTrue(not e["beside"] and e["w"] >= 2 * e["h"])           # east and west: across the card
         self.assertGreaterEqual(e["fillW"], 0.6)

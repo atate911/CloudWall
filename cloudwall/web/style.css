@@ -161,9 +161,17 @@ header { display: flex; align-items: center; gap: 1.4rem; padding: .7rem 1.4rem 
 .ab-facts dd { font-size: .92rem; }
 .ab-here { margin-top: 1.1rem; padding-top: .9rem; border-top: 1px solid var(--rule); }
 .ab-here p { margin: 0 0 .35rem; font-size: .84rem; line-height: 1.5; color: var(--ink-2); }
+/* said of this one aircraft, then of every aircraft of its type: each under its own heading */
+.ab-here h3 { margin: 0 0 .3rem; }
+.ab-here p + h3 { margin-top: .9rem; }
 /* what opens it: the drawing on the flight card, and each type in the logbook's collection */
 .about-btn { position: absolute; top: 0; left: 0; padding: .5rem .65rem; z-index: 1; font: 700 .8rem var(--sans); color: var(--blue); }
 .about-btn:hover { text-decoration: underline; }
+/* the type's name on the flight card, as the way into the same panel: the words as they stand, their arrow in blue */
+.about-link { font: inherit; color: inherit; text-align: inherit; padding: 0; cursor: pointer; }
+.about-link i { font-style: normal; color: var(--blue); }
+.about-link:hover { text-decoration: underline; text-decoration-color: var(--blue); }
+.about-link:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
 .about-btn:focus-visible, .coll[data-about]:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
 html.phone .about-btn { padding: .7rem .8rem; font-size: .84rem; }
 .coll[data-about] { cursor: pointer; }
@@ -243,13 +251,23 @@ nav button span { color: var(--slate); font-weight: 400; margin-left: .4rem; }
 
 /* ---------- flight card ---------- */
 .hero-card { display: flex; flex-direction: column; padding: 1.4rem 1.6rem 1.3rem; gap: .9rem; container-type: inline-size; }
-.h-top { display: flex; align-items: flex-start; gap: 1.4rem; }
-.flight { font-size: min(3.6rem, 10.5cqi); letter-spacing: -.02em; color: var(--ink); white-space: pre; flex: none; }
-.airline { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; padding-top: .35rem;
-  font-size: 1.2rem; font-weight: 700; white-space: nowrap; }
-.airline > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.airline > [hidden] { display: none; }
+/* the head of the card: what the aircraft is, in its biggest letters (two lines of them at most);
+   under it one row: the airline's logo, the flight beside it, and the badges at the row's end
+   (under it, where there isn't the room) */
+.h-top { display: flex; flex-direction: column; align-items: stretch; gap: .6rem; }
+.h-type { font: 700 min(2.8rem, 8.6cqi)/1.06 var(--sans); letter-spacing: -.025em; color: var(--ink); text-wrap: balance; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; padding-bottom: .06em; }
+.h-type .about-link i { font-weight: 400; }
+.airline { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; column-gap: 1.1rem; row-gap: .45rem; font-size: 1rem; font-weight: 700; white-space: nowrap; }
+.h-who { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .22rem; }
+.airline > .tags { margin: 0 0 0 auto; justify-content: flex-end; }
+.h-who > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.h-who > [hidden], .airline > [hidden] { display: none; }
+.airline:not(:has(.logo-tile:not([hidden]), .h-who > :not([hidden]):not(:empty))) { display: none; }      /* nothing to say of who flies it */
+.flight { font-size: min(1.6rem, 7cqi); letter-spacing: -.01em; color: var(--ink); white-space: pre; flex: none; }
 .airline small { display: flex; flex-wrap: wrap; column-gap: 1.1rem; row-gap: .1rem; max-width: 100%; font: 400 .8rem var(--sans); color: var(--slate); }
+.airline > .logo-tile { height: 2.9rem; }
+.airline > .logo-tile img { max-width: min(13rem, 44cqi); }
 .logo-tile { display: inline-flex; align-items: center; height: 2.3rem; flex: none; }
 .logo-tile[hidden] { display: none; }
 .logo-tile img { height: 100%; width: auto; max-width: 11rem; object-fit: contain; display: block; }
@@ -257,6 +275,7 @@ nav button span { color: var(--slate); font-weight: 400; margin-left: .4rem; }
 .logo-tile.tiny { height: 1.5rem; } .logo-tile.tiny img { max-width: 5.4rem; }
 /* most logos are drawn for white backgrounds; at night they sit on a pale card, dimmed */
 body.night .logo-tile { background: #dfe4e8; padding: .25rem .5rem; border-radius: .4rem; filter: brightness(.82); height: 2.6rem; }
+body.night .airline > .logo-tile { height: 3.1rem; }
 body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { height: 1.7rem; padding: .15rem .35rem; }
 .countdown { position: relative; width: 4.4rem; height: 4.4rem; flex: none; }
 .countdown svg { width: 100%; height: 100%; }
@@ -306,6 +325,9 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 .arc path:first-child { stroke: var(--rule); stroke-dasharray: 2 3; }
 #h-arc { stroke: var(--magenta); }
 #h-arc-dot { fill: var(--magenta); }
+.arc-head { fill: var(--slate); stroke: none; }
+/* the airports stand west to east, as on a map: a flight going west is drawn from the right */
+.route.rev .arc { transform: scaleX(-1); }
 .arc-note { text-align: center; font-size: .74rem; color: var(--slate); margin-top: .3rem; line-height: 1.5; }
 .arc-time { color: var(--ink-2); }
 .arc-time:empty { display: none; }
@@ -587,15 +609,28 @@ body.night #radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) {
 #scope.atc #radar .basemap.atc-chart { mix-blend-mode: normal; opacity: .26;
   filter: invert(1) grayscale(1) blur(.6px) contrast(.9); }
 
-/* ---------- the Map view: the flights on an everyday map, at full strength, for anyone ---------- */
-#scope.map #radar .basemap.plain-map { mix-blend-mode: normal; filter: none; opacity: 1; }
-body.night #scope.map #radar .basemap.plain-map { filter: brightness(.82); }
+/* ---------- the Map view: the flights on an everyday map, for anyone. The map is turned down
+   until it sits behind the aircraft and their labels: by day the photograph muted and a little
+   darker, its roads and names fainter, and a street map paled, with the aircraft drawn dark on
+   it; by night both of them dark, the street map turned light-on-dark, the aircraft white ---------- */
+#scope.map #radar .basemap.plain-map { mix-blend-mode: normal; opacity: 1; filter: saturate(.62) brightness(.58) contrast(.96); }
+#scope.map #radar .basemap.plain-map .overlay { opacity: .55; }
+#scope.map #radar .basemap.plain-map.streets { filter: saturate(.45) contrast(.8) brightness(.93); }
+body.night #scope.map #radar .basemap.plain-map { filter: saturate(.45) brightness(.38) contrast(1.05); }
+body.night #scope.map #radar .basemap.plain-map .overlay { opacity: .5; }
+body.night #scope.map #radar .basemap.plain-map.streets { filter: invert(1) hue-rotate(180deg) saturate(.4) brightness(.62) contrast(.9); }
 #scope.map #radar .scope-bg { fill: #3a4a3e; }
 #scope.map #radar .blip { fill: #fff; stroke: rgb(10 20 30 / .85); stroke-width: 1.3; }
 #scope.map #radar .hero .blip { fill: var(--magenta); stroke: #fff; }
 #scope.map #radar .tag { fill: #fff; font-size: 5.4px; stroke: rgb(10 20 30 / .85); stroke-width: 1.9px; }
 #scope.map #radar .tag-sub { font-family: var(--sans); font-size: 4.4px; fill: #f1f4f6; stroke: rgb(10 20 30 / .85); stroke-width: 1.7px; }
 #scope.map #radar .hero .tag { fill: #ffd2e6; }
+/* on the pale street map of the day, the aircraft and their labels in ink with a white edge */
+body:not(.night) #scope.map #radar:has(.basemap.streets) .blip { fill: #17324e; stroke: rgb(255 255 255 / .95); }
+body:not(.night) #scope.map #radar:has(.basemap.streets) .hero .blip { fill: var(--magenta); stroke: #fff; }
+body:not(.night) #scope.map #radar:has(.basemap.streets) .tag { fill: #10202f; stroke: rgb(255 255 255 / .92); }
+body:not(.night) #scope.map #radar:has(.basemap.streets) .tag-sub { fill: #2b3c4e; stroke: rgb(255 255 255 / .92); }
+body:not(.night) #scope.map #radar:has(.basemap.streets) .hero .tag { fill: #8d1f56; }
 #radar .map-home circle { fill: rgb(255 255 255 / .25); stroke: #fff; stroke-width: .8; }
 #radar .map-home .dot { fill: var(--blue); stroke: #fff; stroke-width: .6; }
 #radar .map-apt rect { fill: #2c5d9e; stroke: #fff; stroke-width: .5; }
@@ -1294,9 +1329,11 @@ html.phone.land .icon-btn { height: 2.3rem; }
 
 /* ---- flight card ---- */
 html.phone .hero-card { padding: 1rem 1rem 1.1rem; gap: .8rem; }
-html.phone .h-top { gap: .9rem; }
-html.phone .flight { font-size: min(3rem, 11cqi); }
-html.phone .airline { font-size: 1.05rem; padding-top: .15rem; }
+html.phone .h-top { gap: .7rem; }
+html.phone .h-type { font-size: min(2.4rem, 9.6cqi); }
+html.phone .flight { font-size: min(1.5rem, 7cqi); }
+html.phone .airline { font-size: 1rem; gap: .9rem; }
+html.phone .airline > .logo-tile { height: 2.7rem; }
 html.phone .airline small { font-size: .78rem; column-gap: .8rem; }
 html.phone .route { gap: .6rem; }
 html.phone .apt { font-size: min(2.4rem, 9cqi); }
@@ -1514,6 +1551,11 @@ html.phone #radar .helipad-label { font-size: 5.4px; }
 .d-simple .sit h1 { font-size: 1.55rem; }
 .d-simple .pic { font-size: 1.05rem; }
 .seg.dens { position: static; flex: none; }
+/* the flight card's switch between its route map and the aircraft's drawing, in the card's top corner */
+.seg.pic { position: static; flex: none; margin-left: auto; align-self: center; }
+.h-kicker > :is(.pin-chip, .est-chip):not([hidden]) ~ .seg.pic { margin-left: 0; }      /* a chip before it has taken the row's slack */
+.seg.pic[hidden] { display: none; }
+.seg.pic button { padding: .3rem .65rem; }
 .seg.dens button { padding: .45rem .7rem; }
 .board-strip { display: flex; margin-bottom: .6rem; padding-bottom: .7rem; border-bottom: 1px solid var(--rule); }
 
@@ -1908,6 +1950,12 @@ html.desk:not(.phone) .route.mapped > .rmap { height: auto; }
 .prog b { position: absolute; left: var(--p, 0%); top: 50%; width: .6rem; height: .6rem; margin: -.3rem 0 0 -.3rem; border-radius: 50%;
   background: var(--magenta); box-shadow: 0 0 0 2px var(--sheet); }
 .prog.unknown :is(i, b) { display: none; }
+/* which way it's going: an arrowhead at the destination's end of the line; flown from the right, and
+   the arrowhead on the left, when the destination is the airport to the west */
+.prog::after { content: ""; position: absolute; top: 50%; right: -.15rem; margin-top: -.32rem; border: .32rem solid transparent; border-right: 0; border-left: .5rem solid var(--slate); }
+.route.rev .prog::after { right: auto; left: -.15rem; border-left: 0; border-right: .5rem solid var(--slate); }
+.route.rev .prog i { left: auto; right: 0; }
+.route.rev .prog b { left: auto; right: var(--p, 0%); margin: -.3rem -.3rem 0 0; }
 .route.unsure .prog { opacity: .35; }
 /* the picture's least worthwhile size is honoured (min-height), so a card short of room overflows and
    fitCard knows to let something go, rather than squeezing one part under the next */
@@ -1944,6 +1992,12 @@ html.desk:not(.phone) .hero-card.fit-nomap .route.mapped { grid-template-rows: a
 html.desk:not(.phone) .hero-card.fit-nomap > .h-route { flex: none; }
 html.desk:not(.phone) .hero-card.fit-noplate .h-bottom .media { display: none; }
 html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) > .h-bottom { flex: none; min-height: 0; display: block; }
+/* the card's switch set to Aircraft, the map beside the facts: the drawing stands in the map's place */
+html.desk:not(.phone) .hero-card.map-beside.pic-plate > .h-bottom > .rmap { display: none; }
+html.desk:not(.phone) .hero-card.map-beside.pic-plate .h-bottom .media { display: flex; grid-column: 1; grid-row: 1 / -1; aspect-ratio: auto; height: 100%; min-height: 6.5rem; max-height: none; align-self: stretch; }
 html.desk:not(.phone) .hero-card.fit-tight { gap: .75rem; padding-top: 1rem; padding-bottom: 1rem; }
 html.desk:not(.phone) .hero-card.fit-tight .apt { font-size: min(2.3rem, 7cqi); }
+html.desk:not(.phone) .hero-card.fit-tight .h-type { font-size: min(2.3rem, 7.6cqi); }
+html.desk:not(.phone) .hero-card.fit-tight .h-top { gap: .45rem; }
+html.desk:not(.phone) .hero-card.fit-tight .airline > .logo-tile { height: 2.5rem; }
 html.desk:not(.phone) .hero-card.fit-tight .metric { padding-top: .5rem; padding-bottom: .55rem; }

@@ -60,25 +60,32 @@ aircraft that matter, Detailed labels every one. The desktop starts Detailed, a 
 wall panel Simple; each screen remembers its own choice, `?density=simple` or `detailed` sets it
 in the address, and `[kiosk] density` sets the wall panel's.
 
-- **Overhead** – a flight card for the aircraft closest to overhead: the flight number as a
-  departure board shows it (with "operated by" for regional partners), the airline's logo,
+- **Overhead** – a flight card for the aircraft closest to overhead: what it is in the card's
+  biggest letters ("Boeing 737-800"), the airline's logo with the flight number beside it as a
+  departure board shows it (with "operated by" for regional partners; the flight is said once, its
+  radio callsign added only when that isn't the same number again, and an aircraft with no flight
+  number goes by its registration or callsign),
   the route with distance flown and to go, the departure and arrival times under the airports
   and the flight time between them, altitude and climb or descent rate (with the
   altitude the autopilot is heading for, when it reports one), speed, distance and how high up
   to look ("2.3 mi NW, 13° up"), heading,
-  and a photo of the airframe beside when it passes the house, the aircraft type,
-  registration and build year, and what the autopilot is doing. The departure time comes from
+  and a photo of the airframe beside when it passes the house, its seats,
+  registration and build year, and what the autopilot is doing. The two airports stand as on a
+  map, the one further west on the left whichever way the flight is going, with "From" and "To"
+  over them and an arrowhead on the line between them. The departure time comes from
   a paid route provider (see below); without one, the card shows an estimated arrival only.
   The photo is of that very airframe (planespotters.net files photos by airframe, so a tail
   number that once belonged to another aircraft doesn't bring up its pictures), credited to its
   photographer in its bottom right corner, with a link to the photo's page there.
   Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
-  dimension line with its length. With no photo, the plate fills the frame. *About this type*, in
-  the plate's corner, opens a page on the type, written for enthusiasts: for the types over the
+  dimension line with its length. With no photo, the plate fills the frame. A tap on the type's
+  name at the head of the card, or on *About this type* in the plate's corner, opens a page on the
+  type, written for enthusiasts: for the types over the
   house every day, what they're built from and why they look and fly as they do; for the rare
   visitors, their story; a few facts chosen for each type; its seats and wake category; where this
-  airframe's build year falls in the type's production run; and how often it and its type have
-  come over the house. A type nobody has written about yet still gets its drawing, its seats and
+  airframe's build year falls in the type's production run; and, under a heading each so that
+  one isn't read as the other, how often this aircraft has come over the house and how often its
+  type has, by how many different aircraft. A type nobody has written about yet still gets its drawing, its seats and
   wake category and what the logbook knows of it. The write-ups are in `cloudwall/data/types/`,
   one file a family, each fact checked against the sources it lists; they are read as CloudWall
   starts, so restart it after changing one.
@@ -90,12 +97,17 @@ in the address, and `[kiosk] density` sets the wall panel's.
   and south gets an upright map beside the facts, in the drawing's place, rather than a short line
   in the middle of a wide strip; one running east and west goes across the card, taking the
   drawing's room too when the card is short; on a phone the map is as tall as its route needs.
-  On a short screen the map gives way first, then the drawing.
+  On a short screen the map gives way first, then the drawing. A card with room for only one of
+  the two shows the map, and a switch in its corner (*Route*, *Aircraft*) puts the drawing in the
+  map's place; each screen remembers how it was last set.
 - **Radar / Map** – beside the card, a radar scope over a street map, or the Map view: the
   same flights on an everyday map for anyone, satellite photos with roads and place names (or a
   street map), filling the panel, every aircraft labelled in words ("Delta 178", "to Denver ·
   12,000 ft", "Small plane", "Helicopter"), with home and the airport marked and no rings,
-  codes or jargon. The wall panel can show it too: `[kiosk] view = "map"`.
+  codes or jargon. The map is turned down so that it sits behind the aircraft: the photographs
+  muted and darkened, their roads and names fainter, the street map paled with the aircraft drawn
+  dark on it; at night both are dark, the street map light-on-dark. The radar's own map, a faint
+  print of the rivers and roads, stays visible at night too. The wall panel can show it too: `[kiosk] view = "map"`.
   Each aircraft is drawn as its kind, about its size, as flight-tracking maps draw traffic: a light
   aircraft or light twin, a turboprop, a business jet, a regional jet with its engines on the tail,
   an airliner, a heavy with two or four engines, a fighter, a seaplane, a glider, an ultralight, a
