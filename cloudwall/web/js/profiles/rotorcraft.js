@@ -119,6 +119,17 @@ const EC135_SEAMS = [
     ["hl", [[5.75, 1.62], [7.75, 1.6]], false],
     ["inlet", [[5.45, 1.9], [5.3, 2.02], [4.95, 2.05], [4.83, 1.95], [4.85, 1.72], [5.05, 1.62], [5.45, 1.78]]],
   ];
+// More of the 3-view's side view (EC135 only; the H145 drawn from it is not known to share them):
+// access panels on the cowling and the cabin side, the seam across the upper fin, the shroud line
+// under the fenestron, and the tail position light.
+const box = (s0, s1, z0, z1) => [[s0, z0, "c"], [s1, z0, "c"], [s1, z1, "c"], [s0, z1, "c"]];
+const EC135_DETAIL = [
+  ["hl", box(3.33, 3.552, 1.818, 1.906)], ["hl", box(3.944, 4.28, 1.489, 1.619)],
+  ["hl", box(2.961, 3.301, 0.777, 0.904)], ["hl", box(3.794, 3.977, 0.581, 0.715)],
+  ["hl", [[8.531, 2.298], [9.691, 2.298]], false],
+  ["hl", [[8.058, 1.253], [8.45, 1.074], [8.776, 0.96], [9.005, 0.862], [9.364, 0.894], [9.625, 1.009], [9.847, 1.218]], false],
+  ["strut", box(10.122, 10.167, 1.492, 1.616)], ["strut", box(10.167, 10.206, 1.518, 1.58)],
+];
 const EC135_ENDPLATE = [[8.07, 1.76, "c"], [7.73, 1.76, "c"], [7.51, 1.44, "c"], [7.86, 0.88, "c"], [8.18, 0.88, "c"], [8.05, 1.4]];
 F.ec35 = {
   kind: "heli", L0: 10.2, over: 2.0, D: 1, W: 1.5,
@@ -126,12 +137,17 @@ F.ec35 = {
   glass: EC135_GLASS,
   frame: 0.035,
   rotor: { s: 3.2, z: 2.65, mast: 0.15, d: 10.2 },
-  extras: [paint(EC135_SEAMS)],
+  extras: [paint(EC135_SEAMS), paint(EC135_DETAIL)],
   overlays: [
     skids({ z: -0.42, t: 0.09, aft: 3.85, fwd: 1.2, toe: [0.95, -0.2], legs: [[1.53, 0.06, 1.53, 0.12], [3.53, 0.02, 3.53, 0.12]] }),
+    // the long boarding step across the skid legs, and the dome over the rotor hub (3-view)
+    paint([["skid", [[1.143, -0.102, "c"], [3.683, -0.102, "c"], [3.703, -0.079], [3.683, -0.056, "c"], [1.143, -0.056, "c"], [1.123, -0.079]]],
+      ["hub", [[2.716, 2.667, "c"], [2.801, 2.746], [2.899, 2.804], [3.063, 2.873], [3.18, 2.886], [3.324, 2.857], [3.487, 2.785], [3.605, 2.706, "c"],
+        [3.454, 2.71, "l"], [2.801, 2.697, "l"]]]]),
     fenestron(9.11, 1.63, 0.56, 0.2),
-    // the horizontal stabiliser's starboard endplate
+    // the horizontal stabiliser's starboard endplate, with its position light (3-view)
     paint([["stab", EC135_ENDPLATE]]),
+    ({ sk }) => sk.ellipse("hl", 7.784, 1.407, 0.069, 0.025),
   ],
 };
 
