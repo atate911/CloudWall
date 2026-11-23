@@ -130,6 +130,19 @@ const EC135_DETAIL = [
   ["hl", [[8.058, 1.253], [8.45, 1.074], [8.776, 0.96], [9.005, 0.862], [9.364, 0.894], [9.625, 1.009], [9.847, 1.218]], false],
   ["strut", box(10.122, 10.167, 1.492, 1.616)], ["strut", box(10.167, 10.206, 1.518, 1.58)],
 ];
+// From the side view in Airbus's ACH135 Technical Description 2023 (Figure 2.1, External dimensions;
+// fitted to the 3-view's outline within about 0.1 m around the cowling): the louvred oval vent on top
+// of the cowling (moved 0.13 m forward onto the 3-view's hump), the louvred grille panel on the
+// cowling side in two panes, the two round vents, the four recessed footsteps up the side and the
+// handle at the roof edge. EC135 only, like the detail above.
+const EC135_ACH = [
+  ["inlet", [[3.687, 2.235, "c"], [3.755, 2.315], [3.892, 2.346], [4.049, 2.329], [4.109, 2.251, "c"], [4.041, 2.162], [3.895, 2.13], [3.747, 2.158]]],
+  ["hl", box(4.104, 4.389, 1.406, 1.998)], ["hl", [[4.101, 1.612], [4.395, 1.616]], false],
+  ...[1.47, 1.53, 1.68, 1.75, 1.82, 1.89, 1.95].map((z) => ["hl", [[4.13, z], [4.36, z]], false]),
+  ...[[2.993, 3.05, 1.616, 1.734], [3.631, 3.698, 1.566, 1.694], [3.809, 3.876, 1.451, 1.57], [4.528, 4.595, 1.187, 1.315]]
+    .map(([s0, s1, z0, z1]) => ["inlet", box(s0, s1, z0, z1)]),
+  ["door", box(3.506, 3.692, 2.064, 2.116)],
+];
 const EC135_ENDPLATE = [[8.07, 1.76, "c"], [7.73, 1.76, "c"], [7.51, 1.44, "c"], [7.86, 0.88, "c"], [8.18, 0.88, "c"], [8.05, 1.4]];
 F.ec35 = {
   kind: "heli", L0: 10.2, over: 2.0, D: 1, W: 1.5,
@@ -137,7 +150,8 @@ F.ec35 = {
   glass: EC135_GLASS,
   frame: 0.035,
   rotor: { s: 3.2, z: 2.65, mast: 0.15, d: 10.2 },
-  extras: [paint(EC135_SEAMS), paint(EC135_DETAIL)],
+  extras: [paint(EC135_SEAMS), paint(EC135_DETAIL), paint(EC135_ACH),
+    ({ sk }) => { sk.ellipse("hl", 3.598, 1.82, 0.098, 0.078); sk.ellipse("hl", 3.871, 1.217, 0.088, 0.059); }],
   overlays: [
     skids({ z: -0.42, t: 0.09, aft: 3.85, fwd: 1.2, toe: [0.95, -0.2], legs: [[1.53, 0.06, 1.53, 0.12], [3.53, 0.02, 3.53, 0.12]] }),
     // the long boarding step across the skid legs, and the dome over the rotor hub (3-view)
@@ -148,6 +162,10 @@ F.ec35 = {
     // the horizontal stabiliser's starboard endplate, with its position light (3-view)
     paint([["stab", EC135_ENDPLATE]]),
     ({ sk }) => sk.ellipse("hl", 7.784, 1.407, 0.069, 0.025),
+    // ACH135 Technical Description side view: the whip antenna on the boom, the two round fittings on
+    // the boom's side, and the lights at the fin cap's front and aft corners
+    paint([["strut", box(6.53, 6.55, 1.481, 1.882)], ["strut", box(9.339, 9.573, 3.29, 3.357)], ["strut", box(10.026, 10.09, 3.256, 3.32)]]),
+    ({ sk }) => { sk.ellipse("hl", 6.369, 1.331, 0.039, 0.039); sk.ellipse("hl", 6.712, 1.336, 0.039, 0.039); },
   ],
 };
 
