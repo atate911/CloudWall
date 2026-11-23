@@ -416,7 +416,28 @@ F.c68a = {
     [[1.19, 0.81], [1.43, 0.82], [1.43, 0.61], [1.19, 0.61]],
   ],
   frame: 0.04,
-  extras: [hatch(4.59, 0.81, 0.24, 1.7, 0.25)],
+  // from the side-on photo of Latitude N563QS: the two swept blades and two domes on the spine, two
+  // swept blades and two stubs under the belly, the round marker low on the side, the louvred vent on
+  // the tail cone, the ventral strake under it and the small plate high on the fin
+  extras: [hatch(4.59, 0.81, 0.24, 1.7, 0.25), ({ sk, top, bottom }) => {
+    const t = (s) => top(s) - 0.02, b = (s) => bottom(s) + 0.02;
+    const blade = (s0, s1, s2, s3, h) => sk.poly("strut", [[s0, t(s0)], [s1, top(s1) + h * 0.95], [s2, top(s2) + h], [s3, t(s3)]]);
+    blade(7.455, 7.713, 7.827, 7.667, 0.3);
+    blade(11.243, 11.404, 11.518, 11.438, 0.18);
+    for (const [a, w, h] of [[8.967, 0.536, 0.1], [12.17, 0.42, 0.07]]) {
+      sk.smooth("hull", [[a, t(a), "c"], [a + w * 0.18, top(a) + h, ""], [a + w * 0.82, top(a) + h, ""], [a + w, t(a + w), "c"]]);
+    }
+    const under = (s0, s1, s2, s3, dz) => sk.poly("strut", [[s0, b(s0)], [s1, bottom(s1) - dz * 0.85], [s2, bottom(s2) - dz], [s3, b(s3)]]);
+    under(6.549, 6.729, 6.876, 6.744, 0.29);
+    under(7.605, 7.623, 7.818, 7.817, 0.18);
+    under(11.426, 11.639, 11.802, 11.637, 0.25);
+    under(12.449, 12.564, 12.889, 12.823, 0.15);
+    sk.ellipse("hub", 6.463, 0.332, 0.05, 0.05);
+    for (const s of [14.33, 14.38, 14.43]) sk.poly("hl", [[s, top(s) - 0.1], [s, top(s) - 0.02]], false);
+    sk.smooth("fin", [[13.74, b(13.74)], [15.85, b(15.85)], [16.09, bottom(16.09) - 0.41], [15.92, bottom(15.92) - 0.52], [13.91, bottom(13.91) - 0.29]]
+      .map((p) => [...p, "c"]));
+  }],
+  overlays: [({ sk }) => sk.smooth("door", [[17.433, 4.744, "c"], [17.758, 4.746, "c"], [17.759, 4.632, "c"], [17.434, 4.63, "c"]])],
   win: [{ z: 0.62, from: 5.61, to: 8.2, pitch: 0.635, w: 0.29, h: 0.39 }],
   wing: { le: 7.8, root: 1.1, span: 22.05, cr: 3.3, ct: 1.15, sweep: 18, dih: 4, z: 0.07, t: [0.14, 0.11] },
   eng: { kind: "fan", aft: { s: 7.23, z: 0.58 }, len: 3.7, dia: 1.07, style: "long", fx: 0.88 },
@@ -429,7 +450,7 @@ F.c700 = {
     top: [[2.4, 1], [1.4, 0.96], [0.7, 0.88], [0.25, 0.78], [0, 0.72]],
     bot: [[3.3, 0], [2.4, 0.09], [1.7, 0.2], [1.1, 0.33], [0.6, 0.45], [0.2, 0.56], [0, 0.62]],
   },
-  extras: [hatch(4.86, 0.78, 0.24, 1.7, 0.25)],
+  extras: [hatch(4.86, 0.78, 0.24, 1.7, 0.25)], overlays: [],
   win: [{ z: 0.62, from: 6.1, to: 10.6, pitch: 0.635, w: 0.29, h: 0.39 }],
   wing: { le: 9.1, root: 1.1, span: 21.01, cr: 4.2, ct: 1.15, sweep: 29, dih: 4, z: 0.07, t: [0.13, 0.1] },
   tip: { h: 1.0, sweep: 40, top: 0.3, base: 0.85, blend: 0.2 },
