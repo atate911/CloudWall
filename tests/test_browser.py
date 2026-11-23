@@ -203,6 +203,7 @@ class BrowserTest(unittest.TestCase):
         for name in ("east", "west", "private", "untyped"):
             self.assertLessEqual(c[name]["overflow"], 1, name)
         # room for one picture: the map, the drawing in its place when the switch says so, and back
+        self.assertTrue(c["switchAt"], "no window height at which the card showed its switch")
         one, drawing, back = c["one"], c["drawing"], c["back"]
         self.assertEqual((one["toggle"], one["map"], one["drawing"], one["on"]), (True, True, False, "map"))
         self.assertEqual((drawing["toggle"], drawing["map"], drawing["drawing"], drawing["on"]), (True, False, True, "plate"))

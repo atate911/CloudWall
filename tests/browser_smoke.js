@@ -534,18 +534,28 @@ const SCENARIOS = {
       out[name] = await read(page);
       await page.close();
     }
-    // a card with room for one picture: the map as it comes, the drawing in its place, and back; the
-    // panel opened from the headline, with what it says of this aircraft and of its type apart
-    const page = await open(browser, "kiosk", "/?density=detailed", errors, pin(PDX, JFK, {}), fakeTiles());
+    // a card with room for one picture: the map as it comes, the drawing in its place, and back. How
+    // short a window leaves room for only one depends on the browser and its fonts, so the window
+    // is made shorter step by step until the card gives a picture up and shows its switch
+    const page = await open(browser, "desktop", "/?density=detailed", errors, pin(PDX, JFK, {}), fakeTiles());
     await page.waitForSelector("#h-map svg.rm", { state: "attached" });
-    await page.waitForTimeout(500);
-    out.one = await read(page);
-    await page.click("#h-pic [data-pic=plate]");
-    await page.waitForTimeout(1500);                    // through an update of the card: it stays as set
-    out.drawing = await read(page);
-    await page.click("#h-pic [data-pic=map]");
-    await page.waitForTimeout(300);
-    out.back = await read(page);
+    out.switchAt = null;
+    for (let h = 950; h >= 420 && !out.switchAt; h -= 25) {
+      await page.setViewportSize({ width: 1600, height: h });
+      await page.waitForTimeout(300);
+      if (await page.locator("#h-pic").isVisible()) out.switchAt = h;
+    }
+    if (out.switchAt) {
+      await page.waitForTimeout(500);
+      out.one = await read(page);
+      await page.click("#h-pic [data-pic=plate]");
+      await page.waitForTimeout(1500);                    // through an update of the card: it stays as set
+      out.drawing = await read(page);
+      await page.click("#h-pic [data-pic=map]");
+      await page.waitForTimeout(300);
+      out.back = await read(page);
+    }
+    // the panel opened from the headline, with what it says of this aircraft and of its type apart
     await page.click("#h-type [data-about]");
     await page.waitForSelector("#about[open] .ab-here p", { timeout: 8000 });
     out.panel = await page.evaluate(() => ({ title: document.getElementById("ab-title").textContent.trim(),
