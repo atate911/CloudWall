@@ -31,6 +31,31 @@ const fence = (k) => {
     P(0.75, -0.5, "c"), P(0.52, -0.27), P(0.32, -0.07)]);
 };
 
+// Antennas and probes, as the AC's "Antennas and Probes Location" figure (2-11-0) draws them.
+// Stations s from the nose tip (s < 0: from the tail-cone end), metres. On the spine (dir 1) or the
+// belly (dir -1), sitting on the fuselage line:
+//   ["blade", s0, s1, h, dir]  a swept blade on a base from s0 to s1, its tip raked aft
+//   ["dome", s0, s1, h, dir]   a low radome;  ["flat", s0, s1, h, dir] a flush plate antenna
+//   ["stub", s0, s1, h, dir]   a short mast with a cap (the ATC transponder antennas)
+// On the side: ["port", s, z, r] a probe or sensor seen face-on (pitot, static, AOA, TAT), and
+// ["panel", [[s, z]...]] a flush dielectric panel's outline (HF in the fin fillet, VOR in the fin tip).
+const aerials = (list) => (k) => {
+  const { sk, at, top, bottom } = k;
+  for (const [kind, ...a] of list) {
+    if (kind === "port") { const [s, z, r] = a; sk.ellipse("inlet", at(s), z, r, r); continue; }
+    if (kind === "panel") { sk.poly("hl", a[0].map(([s, z]) => [at(s), z])); continue; }
+    const [s0, s1, h, dir] = a, A = at(s0), B = at(s1), c = B - A, m = (A + B) / 2;
+    const z = (s) => (dir > 0 ? top(s) : k.bottom(s)) - dir * 0.02, up = (s, dz) => [s, z(s) + dir * dz];
+    if (kind === "blade") sk.poly("strut", [up(A, 0), up(A + 0.84 * c, h), up(B + 0.15 * c, h), up(B, 0)]);
+    else if (kind === "flat") sk.poly("strut", [up(A, 0), up(A, h), up(B, h), up(B, 0)]);
+    else if (kind === "dome") sk.smooth("strut", [up(A, 0, "c"), up(A + 0.2 * c, h * 0.8), up(m, h), up(B - 0.2 * c, h * 0.8), up(B, 0, "c")]);
+    else if (kind === "stub") {
+      sk.poly("strut", [up(m - 0.025, 0), up(m - 0.025, h * 0.7), up(m + 0.025, h * 0.7), up(m + 0.025, 0)]);
+      sk.poly("strut", [up(A, h * 0.7), up(A, h), up(B, h), up(B, h * 0.7)]);
+    }
+  }
+};
+
 // ---------- Airbus A320 family ----------
 const A320_NOSE = {
   tip: 0.324,
@@ -71,6 +96,25 @@ const PW1100G = { kind: "fan", at: [0.26], fwd: 3.67, drop: 1.69, len: 4.95, dia
 // sharklet (AC fig. 2-2-0-991-009): 2.43 m tall, blended into the tip, raked tip chord 0.5 m
 const SHARKLET = { h: 2.38, sweep: 32, top: 0.3, base: 0.41, blend: 0.9 };
 const WIN = { z: 0.662, pitch: 0.533, w: 0.23, h: 0.33 };
+// A320 fig. 2-11-0-991-003 (A320-200 and A320neo): a schematic, not to scale, so its stations are
+// placed between door 1, the overwing exits, door 4 and the two ends; the crown and belly antennas
+// from whichever of its two side views draws them, the probes on this (right) side from the right
+// view. Spine: GPS 1 and 2, VHF 1, ATC 4, ATC 3, TCAS top, ADF, VHF 3, the ELT; belly: DME 1, ATC 1
+// and 2, DME 2, TCAS bottom, the marker, VHF 2 and the two pairs of radio-altimeter antennas;
+// side: the emergency static probe, pitot probe 2, the TAT probe, the static probes and AOA sensor 2;
+// the HF antenna in the fin fillet and the VOR antenna in the fin tip.
+const A320_AERIALS = [
+  ["flat", 4.15, 4.33, 0.07, 1], ["flat", 4.48, 4.67, 0.07, 1], ["blade", 5.14, 5.49, 0.4, 1], ["stub", 6.27, 6.46, 0.12, 1],
+  ["stub", 7.48, 7.72, 0.12, 1], ["dome", 7.91, 8.29, 0.11, 1], ["dome", 17.14, 17.77, 0.13, 1], ["blade", 21.66, 22.15, 0.44, 1],
+  ["blade", 28.62, 28.97, 0.21, 1],
+  ["dome", 2.07, 2.34, 0.09, -1], ["flat", 5.91, 6.09, 0.08, -1], ["stub", 6.14, 6.38, 0.12, -1], ["dome", 6.71, 6.86, 0.12, -1],
+  ["dome", 7.94, 8.29, 0.15, -1], ["flat", 9.75, 10.18, 0.1, -1], ["blade", 21.42, 21.76, 0.31, -1], ["flat", 23.26, 23.4, 0.08, -1],
+  ["flat", 23.89, 24.03, 0.08, -1], ["flat", 25.0, 25.17, 0.08, -1], ["flat", 25.53, 25.7, 0.08, -1],
+  ["port", 2.09, 1.5, 0.05], ["port", 2.06, 0.27, 0.05], ["port", 2.66, 0.93, 0.05], ["port", 6.62, 0.13, 0.04], ["port", 6.85, 0.13, 0.04],
+  ["port", 8.64, 1.71, 0.06],
+  ["panel", [[30.55, 4.03], [31.81, 5.43], [31.89, 5.37], [30.63, 3.97]]],
+  ["panel", [[35.81, 9.64], [35.81, 9.78], [36.43, 9.78], [36.43, 9.64]]],
+];
 const row = (from, to, pitch = WIN.pitch) => ({ ...WIN, from, to, pitch });
 
 // References: Airbus "A320 Aircraft Characteristics - Airport and Maintenance Planning" (AC, Jul
@@ -90,7 +134,7 @@ F.a320 = {
   eng: V2500,
   fin: { le: 7.73, cr: 5.44, ct: 1.76, h: 5.82, sweep: 41.3, fillet: [1.55, 0.95] },
   stab: { le: 5.39, z: 0.703, span: 12.45, root: 1.1, cr: 3.4, ct: 1.24, sweep: 34, dih: 6.5 },
-  extras: [seam(A320_FAIRING)],
+  extras: [seam(A320_FAIRING), aerials(A320_AERIALS)],
   overlays: [canoes(A320_FTF), fence],
 };
 // A320neo: PW1100G (Spirit's fleet outnumbers Frontier's partly LEAP-1A one) and sharklets
@@ -99,7 +143,7 @@ F.a20n = { ...F.a320, eng: PW1100G, tip: SHARKLET, overlays: [canoes(A320_FTF)] 
 // A319: 1.60 m shorter ahead of the wing and 2.13 m behind; one pair of overwing exits (the aft
 // one; the forward pair is optional). CFM56-5B, as on most US A319s (American, Delta, Allegiant).
 const A319 = {
-  fwd: 0.43, eng: CFM56,
+  fwd: 0.43, eng: CFM56, extras: [seam(A320_FAIRING)],
   doors: [[5.04, 0.81], [8.16, 1.82, "C"], [2.28, 0.51, "E", "w"], [-13.28, 1.82, "C"], [-8.03, 0.81]],
 };
 // A318: a further 0.79 m shorter ahead of the wing, 1.6 m behind it; fin 0.75 m taller (an
