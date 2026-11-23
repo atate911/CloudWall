@@ -163,13 +163,25 @@ const A319 = {
   fwd: 0.43, eng: CFM56, extras: [seam(A320_FAIRING), aerials(A319_AERIALS)],
   doors: [[5.04, 0.81], [8.16, 1.82, "C"], [2.28, 0.51, "E", "w"], [-13.28, 1.82, "C"], [-8.03, 0.81]],
 };
+// A318 fig. 2-11-0 (A318-100), placed the same way; the VOR antenna sits in its taller fin tip
+const A318_AERIALS = [
+  ["flat", 4.39, 4.56, 0.07, 1], ["flat", 4.65, 4.81, 0.07, 1], ["blade", 5.48, 5.84, 0.26, 1], ["stub", 6.46, 6.77, 0.1, 1],
+  ["stub", 6.48, 6.61, 0.1, 1], ["dome", 7.54, 8.04, 0.18, 1], ["dome", 14.64, 15.3, 0.12, 1], ["blade", 19.59, 19.92, 0.38, 1],
+  ["blade", 22.06, 22.26, 0.15, 1],
+  ["stub", 6.1, 6.35, 0.1, -1], ["stub", 6.17, 6.33, 0.08, -1], ["dome", 6.94, 7.16, 0.09, -1], ["dome", 7.54, 7.93, 0.14, -1],
+  ["flat", 8.58, 9.02, 0.09, -1], ["blade", 18.87, 19.03, 0.3, -1], ["flat", 19.42, 19.57, 0.06, -1], ["flat", 20.01, 20.15, 0.06, -1],
+  ["flat", 20.76, 20.9, 0.06, -1], ["flat", 21.37, 21.5, 0.06, -1],
+  ["port", 2.69, 1.48, 0.05], ["port", 3.14, 0.43, 0.05], ["port", 3.57, 0.99, 0.05], ["port", 6.39, 0.43, 0.04], ["port", 6.68, 0.43, 0.04],
+  ["port", 7.73, 2.08, 0.06],
+  A320_FIN_PANELS[0], ["panel", [[-2.13, 10.15], [-2.13, 10.25], [-1.59, 10.25], [-1.59, 10.15]]],
+];
 // A318: a further 0.79 m shorter ahead of the wing, 1.6 m behind it; fin 0.75 m taller (an
 // extension above the rudder). CFM56-5B.
 const A318 = {
   fwd: 0.39, eng: CFM56, fairAft: 1.2,
   doors: [[5.04, 0.81], [7.89, 1.82, "C"], [2.27, 0.51, "E", "w"], [-12.47, 1.82, "C"], [-8.03, 0.81]],
   fin: { ...F.a320.fin, h: 6.57, ct: 1.5, rudder: 0 },
-  extras: [seam(A320_FAIRING), (k) => {
+  extras: [seam(A320_FAIRING), aerials(A318_AERIALS), (k) => {
     // rudder hinge line, stopping where the fin-tip extension starts, then across to the trailing edge
     const t = k.f.fin, s0 = k.L - t.le, sw = k.tan(t.sweep), zt = k.D + t.h, zx = zt - 0.78;
     const tipLE = s0 + (zt - k.top(s0)) * sw, a = s0 + t.cr * 0.7, za = k.top(a), te = s0 + t.cr, zte = k.top(te) - 0.4;
