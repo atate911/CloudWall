@@ -16,7 +16,9 @@ const F = {};
 //   struts  [[s, z] bottom, [s, z] top, width at bottom, width at top]
 //   gear    {leg: [[s, z] top, [s, z] bottom], w: [w0, w1], at: [s, z] axle, r, spat: {f, a, t, b}}
 //           spat: reach ahead of / behind the axle, top above / bottom below it; or {pts}: its traced outline
-//   draw    extra functions (kit) => void, drawn last
+//   shapes  [cls, [[s, z, flag]...], closed?] smooth parts drawn last (fairings, inlets, rings), moved
+//           with the rest by stretch() and scale()
+//   draw    extra functions (kit) => void, drawn last (fixed coordinates: not moved by stretch or scale)
 
 // A tapered leg or strut from [s0, z0] to [s1, z1], w0 / w1 wide (metres, along s).
 const leg = (sk, [s0, z0], [s1, z1], w0 = 0.08, w1 = w0) =>
@@ -44,6 +46,7 @@ const OVERLAYS = [(k) => {
     if (g.leg) leg(k.sk, g.leg[0], g.leg[1], ...(g.w || []));
     if (g.at) wheel(k.sk, g.at[0], g.at[1], g.r, g.spat);
   }
+  for (const [cls, pts, closed = true] of p.shapes || []) k.sk.smooth(cls, pts, closed);
   for (const fn of p.draw || []) fn(k);
 }];
 
@@ -63,6 +66,7 @@ function stretch(f, at, ds, more = {}) {
     wingSide: f.wingSide && f.wingSide.map(([cls, pts, closed]) => [cls, loop(pts), closed]),
     parts: {
       ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
+      shapes: (p.shapes || []).map(([cls, pts, closed]) => [cls, loop(pts), closed]),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [mv(a), mv(b), w0, w1]),
       gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(mv), at: g.at && mv(g.at), spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
     },
@@ -83,6 +87,7 @@ function scale(f, k, more = {}) {
     eng: f.eng && { ...f.eng, nose: sc(f.eng.nose, ["s", "z", "d"]) },
     parts: {
       ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
+      shapes: (p.shapes || []).map(([cls, pts, closed]) => [cls, loop(pts), closed]),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [pt(a), pt(b), w0, w1]),
       gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(pt), at: g.at && pt(g.at), r: g.r * k, spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
     },
@@ -435,9 +440,30 @@ const PA46 = {
   wing: { le: 2.73, root: 0.65, span: 13.11, cr: 1.57, ct: 0.9, sweep: 1.8, dih: 4.5, z: 0.05, t: [0.15, 0.12] },
   eng: { kind: "none", nose: { s: 0.38, z: 0.475, d: 2.03, blades: 3 } },
   stab: { le: 1.38, z: 0.79, span: 4.42, root: 0.25, cr: 0.9, ct: 0.6, sweep: 8, dih: 0, thick: 0.1 },
+  // the wing as the 3-view draws it: the tip aerofoil, the leading edge running down the dihedral, the
+  // trailing edge to the root, with the tip's lower surface and the flap's edge and end inside
+  wingSide: [
+    ["wing", [[2.931, 0.516], [2.973, 0.566], [3.056, 0.591], [3.346, 0.591], [3.596, 0.567], [3.845, 0.534, "cl"], [4.211, 0.044, "c"],
+      [4.011, 0.011], [3.679, -0.048], [3.347, -0.073, "l"], [3.015, -0.057], [2.816, -0.007], [2.741, 0.059], [2.766, 0.159, "l"]]],
+    ["hl", [[2.931, 0.516], [3.014, 0.475], [3.347, 0.467], [3.679, 0.492], [3.845, 0.534]], false],
+    ["hl", [[3.679, 0.492, "c"], [3.853, 0.193, "c"], [4.011, -0.014]], false],
+    ["hl", [[3.853, 0.193], [4.053, 0.218]], false],
+  ],
   parts: {
-    doors: [rect(4.26, 4.96, 0.0, 1.14, 0.07), [[4.26, 0.56], [4.96, 0.56]]],
-    lines: [[[7.42, 1.0], [8.27, 2.47]]],
+    // cabin door with its split; from the 3-view, the forward baggage door with its handle
+    doors: [rect(4.26, 4.96, 0.0, 1.14, 0.07), [[4.26, 0.56], [4.96, 0.56]],
+      [[1.611, 0.739, "l"], [2.026, 0.739], [2.076, 0.69, "l"], [2.076, 0.158], [2.027, 0.108, "l"], [1.611, 0.108], [1.562, 0.158, "l"], [1.561, 0.689]]],
+    // rudder hinge; from the 3-view: the cowl's nose-ring seam, the baggage door handle, the rudder's top
+    // and foot
+    lines: [[[7.42, 1.0], [8.27, 2.47]], [[0.581, 0.655], [0.582, 0.156]], [[1.852, 0.216], [1.836, 0.158]],
+      [[7.928, 2.506], [8.26, 2.49]], [[7.44, 1.061], [7.465, 1.011], [7.913, 0.995]]],
+    // from the 3-view: the D-shaped inlet in the nose ring, the box it draws under the nose, the loop
+    // under the tail cone
+    shapes: [
+      ["inlet", [[0.481, 0.588, "cl"], [0.54, 0.588], [0.581, 0.505], [0.565, 0.439], [0.49, 0.422, "cl"]]],
+      ["pant", [[1.03, -0.02, "cl"], [1.03, -0.225], [1.055, -0.242, "l"], [2.069, -0.24], [2.093, -0.216, "l"], [2.093, -0.02, "cl"]]],
+      ["hl", [[7.582, 0.638], [7.706, 0.555], [7.814, 0.538], [7.872, 0.596]], false],
+    ],
   },
   extras: EXTRAS, overlays: OVERLAYS,
 };
@@ -445,7 +471,9 @@ F.pa46 = scale(PA46, 8.8 / 8.66);
 F.p46t = stretch(F.pa46, 1.0, 0.2, {
   kind: "turboprop", eng: { kind: "none", nose: { s: 0.39, z: 0.483, d: 2.06, blades: 4 } },
 });
-F.p46t.parts = { ...F.p46t.parts, draw: [(k) => k.sk.ellipse("inlet", 1.05, 0.5, 0.11, 0.08)] };
+// the box under the nose is from the piston 310P's 3-view, so the turbine keeps only the other parts
+F.p46t.parts = { ...F.p46t.parts, shapes: F.p46t.parts.shapes.filter(([cls]) => cls !== "pant"),
+  draw: [(k) => k.sk.ellipse("inlet", 1.05, 0.5, 0.11, 0.08)] };
 
 // ---------- Beechcraft A36 / G36 Bonanza ----------
 // Reference: Beechcraft A36 Bonanza 3-view (Wikimedia Commons,
