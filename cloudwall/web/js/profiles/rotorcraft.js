@@ -370,9 +370,19 @@ F.h60 = {
       // main gear drag beam and its step fairing
       ["strut", [[3.57, -0.17, "c"], [2.2, 0.17, "c"], [2.2, 0.08, "c"], [3.57, -0.25, "c"]]],
       ["fin", [[1.91, 0.22], [2.2, 0.36], [2.55, 0.33], [2.66, 0.2], [2.4, 0.07], [2.0, 0.1]]],
+      // more of the orthographic drawing: the wire-strike cutter ahead of the rotor pylon, the cabin
+      // door's lower track fairing, the drive-shaft cover along the boom and up the tail pylon, and the
+      // boom joint ahead of the pylon
+      ["strut", [[3.544, 2.65, "c"], [3.878, 2.409, "c"], [3.89, 2.425, "c"], [3.556, 2.666, "c"]]],
+      ["hl", [[5.512, 0.153, "c"], [6.335, 0.18], [6.576, 0.278], [6.915, 0.243, "c"], [6.625, 0.193], [6.262, 0.132], [5.513, 0.117, "c"]]],
+      ["hl", [[8.192, 1.614], [12.113, 1.023]], false],
+      ["hl", [[11.29, 1.141], [11.293, 0.258]], false],
+      ["hl", [[12.741, 1.382, "c"], [12.923, 1.231, "c"], [14.357, 2.797]], false],
     ]),
   ],
   overlays: [
+    // the elastomeric blade cuffs either side of the rotor hub (orthographic drawing)
+    ({ sk }) => { sk.ellipse("hub", 3.688, 2.965, 0.15, 0.13); sk.ellipse("hub", 5.164, 3.018, 0.15, 0.13); },
     // canted (20 degree) four-blade tail rotor on the starboard side of the pylon
     tail(14.62, 3.09, 3.35, 4, 45, 0.94),
     paint([["stab", aero(13.2, 1.2, 14.95, 0.98, 0.12)]]),
