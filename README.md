@@ -344,6 +344,56 @@ density = "simple" # the radar's labels: "simple" names the aircraft that matter
 
 The address can override these on any screen: `/kiosk?view=radar&radar=atc&tracks=off&range=20&density=detailed`.
 
+## Watching from outside the house: a private link
+
+CloudWall has no logins. On a home network that is as it should be, but put on the internet (to
+watch from a car's browser, or a phone away from home) it would show anyone who found the address
+where the house is, let them add and remove places, and spend any paid route lookups. A private
+link keeps it yours without a password to type each time: the key is part of the address, so a
+bookmark or a favourite carries it.
+
+1. Make a key, from CloudWall's folder:
+
+       .venv/bin/cloudwall --new-key
+
+   It prints one made to be typed once on a touchscreen and hard to guess: sixteen lower-case
+   letters in four groups you can say aloud, such as `tafo-kemi-luza-nobe`.
+
+2. Put it in the config file (`~/.config/cloudwall/config.toml`), under `[server]`, and restart
+   CloudWall (`make restart`):
+
+   ```toml
+   [server]
+   key = "tafo-kemi-luza-nobe"
+   ```
+
+3. Open CloudWall at its address followed by `/k/` and the key, once on each screen, and keep it
+   as a favourite or bookmark:
+
+   | Screen | Address |
+   |---|---|
+   | The page (a car, a PC, a phone) | `https://<your address>/k/tafo-kemi-luza-nobe/` |
+   | The wall panel | `http://<server>:5050/k/tafo-kemi-luza-nobe/kiosk` |
+
+   The key works typed with or without its hyphens, and in capitals or not.
+
+What to know:
+
+- **Every screen needs the link once a key is set**, the ones at home too. `deploy/kiosk.sh`
+  opens the wall panel: start it with `CLOUDWALL_URL=http://localhost:5050/k/<key>`. Any other
+  address, for the page or for its data, answers only "This CloudWall is private".
+- **Nothing expires.** The key travels in the address of everything the page asks for, so there
+  is no cookie to be cleared and nothing to sign in to again.
+- **Whatever put CloudWall on the internet** (a reverse proxy, a tunnel) should serve it over
+  HTTPS, so the key isn't sent in the clear, and no longer needs a password of its own for
+  CloudWall's address.
+- **Anyone who has the link has CloudWall.** To take it back, make a new key and restart; the old
+  link stops working at once.
+- **A key of your own** must be at least 12 letters and digits (letters, digits and hyphens
+  only). Take the key out of the config to go back to an open CloudWall.
+- Anything else that reads CloudWall's data (a Home Assistant card, a script) uses the same
+  prefix: `/k/<key>/api/state`.
+
 ## The ATC radar
 
 The ATC style draws the radar as a terminal controller sees it on STARS, the FAA's terminal
@@ -520,18 +570,8 @@ no requests (or, with `"log"`, only the slow position check).
   under); Horizon, which only ever flies as Alaska, shows as Alaska, "operated by Horizon Air".
 - CloudWall has no logins: it is meant for a home network, not the open internet. It refuses
   requests to add or remove places that come from another site's page.
-- To watch it from outside the house (a car's browser, a phone away from home) without a
-  password to type each time, give it a private link. `cloudwall --new-key` prints a key made to
-  be typed once on a touchscreen and hard to guess, sixteen letters in four groups you can say
-  aloud ("tafo-kemi-luza-nobe"); set it as `key` under `[server]` and restart. CloudWall then
-  answers only at `<its address>/k/<key>/` (the wall panel at `.../k/<key>/kiosk`) and tells every
-  other request, for the page or for any of its data, only that it is private. Open the link
-  once on each screen and keep it as a bookmark or favourite: the key travels in the address, so
-  there is no cookie to expire and nothing to type again. It works typed with or without the
-  hyphens, in either case. Every screen needs the link once a key is set, the ones at home too.
-  Whatever put CloudWall on the internet (a reverse proxy, a tunnel) should serve it over HTTPS,
-  so that the key isn't sent in the clear, and no longer needs a password of its own for it.
-  Anyone who has the link has CloudWall: to take it back, set a new key.
+- To watch it from outside the house without a password to type each time, give it a private
+  link: see [Watching from outside the house](#watching-from-outside-the-house-a-private-link).
 - Anything else on your network can read what the screens read: [API.md](API.md) lists every
   answer, key by key (a Home Assistant card or a widget needs only `/api/state`).
 - The logbook notes where each flyover's closest point was and which way it was flying, as well as
