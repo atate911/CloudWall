@@ -924,7 +924,26 @@ F.da42 = {
   wing: { le: 2.55, root: 0.6, span: 13.42, cr: 1.55, ct: 0.85, sweep: 1, dih: 5, z: -0.02, t: [0.15, 0.12] },
   eng: { kind: "prop", at: [0.164], fwd: 1.03, drop: 0.04, len: 2.7, dia: 0.6, prop: 1.9, blades: 3, spinner: 0.12, tailZ: 0.2 },
   stab: { le: 1.05, z: 1.535, span: 3.6, root: 0.1, cr: 1.0, ct: 0.75, sweep: 8, dih: 0, thick: 0.1 },
-  parts: { lines: [[[8.15, 1.48], [8.1, -0.1]]] },
+  // Detail from the three-view of the DA 42 NG AFM (Doc. No. 7.01.15-E Rev. 1, section 1.7), whose side
+  // view the outline above matches to within 5 cm: the nose baggage door and its handle, the rudder
+  // hinge and its trim tab, the joint of the fin's root fillet, the seam where the boom runs under
+  // it, the ventral fin's root, the round opening on the nacelle's side, the frame post between the
+  // front canopy and the rear door's window, and the near wing's swept winglet, which stands in
+  // front of the cabin in a side view.
+  parts: {
+    doors: [[[0.54, 0.608, "c"], [0.542, 0.355], [0.581, 0.273], [0.671, 0.24], [1.096, 0.221], [1.169, 0.257], [1.197, 0.319],
+      [1.228, 0.681, "c"]], rect(0.855, 1.015, 0.334, 0.364, 0.015)],
+    lines: [[[8.253, 1.46], [7.787, 0.327], [7.711, 0.074]], [[8.535, 0.869], [8.463, 0.869], [8.442, 0.662], [8.412, 0.436], [8.382, 0.211]],
+      [[6.967, 0.581], [7.094, 0.625], [7.195, 0.705], [7.25, 0.794], [7.287, 0.875]], [[5.902, 0.676], [6.1, 0.637], [6.29, 0.617]],
+      [[5.87, 0.278], [6.774, 0.303], [7.723, 0.327]]],
+    marks: [
+      ["fin", [[3.178, 1.153, "c"], [3.341, 1.151, "c"], [3.335, 0.744, "c"], [3.137, 0.747, "c"]]],
+      ["hl", [[3.25, 1.152], [3.209, 0.746]], false], ["hl", [[3.295, 1.161], [3.281, 0.745]], false],
+      ["wl", [[3.288, 0.582, "c"], [3.326, 0.754], [3.437, 0.924], [3.529, 1.067], [3.622, 1.211], [3.696, 1.355], [3.769, 1.435],
+        [3.86, 1.479, "c"], [3.986, 1.468, "c"], [3.939, 1.306], [3.892, 1.153], [3.799, 0.919], [3.724, 0.721], [3.695, 0.577, "c"]]],
+    ],
+    dots: [["hl", 2.416, 0.223, 0.127]],
+  },
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
