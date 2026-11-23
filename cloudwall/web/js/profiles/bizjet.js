@@ -182,8 +182,21 @@ F.lj45 = {
     [[1.11, 0.715], [1.37, 0.905], [1.63, 0.905], [1.6, 0.73]],
   ],
   frame: 0.035,
-  extras: [hatch(3.62, 0.8, 0.3, 1.42)],
-  overlays: [ventral([[2.3, 0.78], [1.1, 0.36], [0.6, 0.36], [0.45, 1.12], [1.4, 0.98]])],
+  // from the side-on photo of N300JC: the swept blade on the spine behind the wing, the swept blade
+  // under the belly ahead of it, the door handle, and on the T-tail's bullet fairing the fitting on top
+  // and the light at its tail
+  extras: [hatch(3.62, 0.8, 0.3, 1.42), ({ sk, top, bottom }) => {
+    sk.poly("strut", [[7.21, top(7.21) - 0.02], [7.36, top(7.36) + 0.24], [7.43, top(7.43) + 0.26], [7.33, top(7.33) - 0.02]]);
+    sk.poly("strut", [[5.25, bottom(5.25) + 0.02], [5.38, bottom(5.38) - 0.26], [5.45, bottom(5.45) - 0.3], [5.37, bottom(5.37) + 0.02]]);
+    sk.smooth("door", [[3.43, 0.7, "c"], [3.58, 0.7, "c"], [3.58, 0.64, "c"], [3.43, 0.64, "c"]]);
+  }],
+  overlays: [ventral([[2.3, 0.78], [1.1, 0.36], [0.6, 0.36], [0.45, 1.12], [1.4, 0.98]]), ({ sk }) => {
+    // the bullet: from 0.375 m ahead of the fin tip's leading edge, 1.5 m long, on the tailplane 0.1 m
+    // under the fin top
+    const tipLE = 15.63 - 2.24 + 1.75 * Math.tan((45.6 * Math.PI) / 180), s0 = tipLE - 0.375, z = 1.8 + 1.75 - 0.1;
+    sk.smooth("strut", [[s0 + 0.9, z + 0.15, "c"], [s0 + 0.95, z + 0.24], [s0 + 1.02, z + 0.24], [s0 + 1.05, z + 0.12, "c"]]);
+    sk.ellipse("hub", s0 + 1.5, z + 0.04, 0.05, 0.05);
+  }],
   win: [{ z: 0.76, from: 4.13, to: 7.98, pitch: 0.549, w: 0.3, h: 0.38 }],
   wing: { le: 6.1, root: 0.9, span: 14.58, cr: 3.0, ct: 1.1, sweep: 13, dih: 2.5, z: 0.06, t: [0.13, 0.1] },
   tip: { h: 0.95, sweep: 32, top: 0.35, base: 0.85 },
