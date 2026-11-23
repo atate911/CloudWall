@@ -1035,35 +1035,51 @@ F.pc12 = {
 };
 
 // ---------- Daher TBM 900 series ----------
-// No three-view reachable: proportions from the three-quarter photo File:N893MA_2015_SOCATA-
-// TBM_900_s-n_1065_(23427100365).jpg (Wikimedia Commons, Wikipedia article Daher TBM) fitted
-// to the published 10.74 m length (types.csv 10.7), 12.83 m span and 4.35 m height. Lowest
-// confidence of this group (perspective). Long PT6A cowl with the side exhaust stack and
-// five-blade prop, pressurised cabin with four square windows, low wing with winglets,
-// conventional swept fin with dorsal and ventral fins, low tailplane, retractable gear.
+// Reference: Daher TBM 900 Pilot's Information Manual (tbm.aero), Section 1, Figure 1.2.1 (1/2)
+// "Three view drawing": the manufacturer's side-view rendering, scaled by its own 10.736 m overall
+// length dimension (2.7 cm per pixel of the embedded image). The nose and the tail cone's underside
+// were first measured off the three-quarter photo File:N893MA_2015_SOCATA-TBM_900_s-n_1065_
+// (23427100365).jpg and agree with the manufacturer's view within 2 cm; the cabin crown, the dorsal fin
+// and the fin did not (crown 10 cm too high, fin leading edge up to half a metre low), so the outline
+// aft of the windscreen, the glazing, the tailplane's station and height, the exhaust stack, the
+// antennas and the ventral strake are traced from the manufacturer's view. The rendering shows the gear
+// down; it is drawn retracted, as in flight. Long PT6A cowl with the side exhaust stack and five-blade
+// prop, pressurised cabin with three small windows behind the pilot's, low wing with winglets.
 F.tbm9 = {
   kind: "turboprop", L0: 10.7, over: 0, D: 1, W: 1.4,
   body: [
     [0, 0.55, "c"], [0.2, 0.7], [0.4, 0.8], [0.6, 0.86], [0.7, 0.9], [1.0, 0.99], [1.5, 1.07], [2.0, 1.13], [2.5, 1.19],
-    [3.05, 1.26, "c"], [3.3, 1.42], [3.6, 1.6], [3.95, 1.73], [4.3, 1.8], [5.0, 1.84], [6.0, 1.85], [7.0, 1.8],
-    [7.8, 1.72], [8.25, 1.79], [8.7, 2.0], [9.0, 2.27, "l"], [9.85, 3.3], [10.0, 3.4], [10.55, 3.42],
-    [10.66, 3.37, "cl"], [10.3, 1.5], [10.3, 1.36], [10.15, 1.26], [9.5, 1.1], [8.7, 0.85], [8.0, 0.6], [7.0, 0.28],
+    [3.05, 1.26, "c"], [3.244, 1.427], [3.407, 1.515], [3.57, 1.591], [3.732, 1.639], [3.895, 1.678], [4.058, 1.706], [4.221, 1.724],
+    [4.384, 1.725, "l"], [6.664, 1.727], [6.827, 1.735], [6.99, 1.752], [7.153, 1.767], [7.316, 1.785], [7.479, 1.809], [7.641, 1.836],
+    [7.804, 1.866], [7.967, 1.907], [8.13, 1.966], [8.293, 2.076, "l"], [9.759, 3.554], [9.813, 3.566, "l"], [10.516, 3.549, "cl"],
+    [9.916, 1.812, "c"], [10.302, 1.663], [10.682, 1.541, "c"],
+    [10.193, 1.321], [9.243, 1.022], [8.293, 0.726], [7.479, 0.468], [7.0, 0.28],
     [6.0, 0.08], [5.0, 0], [4.0, -0.02], [3.0, 0], [2.0, 0.05], [1.2, 0.11], [0.8, 0.18], [0.62, 0.28], [0.45, 0.34],
     [0.2, 0.42],
   ],
-  glass: [[[3.1, 1.28], [3.6, 1.58, ""], [4.0, 1.72], [4.1, 1.3]], [[4.22, 1.3], [4.25, 1.66], [4.75, 1.7], [4.8, 1.3]]],
-  frame: 0.05,
-  win: [{ z: 1.47, from: 5.25, to: 7.05, pitch: 0.6, w: 0.34, h: 0.42 }],
+  // the windscreen's side pane along the crown, and the pilot's swept side window
+  glass: [
+    [[3.0, 1.215, "c"], [3.271, 1.378], [3.542, 1.527], [3.76, 1.622], [3.95, 1.657, "c"], [3.868, 1.541], [3.624, 1.432], [3.352, 1.296], [3.108, 1.174, "c"]],
+    [[3.502, 0.998, "c"], [3.624, 1.201], [3.787, 1.378], [3.95, 1.459], [4.18, 1.459, "c"], [4.208, 1.215, "c"], [4.14, 1.147, "c"], [3.597, 0.971, "c"]],
+  ],
+  frame: 0.015,
+  // the three cabin windows, unevenly spaced
+  win: [4.569, 5.158, 5.972].map((s) => ({ z: 1.323, from: s, to: s, w: 0.26, h: 0.3 })),
   wing: { le: 4.4, root: 0.65, span: 12.83, cr: 1.95, ct: 1.0, sweep: 3, dih: 6.5, z: 0.12, t: [0.16, 0.12] },
   tip: { h: 0.35, sweep: 45, top: 0.25, base: 0.8 },
   eng: { kind: "none", nose: { s: 0.45, z: 0.55, d: 2.31, blades: 5 } },
-  stab: { le: 1.45, z: 1.35, span: 4.85, root: 0.15, cr: 1.4, ct: 0.8, sweep: 15, dih: 4, thick: 0.1 },
+  stab: { le: 1.27, z: 1.6, span: 4.85, root: 0.15, cr: 1.4, ct: 0.8, sweep: 15, dih: 4, thick: 0.1 },
   parts: {
-    lines: [[[9.7, 1.4], [10.15, 3.38]]],
-    draw: [(k) => {
-      k.sk.smooth("inlet", [[1.15, 0.72], [1.55, 0.8], [1.6, 0.68, "c"], [1.2, 0.63]]);
-      k.sk.smooth("fin", [[8.9, 0.85, "c"], [9.9, 0.86, "c"], [10.1, 1.2, "c"], [9.5, 1.05]]);
-    }],
+    lines: [[[9.81, 1.9], [10.15, 3.38]]],
+    // as the manufacturer's view draws them: the exhaust stack on the cowl's side with its outlet, the
+    // blade antenna on the spine and the swept one under the belly, the ventral strake under the tail cone
+    shapes: [
+      ["core", [[0.882, 0.808, "c"], [1.208, 0.808], [1.235, 0.618, "c"], [0.882, 0.618, "c"]]],
+      ["strut", [[6.23, 1.703, "c"], [6.433, 1.961, "c"], [6.501, 1.948, "c"], [6.461, 1.703, "c"]]],
+      ["strut", [[6.474, 0.292, "c"], [6.623, 0.292, "c"], [6.827, 0.088], [6.909, 0.034, "c"], [6.678, 0.034, "c"]]],
+      ["fin", [[7.451, 0.496, "c"], [7.533, 0.319, "c"], [8.89, 0.781, "c"], [9.053, 0.971, "c"]]],
+    ],
+    dots: [["inlet", 1.303, 0.713, 0.081, 0.087]],
   },
   extras: EXTRAS, overlays: OVERLAYS,
 };
