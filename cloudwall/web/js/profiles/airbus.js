@@ -31,30 +31,9 @@ const fence = (k) => {
     P(0.75, -0.5, "c"), P(0.52, -0.27), P(0.32, -0.07)]);
 };
 
-// Antennas and probes, as the AC's "Antennas and Probes Location" figure (2-11-0) draws them.
-// Stations s from the nose tip (s < 0: from the tail-cone end), metres. On the spine (dir 1) or the
-// belly (dir -1), sitting on the fuselage line:
-//   ["blade", s0, s1, h, dir]  a swept blade on a base from s0 to s1, its tip raked aft
-//   ["dome", s0, s1, h, dir]   a low radome;  ["flat", s0, s1, h, dir] a flush plate antenna
-//   ["stub", s0, s1, h, dir]   a short mast with a cap (the ATC transponder antennas)
-// On the side: ["port", s, z, r] a probe or sensor seen face-on (pitot, static, AOA, TAT), and
-// ["panel", [[s, z]...]] a flush dielectric panel's outline (HF in the fin fillet, VOR in the fin tip).
-const aerials = (list) => (k) => {
-  const { sk, at, top, bottom } = k;
-  for (const [kind, ...a] of list) {
-    if (kind === "port") { const [s, z, r] = a; sk.ellipse("inlet", at(s), z, r, r); continue; }
-    if (kind === "panel") { sk.poly("hl", a[0].map(([s, z]) => [at(s), z])); continue; }
-    const [s0, s1, h, dir] = a, A = at(s0), B = at(s1), c = B - A, m = (A + B) / 2;
-    const z = (s) => (dir > 0 ? top(s) : k.bottom(s)) - dir * 0.02, up = (s, dz) => [s, z(s) + dir * dz];
-    if (kind === "blade") sk.poly("strut", [up(A, 0), up(A + 0.84 * c, h), up(B + 0.15 * c, h), up(B, 0)]);
-    else if (kind === "flat") sk.poly("strut", [up(A, 0), up(A, h), up(B, h), up(B, 0)]);
-    else if (kind === "dome") sk.smooth("strut", [up(A, 0, "c"), up(A + 0.2 * c, h * 0.8), up(m, h), up(B - 0.2 * c, h * 0.8), up(B, 0, "c")]);
-    else if (kind === "stub") {
-      sk.poly("strut", [up(m - 0.025, 0), up(m - 0.025, h * 0.7), up(m + 0.025, h * 0.7), up(m + 0.025, 0)]);
-      sk.poly("strut", [up(A, h * 0.7), up(A, h), up(B, h), up(B, h * 0.7)]);
-    }
-  }
-};
+// Antennas and probes, as the AC's "Antennas and Probes Location" figure (2-11-0) draws them; the
+// list format is described at aerials() in silhouette.js.
+const aerials = (list) => (k) => k.aerials(list);
 
 // ---------- Airbus A320 family ----------
 const A320_NOSE = {
