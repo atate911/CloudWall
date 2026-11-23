@@ -845,7 +845,14 @@ F.a139 = {
       ...[2.05, 2.2, 2.35].map((z) => ["hl", [[5.97, z], [6.28, z]], false]),
       ["inlet", [[7.3, 2.05], [7.6, 2.28], [7.95, 2.1], [7.65, 1.85]]],
       ["fin", [[4.95, 0.02], [4.97, 0.22], [5.15, 0.3], [6.2, 0.3], [6.36, 0.15], [6.3, 0.0]]],
+      // more from the same side view: the radome joint, the outline over the windscreen's top
+      // edge, the engine cowling's lower edge from the roof step back to the boom
+      ["hl", [[0.918, 0.86], [0.917, 0.359]], false],
+      ["door", [[1.777, 1.656, "c"], [1.839, 1.687], [2.071, 1.763], [2.226, 1.813, "l"], [2.473, 1.813, "c"], [2.488, 1.647, "c"], [2.071, 1.617], [1.854, 1.628]]],
+      ["hl", [[3.479, 2.302], [3.773, 2.363], [4.546, 2.439], [5.319, 2.472], [5.937, 2.482], [6.555, 2.45], [7.019, 2.388]], false],
     ]),
+    // the exhaust outlet's lip, at the front of the exhaust as the side view draws it
+    ({ sk }) => sk.ellipse("core", 7.34, 2.062, 0.116, 0.216),
   ],
   overlays: [paint([["stab", aero(11.45, 1.52, 12.25, 1.45, 0.2)]])],
 };
