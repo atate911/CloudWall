@@ -42,7 +42,7 @@ class Sketch {
       if (b) return unit(P[at(i)], P[at(i + 1)]);
       return unit(P[at(i - 1)], P[at(i + 1)]);
     };
-    const f = (v) => +v.toFixed(2);
+    const f = (v) => +v.toFixed(3);
     let d = `M${f(P[0][0])},${f(P[0][1])}`;
     for (let i = 0; i < (closed ? n : n - 1); i++) {
       const a = P[i], b = P[at(i + 1)];
@@ -56,12 +56,12 @@ class Sketch {
   path(cls, d, extra = "") { this.out.push(`<path class="${cls}" d="${d}"${extra}/>`); return d; }
   smooth(cls, pts, closed = true, extra = "") { return this.path(cls, this.curve(pts, closed), extra); }
   poly(cls, pts, closed = true) {
-    return this.path(cls, "M" + pts.map(([s, z]) => this.xy(s, z).map((v) => +v.toFixed(2)).join(",")).join("L") + (closed ? "Z" : ""));
+    return this.path(cls, "M" + pts.map(([s, z]) => this.xy(s, z).map((v) => +v.toFixed(3)).join(",")).join("L") + (closed ? "Z" : ""));
   }
   ellipse(cls, s, z, rx, ry) {
     const [x, y] = this.xy(s, z);
     this.xy(s - rx, z - ry); this.xy(s + rx, z + ry);
-    this.out.push(`<ellipse class="${cls}" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" rx="${rx.toFixed(3)}" ry="${ry.toFixed(3)}"/>`);
+    this.out.push(`<ellipse class="${cls}" cx="${x.toFixed(3)}" cy="${y.toFixed(3)}" rx="${rx.toFixed(3)}" ry="${ry.toFixed(3)}"/>`);
   }
 }
 
@@ -376,7 +376,12 @@ function draw(f) {
   // wing, its tips, the flap track fairings, then the engines in front of it
   let sec = null;
   if (w) {
-    sec = kit.sec = surface(sk, "wing", w);
+    // a family may give the wing's side view as traced off its drawing: [cls, [[s, z, flag]...], closed?]
+    // parts drawn instead of the computed one (the planform still places struts, engines and tips)
+    if (f.wingSide) {
+      sec = kit.sec = planform(w);
+      for (const [cls, pts, closed = true] of f.wingSide) sk.smooth(cls, pts, closed);
+    } else sec = kit.sec = surface(sk, "wing", w);
     for (const spec of f.ftf || []) {
       // a span fraction, or [span fraction, start, end, depth] in shares of the local chord
       const [e, x0, x1, dp] = Array.isArray(spec) ? spec : [spec, 0.62, 1.12, f.ftfDepth ?? 0.045];

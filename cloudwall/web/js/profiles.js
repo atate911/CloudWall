@@ -18,6 +18,8 @@
 //   win      window rows {z (D), from, to (s), pitch, w, h, upper}
 //   wing     {le (root leading edge s), root (half-width at root), span, cr, kink [e, chord], ct,
 //            sweep (LE, deg), dih (deg), z (chord height at root, D), t [root, tip thickness], rake, bend}
+//   wingSide the wing's side view traced off the type's drawing, drawn instead of the one computed from
+//            `wing`: a list of [class, [[s, z, flag]...], closed?] parts (outline, then its inner lines)
 //   tip      wingtip device {type fence | (blade) h, sweep, top, base, blend, lo, loSweep, loTip}
 //   ftf      flap-track fairings: span fractions, or [e, start, end, depth] in shares of local chord
 //   eng      {kind fan|prop, at [span fractions], fwd (inlet ahead of local LE), drop (centre below
