@@ -16,9 +16,11 @@ const F = {};
 //   struts  [[s, z] bottom, [s, z] top, width at bottom, width at top]
 //   gear    {leg: [[s, z] top, [s, z] bottom], w: [w0, w1], at: [s, z] axle, r, spat: {f, a, t, b}}
 //           spat: reach ahead of / behind the axle, top above / bottom below it; or {pts}: its traced outline
-//   shapes  [cls, [[s, z, flag]...], closed?] smooth parts drawn last (fairings, inlets, rings), moved
-//           with the rest by stretch() and scale()
-//   draw    extra functions (kit) => void, drawn last (fixed coordinates: not moved by stretch or scale)
+//   shapes, marks  [class, [[s, z, flag]...], closed?] smooth parts drawn last, over the wing and glass
+//           (fairings, inlets, fittings, frames)
+//   dots    [class, s, z, rx, ry] small round parts drawn last (beacons, fuel caps)
+//   draw    extra functions (kit) => void, drawn last (fixed coordinates: prefer shapes, marks and dots,
+//           which stretch() and scale() carry)
 
 // A tapered leg or strut from [s0, z0] to [s1, z1], w0 / w1 wide (metres, along s).
 const leg = (sk, [s0, z0], [s1, z1], w0 = 0.08, w1 = w0) =>
@@ -47,6 +49,8 @@ const OVERLAYS = [(k) => {
     if (g.at) wheel(k.sk, g.at[0], g.at[1], g.r, g.spat);
   }
   for (const [cls, pts, closed = true] of p.shapes || []) k.sk.smooth(cls, pts, closed);
+  for (const [cls, pts, closed = true] of p.marks || []) k.sk.smooth(cls, pts, closed);
+  for (const [cls, s, z, rx, ry = rx] of p.dots || []) k.sk.ellipse(cls, s, z, rx, ry);
   for (const fn of p.draw || []) fn(k);
 }];
 
@@ -63,10 +67,12 @@ function stretch(f, at, ds, more = {}) {
   return {
     ...f, L0: f.L0 + ds, body: loop(f.body), glass: (f.glass || []).map(loop),
     wing: f.wing && { ...f.wing, le: f.wing.le > at ? f.wing.le + ds : f.wing.le },
-    wingSide: f.wingSide && f.wingSide.map(([cls, pts, closed]) => [cls, loop(pts), closed]),
+    wingSide: f.wingSide && f.wingSide.map(([c, pts, cl]) => [c, loop(pts), cl]),
     parts: {
       ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
       shapes: (p.shapes || []).map(([cls, pts, closed]) => [cls, loop(pts), closed]),
+      marks: (p.marks || []).map(([c, pts, cl]) => [c, loop(pts), cl]),
+      dots: (p.dots || []).map(([c, s, z, rx, ry]) => [c, ...mv([s, z]), rx, ry]),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [mv(a), mv(b), w0, w1]),
       gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(mv), at: g.at && mv(g.at), spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
     },
@@ -83,11 +89,13 @@ function scale(f, k, more = {}) {
   return {
     ...f, L0: f.L0 * k, over: (f.over || 0) * k, W: f.W * k, body: loop(f.body), glass: (f.glass || []).map(loop),
     wing: sc(f.wing, ["le", "root", "span", "cr", "ct", "z"]), stab: sc(f.stab, ["le", "z", "span", "root", "cr", "ct"]),
-    wingSide: f.wingSide && f.wingSide.map(([cls, pts, closed]) => [cls, loop(pts), closed]),
     eng: f.eng && { ...f.eng, nose: sc(f.eng.nose, ["s", "z", "d"]) },
+    wingSide: f.wingSide && f.wingSide.map(([c, pts, cl]) => [c, loop(pts), cl]),
     parts: {
       ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
       shapes: (p.shapes || []).map(([cls, pts, closed]) => [cls, loop(pts), closed]),
+      marks: (p.marks || []).map(([c, pts, cl]) => [c, loop(pts), cl]),
+      dots: (p.dots || []).map(([c, s, z, rx, ry = rx]) => [c, s * k, z * k, rx * k, ry * k]),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [pt(a), pt(b), w0, w1]),
       gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(pt), at: g.at && pt(g.at), r: g.r * k, spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
     },
@@ -644,12 +652,40 @@ const BE36 = {
   ],
   frame: 0.035,
   wing: { le: 1.95, root: 0.6, span: 10.21, cr: 2.1, ct: 1.1, sweep: 6, dih: 6.5, z: 0.12, t: [0.15, 0.12] },
+  // the wing as the 3-view draws it: the pointed root fillet curving up into the root fairing, the
+  // flap's trailing edge at the root; the flap hinge and its cross line, the fillet's leading-edge panel
+  wingSide: [
+    ["wing", [[1.897, 0.227, "c"], [2.038, 0.319], [2.127, 0.354], [2.186, 0.363], [2.239, 0.415], [2.257, 0.484], [2.274, 0.518], [2.321, 0.604],
+      [2.38, 0.662], [2.428, 0.685], [2.535, 0.712], [2.734, 0.718], [3.038, 0.702], [3.217, 0.679], [3.315, 0.659], [3.405, 0.651],
+      [3.434, 0.631, "l"], [4.042, 0.172], [4.083, 0.136, "c"], [4.095, 0.1], [3.902, 0.076], [3.724, 0.065], [3.36, 0.043], [3.011, 0.041],
+      [2.639, 0.04], [2.517, 0.047], [2.278, 0.078], [2.193, 0.093], [2.079, 0.126], [1.927, 0.183]]],
+    ["hl", [[3.243, 0.635, "l"], [3.746, 0.065]], false],
+    ["hl", [[3.394, 0.438], [3.505, 0.44], [3.672, 0.448]], false],
+    ["hl", [[1.918, 0.217], [2.086, 0.228], [2.122, 0.246], [2.145, 0.266], [2.175, 0.321], [2.186, 0.363]], false],
+  ],
   eng: { kind: "none", nose: { s: 0.38, z: 0.625, d: 2.03, blades: 3 } },
   stab: { le: 1.38, z: 0.93, span: 3.71, root: 0.25, cr: 1.1, ct: 0.75, sweep: 8, dih: 0, thick: 0.1 },
   parts: {
+    // front door; the cowling's louvred outlet; (the aft "club" doors are on the far side: dashed in the 3-view)
     doors: [[[1.97, 0.45, "c"], [1.97, 0.88, "c"], [2.29, 1.38, "c"], [2.95, 1.38, "c"], [2.95, 0.45, "c"]],
-      rect(3.61, 4.19, 0.25, 1.3, 0.06), rect(4.21, 4.79, 0.25, 1.3, 0.06)],
-    lines: [[[7.42, 1.05], [7.78, 2.22], [7.52, 2.27], [7.52, 2.42]]],
+      rect(3.61, 4.19, 0.25, 1.3, 0.06), rect(4.21, 4.79, 0.25, 1.3, 0.06),
+      [[0.637, 0.468, "c"], [1.046, 0.474, "c"], [1.049, 0.244, "c"], [0.64, 0.238, "c"]]],
+    // rudder hinge; the nose bowl seam, the upper cowl panel and its aft seam, the outlet's louvres; the
+    // dorsal fin's joint with the fuselage top and the panel at its foot
+    lines: [[[7.42, 1.05], [7.78, 2.22], [7.52, 2.27], [7.52, 2.42]],
+      [[0.508, 0.807], [0.523, 0.688], [0.533, 0.56], [0.545, 0.305], [0.562, 0.067]],
+      [[0.55, 0.552], [0.789, 0.555], [1.483, 0.587], [1.473, 0.97]],
+      [[0.766, 0.381], [0.753, 0.351], [0.758, 0.321]], [[0.813, 0.381], [0.8, 0.351], [0.805, 0.321]],
+      [[0.859, 0.382], [0.847, 0.352], [0.852, 0.322]], [[0.906, 0.383], [0.894, 0.353], [0.899, 0.323]],
+      [[5.42, 1.24], [5.889, 1.2], [6.401, 1.155], [6.913, 1.1], [7.42, 1.05]],
+      [[6.103, 1.168], [6.102, 1.223], [6.442, 1.235], [6.452, 1.177]]],
+    // as the 3-view draws them: the storm window in the front side window, the fixed step behind the
+    // wing; the fuel filler on the wing root, the beacon on the fin tip
+    marks: [["pant", [[2.101, 1.069, "c"], [2.365, 1.073, "c"], [2.368, 0.911, "c"], [2.104, 0.907, "c"]]],
+      ["glass", [[2.136, 1.035, "c"], [2.332, 1.038, "c"], [2.333, 0.945, "c"], [2.137, 0.942, "c"]]],
+      ["strut", [[4.262, 0.105, "c"], [4.339, 0.106, "c"], [4.342, -0.099, "c"], [4.265, -0.1, "c"]]],
+      ["strut", [[4.121, -0.102, "c"], [4.308, -0.074], [4.504, -0.105, "c"], [4.411, -0.157], [4.309, -0.167], [4.198, -0.16]]]],
+    dots: [["inlet", 2.717, 0.648, 0.05, 0.025], ["hub", 7.471, 2.504, 0.05, 0.05]],
   },
   extras: EXTRAS, overlays: OVERLAYS,
 };
@@ -663,6 +699,25 @@ F.be36 = stretch(BE36, 1.2, 0.27);
 // double "club" doors aft on the right: drawn as the 55 with a 0.26 m plug ahead of the wing
 // and the 58's window and door layout. Pointed baggage nose, wing-mounted IO-550 nacelles
 // with three-blade props, straight swept fin, retractable gear (drawn retracted).
+// From the D55 3-view, drawn over the renderer's nacelle: the cowl's front ring, upper cowl panel
+// (a double seam) and its aft seam, the cowl split, the oil-cooler bump on top, the cowl outlet's
+// lip and the exhaust stack below it.
+const BE55_NACELLE = [
+  ["hl", [[1.242, 0.708], [1.241, 0.333]], false], ["hl", [[1.317, 0.698], [1.316, 0.352]], false],
+  ["hl", [[1.336, 0.698], [2.36, 0.693]], false], ["hl", [[1.336, 0.67], [2.36, 0.665]], false],
+  ["hl", [[2.36, 0.693], [2.36, 0.553]], false], ["hl", [[1.335, 0.428], [2.13, 0.423]], false],
+  ["nac", [[2.122, 0.783, "c"], [2.132, 0.844], [2.165, 0.858], [2.291, 0.845], [2.347, 0.824], [2.403, 0.763, "c"]]],
+  ["hl", [[2.167, 0.348], [2.242, 0.349], [2.284, 0.413], [2.308, 0.44], [2.354, 0.447], [2.41, 0.393]], false],
+  ["inlet", [[2.13, 0.376, "c"], [2.195, 0.319], [2.269, 0.268], [2.4, 0.244], [2.634, 0.228, "c"], [2.615, 0.21], [2.4, 0.211],
+    [2.148, 0.221], [2.082, 0.254]]],
+];
+// the wing as the 3-view draws it: the root fillet rising from the nacelle, the trailing edge running
+// down to the root, the nacelle's lower aft fairing back to the fuselage; and the flap at the root
+const BE55_WING = [
+  ["wing", [[2.261, 0.403, "c"], [2.336, 0.543], [2.421, 0.674], [2.496, 0.739], [2.824, 0.765], [3.198, 0.75], [3.432, 0.716],
+    [3.506, 0.678, "l"], [4.299, 0.094, "c"], [3.943, 0.044], [3.531, 0.004], [2.825, 0.026], [2.493, 0.098], [2.166, 0.151, "c"]]],
+  ["hl", [[3.534, 0.603], [3.384, 0.576], [3.598, 0.35], [3.804, 0.386]], false],
+];
 const BE55 = {
   kind: "piston", L0: 8.83, over: 0, D: 1, W: 1.2,
   body: [
@@ -676,8 +731,25 @@ const BE55 = {
   ],
   frame: 0.035,
   wing: { le: 2.42, root: 0.6, span: 11.53, cr: 2.13, ct: 0.88, sweep: 4.2, dih: 6, z: 0.08, t: [0.15, 0.12] },
+  wingSide: BE55_WING,
   eng: { kind: "prop", at: [0.19], fwd: 1.6, drop: -0.28, len: 2.7, dia: 0.54, prop: 1.98, blades: 3, spinner: 0.13, tailZ: 0.3 },
   stab: { le: 1.98, z: 0.86, span: 4.86, root: 0.25, cr: 1.2, ct: 0.78, sweep: 8, dih: 0, thick: 0.1 },
+  parts: {
+    // the lens in the nose
+    doors: [[[0.174, 0.395, "c"], [0.427, 0.375, "c"], [0.426, 0.309, "c"], [0.202, 0.371, "c"]]],
+    // rudder hinge; the nose cap's seam and the nose baggage door's front edge; the dorsal fin's joint
+    // with the fuselage top and the plate at its foot; the fin's panel line; the rudder trim tab
+    lines: [[[7.7, 0.97], [8.2, 2.42], [8.05, 2.47], [8.05, 2.55]],
+      [[0.082, 0.592], [0.09, 0.358]], [[0.986, 0.877], [0.989, 0.559], [0.987, 0.232]],
+      [[4.978, 1.3], [5.259, 1.267], [5.82, 1.189], [6.661, 1.073], [7.662, 0.941]],
+      [[5.979, 1.155], [5.979, 1.23], [6.279, 1.238], [6.278, 1.154]],
+      [[7.066, 1.568], [7.842, 1.546]], [[8.498, 1.739], [8.321, 1.768], [8.14, 1.17], [8.336, 1.141]]],
+    // the nacelle's details; the fixed step behind the wing; the small dome on the cabin roof
+    marks: [...BE55_NACELLE,
+      ["strut", [[4.523, 0.046, "c"], [4.579, 0.046, "c"], [4.578, -0.16, "c"], [4.522, -0.16, "c"]]],
+      ["strut", [[4.438, -0.169, "c"], [4.55, -0.151], [4.653, -0.17, "c"], [4.597, -0.207], [4.484, -0.206]]],
+      ["hub", [[3.267, 1.435, "c"], [3.281, 1.482], [3.342, 1.5], [3.482, 1.495], [3.52, 1.471], [3.524, 1.434, "c"]]]],
+  },
   extras: EXTRAS, overlays: OVERLAYS,
 };
 F.be58 = stretch(BE55, 2.8, 0.26, {
@@ -688,14 +760,20 @@ F.be58 = stretch(BE55, 2.8, 0.26, {
     [[4.42, 0.82], [4.42, 1.22], [4.88, 1.2], [4.88, 0.82]],
     [[5.02, 0.84], [5.02, 1.18], [5.44, 1.15], [5.44, 0.86]],
   ],
-  parts: {
-    doors: [[[2.27, 0.55, "c"], [2.27, 0.9, "c"], [2.7, 1.35, "c"], [3.66, 1.37, "c"], [3.66, 0.55, "c"]],
-      rect(4.33, 4.94, 0.2, 1.3, 0.06), rect(4.96, 5.56, 0.24, 1.29, 0.06)],
-    lines: [[[7.96, 0.97], [8.46, 2.42], [8.31, 2.47], [8.31, 2.55]]],
-  },
 });
-// the plug is between windscreen and wing: the wing (and its nacelles) moves back with the tail
-F.be58.wing = { ...F.be58.wing, le: BE55.wing.le + 0.26 };
+F.be58.parts = {
+  ...F.be58.parts,
+  doors: [[[2.27, 0.55, "c"], [2.27, 0.9, "c"], [2.7, 1.35, "c"], [3.66, 1.37, "c"], [3.66, 0.55, "c"]],
+    rect(4.33, 4.94, 0.2, 1.3, 0.06), rect(4.96, 5.56, 0.24, 1.29, 0.06), ...F.be58.parts.doors],
+};
+// the plug is between windscreen and wing: the wing (and its nacelles) moves back with the tail, and
+// so do the nacelle's details and the wing's side view
+{
+  const back = (pts) => pts.map(([s, z, ...r]) => [s + 0.26, z, ...r]);
+  F.be58.wing = { ...F.be58.wing, le: BE55.wing.le + 0.26 };
+  F.be58.wingSide = BE55_WING.map(([c, pts, cl]) => [c, back(pts), cl]);
+  F.be58.parts.marks = [...BE55_NACELLE.map(([c, pts, cl]) => [c, back(pts), cl]), ...F.be58.parts.marks.slice(BE55_NACELLE.length)];
+}
 
 // ---------- Mooney M20 ----------
 // Reference: Mooney M20G Statesman 3-view (Wikimedia Commons,
@@ -723,11 +801,32 @@ const M20 = {
   ],
   frame: 0.035,
   wing: { le: 1.86, root: 0.55, span: 10.67, cr: 2.14, ct: 1.05, sweep: 1.5, dih: 5.5, z: 0.04, t: [0.15, 0.12] },
+  // the wing as the 3-view draws it: the pointed root fillet, the root section's lens with the joint
+  // across it, the trailing edge running down to the flap at the root; the flap hinge
+  wingSide: [
+    ["wing", [[1.831, 0.172, "c"], [1.929, 0.254], [2.008, 0.323], [2.028, 0.459], [2.038, 0.606], [2.058, 0.694], [2.176, 0.733],
+      [2.371, 0.742], [2.567, 0.726], [2.762, 0.701], [2.957, 0.646, "l"], [3.621, 0.16, "c"], [4.031, 0.119], [4.324, 0.069, "c"],
+      [4.031, 0.041], [3.737, 0.037], [3.542, 0.033], [3.151, 0.039], [2.564, 0.042], [2.173, 0.087], [1.929, 0.122]]],
+    ["hl", [[2.068, 0.684], [2.224, 0.644], [2.371, 0.624], [2.566, 0.614], [2.762, 0.618], [2.957, 0.646]], false],
+    ["hl", [[2.567, 0.721, "l"], [2.566, 0.604]], false],
+    ["hl", [[2.586, 0.594], [2.781, 0.584], [2.967, 0.446], [3.162, 0.435]], false],
+    ["hl", [[2.967, 0.446, "l"], [3.542, 0.038]], false],
+  ],
   eng: { kind: "none", nose: { s: 0.43, z: 0.78, d: 1.88, blades: 2 } },
   stab: { le: 1.37, z: 0.65, span: 3.58, root: 0.2, cr: 1.0, ct: 0.7, sweep: 4, dih: 0, thick: 0.1 },
   parts: {
-    doors: [[[1.84, 0.5, "c"], [1.84, 0.82, "c"], [1.97, 1.2, "c"], [2.53, 1.22, "c"], [2.53, 0.5, "c"]]],
-    lines: [[[6.4, 1.93], [7.08, 0.2]]],
+    // the right door; the baggage door
+    doors: [[[1.84, 0.5, "c"], [1.84, 0.82, "c"], [1.97, 1.2, "c"], [2.53, 1.22, "c"], [2.53, 0.5, "c"]],
+      rect(3.953, 4.463, 0.225, 0.657, 0.05)],
+    // rudder hinge and the fin cap's joint; from the 3-view: the lower cowl's inlet lip, the panel
+    // ahead of the windscreen; the dorsal fin's joint with the fuselage top and the fin's root; the
+    // two seams below the tailplane, and the small hook under the tail cone
+    lines: [[[6.4, 1.93], [7.08, 0.2]], [[6.219, 1.969], [6.248, 1.929], [6.375, 1.909]],
+      [[0.493, 0.485], [0.551, 0.406], [0.658, 0.318], [0.824, 0.249], [1.049, 0.199]],
+      [[1.355, 0.951], [1.354, 0.775], [1.442, 0.774]], [[1.511, 0.764], [1.579, 0.764], [1.58, 0.94]],
+      [[5.0, 0.915], [5.696, 0.792], [6.204, 0.698]], [[6.019, 0.913], [6.204, 0.707]],
+      [[6.164, 0.59], [6.153, 0.101]], [[6.311, 0.59], [6.319, 0.13]],
+      [[6.143, 0.092], [6.202, 0.062], [6.26, 0.052]]],
   },
   extras: EXTRAS, overlays: OVERLAYS,
 };
@@ -758,7 +857,21 @@ F.st75 = {
   eng: { kind: "none", nose: { s: 0.1, z: 0.47, d: 2.45, blades: 2 } },
   stab: { le: 1.8, z: 0.62, span: 3.81, root: 0.2, cr: 1.24, ct: 1.0, sweep: 3, dih: 0, thick: 0.08 },
   parts: {
-    lines: [[[6.72, 0.5], [6.72, 1.19], [6.39, 1.19], [6.39, 1.42]], [[2.98, 0.86], [3.48, 0.84]], [[3.78, 0.83], [4.3, 0.81]]],
+    lines: [[[6.72, 0.5], [6.72, 1.19], [6.39, 1.19], [6.39, 1.42]], [[2.98, 0.86], [3.48, 0.84]], [[3.78, 0.83], [4.3, 0.81]],
+      // from the general arrangement diagram: the engine ring's aft edge (two lines), the panel line
+      // along the side, the panel behind the rear cockpit, and the rudder's lower edge down to the tail cone
+      [[0.704, 0.88], [0.697, -0.05]], [[0.734, 0.88], [0.728, -0.05]],
+      [[0.763, 0.648], [2.505, 0.632], [4.385, 0.616]], [[3.649, 0.964], [3.646, 0.622]], [[4.387, 0.881], [4.385, 0.616]],
+      [[6.764, 0.492], [7.068, 0.111]]],
+    // the D-shaped port in the forward side panel, the small fitting under the panel line, the hand
+    // hold, the dome on the turtle deck, the rudder trim tab
+    doors: [[[0.774, 0.618, "c"], [0.773, 0.467, "c"], [0.869, 0.467], [0.918, 0.526], [0.876, 0.605]],
+      rect(3.905, 4.007, 0.643, 0.704, 0.02),
+      [[7.491, 0.738, "c"], [7.551, 0.75, "c"], [7.567, 0.455, "c"], [7.513, 0.438, "c"]]],
+    marks: [["hl", [[1.147, 0.633], [1.153, 0.603], [1.171, 0.591], [1.189, 0.603], [1.195, 0.633]], false],
+      ["hub", [[4.549, 0.86, "c"], [4.562, 0.896], [4.592, 0.919], [4.628, 0.907], [4.646, 0.871, "c"]]]],
+    // the ringed fitting at the top of the rudder's trailing edge
+    dots: [["hub", 7.306, 1.239, 0.09, 0.078], ["inlet", 7.306, 1.239, 0.036, 0.036]],
     struts: [
       // tailplane bracing
       [[6.42, 0.21], [6.57, 0.6], 0.04, 0.04], [[6.42, 0.21], [6.2, 0.6], 0.04, 0.04],
