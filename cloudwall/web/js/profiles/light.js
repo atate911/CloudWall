@@ -16,7 +16,10 @@ const F = {};
 //   struts  [[s, z] bottom, [s, z] top, width at bottom, width at top]
 //   gear    {leg: [[s, z] top, [s, z] bottom], w: [w0, w1], at: [s, z] axle, r, spat: {f, a, t, b}}
 //           spat: reach ahead of / behind the axle, top above / bottom below it; or {pts}: its traced outline
-//   draw    extra functions (kit) => void, drawn last
+//   marks   [class, [[s, z, flag]...], closed?] shapes drawn last, over the wing and glass (fittings, frames)
+//   dots    [class, s, z, rx, ry] small round parts drawn last (beacons, fuel caps)
+//   draw    extra functions (kit) => void, drawn last (fixed coordinates: prefer marks and dots, which
+//           stretch() and scale() carry)
 
 // A tapered leg or strut from [s0, z0] to [s1, z1], w0 / w1 wide (metres, along s).
 const leg = (sk, [s0, z0], [s1, z1], w0 = 0.08, w1 = w0) =>
@@ -44,6 +47,8 @@ const OVERLAYS = [(k) => {
     if (g.leg) leg(k.sk, g.leg[0], g.leg[1], ...(g.w || []));
     if (g.at) wheel(k.sk, g.at[0], g.at[1], g.r, g.spat);
   }
+  for (const [cls, pts, closed = true] of p.marks || []) k.sk.smooth(cls, pts, closed);
+  for (const [cls, s, z, rx, ry = rx] of p.dots || []) k.sk.ellipse(cls, s, z, rx, ry);
   for (const fn of p.draw || []) fn(k);
 }];
 
@@ -60,8 +65,11 @@ function stretch(f, at, ds, more = {}) {
   return {
     ...f, L0: f.L0 + ds, body: loop(f.body), glass: (f.glass || []).map(loop),
     wing: f.wing && { ...f.wing, le: f.wing.le > at ? f.wing.le + ds : f.wing.le },
+    wingSide: f.wingSide && f.wingSide.map(([c, pts, cl]) => [c, loop(pts), cl]),
     parts: {
       ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
+      marks: (p.marks || []).map(([c, pts, cl]) => [c, loop(pts), cl]),
+      dots: (p.dots || []).map(([c, s, z, rx, ry]) => [c, ...mv([s, z]), rx, ry]),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [mv(a), mv(b), w0, w1]),
       gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(mv), at: g.at && mv(g.at), spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
     },
@@ -79,8 +87,11 @@ function scale(f, k, more = {}) {
     ...f, L0: f.L0 * k, over: (f.over || 0) * k, W: f.W * k, body: loop(f.body), glass: (f.glass || []).map(loop),
     wing: sc(f.wing, ["le", "root", "span", "cr", "ct", "z"]), stab: sc(f.stab, ["le", "z", "span", "root", "cr", "ct"]),
     eng: f.eng && { ...f.eng, nose: sc(f.eng.nose, ["s", "z", "d"]) },
+    wingSide: f.wingSide && f.wingSide.map(([c, pts, cl]) => [c, loop(pts), cl]),
     parts: {
       ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
+      marks: (p.marks || []).map(([c, pts, cl]) => [c, loop(pts), cl]),
+      dots: (p.dots || []).map(([c, s, z, rx, ry = rx]) => [c, s * k, z * k, rx * k, ry * k]),
       struts: (p.struts || []).map(([a, b, w0, w1]) => [pt(a), pt(b), w0, w1]),
       gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(pt), at: g.at && pt(g.at), r: g.r * k, spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat })),
     },
@@ -455,12 +466,40 @@ const BE36 = {
   ],
   frame: 0.035,
   wing: { le: 1.95, root: 0.6, span: 10.21, cr: 2.1, ct: 1.1, sweep: 6, dih: 6.5, z: 0.12, t: [0.15, 0.12] },
+  // the wing as the 3-view draws it: the pointed root fillet curving up into the root fairing, the
+  // flap's trailing edge at the root; the flap hinge and its cross line, the fillet's leading-edge panel
+  wingSide: [
+    ["wing", [[1.897, 0.227, "c"], [2.038, 0.319], [2.127, 0.354], [2.186, 0.363], [2.239, 0.415], [2.257, 0.484], [2.274, 0.518], [2.321, 0.604],
+      [2.38, 0.662], [2.428, 0.685], [2.535, 0.712], [2.734, 0.718], [3.038, 0.702], [3.217, 0.679], [3.315, 0.659], [3.405, 0.651],
+      [3.434, 0.631, "l"], [4.042, 0.172], [4.083, 0.136, "c"], [4.095, 0.1], [3.902, 0.076], [3.724, 0.065], [3.36, 0.043], [3.011, 0.041],
+      [2.639, 0.04], [2.517, 0.047], [2.278, 0.078], [2.193, 0.093], [2.079, 0.126], [1.927, 0.183]]],
+    ["hl", [[3.243, 0.635, "l"], [3.746, 0.065]], false],
+    ["hl", [[3.394, 0.438], [3.505, 0.44], [3.672, 0.448]], false],
+    ["hl", [[1.918, 0.217], [2.086, 0.228], [2.122, 0.246], [2.145, 0.266], [2.175, 0.321], [2.186, 0.363]], false],
+  ],
   eng: { kind: "none", nose: { s: 0.38, z: 0.625, d: 2.03, blades: 3 } },
   stab: { le: 1.38, z: 0.93, span: 3.71, root: 0.25, cr: 1.1, ct: 0.75, sweep: 8, dih: 0, thick: 0.1 },
   parts: {
+    // front door; the cowling's louvred outlet; (the aft "club" doors are on the far side: dashed in the 3-view)
     doors: [[[1.97, 0.45, "c"], [1.97, 0.88, "c"], [2.29, 1.38, "c"], [2.95, 1.38, "c"], [2.95, 0.45, "c"]],
-      rect(3.61, 4.19, 0.25, 1.3, 0.06), rect(4.21, 4.79, 0.25, 1.3, 0.06)],
-    lines: [[[7.42, 1.05], [7.78, 2.22], [7.52, 2.27], [7.52, 2.42]]],
+      rect(3.61, 4.19, 0.25, 1.3, 0.06), rect(4.21, 4.79, 0.25, 1.3, 0.06),
+      [[0.637, 0.468, "c"], [1.046, 0.474, "c"], [1.049, 0.244, "c"], [0.64, 0.238, "c"]]],
+    // rudder hinge; the nose bowl seam, the upper cowl panel and its aft seam, the outlet's louvres; the
+    // dorsal fin's joint with the fuselage top and the panel at its foot
+    lines: [[[7.42, 1.05], [7.78, 2.22], [7.52, 2.27], [7.52, 2.42]],
+      [[0.508, 0.807], [0.523, 0.688], [0.533, 0.56], [0.545, 0.305], [0.562, 0.067]],
+      [[0.55, 0.552], [0.789, 0.555], [1.483, 0.587], [1.473, 0.97]],
+      [[0.766, 0.381], [0.753, 0.351], [0.758, 0.321]], [[0.813, 0.381], [0.8, 0.351], [0.805, 0.321]],
+      [[0.859, 0.382], [0.847, 0.352], [0.852, 0.322]], [[0.906, 0.383], [0.894, 0.353], [0.899, 0.323]],
+      [[5.42, 1.24], [5.889, 1.2], [6.401, 1.155], [6.913, 1.1], [7.42, 1.05]],
+      [[6.103, 1.168], [6.102, 1.223], [6.442, 1.235], [6.452, 1.177]]],
+    // as the 3-view draws them: the storm window in the front side window, the fixed step behind the
+    // wing; the fuel filler on the wing root, the beacon on the fin tip
+    marks: [["pant", [[2.101, 1.069, "c"], [2.365, 1.073, "c"], [2.368, 0.911, "c"], [2.104, 0.907, "c"]]],
+      ["glass", [[2.136, 1.035, "c"], [2.332, 1.038, "c"], [2.333, 0.945, "c"], [2.137, 0.942, "c"]]],
+      ["strut", [[4.262, 0.105, "c"], [4.339, 0.106, "c"], [4.342, -0.099, "c"], [4.265, -0.1, "c"]]],
+      ["strut", [[4.121, -0.102, "c"], [4.308, -0.074], [4.504, -0.105, "c"], [4.411, -0.157], [4.309, -0.167], [4.198, -0.16]]]],
+    dots: [["inlet", 2.717, 0.648, 0.05, 0.025], ["hub", 7.471, 2.504, 0.05, 0.05]],
   },
   extras: EXTRAS, overlays: OVERLAYS,
 };
