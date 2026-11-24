@@ -1,0 +1,32 @@
+name = "British Aerospace Jetstream 41"
+types = ["JS41"]
+production = [1992, 1997]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/British_Aerospace_Jetstream_41",
+  "https://en.wikipedia.org/wiki/British_Aerospace_Jetstream",
+]
+
+text = """
+British Aerospace stretched the Jetstream 31 into the Jetstream 41 to take on the 30-seaters, the
+Embraer Brasilia, Dornier 328 and Saab 340, with 29 seats still three abreast. The fuselage, all new
+though it looks like the 31's, is 16 ft longer, with plugs of 8 ft ahead of the wing and 7 ft behind
+it, and the wing now passes beneath it, so its spar no longer makes a step in the aisle and the
+bigger wing-root fairings hold more baggage. TPE331-14 engines of up to 1,650 shp sit in nacelles
+raised for more ground clearance, and the flight deck has electronic displays behind a new
+windscreen. It was the first turboprop certified to both the European JAR 25 and the American FAR 25
+airliner standards.
+
+It first flew on 25 September 1991 and Manx Airlines took the first on 25 November 1992. The largest
+operator was Trans States Airlines, whose 25 flew as American Connection, Delta Connection and Trans
+World Express. Sales began well, but in May 1997 British Aerospace ended production after 100. As
+of January 2025, 20 were in airline service.
+"""
+
+[facts]
+"First flight" = "September 1991"
+"Built" = "100"
+"Engines" = "2 × AlliedSignal TPE331-14GR/HR, 1,650 shp"
+"Max takeoff weight" = "10,886 kg (24,000 lb)"
+"Range" = "774 nm (1,433 km) with 29 passengers"
+"Cruise" = "295 kt"
