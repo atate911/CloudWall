@@ -138,7 +138,67 @@ F.dhc6 = commuter({
   },
 });
 
+// ---------- Short 360 and 330 ----------
+// References: published dimensions (Wikipedia: 360-300 length 21.58 m, span 22.81 m, height 7.21 m;
+// 330-200 length 17.69 m, span 22.76 m, height 4.95 m; the 360 adds a 0.91 m plug ahead of the wing
+// and a new rear fuselage and tail) and near side-on Commons photos scaled to those lengths: for the
+// 360 "Short 360-300, RAS - Rheinland Air Service AN0908076.jpg" (broadside; heights scaled by 0.96 to
+// its published height), checked against "Short 360-200, Aerocondor JP5963911.jpg" and "Night Express
+// Short 360-300(F) D-CRAS"; for the 330 "Short 330 (DLT) at FRA 1983-02-28 (2).jpg", its stations aft
+// of the plug taken from the 360 less the plug. Square-section fuselage with the fuel over the cabin,
+// high braced wing on stub wings that carry the main gear (retracted here into their sponsons),
+// long PT6A nacelles on top of the wing; the 330 has twin rectangular fins at the tailplane tips,
+// the 360 a single swept fin on a long tapered rear fuselage.
+F.sh36 = commuter({
+  L0: 21.58, W: 2.24,
+  body: [
+    [0, 0.15, "c"], [0.1, 0.32], [0.39, 0.48], [1.05, 0.78], [1.7, 1.09], [2.43, 1.41], [2.8, 1.68], [3.15, 1.98], [3.6, 2.15], [3.95, 2.26],
+    [4.6, 2.35], [5.5, 2.4, "l"], [13.0, 2.42], [14.2, 2.4], [15.6, 2.5], [16.8, 2.64], [17.6, 2.83], [18.2, 3.12], [18.8, 3.69, "l"],
+    [20.35, 6.16], [20.55, 6.29, "l"], [21.5, 6.32, "c"], [21.58, 6.24, "l"], [20.95, 2.5], [21.1, 2.11], [21.05, 1.87, "c"], [20.0, 1.6],
+    [18.0, 1.03], [16.5, 0.65], [15.4, 0.34], [14.3, 0.12], [13.4, 0.0, "l"], [11.4, -0.02], [11.15, 0.0], [10.9, -0.36], [10.0, -0.44],
+    [8.9, -0.42], [8.4, -0.29], [8.2, -0.05], [8.0, -0.02, "l"], [0.8, -0.03], [0.4, -0.01], [0.15, 0.04], [0.04, 0.09],
+  ],
+  glass: [
+    [[2.45, 1.42], [2.85, 1.72], [3.12, 1.95], [3.22, 1.86], [3.05, 1.42]],
+    [[3.15, 1.3], [3.15, 1.68], [3.75, 1.68], [3.75, 1.3]],
+  ],
+  wing: { le: 8.2, root: 1.12, span: 22.81, cr: 1.85, ct: 1.85, sweep: 0, dih: 1.5, z: 2.5, t: [0.14, 0.14] },
+  stab: { le: 2.38, z: 2.02, span: 7.2, root: 0.3, cr: 1.8, ct: 1.1, sweep: 14, dih: 0, thick: 0.1 },
+  parts: {
+    wins: [[0.93, 0.3, 0.4, [4.54, 5.29, 6.03, 7.37, 8.04, 8.68, 10.07, 10.72, 11.41, 12.07, 12.74, 13.49]]],
+    doors: [rect(4.14, 4.97, 0.57, 1.7, 0.12), rect(13.07, 13.92, 0.11, 1.59, 0.12)],
+    lines: [[[20.32, 2.55], [21.0, 6.2]], [[8.2, -0.05], [11.15, 0.0]]],
+    struts: [[[9.34, 0.3], [9.15, 2.42], 0.2, 0.16]],
+    nacelles: [{
+      s: 6.03, z: 2.21, sp: 0.5, sr: 0.3, prop: 2.9, blades: 6, inlet: [0.75, -0.4, 0.1, 0.08],
+      outline: [[0, 0, "c"], [0.22, 0.22], [0.5, 0.3, "c"], [0.65, 0.4], [1.0, 0.5], [2.0, 0.56], [3.2, 0.5], [4.25, 0.28, "c"],
+        [3.4, -0.2], [2.3, -0.48], [1.2, -0.56], [0.7, -0.5], [0.52, -0.32], [0.5, -0.3, "c"], [0.22, -0.22]],
+    }],
+  },
+});
+// The 330's fins stand on the tailplane tips, so they are drawn over it.
+const sh33Fin = [[16.25, 1.45, "c"], [16.25, 4.05], [16.42, 4.3, "l"], [17.52, 4.3], [17.69, 4.12, "l"], [17.69, 1.4], [17.55, 1.25, "l"], [16.42, 1.25]];
+F.sh33 = commuter({
+  L0: 17.69, W: 2.24,
+  body: [
+    ...F.sh36.body.slice(0, 12), [13.5, 2.4], [15.0, 2.33], [16.2, 2.17], [16.5, 2.07, "c"], [16.5, 1.82, "c"], [15.5, 1.45], [14.2, 0.95],
+    [13.05, 0.45], [12.2, 0.12], [11.6, 0.0, "l"], [10.49, -0.02], [10.24, 0.0], [9.99, -0.36], [9.09, -0.44], [7.99, -0.42], [7.49, -0.29],
+    [7.29, -0.05], [7.09, -0.02, "l"], ...F.sh36.body.slice(-4),
+  ],
+  glass: F.sh36.glass,
+  wing: { ...F.sh36.wing, le: 7.29, span: 22.76 },
+  stab: { le: 2.0, z: 2.05, span: 5.6, root: 0.3, cr: 1.7, ct: 1.7, sweep: 0, dih: 0, thick: 0.1 },
+  parts: {
+    wins: [[0.93, 0.3, 0.4, [4.57, 5.29, 6.58, 7.23, 7.9, 9.24, 9.9, 10.55, 11.2, 11.86, 12.58]]],
+    doors: [rect(4.14, 4.97, 0.57, 1.7, 0.12), rect(12.16, 13.0, 0.11, 1.59, 0.12)],
+    lines: [[[7.29, -0.05], [10.24, 0.0]]],
+    struts: [[[8.43, 0.3], [8.24, 2.42], 0.2, 0.16]],
+    nacelles: [{ ...F.sh36.parts.nacelles[0], s: 5.12, blades: 5, prop: 2.82 }],
+    shapes: [["fin", sh33Fin], ["hl", [[17.08, 1.3], [17.08, 4.28]], false]],
+  },
+});
+
 export const families = F;
 export const types = {
-  D228: "d228", DHC6: "dhc6",
+  D228: "d228", DHC6: "dhc6", SH33: "sh33", SH36: "sh36",
 };
