@@ -185,7 +185,42 @@ F.c441 = {
   overlays: [engines, pipe(2.85, 0.05, 0.11)],
 };
 
+// ---------- Mitsubishi MU-2 (long fuselage: MU-2G, J, L, N and Marquise) ----------
+// Published dimensions (Wikipedia, MU-2L from Jane's 1976-77): length 12.01 m, span 11.94 m over the
+// tip tanks, height 4.17 m; propellers 2.29 m. Drawn as the long-fuselage models, 1.91 m longer than
+// the short ones (the Solitaire and earlier), which share its designator; their table length is the
+// long one's. Fuselage, the long drooping nose, windshield, cabin windows, the nacelles riding on the
+// high wing, the main-gear sponsons and the sharply swept fin measured off the side-on Commons photo
+// "Mitsubishi MU-2B belonging to Thunder Airlines.jpg" (C-GZNS, a Marquise), scaled by the overall
+// length; the airstair door off "Mitsubishi MU-2B AN1706942.jpg" (LY-ZDV).
+const mu2Sponson = ({ shaded, D }) => {
+  shaded([[3.5, 0.32 * D, "c"], [3.9, -0.12], [4.6, -0.24], [6.4, -0.26], [7.5, -0.2], [8.05, 0.0], [8.0, 0.25 * D, "c"]]);
+};
+F.mu2 = {
+  kind: "turboprop", L0: 11.3, over: 0.72, D: 1.45, W: 1.5, fwd: 0.5, fair: 0,
+  nose: {
+    tip: 0.22,
+    top: [[0.1, 0.3], [0.25, 0.36], [0.45, 0.42], [0.7, 0.5], [1.0, 0.62], [1.3, 0.78], [1.55, 0.9], [1.8, 0.97], [2.1, 1]],
+    bot: [[0.1, 0.1], [0.3, 0.04], [0.6, 0.01], [0.9, 0]],
+  },
+  tail: {
+    top: [[2.0, 1], [1.4, 0.97], [0.8, 0.9], [0, 0.8]],
+    bot: [[3.6, 0], [2.8, 0.1], [2.0, 0.22], [1.2, 0.36], [0.5, 0.5], [0, 0.58]],
+  },
+  glass: [
+    [[1.03, 0.63], [1.45, 0.86], [1.54, 0.88], [1.54, 0.65]],
+    [[1.62, 0.62], [1.62, 0.9], [2.05, 0.9], [2.05, 0.62]],
+  ],
+  win: [{ z: 0.62, from: 3.95, to: 6.5, pitch: 0.85, w: 0.3, h: 0.33 }],
+  wing: { le: 4.55, root: 0.6, span: 11.94, cr: 1.7, ct: 1.1, sweep: 0, dih: 1, z: 0.98, t: [0.15, 0.12] },
+  nac: [0.33], eng: { kind: "prop", at: [], fwd: 0.4, drop: -0.08, len: 4.1, dia: 0.62, spinner: 0.08, tailZ: 0.1, belly: 0.9, prop: 2.29, blades: 4 },
+  fin: { le: 2.75, cr: 2.4, ct: 0.75, h: 1.97, sweep: 50, rudder: 0.6 },
+  stab: { le: 0.84, z: 0.7, span: 5.0, root: 0.2, cr: 1.1, ct: 0.6, sweep: 15, dih: 4 },
+  extras: [dorsal(-4.4, 1.95, 0.4), mu2Sponson, door(7.4, 0.66, 0.2, 1.2)],
+  overlays: [engines, pipe(3.1, 0.05, 0.09), tipTank(2.1, 0.5, 0.55, 0.02)],
+};
+
 export const families = F;
 export const types = {
-  PAY1: "pa31t", PAY2: "pa31t", PA31T: "pa31t", PAY3: "pa42", PA42: "pa42", PAY4: "pa42k", C425: "c425", C441: "c441",
+  PAY1: "pa31t", PAY2: "pa31t", PA31T: "pa31t", PAY3: "pa42", PA42: "pa42", PAY4: "pa42k", C425: "c425", C441: "c441", MU2: "mu2",
 };

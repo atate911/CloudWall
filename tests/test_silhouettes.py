@@ -60,7 +60,7 @@ class SilhouetteTest(unittest.TestCase):
                # turboprops and light aircraft added to the table for their icon and size, to be traced
                "AC11", "AC6L", "AC90", "AC95", "AT3T", "AT8T", "BE10", "BE30", "BE33", "BE35", "BE99",
                "BE9L", "BE9T", "C212", "CN35", "D228", "DHC3", "DHC6", "E110", "E120",
-               "EPIC", "F27", "F50", "G159", "JS31", "JS32", "JS41", "KODI", "MU2", "P180",
+               "EPIC", "F27", "F50", "G159", "JS31", "JS32", "JS41", "KODI", "P180",
                "PC21", "PC6", "PC7", "PC9", "SF34", "SH33",
                "SH36", "T34P", "T34T"}
 
