@@ -293,7 +293,45 @@ F.t34p = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Beechcraft T-34C Turbo-Mentor ----------
+// The T-34A above with the PT6A nose: no dimensioned drawing of the C was reachable, so its airframe
+// is the A's, moved back behind a nose 0.68 m longer, as measured off the T-34C 3-view on Wikimedia
+// Commons (File:Beechcraft_T-34C_Mentor_3-view_line_drawing.png, Wikipedia article Beechcraft T-34
+// Mentor; a small drawing, about 2.8 cm a pixel, scaled to the published 28 ft 8 1/2 in, 8.75 m). It
+// puts the windscreen 0.68 m further back than on the A and the fin, wing root and canopy where the
+// A's move to; its tail cone runs on past the rudder to a point, with the ventral strakes under it.
+// The nose shape, the chin inlet under the spinner and the exhaust stack on the side behind the
+// propeller follow the drawing and the near side-on air-to-air photo File:T-34C_Turbo_Mentor.jpg.
+// Lower confidence than the A (a small drawing and a photo).
+F.t34t = stretch(F.t34p, 1.6, 0.68, {
+  kind: "turboprop", L0: 8.75,
+  body: [
+    [0, 0.72, "c"], [0.12, 0.8], [0.25, 0.85], [0.42, 0.88, "c"], [0.5, 0.91], [0.8, 0.98], [1.2, 1.04], [1.8, 1.09],
+    [2.4, 1.12, "cl"], [2.76, 1.5], [2.93, 1.58], [3.18, 1.6], [3.68, 1.6], [4.18, 1.59], [4.58, 1.57], [4.88, 1.5], [5.13, 1.37],
+    [5.28, 1.31, "c"], [5.68, 1.27], [6.18, 1.235, "l"], [7.18, 1.28, "cl"], [7.33, 2.38], [7.4, 2.48], [7.58, 2.52], [7.88, 2.5],
+    [8.18, 2.46], [8.28, 2.4, "l"], [8.5, 1.0], [8.64, 0.87], [8.75, 0.74, "c"], [8.6, 0.67], [8.38, 0.64], [8.18, 0.62],
+    [7.68, 0.57], [7.18, 0.48], [6.68, 0.4], [6.18, 0.32], [5.68, 0.25], [5.18, 0.17], [4.68, 0.13], [4.18, 0.1], [3.68, 0.08],
+    [3.18, 0.06], [2.68, 0.05], [2.0, 0.06], [1.5, 0.08], [1.0, 0.14], [0.75, 0.22], [0.6, 0.33], [0.52, 0.45], [0.47, 0.52],
+    [0.42, 0.56, "c"], [0.25, 0.62], [0.12, 0.67],
+  ],
+  eng: { kind: "none", nose: { s: 0.3, z: 0.72, d: 2.24, blades: 3 } },
+});
+{
+  const p = F.t34t.parts;
+  F.t34t.parts = {
+    ...p,
+    // the access door aft (the A's cowl outlet is gone)
+    doors: p.doors.slice(1),
+    // rudder hinge and tab, canopy rail and dorsal line (moved back with the airframe); spinner seam, cowl joints
+    lines: [...p.lines.filter((l) => l[0][0] > 2), [[0.42, 0.88], [0.42, 0.56]], [[1.55, 1.07], [1.55, 0.09]], [[2.35, 1.12], [2.35, 0.06]]],
+    // the exhaust stack behind the propeller, the chin inlet under the spinner, the ventral strakes
+    shapes: [["core", [[0.85, 0.8, "c"], [1.22, 0.76], [1.32, 0.63, "c"], [0.85, 0.64, "c"]]],
+      ["inlet", [[0.46, 0.53, "c"], [0.62, 0.52, "c"], [0.6, 0.41, "c"], [0.52, 0.43, "c"]]],
+      ["fin", [[6.9, 0.43, "c"], [8.38, 0.63, "c"], [8.36, 0.47, "c"], [7.1, 0.27, "c"]]]],
+  };
+}
+
 export const families = F;
 export const types = {
-  BE33: "be33", BE35: "be35", T34P: "t34p",
+  BE33: "be33", BE35: "be35", T34P: "t34p", T34T: "t34t",
 };
