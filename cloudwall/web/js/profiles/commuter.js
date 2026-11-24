@@ -99,7 +99,46 @@ F.d228 = commuter({
   },
 });
 
+// ---------- de Havilland Canada DHC-6 Twin Otter ----------
+// References: published dimensions (Wikipedia: length 15.77 m with the long nose of the Series 200
+// on, span 19.81 m with a 1.97 m chord from its 39 m2, height 5.94 m), the side view of the Commons
+// "De Havilland Canada UV-18A Twin Otter 3-view line drawing.png" for the stations of the wing, gear
+// and fin, and the near side-on Commons photo "DHC-6 (DLT) at FRA 1983-02-28.jpg" (Series 300
+// D-IDWT) scaled to the length for the outline, windows, nacelles, gear and tail. Long pointed nose,
+// square cabin under a strut-braced high wing, PT6A nacelles slung from the wing with three-blade
+// propellers, fixed tricycle gear on a sprung main leg, tall swept fin with the tailplane low on it.
+F.dhc6 = commuter({
+  L0: 15.77, W: 1.6,
+  body: [
+    [0, 0.47, "c"], [0.12, 0.63], [0.4, 0.79], [0.9, 0.96], [1.5, 1.12], [2.0, 1.27], [2.45, 1.45], [2.75, 1.68], [3.05, 1.92],
+    [3.4, 2.0, "l"], [9.0, 1.97], [11.0, 1.92], [12.3, 1.9], [12.7, 1.98], [13.05, 2.2, "l"], [14.45, 5.0], [14.62, 5.07, "l"],
+    [15.72, 5.0, "c"], [15.77, 4.9, "l"], [15.62, 2.45, "l"], [15.58, 1.55], [15.42, 1.3], [15.1, 1.15], [13.6, 0.85], [11.5, 0.43],
+    [10.0, 0.17], [8.9, 0.02, "l"], [1.7, 0], [1.1, 0.05], [0.5, 0.15], [0.15, 0.3],
+  ],
+  glass: [
+    [[2.5, 1.45], [2.78, 1.72], [3.0, 1.92], [3.08, 1.86], [3.0, 1.45]],
+    [[3.1, 1.3], [3.1, 1.82], [3.52, 1.88], [3.52, 1.3]],
+  ],
+  wing: { le: 5.2, root: 0.8, span: 19.81, cr: 1.98, ct: 1.98, sweep: 0, dih: 1, z: 2.12, t: [0.16, 0.16] },
+  stab: { le: 1.75, z: 2.32, span: 6.3, root: 0.3, cr: 1.55, ct: 1.3, sweep: 3, dih: 0, thick: 0.1 },
+  parts: {
+    wins: [[1.36, 0.26, 0.32, [4.3, 4.88, 5.45, 5.98, 6.53, 7.08, 7.63, 8.5]]],
+    doors: [rect(9.0, 9.85, 0.12, 1.68, 0.1), rect(2.95, 3.6, 0.2, 1.88, 0.08)],
+    lines: [[[14.98, 2.35], [15.02, 4.95]], [[0.42, 0.14], [0.36, 0.8]]],
+    struts: [[[6.3, 0.25], [6.05, 2.02], 0.14, 0.12]],
+    gear: [
+      { leg: [[6.25, 0.1], [6.55, -0.55]], w: [0.16, 0.12], at: [6.55, -0.56], r: 0.39 },
+      { leg: [[1.75, 0.05], [1.72, -0.62]], w: [0.09, 0.07], at: [1.72, -0.66], r: 0.3 },
+    ],
+    nacelles: [{
+      s: 3.15, z: 1.43, sp: 0.42, sr: 0.24, prop: 2.6, blades: 3, inlet: [0.6, -0.35, 0.08, 0.06],
+      outline: [[0, 0, "c"], [0.18, 0.18], [0.42, 0.24, "c"], [0.55, 0.42], [0.9, 0.62], [1.6, 0.72], [2.8, 0.75], [3.6, 0.55], [4.2, 0.2, "c"],
+        [3.6, 0.0], [2.4, -0.18], [1.3, -0.24], [0.6, -0.28], [0.45, -0.24, "c"], [0.18, -0.18]],
+    }],
+  },
+});
+
 export const families = F;
 export const types = {
-  D228: "d228",
+  D228: "d228", DHC6: "dhc6",
 };
