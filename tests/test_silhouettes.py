@@ -60,7 +60,7 @@ class SilhouetteTest(unittest.TestCase):
                # turboprops and light aircraft added to the table for their icon and size, to be traced
                "AC11", "AC6L", "AC90", "AC95", "AT3T", "AT8T", "BE10", "BE30", "BE33", "BE35", "BE99",
                "BE9L", "BE9T", "C425", "C441", "CN35", "DHC3", "E110", "E120",
-               "EPIC", "F27", "F50", "G159", "JS31", "JS32", "JS41", "KODI", "MU2", "P180", "PA31T",
+               "EPIC", "F27", "F50", "G159", "JS41", "KODI", "MU2", "P180", "PA31T",
                "PA42", "PAY1", "PAY2", "PAY3", "PAY4", "PC21", "PC6", "PC7", "PC9", "SF34",                "T34P", "T34T"}
 
     def test_every_type_has_its_own_profile(self):

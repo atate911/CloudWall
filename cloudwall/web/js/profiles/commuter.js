@@ -244,7 +244,40 @@ F.c212 = commuter({
   },
 });
 
+// ---------- BAe Jetstream 31 / 32 ----------
+// References: published dimensions (Wikipedia: length 14.37 m, span 15.85 m, height 5.32 m) and Commons
+// photos: "XX500 at RNAS Culdrose (8105701505).jpg" (a Jetstream T2, the same airframe, near
+// broadside and distant) scaled to the length for the outline, windows, emergency exit and flight
+// deck; "ZE438 (15924180000).jpg" (a Jetstream T3, the naval Jetstream 31) for the fin, rudder and
+// the tailplane's height on the fin; the port-side "Pascan Aviation - BAe Jetstream 32 - C-GPPS"
+// for the nacelles, wing root and airstair door. Round pressurised fuselage with a long drooping
+// nose and oval windows, low wing, TPE331 nacelles reaching past the trailing edge, swept fin with
+// the tailplane a third of the way up it; gear retracted.
+F.js31 = commuter({
+  L0: 14.37, W: 1.98,
+  body: [
+    [0, 0.38, "c"], [0.08, 0.52], [0.44, 0.69], [1.28, 0.99], [2.04, 1.26], [2.38, 1.39], [2.7, 1.58], [3.14, 1.9], [3.5, 1.99],
+    [3.98, 2.03, "l"], [10.5, 2.04], [10.97, 2.18], [11.3, 2.44, "l"], [13.46, 4.42, "c"], [14.37, 4.42, "c"], [13.62, 1.5],
+    [13.56, 1.2], [13.52, 1.0, "c"], [13.08, 0.84], [11.4, 0.5], [9.3, 0.22], [8.0, 0.04, "l"], [2.0, 0], [1.2, 0.02], [0.5, 0.1],
+    [0.15, 0.22], [0.03, 0.31],
+  ],
+  glass: [
+    [[2.62, 1.1], [3.12, 1.62], [3.22, 1.64], [3.22, 1.1]],
+    [[3.28, 1.26], [3.28, 1.66], [3.52, 1.7], [3.52, 1.26]],
+  ],
+  wing: { le: 5.2, root: 0.85, span: 15.85, cr: 2.25, ct: 0.95, sweep: 2, dih: 7, z: 0.25, t: [0.16, 0.12] },
+  eng: { kind: "prop", at: [0.27], fwd: 2.15, drop: -0.25, len: 4.6, dia: 0.8, spinner: 0.09, tailZ: -0.2, belly: 0.9, prop: 2.7, blades: 4 },
+  stab: { le: 2.77, z: 2.5, span: 6.6, root: 0.12, cr: 1.6, ct: 0.8, sweep: 18, dih: 3, thick: 0.1 },
+  parts: {
+    wins: [[1.36, 0.34, 0.4, [4.24, 4.82, 5.43, 6.21, 6.95, 7.56, 8.19]]],
+    doors: [rect(6.0, 6.45, 0.95, 1.65, 0.12), rect(8.62, 9.32, 0.18, 1.72, 0.14)],
+    lines: [[[13.78, 1.9], [13.98, 4.4]]],
+  },
+});
+// Jetstream 32 (Super 31): the same airframe with more powerful engines.
+F.js32 = F.js31;
+
 export const families = F;
 export const types = {
-  D228: "d228", DHC6: "dhc6", SH33: "sh33", SH36: "sh36", C212: "c212",
+  D228: "d228", DHC6: "dhc6", SH33: "sh33", SH36: "sh36", C212: "c212", JS31: "js31", JS32: "js32",
 };
