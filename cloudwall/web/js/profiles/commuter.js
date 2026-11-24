@@ -198,7 +198,53 @@ F.sh33 = commuter({
   },
 });
 
+// ---------- CASA C-212 Aviocar (Series 300 / 400) ----------
+// References: published dimensions (Wikipedia: length 16.15 m, span 20.28 m, height 6.6 m, propellers
+// 2.74 m, four blades) and the Commons side-view illustration "Casa Aviocar Fuerza Aérea
+// Dominicana.svg" scaled to the length for the outline, nacelles, wing, winglets, portholes and doors,
+// checked against the near side-on photo "Skytraders (VH-VHA) CASA C-212-400 Aviocar at Sydney
+// Airport.jpg" (fuselage depth to length within 3 %, the gear stations). The 300 and 400 have the
+// longer nose with a baggage hold and winglets that the earlier 100 and 200 lack. Box fuselage
+// with round portholes, wing on its roof, TPE331 nacelles ahead of it, fixed gear in sponsons, and a
+// rear loading ramp under the upswept tail.
+F.c212 = commuter({
+  L0: 16.15, W: 2.3,
+  body: [
+    [0, 0.54, "c"], [0.05, 0.64], [0.18, 0.76], [0.38, 0.87], [0.62, 0.98], [0.93, 1.1], [1.43, 1.26], [2.06, 1.41], [2.38, 1.76], [2.67, 2.05],
+    [2.82, 2.14], [3.05, 2.21], [3.47, 2.27], [4.55, 2.3, "l"], [9.1, 2.33], [10.18, 2.37, "l"], [13.75, 3.54, "c"], [14.23, 5.88, "c"],
+    [15.34, 5.88, "c"], [15.59, 4.8], [16.06, 2.61], [16.15, 2.39, "c"], [16.07, 2.3], [15.84, 2.24], [14.15, 1.96], [13.61, 1.84],
+    [11.32, 0.69], [10.66, 0.36], [10.2, 0.12], [9.93, 0.06, "l"], [7.1, 0.01], [3.29, 0], [1.86, 0.07], [0.87, 0.17], [0.45, 0.24],
+    [0.13, 0.33], [0.05, 0.38],
+  ],
+  glass: [
+    [[2.12, 1.38], [2.58, 1.79], [2.8, 1.8], [2.8, 1.38]],
+    [[2.9, 1.38], [2.9, 1.8], [3.35, 1.8], [3.35, 1.38]],
+  ],
+  wing: { le: 6.39, root: 1.15, span: 20.28, cr: 2.45, kink: [0.35, 2.45], ct: 1.3, sweep: 0, dih: 1, z: 2.38, t: [0.13, 0.11] },
+  stab: { le: 2.25, z: 2.45, span: 8.4, root: 0.3, cr: 2.0, ct: 1.2, sweep: 8, dih: 0, thick: 0.1 },
+  parts: {
+    under: [["pant", [[6.25, 0.36], [6.65, 0.74], [7.4, 0.8], [8.2, 0.74], [8.6, 0.38], [8.2, 0.04], [7.4, -0.02], [6.65, 0.04]]]],
+    wins: [[1.38, 0.33, 0.33, [4.77, 5.54, 6.34, 7.1, 7.87, 8.63]]],
+    doors: [
+      [[3.5, 0.28, "l"], [4.15, 0.28, "l"], [4.15, 1.2], [3.83, 1.47], [3.5, 1.2, "l"]],
+      rect(9.22, 9.98, 0.37, 1.98, 0.14), rect(0.71, 1.51, 0.3, 1.0, 0.1),
+    ],
+    lines: [[[14.99, 5.1], [15.13, 2.62]], [[0.62, 0.22], [0.6, 0.98]], [[10.2, 0.12], [15.84, 2.24]]],
+    gear: [
+      { leg: [[7.35, 0.1], [7.35, -0.3]], w: [0.2, 0.16], at: [7.35, -0.33], r: 0.37 },
+      { leg: [[1.95, 0.08], [1.95, -0.42]], w: [0.09, 0.07], at: [1.95, -0.45], r: 0.3 },
+    ],
+    nacelles: [{
+      s: 4.46, z: 2.24, sp: 0.5, sr: 0.28, prop: 2.74, blades: 4, inlet: [0.7, -0.4, 0.09, 0.07],
+      outline: [[0, 0, "c"], [0.2, 0.2], [0.5, 0.28, "c"], [0.62, 0.35], [1.0, 0.37], [2.3, 0.34], [3.5, 0.2], [4.5, 0.06, "c"],
+        [3.6, -0.06], [2.8, -0.22], [1.9, -0.49], [1.0, -0.52], [0.6, -0.45], [0.52, -0.3], [0.5, -0.28, "c"], [0.2, -0.2]],
+    }],
+    // the winglets, seen edge-on above the wing
+    shapes: [["wl", [[7.0, 2.5, "c"], [8.5, 3.12, "c"], [8.62, 3.1, "c"], [8.62, 2.46, "c"]]]],
+  },
+});
+
 export const families = F;
 export const types = {
-  D228: "d228", DHC6: "dhc6", SH33: "sh33", SH36: "sh36",
+  D228: "d228", DHC6: "dhc6", SH33: "sh33", SH36: "sh36", C212: "c212",
 };
