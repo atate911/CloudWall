@@ -189,11 +189,11 @@ class BrowserTest(unittest.TestCase):
         self.assertEqual((east["head"], east["about"], east["flight"], east["sub"]), ("Boeing 737-800", "B738", "DL 178", ""))
         self.assertNotIn("Aircraft", east["facts"])                          # the headline says it
         self.assertEqual(west["sub"], "DAL21K")                              # a callsign that isn't the flight number again is worth showing
-        # the airports as on a map: the western one on the left, whichever way the flight is going
+        # origin on the left, destination on the right, whichever way the flight is going on the map
         self.assertEqual((east["airports"], east["rev"]), (["From PDX", "To JFK"], False))
-        self.assertEqual((west["airports"], west["rev"]), (["To PDX", "From JFK"], True))
-        # the aircraft's own drawing rides the line between them, facing the way it's going
-        self.assertEqual((east["rider"], west["rider"]), (1, -1))
+        self.assertEqual((west["airports"], west["rev"]), (["From JFK", "To PDX"], False))
+        # the aircraft's own drawing rides the line between them, flying left to right
+        self.assertEqual((east["rider"], west["rider"]), (1, 1))
         # no flight number: the registration stands in its place, and isn't said again among the facts
         private = c["private"]
         self.assertEqual((private["head"], private["flight"]), ("Boeing 737-800", "N3765"))

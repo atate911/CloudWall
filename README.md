@@ -70,9 +70,9 @@ in the address, and `[kiosk] density` sets the wall panel's.
   altitude the autopilot is heading for, when it reports one), speed, distance and how high up
   to look ("2.3 mi NW, 13° up"), heading,
   and a photo of the airframe beside when it passes the house, its seats,
-  registration and build year, and what the autopilot is doing. The two airports stand as on a
-  map, the one further west on the left whichever way the flight is going, with "From" and "To"
-  over them; on the line between them rides the aircraft itself, its own side elevation in small,
+  registration and build year, and what the autopilot is doing. The two airports stand origin
+  on the left and destination on the right, whichever way the flight is going, with "From" and "To"
+  over them, so the line between them always fills left to right; on the line between them rides the aircraft itself, its own side elevation in small,
   facing the way it's going, with an arrowhead at the destination's end. The departure time comes from
   a paid route provider (see below); without one, the card shows an estimated arrival only.
   The photo is of that very airframe (planespotters.net files photos by airframe, so a tail
