@@ -1,0 +1,29 @@
+name = "Epic LT"
+types = ["EPIC"]
+production = [2006, 2019]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Epic_LT",
+]
+
+text = """
+The Epic LT was sold as a kit, for its owners to build: a six-seat turboprop of carbon-fibre
+composite with retractable gear and a Pratt & Whitney Canada PT6A-67A flat-rated to 1,200 hp, good
+for 340 knots at its fastest cruise. Epic Air of Bend, Oregon designed it for private pilots who
+wanted that speed in a single, and its owners built their kits under factory supervision at Bend,
+later at other sites with Epic's help. The prototype flew in 2004 and the first was finished in
+2006.
+
+Epic went bankrupt in August 2009 while it was trying to certify a factory-built version, the
+Dynasty. New owners took over in April 2010, stopped selling kits in 2012 and won FAA
+certification for the design as the Epic E1000 in 2019; the 54th and last LT received its
+certificate of airworthiness in December 2018. In July 2016 six LTs left the Oshkosh airshow
+together to fly round the world, flown by their owners.
+"""
+
+[facts]
+"First flight" = "2004"
+"Built" = "54"
+"Engine" = "Pratt & Whitney Canada PT6A-67A, flat-rated to 1,200 hp"
+"Cruise" = "340 kt"
+"Range" = "1,874 nm, with long-range tanks"
