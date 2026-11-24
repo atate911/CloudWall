@@ -140,8 +140,9 @@ F.dhc6 = commuter({
 
 // ---------- Short 360 and 330 ----------
 // References: published dimensions (Wikipedia: 360-300 length 21.58 m, span 22.81 m, height 7.21 m;
-// 330-200 length 17.69 m, span 22.76 m, height 4.95 m; the 360 adds a 0.91 m plug ahead of the wing
-// and a new rear fuselage and tail) and near side-on Commons photos scaled to those lengths: for the
+// 330-200 length 17.69 m, span 22.76 m, height 4.95 m; the 360 adds a 0.91 m plug, which the photos
+// put ahead of the wing, one window more there, and a new rear fuselage and tail) and near side-on
+// Commons photos scaled to those lengths: for the
 // 360 "Short 360-300, RAS - Rheinland Air Service AN0908076.jpg" (broadside; heights scaled by 0.96 to
 // its published height), checked against "Short 360-200, Aerocondor JP5963911.jpg" and "Night Express
 // Short 360-300(F) D-CRAS"; for the 330 "Short 330 (DLT) at FRA 1983-02-28 (2).jpg", its stations aft
