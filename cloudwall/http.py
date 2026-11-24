@@ -2,7 +2,11 @@ import json
 import urllib.error
 import urllib.request
 
-UA = "CloudWall/0.1 (hobby flight board)"
+from . import __version__
+
+# How CloudWall names itself to the services it asks: with a way to reach its makers, which some ask
+# for and planespotters.net requires (without one, every photo lookup is refused with a 403)
+UA = f"CloudWall/{__version__} (+https://github.com/atate911/CloudWall)"
 
 
 def get_json(url, timeout=12, headers=None):
