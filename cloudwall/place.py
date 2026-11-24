@@ -51,7 +51,9 @@ class Place:
     def summary(self):
         ap = self.cfg["airport"]
         return {"id": self.id, "name": self.name, "icao": ap["icao"], "iata": ap["iata"], "city": ap.get("city"),
-                "zip": self.cfg["home"].get("zip"), "added": self.added}
+                "zip": self.cfg["home"].get("zip"), "added": self.added,
+                # to a few hundred feet: enough for a screen using its own location to find a place already there
+                "lat": round(self.cfg["home"]["lat"], 3), "lon": round(self.cfg["home"]["lon"], 3)}
 
     # -- what a screen asks for (server.py) ---------------------------------------------
     def state(self, pin=None, range_nm=0, square=False, reach=1.0):

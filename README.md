@@ -267,6 +267,13 @@ disk: set the same place up again and it carries on in it, while a different pla
 same name starts one of its own. Each screen remembers its own place, so the kiosk can show home
 while a laptop shows the cabin.
 
+"Use my location…" in the same menu (and "Use this device's location" in the Set a location box)
+asks the browser where the device is and centres the radar there: if a place is already set up
+within about a mile, the screen switches to it; otherwise the coordinates are filled in, to choose
+the airport and save as above. Browsers give a page its location only over HTTPS or at
+`localhost`, so a phone on the house network at `http://<address>:5050` can't use it: reach
+CloudWall through whatever serves it over HTTPS (see the private link, below), or type a ZIP code.
+
 The kiosk has no menu: it shows `[kiosk] place` (a place's name, the first when empty), and
 `?place=` in the address picks one on any screen.
 
