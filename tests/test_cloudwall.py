@@ -1452,6 +1452,11 @@ class ServerTest(unittest.TestCase):
                 config.check("server", {"key": bad})
         self.assertEqual(access.admit("/k/Tafo-Kemi-Luza-Nobe/api/state?range=15", access.tidy("tafo-kemi-luza-nobe")), ("in", "/api/state?range=15"))
 
+    def test_it_names_itself_with_a_way_to_reach_it(self):
+        # planespotters.net refuses a User-Agent with no contact URL or email: no photos at all
+        from cloudwall.http import UA
+        self.assertRegex(UA, r"^CloudWall/[\d.]+ \(\+https://\S+\)$")
+
     def test_the_private_link_is_written_into_the_config(self):
         import tempfile
         from pathlib import Path
