@@ -1,0 +1,33 @@
+name = "Pilatus PC-6 Porter"
+types = ["PC6"]
+production = [1959, 2022]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Pilatus_PC-6_Porter",
+  "https://www.pilatus-aircraft.com/assets/files/Model-Building-Plans/PC-6-Model-Building-Plan.pdf",
+]
+
+text = """
+Pilatus built the Porter at Stans, in the Swiss mountains, to land where otherwise only a
+helicopter could. Carrying 1,200 kg it takes off in 640 ft and lands in 427, from grass, gravel,
+snow or rough strips at altitude, and one holds the record for the highest landing by a fixed-wing
+aircraft, at 18,865 ft on the Dhaulagiri glacier in Nepal. The long-legged main gear and the
+tailwheel hold the wing and propeller high off rough ground, and big sliding doors on both sides
+of the cabin let out paratroops, skydivers and supply drops: in the early 1990s
+about 40 per cent of the PC-6s in Europe were flying skydivers.
+
+The first flew in May 1959 with a 340 hp Lycoming piston engine, and the Turbo Porter followed in
+1961, first with a Turbomeca Astazou turboprop, then the Garrett TPE331 and from 1966 the Pratt &
+Whitney Canada PT6A that most of them have. Fairchild Hiller built about 100 under licence in the
+United States, some as the AU-23A Peacemaker gunship for the Vietnam War, and the CIA's airline Air
+America flew up to 23 at a time over South-East Asia. Pilatus delivered the last of 604 in December
+2022, after 63 years. Know it by the long slim nose, the slab-sided cabin under a wing braced by a
+single strut each side, and the tall, square fin.
+"""
+
+[facts]
+"First flight" = "May 1959 (Turbo Porter: May 1961)"
+"Built" = "604"
+"Engine" = "Pratt & Whitney Canada PT6A-27, 410 kW (PC-6/B2-H4)"
+"Takeoff distance" = "1,444 ft (440 m) over a 50 ft obstacle (PC-6/B2-H4)"
+"Cruise" = "125 kt (PC-6/B2-H4)"

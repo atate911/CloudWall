@@ -1,0 +1,36 @@
+name = "Pilatus PC-21"
+types = ["PC21"]
+production = [2008]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Pilatus_PC-21",
+  "https://www.pilatus-aircraft.com/assets/files/Model-Building-Plans/PC-21-Model-Building-Plan.pdf",
+  "https://www.pilatus-aircraft.com/en/fly/pc-21",
+]
+
+text = """
+Pilatus designed the PC-21 to do most of a jet trainer's work at a turboprop's cost, so that
+student pilots reach their jets, and their squadrons, with fewer expensive hours behind them. A
+1,600 shp PT6A-68B turns a five-blade graphite scimitar propeller, the wing is stressed for 8 g,
+and hydraulically boosted ailerons working with spoilers give it a fighter's rate of roll, while a
+digital power management system and an automatic yaw compensator keep all that power from making
+it hard to fly slowly. Student and instructor sit stepped under one bird-strike-resistant canopy,
+in a pressurised cockpit with Martin-Baker zero-zero ejection seats and a head-up display each, and
+from the back seat the instructor can feed the student simulated radar targets, weapons and system
+failures in flight.
+
+It first flew in July 2002 and joined the Swiss Air Force in 2008. Singapore was the first export
+customer, training its pilots at RAAF Pearce in Australia, and Australia, France, Spain,
+Saudi Arabia, Qatar, the United Arab Emirates and Jordan followed; in May 2026 Canada chose it to
+replace its Canadair Tutors, as a trainer and as the mount of the Snowbirds display team. Tell it from the older
+Pilatus trainers by its long pointed nose, one long canopy and the big fillet blending the wing
+into the fuselage.
+"""
+
+[facts]
+"First flight" = "July 2002"
+"Entered service" = "April 2008 (Swiss Air Force)"
+"Engine" = "Pratt & Whitney Canada PT6A-68B, 1,600 shp"
+"Cruise" = "337 kt at 10,000 ft"
+"Top speed" = "370 kt (maximum operating speed)"
+"Built" = "over 200"
