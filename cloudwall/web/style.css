@@ -976,11 +976,16 @@ body.night .k-who .logo-tile { height: min(9vh, 10cqi); padding: .8vh 1.4vh; bor
 /* the card alone: the route line runs the width of the screen, the drawing larger on it, and under
    it when the aircraft left, how far it has come and has to go, and when it gets in */
 /* the airline and the type beside the flight number rather than under it */
-.card-only .k-head { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 4vh; align-items: center; }
+.card-only .k-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 4vh; align-items: center; }
 .card-only .k-id { display: contents; }
 .card-only .k-flight { grid-row: 1 / 3; font-size: min(16vh, calc(104cqi / var(--n, 6))); }
 .card-only .k-who { grid-column: 2; align-self: end; }
 .card-only .k-type { grid-column: 2; align-self: start; margin-top: 1vh; }
+/* the airframe's photo at the head's right, as tall as the flight number beside it */
+.k-photo { display: none; }
+.card-only .k-photo:not([hidden]) { display: block; grid-column: 3; grid-row: 1 / 3; align-self: center; height: min(19vh, 22cqi); aspect-ratio: 3 / 2;
+  border-radius: 1vh; }
+.k-photo .credit { font-size: 1.7vh; padding: .2vh 0 0 .8vh; border-top-left-radius: .6vh; }
 .card-only .k-line { height: 12vh; }
 .card-only .k-craft { --h: min(12vh, calc(46cqw / var(--ar))); }
 .card-only .k-apt b { font-size: min(12vh, 12cqi); }
@@ -2005,6 +2010,13 @@ html.desk:not(.phone) .hero-card.fit-nomap .route.mapped { grid-template-rows: a
 html.desk:not(.phone) .hero-card.fit-nomap > .h-route { flex: none; }
 html.desk:not(.phone) .hero-card.fit-noplate .h-bottom .media { display: none; }
 html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) > .h-bottom { flex: none; min-height: 0; display: block; }
+/* a card with its map: the drawing already rides the route line, so a photo of the airframe, when there
+   is one, takes the drawing's place whole; and where there's no room for the drawing under a map
+   across the card, the photo still stands beside the facts, small */
+html.desk:not(.phone) .hero-card.mapped:not(.fit-nomap) .h-bottom .media.has-photo .sil-box { display: none; }
+html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) > .h-bottom:has(.media.has-photo) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.4rem; align-items: center; }
+html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) .h-bottom .media.has-photo { display: flex; order: 2; width: auto; height: 8.5rem; aspect-ratio: 3 / 2; max-height: none; }
+html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) .h-bottom .media.has-photo .sil-box { display: none; }
 /* the card's switch set to Aircraft, the map beside the facts: the drawing stands in the map's place */
 html.desk:not(.phone) .hero-card.map-beside.pic-plate > .h-bottom > .rmap { display: none; }
 html.desk:not(.phone) .hero-card.map-beside.pic-plate .h-bottom .media { display: flex; grid-column: 1; grid-row: 1 / -1; aspect-ratio: auto; height: 100%; min-height: 6.5rem; max-height: none; align-self: stretch; }

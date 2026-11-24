@@ -84,6 +84,7 @@ function planeHtml() {
       <div class="k-id"><div class="flaps k-flight" id="k-flight"></div>
         <div class="k-who"><div class="logo-tile" id="k-logo" hidden><img class="logo" id="k-logo-img" alt=""></div><span id="k-airline"></span></div></div>
       <div class="k-type" id="k-type"></div>
+      <figure class="photo k-photo" id="k-photo" hidden></figure>
     </div>
     <div id="k-route"></div>
     <div class="k-read">
@@ -94,9 +95,27 @@ function planeHtml() {
   </div>`;
 }
 
+// A photo of this very airframe (planespotters.net), at the head of the card beside its flight
+// number, once it has loaded, with its photographer's credit on it as their terms ask
+function showPhoto(a) {
+  const fig = $("k-photo");
+  if (!fig || !a.photo || !a.photo_by || cur.photo === a.photo) return;
+  cur.photo = a.photo;
+  const img = new Image();
+  img.referrerPolicy = "no-referrer";
+  img.alt = "";
+  img.onload = () => {
+    if (cur.photo !== a.photo || !fig.isConnected) return;
+    fig.innerHTML = `<span class="credit">© ${esc(a.photo_by)} · planespotters.net</span>`;
+    fig.prepend(img);
+    fig.hidden = false;
+  };
+  img.src = a.photo;
+}
+
 function showPlane(el, a, state) {
   if (cur.hex !== a.hex) {
-    cur = { hex: a.hex, routeKey: null };
+    cur = { hex: a.hex, routeKey: null, photo: null };
     el.innerHTML = planeHtml();
     showLogo($("k-logo"), $("k-logo-img"), state, a.airline_iata, $("k-airline"));
   }
@@ -111,6 +130,7 @@ function showPlane(el, a, state) {
     h && [h.code, h.state, h.eta_s == null ? null : Math.round((h.eta_s - since(state)) / 60)],
     !(a.route && a.route.plausible) && !a.local && !a.medical ? whereWords(a, state) : null]);
   if (key !== cur.routeKey) { cur.routeKey = key; $("k-route").innerHTML = routeBlock(a, state); }
+  showPhoto(a);
   const v = a.vrate || 0;
   $("k-alt").innerHTML = `${a.on_ground ? "0" : num(a.alt)}${v > 300 ? '<i class="up">▲</i>' : v < -300 ? '<i class="down">▼</i>' : ""}`;
   $("k-alt-l").textContent = a.on_ground ? "on the ground" : v > 300 ? "feet, climbing" : v < -300 ? "feet, descending" : "feet";
