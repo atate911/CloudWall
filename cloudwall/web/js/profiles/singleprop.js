@@ -345,7 +345,53 @@ F.kodi = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Epic LT ----------
+// No three-view reachable: measured from the near side-on photo File:Epic_LT_Dynasty.JPG (Wikimedia
+// Commons: N6XK, the LT the company flew as its certification prototype), rendered 1920 px wide and
+// scaled by the 35 ft 10 in (10.92 m) length (Wikipedia, Epic LT, from Epic), spinner to tailplane
+// tip, 6.2 mm a pixel. Lower confidence (photo, taken from a little ahead): the wing, foreshortened in
+// it, is drawn from its 43 ft span and 203.6 sq ft area. Gear drawn up. The long PT6A-67 cowl with
+// its side exhaust stack, the pointed windscreen, the slim carbon fuselage with four oval windows a
+// side, the low wing and the swept fin with the tailplane on its root.
+const oval = (s, z, rx, ry) => Array.from({ length: 8 }, (_, i) => [s + rx * Math.cos(i * Math.PI / 4), z + ry * Math.sin(i * Math.PI / 4), ""]);
+F.epic = {
+  kind: "turboprop", L0: 10.92, over: 0, D: 1, W: 1.4,
+  body: [
+    [0, 0.83, "c"], [0.15, 0.95], [0.4, 1.05], [0.73, 1.13], [1.6, 1.21], [2.3, 1.25], [2.97, 1.29, "c"], [3.4, 1.46], [3.78, 1.58],
+    [4.47, 1.66], [5.33, 1.68], [6.57, 1.61], [7.5, 1.52], [8.1, 1.46], [8.35, 1.46], [8.75, 1.62], [9.06, 1.86, "l"], [9.8, 2.47],
+    [9.92, 2.52, "l"], [10.55, 2.53, "c"], [10.05, 1.18, "c"], [9.93, 1.0], [9.75, 0.68], [9.5, 0.55], [8.33, 0.37], [7.1, 0.24],
+    [5.85, 0.12], [4.5, 0.04], [3.47, 0.02], [2.2, 0.0], [1.3, 0.02], [1.0, 0.1], [0.85, 0.28], [0.73, 0.52, "c"], [0.4, 0.62],
+    [0.15, 0.72],
+  ],
+  // the pilot's side window under the pointed windscreen, and the four oval cabin windows
+  glass: [
+    [[3.0, 1.33, "c"], [3.45, 1.47, ""], [3.8, 1.54, ""], [4.24, 1.48, "c"], [4.2, 1.3, ""], [4.0, 1.19, "c"], [3.4, 1.24, ""]],
+    oval(4.63, 1.335, 0.22, 0.155), oval(5.415, 1.34, 0.21, 0.155), oval(6.16, 1.31, 0.2, 0.14), oval(6.86, 1.27, 0.19, 0.14),
+  ],
+  frame: 0.02,
+  wing: { le: 4.0, root: 0.6, span: 13.1, cr: 1.9, ct: 1.0, sweep: 5, dih: 5, z: 0.15, t: [0.15, 0.12] },
+  eng: { kind: "none", nose: { s: 0.7, z: 0.83, d: 2.3, blades: 4 } },
+  stab: {},
+  stabSide: [
+    ["stab", [[8.6, 1.1, "c"], [9.0, 1.16], [10.2, 1.15], [10.92, 1.04, "c"], [10.2, 1.0], [9.0, 1.04]]],
+  ],
+  parts: {
+    // the cabin door
+    doors: [rect(5.8, 6.54, 0.38, 1.58, 0.14)],
+    // the rudder hinge and the cowling's rear seam
+    lines: [[[10.2, 2.52], [9.82, 1.25]], [[2.81, 1.28], [2.81, 0.02]]],
+    // the exhaust stack, the spine antennas
+    shapes: [
+      ["core", [[1.14, 0.83, "c"], [1.25, 0.93], [1.7, 0.92, "c"], [1.73, 0.72, "c"], [1.25, 0.73]]],
+      ["strut", [[7.45, 1.53, "c"], [7.8, 1.9, "c"], [7.85, 1.88, "c"], [7.65, 1.51, "c"]]],
+      ["strut", [[5.5, 1.67, "c"], [5.53, 1.76, "c"], [5.62, 1.76, "c"], [5.63, 1.67, "c"]]],
+    ],
+    dots: [["inlet", 1.66, 0.82, 0.05, 0.08]],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 export const families = F;
 export const types = {
-  PC6: "pc6", PC9: "pc9", PC21: "pc21", DHC3: "dhc3", KODI: "kodi",
+  PC6: "pc6", PC9: "pc9", PC21: "pc21", DHC3: "dhc3", KODI: "kodi", EPIC: "epic",
 };
