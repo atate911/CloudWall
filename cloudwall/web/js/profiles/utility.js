@@ -331,7 +331,60 @@ F.t34t = stretch(F.t34p, 1.6, 0.68, {
   };
 }
 
+// ---------- Rockwell Commander 112 / 114 ----------
+// Reference: Aero Commander 112 "Three view dimensions" (Wikimedia Commons,
+// File:Aero_Commander_112_3-view_line_drawing.png, Wikipedia article Rockwell Commander 112), a
+// manufacturer's drawing: its side view measured with its own 24 ft 10 in length dimension and drawn
+// at the published 24 ft 11 in (7.59 m, types.csv), about 0.85 cm a pixel; its 32 ft 9 in span,
+// 12 ft 6 in tailplane and 76 in propeller are used as given. The side view is drawn without the
+// propeller and with the gear down: the propeller is the renderer's two-blade one at that diameter
+// and the gear is drawn retracted. The long pointed spinner and raked cowl, the windscreen running
+// back in one curve to the roof, the door window behind the thick windscreen post and the tapered rear
+// window, the swept dorsal and fin with the tailplane set halfway up it (out of the propeller's wash),
+// and the rudder running down to the bottom of the tail cone.
+F.ac11 = {
+  kind: "piston", L0: 7.59, over: 0, D: 1, W: 1.25,
+  body: [
+    [0, 0.69, "c"], [0.15, 0.75], [0.3, 0.8], [0.51, 0.87, "c"], [0.6, 0.9], [1.0, 0.95], [1.3, 0.965], [1.62, 0.97, "c"],
+    [1.8, 1.06], [2.0, 1.15], [2.2, 1.22], [2.5, 1.27], [3.0, 1.29], [3.5, 1.25], [4.0, 1.15], [4.5, 1.08], [5.0, 1.02],
+    [5.5, 0.98], [5.65, 0.975], [5.85, 1.03], [6.0, 1.12], [6.12, 1.21, "l"], [6.95, 1.83], [7.05, 1.95], [7.15, 1.98],
+    [7.35, 1.96, "l"], [7.61, 1.94, "cl"], [7.47, 0.5, "c"], [7.5, 0.42], [7.47, 0.25], [7.4, 0.2], [7.2, 0.18], [6.5, 0.13],
+    [6.0, 0.09], [5.5, 0.06], [5.0, 0.04], [4.5, 0.02], [4.0, 0.0], [3.5, 0.0], [3.0, 0.01], [2.5, 0.04], [2.0, 0.07],
+    [1.6, 0.1], [1.3, 0.12], [1.0, 0.15], [0.92, 0.19], [0.8, 0.29], [0.6, 0.44], [0.51, 0.5, "c"], [0.3, 0.57], [0.15, 0.62],
+  ],
+  // windscreen side, door window, the tapered rear window
+  glass: [
+    [[1.7, 0.99], [1.95, 1.12, ""], [2.37, 1.22], [2.14, 0.84], [2.05, 0.93]],
+    [[2.3, 0.79], [2.5, 1.15], [3.02, 1.16], [3.04, 0.68], [2.6, 0.7, ""]],
+    [[3.2, 0.65], [3.2, 1.1], [3.6, 1.08, ""], [4.0, 0.98, ""], [4.2, 0.9], [3.9, 0.72, ""], [3.5, 0.65, ""]],
+  ],
+  frame: 0.04,
+  wing: { le: 2.05, root: 0.6, span: 9.98, cr: 1.9, ct: 1.2, sweep: 3, dih: 7, z: 0.12, t: [0.15, 0.12] },
+  // the wing as the drawing has it: the root fillet rising to the root section, the flap at the root
+  wingSide: [
+    ["wing", [[2.03, 0.2, "c"], [2.2, 0.3], [2.3, 0.45], [2.36, 0.6], [2.45, 0.67], [2.7, 0.69], [3.0, 0.66], [3.2, 0.62, "l"],
+      [3.95, 0.02, "c"], [3.5, 0.0], [3.0, 0.03], [2.5, 0.1], [2.2, 0.16]]],
+    ["hl", [[2.45, 0.62], [2.8, 0.58], [3.15, 0.59]], false],
+    ["hl", [[3.1, 0.6, "l"], [3.42, 0.3, "l"], [3.7, 0.02]], false],
+    ["hl", [[3.42, 0.3], [3.68, 0.3]], false],
+  ],
+  eng: { kind: "none", nose: { s: 0.45, z: 0.69, d: 1.93, blades: 2 } },
+  stab: { le: 1.37, z: 1.07, span: 3.81, root: 0.15, cr: 1.1, ct: 0.75, sweep: 10, dih: 0, thick: 0.1 },
+  parts: {
+    // the door around its window (one each side), the baggage door
+    doors: [[[2.06, 0.82, "c"], [2.45, 1.21, "c"], [3.12, 1.23, "c"], [3.12, 0.4, "c"], [2.05, 0.34, "c"]],
+      rect(3.9, 4.48, 0.1, 0.62, 0.06)],
+    // spinner seam, the cowl's split line and aft seam; rudder hinge, the fin cap's joint; the fuselage top under the dorsal
+    lines: [[[0.51, 0.87], [0.51, 0.5]], [[0.6, 0.66], [1.6, 0.57]], [[1.6, 0.97], [1.6, 0.1]],
+      [[6.57, 0.16], [7.31, 1.85]], [[7.0, 1.86], [7.6, 1.83]], [[4.0, 1.04], [5.5, 0.82], [7.47, 0.5]]],
+    // the cooling inlet behind the spinner, the beacon on the fin cap
+    shapes: [["inlet", [[0.6, 0.79, "c"], [0.72, 0.77, "c"], [0.72, 0.62, "c"], [0.6, 0.6, "c"]]],
+      ["hub", [[7.05, 1.95, "c"], [7.12, 2.03], [7.2, 1.97, "c"]]]],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 export const families = F;
 export const types = {
-  BE33: "be33", BE35: "be35", T34P: "t34p", T34T: "t34t",
+  BE33: "be33", BE35: "be35", T34P: "t34p", T34T: "t34t", AC11: "ac11",
 };
