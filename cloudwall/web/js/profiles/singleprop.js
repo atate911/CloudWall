@@ -167,7 +167,69 @@ F.pc9 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Pilatus PC-6 Porter / Turbo Porter ----------
+// Reference: "Pilatus PC-6 Turbo-Porter 3-view line drawing" (Wikimedia Commons,
+// File:Pilatus_PC-6_Turbo-Porter_3-view_line_drawing.svg, Wikipedia article Pilatus PC-6 Porter),
+// the side view rendered 1920 px wide and scaled by the 10.90 m length in Pilatus's PC-6 model
+// building plan (8.4 mm a pixel). A PT6A Turbo Porter: the long slim cowl with its exhaust stack,
+// the deep slab-sided cabin with the wing sitting on its roof, a single strut each side, the big
+// sliding door, the tall square fin and rudder, and the long-legged main gear and tailwheel.
+F.pc6 = {
+  kind: "turboprop", L0: 10.9, over: 0, D: 1, W: 1.2,
+  body: [
+    [0, 0.5, "c"], [0.15, 0.62], [0.32, 0.73], [0.5, 0.82], [0.56, 0.86, "c"], [1.0, 0.94], [1.5, 1.0], [2.0, 1.07], [2.5, 1.13],
+    [3.05, 1.18, "c"], [3.25, 1.33], [3.42, 1.47], [3.62, 1.54, "l"], [5.6, 1.54, "l"], [6.0, 1.52, "l"], [7.1, 1.435, "cl"],
+    [9.12, 2.0, "cl"], [9.12, 3.13, "cl"], [9.56, 3.13, "cl"], [9.56, 3.25, "cl"], [10.3, 3.25, "cl"], [10.3, 1.33, "c"],
+    [10.43, 1.2], [10.48, 1.02, "c"], [10.0, 0.87, "l"], [6.27, 0.17, "cl"], [2.65, 0.0, "l"], [1.95, 0.04], [1.0, 0.12, "c"],
+    [0.98, 0.2], [0.9, 0.28, "c"], [0.56, 0.27, "c"], [0.4, 0.31], [0.2, 0.4],
+  ],
+  // the windscreen's side pane, the cockpit door window, the two arched cabin windows in the
+  // sliding door, and the round window behind it
+  glass: [
+    [[3.16, 1.2, "c"], [3.42, 1.43, ""], [3.62, 1.5, "c"], [3.6, 1.38, "c"], [3.32, 1.15, "c"]],
+    [[3.42, 1.33, "c"], [3.4, 0.75, "c"], [3.8, 0.72, "c"], [3.87, 1.28], [3.78, 1.36, "c"]],
+    [[4.16, 0.92, "c"], [4.16, 1.06, ""], [4.24, 1.22, ""], [4.45, 1.3, ""], [4.88, 1.3, "c"], [4.88, 0.92, "c"]],
+    [[4.96, 0.92, "c"], [4.96, 1.3, "c"], [5.4, 1.3, ""], [5.61, 1.22, ""], [5.69, 1.06, ""], [5.69, 0.92, "c"]],
+    [[5.79, 1.11, ""], [5.84, 1.22, ""], [5.95, 1.26, ""], [6.06, 1.22, ""], [6.11, 1.11, ""], [6.06, 1.0, ""], [5.95, 0.96, ""], [5.84, 1.0, ""]],
+  ],
+  frame: 0.035,
+  wing: { le: 3.55, root: 0.6, span: 15.87, cr: 1.9, ct: 1.9, sweep: 0, dih: 1, z: 1.55, t: [0.14, 0.14] },
+  // the wing on the cabin roof as the 3-view draws it, with its flap hinge line
+  wingSide: [
+    ["wing", [[3.55, 1.6, "c"], [3.7, 1.74], [4.0, 1.8], [4.5, 1.785], [5.0, 1.7], [5.4, 1.6], [5.65, 1.55, "c"], [5.0, 1.5], [4.0, 1.5], [3.6, 1.52]]],
+    ["hl", [[4.7, 1.53], [5.45, 1.56]], false],
+  ],
+  eng: { kind: "none", nose: { s: 0.45, z: 0.5, d: 2.67, blades: 3 } },
+  stab: {},
+  stabSide: [
+    ["stab", [[9.65, 1.2, "c"], [9.9, 1.27], [10.3, 1.27], [10.9, 1.16, "c"], [10.3, 1.12], [9.9, 1.12]]],
+  ],
+  parts: {
+    // the sliding cabin door and its split, the cockpit door
+    doors: [
+      [[4.05, 0.25, "c"], [4.05, 1.12], [4.3, 1.33], [5.5, 1.33], [5.75, 1.12], [5.75, 0.25, "c"]],
+      [[3.27, 1.4, "c"], [3.27, 0.3, "c"], [3.86, 0.3], [3.92, 0.5], [3.95, 1.36, "c"]],
+    ],
+    // the split between the sliding door's halves; the rudder hinge; the cowling's seams and panels
+    lines: [[[4.92, 0.25], [4.92, 1.33]], [[9.6, 3.13], [9.62, 1.3]], [[1.25, 0.96], [1.27, 0.12]], [[2.65, 1.13], [2.65, 0.0]],
+      [[1.27, 0.7], [2.65, 0.85]], [[1.3, 0.47], [2.65, 0.55]], [[6.27, 0.17], [6.27, 1.52]]],
+    struts: [[[4.0, 0.08], [4.0, 1.5], 0.1, 0.09], [[3.36, -0.6], [3.98, 0.0], 0.06, 0.06]],
+    gear: [
+      { leg: [[3.32, 0.0], [3.32, -0.65]], w: [0.08, 0.07], at: [3.32, -0.65], r: 0.33 },
+      { leg: [[10.5, 0.95], [10.47, 0.58]], w: [0.06, 0.05], at: [10.82, 0.42], r: 0.14,
+        lines: [[[10.47, 0.58], [10.82, 0.42]]], shapes: [["strut", [[10.44, 0.6], [10.5, 0.62], [10.84, 0.45], [10.8, 0.4]]]] },
+    ],
+    // the exhaust stack, the scoop under the cowling and the step under the cabin
+    shapes: [
+      ["core", [[0.68, 0.48, "c"], [0.75, 0.56], [0.98, 0.58, "c"], [0.98, 0.49, "c"], [0.75, 0.46]]],
+      ["strut", [[1.85, 0.05, "c"], [1.96, -0.05, "c"], [2.0, 0.04, "c"]]],
+      ["strut", [[4.72, 0.0], [4.74, -0.13], [4.65, -0.13], [4.65, -0.16], [4.92, -0.16], [4.92, -0.13], [4.8, -0.13], [4.79, 0.0]]],
+    ],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 export const families = F;
 export const types = {
-  PC9: "pc9", PC21: "pc21",
+  PC6: "pc6", PC9: "pc9", PC21: "pc21",
 };
