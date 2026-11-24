@@ -1,5 +1,5 @@
 name = "Daher Kodiak 100"
-types = ["KODI"]
+types = ["KODI", "K100"]          # the feeds send K100
 production = [2008]
 checked = "2026-11"
 sources = [

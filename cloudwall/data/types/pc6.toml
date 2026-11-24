@@ -1,5 +1,5 @@
 name = "Pilatus PC-6 Porter"
-types = ["PC6"]
+types = ["PC6", "PC6T", "PC6P"]   # the feeds send PC6T (Turbo Porter) and PC6P (piston Porter)
 production = [1959, 2022]
 checked = "2026-11"
 sources = [

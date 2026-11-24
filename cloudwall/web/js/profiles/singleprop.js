@@ -436,5 +436,5 @@ F.epic = {
 
 export const families = F;
 export const types = {
-  PC6: "pc6", PC7: "pc7", PC9: "pc9", PC21: "pc21", DHC3: "dhc3", KODI: "kodi", EPIC: "epic",
+  PC6: "pc6", PC6T: "pc6", PC6P: "pc6", K100: "kodi", PC7: "pc7", PC9: "pc9", PC21: "pc21", DHC3: "dhc3", KODI: "kodi", EPIC: "epic",
 };
