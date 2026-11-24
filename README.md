@@ -347,55 +347,94 @@ The address can override these on any screen: `/kiosk?view=radar&radar=atc&track
 
 ## Watching from outside the house: a private link
 
-CloudWall has no logins. On a home network that is as it should be, but put on the internet (to
-watch from a car's browser, or a phone away from home) it would show anyone who found the address
-where the house is, let them add and remove places, and spend any paid route lookups. A private
-link keeps it yours without a password to type each time: the key is part of the address, so a
-bookmark or a favourite carries it.
+Open to anyone who can reach it is fine on a home network. On the internet (to watch from a car's
+browser, or a phone away from home) it would show anyone who found the address where the house
+is, let them add and remove places, and spend any paid route lookups. So CloudWall can be given a
+**password that lives in its address**: a key. With one set, CloudWall's own server answers only
+at `<its address>/k/<key>/` and tells every other request nothing but "This CloudWall is private".
+Nothing is typed into a box and nothing is remembered: the key is in the bookmark, so opening the
+bookmark is signing in, every time, even on a browser that forgets everything when it closes (a
+Tesla's does).
 
-From CloudWall's folder, run:
+### On a server with Caddy: one command
+
+When CloudWall runs on a server with a name of its own on the internet (a DNS record pointing at
+it) and [Caddy](https://caddyserver.com) in front of it for HTTPS, run this from CloudWall's
+folder on the server:
+
+    make public DOMAIN=cloudwall.example.com
+
+(or `.venv/bin/cloudwall --public cloudwall.example.com`). In order, it:
+
+1. **Makes the key** if there isn't one, and writes it, the name, and `host = "127.0.0.1"` into
+   the config's `[server]`, so CloudWall listens only for Caddy on the same machine and port 5050
+   is no longer reachable from the internet over plain HTTP.
+2. **Restarts CloudWall** if it runs as a service, and **waits until CloudWall refuses anything
+   without the key.** If it doesn't (not restarted yet), it stops there and changes nothing in
+   Caddy: restart CloudWall and run it again.
+3. **Takes Caddy's own password off that name.** A `basic_auth` in the name's block in
+   `/etc/caddy/Caddyfile` would ask for a username and password on every screen before CloudWall
+   saw the key, every time the browser started afresh; the key now does its job. It is commented
+   out with a note, not deleted, and nothing else in the Caddyfile changes. (With no block for the
+   name, one is added.) Caddy checks the new file (`caddy validate`) before it is put in place, the
+   one before is kept beside it as `Caddyfile.before-cloudwall`, and Caddy reloads. This step uses
+   `sudo`.
+4. **Opens the link from the internet** as the car will, says whether it works, and prints it:
+
+```
+  Every screen (a car, a phone, a PC):   https://cloudwall.example.com/k/tafo-kemi-luza-nobe/
+  The wall panel:                        https://cloudwall.example.com/k/tafo-kemi-luza-nobe/kiosk
+```
+
+Type that once into each screen's browser and keep it as a bookmark or favourite; open CloudWall
+from there from then on. The key works typed with or without its hyphens, and in capitals or not,
+so `cloudwall.example.com/k/tafokemiluzanobe` is enough on a touchscreen keyboard. Running the
+command again changes nothing and prints the link again. The name's DNS record must point at the
+server, and ports 80 and 443 must be open in its firewall (Caddy gets its certificate through
+them).
+
+The address without the key (`https://cloudwall.example.com/`) shows "This CloudWall is
+private". That is CloudWall answering, not Caddy, and is as it should be.
+
+### Anywhere else
 
     make private-link
 
-(or `.venv/bin/cloudwall --private-link`). It makes a key that is easy to type once on a
-touchscreen and hard to guess, sixteen lower-case letters in four groups you can say aloud such
-as `tafo-kemi-luza-nobe`; writes it into the config file under `[server]` (starting one at
-`~/.config/cloudwall/config.toml` if there is none); restarts CloudWall if it runs as a service
-(`make service`); and prints the links to open, with this machine's address filled in:
-
-```
-  On the home network (a PC, a phone):   http://192.168.1.20:5050/k/tafo-kemi-luza-nobe/
-  The wall panel:                        http://192.168.1.20:5050/k/tafo-kemi-luza-nobe/kiosk
-  From outside the house:                https://<your address>/k/tafo-kemi-luza-nobe/
-```
-
-Open each once on its screen and keep it as a bookmark or favourite. The key works typed with or
-without its hyphens, and in capitals or not.
+(or `.venv/bin/cloudwall --private-link`) makes the key, writes it into the config file under
+`[server]` (starting one at `~/.config/cloudwall/config.toml` if there is none), restarts
+CloudWall if it runs as a service (`make service`), and prints the links with this machine's
+address filled in. Whatever puts CloudWall on the internet (a reverse proxy, a tunnel) should
+serve it over HTTPS, so the key isn't sent in the clear, and should not ask for a password of its
+own: a login page in front of CloudWall can't be passed by a link, and asks again every time a
+browser starts afresh.
 
 | Command | What it does |
 |---|---|
+| `cloudwall --public <name>` | All of the above on a server with Caddy (`make public DOMAIN=<name>`) |
 | `cloudwall --private-link` | Shows the links when a key is set; makes one when not |
 | `cloudwall --private-link new` | A fresh key: the old link stops working at once |
-| `cloudwall --private-link off` | Takes the key away: CloudWall is open again, as on a home network |
+| `cloudwall --private-link off` | Takes the key away: open again, as on a home network (refused once `--public` has put it on the internet) |
 
 To do it by hand instead: `cloudwall --new-key` prints a key; put it in the config file as
 `key = "..."` under `[server]` and restart CloudWall.
 
 What to know:
 
-- **Every screen needs the link once a key is set**, the ones at home too. The wall panel
-  started by `deploy/kiosk.sh` on CloudWall's own machine finds the key in the config by itself;
-  one on another machine is started with `CLOUDWALL_URL=http://<server>:5050/k/<key>`. Any other
-  address, for the page or for its data, answers only "This CloudWall is private".
+- **Every screen needs the whole link once a key is set**, the ones at home too, and the page
+  remembers nothing between visits: a screen that opened the link yesterday is still told "This
+  CloudWall is private" at the address without it. No screen has to be opened before another. The
+  wall panel started by `deploy/kiosk.sh` on CloudWall's own machine finds the key in the config by
+  itself; one on another machine is started with `CLOUDWALL_URL=<the link without its closing
+  slash>`, such as `CLOUDWALL_URL=https://cloudwall.example.com/k/<key>`.
 - **Nothing expires.** The key travels in the address of everything the page asks for, so there
   is no cookie to be cleared and nothing to sign in to again.
-- **Whatever put CloudWall on the internet** (a reverse proxy, a tunnel) should serve it over
-  HTTPS, so the key isn't sent in the clear, and no longer needs a password of its own for
-  CloudWall's address.
-- **Anyone who has the link has CloudWall.** To take it back, run
-  `.venv/bin/cloudwall --private-link new`: the old link stops working at once.
-- **A key of your own** must be at least 12 letters and digits (letters, digits and hyphens
-  only). Take the key out of the config to go back to an open CloudWall.
+- **Anyone who has the link has CloudWall,** and the link shows wherever addresses are kept: the
+  address bar, browser history, synced bookmarks, a proxy's logs. Share it as you would a
+  password. To take it back, run `.venv/bin/cloudwall --private-link new`: the old link stops
+  working at once.
+- **A key is hard to guess**: about 50 bits, so trying keys at a thousand a second would take
+  tens of thousands of years. A key of your own must be at least 12 letters and digits (letters,
+  digits and hyphens only).
 - Anything else that reads CloudWall's data (a Home Assistant card, a script) uses the same
   prefix: `/k/<key>/api/state`.
 
@@ -572,10 +611,11 @@ no requests (or, with `"log"`, only the slow position check).
   An aircraft's airline name comes from its callsign too, so the name, logo and flight number
   always agree (SkyWest's flights as SkyWest's, unless a paid route says whose brand it flies
   under); Horizon, which only ever flies as Alaska, shows as Alaska, "operated by Horizon Air".
-- CloudWall has no logins: it is meant for a home network, not the open internet. It refuses
-  requests to add or remove places that come from another site's page.
-- To watch it from outside the house without a password to type each time, give it a private
-  link: see [Watching from outside the house](#watching-from-outside-the-house-a-private-link).
+- Without a key, CloudWall asks no password: that suits a home network, not the open internet. It
+  refuses requests to add or remove places that come from another site's page.
+- To watch it from outside the house, give it a password that lives in its address, so a bookmark
+  opens it with nothing to type: see
+  [Watching from outside the house](#watching-from-outside-the-house-a-private-link).
 - Anything else on your network can read what the screens read: [API.md](API.md) lists every
   answer, key by key (a Home Assistant card or a widget needs only `/api/state`).
 - The logbook notes where each flyover's closest point was and which way it was flying, as well as

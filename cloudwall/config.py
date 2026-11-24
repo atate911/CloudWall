@@ -64,7 +64,9 @@ DEFAULTS = {
     "kiosk": {"place": "", "view": "card", "radar": "chart", "tracks": True, "range_nm": 0, "density": "simple", "quiet": ""},
     # key: with one set, CloudWall answers only under /k/<key>/ (access.py): a private link for
     # reaching it from outside the house. Empty: open to whoever can reach it, as on a home network.
-    "server": {"host": "0.0.0.0", "port": 5050, "key": ""},
+    # address: the name it is reached by on the internet, through Caddy ("cloudwall.example.com"),
+    # for the links it prints; `cloudwall --public` sets it.
+    "server": {"host": "0.0.0.0", "port": 5050, "key": "", "address": ""},
     "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
 }
 
@@ -128,6 +130,8 @@ def check(section, values):
         raise ValueError(f'[kiosk] quiet must be a span of hours like "23:00-06:30", or "" for none, not {values["quiet"]!r}')
     if section == "server" and "port" in values and not (isinstance(values["port"], int) and 0 < values["port"] < 65536):
         raise ValueError(f"[server] port must be a whole number from 1 to 65535, not {values['port']!r}")
+    if section == "server" and not re.fullmatch(r"(?i)([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]*[a-z0-9]|", str(values.get("address", ""))):
+        raise ValueError(f'[server] address must be a name alone, like "cloudwall.example.com" (no https:// or /), not {values["address"]!r}')
     if section == "server" and access.problem(values.get("key", "")):
         raise ValueError(f"[server] key {access.problem(values['key'])}")
     if section == "source" and "urls" in values and not (values["urls"] and all(isinstance(u, str) for u in values["urls"])):

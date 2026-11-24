@@ -1403,10 +1403,13 @@ class ServerTest(unittest.TestCase):
             self.assertEqual(e.exception.code, 400)
 
     def test_kiosk_and_desktop_serve_the_same_page(self):
+        import urllib.request
         base, _ = self.serve(config.load())
         home = self.get(base + "/")
-        for path in ("/kiosk", "/kiosk/"):
+        for path in ("/kiosk", "/kiosk/", "/kiosk/?view=radar"):
             self.assertEqual(self.get(base + path), home)
+        # with a closing slash, its relative addresses (style.css, js/app.js) would point inside /kiosk/: it is sent on
+        self.assertEqual(urllib.request.urlopen(base + "/kiosk/?view=radar", timeout=5).geturl(), base + "/kiosk?view=radar")
 
     def test_a_private_link(self):
         """With [server] key set, CloudWall answers only under /k/<key>/, and there as it always
@@ -1424,6 +1427,8 @@ class ServerTest(unittest.TestCase):
             self.assertEqual(self.get(f"{base}/k/{key}/kiosk"), home)
             self.assertIn("aircraft", json.loads(self.get(f"{base}/k/{key}/api/state?range=15")))
         self.assertEqual(self.get(f"{base}/k/tafo-kemi-luza-nobe"), home)             # the closing slash is added for it
+        self.assertEqual(urllib.request.urlopen(f"{base}/k/tafo-kemi-luza-nobe/kiosk/", timeout=5).geturl(),
+                         f"{base}/k/tafo-kemi-luza-nobe/kiosk")                          # and the wall panel's extra one taken away
         for path in ("/", "/kiosk", "/api/state", "/api/logbook", "/js/app.js", "/k/", "/k//", "/k/tafo-kemi-luza-nobx/",
                      "/k/tafo-kemi/", "/k/wrong/api/state", "/x/k/tafo-kemi-luza-nobe/"):
             with self.assertRaises(urllib.error.HTTPError, msg=path) as e:
@@ -2401,3 +2406,190 @@ class KioskQuietTest(unittest.TestCase):
             with self.assertRaises(ValueError, msg=bad):
                 config.check("kiosk", {"quiet": bad})
         self.assertEqual(config.DEFAULTS["kiosk"]["quiet"], "")
+
+
+class PublicTest(unittest.TestCase):
+    """`cloudwall --public <name>`: Caddy's own password taken off the name, CloudWall's key in its
+    place, and nothing opened to the internet before CloudWall keeps itself private."""
+
+    SITE = """{
+\temail me@example.com
+}
+
+(common) {
+\tencode gzip
+}
+
+other.example.com {
+\tbasic_auth {
+\t\tbob $2a$14$abc
+\t}
+\treverse_proxy localhost:8080
+}
+
+cloudwall.example.com {
+\timport common
+\tbasic_auth {
+\t\talice $2a$14$Zkx19XLiW6VYouLHR5NmfOFU0z2GTNmpkT/5qqR7hx4IjWJPDhjvG # the password
+\t}
+\treverse_proxy localhost:5050
+\tlog {
+\t\toutput file /var/log/caddy/cloudwall.log
+\t}
+}
+"""
+
+    def test_caddys_password_comes_off_its_own_site_only(self):
+        from cloudwall import caddy
+        plan = caddy.plan(self.SITE, "cloudwall.example.com", 5050)
+        self.assertTrue(plan.changed and plan.local)
+        self.assertEqual((plan.removed, plan.upstreams), (1, ["localhost:5050"]))
+        after = plan.text.split("cloudwall.example.com {")
+        self.assertEqual(after[0], self.SITE.split("cloudwall.example.com {")[0])       # the other site keeps its password
+        self.assertIn("\t# basic_auth {\n\t# alice $2a$14$", after[1])                 # commented out, so it reads back
+        self.assertIn(caddy.NOTE, after[1])
+        self.assertIn("\treverse_proxy localhost:5050\n\tlog {\n", after[1])           # the rest as it was
+        self.assertNotRegex(after[1], r"(?m)^\s*basic_?auth")
+        again = caddy.plan(plan.text, "cloudwall.example.com", 5050)                   # a second run has nothing to do
+        self.assertFalse(again.changed)
+        self.assertEqual(again.text, plan.text)
+
+    def test_the_ways_a_site_is_written(self):
+        from cloudwall import caddy
+        # a single site, no braces; the old directive name, on one line; Caddy's own shorthand for this machine
+        p = caddy.plan("cloudwall.example.com\nbasicauth /* alice $2a$hash\nreverse_proxy :5050\n", "cloudwall.example.com", 5050)
+        self.assertEqual((p.removed, p.local), (1, True))
+        self.assertIn("# basicauth /* alice $2a$hash\nreverse_proxy :5050\n", p.text)
+        # several addresses on its line, a scheme and port on this one; upstreams named with `to`
+        p = caddy.plan("www.example.com, https://CloudWall.example.com:443 {\n\tbasic_auth {\n\t\ta b\n\t}\n"
+                       "\treverse_proxy {\n\t\tto 127.0.0.1:5050\n\t}\n}\n", "cloudwall.example.com", 5050)
+        self.assertEqual((p.removed, p.upstreams, p.local), (1, ["127.0.0.1:5050"], True))
+        # a name Caddy doesn't serve yet: a block of its own, after what's there
+        p = caddy.plan(self.SITE, "new.example.com", 5051)
+        self.assertTrue(p.added and p.local)
+        self.assertTrue(p.text.startswith(self.SITE) and p.text.endswith("\nnew.example.com {\n\treverse_proxy 127.0.0.1:5051\n}\n"))
+        self.assertTrue(caddy.plan("", "new.example.com", 5050).text.startswith("new.example.com {"))
+        # CloudWall in a container elsewhere: Caddy is left to reach it there, and CloudWall to listen where it does
+        p = caddy.plan("cloudwall.example.com {\n\treverse_proxy 172.17.0.2:5050\n}\n", "cloudwall.example.com", 5050)
+        self.assertFalse(p.local or p.changed)
+        # a block that sends the name somewhere else is for a person to sort out
+        for text in ("cloudwall.example.com {\n\treverse_proxy localhost:8080\n}\n", "cloudwall.example.com {\n\tfile_server\n}\n"):
+            with self.assertRaises(ValueError):
+                caddy.plan(text, "cloudwall.example.com", 5050)
+        self.assertEqual(caddy.code('respond "# not a comment" # a comment'), 'respond "# not a comment" ')
+
+    def fake_runner(self, refuse=()):
+        """A stand-in for running commands as root: what was run, and a file system of one folder."""
+        import subprocess
+        runs, files = [], {}
+
+        def runner(cmd, input=None):
+            cmd = [c for c in cmd if c != "sudo"]
+            runs.append(cmd)
+            code = 1 if cmd[0] in refuse or cmd[:2] == ["caddy", "validate"] and "refuse" in files.get(cmd[3], "") else 0
+            if cmd[0] == "tee":
+                files[cmd[1]] = input
+            elif cmd[0] == "cp" and not code:
+                files[cmd[-1]] = files.get(cmd[-2], "")
+            elif cmd[0] == "rm":
+                files.pop(cmd[-1], None)
+            elif cmd[0] == "test":
+                code = 0 if cmd[-1] in files else 1
+            return subprocess.CompletedProcess(cmd, code, "", "Error: bad Caddyfile" if code else "")
+        return runner, runs, files
+
+    def test_caddy_takes_the_new_file_only_once_it_has_checked_it(self):
+        from cloudwall import caddy
+        runner, runs, files = self.fake_runner()
+        files["/etc/caddy/Caddyfile"] = "before"
+        kept = caddy.install("/etc/caddy/Caddyfile", "after", runner)
+        self.assertEqual(files, {"/etc/caddy/Caddyfile": "after", str(kept): "before"})
+        self.assertIn(["caddy", "validate", "--config", "/etc/caddy/Caddyfile.cloudwall-new", "--adapter", "caddyfile"], runs)
+        self.assertLess(runs.index(["caddy", "validate", "--config", "/etc/caddy/Caddyfile.cloudwall-new", "--adapter", "caddyfile"]),
+                        next(i for i, r in enumerate(runs) if r[:2] == ["cp", "/etc/caddy/Caddyfile.cloudwall-new"]))
+        self.assertTrue(any(r[0] == "caddy" and r[1] == "reload" or r[:2] == ["systemctl", "reload"] for r in runs))
+        kept2 = caddy.install("/etc/caddy/Caddyfile", "after again", runner)        # a second time: the first copy is kept too
+        self.assertNotEqual(kept2, kept)
+        self.assertEqual(files[str(kept)], "before")
+        with self.assertRaisesRegex(RuntimeError, "left as it was"):                 # Caddy won't have it: nothing changes
+            caddy.install("/etc/caddy/Caddyfile", "refuse this", runner)
+        self.assertEqual(files["/etc/caddy/Caddyfile"], "after again")
+        self.assertNotIn("/etc/caddy/Caddyfile.cloudwall-new", files)
+
+    def test_the_link_is_checked_as_a_car_would_open_it(self):
+        from cloudwall import caddy
+        private = (401, {}, b"This CloudWall is private")
+        state = (200, {}, b'{"aircraft": []}')
+        asks = (401, {"WWW-Authenticate": 'Basic realm="restricted"'}, b"")
+        answers = lambda bare, page: lambda url, timeout=10: page if "/k/" in url else bare
+        self.assertTrue(caddy.check("c.example.com", "k", answers(private, state), tries=1)[0])
+        ok, said = caddy.check("c.example.com", "k", answers(asks, state), tries=1)
+        self.assertFalse(ok)
+        self.assertIn("still asks for its own password", said)
+
+        def unreachable(url, timeout=10):
+            raise OSError("Name or service not known")
+        ok, said = caddy.check("c.example.com", "k", unreachable, tries=1)
+        self.assertFalse(ok)
+        self.assertIn("ports 80 and 443", said)
+
+    def run_public(self, caddyfile, answers_without_key=401):
+        """`cloudwall --public cloudwall.example.com` against a config file and a Caddyfile in a
+        folder, with systemd, root, Caddy and the internet stood in for."""
+        import contextlib
+        import io
+        import tempfile
+        from unittest import mock
+        from cloudwall import __main__ as cli, access, caddy
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        conf, cf = Path(d.name) / "config.toml", Path(d.name) / "Caddyfile"
+        conf.write_text(config.EXAMPLE.read_text())
+        cf.write_text(caddyfile)
+        installed = []
+        out = io.StringIO()
+        with mock.patch.object(caddy, "CADDYFILE", cf), \
+                mock.patch.object(access, "restart_service", return_value=True), \
+                mock.patch.object(caddy, "fetch", return_value=(answers_without_key, {}, b"")), \
+                mock.patch.object(caddy, "install", side_effect=lambda path, text: installed.append(text) or "kept"), \
+                mock.patch.object(caddy, "check", return_value=(True, "Checked.")), \
+                mock.patch.object(cli.time, "sleep"), contextlib.redirect_stdout(out):
+            try:
+                cli.public(str(conf), "CloudWall.example.com")
+                code = 0
+            except SystemExit as e:
+                code = e.code
+        return code, config.load(str(conf))["server"], installed, out.getvalue()
+
+    def test_one_command_puts_it_on_the_internet(self):
+        code, server, installed, said = self.run_public(self.SITE)
+        self.assertEqual(code, 0, said)
+        self.assertEqual((server["address"], server["host"]), ("cloudwall.example.com", "127.0.0.1"))   # nothing but Caddy reaches it
+        self.assertIsNone(__import__("cloudwall.access").access.problem(server["key"]))
+        self.assertEqual(len(installed), 1)
+        self.assertNotRegex(installed[0].split("cloudwall.example.com {")[1], r"(?m)^\s*basic_?auth")
+        self.assertIn(f"https://cloudwall.example.com/k/{server['key']}/", said)
+
+    def test_caddys_password_stays_on_until_cloudwall_keeps_itself_private(self):
+        for answers in (200, None):                    # still open (not restarted), or not running at all
+            code, server, installed, said = self.run_public(self.SITE, answers_without_key=answers)
+            self.assertNotEqual(code, 0)
+            self.assertEqual(installed, [], answers)
+            self.assertIn("Caddy's password stays on", str(code))
+            self.assertTrue(server["key"])             # the key is in the config, for when it is restarted
+
+    def test_a_public_cloudwall_keeps_its_key(self):
+        import contextlib
+        import io
+        import tempfile
+        from cloudwall import __main__ as cli
+        with tempfile.TemporaryDirectory() as d:
+            conf = Path(d) / "config.toml"
+            conf.write_text('[server]\nkey = "tafo-kemi-luza-nobe"\naddress = "cloudwall.example.com"\n')
+            with self.assertRaisesRegex(SystemExit, "open it to everyone"):
+                cli.private_link(str(conf), "off")
+            self.assertEqual(config.load(str(conf))["server"]["key"], "tafo-kemi-luza-nobe")
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                cli.private_link(str(conf), "show")
+            self.assertIn("https://cloudwall.example.com/k/tafo-kemi-luza-nobe/", out.getvalue())

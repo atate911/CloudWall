@@ -125,12 +125,17 @@ host = "0.0.0.0"
 port = 5050
 # A private link, for reaching CloudWall from outside the house (a car's browser, a phone away from
 # home) without opening it to everyone who finds the address. With a key set, CloudWall answers
-# only at <its address>/k/<key>/ and tells any other request nothing: open that link once on each
-# screen and keep it as a bookmark or favourite (the wall panel's is .../k/<key>/kiosk). The key is
-# typed with or without its hyphens. `cloudwall --private-link` (or `make private-link`) makes one
-# that is easy to type and hard to guess, writes it here, restarts the service and prints the links;
-# one of your own needs at least 12 letters and digits. Leave it out on a home network.
+# only at <its address>/k/<key>/ and tells any other request nothing: the key is a password that
+# lives in the address instead of being typed into a box. Keep the whole link as a bookmark or
+# favourite on each screen and always open it from there (the wall panel's is .../k/<key>/kiosk):
+# nothing is remembered, so the address without the key never works. The key is typed with or
+# without its hyphens. `cloudwall --private-link` (or `make private-link`) makes one that is easy
+# to type and hard to guess, writes it here, restarts the service and prints the links; one of
+# your own needs at least 12 letters and digits. Leave it out on a home network.
 # key = "tafo-kemi-luza-nobe"
+# The name CloudWall has on the internet, served over HTTPS by Caddy in front of it, for the links
+# it prints. `cloudwall --public cloudwall.example.com` (or `make public DOMAIN=...`) sets it.
+# address = "cloudwall.example.com"
 
 [storage]
 db_path = ""           # empty: ~/.local/share/cloudwall/cloudwall.db

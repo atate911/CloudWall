@@ -1,8 +1,9 @@
 import argparse
 import logging
+import time
 from pathlib import Path
 
-from . import __version__, access, config, sources
+from . import __version__, access, caddy, config, sources
 from .flightaware import FlightAware
 from .flightradar24 import Flightradar24
 from .server import make_server
@@ -24,11 +25,15 @@ def private_link(path, what):
         cfg = config.load(path)
     except ValueError as e:
         raise SystemExit(f"cloudwall: {config.find(path)}: {e}")
-    key, port, host = cfg["server"]["key"], cfg["server"]["port"], cfg["server"]["host"]
+    key, port, host, address = (cfg["server"][k] for k in ("key", "port", "host", "address"))
     if what == "url":
         print(f"http://localhost:{port}" + (f"/k/{key}" if key else ""))
         return
     file = config.find(path)
+    if what == "off" and key and address:
+        raise SystemExit(f"cloudwall: CloudWall is on the internet at https://{address}/ with its key as its only password "
+                         f"(cloudwall --public), so taking the key away would open it to everyone. Put a password back on "
+                         f"{address} in Caddy and take `address` out of the config's [server] first.")
     if what in ("new", "off") or (what == "" and not key):
         if file is None:                         # no config file yet: start one from the example
             file, _ = config.init(path)
@@ -48,13 +53,98 @@ def private_link(path, what):
     if not key:
         print("\nCloudWall is open to whoever can reach it, as on a home network:")
     else:
-        print(f"\nCloudWall answers only under /k/{key}/. Open these once on each screen and keep them as a\n"
-              "bookmark or favourite (the key works typed with or without its hyphens):")
-    for label, url in access.links(key, host, port):
+        print(f"\nCloudWall answers only under /k/{key}/: the key is its password, carried in the address.\n"
+              "Keep the whole link as a bookmark or favourite on each screen and open it from there (the key\n"
+              "works typed with or without its hyphens):")
+    for label, url in access.links(key, host, port, address):
         if key or not label.startswith("From outside"):
             print(f"  {label + ':':<38} {url}")
-    if key:
+    if key and not address:
         print("\nThe wall panel started by deploy/kiosk.sh finds the key by itself.")
+
+
+def public(path, name):
+    """`cloudwall --public <name>`: CloudWall at https://<name>/k/<key>/ through the Caddy on this
+    machine, with nothing to type but the link. It makes the key if there isn't one, has CloudWall
+    listen only on this machine when Caddy is all that reaches it, restarts it, and only once
+    CloudWall is known to be keeping itself private takes Caddy's own password (basic_auth) away;
+    then it checks the link from the internet and prints it."""
+    try:
+        cfg = config.load(path)
+    except ValueError as e:
+        raise SystemExit(f"cloudwall: {config.find(path)}: {e}")
+    name = (name or cfg["server"]["address"]).strip().lower()
+    if not name:
+        raise SystemExit("cloudwall --public: say which name it's reached by: cloudwall --public cloudwall.example.com")
+    try:
+        config.check("server", {"address": name})
+    except ValueError as e:
+        raise SystemExit(f"cloudwall --public: {e}")
+    port, key = cfg["server"]["port"], cfg["server"]["key"]
+    try:
+        text = caddy.CADDYFILE.read_text()
+    except PermissionError:
+        r = caddy.run(access.as_root(["cat", str(caddy.CADDYFILE)]))
+        if r.returncode:
+            raise SystemExit(f"cloudwall --public: couldn't read {caddy.CADDYFILE}: {r.stderr.strip()}")
+        text = r.stdout
+    except FileNotFoundError:
+        raise SystemExit(f"cloudwall --public: there's no {caddy.CADDYFILE}: install Caddy first "
+                         "(https://caddyserver.com/docs/install), then run this again.")
+    try:
+        plan = caddy.plan(text, name, port)
+    except ValueError as e:
+        raise SystemExit(f"cloudwall --public: {e}")
+
+    # 1. CloudWall: its key, its name, and nowhere to be reached but through Caddy
+    file = config.find(path) or config.init(path)[0]
+    key = key or access.new_key()
+    try:
+        access.write_key(file, key)
+        access.write_setting(file, "server", "address", name)
+        if plan.local:
+            access.write_setting(file, "server", "host", "127.0.0.1")
+    except (OSError, ValueError) as e:
+        raise SystemExit(f"cloudwall: {e}")
+    print(f"CloudWall's config ({file}): its key is {key}, its address {name}"
+          + (", and it listens only on this machine, for Caddy." if plan.local else "."))
+    restarted = access.restart_service()
+    print("CloudWall restarted." if restarted else "CloudWall isn't running as a service here, so it wasn't restarted.")
+
+    # 2. Caddy's password comes off only once CloudWall answers nothing without the key
+    status = None
+    for _ in range(20):
+        try:
+            status = caddy.fetch(f"http://127.0.0.1:{port}/api/state", timeout=3)[0]
+            if status == 401:
+                break
+        except OSError:
+            pass
+        time.sleep(1)
+    if status != 401:
+        why = ("still answers without the key" if status else "isn't answering")
+        raise SystemExit(f"\nCloudWall on port {port} {why}, so Caddy's password stays on for now. Restart CloudWall "
+                         f"(with its new config), then run this again.")
+    if plan.changed:
+        try:
+            kept = caddy.install(caddy.CADDYFILE, plan.text)
+        except RuntimeError as e:
+            raise SystemExit(f"cloudwall --public: {e}")
+        did = (f"took its password off {name} (commented out, with a note)" if plan.removed
+               else f"now serves {name}, over HTTPS with a certificate of its own")
+        print(f"Caddy {did}, and reloaded. Its Caddyfile as it was is kept at {kept}.")
+    else:
+        print(f"Caddy already serves {name} with nothing of its own to ask: left as it was.")
+
+    # 3. The link, tried as the car will open it
+    ok, said = caddy.check(name, key)
+    print(("\n" if ok else "\nNot working yet: ") + said)
+    print("\nBookmark this on each screen (on a Tesla, type it once into the browser and add it to Favourites):\n")
+    for label, url in access.links(key, "", port, name):
+        print(f"  {label + ':':<38} {url}")
+    print("\nAnyone with the link has CloudWall. To end it and make a new one: cloudwall --private-link new")
+    if not ok:
+        raise SystemExit(1)
 
 
 def main():
@@ -71,6 +161,10 @@ def main():
                          "into the config file, restarts the service if it runs as one, and prints the links to open "
                          "(with no word: shows the link if there is one, makes one if not). new: a fresh key, ending "
                          "the old link; off: open again, as on a home network")
+    ap.add_argument("--public", nargs="?", const="", metavar="NAME",
+                    help="put CloudWall on the internet at https://NAME/k/<key>/ through the Caddy on this machine: "
+                         "makes the key, takes Caddy's own password off NAME (CloudWall's key does its job), "
+                         "checks the link and prints it. NAME's DNS must point here, with ports 80 and 443 open")
     ap.add_argument("--init-config", action="store_true",
                     help="write a starter config file (to --config, or the user config dir) and exit")
     ap.add_argument("--version", action="version", version=f"cloudwall {__version__}")
@@ -83,6 +177,9 @@ def main():
               f"and restart CloudWall. It then answers only at  <its address>/k/{key}/  (the wall panel at\n"
               f".../k/{key}/kiosk): open that once on each screen and keep it as a bookmark or favourite.\n"
               f"(`cloudwall --private-link` does all of that for you.)")
+        return
+    if args.public is not None:
+        public(args.config, args.public)
         return
     if args.private_link is not None:
         private_link(args.config, args.private_link)
