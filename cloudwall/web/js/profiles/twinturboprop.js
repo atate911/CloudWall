@@ -122,7 +122,70 @@ F.pa42k = {
   overlays: [engines, pipe(4.3, 0.0, 0.12), tipTank(3.0, 0.45, 0.6)],
 };
 
+// ---------- Cessna 425 Corsair / Conquest I ----------
+// Published dimensions (Wikipedia, from Jane's 1982-83): length 10.93 m (35 ft 10.25 in), span
+// 13.45 m (44 ft 1.5 in), height 3.84 m. Nose, windshield, the cabin's three large and two small
+// round windows, fin and tailplane measured off the Commons photo "Cessna 425 Corsair - Conquest
+// I.jpg" (N425SL), scaled by the overall length; the nacelle stations (the photo looks a little from
+// ahead) checked against "The Cessna 425 Corsair (544365691).jpg" and the Cessna 421's three-view
+// ("Cessna 421 3-view line drawing.png"), whose fuselage it shares. A Cessna 421 with PT6A turboprops
+// in long nacelles, no tip tanks, and a straight swept fin over a tailplane with dihedral.
+F.c425 = {
+  kind: "turboprop", L0: 10.56, over: 0.37, D: 1.55, W: 1.4, fwd: 0.6, fair: 0,
+  nose: {
+    tip: 0.32,
+    top: [[0.15, 0.45], [0.4, 0.53], [0.8, 0.6], [1.2, 0.65], [1.55, 0.69], [1.72, 0.72], [2.0, 0.86], [2.3, 0.96], [2.6, 1]],
+    bot: [[0.1, 0.18], [0.3, 0.09], [0.55, 0.04], [0.85, 0.01], [1.15, 0]],
+  },
+  tail: {
+    top: [[1.77, 1], [1.2, 0.9], [0.6, 0.76], [0, 0.6]],
+    bot: [[2.6, 0], [2.0, 0.1], [1.3, 0.21], [0.6, 0.32], [0, 0.4]],
+  },
+  glass: [
+    [[1.72, 0.71], [2.22, 0.92], [2.32, 0.93], [2.32, 0.71]],
+    [[2.56, 0.68], [2.56, 0.88], [2.88, 0.88], [2.88, 0.68]],
+  ],
+  win: [{ z: 0.72, from: 5.07, to: 6.31, pitch: 0.615, w: 0.37, h: 0.33 }, { z: 0.72, from: 6.86, to: 7.31, pitch: 0.44, w: 0.28, h: 0.27 }],
+  wing: { le: 3.9, root: 0.7, span: 13.45, cr: 2.0, ct: 1.05, sweep: 1, dih: 5, z: 0.1, t: [0.18, 0.1] },
+  nac: [0.26], eng: { kind: "prop", at: [], fwd: 1.75, drop: -0.25, len: 3.8, dia: 0.75, spinner: 0.07, tailZ: -0.4, belly: 1.0, prop: 2.36, blades: 3 },
+  fin: { le: 1.99, cr: 2.1, ct: 1.06, h: 1.43, sweep: 39, rudder: 0.62 },
+  stab: { le: 1.55, z: 0.46, span: 5.8, root: 0.2, cr: 1.2, ct: 0.75, sweep: 5, dih: 7 },
+  extras: [dorsal(-3.0, 1.8, 0.5), door(7.85, 0.62, 0.25, 1.2)],
+  overlays: [engines, stacks(0.55, 0.12, 0.36, 0.18)],
+};
+
+// ---------- Cessna 441 Conquest II ----------
+// Published dimensions (Wikipedia, from Jane's 1982-83): length 11.89 m (39 ft 0 in), span 15.04 m
+// (49 ft 4 in), height 4.01 m. Fuselage depth, nose, windshield, the six oval cabin windows, the long
+// nacelles with the TPE331 exhaust on their outboard side, the fin and the tailplane measured off the
+// near side-on Commons photo "N16NW.jpg", scaled by the overall length, and checked against
+// "XB-KBI (6875689500).jpg". The Titan's fuselage, pressurised, on a long slender wing of high aspect
+// ratio; tall swept fin on a dorsal, tailplane with marked dihedral low on the tail cone.
+F.c441 = {
+  kind: "turboprop", L0: 10.82, over: 1.07, D: 1.6, W: 1.45, fwd: 0.6, fair: 0,
+  nose: {
+    tip: 0.39,
+    top: [[0.15, 0.5], [0.4, 0.57], [0.8, 0.62], [1.2, 0.645], [1.55, 0.665], [1.75, 0.78], [1.95, 0.92], [2.2, 0.98], [2.5, 1]],
+    bot: [[0.1, 0.24], [0.3, 0.13], [0.5, 0.06], [0.75, 0.02], [1.0, 0]],
+  },
+  tail: {
+    top: [[1.8, 1], [1.2, 0.9], [0.6, 0.73], [0, 0.56]],
+    bot: [[2.6, 0], [2.0, 0.08], [1.4, 0.17], [0.7, 0.27], [0, 0.35]],
+  },
+  glass: [
+    [[1.57, 0.67], [1.85, 0.91], [1.9, 0.91], [1.9, 0.68]],
+    [[1.95, 0.69], [1.95, 0.88], [2.2, 0.86], [2.2, 0.69]],
+  ],
+  win: [{ z: 0.78, from: 4.17, to: 7.19, pitch: 0.602, w: 0.42, h: 0.3 }],
+  wing: { le: 4.1, root: 0.72, span: 15.04, cr: 2.0, ct: 0.95, sweep: 1, dih: 4, z: 0.1, t: [0.18, 0.12] },
+  nac: [0.24], eng: { kind: "prop", at: [], fwd: 2.75, drop: -0.3, len: 3.6, dia: 0.8, spinner: 0.07, tailZ: -0.4, belly: 1.0, prop: 2.29, blades: 3 },
+  fin: { le: 1.72, cr: 2.15, ct: 1.07, h: 1.9, sweep: 42, rudder: 0.62 },
+  stab: { le: 1.9, z: 0.5, span: 6.0, root: 0.2, cr: 1.3, ct: 0.8, sweep: 5, dih: 10 },
+  extras: [dorsal(-3.2, 2.05, 0.5), door(7.8, 0.6, 0.25, 1.22)],
+  overlays: [engines, pipe(2.85, 0.05, 0.11)],
+};
+
 export const families = F;
 export const types = {
-  PAY1: "pa31t", PAY2: "pa31t", PA31T: "pa31t", PAY3: "pa42", PA42: "pa42", PAY4: "pa42k",
+  PAY1: "pa31t", PAY2: "pa31t", PA31T: "pa31t", PAY3: "pa42", PA42: "pa42", PAY4: "pa42k", C425: "c425", C441: "c441",
 };
