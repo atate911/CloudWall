@@ -1,0 +1,32 @@
+name = "Mitsubishi MU-2"
+types = ["MU2"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Mitsubishi_MU-2",
+]
+
+text = """
+Mitsubishi's first design after the war, and one of post-war Japan's most successful aircraft: 704
+were built between 1963 and 1986, in Japan and at San Angelo, Texas, where Mooney and then
+Mitsubishi finished airframes shipped from Japan. It flies fast and lands slowly because it has no
+ailerons. Spoilers on top of the wing roll it instead, which leaves the whole trailing edge free for
+double-slotted flaps: its wing is loaded like a light jet's in cruise, and like a King Air's with
+the flaps down. You can tell it by that short high wing with Garrett TPE331s riding on top of it, the tip
+tanks, the long drooping nose and the fairings for the main gear bulging from the lower fuselage.
+The long-fuselage models, from the MU-2G of 1969 to the Marquise, are 1.91 m longer than the short
+ones, the last of which was the Solitaire.
+
+Its performance drew pilots moving up from piston twins who were not ready for it, and its accident
+record in the United States became notorious. Studies never faulted the design; since 2006 an FAA
+special regulation has required type-specific training for every MU-2 pilot, and it is credited
+with bringing the accident rate below that of similar turboprops. Since 1987 MU-2s flown by retired
+US Air Force pilots have played F-15s and MiG-29s for trainee air battle managers at Tyndall Air
+Force Base, Florida.
+"""
+
+[facts]
+"First flight" = "September 1963"
+"Built" = "704"
+"Engines" = "2 × Garrett TPE331"
+"Cruise" = "547 km/h (295 kt), MU-2L"
+"Max takeoff weight" = "5,250 kg (11,570 lb), MU-2L"
