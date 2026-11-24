@@ -384,7 +384,62 @@ F.ac11 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Aero Commander 500 series (560, 680, 500) ----------
+// Reference: U.S. Air Force L-26B (Aero Commander 560A) three-view (Wikimedia Commons,
+// File:Aero_Commander_L-26B_3-view_line_drawing.png, Wikipedia article Aero Commander 500 family),
+// dimensioned in inches: its side view scaled by its own 420.5 in (10.68 m) overall length, about
+// 1.1 cm a pixel, with the 528.7 in (13.43 m) span and 200.95 in (5.1 m) tailplane as given, and drawn
+// as the view has it, level on the ground. The round-nosed piston Commander (520 to 680 and the 500A
+// and 500B; the later Shrike's pointed nose and squared fin are not drawn): the cabin slung under the
+// high wing, the engines in long nacelles under the wing with three-blade propellers, the two cockpit
+// side windows, the swept fin on a curved dorsal with the tailplane on the tail cone in its fairing,
+// the fin-tip beacon; the gear (drawn down in the view) retracted.
+const AC6L_NACELLE = [[2.88, 1.47, "c"], [3.2, 1.49], [3.6, 1.45], [4.5, 1.38], [5.5, 1.31], [5.85, 1.26], [5.97, 1.12],
+  [5.85, 0.97], [5.5, 0.87], [5.0, 0.79], [4.5, 0.75], [4.0, 0.77], [3.5, 0.82], [2.95, 0.97], [2.88, 1.03, "c"]];
+F.ac6l = {
+  kind: "piston", L0: 10.68, over: 0, D: 1, W: 1.42,
+  body: [
+    [0.01, 0.52, "c"], [0.1, 0.67], [0.3, 0.8], [0.5, 0.87], [1.0, 0.96], [1.28, 0.99, "cl"], [1.6, 1.3], [1.85, 1.43],
+    [2.0, 1.5], [2.2, 1.53], [2.6, 1.53], [3.0, 1.54], [3.5, 1.52, "l"], [7.9, 1.52], [8.3, 1.63], [8.6, 1.98, "l"],
+    [9.55, 3.9], [9.68, 4.01], [9.9, 4.03, "l"], [10.5, 4.03, "cl"], [10.37, 1.92, "c"], [10.47, 1.77], [10.62, 1.58],
+    [10.68, 1.45], [10.6, 1.27], [10.45, 1.12], [10.3, 1.08], [10.0, 1.03], [9.0, 0.83], [8.0, 0.62], [7.0, 0.42], [6.0, 0.22],
+    [5.5, 0.1], [5.0, -0.02], [4.5, -0.06], [4.0, -0.09], [3.0, -0.08], [2.0, -0.06], [1.5, -0.03], [1.0, 0.0], [0.5, 0.06],
+    [0.2, 0.15], [0.05, 0.25], [0.02, 0.4],
+  ],
+  // the windscreen's side pane, the cockpit side window, the cabin window behind the wing
+  glass: [
+    [[1.33, 0.99], [1.78, 1.39], [1.9, 1.41], [1.95, 1.31], [1.83, 0.87]],
+    [[1.93, 0.88], [2.07, 1.31], [2.42, 1.32], [2.46, 0.86]],
+    rect(6.4, 6.86, 0.86, 1.18, 0.07).map((p) => (p[2] ? p : [p[0], p[1], ""])),
+  ],
+  frame: 0.04,
+  wing: { le: 3.52, root: 0.7, span: 13.43, cr: 2.4, ct: 1.0, sweep: 0, dih: 4, z: 1.55, t: [0.15, 0.12] },
+  // the wing as the view draws it, its thick section over the nacelle
+  wingSide: [["wing", [[3.52, 1.62, "c"], [3.55, 1.83], [3.65, 1.87], [4.0, 1.86], [4.6, 1.72], [5.0, 1.6], [5.6, 1.39, "c"],
+    [5.0, 1.35], [4.5, 1.31], [4.0, 1.36], [3.6, 1.42]]]],
+  eng: { kind: "none" },
+  stab: { le: 1.23, z: 1.5, span: 5.1, root: 0.3, cr: 1.2, ct: 0.7, sweep: 10, dih: 0, thick: 0.1 },
+  // the tailplane in its fairing on the tail cone
+  stabSide: [["stab", [[9.5, 1.52, "c"], [9.6, 1.47], [10.0, 1.44], [10.6, 1.52, "c"], [10.0, 1.57], [9.7, 1.56]]]],
+  parts: {
+    // rudder hinge and cap, the trim tab; the tailplane fairing's hump; the nose's lower seam
+    lines: [[[9.55, 1.95], [9.9, 3.75], [10.5, 3.75]], [[10.25, 1.95], [10.27, 2.6], [10.35, 2.6], [10.35, 1.95]],
+      [[9.5, 1.52], [9.75, 1.84], [10.0, 1.98], [10.2, 1.95], [10.37, 1.85]], [[0.05, 0.33], [0.3, 0.22], [0.6, 0.14]]],
+    // the fin-tip beacon, the landing light in the nose, the inlet on the nacelle's top
+    dots: [["hub", 9.9, 4.03, 0.1, 0.12], ["inlet", 0.25, 0.33, 0.1, 0.04], ["inlet", 3.8, 1.84, 0.12, 0.03]],
+    // the propeller in front of the nacelle
+    draw: [(k) => k.prop(k.sk, 2.78, 1.25, 2.1, 3)],
+  },
+  // the nacelle and its spinner, behind the wing
+  extras: [...EXTRAS, (k) => {
+    k.shaded(AC6L_NACELLE, "nac");
+    k.sk.smooth("nac", [[2.53, 1.29, "c"], [2.7, 1.42], [2.88, 1.47, "c"], [2.88, 1.03, "c"], [2.7, 1.1]]);
+    k.sk.poly("hl", [[3.15, 1.48], [3.15, 0.92]], false);
+  }],
+  overlays: OVERLAYS,
+};
+
 export const families = F;
 export const types = {
-  BE33: "be33", BE35: "be35", T34P: "t34p", T34T: "t34t", AC11: "ac11",
+  BE33: "be33", BE35: "be35", T34P: "t34p", T34T: "t34t", AC11: "ac11", AC6L: "ac6l",
 };
