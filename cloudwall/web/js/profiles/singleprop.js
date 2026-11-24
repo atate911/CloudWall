@@ -292,7 +292,60 @@ F.dhc3 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Quest / Daher Kodiak 100 ----------
+// No three-view reachable: measured from the side-on photo File:Quest_Kodiak_100_side_view_
+// 20130608.jpg (Wikimedia Commons, N491KQ), rendered 1920 px wide and scaled by the 34 ft 2 in
+// (10.41 m) length (Wikipedia, Daher Kodiak, from Quest's brochure), spinner to tailplane tip, 6.2 mm a
+// pixel. Lower confidence (photo): the wing, seen from below in it, is drawn to the chord its 45 ft
+// span and 240 sq ft area give. The PT6A's long cowl with its side exhaust stack, the fat cabin with
+// four square windows a side, the high strut-braced wing, the long dorsal fin into the swept fin,
+// and fixed tricycle gear.
+F.kodi = {
+  kind: "turboprop", L0: 10.41, over: 0, D: 1, W: 1.4,
+  body: [
+    [0, 0.71, "c"], [0.1, 0.8], [0.25, 0.88], [0.45, 0.95], [0.55, 0.99], [1.09, 1.07], [1.6, 1.1], [2.2, 1.12, "c"], [2.5, 1.26],
+    [2.8, 1.42], [3.05, 1.52], [3.35, 1.56, "l"], [6.23, 1.58, "cl"], [8.27, 2.03, "cl"], [9.25, 3.68, "c"], [9.6, 3.68, "l"],
+    [10.0, 3.66, "cl"], [9.75, 1.41, "c"], [9.7, 1.14, "l"], [8.75, 0.86], [7.8, 0.52], [6.68, 0.22], [5.56, 0.07], [4.5, 0.01],
+    [3.5, 0.0], [2.5, 0.02], [2.0, 0.06], [1.6, 0.15], [1.0, 0.33], [0.6, 0.43], [0.45, 0.48], [0.25, 0.55], [0.1, 0.62],
+  ],
+  // the windscreen's side, the crew door window and the four cabin windows
+  glass: [
+    [[2.27, 1.13, "c"], [2.6, 1.3, ""], [2.97, 1.49, "c"], [3.02, 1.4, "c"], [2.62, 1.12, "c"]],
+    [[3.43, 0.95, "c"], [3.38, 1.36, "c"], [3.05, 1.41, "c"], [2.72, 0.98, "c"]],
+    pane(3.91, 4.36, 0.95, 1.25, 0.06), pane(4.69, 5.09, 0.95, 1.25, 0.06), pane(5.4, 5.78, 0.95, 1.25, 0.06), pane(6.18, 6.57, 0.95, 1.25, 0.06),
+  ],
+  frame: 0.035,
+  wing: { le: 3.0, root: 0.7, span: 13.72, cr: 1.65, ct: 1.65, sweep: 0, dih: 1, z: 1.6, t: [0.15, 0.13] },
+  wingSide: [
+    ["wing", [[3.0, 1.57, "c"], [3.12, 1.71], [3.5, 1.79], [4.0, 1.77], [4.4, 1.69], [4.68, 1.6, "c"], [4.2, 1.55], [3.5, 1.53]]],
+  ],
+  eng: { kind: "none", nose: { s: 0.4, z: 0.71, d: 2.44, blades: 3 } },
+  stab: {},
+  stabSide: [
+    ["stab", [[8.9, 1.42, "c"], [9.3, 1.5], [9.9, 1.48], [10.41, 1.28, "c"], [9.9, 1.3], [9.3, 1.33]]],
+  ],
+  parts: {
+    // the crew door and the cabin door
+    doors: [
+      [[2.62, 0.38, "c"], [2.62, 0.95], [3.0, 1.46], [3.52, 1.46, "c"], [3.52, 0.38, "c"]],
+    ],
+    // the rudder hinge, the cowling's rear seam
+    lines: [[[9.55, 3.66], [9.42, 1.45]], [[2.2, 1.12], [2.22, 0.06]]],
+    struts: [[[3.72, 0.3], [3.49, 1.55], 0.17, 0.13]],
+    gear: [
+      { leg: [[4.66, 0.02], [4.38, -0.6]], w: [0.16, 0.1], at: [4.36, -0.6], r: 0.33 },
+      { leg: [[1.37, 0.08], [1.25, -0.66]], w: [0.09, 0.07], at: [1.24, -0.66], r: 0.24 },
+    ],
+    // the exhaust stack; the main gear's root fairing on the belly
+    shapes: [
+      ["core", [[0.64, 0.7, "c"], [0.75, 0.8], [1.06, 0.8, "c"], [1.09, 0.66, "c"], [0.75, 0.64]]],
+      ["pant", [[4.3, 0.05, "c"], [4.5, 0.18], [4.9, 0.17], [5.05, 0.05, "c"], [4.7, -0.05]]],
+    ],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 export const families = F;
 export const types = {
-  PC6: "pc6", PC9: "pc9", PC21: "pc21", DHC3: "dhc3",
+  PC6: "pc6", PC9: "pc9", PC21: "pc21", DHC3: "dhc3", KODI: "kodi",
 };
