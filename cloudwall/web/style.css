@@ -441,11 +441,14 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 .dimline::before, .dimline::after { content: ""; flex: 1; border-top: 1px solid; min-width: .4rem; }
 .dimline span { flex: none; font-variant-numeric: tabular-nums; } .dimline b { color: var(--ink-2); font-weight: 700; }
 .plate-note { font-size: .7rem; font-weight: 700; color: var(--blue); white-space: nowrap; }
-/* with a photo, the frame becomes a print over its type plate */
-.media.has-photo { flex-direction: column; align-items: stretch; }
-.media.has-photo .photo { flex: 1 1 0; min-height: 0; height: auto; }
-.media.has-photo .sil-box { flex: 0 0 44%; height: auto; border-top: 1px solid var(--rule); padding: .35rem 6% .3rem; }
-.media.has-photo .plate { gap: .2rem; }
+/* with a photo, the frame shows the photo or the type plate, one at a time, a switch in its top right corner */
+.media.has-photo { position: relative; flex-direction: column; align-items: stretch; }
+.media.has-photo .photo, .media.has-photo .sil-box { flex: 1 1 0; min-height: 0; height: auto; }
+.media.has-photo:not(.show-plate) .sil-box, .media.has-photo.show-plate .photo { display: none; }
+.media .media-seg { left: auto; right: .4rem; top: .4rem; background: color-mix(in srgb, var(--sheet) 82%, transparent); }
+.media .media-seg button { padding: .3rem .6rem; font-size: .7rem; }
+/* the type designator moves down out of the switch's way */
+.media.has-photo .sil-box[data-code]::before { top: 2.3rem; }
 /* side elevations drawn to scale: inked outlines over chart paper, like a type-certificate drawing */
 .sil { display: block; overflow: visible;
   --sil-line: color-mix(in srgb, var(--ink) 90%, transparent);
@@ -2010,13 +2013,10 @@ html.desk:not(.phone) .hero-card.fit-nomap .route.mapped { grid-template-rows: a
 html.desk:not(.phone) .hero-card.fit-nomap > .h-route { flex: none; }
 html.desk:not(.phone) .hero-card.fit-noplate .h-bottom .media { display: none; }
 html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) > .h-bottom { flex: none; min-height: 0; display: block; }
-/* a card with its map: the drawing already rides the route line, so a photo of the airframe, when there
-   is one, takes the drawing's place whole; and where there's no room for the drawing under a map
-   across the card, the photo still stands beside the facts, small */
-html.desk:not(.phone) .hero-card.mapped:not(.fit-nomap) .h-bottom .media.has-photo .sil-box { display: none; }
+/* where there's no room for the drawing under a map across the card, a photo (or the drawing, by the
+   switch on it) still stands beside the facts, small */
 html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) > .h-bottom:has(.media.has-photo) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.4rem; align-items: center; }
 html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) .h-bottom .media.has-photo { display: flex; order: 2; width: auto; height: 8.5rem; aspect-ratio: 3 / 2; max-height: none; }
-html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) .h-bottom .media.has-photo .sil-box { display: none; }
 /* the card's switch set to Aircraft, the map beside the facts: the drawing stands in the map's place */
 html.desk:not(.phone) .hero-card.map-beside.pic-plate > .h-bottom > .rmap { display: none; }
 html.desk:not(.phone) .hero-card.map-beside.pic-plate .h-bottom .media { display: flex; grid-column: 1; grid-row: 1 / -1; aspect-ratio: auto; height: 100%; min-height: 6.5rem; max-height: none; align-self: stretch; }

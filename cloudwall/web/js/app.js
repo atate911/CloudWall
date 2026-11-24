@@ -3,7 +3,7 @@ import { $, esc, store, phone, api, runwayList, degF, since, dataAge, COUNT_STOP
 import { updateSky } from "./sky.js";
 import { drawScope, mapReach, flashCraft } from "./scope.js";
 import { loadMap } from "./map.js";
-import { renderHero, tickHero, nextSlide, forgetHero, heroResized, setPicture } from "./hero.js";
+import { renderHero, tickHero, nextSlide, forgetHero, heroResized, setPicture, setMedia } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
 import { chime, soundOn, setSound } from "./fx.js";
 import { renderWeatherTab } from "./weather.js";
@@ -478,6 +478,9 @@ $("hero").addEventListener("click", (e) => {
   // the switch in the card's corner: the route map, or the aircraft's drawing in its place
   const pic = e.target.closest("[data-pic]");
   if (pic) { setPicture(pic.dataset.pic); return; }
+  // the switch in the photo's corner: the photo, or the drawing in its place
+  const med = e.target.closest("[data-media]");
+  if (med) { setMedia(med.dataset.media); return; }
   // the button on the card's drawing, and the type's name among the facts: about the aircraft's type
   const ab = !KIOSK && state.hero && e.target.closest("[data-about]");
   if (ab) { openAbout(ab.dataset.about, aboutContext(state.hero)); return; }

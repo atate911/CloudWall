@@ -78,10 +78,10 @@ in the address, and `[kiosk] density` sets the wall panel's.
   The photo is of that very airframe (planespotters.net files photos by airframe, so a tail
   number that once belonged to another aircraft doesn't bring up its pictures), credited to its
   photographer in its bottom right corner, with a link to the photo's page there.
-  Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
-  dimension line with its length. With no photo, the plate fills the frame. When the card shows
-  the route on its map, the drawing already rides the route line, so the photo takes the plate's
-  place whole (beside the facts, small, when the map leaves no room for more). A tap on the type's
+  A switch in the photo's corner (*Photo*, *Drawing*) puts the type plate in its place: a side
+  elevation of the type, drawn to scale over a dimension line with its length. Each screen
+  remembers which it was last set to. With no photo, the plate fills the frame. When the map
+  leaves no room for more, the frame stands beside the facts, small. A tap on the type's
   name at the head of the card, or on *About this type* in the plate's corner, opens a page on the
   type, written for enthusiasts: for the types over the
   house every day, what they're built from and why they look and fly as they do; for the rare

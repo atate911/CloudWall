@@ -282,10 +282,14 @@ function showHero(el, a, state) {
     img.onload = () => {
       const m = $("h-media");
       if (cur.photo !== a.photo || !m) return;
-      m.querySelectorAll(".photo").forEach((p) => p.remove());
+      m.querySelectorAll(".photo, .media-seg").forEach((p) => p.remove());
       fig.prepend(img);
       m.prepend(fig);
       m.classList.add("has-photo");
+      // a switch in the frame's corner: the photo or the drawing, one at a time, as last set on this screen
+      m.insertAdjacentHTML("beforeend", `<div class="seg media-seg" role="group" aria-label="Photo or drawing">` +
+        `<button data-media="photo" title="The photo of this aircraft">Photo</button><button data-media="plate" title="The type's drawing, to scale">Drawing</button></div>`);
+      showMedia(m);
     };
     img.src = a.photo;
   }
@@ -391,6 +395,19 @@ if (document.fonts && document.fonts.addEventListener) {
     const el = $("hero");
     if (el && el.classList.contains("hero-card")) { el._mapKey = null; fitCard(el); }
   });
+}
+
+// The switch in the photo's corner: the airframe's photo, or the type's drawing in its place.
+const mediaPick = () => (store("media") === "plate" ? "plate" : "photo");
+function showMedia(m) {
+  const pick = mediaPick();
+  m.classList.toggle("show-plate", pick === "plate");
+  m.querySelectorAll("[data-media]").forEach((b) => b.classList.toggle("on", b.dataset.media === pick));
+}
+export function setMedia(which) {
+  store("media", which === "plate" ? "plate" : "photo");
+  const m = $("h-media");
+  if (m) showMedia(m);
 }
 
 // The switch in the card's corner: the route map, or the aircraft's drawing in its place.
