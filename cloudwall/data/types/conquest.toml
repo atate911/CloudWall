@@ -1,0 +1,59 @@
+name = "Cessna Conquest"
+types = ["C441", "C425"]
+production = [1977, 1986]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Cessna_441_Conquest_II",
+  "https://en.wikipedia.org/wiki/Cessna_425",
+  "https://aviationweek.com/business-aviation/cessna-conquest-ii-undervalued-speedy-fuel-efficient-turboprop",
+  "https://www.businessairnews.com/mag_story.html?ident=9610",
+]
+
+[facts]
+"Engines" = "2 × Garrett TPE331-8, 636 shp (441); most since re-engined with the TPE331-10"
+
+[variants.C441]
+name = "Cessna 441 Conquest II"
+text = """
+Cessna's first turboprop, meant to fill the gap between its piston twins and its Citation jets.
+It began on paper in 1972 as the Model 431, a piston twin, and grew Garrett TPE331 turboprops on
+the way to its first flight in August 1975. Underneath it is a pressurised development of the
+Titan, Cessna's 400-series piston twin, on a new wing of unusually high aspect ratio and bonded
+construction: long and slender, it is what makes a 441 look different from
+the King Airs and Cheyennes it competed with, along with the tall swept fin and the tailplane's
+marked dihedral.
+
+Called simply the Conquest until 1983, when it became the Conquest II, it was built from 1977 to
+1986, 362 in all. Most have since been given TPE331-10 engines, with which a 441 cruises at about
+316 kt at 29,000 ft while burning 480 lb of fuel an hour. Charter operators value it for that, and
+it served Australia's Royal Flying Doctor Service.
+"""
+[variants.C441.facts]
+"First flight" = "August 1975"
+"Built" = "362"
+"Cruise" = "316 kt at 29,000 ft (TPE331-10)"
+"Range" = "2,000 nm (3,700 km)"
+"Max takeoff weight" = "9,850 lb (4,468 kg)"
+
+[variants.C425]
+name = "Cessna 425 Corsair or Conquest I"
+production = [1980, 1986]
+text = """
+The smaller Conquest is a Cessna 421 with Pratt & Whitney Canada PT6 turboprops in place of its
+piston engines, introduced in 1980 as the Corsair to take on the King Air 90. Cessna claimed it 15
+to 20 kt faster than the C90, with 15 percent less fuel burned and a price $200,000 lower, and
+reviewers liked its easy handling and the big windows of its eight-seat cabin.
+
+Owners asked for more cabin and a higher takeoff weight, and the Corsair became the Conquest I, the
+441 becoming the Conquest II beside it; earlier Corsairs could be brought up to the new standard
+with factory kits. General aviation's slump in the mid-1980s ended production in 1986, after 236.
+Next to a 441 it is shorter, with round windows rather than oval ones and the PT6's exhaust stacks
+just behind each propeller.
+"""
+[variants.C425.facts]
+"First flight" = "September 1978"
+"Built" = "236"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-112, 450 shp"
+"Top speed" = "264 kt"
+"Range" = "1,646 nm (3,048 km)"
+"Max takeoff weight" = "8,200 lb (3,719 kg)"
