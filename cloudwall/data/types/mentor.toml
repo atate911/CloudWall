@@ -1,0 +1,55 @@
+name = "Beechcraft T-34 Mentor"
+types = ["T34P", "T34T"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Beechcraft_T-34_Mentor",
+  "https://en.wikipedia.org/wiki/Beechcraft_Bonanza",
+]
+
+text = """
+Walter Beech built the Model 45 at his own expense, at a time when there was no money for a new
+trainer, hoping to sell the services something cheaper than the T-6 Texan. It took the Bonanza's
+wing, engine and gear, gave them a slimmer fuselage with student and instructor in tandem under a
+long canopy, and swapped the V-tail for a tall conventional fin to suit a conservative military,
+the fin that later went onto the Travel Air twin. It was also built far stronger than the Bonanza,
+for +10 and −4.5 g. Beech's test pilot Vern Carstens first flew it on 2 December 1948, and after a
+long competition the US Air Force took it into service in 1953 as the T-34A, the Navy following in
+1955 with the T-34B. In all more than 2,300 were built, and licensed copies came from Canada, Japan
+and Argentina.
+"""
+
+[facts]
+"First flight" = "December 1948"
+"Built" = "over 2,300, all models"
+
+[variants.T34P]
+name = "Beechcraft T-34A or T-34B Mentor"
+production = [1953, 1959]
+more = """
+The prototype had the 185 hp Continental of the Bonanzas of its day; production Mentors have the
+bigger E-225. The Air Force replaced its 450 T-34As with the Cessna T-37 jet around 1960 and passed
+many to aero clubs and the Civil Air Patrol, and the Navy trained on its 423 T-34Bs until 1976. In
+civil hands the Lima Lima Flight Team and Julie Clark flew them at air shows, but after wings failed
+in simulated dogfights the FAA grounded the civil fleet in 2004, and only in 2011, for aircraft
+with the required spar repairs, was it cleared again to its original limits. The long canopy and the tall
+straight fin tell it from the Bonanza it came from.
+"""
+[variants.T34P.facts]
+"Built" = "1,904, with the licence-built aircraft"
+"Engine" = "Continental E-225"
+
+[variants.T34T]
+name = "Beechcraft T-34C Turbo-Mentor"
+production = [1975, 1990]
+more = """
+After a gap of almost 15 years, the Navy had two T-34Bs fitted with a 550 shp Pratt & Whitney Canada
+PT6A turboprop, a version of the Baron's wing and the landing gear of the Duke, and the first flew on
+21 September 1973. As the T-34C it trained the Navy's, Marines' and Coast Guard's aviators for more
+than 35 years, until the T-6 Texan II replaced it. Argentina's armed T-34C-1s flew reconnaissance
+from the Falklands in 1982 until the SAS destroyed them on the ground at Pebble Island. Tell it from
+the piston Mentor by its longer nose, with an exhaust stack on each side behind the propeller.
+"""
+[variants.T34T.facts]
+"First flight" = "September 1973"
+"Engine" = "Pratt & Whitney Canada PT6A-25, 550 shp"
+"Cruise" = "214 kt"
