@@ -220,7 +220,47 @@ F.mu2 = {
   overlays: [engines, pipe(3.1, 0.05, 0.09), tipTank(2.1, 0.5, 0.55, 0.02)],
 };
 
+// ---------- Rockwell / Gulfstream Turbo Commander 690 and Jetprop 840-1000 (695) ----------
+// Published dimensions: length 13.52 m (44 ft 4 in) for the 690 series; 13.10 m (42.98 ft), span
+// 15.89 m and height 4.56 m for the Jetprop 1000 (Twin Commander Aircraft). Fuselage, the upswept
+// tail cone, nose, windshield, the picture window, the nacelles hanging under the high wing and the
+// tall fin measured off the side-on Commons photo "Rockwell 690B Turbo Commander AN0534949.jpg"
+// (CS-ASA), scaled by the overall length, and checked against "Rockwell 690B Turbo Commander
+// AN1386614.jpg" (SE-LZX). The window row is the right side's, as photographed. The Jetprop's
+// longer wing with winglets and its row of square windows off "Gulfstream Commander 695A Jetprop
+// 1000 (N695JP, cn 96024) (4-13-2024).jpg" and "Rockwell Commander 695 Jetprop 980 (N9812S, cn
+// 95060) (4-12-2024).jpg".
+F.ac90 = {
+  kind: "turboprop", L0: 13.25, over: 0.27, D: 1.55, W: 1.4, fwd: 0.5, fair: 0,
+  nose: {
+    tip: 0.2,
+    top: [[0.1, 0.28], [0.3, 0.36], [0.6, 0.46], [0.9, 0.55], [1.12, 0.61], [1.3, 0.73], [1.45, 0.86], [1.65, 0.96], [1.9, 1]],
+    bot: [[0.1, 0.08], [0.3, 0.03], [0.6, 0.005], [0.9, 0]],
+  },
+  tail: {
+    top: [[5.0, 1], [3.5, 1.04], [2.0, 1.12], [1.0, 1.13], [0, 1.04]],
+    bot: [[4.6, 0], [3.6, 0.12], [2.6, 0.3], [1.6, 0.5], [0.8, 0.68], [0, 0.82]],
+  },
+  glass: [
+    [[1.12, 0.61], [1.38, 0.86], [1.42, 0.88], [1.42, 0.62]],
+    [[1.6, 0.6], [1.6, 0.85], [1.93, 0.85], [1.93, 0.6]],
+  ],
+  win: [{ z: 0.64, from: 3.62, to: 3.62, w: 0.66, h: 0.48 }, { z: 0.64, from: 4.23, to: 4.23, w: 0.22, h: 0.38 }],
+  wing: { le: 5.0, root: 0.65, span: 14.17, cr: 2.2, ct: 1.2, sweep: 0, dih: 3, z: 1.0, t: [0.15, 0.12] },
+  nac: [0.26], eng: { kind: "prop", at: [], fwd: 1.1, drop: 0.6, len: 4.6, dia: 0.66, spinner: 0.08, tailZ: 0.1, belly: 1.0, prop: 2.69, blades: 3 },
+  fin: { le: 2.24, cr: 2.3, ct: 0.97, h: 2.55, sweep: 22, rudder: 0.62 },
+  stab: { le: 1.08, z: 1.3, span: 6.4, root: 0.2, cr: 1.4, ct: 0.7, sweep: 25, dih: 2 },
+  extras: [dorsal(-4.2, 2.1, 0.4)],
+  overlays: [engines, pipe(1.9, 0.12, 0.09)],
+};
+F.ac95 = {
+  ...F.ac90,
+  win: [{ z: 0.64, from: 3.3, to: 6.1, pitch: 0.7, w: 0.42, h: 0.42 }],
+  wing: { ...F.ac90.wing, span: 15.89 },
+  tip: { h: 0.38, sweep: 35, top: 0.25, base: 0.45, blend: 0.05 },
+};
+
 export const families = F;
 export const types = {
-  PAY1: "pa31t", PAY2: "pa31t", PA31T: "pa31t", PAY3: "pa42", PA42: "pa42", PAY4: "pa42k", C425: "c425", C441: "c441", MU2: "mu2",
+  PAY1: "pa31t", PAY2: "pa31t", PA31T: "pa31t", PAY3: "pa42", PA42: "pa42", PAY4: "pa42k", C425: "c425", C441: "c441", MU2: "mu2", AC90: "ac90", AC95: "ac95",
 };
