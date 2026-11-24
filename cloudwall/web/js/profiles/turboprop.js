@@ -139,6 +139,52 @@ F.b350 = {
   eng: { ...F.be20.eng, blades: 4, prop: 2.67 },
 };
 
+// ---------- Beechcraft King Air 90 / F90 / 100 ----------
+// Reference: Wikimedia Commons "Beechcraft U-21A Ute 3-view line drawing.png", a dimensioned
+// manufacturer's drawing of the King Air 90 airframe (length 35 ft 6 in, span 45 ft 10.5 in, height
+// 14 ft 2.56 in, propellers 7 ft 9 in, main gear track 12 ft 9 in): its side view gives the 90's
+// tail cone, conventional tail with dorsal fillet and dihedral tailplane, and the wing and nacelle
+// stations. Published dimensions (Wikipedia): C90 length 10.82 m, span 15.32 m; F90 12.13 m long,
+// 14.00 m span; 100 series 12.17 m long, 14.0 m span, 4.70 m high. Windows and door checked against
+// Commons photos: "Beechcraft King Air C90GTx Sideview.jpg" and "Beechcraft King Air F90 N3809C
+// MD1.jpg" (three round cabin windows ahead of the airstair door, one behind it, on the left side),
+// "C-GSYN Adlair Aviation Ltd Beechcraft King Air 100 (BE10) 03.JPG" and "Beechcraft King Air A100
+// 5R-MHC.jpg" (the 200's five). The 90 shares the 200's nose, cabin section and nacelles, so those
+// are the 200's above; its cabin is 1.35 m shorter, 60 % of it ahead of the wing as the 200 drawing
+// has it. The F90 is the 90's fuselage and wing with the 200's T-tail; the 100 is the 200's
+// fuselage with a conventional tail like the 90's, taller (its 4.70 m height less the 200's 4.37 m).
+const KA90_TAIL = {
+  top: [[2.4, 1], [2.1, 0.97], [1.0, 0.84], [0, 0.73]],
+  bot: [[3.1, 0], [2.57, 0.08], [2.0, 0.17], [1.37, 0.28], [0.7, 0.37], [0.14, 0.42], [0, 0.44]],
+};
+F.be9l = {
+  ...F.be20, L0: 10.17, over: 0.65,
+  tail: KA90_TAIL,
+  win: [{ z: 0.727, from: 4.15, to: 5.13, pitch: 0.49, w: 0.36, h: 0.36 }, { z: 0.727, from: -3.75, to: -3.75, w: 0.45, h: 0.3 }],
+  wing: { ...F.be20.wing, le: 3.0, span: 15.32 },
+  eng: { ...F.be20.eng, at: [0.17], fwd: 2.57, len: 5.12, prop: 2.29, blades: 4 },
+  fin: { le: 1.65, cr: 1.68, ct: 0.9, h: 1.78, sweep: 40.6, fillet: [0.8, 0.35], rudder: 0.62 },
+  stab: { le: 2.03, z: 0.7, span: 5.25, root: 0.3, cr: 1.75, ct: 1.2, sweep: 13, dih: 9 },
+  extras: [door(-4.42, 0.72, 0.25, 1.38)],
+};
+F.be9t = {
+  ...F.be9l, L0: 10.65, over: F.be20.over,
+  tail: F.be20.tail, fin: F.be20.fin, stab: F.be20.stab,
+  win: [F.be9l.win[0], { ...F.be9l.win[1], from: -4.23, to: -4.23 }],
+  wing: { ...F.be9l.wing, span: 14.0 },
+  extras: [door(-4.9, 0.72, 0.25, 1.38)],
+};
+F.be10 = {
+  ...F.be20, L0: 11.52, over: 0.65,
+  tail: KA90_TAIL,
+  win: [F.be20.win[0], { ...F.be20.win[1], from: -3.59, to: -3.59 }],
+  wing: { ...F.be20.wing, span: 14.0 },
+  eng: { ...F.be20.eng, blades: 4 },
+  fin: { ...F.be9l.fin, le: 1.75, cr: 1.8, ct: 0.95, h: 2.0 },
+  stab: { ...F.be9l.stab, le: 2.1 },
+  extras: [door(-4.46, 0.72, 0.25, 1.38)],
+};
+
 // ---------- ATR 72 ----------
 // Reference: Wikimedia Commons "ATR family v1.0.png" (dimensioned side, plan and front views of
 // the ATR 72 and 42; length 27.17 m, span 27.05 m, height 7.65 m). High wing on a raised
@@ -263,7 +309,105 @@ F.sw4 = {
   extras: [dorsal(-6.2, -2.95, 2.25, 0.4), door(4.3, 0.64, 0.25, 1.35), door(-5.0, 1.3, 0.3, 1.25)],
 };
 
+// Square-cornered cabin windows (the renderer's window rows are round-ended): centres s (metres),
+// width w, height h, centre height z above the keel, corner radius r.
+const panes = (list, w, h, z, r = 0.07) => ({ sk }) => {
+  for (const s of list) {
+    const a = s - w / 2, b = s + w / 2, z0 = z - h / 2, z1 = z + h / 2;
+    sk.smooth("glass", [[a + r, z0, "l"], [b - r, z0], [b, z0 + r, "l"], [b, z1 - r], [b - r, z1, "l"], [a + r, z1], [a, z1 - r, "l"], [a, z0 + r]]);
+  }
+};
+
+// ---------- Beechcraft 99 Airliner ----------
+// Published dimensions (Wikipedia, Model 99A): length 44 ft 6.75 in (13.58 m), span 45 ft 10.5 in
+// (13.98 m), height 14 ft 4.33 in (4.38 m). It has the Queen Air's wing and the King Air's engines
+// and nacelles (so those are the King Air 90's above, measured off the U-21A drawing of the same
+// wing, 45 ft 10.5 in span, and nacelles), on a longer cabin behind its own long, drooping nose.
+// No three-view on Commons: stations measured off the near side-on Beech factory photo "Beechcraft
+// - 99 - Airliner.jpg" (scaled by the overall length) and heights off "Beech 99 (287390412).jpg",
+// with "Jamaica Air Shuttle Beechcraft Model 99 In Flight.jpg" for the left side's openings: a
+// forward exit with its window, six square cabin windows, the wide airstair-and-cargo door behind
+// the wing and a round window aft of it; swept fin on a long low dorsal, dihedral tailplane low on
+// the tail cone, three-blade propellers. Tailplane span is estimated from the photos.
+F.be99 = {
+  kind: "turboprop", L0: 13.0, over: 0.58, D: 1.78, W: 1.6, fwd: 0.4, fair: 0,
+  nose: {
+    tip: 0.31,
+    top: [[0.05, 0.38], [0.15, 0.43], [0.3, 0.47], [0.6, 0.53], [0.9, 0.58], [1.2, 0.63], [1.5, 0.68], [1.72, 0.72], [1.95, 0.88], [2.12, 0.97], [2.3, 1]],
+    bot: [[0.05, 0.22], [0.15, 0.15], [0.3, 0.1], [0.6, 0.055], [1.0, 0.025], [1.4, 0.008], [1.8, 0]],
+  },
+  tail: {
+    top: [[2.6, 1], [2.2, 0.97], [1.1, 0.84], [0, 0.72]],
+    bot: [[3.4, 0], [2.8, 0.07], [2.1, 0.18], [1.4, 0.29], [0.7, 0.38], [0.15, 0.43], [0, 0.45]],
+  },
+  glass: [
+    [[1.66, 0.7], [1.93, 0.9], [2.01, 0.93], [2.02, 0.86], [1.84, 0.67]],
+    [[2.05, 0.9], [2.24, 0.9], [2.27, 0.84], [2.27, 0.71], [2.05, 0.71], [1.95, 0.8]],
+  ],
+  wing: { le: 5.35, root: 0.8, span: 13.98, cr: 2.2, ct: 1.1, sweep: 1, dih: 6, z: 0.11, t: [0.16, 0.12] },
+  eng: { ...F.be9l.eng, prop: 2.36, blades: 3 },
+  fin: { le: 2.17, cr: 2.2, ct: 1.0, h: 1.8, sweep: 44, fillet: [1.5, 0.3], rudder: 0.66 },
+  stab: { le: 1.74, z: 0.74, span: 5.4, root: 0.3, cr: 1.6, ct: 1.0, sweep: 15, dih: 7 },
+  extras: [
+    panes([4.34, 5.44, 5.94, 6.44, 6.94, 7.44, 7.94], 0.4, 0.4, 1.32),
+    // the forward exit round its window, the airstair-and-cargo door, the round window behind it
+    door(4.34, 0.62, 0.78, 0.92), door(8.85, 1.1, 0.25, 1.32),
+    ({ sk }) => sk.ellipse("glass", 9.8, 1.32, 0.14, 0.12),
+  ],
+  overlays: [stacks(1.45, 0.2)],
+};
+
+// ---------- Piaggio P.180 Avanti ----------
+// Reference: Wikimedia Commons "P180 Avanti.jpg" (side, plan and front views with a cabin section),
+// scaled by the published length 14.41 m (Piaggio; Wikipedia 47.3 ft), span 14.03 m (46 ft), height
+// 13 ft. Checked against the side-on photo "Piaggio P180 Avanti.JPG" (PH-DLN). Laminar fuselage whose
+// depth swells to 2 m over the cabin and tapers to a high tail cone, canard foreplane low on the nose,
+// straight mid-set wing behind the cabin carrying long nacelles with five-blade pusher propellers
+// (2.16 m in the front view), swept T-tail, and two delta fins under the tail cone. Left side: the
+// airstair door ahead of four small cabin windows.
+const P180_PARTS = ({ sk, prop, surface }) => {
+  // the near delta fin under the tail cone
+  sk.smooth("fin", [[9.7, 0.81, "c"], [12.41, 1.06, "c"], [12.36, 0.66], [12.05, 0.61, "c"], [11.24, 0.68]]);
+  // the canard: slight anhedral, flapped trailing edge
+  surface(sk, "stab", { le: 0.54, root: 0.45, span: 3.48, cr: 0.72, ct: 0.5, sweep: 8, dih: -5, z: 0.42, t: [0.12, 0.1] });
+  // the nacelle, its intake scoop and exhaust, then the spinner and the pusher propeller behind it
+  sk.smooth("nac", [[6.5, 1.32, "c"], [6.6, 1.52], [7.08, 1.68], [8.0, 1.78], [8.89, 1.8], [9.79, 1.76], [10.47, 1.68, "c"],
+    [10.47, 1.14, "c"], [9.79, 1.0], [8.89, 0.93], [8.0, 0.91], [7.08, 0.97], [6.6, 1.1]]);
+  sk.smooth("hl", [[7.75, 1.24, "c"], [8.4, 1.37], [9.05, 1.29, "c"], [8.7, 1.18], [8.0, 1.16]]);
+  sk.ellipse("inlet", 9.78, 1.47, 0.36, 0.09);
+  sk.smooth("nac", [[10.47, 1.58, "c"], [10.9, 1.52], [11.28, 1.4, "c"], [10.9, 1.28], [10.47, 1.22, "c"]]);
+  prop(sk, 10.56, 1.4, 2.16, 5);
+};
+F.p180 = {
+  kind: "turboprop", L0: 12.64, over: 1.77, D: 2.0, W: 1.95, fwd: 0.5, fair: 0,
+  nose: {
+    tip: 0.2,
+    top: [[0.11, 0.27], [0.29, 0.36], [0.61, 0.555], [0.83, 0.62], [1.29, 0.76], [1.74, 0.885], [2.28, 0.99], [2.6, 1]],
+    bot: [[0.07, 0.135], [0.2, 0.09], [0.38, 0.068], [0.65, 0.045], [1.06, 0.023], [1.51, 0.005], [1.74, 0]],
+  },
+  tail: {
+    top: [[2.32, 1], [1.87, 0.95], [1.42, 0.89], [0.97, 0.81], [0.52, 0.71], [0, 0.58]],
+    bot: [[2.55, 0], [2.1, 0.054], [1.65, 0.12], [1.2, 0.2], [0.74, 0.32], [0.29, 0.43], [0, 0.5]],
+  },
+  glass: [[[0.79, 0.6], [0.86, 0.645], [1.15, 0.75], [1.29, 0.77], [1.49, 0.73], [1.49, 0.575], [0.79, 0.575]]],
+  frame: 0.03,
+  win: [{ z: 0.67, from: 4.24, to: 6.2, pitch: 0.645, w: 0.235, h: 0.36 }],
+  wing: { le: 7.45, root: 0.9, span: 14.03, cr: 1.53, ct: 0.67, sweep: 2.5, dih: 2, z: 0.66, t: [0.13, 0.12] },
+  fin: { le: 2.17, cr: 2.03, ct: 1.53, h: 1.38, sweep: 41, rudder: 0.7 },
+  stab: { le: 0.4, z: "T", drop: 0.12, span: 4.33, root: 0.25, cr: 1.2, ct: 0.95, sweep: 32, dih: 0, bullet: [1.5, 0.14] },
+  extras: [
+    door(3.53, 0.66, 0.25, 1.32),
+    marks([["hl", [[1.31, 0.12], [1.31, 1.13]]], ["strut", [[6.77, 2.0], [7.2, 2.2], [7.42, 2.2], [7.12, 2.0]]],
+      ["door", [[8.2, 0.75, "c"], [9.05, 0.78, "c"], [9.05, 0.42, "c"], [8.2, 0.33, "c"]]], ["strut", [[8.65, 0.07], [8.95, -0.2], [9.2, -0.2], [8.95, 0.07]]]]),
+  ],
+  overlays: [P180_PARTS],
+};
+
 export const families = F;
 export const types = {
   DH8D: "dh8d", DH8C: "dh8c", BE20: "be20", B350: "b350", AT72: "at72", AT76: "at76", B190: "b190", SW4: "sw4",
+  BE9L: "be9l", BE9T: "be9t", BE10: "be10",
+  // the 300 is the 200's airframe with the 350's PT6A-60As and four-blade propellers
+  BE30: ["be20", { eng: { ...F.be20.eng, blades: 4, prop: 2.67 } }],
+  BE99: "be99", P180: "p180",
 };

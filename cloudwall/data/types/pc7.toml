@@ -1,0 +1,56 @@
+name = "Pilatus PC-7 and PC-9"
+types = ["PC7", "PC9"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Pilatus_PC-7",
+  "https://en.wikipedia.org/wiki/Pilatus_PC-9",
+  "https://www.pilatus-aircraft.com/assets/files/Model-Building-Plans/PC-9-M-Model-Building-Plan.pdf",
+  "https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/types.json",
+]
+
+[variants.PC7]
+name = "Pilatus PC-7 Turbo Trainer"
+production = [1978]
+text = """
+Pilatus made the PC-7 by putting a Pratt & Whitney Canada PT6A turboprop in the nose of its
+piston-engined P-3 trainer, then gave it a bubble canopy, an altered fin and a new one-piece wing
+with its fuel inside. The prototype flew in April 1966 and the project was shelved; the oil crisis
+of 1973 and Beechcraft's turboprop T-34C brought it back, and production aircraft flew from August
+1978. More than twenty air forces have trained their pilots on it, and its profits paid for the
+aircraft Pilatus built next.
+
+Its sales have also been Switzerland's trouble. Every export needs the Swiss government's approval,
+and PC-7s sold as trainers have been armed and flown in combat by Chad, Iran and Mexico, against
+the terms of their sale. The PC-7 Mk II M of the 1990s put the PC-7's smaller engine in the PC-9's
+airframe, first for South Africa and later for India, which signed for 75 in 2012. Tell the
+original from a PC-9 by its shorter nose and shorter canopy.
+"""
+[variants.PC7.facts]
+"First flight" = "April 1966 (prototype), August 1978 (production)"
+"Built" = "over 600"
+"Engine" = "Pratt & Whitney Canada PT6A-25A, 410 kW"
+"Cruise" = "222 kt (412 km/h) at 20,000 ft"
+
+[variants.PC9]
+name = "Pilatus PC-9"
+production = [1985]
+text = """
+The PC-9 looks like a PC-7 but shares little of its structure. Pilatus designed it in the early
+1980s to take a student from first lessons to advanced training without an intermediate type, with
+a PT6A-62 flat-rated to 950 shp, a longer nose, a longer canopy over stepped ejection seats, so the
+instructor behind can see past the student, and an airbrake under the belly. It first flew in May
+1984, lost the Royal Air Force's trainer competition to the Short Tucano, and found its first buyer
+in Saudi Arabia. Australia ordered 67, built under licence there by Hawker de Havilland as the
+PC-9/A, and the RAAF's Roulettes display team flew them.
+
+Its biggest success came through Beechcraft, whose much modified PC-9 Mk II won the United States'
+JPATS trainer contest in June 1995. Built in the United States as the T-6 Texan II, with more than
+700 planned for the US Air Force and Navy, it flies under a type designator of its own. Pilatus's
+own PC-9 M has a glass cockpit with large primary and secondary flight displays.
+"""
+[variants.PC9.facts]
+"First flight" = "May 1984"
+"Built" = "over 250"
+"Engine" = "Pratt & Whitney Canada PT6A-62, flat-rated to 950 shp"
+"Cruise" = "298 kt at 10,000 ft (PC-9 M)"
+"Max takeoff weight" = "7,055 lb (3,200 kg)"

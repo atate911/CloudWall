@@ -88,8 +88,10 @@ class Tiles:
         return self.style if self.style in STYLES or self.is_layer else "custom"
 
     def info(self):
+        # reach_nm: how far from home tiles are served (none for a layer served anywhere), so a
+        # display doesn't ask for the ones it would be refused
         return {"enabled": self.enabled, "style": self.look(), "attribution": self.attribution, "opacity": self.opacity,
-                "zooms": list(self.zooms)}
+                "zooms": list(self.zooms), "reach_nm": None if self.anywhere else self.reach_nm}
 
     def allowed(self, z, x, y):
         if not (self.zooms[0] <= z <= self.zooms[1] and 0 <= x < 2 ** z and 0 <= y < 2 ** z):

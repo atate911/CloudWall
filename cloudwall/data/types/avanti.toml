@@ -1,0 +1,34 @@
+name = "Piaggio P.180 Avanti"
+types = ["P180"]
+production = [1990]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Piaggio_P.180_Avanti",
+]
+
+text = """
+The Avanti and Beechcraft's very similar Starship came out of the same 1980s push for a new kind of
+business aircraft. It has three lifting surfaces, a small canard low on the nose, a slender straight
+wing set behind the cabin and a T-tail, and its two Pratt & Whitney Canada PT6A turboprops face
+backwards, pushing with five-blade propellers from behind the wing. Because the wing's spars pass
+behind the cabin rather than through it, and the fuselage's cross-section changes all along its
+length like a wing section, the cabin is wider in the middle than at the cockpit, and Piaggio
+credits the fuselage with up to a fifth of the lift. With no propeller wash over the wing, air flows
+smoothly over about half its chord, against a quarter at most on a conventional turboprop.
+
+That makes it about as fast as a light jet on much less fuel: in 2003 Joe Ritchie and Steve Fossett
+flew one from San Diego to Charleston in 3 hours 52 minutes, averaging 475 knots, a transcontinental
+record. Engineering began in 1979, Gates Learjet helped develop the fuselage until it pulled out in
+January 1986, and the prototype flew that September. The Avanti II of 2005 brought PT6A-66B engines
+and a glass cockpit, and the Evo of 2014 quieter scimitar-bladed propellers and winglets. The cabin
+is quiet with the propellers behind it, but outside the pusher props give it a loud, high-pitched
+note.
+"""
+
+[facts]
+"First flight" = "September 1986"
+"Entered service" = "September 1990"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-66B, 850 shp"
+"Cruise" = "318 kt at 41,000 ft, long-range (Evo)"
+"Range" = "1,510 nm (2,800 km) with four passengers"
+"Ceiling" = "41,000 ft"

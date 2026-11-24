@@ -34,6 +34,10 @@ export function tileLayout(home, radiusNm, screenPxPerNm, layer = null) {
   const tiles = [];
   for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
     const nw = offset(home, { lat: y2lat(y, z), lon: x2lon(x, z) }), se = offset(home, { lat: y2lat(y + 1, z), lon: x2lon(x + 1, z) });
+    // the server serves tiles only within reach of home: one wholly beyond it isn't asked for
+    // (it lies past the edge the display shows anyway, in the corners a square layout covers)
+    const reach = layer && layer.reach_nm;
+    if (reach && Math.hypot(Math.max(nw.x, 0, -se.x), Math.max(se.y, 0, -nw.y)) > reach + 0.1) continue;    // (a hair of margin: the server measures on the sphere)
     tiles.push({ url: `${prefix}/${z}/${x}/${y}`, x0: nw.x, y0: nw.y, x1: se.x, y1: se.y });
   }
   return { z, tiles };

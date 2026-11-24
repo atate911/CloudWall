@@ -1,0 +1,45 @@
+name = "Short 330 and 360"
+types = ["SH33", "SH36"]
+production = [1976, 1992]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Short_330",
+  "https://en.wikipedia.org/wiki/Short_360",
+]
+
+text = """
+Short Brothers of Belfast built the 330 from its Skyvan utility transport, keeping the Skyvan's
+square-section fuselage and its braced high wing but lengthening both, to take up to 30 passengers:
+the most US rules then allowed a commuter airline to carry. It first flew on 22 August 1974 and
+entered service with Canada's Time Air in 1976. All of its fuel is in tanks over the cabin ceiling,
+the main gear folds into stub wings low on the fuselage, and the tail has twin fins. Boeing
+engineers helped lay out a cabin modelled on larger airliners'. It was slower than its pressurised rivals, but cheap, quiet and rugged, and easy to maintain; one airline
+nicknamed it the "Shed". The Sherpa, with a full-width rear ramp, became the US Air Force's C-23,
+flying spare parts between its bases in Europe, and 141 330s and Sherpas were built until 1992.
+"""
+
+[variants.SH33]
+name = "Short 330"
+[variants.SH33.facts]
+"First flight" = "August 1974"
+"Built" = "141, with the Sherpa"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-45R, 1,198 shp (330-200)"
+"Max takeoff weight" = "10,387 kg (22,900 lb)"
+"Range" = "915 nm (1,695 km)"
+
+[variants.SH36]
+name = "Short 360"
+production = [1982, 1991]
+more = """
+The 360 stretches the 330 with a 3 ft fuselage plug for two more rows of seats, 36 in all,
+and replaces its twin fins with a single swept fin on a new, longer rear fuselage that tapers more
+smoothly and cuts drag. It first flew on 1 June 1981 and entered service with Suburban Airlines in
+November 1982; the 360-300 of 1987 added six-blade propellers and more powerful engines. Short built
+165 until 1991. The main user of both types today is a freight airline, Air Cargo Carriers.
+"""
+[variants.SH36.facts]
+"First flight" = "June 1981"
+"Built" = "165"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-65AR, 1,424 shp (360 Advanced)"
+"Max takeoff weight" = "12,292 kg (27,100 lb), 360-300"
+"Range" = "861 nm (1,595 km)"

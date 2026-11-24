@@ -1,0 +1,60 @@
+name = "Air Tractor"
+types = ["AT3T", "AT8T"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Air_Tractor",
+  "https://en.wikipedia.org/wiki/Air_Tractor_AT-500_family",
+  "https://en.wikipedia.org/wiki/Air_Tractor_AT-802",
+]
+
+text = """
+Leland Snow built his first crop sprayer, the S-1, in 1951 when he was 23, and its successors became
+the Thrush. He sold that company to Rockwell in 1965, left to design a new aircraft, and Air Tractor,
+in Olney, Texas, has built his designs since 1974. All of them share one layout: a low wing, a
+tailwheel, a big engine out front, and the hopper for the chemicals between the engine's firewall
+and the cockpit, so the pilot sits well back behind a long nose. The turboprop models have a Pratt &
+Whitney Canada PT6A, and in 2024 Air Tractor dropped its piston engines to build only those; from
+2011 through 2018 it delivered more turboprop aircraft than any other maker, 141 of the 601
+general-aviation turboprops built worldwide in 2018.
+"""
+
+[variants.AT3T]
+name = "Air Tractor AT-502"
+production = [1986]
+text = """
+The AT-500 family first flew on 25 April 1986, a stretch of Air Tractor's earlier sprayers with 50
+inches more span and 22 inches more fuselage for a larger hopper. The AT-502B, the main production
+model, carries 1,900 litres (500 US gal) behind a 750 shp PT6A-34AG, and from 2011 through 2018 it
+was the world's best-selling agricultural aircraft, with 388 delivered. Most can take a second
+seat, a wide "buddy" seat or one in tandem, for a loader, an observer or a student, and the AT-504
+is a side-by-side trainer with dual controls.
+
+Tell it from the bigger AT-802 by its shorter wing, 52 ft (15.8 m) against 59 ft, and its smaller
+hopper and engine.
+"""
+[variants.AT3T.facts]
+"First flight" = "April 1986"
+"Engine" = "Pratt & Whitney Canada PT6A-34AG, 750 shp (AT-502B)"
+"Hopper" = "500 US gal (1,900 L)"
+"Max takeoff weight" = "10,480 lb (4,754 kg), AT-502B"
+
+[variants.AT8T]
+name = "Air Tractor AT-802"
+production = [1990]
+text = """
+The AT-802, first flown in October 1990, is the largest of the line: its hopper holds 820 US gallons
+(3,104 litres) behind a 1,350 shp PT6A-67AG, on a wing of 59 ft (18 m). The AT-802A has one seat,
+the AT-802 a second in tandem. With a computerised firegate it is the AT-802F, a single-engine air
+tanker flown over wildfires by forest services and contractors around the world, and the Fire Boss
+stands it on Wipaire amphibious floats, so it can land on a runway or on water and scoop its load
+from a lake or river.
+
+The airframe went to war, too. The armoured AT-802U, with a bulletproof windscreen and self-sealing
+tanks, was built for light attack and surveillance, and in August 2022 US Special Operations Command
+said it would buy up to 75, modified by L3Harris for its Armed Overwatch programme as the OA-1K.
+"""
+[variants.AT8T.facts]
+"First flight" = "October 1990"
+"Engine" = "Pratt & Whitney Canada PT6A-67AG, 1,350 shp"
+"Hopper" = "820 US gal (3,104 L)"
+"Max takeoff weight" = "16,000 lb (7,257 kg)"

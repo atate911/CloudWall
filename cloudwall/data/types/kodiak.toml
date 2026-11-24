@@ -1,0 +1,32 @@
+name = "Daher Kodiak 100"
+types = ["KODI", "K100"]          # the feeds send K100
+production = [2008]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Daher_Kodiak",
+  "https://web.archive.org/web/20170208034113/http://dcsw5hu9eqt6x.cloudfront.net/wp-content/uploads/2014/04/Quest_Electronic_Brochure_April_20141.pdf",
+]
+
+text = """
+Quest Aircraft of Sandpoint, Idaho designed the Kodiak for missionaries and relief work on the
+kind of airstrips found across Africa: all aluminium, so it can be mended in the field, with twice
+the cargo room and lifting capacity of a Cessna 206, a turbine that burns Jet A, up to ten seats
+and a wingspan kept under 45 ft for narrow strips. Its 750 shp PT6A-34 swings a four-blade
+propeller with 19 in of clearance over rough ground, and its exhaust stacks point back so they
+won't set tall grass alight. A drooped leading edge, broken near the tips, and long, wide Fowler
+flaps give it its short take-offs: bigger than a Beaver and smaller than an Otter or a Caravan, it
+has more power than the old de Havillands and gets off the ground in less distance than the Caravan.
+
+The prototype first flew in October 2004 and the first delivery came in January 2008. Daher bought
+Quest in 2019 and builds it as the Kodiak 100, alongside a stretched Kodiak 900; 300 had been
+delivered by 2021. Know it by its high, strut-braced wing on a deep, square-windowed cabin, the
+fixed tricycle gear and the tall fin.
+"""
+
+[facts]
+"First flight" = "October 2004"
+"Entered service" = "January 2008"
+"Engine" = "Pratt & Whitney Canada PT6A-34, 750 shp"
+"Cruise" = "183 kt"
+"Range" = "1,132 nm"
+"Max takeoff weight" = "7,255 lb (3,291 kg)"

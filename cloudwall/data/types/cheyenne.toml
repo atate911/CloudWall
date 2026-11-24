@@ -1,0 +1,90 @@
+name = "Piper Cheyenne"
+types = ["PAY1", "PAY2", "PAY3", "PA42", "PAY4"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Piper_PA-31T_Cheyenne",
+  "https://en.wikipedia.org/wiki/Piper_PA-42_Cheyenne",
+]
+
+text = """
+Piper's turboprops grew out of its Pressurized Navajo: the same fuselage, given Pratt & Whitney
+Canada PT6 turboprops, first flew in August 1969 and became the
+PA-31T Cheyenne. The Cheyenne II has 620 shp engines and the Cheyenne I 500 shp ones; the IIXL is
+stretched, with 750 shp. All have a long pointed nose, tip tanks, the PA-31's low wing and a conventional
+tail, the PT6's exhaust stacks jutting from the side of each nacelle just behind the propeller, and
+an airstair door behind the wing. Piper built 823.
+"""
+
+[variants.PAY1]
+name = "Piper PA-31T1 Cheyenne I"
+[variants.PAY1.facts]
+"First flight" = "August 1969 (PA-31T)"
+"Built" = "823 PA-31Ts"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-11, 500 shp"
+
+[variants.PAY2]
+name = "Piper PA-31T Cheyenne II or IIXL"
+[variants.PAY2.facts]
+"First flight" = "August 1969"
+"Built" = "823 PA-31Ts"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-28, 620 shp; PT6A-135, 750 shp (IIXL)"
+"Top speed" = "326 mph (283 kt), Cheyenne II"
+"Ceiling" = "29,000 ft (Cheyenne II)"
+
+[variants.PAY3]
+name = "Piper PA-42 Cheyenne III"
+text = """
+A Cheyenne II stretched by about a metre, with 720 shp PT6A-41s and, the change that tells it from
+the earlier Cheyennes at a glance, a T-tail on a long dorsal fin. Piper announced it in September
+1977; the first production aircraft flew in May 1979, and deliveries began in June 1980. The IIIA,
+from the PA-42-720, has PT6A-61s and a ceiling raised to 35,000 ft.
+
+The Cheyenne III is still a Navajo underneath, with the same low wing, tip tanks and long nacelles,
+seating six to nine. The US Customs Service bought a surveillance version, the Customs High
+Endurance Tracker, with an AN/APG-66 radar and an infrared sensor under the belly; nine were built.
+"""
+[variants.PAY3.facts]
+"First flight" = "May 1979"
+"Built" = "192 PA-42s"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-41, 720 shp"
+"Range" = "1,330 nm (2,463 km)"
+"Max takeoff weight" = "11,080 lb (5,026 kg)"
+"Ceiling" = "33,000 ft; 35,000 ft (IIIA)"
+
+[variants.PA42]
+name = "Piper PA-42 Cheyenne III or 400"
+text = """
+The PA-42 is a Cheyenne II stretched by about a metre, with a
+T-tail on a long dorsal fin, the change that tells it from the earlier Cheyennes at a glance. The
+first production Cheyenne III flew in May 1979 with 720 shp PT6A-41s, and deliveries began in June
+1980. The 400 of 1984 has Garrett TPE331s of 1,000 shp, four-blade propellers and a bigger tail,
+and cruises at up to 351 kt: the largest aircraft Piper has made.
+"""
+[variants.PA42.facts]
+"First flight" = "May 1979"
+"Built" = "192"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-41, 720 shp (III); Garrett TPE331-14, 1,000 shp (400)"
+
+[variants.PAY4]
+name = "Piper PA-42-1000 Cheyenne 400"
+text = """
+Rather than build a light jet to take on the Citation I, Piper put 1,000 shp Garrett TPE331-14s on
+the Cheyenne III, enlarged its tail for stability at high speed and altitude, strengthened the
+fuselage and raised the pressurisation to 7.6 psi, so that the cabin stays at 10,000 ft at 41,000
+ft. Certified in 1984 as the Cheyenne IV, it was renamed the 400LS while Lear Siegler owned Piper,
+then the 400. Its four-blade Dowty propellers are 106 in across, with 8 in to spare above the
+ground, and the TPE331s exhaust from the back of the nacelles rather than through the PT6's side
+stacks.
+
+At up to 351 kt it is faster than a Citation I on most trips while burning a third less fuel. On 16
+April 1985 Chuck Yeager flew one from Hillsboro, Oregon, to time-to-climb records, reaching 12,000 m
+in 11 minutes 8 seconds, then set city-pair records with it across the United States and to Paris.
+Only 43 were built, the last in 1991: the largest aircraft Piper has made.
+"""
+[variants.PAY4.facts]
+"Certified" = "1984"
+"Built" = "43"
+"Engines" = "2 × Garrett TPE331-14, 1,000 shp"
+"Top speed" = "351 kt"
+"Ceiling" = "41,000 ft"
+"Max takeoff weight" = "12,050 lb (5,466 kg)"

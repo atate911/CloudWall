@@ -1,0 +1,32 @@
+name = "De Havilland Canada DHC-3 Otter"
+types = ["DHC3"]
+production = [1953, 1967]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/De_Havilland_Canada_DHC-3_Otter",
+  "https://raw.githubusercontent.com/Mictronics/readsb-protobuf/dev/webapp/src/db/types.json",
+]
+
+text = """
+De Havilland Canada drew up the Otter in 1951 as a bigger Beaver. Called the "King Beaver" while it
+was designed, it was to be a one-ton truck to the Beaver's half-ton, with a longer fuselage, a
+wing of greater span, ten or eleven seats in the cabin and a 600 hp Pratt & Whitney R-1340 Wasp radial geared
+down to turn its propeller slowly. Like the Beaver it flies on wheels, skis or floats, and bush
+airlines took to it as readily, but the US Army became its biggest user, with 184 delivered as the
+U-1A. In 1957 four flew off the Canadian carrier HMCS Magnificent at anchor off Port Said in the
+Suez Crisis, the only time RCAF fixed-wing aircraft have flown from a Canadian warship, and the
+same year an Otter crossed the South Pole with the Commonwealth Trans-Antarctic Expedition.
+
+466 were built, the last in 1967, and it became the starting point for the Twin Otter. Otters
+still work as bush planes and skydiving aircraft; some have been re-engined with PT6A, Walter or
+Garrett turboprops, and those fly under a type designator of their own. The original keeps the
+blunt round cowl of its radial, ahead of a tall, slab-sided cabin and a fin that sweeps up from a
+long curved dorsal fin.
+"""
+
+[facts]
+"First flight" = "December 1951"
+"Built" = "466"
+"Engine" = "Pratt & Whitney R-1340 Wasp, 600 hp"
+"Cruise" = "120 kt (138 mph)"
+"Max takeoff weight" = "8,000 lb (3,630 kg)"

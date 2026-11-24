@@ -1452,6 +1452,34 @@ class ServerTest(unittest.TestCase):
                 config.check("server", {"key": bad})
         self.assertEqual(access.admit("/k/Tafo-Kemi-Luza-Nobe/api/state?range=15", access.tidy("tafo-kemi-luza-nobe")), ("in", "/api/state?range=15"))
 
+    def test_the_private_link_is_written_into_the_config(self):
+        import tempfile
+        from pathlib import Path
+        from cloudwall import access
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "config.toml"
+            # a [server] section with no key: added after its settings, ahead of the comment below them
+            p.write_text('[home]\nlat = 45.6\n\n[server]\nport = 5051\n# a note\n\n[storage]\ndb_path = ""\n')
+            access.write_key(p, "tafo-kemi-luza-nobe")
+            text = p.read_text()
+            self.assertIn('port = 5051\nkey = "tafo-kemi-luza-nobe"\n# a note', text)
+            self.assertEqual(config.load(str(p))["server"]["key"], "tafo-kemi-luza-nobe")
+            access.write_key(p, "bado-fegi-huja-kalo")                   # a new one replaces it, in place
+            self.assertEqual(p.read_text(), text.replace("tafo-kemi-luza-nobe", "bado-fegi-huja-kalo"))
+            access.write_key(p, "")                                      # off: open again
+            self.assertEqual(config.load(str(p))["server"]["key"], "")
+            q = Path(d) / "other.toml"                                   # no [server] at all: one is added
+            q.write_text('[home]\nlat = 45.6\n')
+            access.write_key(q, "tafo-kemi-luza-nobe")
+            self.assertEqual(q.read_text(), '[home]\nlat = 45.6\n\n[server]\nkey = "tafo-kemi-luza-nobe"\n')
+            # the example config, with its commented-out key, takes one too
+            e = Path(d) / "example.toml"
+            e.write_text(config.EXAMPLE.read_text())
+            access.write_key(e, "tafo-kemi-luza-nobe")
+            self.assertEqual(config.load(str(e))["server"]["key"], "tafo-kemi-luza-nobe")
+        links = dict(access.links("tafo-kemi-luza-nobe", "192.168.1.20", 5050))
+        self.assertEqual(links["The wall panel"], "http://192.168.1.20:5050/k/tafo-kemi-luza-nobe/kiosk")
+
     def test_a_screen_asks_for_its_radar_range(self):
         base, places = self.serve(config.load())
         t = places["home"].tracker
@@ -2188,6 +2216,9 @@ class ReferenceTablesTest(unittest.TestCase):
         self.assertEqual(aircraft.shape("B738"), {"shape": "narrow", "length": 39.5, "known": True})
         self.assertEqual(aircraft.shape("zzzz", "A7"), {"shape": "heli", "length": 12, "known": False})   # by its category
         self.assertEqual(aircraft.shape(None), {"shape": "narrow", "length": 36, "known": False})
+        self.assertEqual(aircraft.shape("BE99", "A6"), {"shape": "turboprop", "length": 13.58, "known": True})   # the table wins
+        # a type the table hasn't, whose transponder calls it high performance (A6) by mistake: its wake category
+        self.assertEqual(aircraft.shape("SW3", "A6"), {"shape": "bizjet", "length": 16, "known": False})
         self.assertEqual(aircraft.shape("CONC")["known"], False)       # known only as rare: no shape of its own
         self.assertEqual([aircraft.rare(t) for t in ("A388", "CONC", "B738", None)], [True, True, False, False])
 

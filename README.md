@@ -70,16 +70,18 @@ in the address, and `[kiosk] density` sets the wall panel's.
   altitude the autopilot is heading for, when it reports one), speed, distance and how high up
   to look ("2.3 mi NW, 13° up"), heading,
   and a photo of the airframe beside when it passes the house, its seats,
-  registration and build year, and what the autopilot is doing. The two airports stand as on a
-  map, the one further west on the left whichever way the flight is going, with "From" and "To"
-  over them; on the line between them rides the aircraft itself, its own side elevation in small,
+  registration and build year, and what the autopilot is doing. The two airports stand origin
+  on the left and destination on the right, whichever way the flight is going, with "From" and "To"
+  over them, so the line between them always fills left to right; on the line between them rides the aircraft itself, its own side elevation in small,
   facing the way it's going, with an arrowhead at the destination's end. The departure time comes from
   a paid route provider (see below); without one, the card shows an estimated arrival only.
   The photo is of that very airframe (planespotters.net files photos by airframe, so a tail
   number that once belonged to another aircraft doesn't bring up its pictures), credited to its
   photographer in its bottom right corner, with a link to the photo's page there.
-  Under the photo sits a type plate: a side elevation of the type, drawn to scale over a
-  dimension line with its length. With no photo, the plate fills the frame. A tap on the type's
+  A switch in the photo's corner (*Photo*, *Drawing*) puts the type plate in its place: a side
+  elevation of the type, drawn to scale over a dimension line with its length. Each screen
+  remembers which it was last set to. With no photo, the plate fills the frame. When the map
+  leaves no room for more, the frame stands beside the facts, small. A tap on the type's
   name at the head of the card, or on *About this type* in the plate's corner, opens a page on the
   type, written for enthusiasts: for the types over the
   house every day, what they're built from and why they look and fly as they do; for the rare
@@ -322,7 +324,7 @@ board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk 
 |---|---|---|
 | `http://<server>:5050/` | A PC or laptop | Everything: Overhead, Board, Weather and Logbook tabs, the radar and sky switch, and the settings menu (sound and night mode). On screens 1200 px wide and up, Detailed adds a live list of every aircraft grouped by what it is doing, with the side view along the runways under it; click a flight to follow it. The arrow on the divider between the radar and the list hides or shows the list, and dragging the divider gives the radar more or less room (double-click it for the usual width); the flight card keeps its size, and each screen remembers its setting. The divider between the flight card and the radar, on any landscape window (Simple's side panel too), sets the card's width the same way: only the radar gives way, the list keeping its width, and each screen remembers it for each layout. On a wide, short window the radar's column keeps to the width of its disc and the card and the list share the rest; when the card is short, its route map moves beside the facts or takes the drawing's room (whichever shows the route bigger), then gives way, then the aircraft drawing does (the facts go into columns), so nothing runs into anything else. Simple on a wide window puts what's worth a look in a third column, past the radar. |
 | `http://<server>:5050/` on a phone | A phone in the hand | The same tabs and switches, laid out for a phone. Upright, the page scrolls: the flight card at full width, then a square radar with its switches above and below it, the tabs along the foot and the status line held at the top. The Board becomes a two-line list (flight, route and when it's overhead; airline, type, altitude and speed), and Weather and Logbook stack into one column. Turned sideways, the card and radar sit side by side. Tapping a blip on the radar brings its flight card into view. |
-| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Made to hang in a room and read from the sofa: one sheet of chart paper with corner marks at the screen's corners, and nothing on it smaller than 4% of the screen's height (about 7 mm on a 13.3" panel), so every word reads from three or four metres away. Across the top, the place, the next thing to happen after the aircraft on the card ("0:45 AS 67 overhead", "1:40 AS 2162 lands") and the clock. Then the aircraft over the house across the whole screen: its flight number beside its airline logo and type; where it's going, its own side elevation riding the line between the airports at its place along the way, with when it left, how far it has come and has to go, and when it gets in (with no route, the aircraft drawn beside where it is and which way it's heading); and how high, how fast and how soon it passes overhead (once past, how far away and which way to look). Along the foot, how many aircraft are about and any heard with no position. `[kiosk] view = "radar"` puts the radar beside the card, with only what reads from across the room (the aircraft and their labels, the runways and the compass points), and `"map"` the Map view. When nothing is overhead, the card turns to slides: the next aircraft over the house, the radar (with the card alone, and anything on it) beside what is on it in words, the side view along the runways while anything is landing or taking off (tap an aircraft in it for its card), the weather with a wind rose, the day so far, a flight restriction, fighters heard. An emergency squawk turns the screen red until it is cleared. |
+| `http://<server>:5050/kiosk` | A 7.5" or 13.3" wall panel | Made to hang in a room and read from the sofa: one sheet of chart paper with corner marks at the screen's corners, and nothing on it smaller than 4% of the screen's height (about 7 mm on a 13.3" panel), so every word reads from three or four metres away. Across the top, the place, the next thing to happen after the aircraft on the card ("0:45 AS 67 overhead", "1:40 AS 2162 lands") and the clock. Then the aircraft over the house across the whole screen: its flight number beside its airline logo and type, with a photo of that very airframe at the right once one has loaded; where it's going, its own side elevation riding the line between the airports at its place along the way, with when it left, how far it has come and has to go, and when it gets in (with no route, the aircraft drawn beside where it is and which way it's heading); and how high, how fast and how soon it passes overhead (once past, how far away and which way to look). Along the foot, how many aircraft are about and any heard with no position. `[kiosk] view = "radar"` puts the radar beside the card, with only what reads from across the room (the aircraft and their labels, the runways and the compass points), and `"map"` the Map view. When nothing is overhead, the card turns to slides: the next aircraft over the house, the radar (with the card alone, and anything on it) beside what is on it in words, the side view along the runways while anything is landing or taking off (tap an aircraft in it for its card), the weather with a wind rose, the day so far, a flight restriction, fighters heard. An emergency squawk turns the screen red until it is cleared. |
 
 The phone layout is chosen by screen size (up to 700 px wide, or 500 px tall when turned sideways),
 so it follows the phone as it turns and also suits a narrow desktop window. `?mode=phone` forces it and
@@ -353,43 +355,47 @@ where the house is, let them add and remove places, and spend any paid route loo
 link keeps it yours without a password to type each time: the key is part of the address, so a
 bookmark or a favourite carries it.
 
-1. Make a key, from CloudWall's folder:
+From CloudWall's folder, run:
 
-       .venv/bin/cloudwall --new-key
+    make private-link
 
-   It prints one made to be typed once on a touchscreen and hard to guess: sixteen lower-case
-   letters in four groups you can say aloud, such as `tafo-kemi-luza-nobe`.
+(or `.venv/bin/cloudwall --private-link`). It makes a key that is easy to type once on a
+touchscreen and hard to guess, sixteen lower-case letters in four groups you can say aloud such
+as `tafo-kemi-luza-nobe`; writes it into the config file under `[server]` (starting one at
+`~/.config/cloudwall/config.toml` if there is none); restarts CloudWall if it runs as a service
+(`make service`); and prints the links to open, with this machine's address filled in:
 
-2. Put it in the config file (`~/.config/cloudwall/config.toml`), under `[server]`, and restart
-   CloudWall (`make restart`):
+```
+  On the home network (a PC, a phone):   http://192.168.1.20:5050/k/tafo-kemi-luza-nobe/
+  The wall panel:                        http://192.168.1.20:5050/k/tafo-kemi-luza-nobe/kiosk
+  From outside the house:                https://<your address>/k/tafo-kemi-luza-nobe/
+```
 
-   ```toml
-   [server]
-   key = "tafo-kemi-luza-nobe"
-   ```
+Open each once on its screen and keep it as a bookmark or favourite. The key works typed with or
+without its hyphens, and in capitals or not.
 
-3. Open CloudWall at its address followed by `/k/` and the key, once on each screen, and keep it
-   as a favourite or bookmark:
+| Command | What it does |
+|---|---|
+| `cloudwall --private-link` | Shows the links when a key is set; makes one when not |
+| `cloudwall --private-link new` | A fresh key: the old link stops working at once |
+| `cloudwall --private-link off` | Takes the key away: CloudWall is open again, as on a home network |
 
-   | Screen | Address |
-   |---|---|
-   | The page (a car, a PC, a phone) | `https://<your address>/k/tafo-kemi-luza-nobe/` |
-   | The wall panel | `http://<server>:5050/k/tafo-kemi-luza-nobe/kiosk` |
-
-   The key works typed with or without its hyphens, and in capitals or not.
+To do it by hand instead: `cloudwall --new-key` prints a key; put it in the config file as
+`key = "..."` under `[server]` and restart CloudWall.
 
 What to know:
 
-- **Every screen needs the link once a key is set**, the ones at home too. `deploy/kiosk.sh`
-  opens the wall panel: start it with `CLOUDWALL_URL=http://localhost:5050/k/<key>`. Any other
+- **Every screen needs the link once a key is set**, the ones at home too. The wall panel
+  started by `deploy/kiosk.sh` on CloudWall's own machine finds the key in the config by itself;
+  one on another machine is started with `CLOUDWALL_URL=http://<server>:5050/k/<key>`. Any other
   address, for the page or for its data, answers only "This CloudWall is private".
 - **Nothing expires.** The key travels in the address of everything the page asks for, so there
   is no cookie to be cleared and nothing to sign in to again.
 - **Whatever put CloudWall on the internet** (a reverse proxy, a tunnel) should serve it over
   HTTPS, so the key isn't sent in the clear, and no longer needs a password of its own for
   CloudWall's address.
-- **Anyone who has the link has CloudWall.** To take it back, make a new key and restart; the old
-  link stops working at once.
+- **Anyone who has the link has CloudWall.** To take it back, run
+  `.venv/bin/cloudwall --private-link new`: the old link stops working at once.
 - **A key of your own** must be at least 12 letters and digits (letters, digits and hyphens
   only). Take the key out of the config to go back to an open CloudWall.
 - Anything else that reads CloudWall's data (a Home Assistant card, a script) uses the same

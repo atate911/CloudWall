@@ -3,7 +3,7 @@ VENV := .venv
 BIN  := $(VENV)/bin
 UNIT := $(HOME)/.config/systemd/user/cloudwall.service
 
-.PHONY: help install run demo test config service restart service-remove logs clean
+.PHONY: help install run demo test config private-link service restart service-remove logs clean
 
 help:
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -E 's/:.*## /\t/' | expand -t 18
@@ -25,6 +25,9 @@ test: ## Run the test suite
 
 config: install ## Write a starter config to ~/.config/cloudwall/config.toml
 	$(BIN)/cloudwall --init-config
+
+private-link: install ## Set up a private link (to reach CloudWall from outside the house) and print it
+	$(BIN)/cloudwall --private-link
 
 service: install ## Install and (re)start a systemd user service (survives logout and reboot)
 	mkdir -p $(dir $(UNIT))

@@ -1,0 +1,30 @@
+name = "Beechcraft 99"
+types = ["BE99"]
+production = [1968, 1987]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Beechcraft_Model_99",
+  "https://en.wikipedia.org/wiki/Beechcraft_King_Air",
+]
+
+text = """
+Beechcraft designed the 99 in the 1960s to replace its piston Model 18, and built it largely from
+parts it already had: the wing of the Queen Air, the Pratt & Whitney Canada PT6A engines and
+nacelles of the King Air, and systems from both, behind a nose structure of its own. It first flew
+in July 1966, was certified in May 1968, and 62 were delivered by the end of that year. Unlike the
+King Air it is unpressurised, a long, slender airliner for 15 passengers with a row of square
+windows, a long drooping nose, and on some a pod under the belly for baggage or cargo.
+
+Later models carried more weight on more power, up to the C99 Commuter with PT6A-36s flat-rated at
+715 hp. Production ended in early 1987 after 239, by when the pressurised 19-seat Beechcraft 1900
+had taken its place, and many of the survivors went on to fly freight: in July 2018, 106 were still
+in airline service, all in the Americas, more than half of them with the cargo airline Ameriflight.
+"""
+
+[facts]
+"First flight" = "July 1966"
+"Built" = "239"
+"Engines" = "2 × Pratt & Whitney Canada PT6A, 550 hp (99) to 715 hp (C99)"
+"Max takeoff weight" = "11,300 lb (5,100 kg), C99"
+"Cruise" = "205 kt at 10,000 ft (99A)"
+"Range" = "910 nm (1,685 km), 99A"

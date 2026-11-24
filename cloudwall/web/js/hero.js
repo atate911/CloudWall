@@ -60,11 +60,9 @@ const saysMore = (callsign, id) => !!callsign && callsign !== id && !(flightDigi
 const aboutLink = (a, words) => (a.type && !document.body.classList.contains("kiosk")
   ? `<button class="about-link" data-about="${esc(a.type)}" title="About this type">${esc(words)}<i aria-hidden="true"> ›</i></button>` : esc(words));
 
-// The two airports stand as they would on a map: the one further west on the left, whichever way the
-// flight is going (the shorter way round the world, as the route's own map draws it), with "From" and
-// "To" over them and an arrowhead on the line for which way. With either's position unknown, the
-// origin on the left.
-const westbound = (r) => [r.origin, r.dest].every((p) => p && p.lon != null) && ((r.dest.lon - r.origin.lon + 540) % 360) - 180 < 0;
+// The two airports stand origin on the left, destination on the right, whichever way the flight is
+// going on the map, so the line between them always fills left to right: "From" and "To" over them and
+// an arrowhead on the line at the destination's end.
 const aptHtml = (p, to, right, here) => `<div class="apt${right ? " r" : ""}${p.iata === here ? " local" : ""}"><small>${to ? "To" : "From"} ${esc(p.city || p.name || "")}</small>` +
   `<div class="flaps" id="${to ? "h-dest" : "h-orig"}"></div><div class="apt-when" id="${to ? "h-arr" : "h-dep"}"></div></div>`;
 
@@ -99,9 +97,9 @@ function routeHtml(a, state) {
       : a.callsign && a.callsign !== a.reg ? ["No published route", "Nothing on file for this flight"] : ["No flight plan on file", ""];
     return `<div class="noroute quiet">${esc(what)}${more ? `<small>${esc(more)}</small>` : ""}</div>`;
   }
-  const iata = state.airport.iata, rev = westbound(r);
-  const left = aptHtml(rev ? r.dest : r.origin, rev, false, iata), right = aptHtml(rev ? r.origin : r.dest, !rev, true, iata);
-  const cls = `${r.plausible ? "" : " unsure"}${rev ? " rev" : ""}`;
+  const iata = state.airport.iata;
+  const left = aptHtml(r.origin, false, false, iata), right = aptHtml(r.dest, true, true, iata);
+  const cls = r.plausible ? "" : " unsure";
   // the aircraft itself rides the line between them, in small: its own side elevation, facing the way
   // it's going (an aircraft of no shape to draw, a balloon, keeps the dot)
   const info = typeInfo(a), dr = info.shape ? drawing(info.type, info.shape, info.length, info.name) : null;
@@ -116,7 +114,7 @@ function routeHtml(a, state) {
     <div class="rmap" id="h-map"></div>
   </div>`;
   }
-  // with no map: an arc from the origin to the destination, drawn the other way round for a flight going west
+  // with no map: an arc from the origin on the left to the destination on the right
   return `<div class="route${cls}">
     ${left}
     <div><svg class="arc" viewBox="0 0 200 40">
@@ -284,10 +282,14 @@ function showHero(el, a, state) {
     img.onload = () => {
       const m = $("h-media");
       if (cur.photo !== a.photo || !m) return;
-      m.querySelectorAll(".photo").forEach((p) => p.remove());
+      m.querySelectorAll(".photo, .media-seg").forEach((p) => p.remove());
       fig.prepend(img);
       m.prepend(fig);
       m.classList.add("has-photo");
+      // a switch in the frame's corner: the photo or the drawing, one at a time, as last set on this screen
+      m.insertAdjacentHTML("beforeend", `<div class="seg media-seg" role="group" aria-label="Photo or drawing">` +
+        `<button data-media="photo" title="The photo of this aircraft">Photo</button><button data-media="plate" title="The type's drawing, to scale">Drawing</button></div>`);
+      showMedia(m);
     };
     img.src = a.photo;
   }
@@ -393,6 +395,19 @@ if (document.fonts && document.fonts.addEventListener) {
     const el = $("hero");
     if (el && el.classList.contains("hero-card")) { el._mapKey = null; fitCard(el); }
   });
+}
+
+// The switch in the photo's corner: the airframe's photo, or the type's drawing in its place.
+const mediaPick = () => (store("media") === "plate" ? "plate" : "photo");
+function showMedia(m) {
+  const pick = mediaPick();
+  m.classList.toggle("show-plate", pick === "plate");
+  m.querySelectorAll("[data-media]").forEach((b) => b.classList.toggle("on", b.dataset.media === pick));
+}
+export function setMedia(which) {
+  store("media", which === "plate" ? "plate" : "photo");
+  const m = $("h-media");
+  if (m) showMedia(m);
 }
 
 // The switch in the card's corner: the route map, or the aircraft's drawing in its place.

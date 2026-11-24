@@ -1,0 +1,47 @@
+name = "Turbo Commander"
+types = ["AC90", "AC95"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Aero_Commander_500_family",
+]
+
+text = """
+The turboprop descendants of Ted Smith's Aero Commander, a high-wing twin designed after the war by
+engineers who had worked on Douglas's A-20 bomber, and flown by Eisenhower as Air Force One. Garrett
+TPE331s came in 1965, and the 690 of 1971 added a new wing centre section with the engines further
+out. Rockwell, then Gulfstream, built the line until 1986. The nacelles hang under the high wing
+above the cabin windows, and a long upswept tail cone carries the tall fin.
+
+When the National Transportation Safety Board reviewed light-twin engine-failure accidents from
+1972 to 1976, the piston Commanders came out second worst, at 3.4 per 100,000 hours. The turboprops,
+with far more power and, most of them, longer bodies that give the rudder more leverage, had one of
+the lowest rates of all, 0.4.
+"""
+
+[facts]
+"Engines" = "2 × Garrett TPE331-5, 717.5 shp (690)"
+"Ceiling" = "31,000 ft (690A)"
+"Max takeoff weight" = "10,250 lb (4,649 kg), 690"
+
+[variants.AC90]
+name = "Commander 690, Jetprop 840 or 900"
+more = """
+The 690A of 1973 brought a new flight deck and higher cabin pressure, and the 690B of 1976 more
+soundproofing and a lavatory. The 690C Jetprop 840 of 1979 got a longer wing with
+wet-wing tanks and winglets, and the 690D Jetprop 900 a longer cabin with five square windows.
+"""
+[variants.AC90.facts]
+"Certified" = "July 1971 (690)"
+
+[variants.AC95]
+name = "Commander 695 Jetprop 980 or 1000"
+more = """
+The 695 Jetprop 980 of 1979 is the Jetprop 840 with 733 shp TPE331-10s, and the Jetprop 1000 of
+1981 the stretched-cabin 900 with 820 shp, its ceiling raised to 35,000 ft and its takeoff weight
+to 11,200 lb. With the 1000B of 1984 these were the last of the line.
+"""
+[variants.AC95.facts]
+"Certified" = "November 1979 (Jetprop 980)"
+"Engines" = "2 × Garrett TPE331-10, 733 to 820 shp"
+"Ceiling" = "35,000 ft (Jetprop 1000)"
+"Max takeoff weight" = "11,200 lb (5,080 kg), Jetprop 1000"

@@ -1,0 +1,32 @@
+name = "de Havilland Canada DHC-6 Twin Otter"
+types = ["DHC6"]
+production = [1966]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/De_Havilland_Canada_DHC-6_Twin_Otter",
+]
+
+text = """
+De Havilland Canada designed the Twin Otter as a twin-engined successor to its single-engined Otter
+bush plane that would keep the Otter's short-field performance, and it was Pratt & Whitney Canada's
+new PT6A turboprop that made the twin practical. The strut-braced wing has double-slotted flaps,
+with ailerons that droop with them for more lift, and the tricycle gear is fixed; Twin Otters
+could leave the factory on wheels, floats or skis. It first flew on 20 May
+1965. The Series 200 of 1968 brought the long nose with its bigger baggage hold, and the Series 300
+of 1969, with more powerful PT6A-27s, outsold all the rest: 614 of the 844 built in Toronto before
+the line closed in 1988.
+
+Viking Air bought the type certificate in 2006 and restarted production with the Series 400, more
+powerful again and with a glass cockpit, delivering the first in July 2010; as De Havilland Canada
+once more it handed over the 1,000th Twin Otter in March 2026. It is the aircraft for places others
+cannot reach: Loganair flies it onto the beach at Barra, where trials with the heavier Short 360
+failed because it sank in the sand, it serves Saba's runway, the shortest in commercial use, and in
+April 2001 two made the first winter flight to the South Pole, for a medical evacuation.
+"""
+
+[facts]
+"First flight" = "May 1965"
+"Built" = "over 1,000"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-27, 620 shp (Series 300)"
+"Max takeoff weight" = "12,500 lb (5,670 kg), Series 300 and 400"
+"Cruise" = "182 kt"

@@ -326,8 +326,6 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
 #h-arc { stroke: var(--magenta); }
 #h-arc-dot { fill: var(--magenta); }
 .arc-head { fill: var(--slate); stroke: none; }
-/* the airports stand west to east, as on a map: a flight going west is drawn from the right */
-.route.rev .arc { transform: scaleX(-1); }
 .arc-note { text-align: center; font-size: .74rem; color: var(--slate); margin-top: .3rem; line-height: 1.5; }
 .arc-time { color: var(--ink-2); }
 .arc-time:empty { display: none; }
@@ -443,11 +441,14 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 .dimline::before, .dimline::after { content: ""; flex: 1; border-top: 1px solid; min-width: .4rem; }
 .dimline span { flex: none; font-variant-numeric: tabular-nums; } .dimline b { color: var(--ink-2); font-weight: 700; }
 .plate-note { font-size: .7rem; font-weight: 700; color: var(--blue); white-space: nowrap; }
-/* with a photo, the frame becomes a print over its type plate */
-.media.has-photo { flex-direction: column; align-items: stretch; }
-.media.has-photo .photo { flex: 1 1 0; min-height: 0; height: auto; }
-.media.has-photo .sil-box { flex: 0 0 44%; height: auto; border-top: 1px solid var(--rule); padding: .35rem 6% .3rem; }
-.media.has-photo .plate { gap: .2rem; }
+/* with a photo, the frame shows the photo or the type plate, one at a time, a switch in its top right corner */
+.media.has-photo { position: relative; flex-direction: column; align-items: stretch; }
+.media.has-photo .photo, .media.has-photo .sil-box { flex: 1 1 0; min-height: 0; height: auto; }
+.media.has-photo:not(.show-plate) .sil-box, .media.has-photo.show-plate .photo { display: none; }
+.media .media-seg { left: auto; right: .4rem; top: .4rem; background: color-mix(in srgb, var(--sheet) 82%, transparent); }
+.media .media-seg button { padding: .3rem .6rem; font-size: .7rem; }
+/* the type designator moves down out of the switch's way */
+.media.has-photo .sil-box[data-code]::before { top: 2.3rem; }
 /* side elevations drawn to scale: inked outlines over chart paper, like a type-certificate drawing */
 .sil { display: block; overflow: visible;
   --sil-line: color-mix(in srgb, var(--ink) 90%, transparent);
@@ -978,11 +979,16 @@ body.night .k-who .logo-tile { height: min(9vh, 10cqi); padding: .8vh 1.4vh; bor
 /* the card alone: the route line runs the width of the screen, the drawing larger on it, and under
    it when the aircraft left, how far it has come and has to go, and when it gets in */
 /* the airline and the type beside the flight number rather than under it */
-.card-only .k-head { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 4vh; align-items: center; }
+.card-only .k-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 4vh; align-items: center; }
 .card-only .k-id { display: contents; }
 .card-only .k-flight { grid-row: 1 / 3; font-size: min(16vh, calc(104cqi / var(--n, 6))); }
 .card-only .k-who { grid-column: 2; align-self: end; }
 .card-only .k-type { grid-column: 2; align-self: start; margin-top: 1vh; }
+/* the airframe's photo at the head's right, as tall as the flight number beside it */
+.k-photo { display: none; }
+.card-only .k-photo:not([hidden]) { display: block; grid-column: 3; grid-row: 1 / 3; align-self: center; height: min(19vh, 22cqi); aspect-ratio: 3 / 2;
+  border-radius: 1vh; }
+.k-photo .credit { font-size: 1.7vh; padding: .2vh 0 0 .8vh; border-top-left-radius: .6vh; }
 .card-only .k-line { height: 12vh; }
 .card-only .k-craft { --h: min(12vh, calc(46cqw / var(--ar))); }
 .card-only .k-apt b { font-size: min(12vh, 12cqi); }
@@ -1962,20 +1968,15 @@ html.desk:not(.phone) .route.mapped > .rmap { height: auto; }
   background: var(--magenta); box-shadow: 0 0 0 2px var(--sheet); }
 .prog.unknown :is(i, b) { display: none; }
 /* the aircraft itself rides the line, where a dot would be: its own side elevation in small, facing
-   the way it's going (turned about for a flight drawn from the right) */
+   the way it's going, left to right */
 .prog.ridden { height: 2.1rem; }
 .prog .rider { --h: 1.75rem; --w: calc(var(--h) * var(--ar)); position: absolute; top: 50%; height: var(--h); width: var(--w);
   left: clamp(calc(var(--w) / 2), var(--p, 0%), calc(100% - var(--w) / 2)); transform: translate(-50%, -60%); }
 .prog .rider .sil { width: 100%; height: 100%; }
 .prog .rider .sil :is(path, rect, ellipse) { stroke-width: .9px; }
-.route.rev .prog .rider { left: auto; right: clamp(calc(var(--w) / 2), var(--p, 0%), calc(100% - var(--w) / 2)); transform: translate(50%, -60%) scaleX(-1); }
 .prog.unknown .rider { display: none; }
-/* which way it's going: an arrowhead at the destination's end of the line; flown from the right, and
-   the arrowhead on the left, when the destination is the airport to the west */
+/* which way it's going: an arrowhead at the destination's end of the line, always the right */
 .prog::after { content: ""; position: absolute; top: 50%; right: -.15rem; margin-top: -.32rem; border: .32rem solid transparent; border-right: 0; border-left: .5rem solid var(--slate); }
-.route.rev .prog::after { right: auto; left: -.15rem; border-left: 0; border-right: .5rem solid var(--slate); }
-.route.rev .prog i { left: auto; right: 0; }
-.route.rev .prog b { left: auto; right: var(--p, 0%); margin: -.3rem -.3rem 0 0; }
 .route.unsure .prog { opacity: .35; }
 /* the picture's least worthwhile size is honoured (min-height), so a card short of room overflows and
    fitCard knows to let something go, rather than squeezing one part under the next */
@@ -2012,6 +2013,10 @@ html.desk:not(.phone) .hero-card.fit-nomap .route.mapped { grid-template-rows: a
 html.desk:not(.phone) .hero-card.fit-nomap > .h-route { flex: none; }
 html.desk:not(.phone) .hero-card.fit-noplate .h-bottom .media { display: none; }
 html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) > .h-bottom { flex: none; min-height: 0; display: block; }
+/* where there's no room for the drawing under a map across the card, a photo (or the drawing, by the
+   switch on it) still stands beside the facts, small */
+html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) > .h-bottom:has(.media.has-photo) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.4rem; align-items: center; }
+html.desk:not(.phone) .hero-card.fit-noplate:not(.map-beside) .h-bottom .media.has-photo { display: flex; order: 2; width: auto; height: 8.5rem; aspect-ratio: 3 / 2; max-height: none; }
 /* the card's switch set to Aircraft, the map beside the facts: the drawing stands in the map's place */
 html.desk:not(.phone) .hero-card.map-beside.pic-plate > .h-bottom > .rmap { display: none; }
 html.desk:not(.phone) .hero-card.map-beside.pic-plate .h-bottom .media { display: flex; grid-column: 1; grid-row: 1 / -1; aspect-ratio: auto; height: 100%; min-height: 6.5rem; max-height: none; align-self: stretch; }

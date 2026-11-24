@@ -1,0 +1,32 @@
+name = "Grumman Gulfstream I"
+types = ["G159"]
+production = [1959, 1969]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Grumman_Gulfstream_I",
+]
+
+text = """
+The Gulfstream I is the first Gulfstream, the business aircraft that gave the line its name. Grumman
+first looked at turning its Widgeon amphibian, and then a turbine version of its TF-1 Trader naval
+utility transport, into executive aircraft, but settled on an all-new design: a low wing, two
+Rolls-Royce Dart turboprops with four-bladed Rotol propellers, and a cabin tall enough to stand up
+in, with its own airstair at the front. From June 1957 Grumman sold places on the production line
+for $10,000 each, and the first customers helped settle the detail and the avionics. It first flew
+from Bethpage in August 1958, and 200 were built by 1969. Most went to corporations, usually with
+ten to twelve seats; Walt Disney's carried Richard Nixon, Ronald Reagan and Jimmy Carter in its
+20,000 hours.
+
+It found other work as well: the US Navy trained A-6 Intruder bombardier navigators in nine TC-4C
+Academes, NASA flew seven, and in 1980 Gulfstream stretched five by 3.25 m (10 ft 8 in) into 37-seat
+G-159C airliners. Others flew scheduled services in Europe, Africa and Canada, and some were given
+freight doors; as of 2006, 44 were still flying, 13 of them with Phoenix Air in the United States.
+"""
+
+[facts]
+"First flight" = "August 1958"
+"Built" = "200"
+"Engines" = "2 × Rolls-Royce Dart Mk 529, 2,190 eshp"
+"Range" = "2,200 nm (4,090 km)"
+"Max takeoff weight" = "35,100 lb (15,900 kg)"
+"Ceiling" = "33,600 ft"
