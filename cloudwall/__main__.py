@@ -16,6 +16,47 @@ from .store import Store, another_places
 log = logging.getLogger("cloudwall")
 
 
+def private_link(path, what):
+    """`cloudwall --private-link [new|show|off|url]`: the private link set up, shown or taken away,
+    without editing the config file by hand. `url` prints only the wall panel's own address on this
+    machine (deploy/kiosk.sh asks for it)."""
+    try:
+        cfg = config.load(path)
+    except ValueError as e:
+        raise SystemExit(f"cloudwall: {config.find(path)}: {e}")
+    key, port, host = cfg["server"]["key"], cfg["server"]["port"], cfg["server"]["host"]
+    if what == "url":
+        print(f"http://localhost:{port}" + (f"/k/{key}" if key else ""))
+        return
+    file = config.find(path)
+    if what in ("new", "off") or (what == "" and not key):
+        if file is None:                         # no config file yet: start one from the example
+            file, _ = config.init(path)
+        key = access.new_key() if what != "off" else ""
+        try:
+            access.write_key(file, key)
+        except (OSError, ValueError) as e:
+            raise SystemExit(f"cloudwall: {e}")
+        print(f"{'Private link made' if key else 'Private link taken away'}: [server] key in {file} "
+              f"{'set to ' + key if key else 'cleared'}.")
+        restarted = access.restart_service()
+        print("CloudWall's service restarted, so it takes effect now." if restarted
+              else "Restart CloudWall (make restart, or stop and start it) for it to take effect." if restarted is False
+              else "Restart CloudWall for it to take effect.")
+        if key and what == "new":
+            print("Any link made before stops working: open the new one on each screen.")
+    if not key:
+        print("\nCloudWall is open to whoever can reach it, as on a home network:")
+    else:
+        print(f"\nCloudWall answers only under /k/{key}/. Open these once on each screen and keep them as a\n"
+              "bookmark or favourite (the key works typed with or without its hyphens):")
+    for label, url in access.links(key, host, port):
+        if key or not label.startswith("From outside"):
+            print(f"  {label + ':':<38} {url}")
+    if key:
+        print("\nThe wall panel started by deploy/kiosk.sh finds the key by itself.")
+
+
 def main():
     ap = argparse.ArgumentParser(prog="cloudwall", description="Flight board for the sky over your house")
     ap.add_argument("--config", help="path to config.toml (default: ./config.toml if present)")
@@ -24,7 +65,12 @@ def main():
     ap.add_argument("--port", type=int, help="port to listen on (default 5050)")
     ap.add_argument("--db", help="override the logbook database path")
     ap.add_argument("--new-key", action="store_true",
-                    help="make a key for a private link (to reach CloudWall from outside the house) and exit")
+                    help="print a fresh key for a private link and exit (--private-link sets one up for you)")
+    ap.add_argument("--private-link", nargs="?", const="", choices=["", "new", "show", "off", "url"], metavar="new|show|off",
+                    help="set up a private link, to reach CloudWall from outside the house: makes a key and writes it "
+                         "into the config file, restarts the service if it runs as one, and prints the links to open "
+                         "(with no word: shows the link if there is one, makes one if not). new: a fresh key, ending "
+                         "the old link; off: open again, as on a home network")
     ap.add_argument("--init-config", action="store_true",
                     help="write a starter config file (to --config, or the user config dir) and exit")
     ap.add_argument("--version", action="version", version=f"cloudwall {__version__}")
@@ -35,7 +81,11 @@ def main():
         key = access.new_key()
         print(f'{key}\n\nPut it in the config file, under [server]:\n\n    key = "{key}"\n\n'
               f"and restart CloudWall. It then answers only at  <its address>/k/{key}/  (the wall panel at\n"
-              f".../k/{key}/kiosk): open that once on each screen and keep it as a bookmark or favourite.")
+              f".../k/{key}/kiosk): open that once on each screen and keep it as a bookmark or favourite.\n"
+              f"(`cloudwall --private-link` does all of that for you.)")
+        return
+    if args.private_link is not None:
+        private_link(args.config, args.private_link)
         return
     if args.init_config:
         path, created = config.init(args.config)

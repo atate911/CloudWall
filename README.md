@@ -355,43 +355,47 @@ where the house is, let them add and remove places, and spend any paid route loo
 link keeps it yours without a password to type each time: the key is part of the address, so a
 bookmark or a favourite carries it.
 
-1. Make a key, from CloudWall's folder:
+From CloudWall's folder, run:
 
-       .venv/bin/cloudwall --new-key
+    make private-link
 
-   It prints one made to be typed once on a touchscreen and hard to guess: sixteen lower-case
-   letters in four groups you can say aloud, such as `tafo-kemi-luza-nobe`.
+(or `.venv/bin/cloudwall --private-link`). It makes a key that is easy to type once on a
+touchscreen and hard to guess, sixteen lower-case letters in four groups you can say aloud such
+as `tafo-kemi-luza-nobe`; writes it into the config file under `[server]` (starting one at
+`~/.config/cloudwall/config.toml` if there is none); restarts CloudWall if it runs as a service
+(`make service`); and prints the links to open, with this machine's address filled in:
 
-2. Put it in the config file (`~/.config/cloudwall/config.toml`), under `[server]`, and restart
-   CloudWall (`make restart`):
+```
+  On the home network (a PC, a phone):   http://192.168.1.20:5050/k/tafo-kemi-luza-nobe/
+  The wall panel:                        http://192.168.1.20:5050/k/tafo-kemi-luza-nobe/kiosk
+  From outside the house:                https://<your address>/k/tafo-kemi-luza-nobe/
+```
 
-   ```toml
-   [server]
-   key = "tafo-kemi-luza-nobe"
-   ```
+Open each once on its screen and keep it as a bookmark or favourite. The key works typed with or
+without its hyphens, and in capitals or not.
 
-3. Open CloudWall at its address followed by `/k/` and the key, once on each screen, and keep it
-   as a favourite or bookmark:
+| Command | What it does |
+|---|---|
+| `cloudwall --private-link` | Shows the links when a key is set; makes one when not |
+| `cloudwall --private-link new` | A fresh key: the old link stops working at once |
+| `cloudwall --private-link off` | Takes the key away: CloudWall is open again, as on a home network |
 
-   | Screen | Address |
-   |---|---|
-   | The page (a car, a PC, a phone) | `https://<your address>/k/tafo-kemi-luza-nobe/` |
-   | The wall panel | `http://<server>:5050/k/tafo-kemi-luza-nobe/kiosk` |
-
-   The key works typed with or without its hyphens, and in capitals or not.
+To do it by hand instead: `cloudwall --new-key` prints a key; put it in the config file as
+`key = "..."` under `[server]` and restart CloudWall.
 
 What to know:
 
-- **Every screen needs the link once a key is set**, the ones at home too. `deploy/kiosk.sh`
-  opens the wall panel: start it with `CLOUDWALL_URL=http://localhost:5050/k/<key>`. Any other
+- **Every screen needs the link once a key is set**, the ones at home too. The wall panel
+  started by `deploy/kiosk.sh` on CloudWall's own machine finds the key in the config by itself;
+  one on another machine is started with `CLOUDWALL_URL=http://<server>:5050/k/<key>`. Any other
   address, for the page or for its data, answers only "This CloudWall is private".
 - **Nothing expires.** The key travels in the address of everything the page asks for, so there
   is no cookie to be cleared and nothing to sign in to again.
 - **Whatever put CloudWall on the internet** (a reverse proxy, a tunnel) should serve it over
   HTTPS, so the key isn't sent in the clear, and no longer needs a password of its own for
   CloudWall's address.
-- **Anyone who has the link has CloudWall.** To take it back, make a new key and restart; the old
-  link stops working at once.
+- **Anyone who has the link has CloudWall.** To take it back, run
+  `.venv/bin/cloudwall --private-link new`: the old link stops working at once.
 - **A key of your own** must be at least 12 letters and digits (letters, digits and hyphens
   only). Take the key out of the config to go back to an open CloudWall.
 - Anything else that reads CloudWall's data (a Home Assistant card, a script) uses the same
