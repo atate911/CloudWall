@@ -277,7 +277,39 @@ F.js31 = commuter({
 // Jetstream 32 (Super 31): the same airframe with more powerful engines.
 F.js32 = F.js31;
 
+// ---------- BAe Jetstream 41 ----------
+// References: published dimensions (Wikipedia: length 19.25 m, span 18.29 m, height 5.74 m,
+// propellers 2.9 m, five blades) and the near broadside Commons photo "easternairways j41 g-majx
+// arp.jpg" (in flight, gear down) scaled to the length for the outline, flight deck, windows, rear
+// door, nacelles and tail. The Jetstream 31's round section stretched by 4.9 m, with a new deeper
+// windscreen, the wing passing under the cabin in a long fairing, and higher nacelles.
+F.js41 = commuter({
+  L0: 19.25, W: 1.98,
+  body: [
+    [0, 0.47, "c"], [0.1, 0.6], [0.75, 0.93], [1.66, 1.36], [2.35, 1.73], [3.04, 2.0], [3.96, 2.11], [5.33, 2.16, "l"], [14.0, 2.16],
+    [15.4, 2.32], [16.0, 2.52], [16.56, 2.94, "l"], [18.5, 4.4, "c"], [19.25, 4.4, "c"], [18.62, 1.6], [18.55, 1.3], [18.45, 1.16, "c"],
+    [17.9, 1.05], [16.8, 0.76], [15.6, 0.48], [14.5, 0.28], [13.35, 0.06], [12.9, -0.12], [12.0, -0.36], [10.5, -0.45], [8.8, -0.42],
+    [7.6, -0.25], [6.8, -0.02, "l"], [2.6, 0], [1.32, 0.12], [0.29, 0.3], [0.08, 0.38],
+  ],
+  glass: [
+    [[2.47, 1.68], [3.04, 1.98], [3.29, 2.0], [3.29, 1.68]],
+    [[3.36, 1.68], [3.36, 1.97], [3.82, 1.98], [3.82, 1.68]],
+  ],
+  wing: { le: 7.6, root: 0.9, span: 18.29, cr: 2.55, ct: 0.95, sweep: 2, dih: 6, z: -0.1, t: [0.16, 0.12] },
+  stab: { le: 2.9, z: 2.2, span: 6.6, root: 0.12, cr: 1.7, ct: 0.85, sweep: 20, dih: 3, thick: 0.1 },
+  parts: {
+    wins: [[1.65, 0.33, 0.36, [5.42, 6.02, 7.2, 7.78, 8.36, 8.94, 9.52, 10.1, 10.69, 11.4, 11.98, 12.55]]],
+    doors: [rect(12.9, 13.5, 0.74, 1.98, 0.12)],
+    lines: [[[18.08, 1.6], [18.82, 4.38]]],
+    nacelles: [{
+      s: 6.36, z: 1.3, sp: 0.5, sr: 0.28, prop: 2.9, blades: 5, inlet: [0.7, -0.38, 0.09, 0.06],
+      outline: [[0, 0, "c"], [0.2, 0.2], [0.5, 0.28, "c"], [0.65, 0.4], [1.2, 0.5], [2.4, 0.48], [3.6, 0.32], [4.6, 0.05, "c"],
+        [3.8, -0.25], [2.6, -0.48], [1.2, -0.52], [0.65, -0.45], [0.52, -0.3], [0.5, -0.28, "c"], [0.2, -0.2]],
+    }],
+  },
+});
+
 export const families = F;
 export const types = {
-  D228: "d228", DHC6: "dhc6", SH33: "sh33", SH36: "sh36", C212: "c212", JS31: "js31", JS32: "js32",
+  D228: "d228", DHC6: "dhc6", SH33: "sh33", SH36: "sh36", C212: "c212", JS31: "js31", JS32: "js32", JS41: "js41",
 };
