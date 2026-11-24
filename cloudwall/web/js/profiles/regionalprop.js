@@ -283,7 +283,44 @@ F.g159 = {
   ],
 };
 
+// ---------- Embraer EMB 110 Bandeirante ----------
+// Reference: Wikimedia Commons "G-OFLT Embraer EMB110 Bandeirante Flightline CVT 03-93
+// (46900426885).jpg" (a near side-on photo of an EMB 110P1), scaled to the published length of
+// 15.10 m to the tailplane tips (span 15.33 m, propellers 2.36 m: Wikipedia). A slim unpressurised
+// tube with square windows, a long tapering nose, low wing, slim PT6A nacelles slung well ahead of
+// it, a swept fin whose rudder overhangs the blunt tail cone, and a swept tailplane reaching
+// further back still.
+F.e110 = {
+  kind: "turboprop", L0: 14.04, over: 1.06, D: 2.05, W: 1.7, fwd: 0.5, fair: 0, floor: 0.2,
+  nose: {
+    tip: 0.316,
+    top: [[0.063, 0.368], [0.149, 0.454], [0.379, 0.539], [0.666, 0.625], [0.807, 0.68], [0.952, 0.796], [1.067, 0.881], [1.238, 0.952],
+      [1.379, 0.996], [1.766, 1]],
+    bot: [[0.063, 0.223], [0.234, 0.19], [0.465, 0.167], [0.837, 0.138], [1.208, 0.093], [1.58, 0.045], [1.952, 0.015], [2.324, 0]],
+  },
+  tail: {
+    top: [[1.551, 1], [1.156, 0.978], [0.807, 0.937], [0.435, 0.863], [0.175, 0.751], [0, 0.621]],
+    bot: [[2.294, 0], [1.922, 0.045], [1.551, 0.156], [1.179, 0.223], [0.807, 0.286], [0.435, 0.342], [0, 0.41]],
+  },
+  glass: [
+    [[0.892, 0.61], [1.223, 0.61], [1.272, 0.796], [1.093, 0.825]],
+    [[0.807, 0.64], [0.881, 0.625], [1.067, 0.825], [1.023, 0.825]],
+  ],
+  doors: [[8.84, 0.69, "E", undefined, 1.01, 0.66]],
+  win: [{ z: 0.584, from: 3.27, to: 9.75, pitch: 0.806, w: 0.36, h: 0.34 }],
+  wing: { le: 4.4, root: 0.85, span: 15.33, cr: 2.3, ct: 1.3, sweep: 2, dih: 7, z: 0.08, t: [0.17, 0.12] },
+  fin: { le: 1.95, cr: 1.94, ct: 1.27, h: 1.9, sweep: 35.4, rudder: 0.68 },
+  stab: { le: 2.2, z: 0.584, span: 6.6, root: 0.5, cr: 1.7, ct: 0.9, sweep: 38, dih: 0 },
+  extras: [marks([["fin", [[13.42, 0.63, "c"], [13.34, 0.24, "c"], [10.86, 0.09, "c"], [11.62, 0.46]]]])],
+  overlays: [
+    nacelle([[2.48, 0.65, "c"], [2.56, 0.74], [2.71, 0.82, "c"], [3.24, 0.89], [4.0, 0.93], [5.0, 0.87], [5.8, 0.62, "c"], [4.88, 0.16], [4.0, 0.13],
+      [3.0, 0.21], [2.71, 0.43, "c"], [2.56, 0.54]], 2.71),
+    marks([["dot", [3.18, 0.58, 0.09, 0.06]]]),
+    propeller(2.62, 0.65, 2.36, 3),
+  ],
+};
+
 export const families = F;
 export const types = {
-  CN35: "cn35", E120: "e120", F27: "f27", F50: "f50", G159: "g159", SF34: "sf34",
+  CN35: "cn35", E110: "e110", E120: "e120", F27: "f27", F50: "f50", G159: "g159", SF34: "sf34",
 };
