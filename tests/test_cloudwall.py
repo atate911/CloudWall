@@ -917,7 +917,7 @@ class AboutTest(unittest.TestCase):
 
     # types in the table for their icon and size, still waiting for a write-up (and a drawing: test_silhouettes)
     UNWRITTEN = {
-        "AC11", "AC6L", "AC90", "AC95", "AT3T", "AT8T", "BE99", "C212", "CN35", "D228",
+        "AC11", "AC6L", "AT3T", "AT8T", "BE99", "C212", "CN35", "D228",
         "DHC3", "DHC6", "E110", "E120", "EPIC", "F27", "F50", "G159", "JS31", "JS32", "JS41", "KODI",
         "P180", "PA31T", "PC21", "PC6", "PC7", "PC9",
         "SH33", "SH36", "T34P", "T34T"}
