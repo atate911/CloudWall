@@ -111,7 +111,63 @@ F.pc21 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Pilatus PC-9 ----------
+// Reference: Pilatus "PC-9 M Model Building Plan 1:25" (pilatus-aircraft.com, Media, Model Building
+// Plans), page 2: the manufacturer's dimensioned side view, a vector drawing rendered at 1200 dpi and
+// scaled by its own 33 ft 4 in (10.18 m) length, nose tip to tailplane tip (2.8 mm a pixel; the 2.31 m
+// wheelbase then measures within 1 cm). Gear drawn up. Long nose with the big exhaust stack, the
+// stepped tandem canopy, the low wing rising to its tips (seen from the side as a tall trapezoid),
+// the swept fin on a long straight dorsal fin and the ventral fin under the tail cone (PC-9 M).
+F.pc9 = {
+  kind: "turboprop", L0: 10.18, over: 0, D: 1, W: 0.97,
+  body: [
+    [0, 0.72, "c"], [0.1, 0.83], [0.25, 0.9], [0.5, 0.985], [0.75, 1.021], [1.0, 1.052], [1.5, 1.113], [2.0, 1.171], [2.5, 1.225],
+    [2.66, 1.245, "c"], [2.75, 1.29], [3.0, 1.426], [3.25, 1.543], [3.5, 1.632], [3.75, 1.7], [4.0, 1.748], [4.5, 1.788], [4.75, 1.793],
+    [5.0, 1.779], [5.25, 1.73], [5.5, 1.64], [5.75, 1.533], [6.0, 1.442], [6.25, 1.377], [6.47, 1.33, "cl"], [7.5, 1.43, "cl"],
+    [8.4, 1.93, "cl"], [8.6, 2.58], [8.75, 2.66, "l"], [9.3, 2.61, "cl"], [9.62, 0.98, "c"],
+    [9.66, 0.85], [9.83, 0.72], [9.84, 0.6], [9.75, 0.503], [9.5, 0.414], [9.25, 0.36], [9.0, 0.322], [8.5, 0.3], [8.25, 0.322],
+    [8.0, 0.312], [7.5, 0.266], [7.0, 0.221], [6.5, 0.176], [6.0, 0.13], [5.5, 0.086], [5.0, 0.037], [4.5, 0.006], [4.0, -0.006],
+    [3.5, 0.01], [3.0, 0.04], [2.5, 0.071], [2.0, 0.101], [1.5, 0.13], [1.0, 0.191], [0.8, 0.25], [0.7, 0.31], [0.66, 0.42, "c"],
+    [0.55, 0.47], [0.4, 0.5], [0.25, 0.551], [0.1, 0.62],
+  ],
+  // front and rear cockpits either side of the canopy arch
+  glass: [
+    [[2.8, 1.31, "c"], [3.0, 1.42, ""], [3.5, 1.62, ""], [4.0, 1.735, ""], [4.33, 1.775, "c"], [4.13, 1.12, "c"], [3.18, 1.06, "c"]],
+    [[4.47, 1.785, "c"], [4.75, 1.788, ""], [5.0, 1.772, ""], [5.25, 1.72, ""], [5.42, 1.65, "c"], [5.17, 1.2, "c"], [4.27, 1.13, "c"]],
+  ],
+  frame: 0.03,
+  wing: { le: 3.15, root: 0.48, span: 10.19, cr: 2.1, ct: 1.0, sweep: 3, dih: 7, z: 0.05, t: [0.15, 0.12] },
+  // the wing as the plan draws it: the outer panel rising to the tip, the aileron and flap lines and
+  // the flap-track fairing behind the root
+  wingSide: [
+    ["wing", [[3.68, 0.735, "c"], [4.0, 0.765], [4.5, 0.73], [4.84, 0.72, "c"], [5.25, 0.08, "c"], [4.5, 0.0], [3.75, -0.006],
+      [3.25, 0.02], [3.12, 0.1], [3.15, 0.22], [3.4, 0.45]]],
+    ["hl", [[4.46, 0.68], [4.97, 0.0]], false],
+    ["hl", [[4.62, 0.37], [5.02, 0.37]], false],
+    ["wing", [[4.98, 0.33, "c"], [5.4, 0.27], [5.75, 0.17, "c"], [5.3, 0.1], [5.05, 0.1]]],
+  ],
+  eng: { kind: "none", nose: { s: 0.4, z: 0.72, d: 2.44, blades: 4 } },
+  stab: {},
+  stabSide: [
+    ["stab", [[8.05, 0.765, "c"], [8.5, 0.82], [9.3, 0.865], [9.8, 0.86], [10.18, 0.83, "c"], [9.8, 0.795], [9.3, 0.765], [8.5, 0.74]]],
+  ],
+  parts: {
+    // the rudder hinge, the fuselage's lower line over the ventral fin, the cowling's seams and its
+    // side access door
+    lines: [[[8.95, 2.64], [8.88, 0.99]], [[8.5, 0.354], [9.0, 0.422], [9.25, 0.473], [9.5, 0.554], [9.64, 0.62]],
+      [[0.55, 0.99], [0.58, 0.47]], [[1.45, 1.12], [1.48, 0.13]], [[1.45, 0.66], [1.95, 0.66], [2.15, 0.85], [2.5, 0.85], [2.5, 1.12]]],
+    doors: [rect(2.18, 2.55, 0.53, 0.8, 0.03), rect(6.25, 6.76, 0.48, 0.8, 0.04), rect(6.98, 7.27, 0.66, 0.82, 0.03),
+      rect(2.65, 3.2, 0.05, 0.25, 0.04)],
+    // the exhaust stack and its outlet
+    shapes: [
+      ["core", [[0.72, 0.73, "c"], [0.85, 0.795], [1.2, 0.81], [1.38, 0.795, "c"], [1.4, 0.68, "c"], [1.2, 0.665], [0.85, 0.68]]],
+    ],
+    dots: [["inlet", 1.3, 0.74, 0.06, 0.06]],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 export const families = F;
 export const types = {
-  PC21: "pc21",
+  PC9: "pc9", PC21: "pc21",
 };
