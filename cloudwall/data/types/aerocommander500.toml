@@ -1,0 +1,31 @@
+name = "Aero Commander 500 series"
+types = ["AC6L"]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Aero_Commander_500_family",
+]
+
+text = """
+Ted Smith, a Douglas project engineer, worked out the Commander after hours through 1944 with a
+group of engineers from the A-20 Havoc, and gave it a layout like the bomber's: a high wing over the
+cabin carrying an engine on each side, on landing gear designed for an aircraft twice its size. The
+prototype flew on 23 April 1948, and to prove to the Civil Aeronautics Authority how well it flew on
+one engine, its builders took a propeller off, stowed it in the cabin and flew from Oklahoma to
+Washington on the other. From the five-seat 520 of 1952 came the swept-fin 560, the supercharged 680
+and the lighter 500, and in 1964 the 500U Shrike Commander gave it a pointed nose and a squared-off
+fin.
+
+Dwight Eisenhower flew in one as Air Force One from 1956 to 1960, the first presidential aircraft
+with only two engines and the first in the blue and white that became the presidents' livery. Bob
+Hoover flew a Shrike at air shows for decades, flying a full aerobatic routine on both engines, then
+on one, then with both stopped, before gliding in to land and coasting off the runway to the crowd;
+that aircraft is on show at the Smithsonian's Udvar-Hazy Center. Its wing spar was its weak point:
+from about 1961 to 1993, 24 lost a wing in flight after fatigue cracking.
+"""
+
+[facts]
+"First flight" = "April 1948"
+"Built" = "1,951 piston twins, of 2,902 Commander twins"
+"Engines" = "2 × Lycoming IO-540, 290 hp (500S)"
+"Cruise" = "176 kt (500S)"
+"Max takeoff weight" = "6,750 lb (3,062 kg), 500S"

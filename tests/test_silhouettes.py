@@ -58,8 +58,7 @@ class SilhouetteTest(unittest.TestCase):
     # types in the table still waiting for a drawing of their own; they get a faint stand-in
     PENDING = {"F16", "F18", "F18H", "F22", "F35", "A10", "T38", "T6",
                # turboprops and light aircraft added to the table for their icon and size, to be traced
-               "AC11", "AC6L", "AT3T", "AT8T", "BE33", "BE35", "CN35", "E110", "E120", "F27", "F50",
-               "G159", "SF34", "T34P", "T34T"}
+               "CN35", "E110", "E120", "F27", "F50", "G159", "SF34"}
 
     def test_every_type_has_its_own_profile(self):
         missing = {t for t in self.types if not self.drawn[t]["mapped"]}

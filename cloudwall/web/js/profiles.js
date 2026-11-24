@@ -35,7 +35,7 @@
 // A group's `types` maps an ICAO code to a family key, to [key, {overrides}], or to a function of
 // the aircraft's model names returning either, for variants that share a code (RV-7 and RV-7A).
 // Each group loads on its own, so a mistake in one file costs only that group's drawings.
-const GROUP_FILES = ["boeing", "boeingwide", "airbus", "airbuswide", "regional", "bizjet", "turboprop", "twinturboprop", "commuter", "light", "singleprop", "rotorcraft", "military", "fighters"];
+const GROUP_FILES = ["boeing", "boeingwide", "airbus", "airbuswide", "regional", "bizjet", "turboprop", "twinturboprop", "commuter", "light", "singleprop", "utility", "rotorcraft", "military", "fighters"];
 const GROUPS = (await Promise.all(GROUP_FILES.map((g) => import(`./profiles/${g}.js`).catch((e) => {
   console.error(`aircraft profiles: ${g}.js did not load`, e);
   return null;
