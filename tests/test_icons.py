@@ -42,7 +42,7 @@ CASES = [
     ({"type": "ZZZZ", "category": "A5"}, "heavy"), ({"type": "ZZZZ", "category": "A7"}, "heli"),
     ({"type": "ZZZZ", "category": "A6"}, "fighter"), ({"type": "C5"}, "heavy"),
     # A6, "high performance", set by mistake in a small aircraft's transponder: its type wins
-    ({"type": "BE99", "category": "A6"}, "light"), ({"type": "SW3", "category": "A6"}, "bizjet"),                   # (types the table of
+    ({"type": "BE99", "category": "A6"}, "turboprop"), ({"type": "SW3", "category": "A6"}, "bizjet"),                   # (types the table of
     ({"type": "AA5"}, "light"), ({"type": "B738", "category": "A7"}, "airliner"),   # wake categories alone has); the type wins
     ({}, None),                                                                                     # nothing to go on
     # the other kinds of traffic: by ICAO's catch-all codes and other types, descriptions and categories
