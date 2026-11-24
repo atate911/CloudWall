@@ -35,6 +35,16 @@ const fillet = (s0, s1, z1) => ({ sk, at, top, f, L }) => {
 // Parts traced off a type's drawing: [class, points]. Classes: strut (a filled outline: antennas),
 // fin (a filled fin-coloured outline: strakes), door (an outline), hl (a panel line),
 // dot ([s, z, rx, ry]: a small dark port).
+// Cabin windows drawn over a nacelle that stands in front of them, the way the renderer draws a
+// window row: stations s (metres), centre height z (in D), width and height (metres).
+const windowsOver = (stations, z, w, h) => ({ sk, D }) => {
+  const run = Math.abs(h - w);
+  const d = stations.map((s) => {
+    const [x, y] = sk.xy(s, z * D);
+    return h >= w ? `M${x.toFixed(2)},${(y - run / 2).toFixed(2)}v${run.toFixed(2)}` : `M${(x - run / 2).toFixed(2)},${y.toFixed(2)}h${run.toFixed(2)}`;
+  }).join("");
+  sk.path("win", d, ` stroke-width="${Math.min(w, h)}"`);
+};
 const marks = (parts) => ({ sk }) => {
   for (const [cls, p] of parts) {
     if (cls === "dot") sk.ellipse("inlet", ...p);
@@ -234,7 +244,46 @@ F.cn35 = {
   ],
 };
 
+// ---------- Grumman Gulfstream I (G-159) ----------
+// Reference: Wikimedia Commons "Grumman G-159 Gulfstream I AN1488671.jpg" (N748AA taxiing, a near
+// side-on photo), scaled to the published length of 19.43 m, nose to rudder (span 23.92 m,
+// height 6.93 m: Wikipedia); the airstair door placed from "Bally's Park Place Casino Hotel Grumman
+// G-159 Gulfstream I N31CN.jpg". Wikimedia's small three-view ("Grumman Gulfstream I drawing.jpg")
+// is too rough to measure from. Low wing, long Dart nacelles reaching well ahead of it with
+// four-bladed Rotol propellers, a row of big oval cabin windows, a deep stand-up cabin under a
+// smooth crown with a small flight-deck hump, a rounded swept fin and a low tailplane.
+F.g159 = {
+  kind: "turboprop", L0: 19.0, over: 0.43, D: 2.47, W: 2.4, fwd: 0.5, fair: 0.04, fairFwd: 0.1, fairAft: 1.05, floor: 0.2,
+  nose: {
+    tip: 0.346,
+    top: [[0.065, 0.419], [0.125, 0.47], [0.313, 0.566], [0.472, 0.627], [0.627, 0.704], [0.781, 0.842], [0.939, 0.971], [1.099, 1.021],
+      [1.253, 1.038], [1.628, 1.002], [1.953, 1]],
+    bot: [[0.065, 0.266], [0.313, 0.159], [0.627, 0.063], [0.939, 0.022], [1.253, 0.01], [1.628, 0]],
+  },
+  tail: {
+    top: [[3.218, 1], [2.16, 0.981], [1.183, 0.924], [0.532, 0.826], [0.207, 0.72], [0, 0.614]],
+    bot: [[3.462, 0], [2.974, 0.005], [2.404, 0.037], [1.997, 0.085], [1.59, 0.134], [1.183, 0.208], [0.858, 0.281], [0.532, 0.378], [0.288, 0.427],
+      [0.044, 0.525], [0, 0.566]],
+  },
+  glass: [
+    [[1.127, 0.698], [1.314, 0.698], [1.314, 0.877], [1.127, 0.877]],
+    [[0.939, 0.737], [1.08, 0.737], [1.111, 0.867], [0.986, 0.867]],
+    [[0.659, 0.72], [0.908, 0.73], [0.977, 0.886], [0.814, 0.886]],
+  ],
+  doors: [[3.4, 0.7, "D", undefined, 1.85, 0.4]],
+  wing: { le: 8.0, root: 1.2, span: 23.92, cr: 3.3, ct: 1.3, sweep: 3, dih: 6, z: 0.12, t: [0.17, 0.12] },
+  fin: { le: 3.26, cr: 3.11, ct: 1.35, h: 3.33, sweep: 37, rudder: 0.7, round: 0.4 },
+  stab: { le: 1.85, z: 0.63, span: 8.0, root: 0.5, cr: 2.0, ct: 1.0, sweep: 20, dih: 3 },
+  extras: [dorsal(-5.33, -2.97, 2.86, 0.3)],
+  overlays: [
+    nacelle([[5.14, 1.12, "c"], [5.4, 1.33], [5.63, 1.46], [6.11, 1.62, "c"], [7.04, 1.66], [9.29, 1.62], [10.91, 1.66], [12.06, 1.58], [12.86, 1.32, "c"],
+      [12.46, 1.04], [12.06, 0.87], [10.91, 0.37], [9.29, 0.11], [8.04, 0.13], [6.95, 0.47], [6.11, 0.66, "c"], [5.63, 0.79], [5.4, 0.92]], 6.11),
+    windowsOver([7.22, 8.42, 9.62, 10.82], 0.595, 0.44, 0.32),
+    propeller(5.72, 1.12, 3.3, 4),
+  ],
+};
+
 export const families = F;
 export const types = {
-  CN35: "cn35", E120: "e120", F27: "f27", F50: "f50", SF34: "sf34",
+  CN35: "cn35", E120: "e120", F27: "f27", F50: "f50", G159: "g159", SF34: "sf34",
 };
