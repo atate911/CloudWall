@@ -1,0 +1,35 @@
+name = "Embraer EMB 110 Bandeirante"
+types = ["E110"]
+production = [1973, 1995]
+checked = "2026-11"
+sources = [
+  "https://embraer.com/historical-center-historical-aircraft-emb-110-bandeirante/en/",
+  "https://en.wikipedia.org/wiki/Embraer_EMB_110_Bandeirante",
+]
+
+text = """
+The Bandeirante, Portuguese for pioneer, is the aircraft Embraer was founded to build. Brazil's
+Ministry of Aeronautics asked in 1965 for a cheap, dependable turboprop transport suited to the
+country's airfields, the French engineer Max Holste designed it, and a team at the government's
+aerospace centre under Ozires Silva built the prototype, which first flew in October 1968. Embraer
+was set up the next year to put it into production, and Silva went on to run it. The eight-seat
+prototypes were soon enlarged into the EMB 110, the Brazilian Air Force ordered 80, and Transbrasil
+flew the first airline service in April 1973. It is an unpressurised low-wing twin on two Pratt &
+Whitney Canada PT6A turboprops, and the airline models seat 15 to 21.
+
+It became Embraer's first export: two went to the Uruguayan Air Force in 1975, the French airline
+Air Littoral bought it in 1977, and after American certification in 1978 commuter airlines in the
+United States and Britain took it up. The later models were stretched by 0.85 m (2 ft 9 in), with
+more powerful engines and a ventral fin under the tail; quick-change versions have a cargo door in
+the rear fuselage, and the EMB 111 is a maritime patrol version, two of which the Argentine Navy
+leased during the Falklands War. Embraer turned to the bigger, pressurised Brasilia and ended
+production in 1991 after 498, the last delivered in 1995. In 2018 about 150 were still flying with
+airlines, air taxis, governments and air forces.
+"""
+
+[facts]
+"First flight" = "October 1968 (prototype)"
+"Entered service" = "April 1973"
+"Built" = "498"
+"Engines" = "2 × Pratt & Whitney Canada PT6A-34, 750 shp (P1)"
+"Max takeoff weight" = "5,900 kg (13,000 lb)"

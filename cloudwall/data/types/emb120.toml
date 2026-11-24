@@ -1,0 +1,38 @@
+name = "Embraer EMB 120 Brasilia"
+types = ["E120"]
+production = [1985, 2001]
+checked = "2026-11"
+sources = [
+  "https://embraer.com/historical-center-historical-aircraft-emb-120-brasilia/en/",
+  "https://en.wikipedia.org/wiki/Embraer_EMB_120_Brasilia",
+  "https://en.wikipedia.org/wiki/Atlantic_Southeast_Airlines_Flight_529",
+  "https://en.wikipedia.org/wiki/Comair_Flight_3272",
+  "https://en.wikipedia.org/wiki/Embraer_ERJ_family",
+]
+
+text = """
+Embraer began work on a pressurised successor to its Bandeirante in 1974. It was first drawn as the
+Araguaia, a stretch of the EMB 121 Xingu business turboprop, but in 1979 it was relaunched as the
+Brasilia, reworked around what American commuter airlines had asked for, and it ended up sharing
+almost nothing with the Xingu but the shape of its T-tail. It has a round fuselage three seats
+across, a low, straight wing with marked dihedral, and a nose cone, dorsal fin and leading edges of
+glass fibre reinforced with Kevlar. The Pratt & Whitney Canada PW118 engines sit high in deep
+nacelles that the main wheels fold up into, turning four-bladed Hamilton Standard propellers, and
+the Brasilia cruises at over 300 kt, quick for a 30-seater. Atlantic Southeast Airlines of Atlanta
+took the first in June 1985.
+
+It sold above all in the United States, and by 1994 Embraer could call it the most widely used
+regional aircraft in the world. Two American accidents mark its record: in 1995 a propeller blade
+weakened by undetected metal fatigue broke away from an Atlantic Southeast Brasilia over Georgia,
+and in 1997 Comair Flight 3272 was brought down by icing near Monroe, Michigan. The extended-range
+EMB 120ER became the standard model in 1993. Embraer's ERJ 145 regional jet began as a stretch of
+the Brasilia, keeping its 2.29 m (7 ft 6 in) fuselage and three-abreast seating, and when
+production of the Brasilia ended in 2001 it was the last turboprop airliner Embraer built.
+"""
+
+[facts]
+"First flight" = "July 1983"
+"Entered service" = "September 1985"
+"Engines" = "2 × Pratt & Whitney Canada PW118, 1,800 shp"
+"Max takeoff weight" = "11,500 kg (25,400 lb)"
+"Cruise" = "315 kt (584 km/h), maximum"

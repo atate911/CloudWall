@@ -1,0 +1,36 @@
+name = "CASA/IPTN CN-235"
+types = ["CN35"]
+production = [1987]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/CASA/IPTN_CN-235",
+  "https://en.wikipedia.org/wiki/EADS_CASA_HC-144_Ocean_Sentry",
+  "https://en.wikipedia.org/wiki/General_Electric_T700",
+]
+
+text = """
+The CN-235 was built by two countries at once. Spain's CASA and the young Indonesian manufacturer
+IPTN formed a joint company, Airtech, in October 1979 to build a twin-turboprop transport for about
+35 passengers or military loads, and the two prototypes were rolled out on the same day in September
+1983, at Getafe before King Juan Carlos and at Bandung before President Suharto. Each production
+aircraft was about 65% Indonesian and 35% Spanish, wherever it was assembled. The designers aimed
+for a big aircraft in a small plane: the fuselage is unusually wide for its size, seating four
+abreast under a high wing, with a loading ramp beneath the upswept tail, and the main wheels retract
+into fairings on the fuselage sides. Two General Electric CT7s, the turboprop version of the Black
+Hawk's engine, power it.
+
+It is slower than a Dash 8 or an ATR 42, and as an airliner it sold little beyond Iberia's regional
+subsidiaries, which flew it from 1989 to 1997, and Indonesian airlines such as Merpati. Air forces
+and coast guards took to it instead, for transport, maritime patrol and search and rescue, from
+Ireland's Air Corps to the US Coast Guard, which flies it as the HC-144 Ocean Sentry, and Jordan has
+an armed gunship version. Turkey, which built its own under licence, is the largest operator. CASA,
+now part of Airbus, stretched it into the C-295 in the 1990s, and deliveries of the CN-235 went on
+into the 2020s.
+"""
+
+[facts]
+"First flight" = "November 1983"
+"Entered service" = "March 1988"
+"Engines" = "2 × General Electric CT7-9C3, 1,750 shp"
+"Max takeoff weight" = "16,100 kg (35,420 lb)"
+"Range" = "2,350 nm (4,355 km)"

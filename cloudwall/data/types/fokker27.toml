@@ -1,0 +1,59 @@
+name = "Fokker F27 Friendship and Fokker 50"
+types = ["F27", "F50"]
+production = [1958, 1997]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Fokker_F27_Friendship",
+  "https://en.wikipedia.org/wiki/Fokker_50",
+]
+
+text = """
+Fokker designed the Friendship in the early 1950s to replace the DC-3, after asking the airlines
+flying DC-3s what they wanted of a new aircraft. It chose two Rolls-Royce Dart turboprops, already
+proven on the Vickers Viscount and far quieter and smoother than piston engines, a pressurised
+cabin, and a high wing, which gives a low floor for easy loading and every passenger a clear view
+down. Much of the structure is bonded metal to metal with Redux adhesive rather than riveted, a
+technique only de Havilland had used before, and it made the airframe lighter and longer-lived. The
+prototype flew in November 1955 and the F27 entered service three years later. Sales were slow at
+first, and Fokker needed help from banks and the Dutch government to keep building it until orders
+took off in 1960.
+
+Fairchild built it under licence in the United States from 1958, and developed its own stretched
+FH-227 from it. The F27-500 of 1967 added 1.5 m (4 ft 11 in) to the fuselage and seats for up to 52,
+and there were combi, freighter, troop-carrying and maritime patrol versions. It became the
+best-selling European turboprop airliner, and production went on until 1987. Later in life many were
+turned into freighters, and the US Army's Golden Knights parachute team jumped from one from 1985.
+"""
+
+[variants.F27]
+name = "Fokker F27 Friendship"
+production = [1958, 1987]
+[variants.F27.facts]
+"First flight" = "November 1955"
+"Entered service" = "November 1958"
+"Engines" = "2 × Rolls-Royce Dart, 1,700 to 2,300 hp"
+"Max takeoff weight" = "19,773 kg (43,590 lb), F27-500"
+
+[variants.F50]
+name = "Fokker 50"
+production = [1987, 1997]
+text = """
+The Fokker 50 is an F27-500 brought up to date. Fokker launched it in November 1983, alongside the
+Fokker 100 jet, as Friendship sales began to fall, and kept the airframe largely as it was, but
+replaced the Darts with Pratt & Whitney Canada PW100s turning slow, six-bladed Dowty propellers.
+Fuel burn fell by 30%, and the slow propellers and vibration absorbers keep the cabin quiet without
+active noise control. It has twice as many windows as the F27, each smaller, small upturned wingtips
+that act as winglets, a two-wheel nose gear and a glass cockpit, with a single lever setting both
+engine power and propeller pitch. The wings came from SABCA in Belgium, fuselage sections from
+Dassault, the flaps from MBB and the tail surfaces from Fuji in Japan.
+
+It first flew in December 1985 and the German airline DLT took the first in 1987, but Fokker's
+losses on the 50 and the Fokker 100 drove it into bankruptcy in March 1996, and the last of 213 was
+delivered in 1997. Fokker also built four of a stretched freighter, the Fokker 60, for the Royal
+Netherlands Air Force, which later sold them to the Peruvian Navy.
+"""
+[variants.F50.facts]
+"First flight" = "December 1985"
+"Built" = "213"
+"Engines" = "2 × Pratt & Whitney Canada PW125B or PW127B"
+"Max takeoff weight" = "20,820 kg (45,900 lb)"

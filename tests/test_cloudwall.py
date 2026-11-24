@@ -911,13 +911,8 @@ class AboutTest(unittest.TestCase):
         def codes(name):
             with open(Path(about.__file__).parent / "data" / name, encoding="utf-8") as f:
                 return {r["type"] for r in csv.DictReader(line for line in f if not line.startswith("#"))}
-        missing = (codes("types.csv") | codes("seats.csv")) - set(about.covered())
-        self.assertEqual(sorted(missing - self.UNWRITTEN), [], "types with no write-up in cloudwall/data/types/")
-        self.assertEqual(sorted(self.UNWRITTEN - missing), [], "these have a write-up now: take them off UNWRITTEN")
-
-    # types in the table for their icon and size, still waiting for a write-up (and a drawing: test_silhouettes)
-    UNWRITTEN = {
-        "CN35", "E110", "E120", "F27", "F50", "G159"}
+        self.assertEqual(sorted((codes("types.csv") | codes("seats.csv")) - set(about.covered())), [],
+                         "types with no write-up in cloudwall/data/types/")
 
     def test_a_variant_adds_to_its_family(self):
         from cloudwall import about
