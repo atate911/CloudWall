@@ -172,7 +172,76 @@ F.be33 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Beechcraft Bonanza 35 (V-tail) ----------
+// Reference: Beechcraft V35B Bonanza 3-view (Wikimedia Commons,
+// File:Beechcraft_V35B_Bonanza_3-view_line_drawing.svg, Wikipedia article Beechcraft Bonanza), side
+// view scaled to types.csv's 8.05 m (26 ft 5 in, the V35B's length as Beech gives it), about 0.7 cm
+// a pixel at the size rendered, and drawn at the attitude the view gives it, as the 33 and the A36
+// are. The drawing carries no dimensions and its plan view's wing is short for the 33 ft 6 in span, so
+// only the side view is used; at that scale its fuselage depth (1.56 m keel to crown) agrees with
+// Beech's dimensioned E33 view (1.54 m) and its cabin is 0.25 m longer, as the 1964-on long cabin is.
+// The V-tail's two surfaces, 35 degrees up from the tail cone, project from the side as one tall
+// swept shape with the ruddervator hinge and trim tab: drawn as the tailplane's side view
+// (stabSide). Three side windows, the last tapered; the front door and baggage door on the right
+// (drawn, as this view shows the right side); the cowl's flat chin under the spinner; retractable
+// gear (drawn retracted).
+F.be35 = {
+  kind: "piston", L0: 8.05, over: 0, D: 1, W: 1.2,
+  body: [
+    [0, 0.7, "c"], [0.1, 0.77], [0.2, 0.8], [0.36, 0.84, "c"], [0.5, 0.88], [1.0, 0.94], [1.3, 0.97], [1.55, 1.0, "c"],
+    [1.8, 1.17], [2.0, 1.28], [2.2, 1.35], [2.4, 1.39], [2.6, 1.41], [3.0, 1.39], [3.5, 1.31], [4.0, 1.24], [4.5, 1.16],
+    [5.0, 1.09], [5.5, 1.01], [6.0, 0.94], [6.5, 0.86], [7.0, 0.79], [7.5, 0.72], [7.85, 0.65], [7.97, 0.6], [8.05, 0.52],
+    [8.0, 0.46], [7.8, 0.42], [7.5, 0.36], [7.0, 0.29], [6.5, 0.22], [6.0, 0.15], [5.5, 0.08], [5.0, 0.0], [4.5, -0.06],
+    [4.0, -0.12], [3.5, -0.14], [3.0, -0.15], [2.5, -0.15], [2.0, -0.15], [1.5, -0.13], [1.0, -0.08], [0.55, 0.0], [0.46, 0.04],
+    [0.42, 0.12, "l"], [0.4, 0.48, "c"], [0.36, 0.51, "c"], [0.2, 0.6], [0.1, 0.64],
+  ],
+  // windscreen side, front, middle and the tapered rear side window
+  glass: [
+    [[1.6, 0.99], [1.8, 1.15, ""], [2.05, 1.28, ""], [2.38, 1.36], [2.22, 1.19, ""], [2.02, 0.97, ""], [1.92, 0.9]],
+    [[1.98, 0.86], [2.42, 1.26, ""], [2.88, 1.24], [2.92, 1.21, ""], [2.92, 0.84]],
+    pane(3.0, 3.62, 0.79, 1.255, 0.05),
+    [[3.69, 0.77], [3.69, 1.2], [4.0, 1.18, ""], [4.3, 1.1, ""], [4.5, 1.0, ""], [4.63, 0.92, ""], [4.6, 0.8, ""], [4.5, 0.76]],
+  ],
+  frame: 0.035,
+  wing: { le: 1.65, root: 0.6, span: 10.2, cr: 2.1, ct: 1.1, sweep: 6, dih: 6.5, z: 0.1, t: [0.15, 0.12] },
+  // the wing as the view draws it: the pointed root fillet rising to the root section, the flap's
+  // trailing edge at the root; the root section's lower line, the flap hinge and its cross line
+  wingSide: [
+    ["wing", [[1.58, 0.15, "c"], [1.75, 0.27], [1.92, 0.38], [2.06, 0.55], [2.13, 0.62], [2.25, 0.67], [2.5, 0.69], [2.8, 0.67],
+      [3.0, 0.64], [3.15, 0.61, "l"], [3.9, -0.05, "c"], [3.5, -0.06], [3.0, -0.07], [2.5, -0.05], [2.0, 0.0], [1.7, 0.08]]],
+    ["hl", [[2.13, 0.6], [2.5, 0.5], [3.0, 0.51], [3.25, 0.53]], false],
+    ["hl", [[3.0, 0.51, "l"], [3.25, 0.22, "l"], [3.55, -0.06]], false],
+    ["hl", [[3.25, 0.22], [3.5, 0.26]], false],
+  ],
+  eng: { kind: "none", nose: { s: 0.28, z: 0.7, d: 2.13, blades: 2 } },
+  // the V-tail: its outline down to the root along the tail cone's side, the ruddervator hinge, the trim tab
+  stab: { le: 1.42, z: 0.7, span: 3.0, root: 0.2, cr: 1.3, ct: 0.75, sweep: 15, dih: 35, thick: 0.1 },
+  stabSide: [
+    ["stab", [[6.6, 0.65, "c"], [6.63, 0.85, "l"], [6.86, 1.71], [7.07, 1.86], [7.3, 1.88], [7.8, 1.8, "cl"], [7.98, 0.64, "c"],
+      [7.75, 0.6], [7.4, 0.58], [7.0, 0.585]]],
+    ["hl", [[7.4, 0.58, "l"], [7.4, 1.68, "l"], [7.07, 1.85]], false],
+    ["hl", [[7.75, 0.6, "l"], [7.75, 1.17, "l"], [7.88, 1.17]], false],
+  ],
+  parts: {
+    // front door, baggage door (both on the right); the cowling's outlet
+    doors: [[[1.93, 0.42, "c"], [1.93, 0.84, "c"], [2.42, 1.33, "c"], [2.97, 1.33, "c"], [2.97, 0.42, "c"]],
+      rect(3.72, 4.2, 0.1, 0.72, 0.05), [[0.59, 0.45, "c"], [1.04, 0.42, "c"], [1.04, 0.16, "c"], [0.59, 0.23, "c"]]],
+    // the spinner's seam and the cowl's front face; the upper cowl panel; the fuselage top under the V-tail
+    lines: [[[0.36, 0.84], [0.36, 0.51]], [[0.5, 0.88], [0.5, 0.53], [1.47, 0.5], [1.47, 0.99]],
+      [[6.63, 0.85], [7.3, 0.76], [7.85, 0.65]]],
+    // the storm window, the fixed step, the antennas on the roof and the spine
+    marks: [["pant", [[2.07, 1.03, "c"], [2.38, 1.03, "c"], [2.38, 0.82, "c"], [1.97, 0.85, "c"]]],
+      ["glass", [[2.1, 1.0, "c"], [2.35, 1.0, "c"], [2.35, 0.85, "c"], [2.02, 0.87, "c"]]],
+      ["strut", [[4.1, -0.12, "c"], [4.15, -0.12, "c"], [4.15, -0.3, "c"], [4.1, -0.3, "c"]]],
+      ["strut", [[4.01, -0.31, "c"], [4.125, -0.29], [4.24, -0.32, "c"], [4.125, -0.34]]],
+      ["strut", [[3.1, 1.385, "c"], [3.1, 1.43], [3.19, 1.42, "c"], [3.21, 1.37, "c"]]],
+      ["strut", [[6.19, 0.92, "c"], [6.19, 1.0], [6.3, 0.97], [6.42, 0.88, "c"]]]],
+    dots: [["inlet", 2.45, 0.63, 0.05, 0.025]],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 export const families = F;
 export const types = {
-  BE33: "be33",
+  BE33: "be33", BE35: "be35",
 };
