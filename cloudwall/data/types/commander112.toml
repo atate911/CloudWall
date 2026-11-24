@@ -1,0 +1,29 @@
+name = "Rockwell Commander 112 and 114"
+types = ["AC11"]
+production = [1972, 2002]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Rockwell_Commander_112",
+]
+
+text = """
+Rockwell's Aero Commander division drew the 112 in 1970 to the new FAR Part 23 rules, with their
+emphasis on gusts and fatigue, and built it strong and roomy: its cabin is 47 inches wide and 49 high
+against the Piper Arrow's 41 by 38, the most spacious four-seater of its day, with a full-size door
+on each side. Wing and fuselage went together as complete assemblies with far fewer rivets than its
+rivals. A prototype lost its tail in testing, and the redesign pushed deliveries to late 1972 and
+added more weight, so the 200 hp 112 was underpowered and a little slower than an Arrow. The 114 of
+1976 gave it a 260 hp six-cylinder Lycoming and the performance its airframe deserved.
+
+Rockwell stopped building it in 1980. Commander Aircraft bought the rights in 1988 and built the
+114B, with a smoother cowling, a new propeller and a plush leather cabin, from 1992 until 2002, the
+last ones sold as the Commander 115; about 1,490 were built in all. On the ramp it stands tall on its
+trailing-link gear, with a raked nose, the wing set low and the tailplane halfway up a tall fin, out
+of the propeller's wash.
+"""
+
+[facts]
+"First flight" = "December 1970"
+"Built" = "about 1,490, all models"
+"Engine" = "Lycoming IO-360, 200 hp (112); IO-540, 260 hp (114)"
+"Cruise" = "135 to 155 kt (114B)"
