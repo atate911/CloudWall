@@ -439,7 +439,56 @@ F.ac6l = {
   overlays: OVERLAYS,
 };
 
+// ---------- Air Tractor AT-802 ----------
+// No three-view reachable: measured from the near side-on photo of a two-seat AT-802 landing
+// (Wikimedia Commons, File:Air_Tractor_AT-802.JPG, Wikipedia article Air Tractor AT-802; left side,
+// mirrored), scaled to the published 35 ft 11 in (10.95 m, types.csv), about 2.3 cm a pixel. Its thrust
+// line is level in the photo and the camera a little behind and below the wing, so the wheels and wing
+// tips spread in perspective: the main wheel is put midway between the two. Lower confidence (photo).
+// The long PT6A nose sloping up over the hopper to the high cockpit, with the exhaust stack and
+// five-blade propeller; the tandem cockpit's windscreen and side windows under the canopy roof; the
+// swept fin and rudder, the tailplane on the tail cone; fixed spring main gear and tailwheel. The
+// firefighting tank under the belly in the photo is left off.
+F.at8t = {
+  kind: "turboprop", L0: 10.95, over: 0, D: 1, W: 1.2,
+  body: [
+    [0, 0.6, "c"], [0.2, 0.75], [0.4, 0.86], [0.65, 0.95, "c"], [1.0, 1.07], [1.5, 1.18], [2.0, 1.3], [2.5, 1.42], [3.0, 1.55],
+    [3.5, 1.66], [4.0, 1.77], [4.6, 1.9, "cl"], [5.2, 2.5], [5.5, 2.55], [6.0, 2.56], [6.5, 2.47], [7.0, 2.3], [7.3, 2.05],
+    [7.5, 1.83], [7.8, 1.62], [8.3, 1.55], [9.1, 1.47, "cl"], [9.55, 3.38], [9.65, 3.43], [10.0, 3.43], [10.4, 3.36, "cl"],
+    [10.58, 1.5, "c"], [10.95, 1.32], [10.98, 1.1], [10.85, 0.97], [10.5, 0.92], [10.0, 0.85], [9.0, 0.7], [8.0, 0.55],
+    [7.0, 0.38], [6.0, 0.2], [5.0, 0.05], [4.0, -0.03], [3.0, -0.05], [2.0, 0.0], [1.5, 0.05], [1.0, 0.12], [0.7, 0.25],
+    [0.65, 0.3, "c"], [0.4, 0.38], [0.2, 0.47],
+  ],
+  // windscreen, the front and rear cockpit side windows
+  glass: [
+    [[4.8, 1.99], [5.2, 2.43], [5.45, 2.43], [5.45, 1.95]],
+    [[5.55, 1.62], [5.55, 2.35], [6.15, 2.38], [6.15, 1.6]],
+    [[6.31, 1.6], [6.31, 2.2], [6.95, 2.18], [7.08, 1.95], [7.08, 1.6]],
+  ],
+  frame: 0.05,
+  wing: { le: 4.0, root: 0.6, span: 18.06, cr: 2.1, kink: [0.75, 2.1], ct: 1.4, sweep: 0, dih: 3.5, z: 0.15, t: [0.15, 0.12] },
+  // the wing as it shows from the side: its root section along the belly, the flap's line
+  wingSide: [["wing", [[3.98, 0.1, "c"], [4.15, 0.27], [4.5, 0.36], [5.0, 0.35], [6.1, 0.2, "c"], [5.0, 0.02], [4.3, -0.02]]],
+    ["hl", [[5.5, 0.28], [5.5, 0.08]], false]],
+  eng: { kind: "none", nose: { s: 0.55, z: 0.6, d: 2.8, blades: 5 } },
+  stab: { le: 1.65, z: 1.4, span: 6.0, root: 0.2, cr: 1.3, ct: 1.0, sweep: 0, dih: 0, thick: 0.1 },
+  parts: {
+    // the rudder hinge; the spinner's seam and the cowl joint; the hopper lid; the cockpit's frames
+    lines: [[[9.45, 3.4], [10.15, 1.5]], [[0.65, 0.95], [0.65, 0.3]], [[1.31, 1.14], [1.31, 0.08]],
+      [[3.25, 1.6], [3.25, 1.5], [4.4, 1.72], [4.45, 1.85]], [[5.5, 1.55], [7.6, 1.55]]],
+    // the exhaust stack on the cowl
+    shapes: [["core", [[1.25, 0.76, "c"], [1.75, 0.74], [1.8, 0.62, "c"], [1.25, 0.6, "c"]]]],
+    // the landing light in the cowl
+    dots: [["inlet", 0.85, 0.27, 0.06]],
+    gear: [
+      { leg: [[3.65, -0.02], [3.3, -0.95]], w: [0.14, 0.1], at: [3.3, -0.95], r: 0.4 },
+      { leg: [[10.05, 0.85], [10.3, -0.12]], w: [0.07, 0.05], at: [10.3, -0.12], r: 0.17 },
+    ],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 export const families = F;
 export const types = {
-  BE33: "be33", BE35: "be35", T34P: "t34p", T34T: "t34t", AC11: "ac11", AC6L: "ac6l",
+  BE33: "be33", BE35: "be35", T34P: "t34p", T34T: "t34t", AC11: "ac11", AC6L: "ac6l", AT8T: "at8t",
 };
