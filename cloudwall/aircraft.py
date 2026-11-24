@@ -20,6 +20,10 @@ _lock = threading.Lock()
 # high-vortex large, heavy, high-performance, rotorcraft.
 BY_CATEGORY = {"A1": ("piston", 8), "A2": ("bizjet", 16), "A3": ("narrow", 38), "A4": ("narrow", 47),
                "A5": ("wide", 62), "A6": ("fighter", 19), "A7": ("heli", 12)}
+# For a type the table hasn't drawn and whose transponder says nothing believable, its wake category
+# (cwt.csv): super and heavy, the 757, large, small over 15,500 lb (a King Air 350, a light jet), small.
+BY_WAKE = {"A": ("wide", 70), "B": ("wide", 64), "C": ("wide", 55), "D": ("wide", 50), "E": ("narrow", 47),
+           "F": ("narrow", 38), "G": ("regional", 28), "H": ("bizjet", 16), "I": ("piston", 9)}
 ANY = ("narrow", 36)        # and with nothing to go on at all, a single-aisle airliner
 
 
@@ -36,13 +40,24 @@ def _table():
     return _types
 
 
+def _category(type_code, category):
+    """The transponder's emitter category, as far as it is believable. A6, "high performance", is
+    set by mistake in some small aircraft's transponders (a Beech 99 calling itself a fighter): a
+    type the FAA's wake table files is an ordinary aircraft of its wake category, and the fighters
+    worth the icon are in the type table by name, so A6 counts only for a type neither knows."""
+    if category == "A6" and type_code and wake(type_code):
+        return None
+    return category
+
+
 def shape(type_code, category=None):
     """{"shape", "length" (m), "known"} for a type: from the table, else (known False) from the
-    transponder's category, else a single-aisle airliner's."""
+    transponder's category, else its wake category, else a single-aisle airliner's."""
+    category = _category(type_code, category)
     t = _table().get(str(type_code or "").upper())
     if t and t["shape"] and t["length_m"]:
         return {"shape": t["shape"], "length": float(t["length_m"]), "known": True}
-    kind, length = BY_CATEGORY.get(category, ANY)
+    kind, length = BY_CATEGORY.get(category) or BY_WAKE.get(wake(type_code)) or ANY
     return {"shape": kind, "length": length, "known": False}
 
 
@@ -107,4 +122,4 @@ def icon(type_code, desc=None, category=None):
         return ICON_OF_SHAPE.get(t["shape"])
     if HELI_WORDS.search(desc):
         return "heli"
-    return ICON_OF_CATEGORY.get(category) or ICON_OF_WAKE.get(wake(code))
+    return ICON_OF_CATEGORY.get(_category(code, category)) or ICON_OF_WAKE.get(wake(code))

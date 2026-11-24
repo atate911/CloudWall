@@ -2216,6 +2216,8 @@ class ReferenceTablesTest(unittest.TestCase):
         self.assertEqual(aircraft.shape("B738"), {"shape": "narrow", "length": 39.5, "known": True})
         self.assertEqual(aircraft.shape("zzzz", "A7"), {"shape": "heli", "length": 12, "known": False})   # by its category
         self.assertEqual(aircraft.shape(None), {"shape": "narrow", "length": 36, "known": False})
+        # a Beech 99 whose transponder calls it high performance (A6): drawn as the small aircraft its wake category says
+        self.assertEqual(aircraft.shape("BE99", "A6"), {"shape": "piston", "length": 9, "known": False})
         self.assertEqual(aircraft.shape("CONC")["known"], False)       # known only as rare: no shape of its own
         self.assertEqual([aircraft.rare(t) for t in ("A388", "CONC", "B738", None)], [True, True, False, False])
 
