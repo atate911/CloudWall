@@ -241,7 +241,59 @@ F.be35 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Beechcraft T-34A / T-34B Mentor ----------
+// Reference: Beechcraft T-34 Mentor general arrangement (Wikimedia Commons,
+// File:Beechcraft_T-34_Mentor_3-view_line_drawing.png, Wikipedia article Beechcraft T-34 Mentor), a
+// dimensioned Beech drawing of the T-34A: side view scaled by its own 25 ft 11 3/16 in (7.91 m)
+// overall length (about 0.9 cm a pixel), drawn level on its thrust line as the drawing has it; its
+// 7 ft 4 in propeller, 32 ft 9 7/8 in span, 7 ft 0 in and 3 ft 6 in wing chords and 12 ft 2 1/8 in,
+// 3 ft 7 3/16 in and 2 ft 5 15/16 in tailplane span and chords are used as given. Two seats in tandem
+// under the long framed canopy (two sliding sections and a fixed one aft), the Bonanza-derived wing
+// with its root fillet, the tall straight fin on a long dorsal, the cowl's panel and outlet, the access
+// door aft; retractable gear (drawn retracted).
+F.t34p = {
+  kind: "piston", L0: 7.91, over: 0, D: 1, W: 0.95,
+  body: [
+    [0, 0.71, "c"], [0.1, 0.79], [0.2, 0.84], [0.33, 0.89, "c"], [0.36, 0.92], [0.5, 0.97], [0.8, 1.02], [1.0, 1.05], [1.4, 1.09],
+    [1.72, 1.12, "cl"], [2.08, 1.5], [2.25, 1.58], [2.5, 1.6], [3.0, 1.6], [3.5, 1.59], [3.9, 1.57], [4.2, 1.5], [4.45, 1.37],
+    [4.6, 1.31, "c"], [5.0, 1.27], [5.5, 1.235, "l"], [6.5, 1.28, "cl"], [6.65, 2.38], [6.72, 2.48], [6.9, 2.52], [7.2, 2.5],
+    [7.5, 2.46], [7.6, 2.4, "l"], [7.82, 1.0], [7.9, 0.88], [7.86, 0.76], [7.7, 0.68], [7.5, 0.64], [7.0, 0.57], [6.5, 0.48],
+    [6.0, 0.4], [5.5, 0.32], [5.0, 0.25], [4.5, 0.17], [4.0, 0.13], [3.5, 0.1], [3.0, 0.08], [2.5, 0.06], [2.0, 0.05], [1.5, 0.05],
+    [1.0, 0.07], [0.8, 0.1], [0.6, 0.14], [0.5, 0.2], [0.42, 0.3], [0.37, 0.45], [0.33, 0.53, "c"], [0.2, 0.6], [0.1, 0.65],
+  ],
+  // windscreen, the two sliding canopy sections and the fixed one behind
+  glass: [
+    [[1.8, 1.14], [2.07, 1.47], [2.12, 1.47], [2.14, 1.12]],
+    [[2.18, 1.12], [2.2, 1.55], [2.5, 1.585, ""], [2.92, 1.585], [2.92, 1.12]],
+    [[2.97, 1.12], [2.97, 1.585], [3.53, 1.575], [3.53, 1.12]],
+    [[3.58, 1.12], [3.58, 1.565], [3.9, 1.545, ""], [4.2, 1.46, ""], [4.5, 1.3], [4.4, 1.2, ""], [4.2, 1.14, ""]],
+  ],
+  frame: 0.04,
+  wing: { le: 1.75, root: 0.5, span: 10.0, cr: 2.13, ct: 1.07, sweep: 6, dih: 6, z: 0.15, t: [0.15, 0.12] },
+  // the wing as the drawing has it: the root fillet's pointed nose rising to the root section, the
+  // flap's trailing edge at the root; the root section's lower line, the flap hinge and cross line
+  wingSide: [
+    ["wing", [[1.75, 0.31, "c"], [1.9, 0.38], [2.05, 0.5], [2.15, 0.65], [2.3, 0.72], [2.5, 0.76], [2.8, 0.75], [3.0, 0.72],
+      [3.2, 0.68, "l"], [3.9, 0.13, "c"], [3.5, 0.1], [3.0, 0.1], [2.5, 0.12], [2.1, 0.18], [1.85, 0.26]]],
+    ["hl", [[2.15, 0.65], [2.5, 0.62], [3.0, 0.63], [3.3, 0.66]], false],
+    ["hl", [[3.08, 0.68, "l"], [3.62, 0.13]], false],
+    ["hl", [[3.3, 0.45], [3.55, 0.46]], false],
+    ["hl", [[1.88, 0.28], [2.37, 0.6]], false],
+  ],
+  eng: { kind: "none", nose: { s: 0.27, z: 0.71, d: 2.24, blades: 2 } },
+  stab: { le: 1.21, z: 0.97, span: 3.71, root: 0.2, cr: 1.1, ct: 0.76, sweep: 4, dih: 0, thick: 0.1 },
+  parts: {
+    // the cowl's outlet, the access door aft
+    doors: [rect(0.57, 1.04, 0.25, 0.52, 0.08), [[4.12, 0.82, "c"], [4.52, 0.82, "c"], [4.52, 0.37, "c"], [4.05, 0.37, "c"]]],
+    // rudder hinge and trim tab; spinner seam, upper cowl panel; canopy rail; the fuselage top under the dorsal
+    lines: [[[7.2, 1.06], [7.2, 2.35], [7.0, 2.52]], [[7.6, 1.12], [7.6, 1.77], [7.72, 1.77]],
+      [[0.33, 0.89], [0.33, 0.53]], [[0.5, 0.96], [0.5, 0.58], [1.46, 0.58], [1.46, 1.09]],
+      [[1.75, 1.1], [4.0, 1.1], [4.3, 1.17], [4.6, 1.31]], [[5.5, 1.235], [6.5, 1.14], [7.82, 1.0]]],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 export const families = F;
 export const types = {
-  BE33: "be33", BE35: "be35",
+  BE33: "be33", BE35: "be35", T34P: "t34p",
 };
