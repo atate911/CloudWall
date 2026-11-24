@@ -150,7 +150,44 @@ F.f27 = {
   ],
 };
 
+// ---------- Saab 340 ----------
+// Reference: Wikimedia Commons "Saab 340B-Plus, Japan Airlines - JAL (Japan Air Commuter - JAC)
+// AN1620908.jpg" (JA001C, a near side-on photo, taxiing), scaled to the published length of
+// 19.73 m from the nose to the fin tip (span 21.44 m, height 6.97 m, propellers 3.35 m:
+// Wikipedia), checked against "Regional Express Saab 340 VH-ORX Adelaide 2024 (01).jpg". A
+// round, short fuselage with a blunt nose, low wing with marked dihedral, deep CT7 nacelles over
+// the wing with the intake under the spinner, a big swept fin on a long dorsal, and a low
+// tailplane with strong dihedral; the airstair door ahead of the propellers, an overwing exit
+// and the cargo door at the back on the left.
+F.sf34 = {
+  kind: "turboprop", L0: 19.54, over: 0.19, D: 2.37, W: 2.31, fwd: 0.5, fair: 0.04, fairFwd: 0.1, fairAft: 1.05, floor: 0.2,
+  nose: {
+    tip: 0.216,
+    top: [[0.071, 0.303], [0.224, 0.477], [0.373, 0.626], [0.531, 0.726], [0.747, 0.842], [0.996, 0.937], [1.203, 0.983], [1.41, 1]],
+    bot: [[0.071, 0.137], [0.224, 0.079], [0.373, 0.046], [0.531, 0.029], [0.83, 0.008], [1.161, 0]],
+  },
+  tail: {
+    top: [[3.02, 1], [2.107, 0.966], [1.278, 0.908], [0.697, 0.859], [0.357, 0.842], [0.191, 0.801], [0.033, 0.668], [0, 0.606]],
+    bot: [[3.02, 0], [2.588, 0.021], [1.95, 0.047], [1.311, 0.162], [0.672, 0.353], [0.191, 0.527], [0.033, 0.593], [0, 0.6]],
+  },
+  glass: [
+    [[0.577, 0.63], [0.685, 0.792], [0.992, 0.806], [0.838, 0.63]],
+    [[0.9, 0.63], [1.054, 0.806], [1.253, 0.806], [1.3, 0.615]],
+  ],
+  doors: [[4.69, 0.78, "D", undefined, 1.73, 0.42], [9.22, 0.54, "E", undefined, 0.62, 1.24], [14.45, 1.34, "C", undefined, 1.32, 0.44]],
+  win: [{ z: 0.636, from: 5.59, to: 12.9, pitch: 0.608, w: 0.27, h: 0.36 }],
+  wing: { le: 8.3, root: 1.15, span: 21.44, cr: 2.6, ct: 1.0, sweep: 3, dih: 7, z: 0.1, t: [0.16, 0.12] },
+  fin: { le: 3.72, cr: 2.87, ct: 1.06, h: 3.44, sweep: 39.6, rudder: 0.7 },
+  stab: { le: 3.03, z: 0.75, span: 9.24, root: 0.6, cr: 1.9, ct: 0.9, sweep: 28, dih: 11 },
+  extras: [dorsal(-7.65, -2.8, 3.48, 0.4)],
+  overlays: [
+    nacelle([[5.91, 0.95, "c"], [6.1, 1.15], [6.35, 1.28], [6.59, 1.34, "c"], [7.2, 1.42], [8.2, 1.42], [9.2, 1.3], [10.2, 0.95], [10.9, 0.45, "c"],
+      [10.2, 0.1], [9.2, -0.1], [8.0, -0.17], [7.1, -0.12], [6.7, 0.1], [6.62, 0.44, "c"], [6.35, 0.64], [6.1, 0.75]], 6.59),
+    propeller(6.39, 0.95, 3.35, 4),
+  ],
+};
+
 export const families = F;
 export const types = {
-  E120: "e120", F27: "f27", F50: "f50",
+  E120: "e120", F27: "f27", F50: "f50", SF34: "sf34",
 };
