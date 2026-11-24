@@ -187,7 +187,54 @@ F.sf34 = {
   ],
 };
 
+// ---------- CASA/IPTN CN-235 ----------
+// Reference: Wikimedia Commons "EADS CASA CN-235.svg" (Sorruno; side and plan views), the side view
+// scaled to the published length of 21.40 m (span 25.81 m, height 8.18 m: Wikipedia) and the wing
+// and tailplane planforms taken off its plan view. A wide, deep fuselage under a high wing, the
+// nacelles riding level with the crown and running back over it, the main wheels in a long sponson
+// on the lower fuselage side, a passenger door at the back ahead of the upswept tail with its
+// loading ramp, a ventral strake, and a tall swept fin on a long straight dorsal. The drawing shows
+// the four-bladed Hamilton Standard 14RF propellers smaller than they are: they are drawn here at
+// 3.35 m, the diameter Jane's gives the 14RF on the Saab 340.
+const cnSponson = ({ shaded }) => shaded([[5.91, 0.16, "c"], [6.51, 0.57], [7.44, 0.92], [8.59, 1.08], [9.65, 1.06], [10.46, 0.92],
+  [11.04, 0.63], [11.35, 0.4, "c"], [11.16, 0.11], [10.69, -0.22], [9.42, -0.3], [7.68, -0.26], [6.51, -0.13], [6.05, 0.05]]);
+F.cn35 = {
+  kind: "turboprop", L0: 21.39, over: 0, D: 2.56, W: 2.87, fwd: 0.5, fair: 0, floor: 0.25,
+  nose: {
+    tip: 0.269,
+    top: [[0.036, 0.382], [0.1, 0.469], [0.227, 0.577], [0.413, 0.659], [0.54, 0.782], [0.726, 0.909], [0.853, 0.954], [1.039, 0.995], [1.166, 1]],
+    bot: [[0.039, 0.187], [0.163, 0.11], [0.381, 0.047], [0.694, 0.015], [1.166, 0]],
+  },
+  tail: {
+    top: [[3.996, 1], [3.488, 1.017], [2.635, 1.049], [1.728, 1.085], [0.821, 1.122], [0.204, 1.14], [0.05, 1.131], [0, 1.104]],
+    bot: [[4.268, 0], [3.549, 0.053], [2.704, 0.391], [2.078, 0.641], [1.515, 0.8], [1.14, 0.877], [0.827, 0.94], [0.201, 1.049], [0, 1.094]],
+  },
+  glass: [
+    [[0.461, 0.657], [0.602, 0.813], [0.689, 0.813], [0.58, 0.65]],
+    [[0.596, 0.619], [0.712, 0.813], [0.821, 0.813], [0.758, 0.604]],
+    [[0.783, 0.604], [0.868, 0.813], [0.921, 0.813], [0.984, 0.704], [0.971, 0.625]],
+  ],
+  doors: [[4.69, 0.42, "D", undefined, 0.74, 1.03], [11.8, 0.79, "D", undefined, 1.62, 0.56]],
+  win: [{ z: 0.557, from: 4.13, to: 4.13, w: 0.27, h: 0.32 }, { z: 0.557, from: 5.47, to: 5.47, w: 0.27, h: 0.32 },
+    { z: 0.557, from: 6.3, to: 10.95, pitch: 0.514, w: 0.27, h: 0.32 }],
+  wing: { le: 8.21, root: 1.45, span: 25.81, cr: 2.48, ct: 1.26, sweep: 5.3, dih: 3, z: 1.18, t: [0.18, 0.12] },
+  fin: { le: 3.89, cr: 3.36, ct: 1.46, h: 4.97, sweep: 27, rudder: 0.7, round: 0.25 },
+  stab: { le: 3.72, z: 1.049, span: 10.8, root: 0.4, cr: 3.13, ct: 1.4, sweep: 19, dih: 0 },
+  extras: [
+    fillet(-7.56, -3.0, 4.57), cnSponson,
+    marks([
+      ["fin", [[17.55, 2.04, "c"], [17.71, 1.76, "c"], [19.19, 1.96, "c"], [19.43, 2.44, "c"]]],
+      ["hl", [[12.5, 0.15], [12.54, 0.4], [15.51, 1.48], [15.6, 1.35]]],
+    ]),
+  ],
+  overlays: [
+    nacelle([[5.47, 2.58, "c"], [5.7, 2.78], [5.95, 2.9], [6.19, 2.92, "c"], [7.1, 3.01], [8.84, 3.03], [10.46, 2.85], [12.46, 2.6, "c"],
+      [11.62, 2.26], [10.46, 1.97], [7.79, 1.97], [6.19, 1.97], [6.14, 2.0, "c"], [5.95, 2.31], [5.7, 2.43]], 6.19),
+    propeller(5.95, 2.58, 3.35, 4),
+  ],
+};
+
 export const families = F;
 export const types = {
-  E120: "e120", F27: "f27", F50: "f50", SF34: "sf34",
+  CN35: "cn35", E120: "e120", F27: "f27", F50: "f50", SF34: "sf34",
 };
