@@ -31,6 +31,7 @@ function openPlaceMenu() {
     <button role="menuitemradio" aria-checked="${p.id === state.place}" data-place="${esc(p.id)}">
       <b>${esc(p.name)}</b><span>${esc(p.icao)}${p.city ? ` · ${esc(p.city)}` : ""}${p.zip && !p.name.includes(p.zip) ? ` · ZIP ${esc(p.zip)}` : ""}</span></button>
     ${p.added ? `<button class="pm-remove" data-remove="${esc(p.id)}" title="Remove ${esc(p.name)}" aria-label="Remove ${esc(p.name)}"></button>` : ""}</div>`).join("") +
+    `<button class="pm-add" id="pm-here" role="menuitem">Use my location…</button>` +
     `<button class="pm-add" id="pm-add" role="menuitem">Set a location…</button>`;
   m.hidden = false;
   $("station").setAttribute("aria-expanded", "true");
@@ -38,6 +39,7 @@ function openPlaceMenu() {
 $("station").addEventListener("click", () => ($("place-menu").hidden ? openPlaceMenu() : closePlaceMenu()));
 $("place-menu").addEventListener("click", async (e) => {
   if (e.target.closest("#pm-add")) { closePlaceMenu(); return openLocation(); }
+  if (e.target.closest("#pm-here")) { closePlaceMenu(); openLocation(); return useMyLocation(); }
   const rm = e.target.closest("button[data-remove]");
   const state = current();
   if (rm) {
@@ -73,6 +75,8 @@ function openLocation() {
   $("loc-form").reset();
   $("loc-where").textContent = ""; $("loc-airports").innerHTML = ""; $("loc-error").textContent = "";
   $("loc-save").disabled = true;
+  $("loc-here").hidden = !("geolocation" in navigator) && window.isSecureContext;   // a browser with none at all
+  $("loc-here").disabled = false;
   locFound = null;
   $("loc-dialog").showModal();
   $("loc-q").focus();
@@ -96,6 +100,48 @@ async function lookUpLocation() {
       .map((a) => opt(a.icao, `<b>${esc(a.iata || a.icao)} · ${esc(a.name)}</b><small>${esc(a.city || "")} · ${a.dist_nm} nm${a.size === "large" ? " · large" : ""}</small>`)).join("");
   $("loc-save").disabled = false;
 }
+// This device's own location, from the browser: a place already set up within a mile or so of
+// it is shown straight away; otherwise its coordinates go in the box, to choose an airport and
+// save as for typed ones. Browsers give a page its location only over HTTPS (or on the machine
+// itself, at localhost), so a screen on the house network at http://<address>:5050 can't have it.
+const HERE_NM = 1;
+function nmApart(a, b) {
+  const r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) ** 2;
+  return 2 * 3440.065 * Math.asin(Math.sqrt(h));
+}
+function hereError(text) {
+  $("loc-where").textContent = text;
+  $("loc-where").classList.add("bad");
+  $("loc-here").disabled = false;
+}
+function useMyLocation() {
+  if (!window.isSecureContext)
+    return hereError("Browsers only share their location with pages over HTTPS (or at localhost): type a ZIP code or coordinates instead");
+  if (!("geolocation" in navigator)) return hereError("This browser can't tell where it is: type a ZIP code or coordinates instead");
+  $("loc-here").disabled = true;
+  $("loc-where").classList.remove("bad");
+  $("loc-where").textContent = "Finding where this device is…";
+  navigator.geolocation.getCurrentPosition((pos) => {
+    if (!$("loc-dialog").open) return;                 // closed while it looked
+    const here = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+    const state = current() || {};
+    const near = (state.places || []).filter((p) => p.lat != null && p.lon != null)
+      .map((p) => ({ p, nm: nmApart(here, p) })).sort((a, b) => a.nm - b.nm)[0];
+    if (near && near.nm <= HERE_NM) {
+      $("loc-dialog").close();
+      return near.p.id === state.place ? undefined : showPlace(near.p.id);
+    }
+    $("loc-here").disabled = false;
+    $("loc-q").value = `${here.lat.toFixed(4)}, ${here.lon.toFixed(4)}`;
+    if (!$("loc-name").value.trim()) $("loc-name").value = "My location";
+    lookUpLocation();
+  }, (err) => hereError(err.code === err.PERMISSION_DENIED
+    ? "Location access was refused: allow it for this page in the browser's settings, or type a ZIP code or coordinates"
+    : "Couldn't find where this device is: type a ZIP code or coordinates instead"),
+  { enableHighAccuracy: false, timeout: 15000, maximumAge: 5 * 60 * 1000 });
+}
+$("loc-here").addEventListener("click", useMyLocation);
 $("loc-q").addEventListener("input", () => { clearTimeout(locTimer); locTimer = setTimeout(lookUpLocation, 250); });
 $("loc-cancel").addEventListener("click", () => $("loc-dialog").close());
 $("loc-form").addEventListener("submit", async (e) => {

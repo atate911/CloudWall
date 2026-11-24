@@ -41,7 +41,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `now` | always | The server's clock when it answered. |
 | `status` | always | The position feed: `source` (its host), `ok`, `updated` (when positions were last received) and `error` (the last failure's words, or null). |
 | `place` | always | The id of the place this answer is for. |
-| `places` | always | Every place being watched: `id`, `name`, `icao`, `iata`, `city`, `zip`, and `added` (true if it was set up from a screen, and so can be removed). |
+| `places` | always | Every place being watched: `id`, `name`, `icao`, `iata`, `city`, `zip`, `lat` and `lon` (to three decimals, a few hundred feet, so a screen using its own location can find a place already there), and `added` (true if it was set up from a screen, and so can be removed). |
 | `home` | always | The place itself: `name`, `lat`, `lon`, `elevation_ft` (and `zip` if it was set by one). |
 | `airport` | always | Its airport: `icao`, `iata`, `name`, `city`, `lat`, `lon`, `elevation_ft`; `runways` (each `name`, `ends` as two `[lat, lon]`, `length_ft`); `others`, the small fields nearby (`code`, `icao`, `name`, `city`, `lat`, `lon`, `elevation_ft`, `runways`); `airspace` (Class B, C and its own D: `id`, `class`, `floor`, `ceiling`, `label`, `rings`); `navaids` (`ident`, `name`, `type`, `lat`, `lon`); `helipads`, the hospital helipads out past the radar's longest range (`code`, `name`, `short`, `city`, `lat`, `lon`, `elevation_ft`; the US only). |
 | `tracking` | always | The `[tracking]` settings in force: `radius_nm`, `overhead_nm`, `max_overhead_alt_ft`, `poll_seconds`, `when_idle`, `idle_after_seconds`. |
