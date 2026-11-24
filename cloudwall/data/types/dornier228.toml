@@ -1,0 +1,32 @@
+name = "Dornier 228"
+types = ["D228"]
+production = [1982]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/Dornier_228",
+]
+
+text = """
+The 228 grew out of a wing. In the late 1970s Dornier developed its "new technology wing", the TNT,
+under a German government programme and tested it on a Do 28 with turboprop engines, then built a
+new square-section fuselage around it in two lengths: the 15-seat 228-100 and the 19-seat 228-200,
+first flown on 28 March and 9 May 1981. The supercritical wing gives its lift at low speeds, and so
+the short-field performance; structurally it is a box of four integrally milled alloy panels with
+Kevlar ribs, stringers and flaps, about 15% lighter than a conventional wing and some 340 hours of
+work quicker to build. Norving began the first airline service in July 1982. Large side doors and
+a square cabin suit freight as well as passengers, and police, coastguards and air forces fly it on
+patrol and survey work for its endurance of up to ten hours.
+
+Dornier built about 245 at Oberpfaffenhofen until 1998, and Hindustan Aeronautics in Kanpur, licensed
+in 1983, 125 more by 2014. Swiss RUAG relaunched it as the 228NG, certified in 2010, with a glass
+cockpit and five-blade composite propellers in place of the four-blade metal ones, and General Atomics bought
+the German line in 2021. In January 2023 ZeroAvia flew a 228 with one of its Garrett TPE331
+turboprops replaced by a hydrogen fuel-cell electric powertrain.
+"""
+
+[facts]
+"First flight" = "March 1981"
+"Built" = "about 245 by Dornier, 125 by HAL to 2014"
+"Engines" = "2 × Garrett (now Honeywell) TPE331-10, 776 shp"
+"Max takeoff weight" = "6,575 kg (14,495 lb)"
+"Cruise" = "223 kt (413 km/h)"

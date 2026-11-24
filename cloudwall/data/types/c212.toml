@@ -1,0 +1,31 @@
+name = "CASA C-212 Aviocar"
+types = ["C212"]
+production = [1974]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/CASA_C-212_Aviocar",
+]
+
+text = """
+CASA designed the C-212 in the late 1960s to replace the Spanish Air Force's Junkers Ju 52s and
+Douglas C-47s, as a twin-turboprop transport that could carry paratroops, stretchers or cargo, and
+civil operators too. It first flew on 26 March 1971, and the air force ordered it in 1974 as the
+Aviocar. It is built to work from rough fields with no ground equipment: a box fuselage under a high
+wing, fixed landing gear on low-pressure tyres, and a rear loading ramp under the upswept tail, rare
+in its class, which has made it a favourite of skydivers and smokejumpers. The cabin is not
+pressurised. The Series 300 of 1987 added winglets, a larger fin and a baggage hold in a longer
+nose, and the 400, first flown in April 1997, more powerful engines and avionics moved into the nose.
+
+Indonesia's IPTN began licence production in Bandung in 1975 and has built it alone since the last
+Spanish-built C-212 went to the Vietnam Coast Guard in December 2012; its current version is the
+NC212i. Air forces, coastguards and charter airlines use it for transport, patrol and search and
+rescue, the US Army's special forces fly it as the C-41A, and Australia's Skytraders flies it on
+skis to support research teams in Antarctica.
+"""
+
+[facts]
+"First flight" = "March 1971"
+"Built" = "485 in Spain, over 124 in Indonesia"
+"Engines" = "2 × Honeywell TPE331-12JR-701C, 925 shp (400)"
+"Max takeoff weight" = "up to 8,000 kg (17,640 lb)"
+"Range" = "451 nm (835 km) with full military payload"

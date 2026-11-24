@@ -917,9 +917,8 @@ class AboutTest(unittest.TestCase):
 
     # types in the table for their icon and size, still waiting for a write-up (and a drawing: test_silhouettes)
     UNWRITTEN = {
-        "AC11", "AC6L", "AC90", "AC95", "AT3T", "AT8T", "C212", "C425", "C441", "CN35", "D228", "DHC6",
-        "E110", "E120", "F27", "F50", "G159", "JS31", "JS32", "JS41", "MU2", "PA31T", "PA42", "PAY1",
-        "PAY2", "PAY3", "PAY4", "SH33", "SH36", "T34P", "T34T"}
+        "AC11", "AC6L", "AC90", "AC95", "AT3T", "AT8T", "C425", "C441", "CN35", "E110", "E120", "F27",
+        "F50", "G159", "MU2", "PA31T", "PA42", "PAY1", "PAY2", "PAY3", "PAY4", "T34P", "T34T"}
 
     def test_a_variant_adds_to_its_family(self):
         from cloudwall import about

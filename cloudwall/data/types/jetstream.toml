@@ -1,0 +1,38 @@
+name = "British Aerospace Jetstream 31 and 32"
+types = ["JS31", "JS32"]
+production = [1982, 1993]
+checked = "2026-11"
+sources = [
+  "https://en.wikipedia.org/wiki/British_Aerospace_Jetstream",
+  "https://en.wikipedia.org/wiki/Handley_Page_Jetstream",
+]
+
+text = """
+Handley Page designed the Jetstream in the mid-1960s, hoping to stay independent of Britain's two big
+aircraft makers with a fast 12- to 18-seat airliner for the American commuter market. Streamlining
+gave it its long nose, and a round pressurised fuselage let it fly higher and faster than its
+unpressurised rivals, though the wing spar crossed the cabin as a step in the aisle. It first flew
+on 18 August 1967, but its French Astazou engines proved underpowered and temperamental, the costs
+ran to more than four times the estimate, and Handley Page went bankrupt; the line closed in 1970.
+Scottish Aviation kept building it, and the RAF trained its multi-engine pilots on it.
+
+British Aerospace, which absorbed Scottish Aviation in 1978, saw that the design was worth more and
+re-engined it with Garrett TPE331 turboprops as the Jetstream 31, seating 18 three abreast with an
+offset aisle and offering water-methanol injection to lift full loads out of hot airfields in the
+United States and Australia. It first flew on 28 March 1980, was certified on 29 June 1982, and sold
+as Handley Page had hoped the original would: 386 Jetstream 31s and 32s were built until 1993.
+"""
+
+[facts]
+"First flight" = "March 1980"
+"Built" = "386"
+"Engines" = "2 × Garrett TPE331-10UG, 940 shp"
+"Max takeoff weight" = "6,950 kg (15,332 lb)"
+"Range" = "680 nm (1,260 km)"
+
+[variants.JS32]
+name = "British Aerospace Jetstream 32"
+more = """
+The Jetstream 32, also called the Super 31, has more powerful engines again; planned in 1985, it
+first flew in 1988.
+"""
