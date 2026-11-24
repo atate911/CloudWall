@@ -309,10 +309,59 @@ F.sw4 = {
   extras: [dorsal(-6.2, -2.95, 2.25, 0.4), door(4.3, 0.64, 0.25, 1.35), door(-5.0, 1.3, 0.3, 1.25)],
 };
 
+// Square-cornered cabin windows (the renderer's window rows are round-ended): centres s (metres),
+// width w, height h, centre height z above the keel, corner radius r.
+const panes = (list, w, h, z, r = 0.07) => ({ sk }) => {
+  for (const s of list) {
+    const a = s - w / 2, b = s + w / 2, z0 = z - h / 2, z1 = z + h / 2;
+    sk.smooth("glass", [[a + r, z0, "l"], [b - r, z0], [b, z0 + r, "l"], [b, z1 - r], [b - r, z1, "l"], [a + r, z1], [a, z1 - r, "l"], [a, z0 + r]]);
+  }
+};
+
+// ---------- Beechcraft 99 Airliner ----------
+// Published dimensions (Wikipedia, Model 99A): length 44 ft 6.75 in (13.58 m), span 45 ft 10.5 in
+// (13.98 m), height 14 ft 4.33 in (4.38 m). It has the Queen Air's wing and the King Air's engines
+// and nacelles (so those are the King Air 90's above, measured off the U-21A drawing of the same
+// wing, 45 ft 10.5 in span, and nacelles), on a longer cabin behind its own long, drooping nose.
+// No three-view on Commons: stations measured off the near side-on Beech factory photo "Beechcraft
+// - 99 - Airliner.jpg" (scaled by the overall length) and heights off "Beech 99 (287390412).jpg",
+// with "Jamaica Air Shuttle Beechcraft Model 99 In Flight.jpg" for the left side's openings: a
+// forward exit with its window, six square cabin windows, the wide airstair-and-cargo door behind
+// the wing and a round window aft of it; swept fin on a long low dorsal, dihedral tailplane low on
+// the tail cone, three-blade propellers. Tailplane span is estimated from the photos.
+F.be99 = {
+  kind: "turboprop", L0: 13.0, over: 0.58, D: 1.78, W: 1.6, fwd: 0.4, fair: 0,
+  nose: {
+    tip: 0.31,
+    top: [[0.05, 0.38], [0.15, 0.43], [0.3, 0.47], [0.6, 0.53], [0.9, 0.58], [1.2, 0.63], [1.5, 0.68], [1.72, 0.72], [1.95, 0.88], [2.12, 0.97], [2.3, 1]],
+    bot: [[0.05, 0.22], [0.15, 0.15], [0.3, 0.1], [0.6, 0.055], [1.0, 0.025], [1.4, 0.008], [1.8, 0]],
+  },
+  tail: {
+    top: [[2.6, 1], [2.2, 0.97], [1.1, 0.84], [0, 0.72]],
+    bot: [[3.4, 0], [2.8, 0.07], [2.1, 0.18], [1.4, 0.29], [0.7, 0.38], [0.15, 0.43], [0, 0.45]],
+  },
+  glass: [
+    [[1.66, 0.7], [1.93, 0.9], [2.01, 0.93], [2.02, 0.86], [1.84, 0.67]],
+    [[2.05, 0.9], [2.24, 0.9], [2.27, 0.84], [2.27, 0.71], [2.05, 0.71], [1.95, 0.8]],
+  ],
+  wing: { le: 5.35, root: 0.8, span: 13.98, cr: 2.2, ct: 1.1, sweep: 1, dih: 6, z: 0.11, t: [0.16, 0.12] },
+  eng: { ...F.be9l.eng, prop: 2.36, blades: 3 },
+  fin: { le: 2.17, cr: 2.2, ct: 1.0, h: 1.8, sweep: 44, fillet: [1.5, 0.3], rudder: 0.66 },
+  stab: { le: 1.74, z: 0.74, span: 5.4, root: 0.3, cr: 1.6, ct: 1.0, sweep: 15, dih: 7 },
+  extras: [
+    panes([4.34, 5.44, 5.94, 6.44, 6.94, 7.44, 7.94], 0.4, 0.4, 1.32),
+    // the forward exit round its window, the airstair-and-cargo door, the round window behind it
+    door(4.34, 0.62, 0.78, 0.92), door(8.85, 1.1, 0.25, 1.32),
+    ({ sk }) => sk.ellipse("glass", 9.8, 1.32, 0.14, 0.12),
+  ],
+  overlays: [stacks(1.45, 0.2)],
+};
+
 export const families = F;
 export const types = {
   DH8D: "dh8d", DH8C: "dh8c", BE20: "be20", B350: "b350", AT72: "at72", AT76: "at76", B190: "b190", SW4: "sw4",
   BE9L: "be9l", BE9T: "be9t", BE10: "be10",
   // the 300 is the 200's airframe with the 350's PT6A-60As and four-blade propellers
   BE30: ["be20", { eng: { ...F.be20.eng, blades: 4, prop: 2.67 } }],
+  BE99: "be99",
 };
