@@ -139,6 +139,52 @@ F.b350 = {
   eng: { ...F.be20.eng, blades: 4, prop: 2.67 },
 };
 
+// ---------- Beechcraft King Air 90 / F90 / 100 ----------
+// Reference: Wikimedia Commons "Beechcraft U-21A Ute 3-view line drawing.png", a dimensioned
+// manufacturer's drawing of the King Air 90 airframe (length 35 ft 6 in, span 45 ft 10.5 in, height
+// 14 ft 2.56 in, propellers 7 ft 9 in, main gear track 12 ft 9 in): its side view gives the 90's
+// tail cone, conventional tail with dorsal fillet and dihedral tailplane, and the wing and nacelle
+// stations. Published dimensions (Wikipedia): C90 length 10.82 m, span 15.32 m; F90 12.13 m long,
+// 14.00 m span; 100 series 12.17 m long, 14.0 m span, 4.70 m high. Windows and door checked against
+// Commons photos: "Beechcraft King Air C90GTx Sideview.jpg" and "Beechcraft King Air F90 N3809C
+// MD1.jpg" (three round cabin windows ahead of the airstair door, one behind it, on the left side),
+// "C-GSYN Adlair Aviation Ltd Beechcraft King Air 100 (BE10) 03.JPG" and "Beechcraft King Air A100
+// 5R-MHC.jpg" (the 200's five). The 90 shares the 200's nose, cabin section and nacelles, so those
+// are the 200's above; its cabin is 1.35 m shorter, 60 % of it ahead of the wing as the 200 drawing
+// has it. The F90 is the 90's fuselage and wing with the 200's T-tail; the 100 is the 200's
+// fuselage with a conventional tail like the 90's, taller (its 4.70 m height less the 200's 4.37 m).
+const KA90_TAIL = {
+  top: [[2.4, 1], [2.1, 0.97], [1.0, 0.84], [0, 0.73]],
+  bot: [[3.1, 0], [2.57, 0.08], [2.0, 0.17], [1.37, 0.28], [0.7, 0.37], [0.14, 0.42], [0, 0.44]],
+};
+F.be9l = {
+  ...F.be20, L0: 10.17, over: 0.65,
+  tail: KA90_TAIL,
+  win: [{ z: 0.727, from: 4.15, to: 5.13, pitch: 0.49, w: 0.36, h: 0.36 }, { z: 0.727, from: -3.75, to: -3.75, w: 0.45, h: 0.3 }],
+  wing: { ...F.be20.wing, le: 3.0, span: 15.32 },
+  eng: { ...F.be20.eng, at: [0.17], fwd: 2.57, len: 5.12, prop: 2.29, blades: 4 },
+  fin: { le: 1.65, cr: 1.68, ct: 0.9, h: 1.78, sweep: 40.6, fillet: [0.8, 0.35], rudder: 0.62 },
+  stab: { le: 2.03, z: 0.7, span: 5.25, root: 0.3, cr: 1.75, ct: 1.2, sweep: 13, dih: 9 },
+  extras: [door(-4.42, 0.72, 0.25, 1.38)],
+};
+F.be9t = {
+  ...F.be9l, L0: 10.65, over: F.be20.over,
+  tail: F.be20.tail, fin: F.be20.fin, stab: F.be20.stab,
+  win: [F.be9l.win[0], { ...F.be9l.win[1], from: -4.23, to: -4.23 }],
+  wing: { ...F.be9l.wing, span: 14.0 },
+  extras: [door(-4.9, 0.72, 0.25, 1.38)],
+};
+F.be10 = {
+  ...F.be20, L0: 11.52, over: 0.65,
+  tail: KA90_TAIL,
+  win: [F.be20.win[0], { ...F.be20.win[1], from: -3.59, to: -3.59 }],
+  wing: { ...F.be20.wing, span: 14.0 },
+  eng: { ...F.be20.eng, blades: 4 },
+  fin: { ...F.be9l.fin, le: 1.75, cr: 1.8, ct: 0.95, h: 2.0 },
+  stab: { ...F.be9l.stab, le: 2.1 },
+  extras: [door(-4.46, 0.72, 0.25, 1.38)],
+};
+
 // ---------- ATR 72 ----------
 // Reference: Wikimedia Commons "ATR family v1.0.png" (dimensioned side, plan and front views of
 // the ATR 72 and 42; length 27.17 m, span 27.05 m, height 7.65 m). High wing on a raised
@@ -266,4 +312,7 @@ F.sw4 = {
 export const families = F;
 export const types = {
   DH8D: "dh8d", DH8C: "dh8c", BE20: "be20", B350: "b350", AT72: "at72", AT76: "at76", B190: "b190", SW4: "sw4",
+  BE9L: "be9l", BE9T: "be9t", BE10: "be10",
+  // the 300 is the 200's airframe with the 350's PT6A-60As and four-blade propellers
+  BE30: ["be20", { eng: { ...F.be20.eng, blades: 4, prop: 2.67 } }],
 };
