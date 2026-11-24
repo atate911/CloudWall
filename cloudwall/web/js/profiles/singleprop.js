@@ -111,6 +111,49 @@ F.pc21 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- Pilatus PC-7 Turbo Trainer ----------
+// No manufacturer drawing of the original PC-7 reachable (Pilatus's plan is of the PC-9-based
+// PC-7 MKX): measured from the side-on air-to-air photo File:Zijaanzicht-van-pc-7-lesvliegtuig-in-de-
+// lucht.jpg (Wikimedia Commons, Royal Netherlands Air Force L-12, gear up), rendered 1920 px wide and
+// scaled by the 9.78 m length (Wikipedia, Pilatus PC-7), spinner to tailplane tip, 6.2 mm a pixel,
+// and checked against the three-view File:Pilatus_PC-7_3_vues.gif. Lower confidence (photo): the
+// wing, seen from above in it, is drawn from its 10.40 m span and 16.60 m² area. The short PT6A-25
+// nose, the one-piece bubble canopy over level tandem seats, the straight wing and the square-cut
+// fin on a short dorsal fin; underwing stores left off.
+F.pc7 = {
+  kind: "turboprop", L0: 9.78, over: 0, D: 1, W: 0.95,
+  body: [
+    [0, 0.62, "c"], [0.12, 0.72], [0.3, 0.8], [0.51, 0.86], [0.55, 0.9, "c"], [1.39, 0.99], [2.38, 1.08], [2.99, 1.14, "c"],
+    [3.2, 1.33], [3.38, 1.47], [3.65, 1.54], [3.92, 1.57], [4.53, 1.57], [4.9, 1.5], [5.15, 1.42], [5.37, 1.32], [5.6, 1.25],
+    [6.0, 1.22], [6.5, 1.19, "cl"], [7.62, 1.48, "cl"], [7.77, 2.5, "cl"], [8.48, 2.46, "cl"], [8.79, 0.93, "c"],
+    [8.85, 0.75], [8.79, 0.56], [7.62, 0.31], [6.39, 0.15], [4.84, 0.03], [3.5, -0.02], [2.99, -0.03], [1.76, 0.0], [1.14, 0.06],
+    [0.85, 0.16], [0.71, 0.25], [0.59, 0.37, "c"], [0.5, 0.4], [0.3, 0.46], [0.12, 0.53],
+  ],
+  // the windscreen's side pane and the one-piece canopy
+  glass: [
+    [[3.03, 1.15, "c"], [3.3, 1.44, "c"], [3.3, 1.08, "c"]],
+    [[3.4, 1.47, "c"], [3.65, 1.53, ""], [3.92, 1.56, ""], [4.53, 1.56, ""], [4.9, 1.49, ""], [5.3, 1.32, "c"], [5.28, 1.04, "c"], [3.4, 1.06, "c"]],
+  ],
+  frame: 0.03,
+  wing: { le: 3.65, root: 0.5, span: 10.4, cr: 2.1, ct: 1.05, sweep: 3, dih: 7, z: 0.05, t: [0.15, 0.12] },
+  eng: { kind: "none", nose: { s: 0.48, z: 0.62, d: 2.3, blades: 3 } },
+  stab: {},
+  stabSide: [
+    ["stab", [[7.43, 0.8, "c"], [7.9, 0.87], [8.8, 0.9], [9.78, 0.86, "c"], [8.8, 0.8], [7.9, 0.77]]],
+  ],
+  parts: {
+    // the rudder hinge, the cowling's seams
+    lines: [[[8.45, 2.46], [8.5, 0.95]], [[1.39, 0.99], [1.39, 0.04]], [[2.38, 1.08], [2.4, -0.01]]],
+    // the exhaust stack, the ventral fairing under the tail cone, the spine and belly antennas
+    shapes: [
+      ["core", [[0.77, 0.66, "c"], [0.85, 0.74], [1.36, 0.74, "c"], [1.39, 0.57, "c"], [0.85, 0.58]]],
+      ["fin", [[7.4, 0.33, "c"], [8.8, 0.6, "c"], [8.86, 0.72, "c"], [8.3, 0.5]]],
+      ["strut", [[6.15, 1.21, "c"], [6.25, 1.33, "c"], [6.31, 1.32, "c"], [6.27, 1.2, "c"]]],
+    ],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 // ---------- Pilatus PC-9 ----------
 // Reference: Pilatus "PC-9 M Model Building Plan 1:25" (pilatus-aircraft.com, Media, Model Building
 // Plans), page 2: the manufacturer's dimensioned side view, a vector drawing rendered at 1200 dpi and
@@ -393,5 +436,5 @@ F.epic = {
 
 export const families = F;
 export const types = {
-  PC6: "pc6", PC9: "pc9", PC21: "pc21", DHC3: "dhc3", KODI: "kodi", EPIC: "epic",
+  PC6: "pc6", PC7: "pc7", PC9: "pc9", PC21: "pc21", DHC3: "dhc3", KODI: "kodi", EPIC: "epic",
 };
