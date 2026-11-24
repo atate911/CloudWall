@@ -229,7 +229,70 @@ F.pc6 = {
   extras: EXTRAS, overlays: OVERLAYS,
 };
 
+// ---------- de Havilland Canada DHC-3 Otter ----------
+// Reference: "De Havilland Canada U-1A Otter 3-view line drawing" (Wikimedia Commons,
+// File:De_Havilland_Canada_U-1A_Otter_3-view_line_drawing.png, from the US Army's characteristics
+// summary of its Otters), the side view rendered 1920 px wide and scaled by the 41 ft 10 in (12.75 m)
+// length (Wikipedia, DHC-3 Otter, from Jane's), hub to rudder, 12.3 mm a pixel. The original radial
+// Otter (the turbine conversions fly under another type code): the blunt round cowl of the R-1340
+// Wasp with its small hub, the tall slab-sided cabin under the wing, one strut a side, the double
+// cargo door, the long curved dorsal fin sweeping up into the rounded fin, and the tailwheel.
+F.dhc3 = {
+  kind: "piston", L0: 12.75, over: 0, D: 1, W: 1.6,
+  body: [
+    [0.55, 0.9, "c"], [0.55, 1.42], [0.62, 1.56], [0.78, 1.6], [1.0, 1.61], [1.3, 1.64], [1.82, 1.74, "cl"], [2.6, 2.2, "c"],
+    [5.2, 2.18, "l"], [5.75, 2.03, "l"], [8.0, 2.0], [8.5, 2.03], [9.25, 2.15], [10.0, 2.4], [10.5, 2.75], [10.9, 3.2],
+    [11.2, 3.7], [11.45, 4.04], [11.75, 4.17], [12.0, 4.08], [12.25, 3.7], [12.5, 3.15], [12.68, 2.6], [12.75, 2.1], [12.72, 1.4],
+    [12.62, 1.05], [12.45, 0.97, "c"], [11.75, 0.85], [11.0, 0.76], [10.25, 0.65], [9.5, 0.55], [8.5, 0.42], [7.5, 0.31],
+    [6.5, 0.2], [5.5, 0.09], [4.5, 0.02], [3.5, 0.0], [2.5, 0.0], [1.75, 0.02], [1.3, 0.05], [1.0, 0.1], [0.8, 0.17],
+    [0.65, 0.27], [0.57, 0.42],
+  ],
+  // the windscreen's edge, the two flight-deck side windows, the cabin windows and the two in the
+  // cargo door
+  glass: [
+    [[1.92, 1.8, "c"], [2.55, 2.17, "c"], [2.6, 2.09, "c"], [2.0, 1.74, "c"]],
+    [[1.98, 1.4], [1.98, 1.58], [2.12, 1.66], [2.15, 1.4]],
+    [[2.22, 1.36], [2.22, 1.66], [2.32, 1.76, ""], [2.5, 1.76], [2.56, 1.36]],
+    pane(3.15, 3.45, 1.25, 1.6, 0.08), pane(3.64, 3.94, 1.25, 1.6, 0.08), pane(4.15, 4.47, 1.25, 1.6, 0.08), pane(4.7, 5.02, 1.25, 1.6, 0.08),
+    pane(5.6, 5.92, 1.25, 1.6, 0.08), pane(6.1, 6.42, 1.25, 1.6, 0.08),
+  ],
+  frame: 0.035,
+  wing: { le: 2.85, root: 0.8, span: 17.69, cr: 2.0, ct: 2.0, sweep: 0, dih: 1, z: 2.1, t: [0.14, 0.14] },
+  // the wing root on the cabin roof as the 3-view draws it, with the flap's root fairing
+  wingSide: [
+    ["wing", [[2.82, 2.27, "c"], [3.0, 2.36], [3.5, 2.43], [4.0, 2.4], [4.5, 2.32], [5.15, 2.18, "c"], [4.5, 2.06], [3.5, 1.93], [3.0, 1.93], [2.86, 2.08]]],
+    ["hl", [[4.92, 1.88], [4.92, 2.15]], false],
+  ],
+  eng: { kind: "none", nose: { s: 0.4, z: 0.88, d: 2.65, blades: 3 } },
+  stab: {},
+  stabSide: [
+    ["stab", [[10.65, 2.06, "c"], [11.0, 2.11], [11.7, 2.11], [12.15, 2.06, "c"], [11.7, 2.0], [11.0, 2.0]]],
+  ],
+  parts: {
+    // the cargo door and its split, the crew door
+    doors: [
+      [[5.45, 0.45, "c"], [5.45, 1.6], [5.6, 1.72], [6.45, 1.72], [6.6, 1.6], [6.6, 0.45, "c"]],
+      [[1.95, 0.65, "c"], [1.95, 1.6], [2.12, 1.78], [2.62, 1.78], [2.7, 1.6], [2.7, 0.95], [2.5, 0.65, "c"]],
+      rect(1.95, 2.62, 0.04, 0.38, 0.06),
+    ],
+    // the cargo door's split, the rudder hinge, the cowling's rings and panel lines
+    lines: [[[6.0, 0.45], [6.0, 1.72]], [[11.85, 3.75], [11.85, 0.86]], [[1.0, 0.11], [1.0, 1.61]], [[1.6, 0.04], [1.6, 1.68]],
+      [[1.0, 1.15], [1.6, 1.15]], [[1.0, 0.48], [1.6, 0.48]], [[3.0, 0.2], [5.8, 0.24]]],
+    struts: [[[3.85, 0.5], [3.55, 1.95], 0.13, 0.12], [[2.92, -0.88], [4.2, 0.0], 0.08, 0.07]],
+    gear: [
+      { leg: [[2.85, 0.55], [2.85, -0.9]], w: [0.14, 0.1], at: [2.85, -0.92], r: 0.4 },
+      { leg: [[10.9, 0.7], [11.2, 0.36]], w: [0.08, 0.06], at: [11.24, 0.33], r: 0.19 },
+    ],
+    // the hub, the antenna mast ahead of the wing and the fairing behind it
+    shapes: [
+      ["hub", [[0.0, 0.88, "c"], [0.08, 0.98], [0.3, 1.0], [0.55, 0.97, "c"], [0.55, 0.79, "c"], [0.3, 0.76], [0.08, 0.78]]],
+      ["strut", [[5.3, 2.15, "c"], [5.4, 2.21], [5.65, 2.2], [5.78, 2.1, "c"]]],
+    ],
+  },
+  extras: EXTRAS, overlays: OVERLAYS,
+};
+
 export const families = F;
 export const types = {
-  PC6: "pc6", PC9: "pc9", PC21: "pc21",
+  PC6: "pc6", PC9: "pc9", PC21: "pc21", DHC3: "dhc3",
 };
