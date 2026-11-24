@@ -357,11 +357,57 @@ F.be99 = {
   overlays: [stacks(1.45, 0.2)],
 };
 
+// ---------- Piaggio P.180 Avanti ----------
+// Reference: Wikimedia Commons "P180 Avanti.jpg" (side, plan and front views with a cabin section),
+// scaled by the published length 14.41 m (Piaggio; Wikipedia 47.3 ft), span 14.03 m (46 ft), height
+// 13 ft. Checked against the side-on photo "Piaggio P180 Avanti.JPG" (PH-DLN). Laminar fuselage whose
+// depth swells to 2 m over the cabin and tapers to a high tail cone, canard foreplane low on the nose,
+// straight mid-set wing behind the cabin carrying long nacelles with five-blade pusher propellers
+// (2.16 m in the front view), swept T-tail, and two delta fins under the tail cone. Left side: the
+// airstair door ahead of four small cabin windows.
+const P180_PARTS = ({ sk, prop, surface }) => {
+  // the near delta fin under the tail cone
+  sk.smooth("fin", [[9.7, 0.81, "c"], [12.41, 1.06, "c"], [12.36, 0.66], [12.05, 0.61, "c"], [11.24, 0.68]]);
+  // the canard: slight anhedral, flapped trailing edge
+  surface(sk, "stab", { le: 0.54, root: 0.45, span: 3.48, cr: 0.72, ct: 0.5, sweep: 8, dih: -5, z: 0.42, t: [0.12, 0.1] });
+  // the nacelle, its intake scoop and exhaust, then the spinner and the pusher propeller behind it
+  sk.smooth("nac", [[6.5, 1.32, "c"], [6.6, 1.52], [7.08, 1.68], [8.0, 1.78], [8.89, 1.8], [9.79, 1.76], [10.47, 1.68, "c"],
+    [10.47, 1.14, "c"], [9.79, 1.0], [8.89, 0.93], [8.0, 0.91], [7.08, 0.97], [6.6, 1.1]]);
+  sk.smooth("hl", [[7.75, 1.24, "c"], [8.4, 1.37], [9.05, 1.29, "c"], [8.7, 1.18], [8.0, 1.16]]);
+  sk.ellipse("inlet", 9.78, 1.47, 0.36, 0.09);
+  sk.smooth("nac", [[10.47, 1.58, "c"], [10.9, 1.52], [11.28, 1.4, "c"], [10.9, 1.28], [10.47, 1.22, "c"]]);
+  prop(sk, 10.56, 1.4, 2.16, 5);
+};
+F.p180 = {
+  kind: "turboprop", L0: 12.64, over: 1.77, D: 2.0, W: 1.95, fwd: 0.5, fair: 0,
+  nose: {
+    tip: 0.2,
+    top: [[0.11, 0.27], [0.29, 0.36], [0.61, 0.555], [0.83, 0.62], [1.29, 0.76], [1.74, 0.885], [2.28, 0.99], [2.6, 1]],
+    bot: [[0.07, 0.135], [0.2, 0.09], [0.38, 0.068], [0.65, 0.045], [1.06, 0.023], [1.51, 0.005], [1.74, 0]],
+  },
+  tail: {
+    top: [[2.32, 1], [1.87, 0.95], [1.42, 0.89], [0.97, 0.81], [0.52, 0.71], [0, 0.58]],
+    bot: [[2.55, 0], [2.1, 0.054], [1.65, 0.12], [1.2, 0.2], [0.74, 0.32], [0.29, 0.43], [0, 0.5]],
+  },
+  glass: [[[0.79, 0.6], [0.86, 0.645], [1.15, 0.75], [1.29, 0.77], [1.49, 0.73], [1.49, 0.575], [0.79, 0.575]]],
+  frame: 0.03,
+  win: [{ z: 0.67, from: 4.24, to: 6.2, pitch: 0.645, w: 0.235, h: 0.36 }],
+  wing: { le: 7.45, root: 0.9, span: 14.03, cr: 1.53, ct: 0.67, sweep: 2.5, dih: 2, z: 0.66, t: [0.13, 0.12] },
+  fin: { le: 2.17, cr: 2.03, ct: 1.53, h: 1.38, sweep: 41, rudder: 0.7 },
+  stab: { le: 0.4, z: "T", drop: 0.12, span: 4.33, root: 0.25, cr: 1.2, ct: 0.95, sweep: 32, dih: 0, bullet: [1.5, 0.14] },
+  extras: [
+    door(3.53, 0.66, 0.25, 1.32),
+    marks([["hl", [[1.31, 0.12], [1.31, 1.13]]], ["strut", [[6.77, 2.0], [7.2, 2.2], [7.42, 2.2], [7.12, 2.0]]],
+      ["door", [[8.2, 0.75, "c"], [9.05, 0.78, "c"], [9.05, 0.42, "c"], [8.2, 0.33, "c"]]], ["strut", [[8.65, 0.07], [8.95, -0.2], [9.2, -0.2], [8.95, 0.07]]]]),
+  ],
+  overlays: [P180_PARTS],
+};
+
 export const families = F;
 export const types = {
   DH8D: "dh8d", DH8C: "dh8c", BE20: "be20", B350: "b350", AT72: "at72", AT76: "at76", B190: "b190", SW4: "sw4",
   BE9L: "be9l", BE9T: "be9t", BE10: "be10",
   // the 300 is the 200's airframe with the 350's PT6A-60As and four-blade propellers
   BE30: ["be20", { eng: { ...F.be20.eng, blades: 4, prop: 2.67 } }],
-  BE99: "be99",
+  BE99: "be99", P180: "p180",
 };
