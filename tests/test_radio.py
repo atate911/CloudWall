@@ -24,6 +24,7 @@ TABLE = """\
 6,1,"KAAA","CLD","CLNC DEL",118.55
 7,1,"KAAA","TWR","TWR",118.7
 8,2,"KBBB","CTAF","CTAF",122.8
+12,2,"KBBB","A/D","AAA APP/DEP",133.0
 9,2,"KBBB","AWOS","AWOS",135.875
 10,3,"KZZZ","TWR","TWR",119.9
 11,1,"KAAA","MISC","VOR",113.0
@@ -46,11 +47,12 @@ class Frequencies(unittest.TestCase):
 
     def test_ourairports(self):
         chans = channels.from_ourairports(TABLE, ["KAAA", "kbbb"])
-        self.assertEqual(len(chans), 8)                     # duplicate tower and the VOR left out
+        self.assertEqual(len(chans), 9)                     # duplicate tower and the VOR left out
         kinds = {c.mhz: c.kind for c in chans}
         self.assertEqual(kinds["118.700"], "tower")
         self.assertEqual(kinds["118.550"], "clearance")
         self.assertEqual(kinds["135.875"], "weather")
+        self.assertEqual(kinds["133.000"], "approach")      # OurAirports' A/D is approach/departure
         self.assertNotIn("119.900", kinds)
         self.assertEqual([c.freq for c in chans], sorted(c.freq for c in chans))
         self.assertIn(channels.GUARD, [c.freq for c in channels.with_guard(chans)])

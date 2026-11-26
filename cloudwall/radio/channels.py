@@ -19,11 +19,11 @@ RASTER_25 = 25_000
 
 # OurAirports' type codes, as found in the table, and the kind each is taken for.
 KINDS = {
-    "TWR": "tower", "A/D": "tower", "TOWER": "tower",
+    "TWR": "tower", "TOWER": "tower",
     "GND": "ground", "GROUND": "ground",
     "CLD": "clearance", "DEL": "clearance", "CLNC DEL": "clearance", "PRE TAXI": "clearance",
     "ATIS": "atis", "D-ATIS": "atis",
-    "APP": "approach", "APP/DEP": "approach", "A/D/A": "approach", "ARR": "approach", "RADAR": "approach",
+    "APP": "approach", "A/D": "approach", "APP/DEP": "approach", "A/D/A": "approach", "ARR": "approach", "RADAR": "approach",
     "DEP": "departure",
     "CTR": "center", "CNTR": "center", "ARTCC": "center",
     "CTAF": "ctaf", "MULTICOM": "ctaf",
