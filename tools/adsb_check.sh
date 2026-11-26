@@ -126,19 +126,32 @@ for s in dump1090-fa readsb dump1090-mutability dump1090 piaware fr24feed adsbex
   fi
 done
 if have docker; then
-  c=$($SUDO docker ps --format '{{.Names}} ({{.Status}})' 2>/dev/null || true)
+  c=$($SUDO docker ps -a --format '{{.Names}} ({{.Status}})' 2>/dev/null || true)
   if [ -n "$c" ]; then
     info "Docker containers:"; sed 's/^/           /' <<<"$c"
-    grep -qiE 'ultrafeeder|readsb' <<<"$c" && [ -z "$decoder" ] && decoder="docker"
+    if grep -iE 'ultrafeeder|readsb' <<<"$c" | grep -q '(Up'; then
+      [ -z "$decoder" ] && decoder="docker"
+    elif grep -qiE 'ultrafeeder|readsb' <<<"$c"; then
+      fail "The decoder container exists but isn't running"
+      hint "Look at its log in the adsb.im web page (System > Logs, or Dozzle on port 9999)"
+      decoder="stopped"
+    fi
   fi
 fi
-if [ -z "$decoder" ]; then
+if [ "$image" = "adsb.im feeder image" ] && [ -z "$decoder" ]; then
+  fail "adsb.im is installed but its decoder (ultrafeeder) was never started: setup isn't finished"
+  hint "Open http://$(hostname -I 2>/dev/null | awk '{print $1}')/ in a browser and complete the setup:"
+  hint "location + altitude, then on the SDR page assign the stick (serial 00001000 etc.) to 1090 MHz"
+  decoder="stopped"
+elif [ "$decoder" = stopped ]; then
+  :
+elif [ -z "$decoder" ]; then
   fail "No ADS-B decoder (dump1090-fa / readsb) is running"
 else
   info "Decoder in use: $decoder"
 fi
 
-if [ -n "$decoder" ] && [ "$decoder" != docker ]; then
+if [ -n "$decoder" ] && [ "$decoder" != docker ] && [ "$decoder" != stopped ]; then
   errs=$($SUDO journalctl -u "$decoder" --since "-30 min" --no-pager 2>/dev/null \
         | grep -iE 'no supported devices|usb_claim_interface|failed to open|lost|cannot|error' | tail -4 || true)
   if [ -n "$errs" ]; then warn "Recent errors from $decoder:"; sed 's/^/           /' <<<"$errs"
@@ -157,7 +170,7 @@ have piaware-config && gain=$(piaware-config -show rtlsdr-gain 2>/dev/null)
 if have ss; then
   ports=$(ss -ltnH 2>/dev/null | awk '{print $4}' | sed 's/.*://' | sort -un | tr '\n' ' ')
   if grep -qw 30005 <<<" $ports "; then pass "Beast output on port 30005 is listening (feeders read from here)"
-  elif [ -n "$decoder" ]; then warn "Nothing listening on port 30005 (Beast output); feeders may get no data"; fi
+  elif [ -n "$decoder" ] && [ "$decoder" != stopped ]; then warn "Nothing listening on port 30005 (Beast output); feeders may get no data"; fi
   grep -qw 30003 <<<" $ports " && info "SBS/BaseStation output on port 30003"
   for p in 80 8080 8504; do grep -qw "$p" <<<" $ports " && info "Web server on port $p"; done
 fi
