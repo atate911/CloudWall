@@ -286,6 +286,16 @@ if planes:
 else:
     out("WARN" if rate else "FAIL", "No aircraft heard in the last minute")
 
+names = {"adsb_icao": "ADS-B", "adsb_icao_nt": "ADS-B (no transponder)", "adsr_icao": "ADS-R (978 rebroadcast)",
+         "tisb_icao": "TIS-B", "tisb_trackfile": "TIS-B (radar track)", "tisb_other": "TIS-B", "adsr_other": "ADS-R",
+         "adsb_other": "ADS-B (anonymous)", "mlat": "MLAT", "mode_s": "Mode S only (no position)", "uat": "UAT (978)"}
+kinds = {}
+for a in planes:
+    k = names.get(a.get("type"), a.get("type") or "unknown")
+    kinds[k] = kinds.get(k, 0) + 1
+if kinds:
+    out("INFO", "By source: " + ", ".join(f"{k} {n}" for k, n in sorted(kinds.items(), key=lambda x: -x[1])))
+
 if pos and lat is not None:
     dists = sorted(((nm(lat, lon, a["lat"], a["lon"]), a) for a in pos), key=lambda x: x[0])
     far = dists[-1][0]
