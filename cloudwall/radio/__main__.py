@@ -24,10 +24,21 @@ def _plan(args):
     chans = channels.from_ourairports(text, args.airports)
     if not args.no_guard:
         chans = channels.with_guard(chans)
+    if args.within:
+        spans = []
+        for w in args.within:
+            lo, _, hi = w.partition("-")
+            spans.append((round(float(lo) * 1e6), round(float(hi) * 1e6)))
+        chans = [c for c in chans if any(lo <= c.freq <= hi for lo, hi in spans)]
     if not chans:
         raise SystemExit(f"No airband frequencies for {', '.join(args.airports)} in {args.frequencies}")
-    kinds = args.receiver or ["rtlsdr"]
-    receivers = [plan.Receiver(kind, kinds[:i].count(kind)) for i, kind in enumerate(kinds)]
+    given = [r.partition(":") for r in args.receiver or ["rtlsdr"]]
+    kinds = [kind for kind, _, _ in given]
+    for kind in kinds:
+        if kind not in plan.DEVICES:
+            raise SystemExit(f"--receiver {kind}: not one of {', '.join(sorted(plan.DEVICES))}")
+    receivers = [plan.Receiver(kind, kinds[:i].count(kind), serial=serial)
+                 for i, (kind, _, serial) in enumerate(given)]
     scanner = None
     if args.scan:
         scanner, receivers = receivers[-1], receivers[:-1]
@@ -42,11 +53,14 @@ def main(argv=None):
         p = sub.add_parser(name)
         p.add_argument("airports", nargs="+", help="ICAO idents whose frequencies to hear")
         p.add_argument("--frequencies", required=True, help="OurAirports' airport-frequencies.csv")
-        p.add_argument("--receiver", action="append", choices=sorted(plan.DEVICES),
-                       help="a receiver, once for each (default: one rtlsdr)")
+        p.add_argument("--receiver", action="append", metavar="KIND[:SERIAL]",
+                       help=f"a receiver, once for each: {', '.join(sorted(plan.DEVICES))}, an RTL-SDR "
+                            "optionally with its serial number (default: one rtlsdr)")
         p.add_argument("--scan", action="store_true",
                        help="give the last receiver the job of scanning what the others can't hear")
         p.add_argument("--no-guard", action="store_true", help="leave out 121.5")
+        p.add_argument("--within", action="append", metavar="LO-HI",
+                       help="only the frequencies in this range of MHz (118.0-120.2); once for each range")
         p.add_argument("--port", type=int, default=airband.BASE_PORT, help="the first channel's UDP port")
     sub.choices["plan"].add_argument("--config", help="write RTLSDR-Airband's config here")
     sub.choices["plan"].add_argument("--gain", type=float)

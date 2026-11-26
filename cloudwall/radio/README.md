@@ -77,6 +77,14 @@ VHF airband antenna is poor there).
   lets it hear what the feeds filter out.
 - A splitter feeds both from the one antenna (with a few dB lost), so a second antenna isn't needed
   for airband.
+- Two dongles of the same make come with the same serial number, so which is which can change at
+  every boot. Give each its own with `rtl_eeprom -d 1 -s 00000102` (one plugged in at a time), and
+  name them by it: `--receiver rtlsdr:00000101 --receiver rtlsdr:00000102`.
+
+RTLSDR-Airband's scan mode hops one channel at a time, not one slice at a time: each hop checks a
+single frequency (a few tens of milliseconds), so a long scan list is slow to get round. Hopping
+whole slices, hearing everything in each while it is there, would need a demodulator of CloudWall's
+own; worth doing only if the channel-at-a-time scan proves too slow.
 
 ## What an Airspy adds
 

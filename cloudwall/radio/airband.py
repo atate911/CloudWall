@@ -45,7 +45,10 @@ def _group(d, indent):
 def _device(receiver, gain, correction):
     d = dict(DEVICES[receiver.kind]["airband"])
     if d["type"] == "rtlsdr":
-        d["index"] = receiver.index
+        if receiver.serial:
+            d["serial"] = receiver.serial       # two dongles of one make: set apart by rtl_eeprom -s
+        else:
+            d["index"] = receiver.index
     d["sample_rate"] = receiver.rate
     if gain is not None:
         d["gain"] = gain

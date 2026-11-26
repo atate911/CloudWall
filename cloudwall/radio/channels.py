@@ -85,21 +85,25 @@ def kind_of(code):
 def from_ourairports(text, idents):
     """The channels of the airports named in `idents`, from airport-frequencies.csv's text.
 
-    Rows that aren't airband voice (a VOR's frequency, a UHF military one) are left out; a frequency
-    an airport lists twice is kept once, under its first listing."""
-    want = {i.upper() for i in idents}
-    seen, out = set(), []
-    for r in csv.DictReader(io.StringIO(text)):
+    Rows that aren't airband voice (a VOR's frequency, a UHF military one) are left out. A frequency
+    listed more than once (Portland Approach under every field it serves) is kept once, under the
+    first of `idents` to list it."""
+    order = {i.upper(): n for n, i in enumerate(idents)}
+    rows = []
+    for n, r in enumerate(csv.DictReader(io.StringIO(text))):
         ident = r.get("airport_ident", "").upper()
-        if ident not in want:
+        if ident not in order:
             continue
         try:
             hz = parse_mhz(r["frequency_mhz"])
         except (ValueError, KeyError):
             continue
-        if (ident, hz) in seen:
+        rows.append((order[ident], n, hz, ident, r))
+    seen, out = set(), []
+    for _, _, hz, ident, r in sorted(rows):
+        if hz in seen:
             continue
-        seen.add((ident, hz))
+        seen.add(hz)
         kind = kind_of(r.get("type"))
         label = (r.get("description") or "").strip() or kind.title()
         out.append(Channel(hz, f"{ident} {label}", kind, ident))

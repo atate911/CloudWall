@@ -25,6 +25,7 @@ TABLE = """\
 7,1,"KAAA","TWR","TWR",118.7
 8,2,"KBBB","CTAF","CTAF",122.8
 12,2,"KBBB","A/D","AAA APP/DEP",133.0
+13,2,"KBBB","APP","AAA APP",124.35
 9,2,"KBBB","AWOS","AWOS",135.875
 10,3,"KZZZ","TWR","TWR",119.9
 11,1,"KAAA","MISC","VOR",113.0
@@ -47,7 +48,8 @@ class Frequencies(unittest.TestCase):
 
     def test_ourairports(self):
         chans = channels.from_ourairports(TABLE, ["KAAA", "kbbb"])
-        self.assertEqual(len(chans), 9)                     # duplicate tower and the VOR left out
+        self.assertEqual(len(chans), 9)                     # duplicates and the VOR left out
+        self.assertEqual(next(c for c in chans if c.mhz == "124.350").airport, "KAAA")   # the first named
         kinds = {c.mhz: c.kind for c in chans}
         self.assertEqual(kinds["118.700"], "tower")
         self.assertEqual(kinds["118.550"], "clearance")
@@ -67,8 +69,10 @@ class Plans(unittest.TestCase):
         self.assertLessEqual(s.hi - s.lo, 2_400_000)
         heard = {c.mhz for c in s.channels}
         self.assertTrue({"118.100", "118.550", "118.700"} <= heard)   # tower, departure, clearance
-        self.assertEqual(len(p.heard) + len(p.scan), len(self.chans))
+        self.assertEqual(len(p.heard) + len(p.scan) + len(p.unscanned), len(self.chans))
         self.assertEqual(p.scan[0].kind, "approach")                  # the most worth left, first
+        self.assertFalse([c for c in p.scan if c.kind in plan.CONTINUOUS])   # ATIS would hold a scanner
+        self.assertTrue(all(c.kind in plan.CONTINUOUS for c in p.unscanned))
 
     def test_centre_stays_off_every_channel(self):
         for r in (plan.Receiver(), plan.Receiver("airspy-mini"), plan.Receiver("airspy-r2")):
@@ -97,6 +101,10 @@ class Plans(unittest.TestCase):
         self.assertEqual(list(airband.ports(p)), list(range(6001, 6001 + len(p.heard))))
         soapy = airband.config(plan.make_plan(self.chans, [plan.Receiver("airspy-r2")]))
         self.assertIn('device_string = "driver=airspy";', soapy)
+        two = airband.config(plan.make_plan(self.chans, [plan.Receiver(serial="00000101"),
+                                                         plan.Receiver(index=1, serial="00000102")]))
+        self.assertIn('serial = "00000102";', two)
+        self.assertNotIn("index =", two)
 
 
 def tone(n, amp=0.5):

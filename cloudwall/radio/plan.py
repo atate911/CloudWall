@@ -27,6 +27,10 @@ DEVICES = {
                   "airband": {"type": "soapysdr", "device_string": "driver=airspy"}},
 }
 
+# Channels that are never quiet (ATIS and the automated weather stations broadcast round the clock):
+# heard if a slice takes them in, but never scanned, or the scanner would stop on them for good.
+CONTINUOUS = {"atis", "weather"}
+
 HALF_RASTER = 12_500          # a centre this far from the 25 kHz raster is between channels
 DC_CLEAR = 10_000             # and no channel may be closer to it than this
 
@@ -34,8 +38,9 @@ DC_CLEAR = 10_000             # and no channel may be closer to it than this
 @dataclass(frozen=True)
 class Receiver:
     kind: str = "rtlsdr"      # a key of DEVICES
-    index: int = 0            # which one of that kind (RTLSDR-Airband's device index or serial)
+    index: int = 0            # which one of that kind, in the order USB finds them
     sample_rate: int = 0      # 0: the kind's
+    serial: str = ""          # an RTL-SDR's serial number: names it whatever order USB finds it in
 
     @property
     def rate(self):
@@ -69,6 +74,7 @@ class Plan:
     slices: list              # one for each receiver given a slice, best first
     scan: list                # the channels no slice covers, most worth first
     scanner: Receiver = None  # the receiver told to scan them, if any
+    unscanned: list = field(default_factory=list)   # continuous broadcasts no slice covers
 
     @property
     def heard(self):
@@ -114,8 +120,8 @@ def make_plan(channels, receivers, scanner=None):
         slices.append(s)
         taken = {c.freq for c in s.channels}
         left = [c for c in left if c.freq not in taken]
-    scan = sorted(left, key=lambda c: (-c.worth, c.freq))
-    return Plan(slices, scan, scanner)
+    scan = sorted((c for c in left if c.kind not in CONTINUOUS), key=lambda c: (-c.worth, c.freq))
+    return Plan(slices, scan, scanner, [c for c in left if c.kind in CONTINUOUS])
 
 
 def describe(plan):
@@ -130,4 +136,7 @@ def describe(plan):
         who = f"{plan.scanner.kind} #{plan.scanner.index}" if plan.scanner else "nobody (no receiver left to scan)"
         out.append(f"Scanned by {who}: {len(plan.scan)} channels")
         out += [f"    {c.mhz}  {c.name}" for c in plan.scan]
+    if plan.unscanned:
+        out.append(f"Not heard (never quiet, so never scanned): {len(plan.unscanned)} channels")
+        out += [f"    {c.mhz}  {c.name}" for c in plan.unscanned]
     return "\n".join(out)
