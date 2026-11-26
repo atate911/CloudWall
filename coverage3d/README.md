@@ -89,10 +89,15 @@ Percentiles and medians are read from 1 nm / 1 dB histograms, so they are accura
 
 ## Reading the page
 
-* **Altitude layers.** Each translucent polygon is one altitude band at that band's height, drawn
-  through the 95th-percentile (or max) distance of every bearing sector. Warm = low, cool = high
-  (legend, top left). Tick **Walls** to join neighbouring bands into one surface. A direction where
-  the polygon pinches in toward the station is a direction with weak or no coverage at that altitude.
+* **The upside-down wedding cake (default).** Every altitude band is a solid tier from its floor to
+  its ceiling, as wide in each direction as the 95th-percentile (or max) distance you hear at that
+  altitude. Low tiers are small and warm-coloured, high tiers wide and cool, so the cake widens upward.
+  A notch or flat side in a tier is a direction with weak coverage at that altitude; a tier that barely
+  extends past the one below it means extra height buys you little there. Tilt to a low angle (or
+  Orbit) to see the steps; **Tier height** sets 1,000 / 2,500 / 5,000 / 10,000 ft tiers.
+  **Smooth outlines** bridges one- or two-sector gaps and averages neighbouring sectors so thin data
+  does not draw spikes (clicking a tier still shows the raw numbers). **Flat sheets** switches to thin
+  translucent layers at each band's mid altitude, with optional walls between them.
 * **Vertical exaggeration** (1×/2×/5×/10×) stretches altitude only, never the rings. 40,000 ft is tiny
   against a 200 nm-wide map, so the default is 5×. Terrain is not exaggerated.
 * **2D map** looks straight down with north up: the ground footprint of every band (thin coloured

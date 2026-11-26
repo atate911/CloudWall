@@ -3,15 +3,15 @@ import { $, getJSON, store, haversineNm, bearingDeg, fmtDist, fmtBrg, fmtAlt, fm
 import { MapView, BASEMAPS } from "./mapview.js";
 import { drawVertical, drawPolar } from "./plots.js";
 
-const KEY = "c3d.settings.v1", CAM = "c3d.camera.v1";
+const KEY = "c3d.settings.v2", CAM = "c3d.camera.v1";
 const iso = (d) => d.toISOString().slice(0, 10);
 const today = new Date();
 const DEFAULTS = {
-  basemap: "liberty", opacity: 0.3, exag: 5, units: "nm", range: "7d", cFrom: "", cTo: "", compare: false,
+  basemap: "liberty", opacity: 0.6, exag: 5, style: "cake", smooth: true, units: "nm", range: "7d", cFrom: "", cTo: "", compare: false,
   aFrom: iso(new Date(today - 14 * 864e5)), aTo: iso(new Date(today - 7 * 864e5)), bFrom: iso(new Date(today - 7 * 864e5)), bTo: iso(today),
-  stat: "p95", srcAdsb: true, srcMlat: false, srcUat: false, sector: 0, bandFt: 0,
+  stat: "p95", srcAdsb: true, srcMlat: false, srcUat: false, sector: 0, bandFt: 5000,
   terrain: true, rings: true, minorRings: true, bearings: true, shadeBands: false, airports: true, peaks: true,
-  fill: true, walls: false, outlines: true, footprint: true, horizon: false, readsbOutline: false,
+  fill: true, walls: false, outlines: true, footprint: false, horizon: false, readsbOutline: false,
   points: false, colorBy: "alt", live: true, liveLabels: true, bandLo: 0, bandHi: 99, hidden: [], polarBand: "all", panel: true, tab: "layers",
 };
 const S = { settings: { ...DEFAULTS, ...(store(KEY) || {}) } };
@@ -226,13 +226,13 @@ async function init() {
   sel.value = s.basemap;
   sel.onchange = async () => { s.basemap = sel.value; save(); const cam = mv.camera(); await mv.create(s.basemap, cam, st.station); pushMap(true); };
 
-  for (const id of ["terrain", "fill", "walls", "outlines", "footprint", "horizon", "live", "liveLabels", "rings", "minorRings", "bearings", "shadeBands", "airports", "peaks"]) bindCheck(id);
+  for (const id of ["terrain", "fill", "smooth", "walls", "outlines", "footprint", "horizon", "live", "liveLabels", "rings", "minorRings", "bearings", "shadeBands", "airports", "peaks"]) bindCheck(id);
   bindCheck("readsbOutline", () => { loadOutline(); pushMap(); });
   bindCheck("points", () => { loadPoints(); pushMap(); });
   for (const id of ["srcAdsb", "srcMlat", "srcUat"]) bindCheck(id, refreshAll);
   bindCheck("compare", () => { $("compare-box").hidden = !s.compare; refreshAll(); });
   $("compare-box").hidden = !s.compare;
-  bindSeg("exag", () => pushMap()); bindSeg("units", () => { pushMap(true); renderStats(); drawPlots(); }); bindSeg("stat", refreshAll);
+  bindSeg("exag", () => pushMap()); bindSeg("style", () => pushMap(true)); bindSeg("units", () => { pushMap(true); renderStats(); drawPlots(); }); bindSeg("stat", refreshAll);
   bindSel("colorBy", () => pushMap());
   bindSel("range", () => { $("custom").hidden = s.range !== "custom"; refreshAll(); });
   $("custom").hidden = s.range !== "custom";

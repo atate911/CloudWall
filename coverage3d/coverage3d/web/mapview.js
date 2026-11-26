@@ -54,7 +54,7 @@ export class MapView {
       style: bm.style || rasterStyle(bm),
       center: camera?.center || [station.lon, station.lat],
       zoom: camera?.zoom ?? 7,
-      pitch: camera?.pitch ?? 60,
+      pitch: camera?.pitch ?? 72,
       bearing: camera?.bearing ?? 0,
       maxPitch: 85,
       maxZoom: 16,
@@ -210,13 +210,27 @@ export class MapView {
     return `rgb(${c[0]},${c[1]},${c[2]})`;
   }
 
+  /** Distance per sector. With "smooth" on: one- or two-sector gaps are bridged from their neighbours and a
+   *  light 1-2-1 average across neighbouring sectors removes spikes caused by thin data (clicks still show raw numbers). */
+  dists(band, cov) {
+    const n = cov.n_sectors, raw = new Array(n).fill(0);
+    for (const s of band.sectors) raw[s.s] = s.dist_nm;
+    if (!this.state?.settings.smooth) return raw;
+    const at = (a, i) => a[((i % n) + n) % n], filled = raw.slice();
+    for (let i = 0; i < n; i++) {
+      if (raw[i] > 0) continue;
+      for (const w of [1, 2]) { const l = at(raw, i - 1), r = at(raw, i + w); if (l > 0 && r > 0) { filled[i] = l + (r - l) / (w + 1); break; } const l2 = at(raw, i - w), r2 = at(raw, i + 1); if (l2 > 0 && r2 > 0) { filled[i] = l2 + ((r2 - l2) * w) / (w + 1); break; } }
+    }
+    return filled.map((v, i) => { if (v <= 0) return 0; const l = at(filled, i - 1) || v, r = at(filled, i + 1) || v; return (l + 2 * v + r) / 4; });
+  }
+
   /** Closed outline of a band: one vertex per sector (at its centre bearing) at the sector's distance. */
   ring(band, cov, station, z = 0) {
-    const n = cov.n_sectors, step = cov.sector_deg, by = new Map(band.sectors.map((s) => [s.s, s.dist_nm]));
+    const n = cov.n_sectors, step = cov.sector_deg, d = this.dists(band, cov);
     const pts = [];
     for (let i = 0; i < n; i++) {
-      const d = by.get(i) ?? 0;     // no data in a sector = no coverage there (the outline pinches to the station)
-      const [lo, la] = d > 0 ? destination(station.lat, station.lon, (i + 0.5) * step, d) : [station.lon, station.lat];
+      // no data in a sector = no coverage there (the outline pinches to the station)
+      const [lo, la] = d[i] > 0 ? destination(station.lat, station.lon, (i + 0.5) * step, d[i]) : [station.lon, station.lat];
       pts.push([lo, la, z]);
     }
     pts.push(pts[0]);
@@ -239,11 +253,24 @@ export class MapView {
     const stn = st.station;
     const covBands = st.cov ? st.cov.bands.filter((b) => !b.ground && st.isVisible(b) && b.sectors.length > 2) : [];
 
-    if (st.cov && s.fill) {
-      const data = covBands.map((b) => ({ band: b, polygon: this.ring(b, st.cov, stn, bandMid(b)), color: [...altColor((b.lo_ft + b.hi_ft) / 2), alpha] }));
-      layers.push(new deck.SolidPolygonLayer({ id: "cov-bands", data, ...common, ...noDepthWrite, getPolygon: (d) => d.polygon, getFillColor: (d) => d.color, pickable: true, onClick: (i) => this.h.onClick({ kind: "band", ...i }), updateTriggers: { getFillColor: [alpha], getPolygon: [ex] } }));
+    const cake = s.style === "cake";
+    if (st.cov && s.fill && cake) {
+      // "Upside-down wedding cake": every altitude band is a solid tier from its floor to its ceiling,
+      // as wide as the coverage at that altitude. Higher tiers reach farther, so the cake widens upward.
+      const lo = (b) => b.lo_ft * FT_M * ex, hi = (b) => b.hi_ft * FT_M * ex;
+      const data = covBands.map((b) => ({ band: b, polygon: this.ring(b, st.cov, stn, lo(b)), h: hi(b) - lo(b), color: [...altColor((b.lo_ft + b.hi_ft) / 2), alpha] }));
+      layers.push(new deck.SolidPolygonLayer({ id: "cov-cake", data, ...common, extruded: true, getPolygon: (d) => d.polygon, getElevation: (d) => d.h, getFillColor: (d) => d.color,
+        material: { ambient: 0.55, diffuse: 0.6, shininess: 4, specularColor: [40, 40, 40] }, pickable: true, onClick: (i) => this.h.onClick({ kind: "band", ...i }),
+        updateTriggers: { getFillColor: [alpha], getPolygon: [ex, s.smooth], getElevation: [ex] } }));
+      // crisp rim on the top and bottom edge of every tier
+      const rims = covBands.flatMap((b) => [{ path: this.ring(b, st.cov, stn, hi(b)), top: true }, { path: this.ring(b, st.cov, stn, lo(b)) }]);
+      layers.push(new deck.PathLayer({ id: "cov-cake-rims", data: rims, ...common, getPath: (d) => d.path, getColor: (d) => (d.top ? [255, 255, 255, 230] : [20, 30, 45, 160]), widthUnits: "pixels", getWidth: (d) => (d.top ? 1.6 : 1), updateTriggers: { getPath: [ex, s.smooth] } }));
     }
-    if (st.cov && s.walls) {
+    if (st.cov && s.fill && !cake) {
+      const data = covBands.map((b) => ({ band: b, polygon: this.ring(b, st.cov, stn, bandMid(b)), color: [...altColor((b.lo_ft + b.hi_ft) / 2), alpha] }));
+      layers.push(new deck.SolidPolygonLayer({ id: "cov-bands", data, ...common, ...noDepthWrite, getPolygon: (d) => d.polygon, getFillColor: (d) => d.color, pickable: true, onClick: (i) => this.h.onClick({ kind: "band", ...i }), updateTriggers: { getFillColor: [alpha], getPolygon: [ex, s.smooth] } }));
+    }
+    if (st.cov && s.walls && !cake) {
       const quads = [];
       for (let i = 0; i + 1 < covBands.length; i++) {
         const a = covBands[i], b = covBands[i + 1];
@@ -260,11 +287,11 @@ export class MapView {
     if (st.cov && s.outlines) {
       const mk = (cov, id, dashed) => {
         const bs = cov.bands.filter((b) => !b.ground && st.isVisible(b) && b.sectors.length > 2);
-        const data = bs.map((b) => ({ path: this.ring(b, cov, stn, bandMid(b)), color: [...altColor((b.lo_ft + b.hi_ft) / 2), 255] }));
+        const data = bs.map((b) => ({ path: this.ring(b, cov, stn, cake ? b.hi_ft * FT_M * ex : bandMid(b)), color: [...altColor((b.lo_ft + b.hi_ft) / 2), 255] }));
         return new deck.PathLayer({ id, data, ...common, getPath: (d) => d.path, getColor: (d) => d.color, widthUnits: "pixels", getWidth: 2, pickable: false,
-          ...(dashed ? { getDashArray: [4, 3], extensions: [new deck.PathStyleExtension({ dash: true })], dashJustified: true } : {}), updateTriggers: { getPath: [ex] } });
+          ...(dashed ? { getDashArray: [4, 3], extensions: [new deck.PathStyleExtension({ dash: true })], dashJustified: true } : {}), updateTriggers: { getPath: [ex, s.smooth, cake] } });
       };
-      layers.push(mk(st.cov, "cov-outlines", false));
+      if (!cake) layers.push(mk(st.cov, "cov-outlines", false));
       if (st.covB) layers.push(mk(st.covB, "cov-outlines-b", true));
     }
     if (st.cov && s.horizon) {
@@ -305,13 +332,13 @@ export class MapView {
 
   // ---- camera ---------------------------------------------------------------------------------------
   view2D() { this.stopOrbit(); this.map.easeTo({ pitch: 0, bearing: 0, duration: 800 }); }
-  view3D() { this.stopOrbit(); this.map.easeTo({ pitch: 60, bearing: 0, duration: 800 }); }
+  view3D() { this.stopOrbit(); this.map.easeTo({ pitch: 72, bearing: 0, duration: 800 }); }
   reset(station, nm = 200) {
     this.stopOrbit();
     const b = new maplibregl.LngLatBounds();
     for (const brg of [0, 90, 180, 270]) b.extend(destination(station.lat, station.lon, brg, nm));
     const cam = this.map.cameraForBounds(b, { padding: 30 });
-    this.map.easeTo({ center: [station.lon, station.lat], zoom: (cam?.zoom ?? 6) - 0.2, pitch: 60, bearing: 0, duration: 900 });
+    this.map.easeTo({ center: [station.lon, station.lat], zoom: (cam?.zoom ?? 6) - 0.2, pitch: 72, bearing: 0, duration: 900 });
   }
   toggleOrbit() {
     if (this.orbiting) return this.stopOrbit();

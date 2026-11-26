@@ -42,7 +42,7 @@ def synthetic_snapshot_points(station, cfg, now, rng, days=7, n_flights=2600):
         if kind < 0.35:                      # local traffic: low and close
             alt0 = rng.uniform(800, 6000); r0 = rng.uniform(5, 45); cruise = alt0
         else:                                 # airliners: cruise at altitude, crossing the region
-            cruise = rng.choice([24000, 29000, 33000, 35000, 37000, 39000, 41000])
+            cruise = rng.choice(range(7000, 43000, 1000))      # every level, so each tier of the cake fills
             alt0 = cruise; r0 = rng.uniform(180, 260)
         # straight line from start point through a point near the station
         x0 = r0 * math.sin(math.radians(brg0)); y0 = r0 * math.cos(math.radians(brg0))
