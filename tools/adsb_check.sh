@@ -133,7 +133,10 @@ if have docker; then
       [ -z "$decoder" ] && decoder="docker"
     elif grep -qiE 'ultrafeeder|readsb' <<<"$c"; then
       fail "The decoder container exists but isn't running"
-      hint "Look at its log in the adsb.im web page (System > Logs, or Dozzle on port 9999)"
+      dc=$(grep -iE 'ultrafeeder|readsb' <<<"$c" | head -1 | awk '{print $1}')
+      lg=$($SUDO docker logs --tail 15 "$dc" 2>&1 || true)
+      [ -n "$lg" ] && { info "Last lines of the $dc log:"; sed 's/^/           /' <<<"$lg"; }
+      hint "Full log: sudo docker logs --tail 100 $dc"
       decoder="stopped"
     fi
   fi
