@@ -1,0 +1,70 @@
+# /etc/coverage3d/config.toml: every setting, with its default. Delete anything you don't want to change.
+# After editing:  sudo systemctl restart coverage3d
+
+[station]
+# The true position (WGS84). The live position is read from the decoder's receiver.json at start-up
+# and hourly; if it is more than position_warn_m away from this, a warning is logged (a wrong
+# position set in the decoder makes every distance and bearing wrong).
+lat = 45.636284
+lon = -122.677496
+ground_elevation_m = 23.0        # ground elevation above mean sea level, metres
+antenna_height_m = 4.0           # antenna above the ground. UPDATE THIS after mounting the antenna outside.
+                                 # antenna height above sea level = ground_elevation_m + antenna_height_m
+position_warn_m = 100.0
+position_source = "receiver"     # "receiver": use receiver.json (matches readsb's own r_dst/r_dir)
+                                 # "config":   use lat/lon above
+adsb_im_env = "/opt/adsb/config/.env"   # cross-check only; ONLY FEEDER_LAT/FEEDER_LONG/FEEDER_ALT_M are read
+                                        # (the file also holds secrets: nothing else is parsed or logged)
+
+[sampler]
+poll_interval_s = 2.0            # how often aircraft.json is read
+http_timeout_s = 4.0
+max_seen_pos_s = 2.0             # a position older than this is ignored
+min_nac_p = 5                    # skip positions with nac_p below this (about 0.5 nm); ignored when nac_p is absent
+max_distance_nm = 400.0          # implausible beyond this
+min_alt_ft = -1500
+max_alt_ft = 60000
+max_speed_kt = 1000.0            # reject a jump implying more than this between two points of one aircraft
+flush_interval_s = 60.0          # points are buffered in memory and written in one transaction this often
+record_mlat = true               # store MLAT points (the page shows them only when "MLAT" is ticked)
+backfill_on_start = true         # on the first start with an empty database, import tar1090's recent history
+backfill_dir = "/run/adsb-feeder-ultrafeeder/tar1090"
+
+[coverage]
+sector_deg = 5                   # bearing sector width, 1..10 (must divide 360)
+band_ft = 2500                   # altitude band height: 1000, 2500, 5000 ...
+max_alt_ft = 45000               # the top band is open-ended (everything above goes into it)
+stat = "p95"                     # default distance statistic: "p95" or "max"
+min_points_per_bin = 3           # bins with fewer points are not drawn
+cache_s = 60                     # API results are cached this long
+
+[storage]
+db_path = "/var/lib/coverage3d/coverage.db"
+retention_days = 30              # raw points are deleted after this; per-day aggregates are kept forever
+
+[server]
+bind = "0.0.0.0"                 # LAN. Use 127.0.0.1 to allow only local access (e.g. through an SSH tunnel)
+port = 8090
+offline_tiles_dir = ""           # directory with {z}/{x}/{y}.png tiles to enable the "Offline" basemap
+airports_csv = ""                # optional OurAirports airports.csv (install.sh --airports downloads one
+                                 # to /var/lib/coverage3d/airports.csv, which is then used automatically)
+
+[web]
+basemap = "liberty"
+rings_nm = 50
+ring_count = 6
+
+# A second receiver (e.g. a 978 MHz UAT stick) can be added as another source. The first source also
+# provides receiver.json / stats.json / outline.json. Uncomment and adjust:
+#
+# [[source]]
+# name = "1090"
+# band = "1090"
+# urls  = ["http://127.0.0.1:8080/data/aircraft.json"]
+# files = ["/run/adsb-feeder-ultrafeeder/readsb/aircraft.json"]
+#
+# [[source]]
+# name = "978"
+# band = "978"
+# urls  = ["http://127.0.0.1:8080/data978/aircraft.json"]
+# files = []
