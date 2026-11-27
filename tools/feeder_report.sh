@@ -36,6 +36,9 @@ PRIVATE_IP = re.compile(r"^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[
 
 def mask(text):
     """Mask anything secret or identifying in free text (logs, settings)."""
+    text = re.sub(r"-----BEGIN[^-]*-----.*?(-----END[^-]*-----|$)", "[certificate or key]", text, flags=re.S)
+    text = re.sub(r"(?i)(['\"]?(private_key|certificate|chain|cert)['\"]?\s*[:=]\s*)(['\"])(.*?)(\3|$)", lambda m: m.group(1) + ("''" if not m.group(4) else "'[masked]'"), text)
+    text = re.sub(r"\b[\w-]+\.(l\.)?adsb\.im\b", "[name].adsb.im", text)
     text = re.sub(r"[\w.+-]+@[\w-]+\.[\w.-]+", "[email]", text)
     text = re.sub(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b", "[uuid]", text)
     text = re.sub(r"(?i)\b(uuid|key|sharing[_-]?key|api[_-]?key|token|secret|password|passwd|feeder[_-]?id|user(name)?|email)(\s*[=:]\s*)(\"?)[^\s,;\"']+",
@@ -57,6 +60,14 @@ def mask(text):
 
 def setting(name, value):
     """A setting's value as it may be shown."""
+    if isinstance(value, str) and value.startswith("["):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            pass
+    if isinstance(value, list):
+        value = [x for x in value if x not in ("", None)]
+        value = "" if not value else value[0] if len(value) == 1 else json.dumps(value)
     v = "" if value is None else str(value)
     if v.strip() == "":
         return "(empty)"
@@ -144,6 +155,8 @@ cfgs = [f for f in ("/opt/adsb/config/config.json", "/opt/adsb/config/.env", "/o
 if not cfgs:
     print("No adsb.im settings found in /opt/adsb (not an adsb.im image, or a different layout)")
     print("Contents of /opt/adsb:", os.listdir("/opt/adsb") if os.path.isdir("/opt/adsb") else "(missing)")
+if SHORT and len(cfgs) > 1:
+    cfgs = [f for f in cfgs if f.endswith(".env")] or cfgs[:1]      # the same settings, once
 for f in cfgs:
     print(f"\n-- settings in {f} (secrets masked) --")
     items = []
@@ -170,9 +183,18 @@ for f in cfgs:
             if line and not line.startswith("#") and "=" in line:
                 k, _, v = line.partition("=")
                 items.append((k.strip(), v.strip().strip('"').strip("'")))
+    off = 0
     for k, v in items:
+        shown = setting(k, v)
+        if SHORT and not re.search(r"(^|_)(lat|lon|long|alt_m|alt)($|_)|^mlat", k, re.I):
+            # the short report: a feeder switched on, a key or ID filled in; the rest only counted
+            if not (shown.lower() in ("true", "[true]") and re.search(r"(enabled?|_is_)", k, re.I)) and not shown.startswith("set ("):
+                off += 1
+                continue
         if wanted(k):
-            print(f"  {k} = {setting(k, v)}")
+            print(f"  {k} = {shown}")
+    if SHORT:
+        print(f"  ({off} other settings: off, empty or not about sharing)")
 
 # ---------------------------------------------------------------- the containers and what they feed
 section("Containers")
@@ -302,6 +324,7 @@ else:
     st = get(f"{base}/stats.json")
     if st:
         print("\nstats.json sections:", ", ".join(st.keys()))
+        print("Receiver now: " + ", ".join(f"{k} {json.dumps(st[k])}" for k in ("gain_db", "estimated_ppm", "aircraft_with_pos", "aircraft_without_pos", "aircraft_count_by_type") if k in st))
         for part in (("last15min",) if SHORT else ("last1min", "last15min", "total")):
             if isinstance(st.get(part), dict):
                 d = st[part]
