@@ -648,7 +648,7 @@ const SCENARIOS = {
     out.railMarked = await page.$$eval("#nav a.warn, #nav a.fail", (a) => a.map((x) => x.getAttribute("href").slice(1)));
     out.troubles = await page.$$eval(".needs .trouble", (t) => t.length);
     out.pages = {};
-    for (const p of ["receiver", "positions", "places", "routes", "look", "access", "safekeeping", "health", "settings", "server"]) {
+    for (const p of ["stations", "receiver", "radio", "positions", "places", "routes", "look", "access", "safekeeping", "health", "settings", "server"]) {
       await page.evaluate((h) => { location.hash = h; }, p);
       await page.waitForSelector(`.page-${p} h1`, { timeout: 8000 });
       out.pages[p] = await page.$$eval(`.page-${p} [data-setting], .page-${p} [data-row]`, (r) => r.length);

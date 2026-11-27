@@ -324,11 +324,11 @@ class BrowserTest(unittest.TestCase):
     def test_the_control_board(self):
         a = self.scenario("admin")
         self.assertEqual(a["nodes"], 8)                                     # the sky and every part, as one picture
-        self.assertEqual(a["rail"], ["home", "receiver", "positions", "places", "routes", "look", "access",
+        self.assertEqual(a["rail"], ["home", "stations", "receiver", "radio", "positions", "places", "routes", "look", "access",
                                      "safekeeping", "health", "settings", "server"])
         self.assertIn("look", a["railMarked"])                              # the demo's simulated traffic, said where it shows
         self.assertGreaterEqual(a["troubles"], 1)
-        for page in ("positions", "places", "look", "access", "safekeeping", "health", "settings"):
+        for page in ("positions", "places", "look", "access", "safekeeping", "health", "settings", "radio"):
             self.assertGreaterEqual(a["pages"][page], 1, page)              # each with its own controls
         self.assertEqual(float(a["radiusAfter"]), float(a["radiusBefore"]) + 1)   # two steps of half a mile on the ring
         self.assertIn("tracking radius", a["dock"])                         # saved, and waiting for a restart

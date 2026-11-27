@@ -129,9 +129,11 @@ Group={USER}
 ExecStart={BIN} station
 Restart=always
 RestartSec=10
-# it only reads: nothing here may be written, and it answers on 127.0.0.1 only
+# it changes nothing on the system: only its own folder (the radio's config) may be written; it
+# answers on 127.0.0.1 only, and reports to its wall over HTTPS
 NoNewPrivileges=yes
 ProtectSystem=strict
+ReadWritePaths={VAR}
 ProtectHome=yes
 PrivateTmp=yes
 ProtectKernelTunables=yes
@@ -358,6 +360,8 @@ def station(system, opts):
     system.add_system_user(USER, VAR)
     system.mkdir(OPT, 0o755)
     system.mkdir(f"{OPT}/releases", 0o755)
+    system.mkdir(ETC, 0o771, "root", USER)            # station.toml, written by `cloudwall station join`
+    system.mkdir(VAR, 0o750, USER, USER)              # the station's own folder: what it keeps between reports
     code = put_release(system, opts.source)
     system.write(BIN, COMMAND_TEXT, mode=0o755)
     got = system.ask(["getent", "group", "video"])
@@ -376,9 +380,9 @@ def station(system, opts):
                 log = system.ask(["journalctl", "-u", "cloudwall-station", "-n", "15", "--no-pager", "-o", "cat"])
                 raise SystemExit("cloudwall: the station didn't start. The end of its log:\n"
                                  + "\n".join("  " + l for l in ((log.stdout if log else "") or "(no log)").strip().splitlines()[-15:]))
-    system.say("The station answers on 127.0.0.1:8095: `cloudwall station --check` says how this receiver is. "
-               "For the wall to see it, the tunnel carries it: pi-tunnel.sh install ... --station "
-               "(and vps-tunnel.sh setup ... --station on the server).")
+    system.say("The station is running: `cloudwall station --check` says how this machine is. To manage it from the "
+               "wall's control board, join it there: make a code on the board's Stations page, then "
+               "`sudo cloudwall station join <the wall's address> <code>`.")
 
 
 def unstation(system, purge=False):

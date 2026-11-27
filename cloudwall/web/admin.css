@@ -826,3 +826,36 @@ body.explain .row-key { display: block; }
 .chips.svc li.ok b { color: var(--ok); } .chips.svc li.fail b { color: var(--stop); } .chips.svc li.fail { box-shadow: inset 0 0 0 1px var(--stop); }
 .station-steps { margin: 0; }
 .line-body .line-val + .line-val { margin-top: -.25rem; }
+
+/* ---------- stations ---------- */
+.stick-list { display: flex; flex-direction: column; gap: .7rem; width: 100%; }
+.stick { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .3rem 1rem; align-items: center; }
+.stick-who { display: flex; flex-direction: column; min-width: 0; } .stick-who b { font-weight: 400; }
+.stick-who code { background: none; padding: 0; color: var(--muted); font-size: .76rem; }
+.stick-state { grid-column: 1 / -1; }
+.inline-name input { max-width: 18rem; }
+.join-code { margin: 0; font-size: 1.05rem; } .join-code b { font-family: var(--mono); color: var(--mine); font-size: 1.25rem; letter-spacing: .04em; margin: 0 .4rem; }
+.join-slot { display: flex; flex-direction: column; gap: 1rem; }
+.group.station > header .status { font-size: .78rem; }
+.group-body > .trouble { border-radius: 0; box-shadow: none; }
+
+/* ---------- the radio ---------- */
+.radio-hero { display: flex; flex-direction: column; gap: 1rem; }
+.radio-top { display: flex; gap: 1rem; align-items: flex-start; } .radio-top .big-ico { color: var(--g-mine); }
+.radio-top b { font-size: 1.15rem; } .radio-top p { margin: .3rem 0 0; color: var(--g-muted); }
+.radio-band { width: 100%; height: auto; display: block; }
+.rb-air { fill: rgba(196, 220, 245, .05); stroke: var(--glass-line); }
+.rb-grid { stroke: var(--glass-line); } .rb-lab { font-size: 13px; fill: var(--g-muted); }
+.rb-slice { fill: rgba(114, 205, 238, .18); stroke: var(--g-mine); stroke-width: 1.2; } .rb-slice.s1 { fill: rgba(98, 216, 158, .16); stroke: var(--g-ok); } .rb-slice.s2 { fill: rgba(255, 180, 77, .16); stroke: var(--g-look); }
+.rb-slab { font-size: 12px; fill: var(--g-ink); }
+.rb-ch { stroke: var(--g-muted); stroke-width: 2.5; stroke-linecap: round; opacity: .7; } .rb-ch.heard { stroke: var(--g-ink); opacity: 1; }
+.radio-key { display: flex; gap: 1.3rem; font-size: .8rem; color: var(--g-muted); margin-top: -.4rem; }
+.radio-key .k::before { content: ""; display: inline-block; width: 2px; height: .8rem; margin-right: .45rem; vertical-align: -.1em; background: var(--g-muted); }
+.radio-key .k.heard::before { background: var(--g-ink); width: 3px; }
+.chan-edit { display: flex; flex-direction: column; gap: .8rem; }
+.chan-list { list-style: none; margin: 0; padding: 0; }
+.chan-list li { display: grid; grid-template-columns: 5.5rem 1fr auto; gap: 1rem; align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--hair-2); }
+.chan-list b { font-weight: 400; color: var(--mine); font-variant-numeric: tabular-nums; }
+.chan-add { display: flex; gap: .5rem; flex-wrap: wrap; } .chan-add input { padding: .5rem .7rem; border: 0; border-radius: var(--r2); background: var(--sheet-hi); box-shadow: inset 0 0 0 1px var(--hair); outline: none; }
+.chan-add input[name=mhz] { width: 7rem; } .chan-add input[name=name] { flex: 1 1 12rem; }
+.chan-add input:focus { box-shadow: inset 0 0 0 2px var(--mine); }

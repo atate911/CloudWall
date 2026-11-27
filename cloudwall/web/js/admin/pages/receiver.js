@@ -7,6 +7,7 @@ import { icon } from "../icons.js";
 import { gauge, signalMeter, polar } from "../draw.js";
 import { head, pageTroubles, out, copyable, trouble } from "../parts.js";
 import { text, toggle, group, advanced, line } from "../controls.js";
+import { machineGroupRows } from "../stationview.js";
 
 let tab = "hearing";
 
@@ -109,64 +110,18 @@ function shares(r) {
     </div>`)]);
 }
 
-/** The receiver's own machine, as its CloudWall station reports it: a row for each part, its
- *  state's dot, what to run where something needs doing. Without a station, how to set one up. */
+/** The machine the ADS-B receiver runs on, as its station reports it (the shared rows: stationview.js). */
 function machine(r) {
   const f = r.station;
   if (!f) {
-    const g = group("Receiver machine", r.station_url ? `Not reporting at ${esc(r.station_url)}` : "Not reporting", [
-      line("Station", `<span class="line-val"><span class="dot"></span> Not set up, or not answering</span>
-        <span class="dim small">With CloudWall's station on the receiver, this page shows its power supply, temperature, clock, SD card, USB stick, decoder, feeders and tunnel, and its problems reach Overview and your alerts.</span>`),
-      el(`<ol class="steps big station-steps">
-        <li><b>On the receiver</b>, install the station:<div data-copy="cd ~/CloudWall && git pull && sudo python3 -m cloudwall install --role station"></div></li>
-        <li><b>On the receiver</b>, show the tunnel's key (for the next step):<div data-copy="sudo cat /etc/adsb-tunnel/id_ed25519.pub"></div></li>
-        <li><b>On this server</b>, let the tunnel carry the station (add <code>--coverage</code> if it carries Coverage3D too):<div data-copy='sudo bash deploy/feed-tunnel/vps-tunnel.sh setup "ssh-ed25519 …" --station'></div></li>
-        <li><b>On the receiver</b>, start the tunnel again with it:<div data-copy="sudo bash ~/CloudWall/deploy/feed-tunnel/pi-tunnel.sh install YOUR-SERVER --station"></div></li>
-      </ol>`),
+    return group("Receiver machine", "No station reporting", [
+      line("Station", `<span class="line-val"><span class="dot"></span> Not reporting</span>
+        <span class="dim small">With CloudWall's station on the receiver, this page shows its power supply, temperature, clock, SD card, sticks, decoder, feeders and tunnel, and its problems reach Overview and your alerts.</span>
+        <a class="btn small" href="#stations">Add it on the Stations page</a>`),
     ]);
-    copies(g);
-    return g;
   }
-  const dot = (st) => `<span class="dot ${st}"></span>`;
-  const rows = [];
-  const up = f.uptime_s != null ? lasted(f.uptime_s) : null;
-  rows.push(line("Machine", `<span class="line-val">${esc(f.board || f.host || "Receiver")}</span>
-    <span class="dim small">${[f.os, f.image ? `${f.image} image` : "", up ? `up ${up}` : "", f.cloudwall ? `station ${f.cloudwall}` : ""].filter(Boolean).map(esc).join("; ")}</span>`));
-  if (f.throttled != null) {
-    const now = f.throttled & 0x1, since = f.throttled & 0x10000, slow = f.throttled & 0x4;
-    rows.push(line("Power", `<span class="line-val">${dot(now ? "fail" : since ? "warn" : "ok")} ${now ? "Under-voltage now" : since ? "Under-voltage has happened since it started" : "No under-voltage since it started"}</span>
-      ${slow ? `<span class="dim small">It is slowing itself down now (heat or power).</span>` : ""}`));
-  }
-  if (f.temp_c != null) rows.push(line("Temperature", `<span class="line-val">${dot(f.temp_c >= 80 ? "fail" : f.temp_c >= 70 ? "warn" : "ok")} ${num(f.temp_c)} °C</span>`));
-  if (f.clock_synced != null) rows.push(line("Clock", `<span class="line-val">${dot(f.clock_synced ? "ok" : "warn")} ${f.clock_synced ? "Synchronised" : "Not synchronised: MLAT positions need it"}</span>`));
-  if (f.disk?.total) {
-    const used = 100 * (1 - f.disk.free / f.disk.total);
-    rows.push(line("SD card", `<span class="line-val">${dot(used >= 97 ? "fail" : used >= 90 ? "warn" : "ok")} ${num(used)}% used</span>
-      <span class="meter-bar"><i style="width:${used.toFixed(1)}%" class="${used >= 90 ? "warn" : ""}"></i></span><span class="dim small">${bytes(f.disk.free)} free of ${bytes(f.disk.total)}</span>`));
-  }
-  if (f.memory?.total) rows.push(line("Memory", `<span class="line-val">${bytes(f.memory.available)} free</span><span class="dim small">of ${bytes(f.memory.total)}${f.load ? `; load ${f.load.map((x) => x.toFixed(2)).join(", ")} on ${f.cpus || "?"} cores` : ""}</span>`));
-  if (f.sdr) rows.push(line("USB stick", `<span class="line-val">${dot(f.sdr.length ? "ok" : "fail")} ${f.sdr.length ? f.sdr.map((x) => esc(x.name || x.id)).join("<br>") : "None found"}</span>
-    ${f.dvb_driver ? `<span class="dim small">The TV-tuner driver is loaded and can take the stick: see Health.</span>` : ""}`));
-  const dec = f.decoder;
-  const units = Object.entries(f.units || {}), boxes = Object.entries(f.containers || {});
-  rows.push(line("Decoder", dec ? `<span class="line-val">${dot(f.checked - dec.now > 60 ? "fail" : "ok")} ${num(dec.aircraft)} aircraft, ${num(dec.with_pos)} with a position</span>
-      <span class="dim small">${esc(dec.where)}${dec.gain_db != null ? `; gain ${dec.gain_db} dB` : ""}</span>`
-    : `<span class="line-val">${dot("fail")} No decoder's data found</span>`));
-  if (units.length || boxes.length) {
-    rows.push(line("Services", `<ul class="chips svc">${units.map(([n, st]) => `<li class="${st === "active" ? "ok" : st === "failed" ? "fail" : "off"}">${esc(n)} <b>${esc(st)}</b></li>`).join("")}
-      ${boxes.map(([n, st]) => `<li class="${/^Up/.test(st) ? "ok" : "fail"}">${esc(n)} <b>${esc(st.replace(/\s*\(.*\)/, ""))}</b></li>`).join("")}</ul>
-      ${f.containers === null && units.some(([n]) => n === "docker") ? `<span class="dim small">adsb.im's containers can't be listed by the station (it isn't in the docker group); their decoder's data is above.</span>` : ""}`));
-  }
-  const fd = Object.entries(f.feeders || {});
-  if (fd.length) rows.push(line("Feeders", fd.map(([n, x]) => `<span class="line-val">${dot(x.connected ? "ok" : "warn")} ${{ flightaware: "FlightAware", flightradar24: "Flightradar24" }[n] || esc(n)}: ${x.connected ? "connected" : "not connected"}</span>`).join("")));
-  if (f.units?.["adsb-tunnel"]) rows.push(line("Tunnel", `<span class="line-val">${dot(f.units["adsb-tunnel"] === "active" ? "ok" : "fail")} adsb-tunnel ${esc(f.units["adsb-tunnel"])}</span>`));
-  const decoderUnit = ["readsb", "dump1090-fa", "dump1090-mutability"].find((n) => f.units?.[n]);
-  rows.push(advanced(() => "commands to run on the receiver", [
-    line("Check it", copyable("cloudwall station --check")),
-    line("Restart the decoder", copyable(decoderUnit ? `sudo systemctl restart ${decoderUnit}` : f.image === "adsb.im" ? "sudo docker restart ultrafeeder" : "sudo systemctl restart readsb")),
-    line("Restart it", copyable("sudo reboot")),
-  ]));
-  return group("Receiver machine", `Reported ${ago(f.checked)} by its station`, rows);
+  return group("Receiver machine", r.station_name ? `${esc(r.station_name)}: reported ${ago(f.checked)}` : `Reported ${ago(f.checked)} through the tunnel`,
+    [...machineGroupRows(f), r.station_id ? line("Its station", `<a href="#stations">${esc(r.station_name)} on the Stations page</a>`) : null]);
 }
 
 function reaches(r, page) {

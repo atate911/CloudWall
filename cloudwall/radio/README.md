@@ -1,7 +1,11 @@
 # The airband radio (incubating)
 
-Hearing aircraft and ATC through a software-defined radio, for a Radio tab to come. Nothing in
-CloudWall uses this package yet: it is being built and tried on real hardware on its own first.
+Hearing aircraft and ATC through a software-defined radio, for a Radio tab to come. CloudWall's
+hooks for it are in place, though the radio doesn't run yet: the control board's Radio page holds
+its channels and how its sticks listen ([radio] in the settings) and shows the plan of what each
+stick would hear (plan.py); the Stations page gives sticks to it; and each station with a stick
+given to it writes RTLSDR-Airband's config (airband.py) into /var/lib/cloudwall/station/. Running
+rtl_airband from that config, and listen.py's call log, come next.
 
 ## What the hardware does
 

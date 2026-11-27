@@ -47,6 +47,7 @@ WEATHER_STALE_S = 3 * 3600
 SUSPECT_AFTER_S = 3 * 3600  # hours of traffic before "none came near" means anything
 SUSPECT_NM = 8
 STATION_S = 120             # the receiver's station is asked this often (its findings stand between)
+STATION_SILENT_S = 300      # a joined station that hasn't reported this long is a problem
 
 
 def sd_notify(message):
@@ -67,8 +68,9 @@ def sd_notify(message):
 
 class Watch:
     def __init__(self, cfg, places, provider=None, demo=False, code_changed=None, incidents=None,
-                 data_dir=None, cache_dir=None, clock=time.time):
+                 data_dir=None, cache_dir=None, clock=time.time, stations=None):
         self.cfg, self.places, self.provider, self.demo = cfg, places, provider, demo
+        self.stations = stations
         self.code_changed = code_changed
         self.data_dir = Path(data_dir) if data_dir else None
         self.cache_dir = Path(cache_dir) if cache_dir else None
@@ -120,10 +122,22 @@ class Watch:
             yield health.trouble("display.demo", "CloudWall was started with --demo: every aircraft is simulated")
 
     def station(self):
-        """The receiver's own machine, as its CloudWall station reports it (sense/station.py):
-        asked every STATION_S; a station that answered before and stops is a problem, one that was
-        never set up isn't."""
+        """The machines with antennas, as their CloudWall stations report them (sense/station.py).
+        Stations joined to this wall report every minute: each one's problems, and one silent for
+        STATION_SILENT_S, are said. Without any joined, a station the tunnel carries is asked every
+        STATION_S; one that answered before and stops is a problem, one never set up isn't."""
         from ..sense import station
+        joined = self.stations.all() if self.stations else []
+        if joined:
+            out = []
+            for st in joined:
+                last = st.get("seen") or st.get("joined") or 0
+                if self.clock() - last > STATION_SILENT_S:
+                    out.append(health.trouble("receiver.station-down", f"{st['name']} hasn't reported "
+                                              + (f"for {(self.clock() - st['seen']) / 60:.0f} min" if st.get("seen") else "since it joined")))
+                elif st.get("facts"):                   # joined: a station by definition, whatever it has
+                    out += [f for f in station.findings(st["facts"], now=self.clock(), jobs=st["desired"].get("jobs")) if f.state != OK]
+            return out
         _, _, url = station.urls(self.cfg)
         if not url or self.demo:
             return []

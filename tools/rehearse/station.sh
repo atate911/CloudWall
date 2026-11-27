@@ -64,3 +64,25 @@ say "uninstall --role station"
 sudo cloudwall uninstall --role station 2>&1 | tail -3
 systemctl is-active cloudwall-station; ls /opt/cloudwall /usr/local/bin/cloudwall 2>&1 | sed 's/^/  /'
 INSIDE
+docker exec -i cloudwall-station bash -s <<'INSIDE'
+set -u
+say() { printf '\n== %s ==\n' "$*"; }
+cd /home/ubuntu/CloudWall
+say "a wall and a station on one machine; the station joins the wall"
+sudo python3 -m cloudwall install --role wall >/dev/null 2>&1; sudo python3 -m cloudwall install --role station >/dev/null 2>&1
+for i in $(seq 1 30); do curl -sf 127.0.0.1:5050/api/admin/whoami >/dev/null && break; sleep 1; done
+CODE=$(curl -s -X POST -H 'Content-Type: application/json' -d '{}' 127.0.0.1:5050/api/admin/stations/code | python3 -c 'import json,sys; print(json.load(sys.stdin)["code"])')
+sudo cloudwall station join http://127.0.0.1:5050 "$CODE" --name "Rehearsal Pi"
+ls -l /etc/cloudwall/station.toml | awk '{print "  " $1, $3, $4}'
+sleep 8
+curl -s 127.0.0.1:5050/api/admin/stations | python3 -c 'import json,sys; s=json.load(sys.stdin)["stations"][0]; print("  ", s["name"], "seen" if s["seen"] else "never", s["desired"]["jobs"])'
+say "the board gives the stick to the radio, with channels"
+SID=$(curl -s 127.0.0.1:5050/api/admin/stations | python3 -c 'import json,sys; print(json.load(sys.stdin)["stations"][0]["id"])')
+curl -s -X POST -H 'Content-Type: application/json' -d '{"section":"radio","key":"channels","value":["118.700 PDX Tower","119.000 Approach"]}' 127.0.0.1:5050/api/admin/settings >/dev/null
+curl -s -X POST -H 'Content-Type: application/json' -d '{"jobs":{"0bda:2832":"vhf"}}' 127.0.0.1:5050/api/admin/stations/$SID | python3 -c 'import json,sys; print("  ", json.load(sys.stdin)["said"])'
+sudo systemctl restart cloudwall-station; sleep 8
+ls -l /var/lib/cloudwall/station/ | sed 's/^/  /'
+head -8 /var/lib/cloudwall/station/rtl_airband.conf | sed 's/^/  /'
+systemctl show cloudwall-station -p NRestarts -p ActiveState
+journalctl -u cloudwall-station -n 4 --no-pager -o cat | sed 's/^/  /'
+INSIDE

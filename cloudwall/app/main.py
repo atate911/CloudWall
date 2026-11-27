@@ -205,10 +205,13 @@ def main():
     # CloudWall checking itself while it runs (app/watch.py), its incidents kept beside the logbooks
     incidents = Incidents(":memory:" if db == ":memory:" else str(Path(db).with_name("health.db")))
     incidents.close_all(time.time())
+    # the stations joined to this wall (memory/stations.py): the machines with antennas, reporting in
+    from ..memory.stations import Stations
+    stations = Stations(None if db == ":memory:" else Path(db).with_name("stations.json"))
     watch = Watch(cfg, places, fa, demo=args.demo, code_changed=server.code_changed, incidents=incidents,
-                  data_dir=None if db == ":memory:" else Path(db).parent, cache_dir=tiles_dir.parent)
+                  data_dir=None if db == ":memory:" else Path(db).parent, cache_dir=tiles_dir.parent, stations=stations)
     server.watch = watch
-    server.admin = Admin(cfg, places, watch, store0, incidents, fa, charts, demo=args.demo)
+    server.admin = Admin(cfg, places, watch, store0, incidents, fa, charts, demo=args.demo, stations=stations)
     watch.start()
     sd_notify("READY=1")                   # (systemd's Type=notify: answering now)
     try:

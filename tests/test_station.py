@@ -59,7 +59,7 @@ class Pi:
 
     def facts(self):
         return station.facts(run=self.run, read=self.read, get=self.get, disk=lambda p: Disk(100, 100 - self.free, self.free),
-                             exists=lambda p: p == "/opt/adsb", now=lambda: NOW)
+                             exists=lambda p: p == "/opt/adsb", now=lambda: NOW, ls=lambda p: None, which=lambda n: None)
 
 
 class FactsTest(unittest.TestCase):
@@ -229,3 +229,159 @@ class WallTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RegistryTest(unittest.TestCase):
+    """memory/stations.py: joining with a code, keys, reports, the settings held for each."""
+
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir)
+        self.now = [NOW]
+
+    def reg(self):
+        from cloudwall.memory.stations import Stations
+        return Stations(self.dir / "stations.json", clock=lambda: self.now[0])
+
+    def test_a_code_joins_once_and_runs_out(self):
+        r = self.reg()
+        code, until = r.code()
+        self.assertRegex(code, r"^cw-[0-9a-f]{4}-[0-9a-f]{4}$")
+        sid, key = r.join(code.upper(), name="Garage Pi <b>", host="adsb-pi")
+        self.assertTrue(r.authorized(sid, key))
+        self.assertFalse(r.authorized(sid, key + "x") or r.authorized("st-00000000", key))
+        self.assertEqual(r.public(sid)["name"], "Garage Pi b")
+        with self.assertRaises(ValueError):
+            r.join(code)                                       # used up
+        late, _ = r.code()
+        self.now[0] += 31 * 60
+        with self.assertRaises(ValueError):
+            r.join(late)                                       # half an hour, and gone
+
+    def test_kept_private_and_across_restarts(self):
+        r = self.reg()
+        sid, key = r.join(r.code()[0], name="Radio Pi")
+        self.assertEqual(oct((self.dir / "stations.json").stat().st_mode & 0o777), "0o640")
+        self.assertNotIn(key, (self.dir / "stations.json").read_text())        # only its hash is kept
+        self.assertTrue(self.reg().authorized(sid, key))
+
+    def test_reports_bring_back_the_settings_and_new_sticks_get_a_job(self):
+        r = self.reg()
+        adsb_pi, _ = r.join(r.code()[0])
+        radio_pi, _ = r.join(r.code()[0])
+        got = r.report(adsb_pi, Pi().facts())
+        self.assertEqual(got["jobs"], {"0bda:2832": "adsb"})                     # (lsusb gives no serial: its id names it)
+        vhf = {"sdr": [{"id": "0bda:2838", "serial": "VHF1"}, {"id": "0bda:2838", "serial": "VHF2"}], "units": {"rtl_airband": "inactive"}}
+        self.assertEqual(r.report(radio_pi, vhf)["jobs"], {"VHF1": "spare", "VHF2": "spare"})   # no decoder there: spare
+        r.update(radio_pi, jobs={"VHF1": "vhf", "VHF2": "vhf"}, name="Radio")
+        self.assertEqual(r.report(radio_pi, vhf), {"name": "Radio", "jobs": {"VHF1": "vhf", "VHF2": "vhf"}})
+        self.assertEqual([s for _, s in r.vhf()], ["VHF1", "VHF2"])
+        with self.assertRaises(ValueError):
+            r.update(radio_pi, jobs={"VHF1": "television"})
+        r.remove(radio_pi)
+        self.assertEqual([s["id"] for s in r.all()], [adsb_pi])
+
+
+class FakeRequest:
+    """What Admin.stations_api reads of a request, and what it sends back."""
+
+    def __init__(self, body, key=None, addr="203.0.113.5"):
+        self.body, self.client_address = body, (addr, 1234)
+        self.headers = {"Authorization": f"Bearer {key}"} if key else {}
+        self.sent = None
+
+    def _body(self, limit=None):
+        return self.body
+
+    def _send(self, code, body, *a, **k):
+        self.sent = (code, body)
+
+
+class JoiningTest(unittest.TestCase):
+    """A station joining the wall and reporting to it, end to end: the wall's side (app/admin.py)
+    and the station's (app/station.py)."""
+
+    def setUp(self):
+        from cloudwall.app.admin import Admin
+        from cloudwall.memory.stations import Stations
+        self.dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.dir)
+        cfg = config.load(None)
+        cfg["radio"]["channels"] = ["118.700 PDX Tower", "119.000 Approach", "120.100 Departure", "124.350 Approach", "133.000 Center"]
+        self.admin = Admin(cfg, [], stations=Stations(self.dir / "stations.json"))
+
+    def wall(self, path, body, key=None):
+        h = FakeRequest(body, key)
+        self.admin.stations_api(h, path)
+        return h.sent
+
+    def test_join_report_and_take_the_settings(self):
+        from cloudwall.app import station as app
+        code = self.admin.route("POST", "stations/code", {}, {})["code"]
+
+        def post(url, body, timeout=20, headers=None, limit=None):        # the wall, as the station reaches it
+            path = url.split("http://wall.example")[1]
+            code_, got = self.wall(path, body, (headers or {}).get("Authorization", "")[7:] or None)
+            if code_ != 200:
+                raise OSError(f"{code_} {got}")
+            return json.dumps(got).encode()
+        conf = self.dir / "station.toml"
+        self.assertEqual(app.join("http://wall.example/", code, "Radio Pi", post=post, conf_path=conf), "Radio Pi")
+        self.assertEqual(oct(conf.stat().st_mode & 0o777), "0o640")
+        c = app.read_conf(conf)
+        self.assertEqual((c["wall"], c["name"]), ("http://wall.example", "Radio Pi"))
+        facts = {"format": 1, "host": "radio-pi", "sdr": [{"id": "0bda:2838", "serial": "VHF1"}, {"id": "0bda:2838", "serial": "VHF2"}]}
+        rep = app.Reporter(c, app.Station(gather=lambda: facts), post=post, state=self.dir / "state")
+        rep.report_once()
+        self.assertEqual(rep.applied["radio"]["state"], "none of this station's sticks is given to the radio")
+        sid = c["id"]
+        self.admin.route("POST", f"stations/{sid}", {}, {"jobs": {"VHF1": "vhf", "VHF2": "vhf"}})
+        desired = rep.report_once()
+        self.assertEqual(desired["radio"]["channels"][0], [118700000, "PDX Tower", "tower"])
+        conf_text = (self.dir / "state" / "rtl_airband.conf").read_text()
+        self.assertIn('serial = "VHF1"', conf_text)
+        self.assertIn("freq = 118700000", conf_text)
+        self.assertEqual(rep.applied["radio"]["state"], "ready, and off")
+        self.assertTrue(json.loads((self.dir / "state" / "desired.json").read_text())["jobs"])
+        rep.report_once()                    # what it applied reaches the wall with its next report
+        listed = self.admin.stations_list()["stations"][0]
+        self.assertEqual((listed["name"], listed["applied"]["jobs"]), ("Radio Pi", {"VHF1": "vhf", "VHF2": "vhf"}))
+        self.assertNotIn("receiver.no-decoder", [f["code"] for f in listed["findings"]])   # a radio Pi needs no decoder
+
+    def test_a_wrong_key_or_code_is_refused_and_codes_are_rate_limited(self):
+        self.assertEqual(self.wall("/api/stations/st-12345678/report", {"facts": {}}, "nope")[0], 401)
+        for _ in range(5):
+            self.assertEqual(self.wall("/api/stations/join", {"code": "cw-0000-0000"})[0], 403)
+        code = self.admin.route("POST", "stations/code", {}, {})["code"]
+        self.assertEqual(self.wall("/api/stations/join", {"code": code})[0], 429)              # even a good one waits
+
+    def test_the_radio_plan_from_the_settings_and_the_sticks(self):
+        sid, _ = self.admin.stations.join(self.admin.stations.code()[0], name="Radio Pi")
+        self.admin.stations.update(sid, jobs={"VHF1": "vhf"})
+        plan = self.admin.radio_plan()
+        self.assertEqual(plan["sticks"], [{"station": "Radio Pi", "serial": "VHF1"}])
+        self.assertEqual(plan["slices"][0]["serial"], "VHF1")
+        heard = [c["mhz"] for c in plan["slices"][0]["channels"]]
+        self.assertIn("118.700", heard)
+        self.assertIn("121.500", [c["mhz"] for c in plan["channels"]])                          # guard, added by itself
+        self.assertTrue(plan["scan"])                                                            # 133.000 is out of reach
+
+    def test_channels_must_be_airband(self):
+        with self.assertRaises(ValueError):
+            config.check("radio", {"channels": ["99.5 KINK FM"]})
+        config.check("radio", {"channels": ["118.700 PDX Tower", "136.975"]})
+
+
+class JoinedWatchTest(unittest.TestCase):
+    def test_a_joined_station_silent_too_long_is_said(self):
+        from cloudwall.app.watch import STATION_SILENT_S, Watch
+        from cloudwall.memory.stations import Stations
+        clock = [NOW]
+        reg = Stations(None, clock=lambda: clock[0])
+        sid, _ = reg.join(reg.code()[0], name="Garage Pi")
+        w = Watch(config.load(None), [], clock=lambda: clock[0], stations=reg)
+        self.assertEqual(w.station(), [])                                    # just joined: not silent yet
+        reg.report(sid, {"format": 1, "host": "pi", "throttled": 0x1, "checked": NOW})
+        self.assertEqual([f.code for f in w.station()], ["receiver.undervoltage"])
+        clock[0] += STATION_SILENT_S + 1
+        self.assertEqual([f.code for f in w.station()], ["receiver.station-down"])

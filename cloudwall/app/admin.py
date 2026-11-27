@@ -9,6 +9,7 @@ hands every /api/admin/ request here (srv.admin), so the server itself knows not
 Everything but whoami and sign-in is the owner's alone (serve/auth.py). A request naming a host
 CloudWall doesn't answer to is refused, and so is one a browser says comes from another site.
 """
+import logging
 import os
 import re
 import threading
@@ -24,15 +25,23 @@ from ..operate.system import System
 from ..sense import station
 from ..serve import auth
 
+log = logging.getLogger("cloudwall.admin")
+
 # Sections only the control board uses: read from the file as saved, so they need no restart.
-LIVE = {"receiver"}
+LIVE = {"receiver", "radio"}
+JOIN_TRIES = 5              # wrong join codes from one address in JOIN_WINDOW_S before it waits
+JOIN_WINDOW_S = 300
+REPORT_BODY = 256 * 1024    # a station's report: its facts, a few kB
 
 UNDER_SYSTEMD = bool(os.environ.get("INVOCATION_ID"))
 
 
 class Admin:
-    def __init__(self, cfg, places, watch=None, store=None, incidents=None, provider=None, charts=None, demo=False):
+    def __init__(self, cfg, places, watch=None, store=None, incidents=None, provider=None, charts=None, demo=False,
+                 stations=None):
         self.cfg, self.places, self.watch, self.incidents = cfg, places, watch, incidents
+        self.stations = stations
+        self.join_tries = {}          # address -> [times of wrong join codes]
         self.provider, self.charts, self.demo = provider, charts, demo
         self.owner = auth.Owner(cfg, store)
         self.started = time.time()
@@ -144,6 +153,22 @@ class Admin:
             return {"ok": True, "said": "the owner's password is changed"}
         if get and name == "receiver":
             return self.receiver()
+        if get and name == "stations":
+            return self.stations_list()
+        if name.startswith("stations/") and self.stations is None:
+            raise ValueError("stations aren't taken by this CloudWall (it runs without a logbook folder)")
+        if method == "POST" and name == "stations/code":
+            code, until = self.stations.code()
+            return {"code": code, "until": until}
+        if name.startswith("stations/st-") and method in ("POST", "DELETE"):
+            sid = name.split("/", 1)[1]
+            if method == "DELETE":
+                self.stations.remove(sid)
+                return {"ok": True, "said": "The station is taken off: it stops reporting here (on it: `sudo cloudwall station leave`)"}
+            got = self.stations.update(sid, name=body.get("name"), jobs=body.get("jobs"))
+            return {"ok": True, "station": got, "said": "Saved: the station takes it at its next report, within a minute"}
+        if get and name == "radio/plan":
+            return self.radio_plan()
         if method == "POST" and name == "alert-test":
             return self.alert_test()
         return None
@@ -161,6 +186,100 @@ class Admin:
         except Exception as e:
             raise ValueError(f"The alert address didn't take it: {e}") from None
         return {"ok": True, "said": "Test alert sent: it should reach you within a few seconds"}
+
+    # -- the stations: the machines with antennas ------------------------------------------------
+    def stations_api(self, h, path):
+        """What a station asks of the wall: to join (with a code from the board), and to report
+        (with its own key), each report answered with the settings held here for it."""
+        if self.stations is None:
+            return h._send(404, {"error": "stations aren't taken here"})
+        body = h._body(REPORT_BODY)
+        if body is None:
+            return h._send(400, {"error": "bad json"})
+        # who asked: behind Caddy (on this machine), the address it passes on; anyone else's own address,
+        # since anyone could write the header
+        addr = h.client_address[0]
+        if auth.is_local(addr) and self.proxied(h):
+            addr = (h.headers.get("X-Forwarded-For") or addr).split(",")[0].strip()
+        rest = path[len("/api/stations/"):].strip("/")
+        if rest == "join":
+            now = time.time()
+            tries = [t for t in self.join_tries.get(addr, []) if now - t < JOIN_WINDOW_S]
+            if len(tries) >= JOIN_TRIES:
+                return h._send(429, {"error": "too many wrong join codes: wait a few minutes"})
+            try:
+                sid, key = self.stations.join(body.get("code"), body.get("name"), body.get("host"))
+            except ValueError as e:
+                self.join_tries[addr] = tries + [now]
+                time.sleep(0.5)
+                return h._send(403, {"error": str(e)})
+            st = self.stations.public(sid)
+            log.info("station %s (%s) joined from %s", st["name"], sid, addr)
+            return h._send(200, {"id": sid, "key": key, "name": st["name"]})
+        m = re.fullmatch(r"(st-[0-9a-f]{8})/report", rest)
+        if not m:
+            return h._send(404, {"error": "not found"})
+        auth_head = h.headers.get("Authorization") or ""
+        key = auth_head[7:] if auth_head.startswith("Bearer ") else ""
+        if not self.stations.authorized(m.group(1), key):
+            time.sleep(0.5)
+            return h._send(401, {"error": "this station isn't joined here (or its key was changed): join it again"})
+        desired = self.stations.report(m.group(1), body.get("facts"), body.get("applied"), addr)
+        desired["radio"] = self.radio_desired()
+        return h._send(200, {"desired": desired})
+
+    def stations_list(self):
+        if self.stations is None:
+            return {"stations": [], "taken": False}
+        out = []
+        for st in self.stations.all():
+            st["findings"] = [f.to_dict() for f in station.findings(st.get("facts"), now=time.time(), jobs=st["desired"].get("jobs"))] \
+                if st.get("facts") else []
+            out.append(st)
+        return {"stations": out, "taken": True, "now": time.time()}
+
+    # -- the radio (VHF): not active yet; its settings and its plan -------------------------------
+    def radio_channels(self):
+        from ..radio import channels as ch
+        out = []
+        for line in (self.saved().get("radio") or {}).get("channels") or []:
+            mhz, _, name = str(line).strip().partition(" ")
+            try:
+                hz = ch.parse_mhz(mhz)
+            except ValueError:
+                continue
+            words = name.strip() or f"{mhz} MHz"
+            kind = next((k for code, k in ch.KINDS.items() if code.lower() in words.lower().split()), "other")
+            out.append(ch.Channel(hz, words, kind))
+        return ch.with_guard(out) if out else []
+
+    def radio_desired(self):
+        """The radio's settings as a station takes them: its channels in hertz, and how to listen."""
+        r = self.saved().get("radio") or {}
+        return {"enabled": bool(r.get("enabled")), "mode": r.get("mode", "parked"),
+                "channels": [[c.freq, c.name, c.kind] for c in self.radio_channels()]}
+
+    def radio_plan(self):
+        """Which channels each stick given to the radio would hear at once (radio/plan.py), and
+        what's left to scan: worked out here from the settings, as the stations will."""
+        from ..radio import plan as rp
+        chans = self.radio_channels()
+        sticks = self.stations.vhf() if self.stations else []
+        receivers = [rp.Receiver("rtlsdr", i, serial=serial) for i, (_, serial) in enumerate(sticks)]
+        mode = (self.saved().get("radio") or {}).get("mode", "parked")
+        scanner = None
+        if mode == "scan" and receivers:
+            scanner, receivers = receivers[-1], receivers[:-1]
+        p = rp.make_plan(chans, receivers, scanner) if chans else None
+        where = {serial: st["name"] for st, serial in sticks}
+        return {"channels": [{"mhz": c.mhz, "name": c.name, "kind": c.kind} for c in chans],
+                "sticks": [{"station": st["name"], "serial": serial} for st, serial in sticks], "mode": mode,
+                "slices": [{"station": where.get(s.receiver.serial), "serial": s.receiver.serial, "lo": s.lo, "hi": s.hi,
+                            "center": s.center, "channels": [{"mhz": c.mhz, "name": c.name} for c in s.channels]}
+                           for s in (p.slices if p else [])],
+                "scan": [{"mhz": c.mhz, "name": c.name} for c in (p.scan if p else [])],
+                "scanner": {"station": where.get(p.scanner.serial), "serial": p.scanner.serial} if p and p.scanner else None,
+                "unheard": [{"mhz": c.mhz, "name": c.name} for c in (p.unscanned if p else [])]}
 
     # -- your receiver ---------------------------------------------------------------------------
     def saved(self):
@@ -234,6 +353,11 @@ class Admin:
         """The receiver's CloudWall station: what its machine says (sense/station.py), and what this
         CloudWall makes of it."""
         from ..core.http import get_json
+        for st in (self.stations.all() if self.stations else []):           # a joined station with the decoder
+            f = st.get("facts") or {}
+            if f.get("decoder") or (f.get("units") or {}).get("readsb"):
+                return {"station_url": None, "station": f, "station_name": st["name"], "station_id": st["id"],
+                        "station_findings": [x.to_dict() for x in station.findings(f, now=time.time())]}
         _, _, url = station.urls(self.saved())
         out = {"station_url": url, "station": None, "station_findings": []}
         if not url:

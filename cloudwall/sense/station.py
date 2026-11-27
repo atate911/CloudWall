@@ -35,15 +35,20 @@ SDR_IDS = {"0bda:2832", "0bda:2838"}
 UNITS = {"readsb": "decoder", "dump1090-fa": "decoder", "dump1090-mutability": "decoder", "dump1090": "decoder",
          "piaware": "FlightAware feeder", "fr24feed": "Flightradar24 feeder", "adsbexchange-feed": "ADSBexchange feeder",
          "tar1090": "map", "lighttpd": "web server", "docker": "containers (adsb.im)", "adsb-tunnel": "CloudWall tunnel",
-         "coverage3d": "Coverage3D", "cloudwall-station": "CloudWall station"}
+         "coverage3d": "Coverage3D", "cloudwall-station": "CloudWall station",
+         "rtl_airband": "VHF radio", "rtl-airband": "VHF radio", "acarsdec": "VHF decoder (ACARS)", "dumpvdl2": "VHF decoder (VDL2)"}
 DECODER_URLS = ("http://127.0.0.1:8080/data", "http://127.0.0.1/tar1090/data", "http://127.0.0.1/skyaware/data",
                 "http://127.0.0.1/dump1090-fa/data")
 DECODER_FILES = ("/run/readsb", "/run/dump1090-fa", "/run/dump1090-mutability", "/run/adsb-feeder-ultrafeeder/readsb")
 
 
+# the commands run here aren't the service: systemd's notification socket isn't theirs to use
+_ENV = {k: v for k, v in os.environ.items() if k != "NOTIFY_SOCKET"}
+
+
 def _run(cmd):
     try:
-        got = subprocess.run(cmd, capture_output=True, text=True, timeout=8)
+        got = subprocess.run(cmd, capture_output=True, text=True, timeout=8, env=_ENV)
         return got.stdout if got.returncode == 0 else None
     except (OSError, subprocess.SubprocessError):
         return None
@@ -89,7 +94,31 @@ def urls(cfg):
 
 # -- what the machine says ---------------------------------------------------------------------------
 
-def facts(run=_run, read=_read, get=_get, disk=shutil.disk_usage, exists=os.path.exists, now=time.time):
+def _ls(path):
+    try:
+        return sorted(os.listdir(path))
+    except OSError:
+        return None
+
+
+def sticks(read=_read, ls=_ls):
+    """The RTL2832U sticks the kernel sees, with their serial numbers (which name a stick whatever
+    USB port or order it comes up in): [{"id", "name", "serial"}], or None if USB can't be read here."""
+    names = ls("/sys/bus/usb/devices")
+    if names is None:
+        return None
+    out = []
+    for n in names:
+        base = f"/sys/bus/usb/devices/{n}"
+        vid, pid = (read(f"{base}/idVendor") or "").strip(), (read(f"{base}/idProduct") or "").strip()
+        if f"{vid}:{pid}".lower() in SDR_IDS:
+            out.append({"id": f"{vid}:{pid}".lower(), "serial": (read(f"{base}/serial") or "").strip() or None,
+                        "name": " ".join(x for x in ((read(f"{base}/manufacturer") or "").strip(), (read(f"{base}/product") or "").strip()) if x) or None})
+    return out
+
+
+def facts(run=_run, read=_read, get=_get, disk=shutil.disk_usage, exists=os.path.exists, now=time.time, ls=_ls,
+          which=shutil.which):
     """Everything the receiver's machine says about itself, read-only, in plain values."""
     f = {"format": FORMAT, "cloudwall": __version__, "host": socket.gethostname(), "checked": now()}
     model = (read("/proc/device-tree/model") or "").replace("\0", "").strip()
@@ -129,10 +158,14 @@ def facts(run=_run, read=_read, get=_get, disk=shutil.disk_usage, exists=os.path
     sync = run(["timedatectl", "show", "-p", "NTPSynchronized", "--value"])
     f["clock_synced"] = None if sync is None else sync.strip() == "yes"
 
-    usb = run(["lsusb"])
-    f["sdr"] = None if usb is None else [
-        {"id": m.group(1).lower(), "name": m.group(2).strip()}
-        for m in re.finditer(r"ID ([0-9a-fA-F]{4}:[0-9a-fA-F]{4})\s*(.*)", usb) if m.group(1).lower() in SDR_IDS]
+    f["sdr"] = sticks(read, ls)
+    if not f["sdr"]:                        # no sysfs to read (or nothing in it): lsusb, without serials
+        usb = run(["lsusb"])
+        if usb is not None:
+            f["sdr"] = [{"id": m.group(1).lower(), "name": m.group(2).strip(), "serial": None}
+                        for m in re.finditer(r"ID ([0-9a-fA-F]{4}:[0-9a-fA-F]{4})\s*(.*)", usb) if m.group(1).lower() in SDR_IDS]
+    # the VHF radio's programs, where installed (the radio isn't run by CloudWall yet: these say what's ready)
+    f["radio"] = {name: bool(which(name)) for name in ("rtl_airband", "acarsdec", "dumpvdl2")}
     mods = read("/proc/modules")
     f["dvb_driver"] = None if mods is None else bool(re.search(r"^dvb_usb_rtl28xxu\b", mods, re.M))
 
@@ -202,9 +235,17 @@ def is_receiver(f):
                        or any(UNITS.get(n) in ("decoder", "FlightAware feeder", "Flightradar24 feeder") for n in f.get("units") or {})))
 
 
-def findings(f, now=None):
+def adsb(f, jobs=None):
+    """Is this machine meant to decode ADS-B: a stick given to it, a decoder installed, or an ADS-B
+    receiver's image? (A Pi with only the VHF radio isn't.)"""
+    return bool("adsb" in (jobs or {}).values() or f.get("image")
+                or any(UNITS.get(n) == "decoder" for n in f.get("units") or {}))
+
+
+def findings(f, now=None, jobs=None):
     """Health findings from a receiver's facts (part "receiver"): a problem for each thing wrong,
-    named from the catalogue, and a line for each thing checked and found well."""
+    named from the catalogue, and a line for each thing checked and found well. `jobs`: what each
+    of its sticks is for, where the wall says (a machine for the radio alone needs no decoder)."""
     if not f:
         return []
     now = now or f.get("checked") or time.time()
@@ -240,7 +281,7 @@ def findings(f, now=None):
         if not sdr:
             out.append(health.trouble("receiver.no-sdr", f"no USB receiver stick on {host}"))
         else:
-            out.append(health.ok("receiver", f"USB stick: {', '.join(s['name'] or s['id'] for s in sdr)}"))
+            out.append(health.ok("receiver", "USB stick: " + ", ".join(str(s.get("name") or s.get("serial") or s.get("id") or "?") for s in sdr)))
     if f.get("dvb_driver"):
         out.append(health.trouble("receiver.dvb-driver"))
     units = f.get("units") or {}
@@ -250,7 +291,7 @@ def findings(f, now=None):
     failed = [n for n, s in units.items() if s == "failed" or (dec is None and s != "active" and UNITS.get(n) == "decoder")]
     if failed:
         out.append(health.trouble("receiver.service-failed", f"{host}: " + ", ".join(f"{n} ({UNITS.get(n, '')}) is {units[n]}" for n in failed)))
-    if dec is None and (sdr or units):
+    if dec is None and adsb(f, jobs):
         out.append(health.trouble("receiver.no-decoder", f"{host}: no decoder's data found"))
     elif dec:
         age = now - dec["now"] if dec.get("now") else None
