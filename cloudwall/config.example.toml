@@ -44,6 +44,11 @@ urls = [
   "https://opendata.adsb.fi/api/v3/lat/{lat}/lon/{lon}/dist/{radius}",
   "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}",
 ]
+merge = false          # true: the first url is your own ADS-B receiver (e.g. "http://<pi>:8080/data/aircraft.json"),
+                       # asked every update alongside the public feeds after it, and the two combined:
+                       # every aircraft either sees, your receiver's fresher position where both see one,
+                       # each moved on along its track to the same moment so a lagging feed never pulls
+                       # an aircraft backwards. The public feeds after it still fail over in order.
 
 # --- Optional paid route providers -------------------------------------------------
 # Accurate live origin/destination and arrival time. The free route database only

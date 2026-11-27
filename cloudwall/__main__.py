@@ -135,7 +135,13 @@ def main():
         store.claim(pc["home"])            # this logbook is this place's
         if store is not store0:
             store.forget(KINDS)            # lookups from when each place kept its own
-        source = sources.Demo() if args.demo else sources.Feeds(cfg["source"]["urls"])
+        src = cfg["source"]
+        if args.demo:
+            source = sources.Demo()
+        elif src.get("merge") and len(src["urls"]) > 1:     # your receiver and the public feeds together
+            source = sources.Merged(src["urls"])
+        else:
+            source = sources.Feeds(src["urls"])
         return Place(pc, store, source, shared, demo=args.demo, named=named)
 
     # places set up from a screen are kept beside the logbook (not in demo mode); a new one never

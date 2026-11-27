@@ -110,6 +110,120 @@ class FeedsTest(unittest.TestCase):
         self.assertEqual(len(urls), 3)
 
 
+RX, PUB = "http://receiver.local/data/aircraft.json", "https://public.example/{lat}/{lon}/{radius}"
+
+
+class MergedTest(unittest.TestCase):
+    """Your own receiver and a public feed together (sources.Merged). The receiver answers like
+    readsb's aircraft.json (now in seconds); the public feed like the community APIs (now in ms)."""
+
+    def setUp(self):
+        self.t = 1_000_000.0
+        self.answers = {}          # "rx" / "pub" -> list of records, or an exception
+        self.now = {"rx": None, "pub": None}
+
+        def fake(url, timeout=0):
+            key = "rx" if url == RX else "pub"
+            got = self.answers.get(key, [])
+            if isinstance(got, Exception):
+                raise got
+            made = self.t if self.now[key] is None else self.now[key]
+            return {"now": made, "aircraft": got} if key == "rx" else {"now": made * 1000, "ac": got}
+
+        self.real, sources.get_json = sources.get_json, fake
+        self.m = sources.Merged([RX, PUB], clock=lambda: self.t)
+
+    def tearDown(self):
+        sources.get_json = self.real
+        self.m.pool.shutdown()
+
+    @staticmethod
+    def rec(hexid, lat, lon, seen_pos=0.0, **kw):
+        return dict({"hex": hexid, "lat": lat, "lon": lon, "seen_pos": seen_pos, "alt_baro": 10000,
+                     "gs": 360.0, "track": 90.0}, **kw)
+
+    def fetch(self):
+        return {a["hex"]: a for a in self.m.fetch(45.6, -122.7, 15)}
+
+    def test_union_of_both_feeds(self):
+        self.answers = {"rx": [self.rec("aaa111", 45.6, -122.7)],
+                        "pub": [self.rec("aaa111", 45.6, -122.71, seen_pos=4), self.rec("bbb222", 46.0, -122.0)]}
+        got = self.fetch()
+        self.assertEqual(set(got), {"aaa111", "bbb222"})          # one only the public feed sees, too
+        self.assertAlmostEqual(got["aaa111"]["lon"], -122.7, places=6)    # the receiver's fresh position
+        self.assertEqual(self.m.name, "receiver.local + public.example")
+
+    def test_lagging_report_is_moved_on_to_now(self):
+        # 360 kt due east, reported 5 s ago: 0.5 nm further east now
+        self.answers = {"rx": [], "pub": [self.rec("ccc333", 45.0, -122.0, seen_pos=5)]}
+        a = self.fetch()["ccc333"]
+        moved = geo.haversine_nm(45.0, -122.0, a["lat"], a["lon"])
+        self.assertAlmostEqual(moved, 0.5, delta=0.01)
+        self.assertGreater(a["lon"], -122.0)
+
+    def test_newer_public_position_beats_a_stale_receiver_one(self):
+        # the receiver last heard it 20 s ago; the public feed has it from 2 s ago
+        self.answers = {"rx": [self.rec("ddd444", 45.0, -122.0, seen_pos=20)],
+                        "pub": [self.rec("ddd444", 45.0, -121.97, seen_pos=2)]}
+        a = self.fetch()["ddd444"]
+        expected = sources.project(sources.normalise(self.rec("ddd444", 45.0, -121.97)), 2)
+        self.assertAlmostEqual(a["lon"], expected["lon"], places=6)
+
+    def test_never_goes_backwards(self):
+        # update 1: the receiver hears it now
+        self.answers = {"rx": [self.rec("eee555", 45.0, -122.0)], "pub": []}
+        first = self.fetch()["eee555"]
+        # update 2, 5 s later: the receiver has lost it; the public feed is 8 s behind (3 s before update 1)
+        self.t += 5
+        self.answers = {"rx": [], "pub": [self.rec("eee555", 45.0, -122.0 - 3 * 0.1 / 60 / math.cos(math.radians(45)), seen_pos=8)]}
+        second = self.fetch()["eee555"]
+        self.assertGreater(second["lon"], first["lon"])           # carried on east, not pulled back west
+        self.assertAlmostEqual(geo.haversine_nm(45.0, first["lon"], 45.0, second["lon"]), 0.5, delta=0.01)
+
+    def test_details_filled_from_the_other_feed(self):
+        self.answers = {"rx": [self.rec("fff666", 45.0, -122.0)],
+                        "pub": [self.rec("fff666", 45.0, -122.0, seen_pos=3, t="B39M", r="N123AS", dbFlags=1)]}
+        a = self.fetch()["fff666"]
+        self.assertEqual((a["type"], a["reg"]), ("B39M", "N123AS"))
+        self.assertTrue(a["military"])
+        self.assertEqual(set(a), set(sources.normalise({"hex": "x"})))   # the same shape as any feed's record
+
+    def test_one_feed_down_the_other_carries_on(self):
+        self.answers = {"rx": OSError("tunnel down"), "pub": [self.rec("abc123", 45.0, -122.0)]}
+        self.assertEqual(set(self.fetch()), {"abc123"})
+        self.assertEqual(self.m.name, "public.example")
+        self.answers = {"rx": [self.rec("abc123", 45.0, -122.0)], "pub": OSError("rate limited")}
+        self.assertEqual(set(self.fetch()), {"abc123"})
+        self.answers = {"rx": OSError("down"), "pub": OSError("down")}
+        self.assertRaises(OSError, self.m.fetch, 45.6, -122.7, 15)
+
+    def test_old_positions_and_ground_traffic(self):
+        self.answers = {"rx": [self.rec("old111", 45.0, -122.0, seen_pos=75),
+                               self.rec("gnd222", 45.0, -122.0, seen_pos=5, alt_baro="ground", gs=15.0)],
+                        "pub": []}
+        got = self.fetch()
+        self.assertNotIn("old111", got)                          # older than a minute: left out
+        self.assertEqual(got["gnd222"]["lon"], -122.0)            # taxiing: not moved on
+
+    def test_clocks_and_times(self):
+        self.assertEqual(sources.feed_time({"now": 1_000_000_000_000}, 1_000_000_000.5), 1_000_000_000)   # ms
+        self.assertEqual(sources.feed_time({"now": 999_000_000}, 1_000_000_000), 1_000_000_000)  # far off: arrival
+        self.assertEqual(sources.feed_time({}, 5.0), 5.0)
+        # a receiver clock a little ahead doesn't make its report count as newer than now
+        self.now["rx"] = self.t + 2
+        self.answers = {"rx": [self.rec("ahd333", 45.0, -122.0)], "pub": []}
+        self.assertAlmostEqual(self.fetch()["ahd333"]["lon"], -122.0, places=6)
+
+    def test_merge_setting(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".toml") as t:
+            t.write(f'[source]\nurls = ["{RX}", "{PUB}"]\nmerge = true\n')
+            t.flush()
+            self.assertTrue(config.load(t.name)["source"]["merge"])
+        self.assertFalse(config.DEFAULTS["source"]["merge"])
+        self.assertRaises(ValueError, config.check, "source", {"merge": "yes"})
+
+
 class StubEnricher:
     live = None
 
