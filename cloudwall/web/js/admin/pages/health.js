@@ -2,7 +2,7 @@
 // from each problem's start to its end), how you hear about it (alerts to your phone, set up here
 // step by step and tested from here), the whole machine's check, and the reference of every problem
 // CloudWall knows, behind a shade.
-import { el, esc, S, call, toast, value, button, runDoctor, problems, ago, when, lasted, plural, setting } from "../core.js";
+import { el, esc, S, call, toast, value, button, runDoctor, problems, ago, when, lasted, plural, setting, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { timeline } from "../draw.js";
 import { head, trouble, copyable } from "../parts.js";
@@ -75,33 +75,29 @@ function known() {
 }
 
 export default {
-  id: "health", title: "Problems and alerts", icon: "problems",
-  live() {
-    const n = problems().length, week = (S.overview?.incidents || []).filter((i) => Date.now() / 1000 - i.started < 7 * 86400).length;
-    return n ? `${n} open now` : week ? `${plural(week, "problem")} this week` : "none this week";
-  },
+  id: "health", get title() { return TITLES.health; }, icon: "problems",
   async draw(page) {
     page.redraw = async () => { const fresh = el(`<div class="page page-health"></div>`); await this.draw(fresh); page.replaceWith(fresh); };
     const inc = (await call("incidents")).incidents;
     const open = problems();
-    page.append(head("Problems and alerts", "What CloudWall's checks of itself have found, what happened lately, and how you hear about it.",
+    page.append(head(TITLES.health, "Open problems, the last week, alerts, and a check of the whole machine.",
       `<span class="status ${open.some((f) => f.state === "fail") ? "fail" : open.length ? "warn" : "ok"}">${open.length ? plural(open.length, "open problem") : "Nothing open"}</span>`));
 
     const week = inc.filter((i) => Date.now() / 1000 - (i.ended || Date.now() / 1000) < 7 * 86400);
-    page.append(el(`<section class="glass week-hero"><h2>The last seven days</h2>${timeline(inc, 7)}
+    page.append(el(`<section class="glass week-hero"><h2>Last 7 days</h2>${timeline(inc, 7)}
       <p class="dim small">${week.length ? `${plural(week.length, "problem")}; ${plural(week.filter((i) => i.major).length, "major one")}. Each bar runs from when it started to when it ended; an open one reaches the right-hand edge.` : "Nothing went wrong this week."}</p></section>`));
 
     if (open.length) {
-      const box = el(`<section class="needs"><h2>Open now</h2></section>`);
+      const box = el(`<section class="needs"><h2>Open problems</h2></section>`);
       open.forEach((f) => box.append(trouble(f, { open: open.length === 1 })));
       page.append(box);
     }
 
-    page.append(group("Alerts on your phone", "Hear about a problem that stops CloudWall working when it starts and when it ends, wherever you are.", [alerts(page)]));
-    page.append(group("The whole machine", "Beyond what the running server watches: the install, its files and its neighbours.", [machine()]));
-    page.append(shade("Everything that happened", () => `${plural(inc.length, "problem")} recorded${inc[0] ? `, the latest ${ago(inc[0].started)}` : ""}`, [
+    page.append(group("Alerts", "Sent when a problem that stops CloudWall starts, and when it ends", [alerts(page)]));
+    page.append(group("System check", "The install, its files, the service, the feeds, backups, the tunnel and Caddy", [machine()]));
+    page.append(shade("History", () => `${plural(inc.length, "problem")} recorded${inc[0] ? `, the latest ${ago(inc[0].started)}` : ""}`, [
       el(`<ul class="history">${inc.map((i) => `<li class="${i.ended ? "over" : i.state}"><span class="dot ${i.ended ? "off" : i.state}"></span><span class="h-what">${esc(i.summary)}</span><span class="h-when">${when(i.started)}</span><span class="h-long">${i.ended ? lasted(i.ended - i.started) : "open"}</span></li>`).join("") || `<li class="dim">Nothing yet.</li>`}</ul>`),
     ]));
-    page.append(shade(`Every problem CloudWall knows`, () => `${Object.keys(S.catalogue?.troubles || {}).length} problems, with what each means and what to do`, [known()]));
+    page.append(shade("Known problems", () => `${Object.keys(S.catalogue?.troubles || {}).length}, each with what it means and what to do`, [known()]));
   },
 };

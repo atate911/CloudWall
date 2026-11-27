@@ -2,7 +2,7 @@
 // doing right now under its name, so the rail alone answers "is everything all right?"; each page
 // opens with a picture of what it looks after and keeps its rare settings behind shades. Saved
 // settings wait for a restart, gathered in one dock at the bottom.
-import { $, el, esc, S, call, on, toast, waiting, restart, loadOverview, loadSettings, whenSignedOut, plural, pageState, save } from "./core.js";
+import { $, el, esc, S, call, on, toast, waiting, restart, loadOverview, loadSettings, whenSignedOut, plural, pageState, save, TITLES } from "./core.js";
 import { say } from "./words.js";
 import { icon } from "./icons.js";
 import { finder, reveal } from "./finder.js";
@@ -31,10 +31,8 @@ function rail() {
   nav.innerHTML = RAIL.map((p) => {
     if (!p) return `<hr>`;
     const st = p.id === "settings" ? ((S.settings?.strays || []).length + (S.settings?.left_out || []).length ? "warn" : "") : pageState(p.id);
-    let live = "";
-    try { live = p.live?.() || ""; } catch { /* the line waits for its data */ }
     return `<a href="#${p.id}" class="${current?.id === p.id ? "on" : ""} ${st}" ${current?.id === p.id ? 'aria-current="page"' : ""}>
-      ${icon(p.icon)}<span class="nav-name">${esc(p.title)}</span><span class="nav-live">${esc(live)}</span>${st ? `<i class="nav-mark ${st}" title="${st === "fail" ? "Something has stopped" : "Worth a look"}"></i>` : ""}</a>`;
+      ${icon(p.icon)}<span class="nav-name">${esc(TITLES[p.id])}</span>${st ? `<i class="nav-mark ${st}" title="${st === "fail" ? "Something here has stopped working" : "Something here needs a look"}"></i>` : ""}</a>`;
   }).join("");
   $("#version").textContent = S.overview ? `CloudWall ${S.overview.version}` : "";
 }
@@ -76,7 +74,7 @@ async function go() {
     const fresh = el(`<div class="page page-${page.id}"></div>`);
     await page.draw(fresh);
     main.replaceChildren(fresh);
-    document.title = `${page.title} · CloudWall control board`;
+    document.title = `${TITLES[page.id]}: CloudWall control board`;
     if (changed && !target) { main.focus({ preventScroll: true }); scrollTo({ top: 0 }); }
     rail(); dock();
     if (target) requestAnimationFrame(() => reveal(target));

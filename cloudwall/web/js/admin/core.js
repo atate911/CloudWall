@@ -167,6 +167,10 @@ export function ownFeed(p = house()) {
   return feeds.find(([label]) => /receiver/i.test(label))?.[1] || null;
 }
 
+// each page's name: the rail, the page's own title, the finder and All settings all say it this way
+export const TITLES = { home: "Overview", receiver: "Receiver", positions: "Feeds", places: "Location", routes: "Routes", look: "Display",
+                        access: "Access", safekeeping: "Backups", health: "Health", settings: "All settings", server: "System" };
+
 // which of the checks' parts each page looks after, for the rail's marks and each page's problems
 export const PARTS = {
   receiver: ["receiver", "tunnel"], positions: ["feeds"], places: ["home"], routes: ["routes"],

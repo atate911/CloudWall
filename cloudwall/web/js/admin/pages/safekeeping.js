@@ -2,11 +2,11 @@
 // it. The picture is when it was last copied and the copies along a month, with the one action
 // that matters most a button beside it; the disk as one bar of what fills it; where things are kept
 // waits under a shade.
-import { el, esc, S, call, toast, value, button, bytes, ago, when, day, plural, loadOverview } from "../core.js";
+import { el, esc, S, call, toast, value, button, bytes, ago, when, day, plural, loadOverview, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { diskBar } from "../draw.js";
 import { head, pageTroubles, copyable } from "../parts.js";
-import { stepper, text, shade, group } from "../controls.js";
+import { stepper, text, group, line, advanced } from "../controls.js";
 
 function strip(list) {
   const now = Date.now() / 1000, span = 30 * 86400, W = 600;
@@ -26,16 +26,12 @@ function fileName(name) {
 }
 
 export default {
-  id: "safekeeping", title: "Safekeeping", icon: "safekeeping",
-  live() {
-    const last = S.overview?.storage?.last_backup;
-    return last ? `backed up ${ago(last)}` : "never backed up";
-  },
+  id: "safekeeping", get title() { return TITLES.safekeeping; }, icon: "safekeeping",
   async draw(page) {
     const o = S.overview, st = o.storage, b = await call("backups");
     const last = b.backups[0];
     const stale = !last || Date.now() / 1000 - last.made > 14 * 86400;
-    page.append(head("Safekeeping", "The logbooks and settings, which can't be downloaded again, and copies of them."));
+    page.append(head(TITLES.safekeeping, "Backups of the settings and logbooks, restoring one, and disk use."));
     const t = pageTroubles("safekeeping");
     if (t) page.append(t);
 
@@ -67,18 +63,21 @@ export default {
     const copies = el(`<div class="copies">${b.backups.length ? `<ol class="copy-list">${b.backups.map((x, i) => `<li>
         <span class="copy-when"><b>${day(x.made)}</b> ${new Date(x.made * 1000).toLocaleTimeString([], { timeStyle: "short" })}${i === 0 ? ` <span class="tag">newest</span>` : ""}</span>
         <span class="copy-size">${bytes(x.size)}</span>
-        <a class="icon-btn" href="api/admin/backups/${encodeURIComponent(x.name)}" download title="Download ${esc(x.name)}">${icon("download")}<span class="sr">Download</span></a></li>`).join("")}</ol>` : `<p class="dim">None yet. The first is made with Back up now, or at the machine with <code>sudo cloudwall backup</code>.</p>`}</div>`);
-    page.append(group("The copies", `The last seven are kept here, in <code>${esc(b.folder)}</code>. Download one now and then: a copy on the same disk doesn't survive the disk.`, [copies]));
+        <a class="icon-btn" href="api/admin/backups/${encodeURIComponent(x.name)}" download title="Download ${esc(x.name)}">${icon("download")}<span class="sr">Download</span></a></li>`).join("")}</ol>` : `<p class="dim">None yet. Back up now makes the first, or at the machine: <code>sudo cloudwall backup</code>.</p>`}</div>`);
+    page.append(group("Backups", "The last seven are kept; keep a downloaded copy off this disk", [
+      line("Kept in", `<code>${esc(b.folder)}</code>`),
+      line("Copies", copies),
+      line("Restore", copyable(`sudo cloudwall restore ${b.folder}/${last?.name || "<file>"} --yes`)),
+    ]));
 
     const files = Object.entries(st.files || {}).sort((a, z) => z[1] - a[1]), biggest = Math.max(1, ...files.map((f) => f[1]));
-    if (files.length) page.append(group("What's kept", "", [el(`<ul class="kept">${files.map(([n, size]) => `<li><span><b>${esc(fileName(n))}</b><code>${esc(n)}</code></span><span class="kept-bar"><i style="width:${Math.max(2, size / biggest * 100)}%"></i></span><span>${bytes(size)}</span></li>`).join("")}</ul>`)]));
-
-    page.append(group("Putting a copy back", "At the machine, with the copy's file: it stops CloudWall, puts everything back as it was, and starts it again.", [copyable(`sudo cloudwall restore ${b.folder}/${last?.name || "<the file>"} --yes`)]));
-
-    page.append(shade("Where it's kept", () => `map downloads up to ${value("map", "cache_mb")} MB (${bytes(st.cache)} now); ${value("storage", "db_path") ? "logbooks in their own place" : "the install's own folders"}`, [
-      stepper("map", "cache_mb", { label: "Map downloads up to", step: 250, min: 100, unitLabel: "MB", presets: [[500], [2000], [5000]], says: (v) => `${bytes(st.cache)} now. Past ${v} MB, the oldest tiles go once a day.` }),
-      text("storage", "db_path", { label: "Logbook file", mono: true, empty: `The install's own: ${st.folder}` }),
-      text("storage", "cache_dir", { label: "Downloads folder", mono: true, empty: "The install's own" }),
+    page.append(group("Storage", "", [
+      files.length ? line("Logbooks", el(`<ul class="kept">${files.map(([n, size]) => `<li><span><b>${esc(fileName(n))}</b><code>${esc(n)}</code></span><span class="kept-bar"><i style="width:${Math.max(2, size / biggest * 100)}%"></i></span><span>${bytes(size)}</span></li>`).join("")}</ul>`)) : null,
+      stepper("map", "cache_mb", { label: "Map tile cache limit", step: 250, min: 100, unitLabel: "MB", presets: [[500], [2000], [5000]], says: (v) => `${bytes(st.cache)} used. Past ${v} MB, the oldest tiles are removed once a day.` }),
+      advanced(() => value("storage", "db_path") || value("storage", "cache_dir") ? "folders of your own" : "the install's own folders", [
+        text("storage", "db_path", { label: "Logbook file", mono: true, empty: `The install's own: ${st.folder}` }),
+        text("storage", "cache_dir", { label: "Cache folder", mono: true, empty: "The install's own" }),
+      ]),
     ]));
   },
 };

@@ -1,7 +1,7 @@
 // Finding the right place: one box at the top of the rail. Empty, it offers what people usually come
 // to do; typed into, it finds any setting by its name, what it does or its name in the file, and
 // any of those jobs; chosen, it opens the page, opens the shade the setting is under, and shows it.
-import { el, esc, S } from "./core.js";
+import { el, esc, S, TITLES } from "./core.js";
 import { icon } from "./icons.js";
 import { APART } from "./words.js";
 
@@ -43,11 +43,11 @@ function entries() {
   return out;
 }
 
-const PAGES = { settings: "All settings", places: "The house", positions: "Position feeds", routes: "Route lookups", look: "The wall", receiver: "Your receiver", access: "Who can see it", safekeeping: "Safekeeping", health: "Problems and alerts", server: "This server" };
+const PAGES = TITLES;
 
 export function finder() {
   const box = el(`<div class="finder" role="search">
-    <label class="finder-box">${icon("positions")}<input type="search" placeholder="Find a setting or a job" aria-label="Find a setting or a job" autocomplete="off" aria-controls="finder-list" aria-expanded="false"></label>
+    <label class="finder-box">${icon("positions")}<input type="search" placeholder="Search settings" aria-label="Search settings and tasks" autocomplete="off" aria-controls="finder-list" aria-expanded="false"></label>
     <ul class="finder-list" id="finder-list" role="listbox" hidden></ul></div>`);
   const input = box.querySelector("input"), list = box.querySelector("ul");
   let hits = [], at = 0;
@@ -64,7 +64,7 @@ export function finder() {
       }).filter(Boolean).sort((a, b) => b[0] - a[0]).slice(0, 9).map((x) => x[1]);
     }
     at = Math.min(at, Math.max(0, hits.length - 1));
-    list.innerHTML = (q ? "" : `<li class="finder-head">What people come here to do</li>`) + (hits.map((e, i) => `<li role="option" data-i="${i}" aria-selected="${i === at}">
+    list.innerHTML = (q ? "" : `<li class="finder-head">Common tasks</li>`) + (hits.map((e, i) => `<li role="option" data-i="${i}" aria-selected="${i === at}">
       ${icon(e.kind === "task" ? "check" : "info")}<span><b>${esc(e.label)}</b><small>${esc(e.sub ? `${e.sub}, on ${PAGES[e.page] || e.page}` : PAGES[e.page] || e.page)}</small></span></li>`).join("") || `<li class="finder-none">Nothing by that name. Every setting is listed on All settings.</li>`);
     list.hidden = false; input.setAttribute("aria-expanded", "true");
   };

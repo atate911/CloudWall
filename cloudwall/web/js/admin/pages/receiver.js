@@ -2,11 +2,11 @@
 // the house, the message rate, signal against noise), with the board's reading of those numbers in
 // words ("the gain looks right"); then its own live map and Coverage3D, as pages of this board; then
 // how it reaches this server. Without a receiver, the page is the way to connect one.
-import { el, esc, S, call, num, plural, ago, house, ownFeed, value } from "../core.js";
+import { el, esc, S, call, num, plural, ago, house, ownFeed, value, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { gauge, signalMeter, polar } from "../draw.js";
 import { head, pageTroubles, out, copyable } from "../parts.js";
-import { text, toggle, shade } from "../controls.js";
+import { text, toggle, group, advanced } from "../controls.js";
 
 let tab = "hearing";
 
@@ -35,7 +35,7 @@ function hearing(r) {
   return el(`<div class="rx">
     <section class="glass rx-hero">
       <figure class="rx-reach">${polar({ outline: r.outline, at, radiusNm: value("tracking", "radius_nm"), maxNow: m.max_nm })}
-        <figcaption><b>How far it hears</b> The shape is the farthest each direction has reached today; the dashed ring this minute's farthest; the small ring the wall's tracking radius.</figcaption></figure>
+        <figcaption><b>Range</b> Shape: the farthest position in each direction today. Dashed ring: the farthest this minute. Small ring: the tracking radius.</figcaption></figure>
       <div class="rx-dials">
         <figure>${gauge({ value: m.messages_s, max: 2000, unit: "a second", label: "Messages a second", zones: [[0, 100, "low"], [100, 2000, "good"]], fmt: (v) => num(v) })}<figcaption>Messages heard${m15.messages_s != null ? `; ${num(m15.messages_s)} a second over 15 minutes` : ""}</figcaption></figure>
         <figure>${signalMeter({ signal: m.signal, noise: m.noise, peak: m.peak })}<figcaption>Signal against noise, dBFS</figcaption></figure>
@@ -100,53 +100,40 @@ function copies(root) {
 
 function shares(r) {
   const home = r.home_url;
-  return el(`<section class="group">
-    <header><h2>Its own pages, and where it shares</h2><p>At home, the receiver's own setup and maps; anywhere, the sites it feeds.</p></header>
-    <div class="links">
-      ${home ? out(home, "Its setup page <small>adsb.im, at home</small>") : `<span class="link-off">Its setup page <small>set its address at home, below</small></span>`}
-      ${home ? out(`${home.replace(/\/$/, "")}:8080`, "SkyAware / tar1090 <small>at home</small>") : ""}
-      ${out("https://flightaware.com/adsb/stats/user/", "FlightAware statistics <small>sign in to see your site</small>")}
-      ${out("https://flightaware.com/adsb/piaware/claim", "Claim it on FlightAware <small>if it feeds as a guest</small>")}
-      ${out("https://www.flightradar24.com/account/data-sharing", "Flightradar24 data sharing <small>your feeder and its account</small>")}
-    </div>
-  </section>`);
+  return group("Links", "", [el(`<div class="links">
+      ${home ? out(home, "Setup page <small>adsb.im, on your home network</small>") : `<span class="link-off">Setup page <small>set its address at home, above</small></span>`}
+      ${home ? out(`${home.replace(/\/$/, "")}:8080`, "SkyAware / tar1090 <small>on your home network</small>") : ""}
+      ${out("https://flightaware.com/adsb/stats/user/", "FlightAware statistics")}
+      ${out("https://flightaware.com/adsb/piaware/claim", "Claim on FlightAware <small>if it feeds as a guest</small>")}
+      ${out("https://www.flightradar24.com/account/data-sharing", "Flightradar24 data sharing")}
+    </div>`)]);
 }
 
 function reaches(r, page) {
-  const g = el(`<section class="group">
-    <header><h2>How it reaches this server</h2><p>${r.reachable ? `Answering at <code>${esc(r.url)}</code>${r.receiver?.version ? `, ${esc(r.receiver.version)}` : ""}.` : `Not answering at <code>${esc(r.url)}</code>: ${esc(r.error || "no answer")}. Is the tunnel up? On the receiver: <code>sudo bash pi-tunnel.sh status</code>`}</p></header>
-  </section>`);
-  g.append(shade("Addresses", () => {
-    const u = value("receiver", "url"), h = value("receiver", "home_url");
-    return [u ? "web server set" : "web server worked out from the feeds", h ? "address at home set" : "no address at home"].join("; ");
-  }, [
-    text("receiver", "url", { label: "Its web server, from this machine", mono: true, empty: "Worked out from the first feed", saved: () => page.redraw() }),
-    text("receiver", "home_url", { label: "Its address at home", mono: true, empty: "Not set", saved: () => page.redraw() }),
-    text("receiver", "coverage_url", { label: "Coverage3D, from this machine", mono: true, empty: "Beside the receiver's", saved: () => page.redraw() }),
-  ], { cls: "inline" }));
-  return g;
+  return group("Connection", r.reachable ? `Answering${r.receiver?.version ? `: ${esc(r.receiver.version)}` : ""}` : `Not answering: ${esc(r.error || "no answer")}`, [
+    text("receiver", "url", { label: "Web server", mono: true, empty: "Worked out from the first feed", saved: () => page.redraw(), says: () => r.url ? `In use: <code>${esc(r.url)}</code>${r.reachable ? "" : ". Is the tunnel up? On the receiver: <code>sudo bash pi-tunnel.sh status</code>"}` : "" }),
+    text("receiver", "home_url", { label: "Address at home", mono: true, empty: "Not set", saved: () => page.redraw() }),
+    advanced(() => r.coverage ? "Coverage3D answering" : "Coverage3D beside the receiver's address", [
+      text("receiver", "coverage_url", { label: "Coverage3D", mono: true, empty: "Beside the receiver's", saved: () => page.redraw(), says: () => r.coverage_url ? `In use: <code>${esc(r.coverage_url)}</code>` : "" }),
+    ]),
+  ]);
 }
 
 export default {
-  id: "receiver", title: "Your receiver", icon: "receiver",
-  live() {
-    const rx = ownFeed();
-    if (!rx) return S.receiver?.reachable ? "answering" : value("receiver", "url") ? "set up" : "not connected";
-    return rx.down_since ? "not answering" : `${plural(rx.count, "aircraft")}, ${rx.lag_s != null ? rx.lag_s.toFixed(1) + " s behind" : "answering"}`;
-  },
+  id: "receiver", get title() { return TITLES.receiver; }, icon: "receiver",
   async draw(page) {
     const r = S.receiver = await call("receiver");
     page.redraw = async () => { const fresh = el(`<div class="page page-receiver"></div>`); await this.draw(fresh); page.replaceWith(fresh); };
     const rx = ownFeed(house());
     const status = !r.url ? "" : r.reachable ? `<span class="status ok">Answering</span>` : `<span class="status fail">Not answering</span>`;
-    page.append(head("Your receiver", r.url ? "The antenna at home: what it hears, how far, and how it reaches this server." : "Your own antenna at home, alongside the public feeds.", status));
+    page.append(head(TITLES.receiver, r.url ? "Your ADS-B receiver: reception, range, its live map and Coverage3D, and its connection to this server." : "Your own ADS-B receiver, used alongside the public feeds.", status));
     const t = pageTroubles("receiver");
     if (t) page.append(t);
     if (!r.url) { const g = connectGuide(page); copies(g); page.append(g); return; }
 
     const tabs = el(`<div class="tabs" role="tablist">
-      <button role="tab" data-tab="hearing">${icon("receiver")} What it hears</button>
-      <button role="tab" data-tab="map">${icon("places")} Its live map</button>
+      <button role="tab" data-tab="hearing">${icon("receiver")} Reception</button>
+      <button role="tab" data-tab="map">${icon("places")} Live map</button>
       <button role="tab" data-tab="coverage">${icon("positions")} Coverage3D</button></div>`);
     const body = el(`<div class="tab-body"></div>`);
     const show = () => {

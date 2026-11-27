@@ -2,10 +2,10 @@
 // the order they're tried, which one is answering now, your receiver joined to the public feed when
 // the two are combined, and what reaches the wall. Feeds are added from a short list of the free
 // ones (and your own receiver), not typed; how often they're asked waits under a shade.
-import { el, esc, S, house, ownFeed, value, save, ago, plural, num, toast } from "../core.js";
+import { el, esc, S, house, ownFeed, value, save, ago, plural, num, toast, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { head, pageTroubles } from "../parts.js";
-import { toggle, cards, stepper, shade, group } from "../controls.js";
+import { toggle, cards, stepper, group, advanced } from "../controls.js";
 
 const PRESETS = [
   { name: "Your receiver, through the tunnel", url: "http://127.0.0.1:18080/data/aircraft.json", own: true },
@@ -83,14 +83,9 @@ function editor(page) {
 }
 
 export default {
-  id: "positions", title: "Position feeds", icon: "feeds",
-  live() {
-    const p = house() || {};
-    if (!p.status?.ok) return "nothing arriving";
-    return `${plural(p.aircraft || 0, "aircraft")} from ${p.status.source || "the feeds"}`;
-  },
+  id: "positions", get title() { return TITLES.positions; }, icon: "feeds",
   async draw(page) {
-    page.append(head("Position feeds", "Where the aircraft's positions come from: tried in order, the next taking over when one stops answering."));
+    page.append(head(TITLES.positions, "Where aircraft positions come from: the feeds in the order they're tried, and how often they're asked."));
     const t = pageTroubles("positions");
     if (t) page.append(t);
     let hero = chain(value("source", "urls") || [], value("source", "merge"));
@@ -99,21 +94,20 @@ export default {
     page.repaint = () => { const fresh = chain(value("source", "urls") || [], value("source", "merge")); hero.replaceWith(fresh); hero = fresh; ed.render(); };
 
     const urls = value("source", "urls") || [];
-    page.append(group("The feeds, in order", "Your own receiver goes first. The free feeds ask for nothing but fair use.", [
+    page.append(group("Sources", "Tried in order; the next takes over when one stops answering", [
       ed,
-      urls.some(isOwn) ? toggle("source", "merge", { label: "Combine your receiver with the public feeds", on: "Your receiver and the first public feed that answers are both asked every update, and combined: your receiver's fresher position wins where both see an aircraft.", off: "Only the first feed that answers is used: your receiver alone while it works.", saved: () => page.repaint() }) : null,
+      urls.some(isOwn) ? toggle("source", "merge", { label: "Combine your receiver with the public feeds", on: "Your receiver and the first public feed that answers are both asked every update and combined; your receiver's position wins where both see an aircraft.", off: "Only the first feed that answers is used.", saved: () => page.repaint() }) : null,
     ]));
 
-    page.append(group("With no screen open", "", [
-      cards("tracking", "when_idle", { label: "When nobody is watching", options: [
-        { value: "log", title: "Keep the logbook", body: "Asks the free feed every 15 s, so every flyover is still logged. No paid lookups, no weather.", icon: "logbook" },
-        { value: "pause", title: "Pause", body: "Asks nothing at all until a screen opens. Flyovers meanwhile go unlogged.", icon: "moon" },
+    page.append(group("Polling", "", [
+      stepper("tracking", "poll_seconds", { label: "Ask the feeds every", min: 1, max: 60, presets: [[3], [5], [10]], says: (v) => `About ${num(86400 / v)} requests a day to each feed while a screen is open.` }),
+      cards("tracking", "when_idle", { label: "With no screen open", options: [
+        { value: "log", title: "Keep the logbook", body: "Asks the free feed every 15 s, so every flyover is still logged. No paid lookups or weather.", icon: "logbook" },
+        { value: "pause", title: "Pause", body: "Asks nothing until a screen opens. Flyovers meanwhile aren't logged.", icon: "moon" },
       ] }),
-    ]));
-
-    page.append(shade("Fine-tuning", () => `asked every ${value("tracking", "poll_seconds")} s; unwatched after ${value("tracking", "idle_after_seconds")} s`, [
-      stepper("tracking", "poll_seconds", { min: 1, max: 60, presets: [[3], [5], [10]], says: (v) => `About ${num(86400 / v)} requests a day to each feed while a screen is open.` }),
-      stepper("tracking", "idle_after_seconds", { min: 15, max: 3600, step: 15, says: (v) => `A screen that hasn't asked for ${v} s counts as closed.` }),
+      advanced(() => `a screen counts as closed after ${value("tracking", "idle_after_seconds")} s`, [
+        stepper("tracking", "idle_after_seconds", { label: "No screen open after", min: 15, max: 3600, step: 15, says: (v) => `A screen that hasn't asked for ${v} s counts as closed.` }),
+      ]),
     ]));
   },
 };

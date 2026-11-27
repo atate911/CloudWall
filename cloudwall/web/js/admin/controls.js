@@ -353,12 +353,30 @@ export function shade(title, summary, children, opt = {}) {
   return d;
 }
 
-/** A group of related settings under one heading, with a line on what they're for. */
+/** A group of related settings: a titled panel with a row for each. `about`: a few plain words in its
+ *  header, if they're needed. `aside`: an element shown beside the rows (a live picture). */
 export function group(title, about, children, opt = {}) {
-  const g = el(`<section class="group ${opt.cls || ""}">${title ? `<header><h2>${esc(title)}</h2>${about ? `<p>${about}</p>` : ""}</header>` : ""}<div class="group-body"></div></section>`);
-  g.querySelector(".group-body").append(...children.filter(Boolean));
+  const g = el(`<section class="group ${opt.aside ? "with-aside" : ""} ${opt.cls || ""}">${title ? `<header><h2>${esc(title)}</h2>${about ? `<p>${about}</p>` : ""}</header>` : ""}<div class="group-body"></div></section>`);
+  const body = g.querySelector(".group-body");
+  if (opt.aside) {
+    const aside = el(`<div class="group-aside"></div>`), rows = el(`<div class="group-rows"></div>`);
+    aside.append(opt.aside); rows.append(...children.filter(Boolean));
+    body.append(aside, rows);
+  } else body.append(...children.filter(Boolean));
   return g;
 }
+
+/** A row that isn't one setting: a name, then what it shows (HTML or an element) and any actions. */
+export function line(name, content, actions = []) {
+  const r = el(`<div class="line"><span class="line-name">${esc(name)}</span><div class="line-body"></div></div>`);
+  const body = r.querySelector(".line-body");
+  if (typeof content === "string") body.insertAdjacentHTML("beforeend", content); else if (content) body.append(content);
+  if (actions.length) { const a = el(`<div class="line-acts"></div>`); a.append(...actions.filter(Boolean)); body.append(a); }
+  return r;
+}
+
+/** The rarely-needed settings of a group, under an Advanced row whose cover says how they stand. */
+export const advanced = (summary, children) => shade("Advanced", summary, children);
 
 // Whenever the settings are read again (a save, a restart), every control on the page and every
 // shade's cover shows them as they now are: two controls of one setting (the map's ring and the

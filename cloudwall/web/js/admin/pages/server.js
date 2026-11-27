@@ -1,7 +1,7 @@
 // This server: CloudWall itself. How long it has run and how (a service that starts itself again,
 // or started by hand), its version, the restart; then the log, live; then every setting as the file
 // has it, for when you know exactly what you're after; then what to type at the machine.
-import { el, esc, S, call, toast, restart, lasted, when, plural, button } from "../core.js";
+import { el, esc, S, call, toast, restart, lasted, when, plural, button, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { head, pageTroubles, copyable } from "../parts.js";
 import { group } from "../controls.js";
@@ -27,11 +27,10 @@ function log() {
 }
 
 export default {
-  id: "server", title: "This server", icon: "server",
-  live() { return S.overview ? `up ${lasted(Date.now() / 1000 - S.overview.started)}` : ""; },
+  id: "server", get title() { return TITLES.server; }, icon: "server",
   async draw(page) {
     const o = S.overview;
-    page.append(head("This server", "CloudWall itself: how it runs, its log, and its settings file."));
+    page.append(head(TITLES.server, "The service, its log, and the settings file."));
     const t = pageTroubles("server");
     if (t) page.append(t);
 
@@ -51,16 +50,16 @@ export default {
     if (!o.under_systemd) hero.querySelector(".srv-act").append(el(`<span class="dim small">Started by hand: stop it and start it again at the machine.</span>`));
     page.append(hero);
 
-    page.append(group("The log", "What CloudWall has said lately, newest at the bottom. The full log is at the machine: <code>journalctl -u cloudwall</code>.", [log()]));
+    page.append(group("Log", "Newest at the bottom; the full log: <code>journalctl -u cloudwall</code>", [log()]));
 
     const odd = (S.settings.strays || []).length + (S.settings.left_out || []).length;
     const fileBits = [el(`<div class="file-line">${o.settings_file ? copyable(o.settings_file).outerHTML : `<p class="dim">None: CloudWall is running on its built-in defaults.</p>`}</div>`),
       el(`<p class="file-go">${icon("list")} <a href="#settings">Every setting, to read through or change</a>${odd ? `; <a href="#settings" class="warn-link">${plural(odd, "line")} in the file ${odd === 1 ? "does" : "do"} nothing</a>` : ""}</p>`)];
-    page.append(group("The settings file", "Every page of this board writes to it. It can be edited by hand too: CloudWall reads it when it starts, and keeps the last that started as <code>.good</code>.", fileBits));
+    page.append(group("Settings file", "Read when CloudWall starts; the last one that started is kept as <code>.good</code>", fileBits));
     page.querySelectorAll(".file-line .icon-btn").forEach((b) => b.onclick = async () => { try { await navigator.clipboard.writeText(o.settings_file); toast("Copied"); } catch { toast("Select it and copy it by hand", true); } });
 
 
-    page.append(group("At the machine", "For what a browser can't do.", [el(`<dl class="cmds">
+    page.append(group("Commands", "Run at the machine", [el(`<dl class="cmds">
       <dt>Check everything, and put right what it can with you</dt><dd data-copy="sudo cloudwall doctor --fix"></dd>
       <dt>Update to the latest version (backs up first)</dt><dd data-copy="sudo python3 -m cloudwall upgrade"></dd>
       <dt>Go back to the version before</dt><dd data-copy="sudo cloudwall rollback"></dd>

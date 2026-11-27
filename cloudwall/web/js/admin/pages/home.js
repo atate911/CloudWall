@@ -1,7 +1,7 @@
 // Home: CloudWall as one picture. The sky on the left, the ways positions reach the server in the
 // middle, what the server feeds on the right, each part lit by how it is doing and each a door to
 // its page. Under it, only what needs doing; nothing to set here.
-import { el, esc, S, sky, problems, house, ownFeed, ago, lasted, num, plural, button, runDoctor, call, toast, loadOverview, value, on } from "../core.js";
+import { el, esc, S, sky, problems, house, ownFeed, ago, lasted, num, plural, button, runDoctor, call, toast, loadOverview, value, on, TITLES } from "../core.js";
 import { setup } from "../words.js";
 import { icon } from "../icons.js";
 import { scope, timeline } from "../draw.js";
@@ -55,13 +55,13 @@ function says(id) {
   return ["off", "", "", "home"];
 }
 
-const NAMES = { receiver: "Your receiver", feeds: "Public feeds", routes: "Route lookups", core: "CloudWall", screens: "Screens", logbook: "Logbook", alerts: "Alerts" };
+const NAMES = { receiver: "Receiver", feeds: "Public feeds", routes: "Routes", core: "CloudWall", screens: "Screens", logbook: "Logbook", alerts: "Alerts" };
 const ICONS = { receiver: "receiver", feeds: "feeds", routes: "routes", core: "server", screens: "screens", logbook: "logbook", alerts: "bell" };
 
 function node(id) {
   if (id === "sky") {
     return `<a class="node node-sky" href="#places" style="grid-area:sky" data-area="sky" title="The sky around the house now: the house, its tracking radius and the overhead circle">
-      <span class="node-name">${icon("sky")} The sky now</span><canvas class="node-scope" aria-hidden="true"></canvas><span class="node-sub sky-say">…</span></a>`;
+      <span class="node-name">${icon("sky")} Live traffic</span><canvas class="node-scope" aria-hidden="true"></canvas><span class="node-sub sky-say">…</span></a>`;
   }
   const [st, val, sub, page] = says(id);
   return `<a class="node ${st}" href="#${page}" style="grid-area:${id}" data-area="${id}" data-node="${id}">
@@ -91,16 +91,12 @@ function wire(map) {
 }
 
 export default {
-  id: "home", title: "Home", icon: "home",
-  live() {
-    const n = problems().length;
-    return n ? `${plural(n, "thing")} to look at` : "All well";
-  },
+  id: "home", get title() { return TITLES.home; }, icon: "home",
   async draw(page) {
     const list = problems();
     const major = list.find((f) => f.major && f.state === "fail");
     const p = house() || {};
-    const title = major ? "Something has stopped" : list.length ? `${plural(list.length, "thing")} to look at` : "All well";
+    const title = major ? "Not working" : list.length ? plural(list.length, "open problem") : "Everything is working";
     const line = major ? esc(major.summary)
       : `${p.status?.ok ? `${plural(p.aircraft, "aircraft")} in range, from ${esc(p.status.source || "the feeds")} ${ago(p.status.updated)}` : "No positions arriving"}. CloudWall checks itself every 30 seconds.`;
     page.append(head(title, line));
@@ -114,7 +110,7 @@ export default {
       const n = (st.aircraft || []).filter((a) => !a.on_ground && a.dist <= st.tracking.radius_nm).length;
       say.textContent = `${plural(n, "aircraft")} within ${num(st.tracking.radius_nm, 1)} nm` + (st.hero ? `, ${st.hero.callsign || st.hero.hex} overhead` : "");
       const said = page.querySelector(".setup-said");
-      if (said && !said.dataset.sky) { said.dataset.sky = "1"; said.innerHTML = `<header><h2>How it's set up</h2><a href="#settings">Every setting</a></header>${setup()}`; }
+      if (said && !said.dataset.sky) { said.dataset.sky = "1"; said.innerHTML = `<header><h2>Setup</h2><a href="#settings">All settings</a></header>${setup()}`; }
     };
     update();
     // the receiver's own answer, when one is set up but isn't feeding positions (it takes a moment)
@@ -130,19 +126,19 @@ export default {
 
     // what needs doing, and nothing else
     if (list.length) {
-      const needs = el(`<section class="needs"><h2>What needs you</h2></section>`);
+      const needs = el(`<section class="needs"><h2>Open problems</h2></section>`);
       list.forEach((f) => needs.append(trouble(f)));
       page.append(needs);
     }
 
     // the setup in words: a sentence that reads wrong is the thing to click
-    const said = el(`<section class="setup-said"><header><h2>How it's set up</h2><a href="#settings">Every setting</a></header>${setup()}</section>`);
+    const said = el(`<section class="setup-said"><header><h2>Setup</h2><a href="#settings">All settings</a></header>${setup()}</section>`);
     page.append(said);
-    on("settings", () => { if (said.isConnected) said.innerHTML = `<header><h2>How it's set up</h2><a href="#settings">Every setting</a></header>${setup()}`; });
+    on("settings", () => { if (said.isConnected) said.innerHTML = `<header><h2>Setup</h2><a href="#settings">All settings</a></header>${setup()}`; });
 
     const lower = el(`<section class="home-lower">
-      <div class="panel week"><h2>The last seven days</h2><div class="week-chart"></div><p class="dim small">Each bar is a problem, from when it started to when it ended. <a href="#health">Every problem, and alerts</a></p></div>
-      <div class="panel doings"><h2>Things to do</h2><div class="doings-list"></div></div></section>`);
+      <div class="panel week"><h2>Last 7 days</h2><div class="week-chart"></div><p class="dim small">Each bar is a problem, from when it started to when it ended. <a href="#health">Health</a></p></div>
+      <div class="panel doings"><h2>Actions</h2><div class="doings-list"></div></div></section>`);
     lower.querySelector(".week-chart").innerHTML = timeline(S.overview.incidents || [], 7);
     const doings = lower.querySelector(".doings-list");
     const last = S.overview.storage?.last_backup;
@@ -150,7 +146,7 @@ export default {
       doing("logbook", "Back up now", last ? `Last backed up ${ago(last)}` : "Never backed up yet", button("Back up", async () => { const got = await call("backups", {}); toast(got.said); await loadOverview(); this.tick(); }, "small")),
       doing("problems", "Check the whole machine", "The settings, the service, every feed, backups, the tunnel and Caddy", button("Check", runDoctor, "small quiet")),
       doing("screens", "Open the wall", "The board as viewers see it", el(`<a class="btn small quiet" href="./" target="_blank" rel="noopener">Open${icon("open")}</a>`)),
-      doing("look", "Open the wall panel", "The kiosk screen, as set on The wall", el(`<a class="btn small quiet" href="kiosk" target="_blank" rel="noopener">Open${icon("open")}</a>`)),
+      doing("look", "Open the wall panel", "The kiosk screen, as set on Display", el(`<a class="btn small quiet" href="kiosk" target="_blank" rel="noopener">Open${icon("open")}</a>`)),
     );
     page.append(lower);
   },

@@ -448,7 +448,7 @@ class Admin:
                 said = "reopened every logbook file"
             return {"ok": True, "said": said or "nothing needed doing"}
         if name == "restart-service":
-            raise ValueError("use Restart on the control board's This server page")
+            raise ValueError("use Restart on the control board's System page")
         if root:
             if name not in helper.ALLOWED:
                 raise ValueError(f"{words}: do this at the machine (`sudo cloudwall doctor --fix`)")

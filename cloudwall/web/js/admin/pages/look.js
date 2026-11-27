@@ -2,11 +2,11 @@
 // settings do (before the restart that makes them its own); quiet hours are an arc on a day's dial;
 // map styles are chosen by looking at the house's own map in each. The layers drawn on the radar
 // are switches with what each shows; the maps seldom changed and the downloads wait under shades.
-import { el, esc, S, sky, setting, value, num } from "../core.js";
+import { el, esc, S, sky, setting, value, num, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { tileAt } from "../map.js";
 import { head, pageTroubles } from "../parts.js";
-import { pictures, segmented, toggle, slider, stepper, text, secret, shade, group, custom, select } from "../controls.js";
+import { pictures, segmented, toggle, slider, stepper, text, secret, group, custom, select, advanced } from "../controls.js";
 
 const VIEWS = {
   card: { label: "The flight card", art: `<svg viewBox="0 0 120 68"><rect class="a-scr" x="1" y="1" width="118" height="66" rx="5"/><path class="a-ink" d="M14 18h48M14 27h30"/><path class="a-dim" d="M14 44h80M14 52h64"/><path class="a-plane" d="M92 14l4 4-9 6 2 12-3 2-5-10-6 6 .6 4-2 2-2.6-5.4L65 33l2-2 4 .6 6-6-10-5 2-3 12 2z"/></svg>` },
@@ -28,7 +28,7 @@ function art(layer, z, home) {
 // -- the wall panel, live ---------------------------------------------------------------------------
 function preview() {
   const box = el(`<figure class="panel-preview"><div class="bezel"><div class="screen"><iframe title="The wall panel, as it is now" tabindex="-1" aria-hidden="true"></iframe></div></div>
-    <figcaption><span class="live-dot"></span>The wall panel now, with the settings beside it<a class="out" href="kiosk" target="_blank" rel="noopener">Open it${icon("open")}</a></figcaption></figure>`);
+    <figcaption><span class="live-dot"></span>Live<a class="out" href="kiosk" target="_blank" rel="noopener">Open the wall panel${icon("open")}</a></figcaption></figure>`);
   const frame = box.querySelector("iframe"), screen = box.querySelector(".screen");
   const fit = () => { const w = screen.clientWidth; frame.style.transform = `scale(${w / 1280})`; screen.style.height = `${w * 720 / 1280}px`; };
   new ResizeObserver(fit).observe(screen);
@@ -94,65 +94,62 @@ function quietDial() {
 }
 
 export default {
-  id: "look", title: "The wall", icon: "look",
-  live() {
-    const v = value("kiosk", "view"), st = value("map", "style");
-    return v ? `${STYLES.find((s) => s[0] === st)?.[1] || st} map; panel: ${VIEWS[v]?.label.toLowerCase() || v}` : "";
-  },
+  id: "look", get title() { return TITLES.look; }, icon: "look",
   async draw(page) {
     const home = (S.sky || await sky())?.home;
-    page.append(head("The wall", "How the screens look: the wall panel, the map under the radar, and what's drawn on it."));
+    page.append(head(TITLES.look, "The wall panel, the maps under the radar and the route, and the layers drawn on the radar."));
     const t = pageTroubles("look");
     if (t) page.append(t);
 
-    // the wall panel: the picture and its settings side by side
+    // the wall panel: its settings beside it, live
     const pv = preview();
-    const panel = el(`<section class="panel-hero"><div class="panel-left"></div><div class="panel-right"></div></section>`);
-    panel.querySelector(".panel-left").append(pv, quietDial());
     const places = (S.overview.places || []).map((p, i) => [i ? p.name : "", i ? p.name : `${p.name} (the house)`]);
-    panel.querySelector(".panel-right").append(...[
-      pictures("kiosk", "view", { label: "What the wall panel shows", options: Object.entries(VIEWS).map(([v, o]) => ({ value: v, label: o.label, art: o.art })), cls: "views", preview: (v) => pv.show({ view: v }),
-        says: (v) => v === "card" ? "The aircraft overhead fills the screen; between aircraft, what's next." : "The flight card on one side; on the other, " + { radar: "the radar.", map: "the map.", sky: "the sky as you'd look up at it." }[v] }),
-      segmented("kiosk", "radar", { label: "Radar drawn as", options: [["chart", "A chart"], ["atc", "An ATC screen"]], preview: (v) => pv.show({ radar: v }) }),
-      segmented("kiosk", "range_nm", { label: "Radar reaches", options: [[0, `${num(value("tracking", "radius_nm"), 1)} nm`], [20, "20 nm"], [30, "30 nm"]], preview: (v) => pv.show({ range_nm: v }), says: (v) => +v ? "" : "The tracking radius, set on The house." }),
+    page.append(group("Wall panel", "The kiosk screen at /kiosk", [
+      pictures("kiosk", "view", { label: "Layout", options: Object.entries(VIEWS).map(([v, o]) => ({ value: v, label: o.label, art: o.art })), cls: "views", preview: (v) => pv.show({ view: v }),
+        says: (v) => v === "card" ? "The aircraft overhead fills the screen; between aircraft, what's next." : "The flight card, with " + { radar: "the radar", map: "the map", sky: "the sky" }[v] + " beside it." }),
+      segmented("kiosk", "radar", { label: "Radar style", options: [["chart", "Chart"], ["atc", "ATC screen"]], preview: (v) => pv.show({ radar: v }) }),
+      segmented("kiosk", "range_nm", { label: "Radar range", options: [[0, `${num(value("tracking", "radius_nm"), 1)} nm`], [20, "20 nm"], [30, "30 nm"]], preview: (v) => pv.show({ range_nm: v }), says: (v) => +v ? "" : "The tracking radius, set on Location." }),
       segmented("kiosk", "density", { label: "Labels", options: [["simple", "What matters"], ["detailed", "Every aircraft"]], preview: (v) => pv.show({ density: v }) }),
       toggle("kiosk", "tracks", { label: "Tracks", on: "The selected aircraft's track, and where each will be in a minute.", off: "Aircraft only, no lines.", preview: (v) => pv.show({ tracks: v }) }),
-      places.length > 1 ? select("kiosk", "place", { label: "Which place", options: places }) : null,
-    ].filter(Boolean));
-    page.append(panel);
+      places.length > 1 ? select("kiosk", "place", { label: "Place", options: places }) : null,
+      quietDial(),
+    ], { aside: pv, cls: "panel-group" }));
     pv.show();
 
     // the map under the radar, chosen by looking at it
     const opacityShow = (v) => page.querySelector(".styles")?.style.setProperty("--map-strength", v);
-    page.append(group("The map under the radar", "On every screen's chart-style radar. Each picture is your own area in that style.", [
+    page.append(group("Radar map", "Under the chart-style radar on every screen", [
       pictures("map", "style", { label: "Map", cls: "styles", options: STYLES.map(([v, label, layer, z]) => ({ value: v, label, art: art(layer, z, home) })),
-        says: (v) => ["sectional", "terminal", "ifr-low", "ifr-high"].includes(v) ? "An FAA chart: the airspace, airways and airports as pilots see them." : v === "off" ? "The radar alone, rings and aircraft." : "" }),
-      slider("map", "opacity", { label: "How strongly it shows", min: 10, max: 100, step: 5, scale: 100, format: (v) => `${v}%`, preview: opacityShow, says: (v) => v < 0.35 ? "Faint: the aircraft stand out." : v > 0.7 ? "Strong: the map competes with the aircraft." : "" }),
+        says: (v) => ["sectional", "terminal", "ifr-low", "ifr-high"].includes(v) ? "An FAA chart: airspace, airways and airports." : v === "off" ? "The radar alone: rings and aircraft." : "" }),
+      slider("map", "opacity", { label: "Strength", min: 10, max: 100, step: 5, scale: 100, format: (v) => `${v}%`, preview: opacityShow, says: (v) => v < 0.35 ? "Faint: the aircraft stand out." : v > 0.7 ? "Strong: the map competes with the aircraft." : "" }),
+      advanced(() => value("map", "url")?.set ? "a tile service of your own" : "the maps above", [
+        secret("map", "url", { label: "Other tile service", unsetLabel: "None: the maps above", add: "Use one", placeholder: "https://…/{z}/{x}/{y}.png" }),
+        text("map", "attribution", { label: "Its credit", empty: "None" }),
+      ]),
     ]));
     opacityShow(value("map", "opacity"));
 
-    // what's drawn on the radar: switches, three across
-    page.append(group("Drawn on the radar too", "Free data, fetched only while a screen is open.", [
-      el(`<div class="switch-row"></div>`),
+    page.append(group("Radar layers", "Free data, fetched only while a screen is open", [
+      toggle("extras", "military", { label: "Military aircraft", on: "Military jets that send their altitude but no position, listed beside the radar.", off: "Not shown." }),
+      toggle("extras", "tfr", { label: "Flight restrictions", on: "The FAA's temporary flight restrictions, on the radar and the weather.", off: "Not shown." }),
+      toggle("extras", "contrails", { label: "Contrail forecast", on: "Whether aircraft overhead will leave contrails, from upper-air temperature and humidity.", off: "Not shown." }),
+      advanced(() => `military within ${value("extras", "military_radius_nm")} nm; restrictions within ${value("extras", "tfr_radius_nm")} nm`, [
+        stepper("extras", "military_radius_nm", { label: "Military within", step: 5, min: 5, max: 250 }),
+        stepper("extras", "tfr_radius_nm", { label: "Restrictions within", step: 5, min: 5, max: 250 }),
+        text("extras", "military_url", { label: "Military feed", mono: true }),
+      ]),
     ]));
-    page.querySelector(".switch-row").append(
-      toggle("extras", "military", { label: "Military nearby", labelHtml: `${icon("military")} Military nearby`, on: "Military jets that send their height but no position, listed beside the radar.", off: "" }),
-      toggle("extras", "tfr", { label: "Flight restrictions", labelHtml: `${icon("tfr")} Flight restrictions`, on: "The FAA's temporary flight restrictions, on the radar and the weather.", off: "" }),
-      toggle("extras", "contrails", { label: "Contrail forecast", labelHtml: `${icon("contrail")} Contrail forecast`, on: "Whether aircraft overhead will leave trails, from the upper air's cold and damp.", off: "" }),
-      toggle("logos", "enabled", { label: "Airline logos", labelHtml: `${icon("logo")} Airline logos`, on: "On the flight card, downloaded once per airline.", off: "" }),
-    );
 
-    page.append(shade("The other maps", () => `the route over ${STYLES.find((s) => s[0] === value("map", "route"))?.[1].toLowerCase() || value("map", "route")}; ${value("map", "atc") && value("map", "atc") !== "off" ? `the ATC radar over the ${STYLES.find((s) => s[0] === value("map", "atc"))?.[1] || value("map", "atc")} chart` : "nothing under the ATC radar"}`, [
-      pictures("map", "route", { label: "Behind the flight card's route", cls: "styles small", options: STYLES.filter(([v]) => ["satellite", "light", "dark", "streets", "osm", "off"].includes(v)).map(([v, label, layer]) => ({ value: v, label, art: art(layer, 5, home) })) }),
-      pictures("map", "atc", { label: "Under the ATC-style radar", cls: "styles small", options: STYLES.filter(([v]) => ["off", "ifr-low", "ifr-high", "sectional", "terminal"].includes(v)).map(([v, label, layer, z]) => ({ value: v, label: v === "off" ? "Nothing (as a controller's)" : label, art: art(layer, z, home) })) }),
+    page.append(group("Other maps", "", [
+      pictures("map", "route", { label: "Route map", cls: "styles small", options: STYLES.filter(([v]) => ["satellite", "light", "dark", "streets", "osm", "off"].includes(v)).map(([v, label, layer]) => ({ value: v, label, art: art(layer, 5, home) })),
+        says: () => "Behind the route on the flight card." }),
+      pictures("map", "atc", { label: "ATC radar chart", cls: "styles small", options: STYLES.filter(([v]) => ["off", "ifr-low", "ifr-high", "sectional", "terminal"].includes(v)).map(([v, label, layer, z]) => ({ value: v, label: v === "off" ? "None" : label, art: art(layer, z, home) })),
+        says: () => "Under the ATC-style radar; none is how a controller's screen looks." }),
     ]));
-    page.append(shade("Distances and sources", () => `military within ${value("extras", "military_radius_nm")} nm; restrictions within ${value("extras", "tfr_radius_nm")} nm${value("map", "url")?.set ? "; own tile service" : ""}`, [
-      stepper("extras", "military_radius_nm", { label: "Military within", step: 5, min: 5, max: 250 }),
-      stepper("extras", "tfr_radius_nm", { label: "Restrictions within", step: 5, min: 5, max: 250 }),
-      text("extras", "military_url", { label: "Military feed", mono: true }),
-      text("logos", "url", { label: "Logo source", mono: true }),
-      secret("map", "url", { label: "Another tile service", unsetLabel: "None: the maps above", add: "Use one", placeholder: "https://…/{z}/{x}/{y}.png" }),
-      text("map", "attribution", { label: "Its credit", empty: "None" }),
+
+    page.append(group("Flight card", "", [
+      toggle("logos", "enabled", { label: "Airline logos", on: "Shown on the flight card, downloaded once per airline.", off: "Not shown." }),
+      advanced(() => "logo source", [text("logos", "url", { label: "Logo source", mono: true })]),
     ]));
   },
 };

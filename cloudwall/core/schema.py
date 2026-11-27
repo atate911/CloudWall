@@ -43,13 +43,13 @@ def _s(name, label, page, about, *settings):
 
 S = Setting
 SECTIONS = (
-    _s("home", "The house", "places", "Where the sky is watched from: the board centres on it, and an aircraft over it is logged.",
+    _s("home", "House", "places", "Where the sky is watched from: the board centres on it, and an aircraft over it is logged.",
        S("name", "Name", "What the house is called on the screens and in the menu of places.", example="Home"),
        S("lat", "Latitude", "North of the equator in decimal degrees (negative south). Your house's, to four places is enough.", "°", "45.5900"),
        S("lon", "Longitude", "East of Greenwich in decimal degrees (negative west: the Americas).", "°", "-122.4740"),
        S("zip", "ZIP code", "Instead of latitude and longitude: the centre of a US ZIP code's area. Used only when lat and lon are left out.", example="98683"),
        S("elevation_ft", "Ground elevation", "The ground's height above sea level, for how high aircraft are above the house. Left out: the airport's.", "ft", "100", advanced=True)),
-    _s("airport", "The local airport", "places", "Arriving and departing labels, the runways in use, landing order and the weather come from it.",
+    _s("airport", "Airport", "places", "Arriving and departing labels, the runways in use, landing order and the weather come from it.",
        S("icao", "Airport", "Its ICAO code, or auto for the nearest large airport within 30 nm (else the nearest with airline service).", example="KPDX")),
     _s("tracking", "Tracking", "places", "How far out the board looks, what counts as overhead, and how often the feed is asked.",
        S("radius_nm", "Tracking radius", "How far out the board, the flight card and the logbook look. The radar can be set to look further.", "nm", "15"),
@@ -90,14 +90,14 @@ SECTIONS = (
     _s("logos", "Airline logos", "look", "Logos on the flight card, downloaded once per airline.",
        S("enabled", "Show logos", "Fetch and show airline logos."),
        S("url", "Logo source", "Where logos come from ({iata} is the airline's code).", advanced=True)),
-    _s("extras", "More free data", "look", "Fetched only while a screen is open.",
+    _s("extras", "Radar layers", "look", "Fetched only while a screen is open.",
        S("military", "Military heard", "Military jets nearby that send their altitude but no position."),
        S("military_radius_nm", "Military within", "How far out to list them.", "nm", "40", advanced=True),
        S("military_url", "Military feed", "Where they come from.", advanced=True),
        S("tfr", "Flight restrictions", "Temporary flight restrictions from the FAA, on the radar and the Weather tab."),
        S("tfr_radius_nm", "Restrictions within", "How far out to show them.", "nm", "30", advanced=True),
        S("contrails", "Contrail forecast", "Whether aircraft overhead leave contrails, from upper-air temperature and humidity.")),
-    _s("kiosk", "The wall panel", "look", "The wall panel (/kiosk) has no buttons, so how it looks is set here.",
+    _s("kiosk", "Wall panel", "look", "The wall panel (/kiosk) has no buttons, so how it looks is set here.",
        S("place", "Place", "Which place it shows: a place's name; empty for the house."),
        S("view", "Beside the card", "card: the aircraft overhead across the whole screen; radar, map or sky beside it."),
        S("radar", "Radar style", "chart, or atc to draw it like an air traffic control screen."),
@@ -105,14 +105,14 @@ SECTIONS = (
        S("range_nm", "Radar range", "0 for the tracking radius, or 20 or 30 to see further.", "nm", "0"),
        S("density", "Labels", "simple names the aircraft that matter; detailed every one."),
        S("quiet", "Quiet hours", "Hours when it shows only a dim clock and what's next, waking for something coming over, an emergency or a tap.", example="23:00-06:30")),
-    _s("receiver", "Your receiver", "receiver", "Your own ADS-B receiver, its live map and Coverage3D, as the board shows them.",
+    _s("receiver", "Receiver", "receiver", "Your own ADS-B receiver, its live map and Coverage3D, as the board shows them.",
        S("url", "Its web server", "Where your receiver's web server (tar1090) answers from this machine. Empty: worked out from "
          "the first feed when combining is on (the tunnel's http://127.0.0.1:18080).", example="http://127.0.0.1:18080"),
        S("coverage_url", "Coverage3D", "Where Coverage3D answers from this machine. Empty: beside the receiver's (through the "
          "tunnel, http://127.0.0.1:18090).", example="http://127.0.0.1:18090", advanced=True),
        S("home_url", "Its address at home", "The receiver's address on your home network (adsb.im's setup page and its own "
          "maps). The board links to these, for use at home; it never opens them to the internet.", example="http://192.168.3.3")),
-    _s("server", "Access", "access", "Who can reach CloudWall, and how.",
+    _s("server", "Network", "access", "Who can reach CloudWall, and how.",
        S("host", "Listen on", "0.0.0.0 for every address (a home network); 127.0.0.1 for this machine only (behind Caddy or a tunnel).", costs="screens may lose it", advanced=True),
        S("port", "Port", "The port screens connect to.", example="5050", costs="every bookmark changes", advanced=True),
        S("key", "Private link", "With a key, CloudWall answers only at <address>/k/<key>/: a password in the address. Make one from Access.", secret=True,
@@ -127,9 +127,9 @@ SECTIONS = (
 )
 
 # the control board's pages, as its rail names them (web/js/admin/main.js draws them)
-PAGES = (("home", "Home"), ("receiver", "Your receiver"), ("positions", "Position feeds"), ("places", "The house"),
-         ("routes", "Route lookups"), ("look", "The wall"), ("access", "Who can see it"), ("safekeeping", "Safekeeping"),
-         ("health", "Problems and alerts"), ("server", "This server"))
+PAGES = (("home", "Overview"), ("receiver", "Receiver"), ("positions", "Feeds"), ("places", "Location"), ("routes", "Routes"),
+         ("look", "Display"), ("access", "Access"), ("safekeeping", "Backups"), ("health", "Health"), ("settings", "All settings"),
+         ("server", "System"))
 
 
 def describe(cfg):

@@ -4,14 +4,14 @@
 // A line opens to change the setting there, with its explanation; "see it on its page" goes to the
 // picture it's part of. Filters narrow it to what you've set, what waits, and the lines in the
 // settings file that do nothing (with a fix for each).
-import { el, esc, S, setting, call, toast, loadSettings, plural, on, sky } from "../core.js";
+import { el, esc, S, setting, call, toast, loadSettings, plural, on, sky, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { head } from "../parts.js";
 import { any } from "../controls.js";
 import { say, setup, APART } from "../words.js";
 
-const PAGE_NAMES = { places: ["The house", "places"], positions: ["Position feeds", "feeds"], receiver: ["Your receiver", "receiver"], routes: ["Route lookups", "routes"],
-                     look: ["The wall", "look"], access: ["Who can see it", "access"], safekeeping: ["Safekeeping", "safekeeping"], health: ["Problems and alerts", "problems"] };
+const ICONS = { places: "places", positions: "feeds", receiver: "receiver", routes: "routes", look: "look", access: "access", safekeeping: "safekeeping", health: "problems" };
+const PAGE_NAMES = Object.fromEntries(Object.entries(ICONS).map(([p, i]) => [p, [TITLES[p], i]]));
 let filter = "all";
 
 /** Every setting, as [page, [setting...]] in the board's order. */
@@ -74,23 +74,16 @@ function sections(items) {
 }
 
 export default {
-  id: "settings", title: "All settings", icon: "list",
-  live() {
-    if (!S.settings) return "";
-    let mine = 0, wait = 0;
-    for (const sec of S.settings.sections) for (const s of sec.settings) { const st = setting(sec.name, s.key); mine += st.changed && !st.secret ? 1 : 0; wait += st.waiting ? 1 : 0; }
-    const odd = (S.settings.strays || []).length + (S.settings.left_out || []).length;
-    return odd ? `${plural(odd, "line")} doing nothing` : wait ? `${wait} waiting for a restart` : `${mine} set by you`;
-  },
+  id: "settings", get title() { return TITLES.settings; }, icon: "list",
   async draw(page) {
     if (!S.sky) await sky();             // (the airport's name, for the setup in words)
     page.redraw = async () => { const fresh = el(`<div class="page page-settings"></div>`); await this.draw(fresh); page.replaceWith(fresh); };
     const groups = byPage(), all = groups.flatMap(([, l]) => l);
     const mine = all.filter((st) => st.changed && !st.secret && st.default !== null && st.default !== undefined), wait = all.filter((st) => st.waiting);
     const odd = (S.settings.strays || []).length + (S.settings.left_out || []).length;
-    page.append(head("All settings", `Every setting in one place: what it's set to, its default where you've set your own, and what waits for a restart. ${S.settings.file ? `From <code>${esc(S.settings.file)}</code>.` : "None saved yet: these are the defaults."}`));
+    page.append(head(TITLES.settings, `Every setting with its value, its default where you've changed it, and what's waiting for a restart. ${S.settings.file ? `File: <code>${esc(S.settings.file)}</code>` : "Nothing saved yet: these are the defaults."}`));
 
-    page.append(el(`<section class="setup-said"><h2>How it's set up</h2>${setup()}<p class="dim small">Each underlined part is a setting: click it to change it.</p></section>`));
+    page.append(el(`<section class="setup-said"><h2>Setup</h2>${setup()}<p class="dim small">Underlined values open their setting.</p></section>`));
     const st = strays(page);
     if (st) page.append(st);
 
@@ -161,7 +154,7 @@ export default {
         r.className = fresh.className + (r.classList.contains("open") ? " open" : "");
       });
       const said = page.querySelector(".setup-said");
-      if (said) said.innerHTML = `<h2>How it's set up</h2>${setup()}<p class="dim small">Each underlined part is a setting: click it to change it.</p>`;
+      if (said) said.innerHTML = `<h2>Setup</h2>${setup()}<p class="dim small">Underlined values open their setting.</p>`;
     };
     on("settings", repaint);
 
