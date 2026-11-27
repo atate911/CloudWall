@@ -111,17 +111,28 @@ async function drawOverview(main) {
   main.innerHTML = `
     <h1>${o.demo ? "Simulated traffic" : esc(place?.name || "CloudWall")}</h1>
     <p class="lede">${summaryLine(o, open)}</p>
-    <section class="annunciator" aria-label="Every part of CloudWall">
-      ${LAMPS.map(([id, label, parts, page]) => {
-        const [st, mine] = lampState(id, parts, findings, o);
-        return `<a class="lamp ${st}" href="#${page}" title="${esc(mine.map((f) => f.summary).join("\n") || label + ": " + ({ ok: "working", off: "not set up, or nothing to check" }[st] || ""))}">
-          <span class="lamp-name">${esc(label)}</span><span class="lamp-say">${esc(lampWords(id, st, mine, o))}</span></a>`;
-      }).join("")}
+    <section class="glareshield" aria-label="Every part of CloudWall">
+      <figure class="scope" title="The sky around ${esc(place?.name || "the house")} now, from the board's own data">
+        <canvas id="scope" aria-label="Radar: the aircraft around the house now" role="img"></canvas>
+        <figcaption id="scope-say"></figcaption>
+      </figure>
+      <div class="panel-right">
+        <div class="masters">${master("warning", "Master warning", open.filter((f) => f.major && f.state === "fail"))}${master("caution", "Master caution", open.filter((f) => !(f.major && f.state === "fail")))}</div>
+        <div class="annunciator">
+        ${LAMPS.map(([id, label, parts, page]) => {
+          const [st, mine] = lampState(id, parts, findings, o);
+          return `<a class="lamp ${st}" href="#${page}" title="${esc(mine.map((f) => f.summary).join("\n") || label + ": " + ({ ok: "working", off: "not set up, or nothing to check" }[st] || ""))}">
+            <span class="lamp-name">${esc(label)}</span><span class="lamp-say">${esc(lampWords(id, st, mine, o))}</span></a>`;
+        }).join("")}
+        </div>
+      </div>
     </section>
     <section id="checklists">${open.length ? "" : `<p class="all-well">Nothing needs doing. CloudWall checks itself every 30 seconds; <button class="link" id="run-doctor">check the whole machine now</button>.</p>`}</section>
     ${o.places.map(placeSheet).join("")}
     <h2>Lately</h2>
     ${incidentTable(o.incidents)}`;
+  main.querySelectorAll(".master").forEach((b) => b.onclick = () => acknowledge(b));
+  scope(main.querySelector("#scope"), main.querySelector("#scope-say"));
   const box = main.querySelector("#checklists");
   open.sort((a, b) => (b.major - a.major) || (a.state === "fail" ? -1 : 1)).forEach((f) => box.appendChild(checklist(f)));
   main.querySelector("#run-doctor")?.addEventListener("click", runDoctor);
@@ -132,6 +143,89 @@ async function drawOverview(main) {
     more.querySelector("button").onclick = runDoctor;
     box.appendChild(more);
   }
+}
+
+// The master lights: lit while any problem of theirs is open, flashing until it has been seen (a click
+// says so, remembered in this browser), as a cockpit's master caution is pressed to say "seen".
+function acked() { try { return new Set(JSON.parse(localStorage.getItem("cloudwall.adminSeen") || "[]")); } catch { return new Set(); } }
+function master(kind, label, list) {
+  const keys = list.map((f) => (f.code || "") + "|" + f.summary), seen = acked();
+  const fresh = keys.some((k) => !seen.has(k));
+  return `<button class="master ${kind}${list.length ? " lit" : ""}${fresh ? " fresh" : ""}" data-keys="${esc(JSON.stringify(keys))}"
+    ${list.length ? "" : "disabled"} title="${list.length ? `${list.length} open${fresh ? ": press to say you've seen it" : ""}` : "Nothing"}">${esc(label)}</button>`;
+}
+function acknowledge(b) {
+  const seen = acked();
+  for (const k of JSON.parse(b.dataset.keys || "[]")) seen.add(k);
+  try { localStorage.setItem("cloudwall.adminSeen", JSON.stringify([...seen].slice(-200))); } catch { /* fine */ }
+  b.classList.remove("fresh");
+}
+
+// The scope: the board's own picture of the sky around the house, drawn on a small radar with a slow
+// sweep (still, for anyone who asks for reduced motion). Aircraft within the tracking radius, the one
+// overhead in magenta as on the board, the airport where it is.
+let scopeTimer = null, scopeFrame = null;
+function scope(canvas, say) {
+  if (!canvas) return;
+  clearInterval(scopeTimer); cancelAnimationFrame(scopeFrame);
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let st = null;
+  const load = async () => {
+    try {
+      const r = await fetch("api/state", { credentials: "same-origin" });
+      st = await r.json();
+      const n = st.aircraft.filter((a) => !a.on_ground).length;
+      say.textContent = `${n} aircraft within ${st.tracking.radius_nm} nm` + (st.hero ? `; ${st.hero.callsign || st.hero.hex} overhead` : "");
+    } catch { say.textContent = "The board's data isn't answering"; }
+  };
+  load(); scopeTimer = setInterval(() => { if (!document.hidden && document.body.contains(canvas)) load(); else if (!document.body.contains(canvas)) clearInterval(scopeTimer); }, 5000);
+  const ctx = canvas.getContext("2d"), t0 = performance.now();
+  const draw = (now) => {
+    if (!document.body.contains(canvas)) return;
+    const dpr = devicePixelRatio || 1, size = canvas.clientWidth;
+    if (canvas.width !== size * dpr) { canvas.width = canvas.height = size * dpr; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const c = size / 2, R = c - 6, css = getComputedStyle(canvas);
+    const phos = css.getPropertyValue("--phosphor").trim() || "#7fe0a0", mag = css.getPropertyValue("--overhead").trim() || "#de80ae";
+    ctx.clearRect(0, 0, size, size);
+    ctx.fillStyle = css.getPropertyValue("--scope").trim() || "#0b1a14";
+    ctx.beginPath(); ctx.arc(c, c, R, 0, 7); ctx.fill();
+    ctx.strokeStyle = phos; ctx.globalAlpha = .22; ctx.lineWidth = 1;
+    for (const k of [1 / 3, 2 / 3, 1]) { ctx.beginPath(); ctx.arc(c, c, R * k, 0, 7); ctx.stroke(); }
+    for (let d = 0; d < 360; d += 30) { const a = d * Math.PI / 180; ctx.beginPath(); ctx.moveTo(c + Math.sin(a) * R * .94, c - Math.cos(a) * R * .94); ctx.lineTo(c + Math.sin(a) * R, c - Math.cos(a) * R); ctx.stroke(); }
+    ctx.globalAlpha = .55; ctx.font = `700 ${Math.max(9, size / 26)}px B612, sans-serif`; ctx.fillStyle = phos; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("N", c, c - R + size / 18);
+    const sweep = still ? null : ((now - t0) / 4000 * 2 * Math.PI) % (2 * Math.PI);
+    if (sweep !== null) {
+      const g = ctx.createConicGradient ? ctx.createConicGradient(sweep - Math.PI / 2 - 0.9, c, c) : null;
+      if (g) { g.addColorStop(0, "transparent"); g.addColorStop(0.143, phos); g.addColorStop(0.1431, "transparent");
+        ctx.globalAlpha = .16; ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(c, c); ctx.arc(c, c, R, 0, 7); ctx.fill(); }
+      ctx.globalAlpha = .7; ctx.strokeStyle = phos; ctx.beginPath(); ctx.moveTo(c, c); ctx.lineTo(c + Math.sin(sweep) * R, c - Math.cos(sweep) * R); ctx.stroke();
+    }
+    ctx.globalAlpha = 1; ctx.fillStyle = phos; ctx.beginPath(); ctx.arc(c, c, 2.2, 0, 7); ctx.fill();
+    if (st) {
+      const radius = st.tracking.radius_nm, k = R / radius, ap = st.airport;
+      if (ap?.lat != null) {
+        const dy = (ap.lat - st.home.lat) * 60, dx = (ap.lon - st.home.lon) * 60 * Math.cos(st.home.lat * Math.PI / 180);
+        if (Math.hypot(dx, dy) < radius) { ctx.globalAlpha = .6; ctx.strokeStyle = phos; ctx.strokeRect(c + dx * k - 3, c - dy * k - 3, 6, 6); }
+      }
+      for (const a of st.aircraft) {
+        if (a.on_ground || a.dist > radius) continue;
+        const b = a.brg * Math.PI / 180, x = c + Math.sin(b) * a.dist * k, y = c - Math.cos(b) * a.dist * k;
+        const hero = st.hero && a.hex === st.hero.hex;
+        let glow = 1;
+        if (sweep !== null) { const behind = ((sweep - b) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI); glow = .45 + .55 * Math.max(0, 1 - behind / 4); }
+        ctx.globalAlpha = glow; ctx.fillStyle = hero ? mag : phos;
+        ctx.beginPath(); ctx.arc(x, y, hero ? 3.8 : 2.6, 0, 7); ctx.fill();
+        if (hero) { ctx.globalAlpha = 1; ctx.strokeStyle = mag; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(x, y, 7.5, 0, 7); ctx.stroke(); }
+        if (a.track != null) { const t = a.track * Math.PI / 180; ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.sin(t) * 9, y - Math.cos(t) * 9); ctx.stroke(); }
+      }
+    }
+    ctx.globalAlpha = 1;
+    if (!still) scopeFrame = requestAnimationFrame(draw);
+  };
+  if (still) { const tick = () => { draw(performance.now()); }; tick(); setInterval(tick, 5000); } else scopeFrame = requestAnimationFrame(draw);
 }
 
 function dedupe(list) {
@@ -167,15 +261,25 @@ function lampWords(id, st, mine, o) {
 }
 
 function checklist(f) {
+  // set out like an air traffic controller's flight strip: the state, the condition, how long open
   const el = document.createElement("article");
-  el.className = `checklist ${f.state}`;
+  el.className = `checklist strip ${f.state}`;
   const steps = f.steps?.length ? f.steps : f.fix ? [f.fix] : [];
+  const since = f.since ? lasted(Date.now() / 1000 - f.since) : "just now";
   el.innerHTML = `
-    <header><h3>${esc(f.summary)}</h3>${f.major ? `<span class="tag major">Stops CloudWall working</span>` : ""}${f.subtle ? `<span class="tag subtle" title="Nothing on the screens looks wrong, but what they show isn't right">Looks right, isn't</span>` : ""}</header>
-    ${f.detail ? `<p class="means">${esc(f.detail)}</p>` : ""}
-    ${f.causes?.length ? `<p class="causes">Usually because ${esc(f.causes.join("; or "))}.</p>` : ""}
-    ${steps.length ? `<ol class="steps">${steps.map((s) => `<li>${md(s)}</li>`).join("")}</ol>` : ""}
-    <div class="actions"></div>`;
+    <header class="strip-row">
+      <span class="strip-state">${f.major && f.state === "fail" ? "Warning" : "Caution"}</span>
+      <h3>${esc(f.summary)}</h3>
+      <span class="strip-cell" title="How long it has been open">${since}</span>
+      ${f.subtle ? `<span class="strip-cell subtle" title="Nothing on the screens looks wrong, but what they show isn't right">Looks right, isn't</span>` : ""}
+      <span class="strip-cell code mono" title="Its name in core/troubles.py">${esc(f.code || f.part)}</span>
+    </header>
+    <div class="strip-body">
+      ${f.detail ? `<p class="means">${esc(f.detail)}</p>` : ""}
+      ${f.causes?.length ? `<p class="causes">Usually because ${esc(f.causes.join("; or "))}.</p>` : ""}
+      ${steps.length ? `<ol class="steps">${steps.map((s) => `<li>${md(s)}</li>`).join("")}</ol>` : ""}
+      <div class="actions"></div>
+    </div>`;
   const actions = el.querySelector(".actions");
   const cat = state.catalogue?.troubles?.[f.code];
   if (f.repair && !f.auto) {
@@ -266,9 +370,11 @@ function placeSheet(p) {
 
 function incidentTable(list) {
   if (!list?.length) return `<p class="dim">No problems recorded yet.</p>`;
-  return `<div class="sheet"><table><tr><th>Problem</th><th>Started</th><th>Lasted</th></tr>${list.map((i) => `<tr>
-    <td><span class="dot ${i.state}"></span>${esc(i.summary)}${i.major ? ` <span class="tag major">major</span>` : ""}</td>
-    <td>${when(i.started)}</td><td>${i.ended ? lasted(i.ended - i.started) : "<b>still open</b>"}</td></tr>`).join("")}</table></div>`;
+  return `<div class="strips">${list.map((i) => `<div class="strip mini ${i.ended ? "ended" : i.state}">
+    <span class="strip-state">${i.ended ? "Over" : i.major ? "Warning" : "Caution"}</span>
+    <span class="strip-text">${esc(i.summary)}</span>
+    <span class="strip-cell">${when(i.started)}</span>
+    <span class="strip-cell">${i.ended ? lasted(i.ended - i.started) : "open"}</span></div>`).join("")}</div>`;
 }
 
 // -- settings -----------------------------------------------------------------------------------
