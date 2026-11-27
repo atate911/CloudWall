@@ -36,8 +36,10 @@ DEFAULTS = {
         "idle_after_seconds": 90,
     },
     # Position feeds, tried in order; CloudWall fails over to the next when one stops answering.
+    # merge: the first is your own receiver, asked alongside the others and combined with them.
     "source": {"urls": ["https://opendata.adsb.fi/api/v3/lat/{lat}/lon/{lon}/dist/{radius}",
-                        "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"]},
+                        "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"],
+               "merge": False},
     "flightradar24": {"api_key": "", "monthly_limit": 0, "safety_margin": 0.15, "billing_day": 1,
                       "daily_limit": 0, "mode": "always",
                       "general_aviation": False, "sandbox": False},

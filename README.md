@@ -513,7 +513,12 @@ no requests (or, with `"log"`, only the slow position check).
   against where the aircraft actually is and greys it out as "route unverified" when
   they disagree.
 - `[source] urls` lists position feeds, tried in order with automatic failover. Any
-  readsb-style JSON feed works, so a local ADS-B receiver can replace the public APIs later.
+  readsb-style JSON feed works, including your own ADS-B receiver's `aircraft.json`. With
+  `merge = true` the first is your receiver, asked every update alongside the public feeds after it,
+  and the two are combined: every aircraft either sees, your receiver's fresher position where both
+  see one, and every position moved on along its track to the same moment (using each record's
+  `seen_pos`), so a public feed running a few seconds behind never pulls an aircraft backwards.
+  `deploy/feed-tunnel/` connects a receiver at home to CloudWall on a server elsewhere.
 - The radar sits over a real map (Esri's dark grey basemap by default, at `opacity` 0.45; `[map] style`
   can be `light`, `satellite`, `osm` or `off`, or `url` can point at any raster tile service,
   such as CARTO with your own API key:

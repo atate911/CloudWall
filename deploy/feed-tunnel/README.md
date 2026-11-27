@@ -41,7 +41,7 @@ own `127.0.0.1:8080`, where tar1090 serves the live aircraft data. CloudWall on 
 | If the VPS is compromised | An attacker could read your aircraft map (tar1090 on the Pi's port 8080). Nothing else on the Pi or your home network is reachable through the tunnel: not adsb.im's setup page (port 80), not SSH, not other devices. |
 | A fake VPS (someone intercepting) | The Pi checks the VPS's SSH host key against a fingerprint you confirmed once. If it ever changes, the Pi refuses to connect. |
 | The Pi runs as root? | No. The tunnel runs as an unprivileged system user `adsbtunnel` on the Pi, with no login shell. |
-| Outages | The service reconnects by itself every 15 s after internet drops, Pi reboots or VPS reboots. If the tunnel is down, CloudWall's request fails and it switches to its next feed (adsb.fi) automatically. |
+| Outages | The service reconnects by itself every 15 s after internet drops, Pi reboots or VPS reboots. If the tunnel is down, CloudWall carries on with the public feed alone (adsb.fi, then adsb.lol) and picks your receiver up again when it's back. |
 
 ## 3. What runs where
 
@@ -128,8 +128,8 @@ bash vps-tunnel.sh cloudwall
 ```
 It finds CloudWall's `config.toml` (same order as CloudWall: `$CLOUDWALL_CONFIG`, the service's
 working directory, then `~/.config/cloudwall/config.toml`; or pass `--config PATH`), backs it up,
-puts the tunnel first in `[source] urls` keeping the existing feeds after it, checks the result
-parses, and restarts CloudWall (`systemctl --user restart cloudwall`).
+puts the tunnel first in `[source] urls` keeping the existing feeds after it, turns on
+`merge = true`, checks the result parses, and restarts CloudWall (`systemctl --user restart cloudwall`).
 
 The result looks like:
 ```toml
@@ -139,9 +139,38 @@ urls = [
   "https://opendata.adsb.fi/api/v3/lat/{lat}/lon/{lon}/dist/{radius}",
   "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}",
 ]
+merge = true
 ```
 CloudWall works out each aircraft's distance itself and keeps only those within `radius_nm`, so
 it doesn't matter that the receiver reports everything it hears out to 100+ nm.
+
+### What `merge = true` does
+
+Without it, the list is only a backup order: CloudWall would show just what the first feed that
+answers has, so with your receiver first you'd lose every aircraft your antenna can't hear (low
+small planes, 978 traffic, anything behind terrain). With it:
+
+- **Every update asks your receiver and the public feed at the same time** (the public feeds after
+  the first still fail over in order: adsb.fi, then adsb.lol). The public feed is asked exactly as
+  often as before; only your receiver is added.
+- **Every aircraft either one sees is shown.** For an aircraft both see, the more recent position
+  wins, which is normally your receiver's, since it hears the aircraft directly while the public
+  feed is a few seconds behind. Details the chosen record lacks (type, registration, operator) are
+  filled in from the other, and the military flag counts if either has it.
+- **The lag is reconciled.** Each feed says how old each position is (`seen_pos`, measured from the
+  answer's own clock), so CloudWall knows when every position was true. It moves each one on along
+  the aircraft's track at its ground speed to the moment of the update (at most 15 s; aircraft on
+  the ground aren't moved), so a 6-second-old public position and a half-second-old receiver position
+  agree on where the aircraft is now.
+- **Aircraft never jump backwards.** If the newest report this time is older than the one used
+  last time (say your receiver lost the aircraft and the public feed is behind), CloudWall keeps
+  carrying the last position forward instead of stepping back to the older one.
+- Positions more than a minute old are left out, as readsb itself does.
+- **If either source is down, the other carries on**; CloudWall logs once when your receiver stops
+  answering and once when it's back. The feed name on screen shows which answered, e.g.
+  `127.0.0.1 + opendata.adsb.fi`.
+- A receiver that answers but hears nothing (say, a loose antenna cable) no longer empties the
+  screen: the public feed's aircraft still show.
 
 ## 5. The key's restrictions, explained
 
@@ -179,7 +208,8 @@ command, a different listen port, a public bind and a `-L` connection to a VPS s
 | **Pi re-flashed or replaced** | The key is gone. Repeat steps 1–3; the new `setup` replaces the old key on the VPS (the old `authorized_keys` is backed up). |
 | **Use a different port than 18080** | Use the same `--remote-port N` on all three: `vps-tunnel.sh setup … --remote-port N`, `pi-tunnel.sh install … --remote-port N`, `vps-tunnel.sh cloudwall --remote-port N`. Then remove the old URL with `vps-tunnel.sh cloudwall-remove --remote-port 18080`. |
 | **Rotate the key** (e.g. once a year, or if the Pi was lost) | On the Pi: `sudo rm /etc/adsb-tunnel/id_ed25519*`, then `sudo bash pi-tunnel.sh keygen`, then step 2 on the VPS with the new key (it replaces the old one), then `sudo bash pi-tunnel.sh restart`. |
-| **Use public feeds first, receiver as backup** | Edit `[source] urls` in `config.toml` by hand and move the tunnel URL down; restart CloudWall. |
+| **Stop combining; receiver only, public feeds as backup** | Set `merge = false` in `[source]`; restart CloudWall. |
+| **Public feeds only, receiver as backup** | Set `merge = false` and move the tunnel URL below the public feeds; restart CloudWall. (With `merge = true`, the receiver must be first.) |
 | **Forward a second Pi service** (e.g. a future app on port 8090) | Add another `-R 127.0.0.1:18090:127.0.0.1:8090` to the unit's `ExecStart`, and add `permitlisten="127.0.0.1:18090"` (comma-separated, alongside the first) to the key's options on the VPS. Then `sudo systemctl daemon-reload && sudo systemctl restart adsb-tunnel`. |
 
 ## 8. Removing it
@@ -202,7 +232,8 @@ to the public feeds on its own. Resume with `sudo systemctl enable --now adsb-tu
 | `test` on the VPS says nothing listens on 18080 | The tunnel isn't connected | `sudo bash pi-tunnel.sh status` on the Pi |
 | `test` works, but data is stale | The decoder on the Pi stopped | `sudo docker ps` on the Pi, check the adsb.im page |
 | CloudWall still shows adsb.fi | Config not updated, CloudWall not restarted, or the tunnel was down at that moment | `bash vps-tunnel.sh cloudwall`; check `journalctl --user -u cloudwall` |
-| CloudWall shows no aircraft but no errors | The receiver answers but hears nothing (e.g. antenna cable loose); CloudWall only fails over when the feed doesn't answer at all | Fix the receiver, or move the tunnel URL below the public feeds |
+| Feed name on screen shows only `opendata.adsb.fi` | Your receiver isn't answering through the tunnel | `bash vps-tunnel.sh test`; `pi-tunnel.sh status` on the Pi |
+| Fewer aircraft than expected, feed name shows only `127.0.0.1` | `merge = true` is missing, or the public feed isn't answering | Check `[source]` in `config.toml`; `journalctl --user -u cloudwall` |
 
 ## 10. Doing it by hand (what the scripts automate)
 
@@ -224,4 +255,4 @@ sudo usermod -p '*' adsbtunnel
 sudo install -d -m 700 -o adsbtunnel -g adsbtunnel /var/lib/adsbtunnel/.ssh
 # put the line from section 5 in /var/lib/adsbtunnel/.ssh/authorized_keys, owned by adsbtunnel, mode 600
 ```
-then add the URL to CloudWall's `[source] urls` and `systemctl --user restart cloudwall`.
+then put the URL first in CloudWall's `[source] urls`, add `merge = true` under it, and `systemctl --user restart cloudwall`.

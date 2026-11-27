@@ -153,10 +153,11 @@ urls = list(src.get("urls") or DEFAULT)
 if src.get("url"):
     urls = [src["url"]] + [u for u in urls if u != src["url"]]
 new = [url] + [u for u in urls if u != url] if mode == "add" else ([u for u in urls if u != url] or DEFAULT)
-if new == urls and not src.get("url"):
-    print("  [OK]   nothing to change:", "already first" if mode == "add" else "not present"); sys.exit(0)
+merge = mode == "add" and len(new) > 1        # your receiver alongside the public feeds, combined
+if new == urls and not src.get("url") and bool(src.get("merge")) == merge:
+    print("  [OK]   nothing to change:", "already first, merged" if mode == "add" else "not present"); sys.exit(0)
 
-block = ["urls = ["] + [f'  "{u}",' for u in new] + ["]"]
+block = ["urls = ["] + [f'  "{u}",' for u in new] + ["]"] + (["merge = true"] if merge else [])
 lines = text.splitlines()
 hdr = next((i for i, l in enumerate(lines) if re.match(r"\s*\[source\]\s*(#.*)?$", l)), None)
 if hdr is None:
@@ -170,18 +171,19 @@ else:
             depth = l.count("[") - l.count("]")
             while depth > 0 and i + 1 < end:
                 i += 1; depth += lines[i].count("[") - lines[i].count("]")
-        elif not re.match(r"\s*url\s*=", l):
+        elif not re.match(r"\s*(url|merge)\s*=", l):
             body.append(l)
         i += 1
     out = lines[:hdr + 1] + block + body + lines[end:]
 result = "\n".join(out) + "\n"
-got = tomllib.loads(result).get("source", {}).get("urls")
-assert got == new, f"rewrite check failed: {got}"
+got = tomllib.loads(result).get("source", {})
+assert got.get("urls") == new and bool(got.get("merge")) == merge, f"rewrite check failed: {got}"
 bak = f"{path}.bak-{time.strftime('%Y%m%d-%H%M%S')}"
 shutil.copy2(path, bak)
 open(path, "w").write(result)
 print(f"  [OK]   backed up to {bak}")
 print("  [OK]   [source] urls is now:"); [print("           " + u) for u in new]
+print(f"  [OK]   merge = {'true: your receiver and the public feeds combined' if merge else 'off: feeds tried in order'}")
 PY
   if systemctl --user is-active --quiet cloudwall 2>/dev/null; then
     systemctl --user restart cloudwall && ok "restarted CloudWall (systemctl --user restart cloudwall)"
