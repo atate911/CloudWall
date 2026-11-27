@@ -175,7 +175,7 @@ class Monitor:
                 "subtle": CATALOGUE[subtle[0].code].title if subtle else None}
 
     def report(self):
-        """In full, for /api/health and the Overview page."""
+        """In full, for /api/health and the control board."""
         return {**self.summary(),
                 "open": [dict(f.to_dict(), since=since, seen=n) for f, since, n in self.open.values()],
                 "findings": [f.to_dict() for f in self.last]}

@@ -631,32 +631,43 @@ const SCENARIOS = {
     return out;
   },
 
-  // the control board (/admin): the lamps, each page, and a setting saved
+  // the control board (/admin): the system at a glance, each page with its controls, a distance
+  // set by its ring on the house's map, and the finder taking you to a setting
   async admin(browser, errors) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } }), out = {};
-    page.on("console", (m) => { if (m.type() === "error") errors.push(`console: ${m.text()}`); });
+    // the map pictures' tiles are answered here, not fetched (the tests use no network): the house's map
+    // draws its plain chart instead, as it does wherever tiles can't be had
+    await page.route("**/tiles/**", (r) => r.fulfill({ status: 404, body: "" }));
+    page.on("console", (m) => { if (m.type() === "error" && !/\/tiles\//.test(m.location().url || "")) errors.push(`console: ${m.text()}`); });
     page.on("pageerror", (e) => errors.push(`page: ${e.message}`));
     page.on("request", (r) => { if (!r.url().startsWith(BASE) && !/^(data|blob|about):/.test(r.url())) errors.push(`left the machine: ${r.url()}`); });
     await page.goto(BASE + "/admin");
-    await page.waitForSelector(".lamp");
-    out.lamps = await page.$$eval(".lamp", (l) => l.length);
-    out.lit = await page.$$eval(".lamp.warn, .lamp.fail", (l) => l.map((x) => x.querySelector(".lamp-name").textContent));
-    out.checklists = await page.$$eval(".checklist", (l) => l.length);
+    await page.waitForSelector(".system .node[data-node]");
+    out.nodes = await page.$$eval(".system .node", (n) => n.length);
+    out.rail = await page.$$eval("#nav a", (a) => a.map((x) => x.getAttribute("href").slice(1)));
+    out.railMarked = await page.$$eval("#nav a.warn, #nav a.fail", (a) => a.map((x) => x.getAttribute("href").slice(1)));
+    out.troubles = await page.$$eval(".needs .trouble", (t) => t.length);
     out.pages = {};
-    for (const p of ["places", "positions", "routes", "maps", "screens", "access", "storage", "health", "system", "log"]) {
+    for (const p of ["receiver", "positions", "places", "routes", "look", "access", "safekeeping", "health", "server"]) {
       await page.evaluate((h) => { location.hash = h; }, p);
-      await page.waitForFunction((h) => document.querySelector("#nav a.on")?.getAttribute("href") === "#" + h
-        && document.querySelector("main h1, main h2"), p, { timeout: 8000 });
-      if (["positions", "routes", "maps", "screens", "access", "storage"].includes(p))    // the settings come after the page
-        await page.waitForSelector("main .row", { state: "attached", timeout: 8000 });
-      out.pages[p] = await page.$$eval("main .row", (r) => r.length);
+      await page.waitForSelector(`.page-${p} h1`, { timeout: 8000 });
+      out.pages[p] = await page.$$eval(`.page-${p} [data-setting]`, (r) => r.length);
     }
-    await page.evaluate(() => { location.hash = "positions"; });
-    await page.waitForSelector("#set-tracking-radius_nm");
-    await page.fill("#set-tracking-radius_nm", "16");
-    await page.click("#set-tracking-radius_nm ~ .save");
-    await page.waitForFunction(() => !document.getElementById("toast").hidden && /saved/i.test(document.getElementById("toast").textContent));
-    out.saved = await page.evaluate(() => !document.getElementById("restart-bar").hidden);
+    // the tracking radius, by its ring on the map: the handle takes the arrow keys
+    await page.evaluate(() => { location.hash = "places"; });
+    await page.waitForSelector(".page-places .ring.track .ring-handle");
+    out.radiusBefore = await page.$eval('[data-setting="tracking.radius_nm"] input', (i) => i.value);
+    await page.focus(".ring.track .ring-handle");
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("ArrowUp");
+    await page.waitForFunction(() => !document.getElementById("dock").hidden, null, { timeout: 8000 });
+    out.radiusAfter = await page.$eval('[data-setting="tracking.radius_nm"] input', (i) => i.value);
+    out.dock = await page.$eval("#dock-text", (d) => d.textContent);
+    // the finder: a word, Enter, and the setting is shown on its page
+    await page.fill(".finder input", "quiet hours");
+    await page.keyboard.press("Enter");
+    await page.waitForSelector('.page-look [data-setting="kiosk.quiet"].found', { timeout: 8000 });
+    out.found = await page.evaluate(() => location.hash);
     await page.close();
     return out;
   },

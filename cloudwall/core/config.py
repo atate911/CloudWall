@@ -51,7 +51,7 @@ DEFAULTS = {
     # Map behind the radar: "dark", "light", "satellite", "osm" or "off" (or set url = a tile URL template)
     # route: the map behind the flight's route on its card, one of the same styles (not a url), or "off"
     # cache_mb: the most disk the downloaded map and chart tiles may take, all layers together
-    "map": {"style": "dark", "opacity": 0.45, "url": "", "attribution": "", "route": "satellite", "cache_mb": 2000},
+    "map": {"style": "dark", "opacity": 0.45, "url": "", "attribution": "", "route": "satellite", "atc": "off", "cache_mb": 2000},
     # Airline logos on the flight card, fetched by airline code and cached on disk
     "logos": {"enabled": True, "url": ""},
     # Extra free data: military jets heard without a position, temporary flight

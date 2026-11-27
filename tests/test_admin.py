@@ -214,6 +214,67 @@ class AdminTest(unittest.TestCase):
                 self.assertIn(b"CloudWall", r.read())
 
 
+class BoardPagesTest(AdminTest):
+    """What the board's pages are drawn from: the overview's figures, settings that need no restart,
+    the test alert."""
+
+    def test_the_overview_has_what_the_pages_draw(self):
+        self.serve()
+        o = self.call("/api/admin/overview")[1]
+        self.assertEqual((o["home"]["lat"], o["home"]["lon"]), (45.62, -122.66))     # the house's map
+        self.assertEqual(o["tracking"]["radius_nm"], config.DEFAULTS["tracking"]["radius_nm"])
+        self.assertIn("cache", o["storage"])                                            # the disk's bar
+        self.assertIsNone(o["storage"]["last_backup"])                                  # never backed up
+        self.assertFalse(o["alerts"])
+
+    def test_the_receivers_settings_take_effect_as_saved(self):
+        self.serve()
+        code, got = self.call("/api/admin/settings", {"section": "receiver", "key": "home_url", "value": "http://192.0.2.7"})
+        self.assertNotIn("restart", got)
+        s = self.call("/api/admin/settings")[1]
+        self.assertEqual(s["running"]["receiver"]["home_url"], "http://192.0.2.7")     # nothing waits for a restart
+        self.assertEqual(self.call("/api/admin/receiver")[1]["home_url"], "http://192.0.2.7")
+        self.call("/api/admin/settings", {"section": "tracking", "key": "radius_nm", "value": 21})
+        s = self.call("/api/admin/settings")[1]
+        self.assertNotEqual(s["running"]["tracking"]["radius_nm"], 21)                  # this one does
+
+    def test_what_the_command_line_gave_isnt_a_change_waiting(self):
+        srv = self.serve()
+        srv.admin.cfg["_cli"] = ["server.port"]                       # as --port leaves it (app/main.py)
+        s = self.call("/api/admin/settings")[1]
+        saved = next(st for sec in s["sections"] if sec["name"] == "server" for st in sec["settings"] if st["key"] == "port")
+        self.assertEqual(s["running"]["server"]["port"], saved["value"])
+
+    def test_a_test_alert_goes_to_the_saved_address_before_a_restart(self):
+        self.serve()
+        code, got = self.call("/api/admin/alert-test", {})
+        self.assertEqual(code, 400)
+        self.assertIn("No alert address", got["error"])
+        self.call("/api/admin/settings", {"section": "health", "key": "notify_url", "value": "https://ntfy.example/cw-test"})
+        sent = []
+        from unittest import mock
+        with mock.patch("cloudwall.core.http.post_json", lambda url, body, timeout=10: sent.append((url, body))):
+            code, got = self.call("/api/admin/alert-test", {})
+        self.assertEqual(code, 200)
+        self.assertEqual(sent[0][0], "https://ntfy.example/cw-test")
+        self.assertEqual(sent[0][1]["event"], "test")
+
+
+class BudgetDaysTest(unittest.TestCase):
+    def test_each_days_use_this_period(self):
+        import datetime as dt
+        from cloudwall.gather.flightradar24 import Flightradar24 as FR24
+        cfg = config.load(None)
+        cfg["flightradar24"].update(api_key="k", monthly_credits=30000, billing_day=1)
+        p = FR24(cfg, Store(":memory:"))
+        p._today = lambda: dt.date(2026, 3, 5)
+        p.store.cache_put("flightradar24_usage", "2026-03-02", 40)
+        p.store.cache_put("flightradar24_usage", "2026-03-05", 7)
+        b = p.budget()
+        self.assertEqual(b["days"], [["2026-03-01", 0], ["2026-03-02", 40], ["2026-03-03", 0], ["2026-03-04", 0], ["2026-03-05", 7]])
+        self.assertEqual((b["period_used"], b["used_today"], b["starts"]), (47, 7, "2026-03-01"))
+
+
 class HelperTest(unittest.TestCase):
     def test_only_what_is_on_the_list_is_done(self):
         with tempfile.TemporaryDirectory() as d:

@@ -23,6 +23,9 @@ from ..operate.survey import Machine, installs
 from ..operate.system import System
 from ..serve import auth
 
+# Sections only the control board uses: read from the file as saved, so they need no restart.
+LIVE = {"receiver"}
+
 UNDER_SYSTEMD = bool(os.environ.get("INVOCATION_ID"))
 
 
@@ -138,14 +141,46 @@ class Admin:
             return {"ok": True, "said": "the owner's password is changed"}
         if get and name == "receiver":
             return self.receiver()
+        if method == "POST" and name == "alert-test":
+            return self.alert_test()
         return None
 
+    def alert_test(self):
+        """Send a test alert to [health] notify_url, so the owner sees it arrive on their phone."""
+        from ..core.http import post_json
+        url = (self.saved().get("health") or {}).get("notify_url")      # as saved: test it before restarting
+        if not url:
+            raise ValueError("No alert address is saved yet")
+        try:
+            post_json(url, {"cloudwall": __version__, "event": "test", "major": False,
+                            "title": "A test alert from CloudWall's control board",
+                            "means": "If this reached you, problems that stop CloudWall working will too."}, timeout=10)
+        except Exception as e:
+            raise ValueError(f"The alert address didn't take it: {e}") from None
+        return {"ok": True, "said": "Test alert sent: it should reach you within a few seconds"}
+
     # -- your receiver ---------------------------------------------------------------------------
-    def receiver_urls(self):
+    def saved(self):
+        """The settings as saved (not as running): for the settings only the board uses, which
+        take effect as soon as they're saved. Read again at most every few seconds."""
+        at, cfg = getattr(self, "_saved", (0, None))
+        path = self.cfg.get("_path")
+        if not path:
+            return self.cfg
+        if time.time() - at > 3 or cfg is None:
+            try:
+                cfg = config.load(path)
+            except Exception:
+                cfg = self.cfg
+            self._saved = (time.time(), cfg)
+        return cfg
+
+    def receiver_urls(self, cfg=None):
         """(the receiver's web server, Coverage3D's), as reached from this machine, or None each."""
-        r = self.cfg.get("receiver") or {}
+        cfg = cfg or self.saved()
+        r = cfg.get("receiver") or {}
         url = (r.get("url") or "").rstrip("/")
-        src = self.cfg["source"]
+        src = cfg["source"]
         if not url and src.get("merge") and src["urls"]:
             first = src["urls"][0]
             url = first.split("/data/")[0] if "/data/" in first else ""
@@ -163,7 +198,7 @@ class Admin:
         with the board's own reading of them."""
         from ..core.http import get_json
         url, cov = self.receiver_urls()
-        out = {"url": url, "coverage_url": cov, "home_url": (self.cfg.get("receiver") or {}).get("home_url") or None,
+        out = {"url": url, "coverage_url": cov, "home_url": (self.saved().get("receiver") or {}).get("home_url") or None,
                "reachable": False, "coverage": False}
         if not url:
             return out
@@ -266,15 +301,48 @@ class Admin:
                 "health": self.watch.report() if self.watch else None,
                 "incidents": self.incidents.recent(20) if self.incidents else [],
                 "places": places, "provider": self.provider.status() if self.provider and self.provider.enabled else None,
-                "storage": {"folder": str(data), "disk": disk, "files": files}, "helper": helper.available(),
-                "installs": installs(Machine()), "private_link": bool(self.cfg["server"]["key"])}
+                "storage": {"folder": str(data), "disk": disk, "files": files, "cache": self.cache_size(),
+                            "last_backup": self.last_backup()}, "helper": helper.available(),
+                "installs": installs(Machine()), "private_link": bool(self.cfg["server"]["key"]),
+                "home": {k: self.cfg["home"].get(k) for k in ("name", "lat", "lon")},
+                "tracking": {k: self.cfg["tracking"][k] for k in ("radius_nm", "overhead_nm", "when_idle")},
+                "map": {"style": self.cfg["map"]["style"], "cache_mb": self.cfg["map"]["cache_mb"]},
+                "alerts": bool(self.cfg.get("health", {}).get("notify_url")),
+                "address": self.cfg["server"].get("address") or None}
+
+    def cache_size(self):
+        """The map tiles' and logos' size on disk (counted at most every ten minutes: it walks a folder)."""
+        at, size = getattr(self, "_cache_size", (0, None))
+        if time.time() - at > 600:
+            folder = config.cache_dir(self.cfg, str(self.cfg["storage"]["db_path"] or config.default_db_path()))
+            size = 0
+            for sub in ("tiles", "logos"):
+                for root, _, names in os.walk(folder / sub):
+                    for n in names:
+                        try:
+                            size += os.path.getsize(os.path.join(root, n))
+                        except OSError:
+                            pass
+            self._cache_size = (time.time(), size)
+        return size
+
+    def last_backup(self):
+        folder = backups.default_folder(self.cfg)
+        times = [p.stat().st_mtime for p in folder.glob("cloudwall-*.tar.gz")] if folder.is_dir() else []
+        return max(times) if times else None
 
     def settings(self):
         path = self.cfg.get("_path")
         on_disk = config.load(path) if path else self.cfg
+        running = {s["name"]: {st["key"]: st["value"] for st in s["settings"]} for s in schema.describe(self.cfg)}
+        for s in schema.describe(on_disk):
+            if s["name"] in LIVE:          # used as saved: nothing waits for a restart
+                running[s["name"]] = {st["key"]: st["value"] for st in s["settings"]}
+            for st in s["settings"]:       # given on the command line: not the file's to change
+                if f'{s["name"]}.{st["key"]}' in self.cfg.get("_cli", []):
+                    running[s["name"]][st["key"]] = st["value"]
         return {"file": path, "pages": [{"name": n, "label": l} for n, l in schema.PAGES],
-                "sections": schema.describe(on_disk),
-                "running": {s["name"]: {st["key"]: st["value"] for st in s["settings"]} for s in schema.describe(self.cfg)}}
+                "sections": schema.describe(on_disk), "live": sorted(LIVE), "running": running}
 
     def set_setting(self, body):
         section, key = str(body.get("section") or ""), str(body.get("key") or "")
@@ -299,6 +367,9 @@ class Admin:
         if key == "key" and section == "server" and value and keys.problem(value):
             raise ValueError(f"the key {keys.problem(value)}")
         config.write_setting(path, section, key, value)
+        self._saved = (0, None)
+        if section in LIVE:
+            return {"ok": True, "said": f"{st.label} saved"}
         return {"ok": True, "said": f"{st.label} saved. Restart CloudWall for it to take effect."
                 + (f" Note: {st.costs}." if st.costs else ""), "restart": True}
 
@@ -342,7 +413,7 @@ class Admin:
                 said = "reopened every logbook file"
             return {"ok": True, "said": said or "nothing needed doing"}
         if name == "restart-service":
-            raise ValueError("use Restart on the System page")
+            raise ValueError("use Restart on the control board's This server page")
         if root:
             if name not in helper.ALLOWED:
                 raise ValueError(f"{words}: do this at the machine (`sudo cloudwall doctor --fix`)")

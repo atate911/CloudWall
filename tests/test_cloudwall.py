@@ -955,7 +955,7 @@ class ChartsTest(unittest.TestCase):
             self.assertEqual((info["atc"]["layer"], info["atc"]["name"]), ("ifr-low", "IFR Enroute Low"))
             self.assertIn("FAA", info["atc"]["attribution"])
             self.assertEqual(set(info["layers"]), {"ifr-low", "ifr-high", "sectional", "terminal", "world",
-                                                   "sat", "streets", "places", "roads"})
+                                                   "sat", "streets", "places", "roads", "dark", "light", "osm"})
             self.assertEqual(list(info["layers"]["ifr-low"]["zooms"]), [7, 11])
             self.assertIn("IFR_AreaLow/MapServer/tile/{z}/{y}/{x}", self.charts(d).layers["ifr-low"].url)
             c = self.charts(d, style="Sectional", atc="off")            # any case

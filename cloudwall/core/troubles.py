@@ -1,6 +1,6 @@
 """Every problem CloudWall knows how to recognise, written once: what it is, why it happens, what
 it means for the owner, and what to do, step by step. A check that finds one names it by its code
-(health.trouble("feeds.all-down", ...)); `cloudwall doctor`, the screens' warning, the Overview
+(health.trouble("feeds.all-down", ...)); `cloudwall doctor`, the screens' warning, the control board's Home
 page, the log and `cloudwall report` all take their words from here.
 
 subtle: nothing looks wrong on the screens, but what they show is false (a frozen feed, a deaf

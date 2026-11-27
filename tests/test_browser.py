@@ -93,7 +93,7 @@ class BrowserTest(unittest.TestCase):
     def scenario(self, name):
         """What the browser found in one scenario, once it is known to have gone through cleanly."""
         found = self.report[name]
-        self.assertEqual(found["errors"], [], f"{name}: errors in the browser")
+        self.assertEqual(found["errors"], [], f"{name}: errors in the browser: {found['errors']}")
         return found
 
     def test_the_desktop_and_each_of_its_tabs(self):
@@ -322,12 +322,16 @@ class BrowserTest(unittest.TestCase):
 
     def test_the_control_board(self):
         a = self.scenario("admin")
-        self.assertEqual(a["lamps"], 9)                                     # a lamp for each part
-        self.assertIn("Screens", a["lit"])                                  # the demo's simulated traffic, said
-        self.assertGreaterEqual(a["checklists"], 1)
-        for page in ("positions", "routes", "maps", "screens", "access", "storage"):
-            self.assertGreaterEqual(a["pages"][page], 1, page)              # each with its settings
-        self.assertTrue(a["saved"])                                         # a setting saved, and a restart offered
+        self.assertEqual(a["nodes"], 8)                                     # the sky and every part, as one picture
+        self.assertEqual(a["rail"], ["home", "receiver", "positions", "places", "routes", "look", "access",
+                                     "safekeeping", "health", "server"])
+        self.assertIn("look", a["railMarked"])                              # the demo's simulated traffic, said where it shows
+        self.assertGreaterEqual(a["troubles"], 1)
+        for page in ("positions", "places", "look", "access", "safekeeping", "health", "server"):
+            self.assertGreaterEqual(a["pages"][page], 1, page)              # each with its own controls
+        self.assertEqual(float(a["radiusAfter"]), float(a["radiusBefore"]) + 1)   # two steps of half a mile on the ring
+        self.assertIn("tracking radius", a["dock"])                         # saved, and waiting for a restart
+        self.assertEqual(a["found"], "#look/kiosk.quiet")                   # the finder went straight to it
 
 
 if __name__ == "__main__":

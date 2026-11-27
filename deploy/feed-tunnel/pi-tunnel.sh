@@ -11,6 +11,8 @@
 #   sudo bash pi-tunnel.sh install VPS_HOST       # 3. after vps-tunnel.sh setup: verify, test, start
 #        [--port 22] [--remote-user adsbtunnel] [--remote-port 18080] [--local-port 8080]
 #        [--fingerprint SHA256:...]               #    (fingerprint printed by vps-tunnel.sh setup)
+#        [--coverage]                             #    Coverage3D (port 8090) too, at the VPS's 18090
+#                                                 #    (the VPS's setup needs --coverage as well)
 #   sudo bash pi-tunnel.sh status                 # is it up? recent log lines
 #   sudo bash pi-tunnel.sh restart
 #   sudo bash pi-tunnel.sh uninstall [--purge]    # stop and remove (--purge also deletes key and user)
@@ -85,24 +87,29 @@ cmd_keygen() {
   say ""
 }
 
-ssh_args() {   # host port ruser rport lport
+ssh_args() {   # host port ruser rport lport [coverage port]
   # -F /dev/null: ignore the system's ssh_config. Every option the tunnel needs is set here, and a
   # bad line there (adsb.im images have shipped "IPQoS 0x00", which newer OpenSSH refuses) would
   # otherwise stop ssh from starting at all.
+  # With Coverage3D, a second forward: the VPS's port after the receiver's (18090) to Coverage3D.
+  local extra=()
+  [ -n "${6:-}" ] && extra=(-R "127.0.0.1:$(( $4 + 10 )):127.0.0.1:$6")
   printf '%s\n' -F /dev/null -N -i "$KEY" -p "$2" \
     -o BatchMode=yes -o IdentitiesOnly=yes \
     -o UserKnownHostsFile="$KNOWN" -o StrictHostKeyChecking=yes \
     -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
     -o ExitOnForwardFailure=yes -o ConnectTimeout=15 \
-    -R "127.0.0.1:$4:127.0.0.1:$5" "$3@$1"
+    -R "127.0.0.1:$4:127.0.0.1:$5" "${extra[@]}" "$3@$1"
 }
 
 cmd_install() {
   need_root
-  local host="" port=22 ruser=adsbtunnel rport=18080 lport=8080 fp="" force=0
+  local host="" port=22 ruser=adsbtunnel rport=18080 lport=8080 fp="" force=0 cport=""
   while [ $# -gt 0 ]; do
     case "$1" in
       --port) port="$2"; shift 2;;
+      --coverage) cport=8090; shift;;
+      --coverage-port) cport="$2"; shift 2;;
       --remote-user) ruser="$2"; shift 2;;
       --remote-port) rport="$2"; shift 2;;
       --local-port) lport="$2"; shift 2;;
@@ -154,7 +161,7 @@ cmd_install() {
   ok "saved the VPS's host keys to $KNOWN"
 
   say "3. Test connection (8 seconds)"
-  mapfile -t args < <(ssh_args "$host" "$port" "$ruser" "$rport" "$lport")
+  mapfile -t args < <(ssh_args "$host" "$port" "$ruser" "$rport" "$lport" "$cport")
   local err; err=$(mktemp); local rc=0
   timeout 8 runuser -u "$LUSER" -- ssh "${args[@]}" 2>"$err" || rc=$?
   if [ "$rc" -eq 124 ]; then
@@ -175,6 +182,7 @@ VPS_SSH_PORT=$port
 VPS_USER=$ruser
 VPS_LISTEN=127.0.0.1:$rport
 PI_TARGET=127.0.0.1:$lport
+COVERAGE=${cport:+127.0.0.1:$(( rport + 10 )) -> 127.0.0.1:$cport}
 EOF
   {
     echo "# Written by pi-tunnel.sh. CloudWall feed: VPS 127.0.0.1:$rport -> this Pi 127.0.0.1:$lport"

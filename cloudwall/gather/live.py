@@ -88,19 +88,24 @@ class LiveProvider:
         return self._used(self._today())
 
     def budget(self):
-        """Where the money stands: today's allowance and the billing period's totals."""
+        """Where the money stands: today's allowance and the billing period's totals, and each
+        day's use so far this period (the last fortnight without a monthly figure), for the
+        control board's picture of how fast the allowance is going."""
         today = self._today()
-        out = {"used_today": self.used_today(), "daily_limit": None, "period_used": None,
-               "period_budget": None, "monthly_limit": self.monthly_limit or None, "resets": None}
+        start, end = billing_period(today, self.billing_day) if self.monthly_limit else (today - dt.timedelta(days=13), None)
+        days = [[self._day(start + dt.timedelta(days=i)), self._used(start + dt.timedelta(days=i))]
+                for i in range((today - start).days + 1)]
+        out = {"used_today": days[-1][1], "daily_limit": None, "period_used": None,
+               "period_budget": None, "monthly_limit": self.monthly_limit or None, "resets": None, "days": days}
         allowance = self.daily_cap or None
         if self.monthly_limit:
-            start, end = billing_period(today, self.billing_day)
-            before = sum(self._used(start + dt.timedelta(days=i)) for i in range((today - start).days))
+            before = sum(n for _, n in days[:-1])
             budget = int(self.monthly_limit * (1 - self.margin))
             days_left = (end - today).days                       # including today
             share = max(0, budget - before) // max(1, days_left)  # today's even share of what's left
             allowance = share if allowance is None else min(allowance, share)
-            out.update(period_used=before + out["used_today"], period_budget=budget, resets=end.isoformat())
+            out.update(period_used=before + out["used_today"], period_budget=budget, resets=end.isoformat(),
+                       starts=start.isoformat())
         out["daily_limit"] = allowance
         return out
 

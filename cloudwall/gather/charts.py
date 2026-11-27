@@ -64,7 +64,9 @@ class Charts:
         self.layers["map"] = self.map
         atc = str(m.get("atc") or "off").lower()
         self.atc = self.layers.get(atc) if atc in FAA_LAYERS else None
-        for lid, style in (("sat", "satellite"), ("streets", "streets"), ("places", "places"), ("roads", "roads")):
+        # (dark, light and osm too, so the control board can show each style as a picture to choose by)
+        for lid, style in (("sat", "satellite"), ("streets", "streets"), ("places", "places"), ("roads", "roads"),
+                           ("dark", "dark"), ("light", "light"), ("osm", "osm")):
             url, credit = STYLES[style]
             self.layers[lid] = Tiles(cfg, cache_dir, layer={"id": style, "url": url, "attribution": credit, "zooms": (6, 17)})
         route = str(m.get("route") or "satellite").lower()
