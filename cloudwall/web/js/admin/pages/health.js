@@ -78,7 +78,7 @@ export default {
   id: "health", title: "Problems and alerts", icon: "problems",
   live() {
     const n = problems().length, week = (S.overview?.incidents || []).filter((i) => Date.now() / 1000 - i.started < 7 * 86400).length;
-    return n ? `${plural(n, "open")}` : week ? `${plural(week, "problem")} this week` : "none this week";
+    return n ? `${n} open now` : week ? `${plural(week, "problem")} this week` : "none this week";
   },
   async draw(page) {
     page.redraw = async () => { const fresh = el(`<div class="page page-health"></div>`); await this.draw(fresh); page.replaceWith(fresh); };
