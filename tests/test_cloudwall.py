@@ -4,12 +4,14 @@ import time
 import unittest
 from pathlib import Path
 
-from cloudwall import config, geo, sources
-from cloudwall.enrich import Enricher
-from cloudwall.store import Store
-from cloudwall.logbook import ordinal
-from cloudwall.tracker import Tracker
-from cloudwall.tracks import Tracks
+from cloudwall.core import config, geo
+from cloudwall.gather import demo, feeds
+from cloudwall.reference import placing
+from cloudwall.gather.enrich import Enricher
+from cloudwall.memory.store import Store
+from cloudwall.memory.logbook import ordinal
+from cloudwall.picture.tracker import Tracker
+from cloudwall.memory.tracks import Tracks
 
 PDX = (45.5887, -122.5975)
 SFO = (37.619, -122.375)
@@ -23,7 +25,7 @@ _net = {}
 
 def setUpModule():
     import urllib.request
-    from cloudwall import enrich
+    from cloudwall.gather import enrich
     _net.update(urlopen=urllib.request.urlopen, get_json=enrich.get_json, reached=[])
 
     def local_only(req, *a, **kw):
@@ -38,7 +40,7 @@ def setUpModule():
 
 def tearDownModule():
     import urllib.request
-    from cloudwall import enrich
+    from cloudwall.gather import enrich
     urllib.request.urlopen, enrich.get_json = _net["urlopen"], _net["get_json"]
     if _net["reached"]:
         raise AssertionError(f"tests reached for the network: {sorted(set(_net['reached']))[:5]}")
@@ -71,7 +73,7 @@ class GeoTest(unittest.TestCase):
 class SourceTest(unittest.TestCase):
     def test_normalise_real_feed(self):
         data = json.loads((Path(__file__).parent / "fixtures/adsblol_point.json").read_text())
-        ac = [sources.normalise(a) for a in data["ac"]]
+        ac = [feeds.normalise(a) for a in data["ac"]]
         by = {a["callsign"]: a for a in ac}
         self.assertEqual(by["UAL1953"]["type"], "B738")
         self.assertEqual(by["UAL1953"]["alt"], 3625)
@@ -89,17 +91,17 @@ class FeedsTest(unittest.TestCase):
                 raise OSError("handshake timed out")
             return {"ac": [{"hex": "abc123", "lat": 45.0, "lon": -122.0, "flight": "ASA1 "}]}
 
-        real, sources.get_json = sources.get_json, fake
+        real, feeds.get_json = feeds.get_json, fake
         try:
-            f = sources.Feeds(["https://bad.example/{lat}/{lon}/{radius}", "https://good.example/{lat}/{lon}/{radius}"])
+            f = feeds.Feeds(["https://bad.example/{lat}/{lon}/{radius}", "https://good.example/{lat}/{lon}/{radius}"])
             self.assertEqual(f.fetch(45, -122, 15)[0]["callsign"], "ASA1")
             self.assertEqual(f.name, "good.example")
             f.fetch(45, -122, 15)                       # stays on the working feed
             self.assertEqual([("bad" in c) for c in calls], [True, False, False])
-            f2 = sources.Feeds(["https://bad.example/{lat}", "https://bad.example/b/{lat}"])
+            f2 = feeds.Feeds(["https://bad.example/{lat}", "https://bad.example/b/{lat}"])
             self.assertRaises(OSError, f2.fetch, 45, -122, 15)
         finally:
-            sources.get_json = real
+            feeds.get_json = real
 
     def test_legacy_single_url_config(self):
         import tempfile
@@ -115,7 +117,7 @@ RX, PUB = "http://receiver.local/data/aircraft.json", "https://public.example/{l
 
 
 class MergedTest(unittest.TestCase):
-    """Your own receiver and a public feed together (sources.Merged). The receiver answers like
+    """Your own receiver and a public feed together (feeds.Merged). The receiver answers like
     readsb's aircraft.json (now in seconds); the public feed like the community APIs (now in ms)."""
 
     def setUp(self):
@@ -131,11 +133,11 @@ class MergedTest(unittest.TestCase):
             made = self.t if self.now[key] is None else self.now[key]
             return {"now": made, "aircraft": got} if key == "rx" else {"now": made * 1000, "ac": got}
 
-        self.real, sources.get_json = sources.get_json, fake
-        self.m = sources.Merged([RX, PUB], clock=lambda: self.t)
+        self.real, feeds.get_json = feeds.get_json, fake
+        self.m = feeds.Merged([RX, PUB], clock=lambda: self.t)
 
     def tearDown(self):
-        sources.get_json = self.real
+        feeds.get_json = self.real
         self.m.pool.shutdown()
 
     @staticmethod
@@ -167,7 +169,7 @@ class MergedTest(unittest.TestCase):
         self.answers = {"rx": [self.rec("ddd444", 45.0, -122.0, seen_pos=20)],
                         "pub": [self.rec("ddd444", 45.0, -121.97, seen_pos=2)]}
         a = self.fetch()["ddd444"]
-        expected = sources.project(sources.normalise(self.rec("ddd444", 45.0, -121.97)), 2)
+        expected = feeds.project(feeds.normalise(self.rec("ddd444", 45.0, -121.97)), 2)
         self.assertAlmostEqual(a["lon"], expected["lon"], places=6)
 
     def test_never_goes_backwards(self):
@@ -187,7 +189,7 @@ class MergedTest(unittest.TestCase):
         a = self.fetch()["fff666"]
         self.assertEqual((a["type"], a["reg"]), ("B39M", "N123AS"))
         self.assertTrue(a["military"])
-        self.assertEqual(set(a), set(sources.normalise({"hex": "x"})))   # the same shape as any feed's record
+        self.assertEqual(set(a), set(feeds.normalise({"hex": "x"})))   # the same shape as any feed's record
 
     def test_one_feed_down_the_other_carries_on(self):
         self.answers = {"rx": OSError("tunnel down"), "pub": [self.rec("abc123", 45.0, -122.0)]}
@@ -207,9 +209,9 @@ class MergedTest(unittest.TestCase):
         self.assertEqual(got["gnd222"]["lon"], -122.0)            # taxiing: not moved on
 
     def test_clocks_and_times(self):
-        self.assertEqual(sources.feed_time({"now": 1_000_000_000_000}, 1_000_000_000.5), 1_000_000_000)   # ms
-        self.assertEqual(sources.feed_time({"now": 999_000_000}, 1_000_000_000), 1_000_000_000)  # far off: arrival
-        self.assertEqual(sources.feed_time({}, 5.0), 5.0)
+        self.assertEqual(feeds.feed_time({"now": 1_000_000_000_000}, 1_000_000_000.5), 1_000_000_000)   # ms
+        self.assertEqual(feeds.feed_time({"now": 999_000_000}, 1_000_000_000), 1_000_000_000)  # far off: arrival
+        self.assertEqual(feeds.feed_time({}, 5.0), 5.0)
         # a receiver clock a little ahead doesn't make its report count as newer than now
         self.now["rx"] = self.t + 2
         self.answers = {"rx": [self.rec("ahd333", 45.0, -122.0)], "pub": []}
@@ -483,7 +485,7 @@ class FlightAwareTest(unittest.TestCase):
                 return {"latitude": lat, "longitude": lon}
             return {"flights": self.flights}
 
-        from cloudwall import flightaware, live
+        from cloudwall.gather import flightaware, live
         self.mod, self.live, self.real = flightaware, live, live.get_json
         live.get_json = fake
         self.store = Store(":memory:")
@@ -550,7 +552,7 @@ class FlightAwareTest(unittest.TestCase):
 
 class Flightradar24Test(unittest.TestCase):
     def setUp(self):
-        from cloudwall import flightradar24, live
+        from cloudwall.gather import flightradar24, live
         self.calls, self.fail = [], None
         # a flight-summary/light row for a flight in the air (field names from the API spec)
         self.row = {"fr24_id": "3a01b036", "flight": "WN2327", "callsign": "SWA2327", "operating_as": "SWA",
@@ -595,7 +597,7 @@ class Flightradar24Test(unittest.TestCase):
         self.assertIsNone(self.fr.route("ASA1"))                             # empty result: 1 credit
         self.assertEqual(self.fr.used_today(), 1)
         self.rows = [dict(self.row, flight_ended=True)]
-        from cloudwall.live import NotYet
+        from cloudwall.gather.live import NotYet
         with self.assertRaises(NotYet):                                      # the leg before, already landed: 2 credits,
             self.fr.route("SWA2327")                                         # and worth asking again in a while
         self.assertEqual(self.fr.used_today(), 3)
@@ -628,11 +630,11 @@ class Flightradar24Test(unittest.TestCase):
 
 class DemoTest(unittest.TestCase):
     def test_demo_runs_end_to_end(self):
-        demo = sources.Demo()
+        sim = demo.Demo()
         store = Store(":memory:")
-        t = Tracker(config.load(), store, Enricher(store, demo=demo))
+        t = Tracker(config.load(), store, Enricher(store, demo=sim))
         home = config.DEFAULTS["home"]
-        t.update(demo.fetch(home["lat"], home["lon"], 15), "demo")
+        t.update(sim.fetch(home["lat"], home["lon"], 15), "demo")
         s = t.snapshot()
         self.assertGreaterEqual(len(s["aircraft"]), 3)
         json.dumps(s)
@@ -644,7 +646,7 @@ if __name__ == "__main__":
 
 class TracksTest(unittest.TestCase):
     def test_heat_lines_are_simplified_and_split_at_gaps(self):
-        from cloudwall.tracks import _simplified
+        from cloudwall.memory.tracks import _simplified
         bent = [(0, 0), (1, 0.001), (2, 0), (2, 1), (2, 2)]
         self.assertEqual(_simplified(bent), [(0, 0), (2, 0), (2, 2)])   # the corner kept, the wobble and the straights dropped
         t = Tracks(15, Store(":memory:"))
@@ -738,12 +740,12 @@ class RadarRangeTest(unittest.TestCase):
         self.assertEqual(t.snapshot()["beyond"], [])
 
     def test_demo_fills_a_longer_range(self):
-        demo = sources.Demo()
+        sim = demo.Demo()
         home = config.DEFAULTS["home"]
-        demo.fetch(home["lat"], home["lon"], 30)
-        demo.next_spawn = 0
-        demo.fetch(home["lat"], home["lon"], 30)
-        self.assertLessEqual(min(a["along"] for a in demo.active), -28)   # new arrivals start near 30 nm
+        sim.fetch(home["lat"], home["lon"], 30)
+        sim.next_spawn = 0
+        sim.fetch(home["lat"], home["lon"], 30)
+        self.assertLessEqual(min(a["along"] for a in sim.active), -28)   # new arrivals start near 30 nm
 
 
 class PlacesTest(unittest.TestCase):
@@ -755,7 +757,7 @@ class PlacesTest(unittest.TestCase):
         return config.load(f.name)
 
     def test_the_defaults_are_one_place_at_pdx(self):
-        [p] = config.places(config.load())
+        [p] = placing.places(config.load())
         self.assertEqual((p["place"], p["airport"]["icao"]), ({"id": "home", "name": "Home"}, "KPDX"))
         self.assertEqual([w["name"] for w in p["airport"]["runways"]], ["10R/28L", "10L/28R", "03/21"])
         # the fields around east Vancouver, nearest first, found in the bundled tables with their runways
@@ -765,7 +767,7 @@ class PlacesTest(unittest.TestCase):
 
     def test_an_icao_code_is_enough(self):
         cfg = self.load('[home]\nlat = 37.66\nlon = -122.40\n[airport]\nicao = "ksfo"\n')
-        ap = config.places(cfg)[0]["airport"]
+        ap = placing.places(cfg)[0]["airport"]
         self.assertEqual((ap["icao"], ap["iata"], ap["city"]), ("KSFO", "SFO", "San Francisco"))
         self.assertAlmostEqual(ap["lat"], 37.619, places=2)              # not PDX's position
         self.assertIn("OAK", [f["code"] for f in ap["others"]])          # small fields found nearby
@@ -776,27 +778,26 @@ class PlacesTest(unittest.TestCase):
         cfg = self.load('[[places]]\nname = "Cabin"\nlat = 44.06\nlon = -121.31\nairport = "KRDM"\n'
                         '[[places]]\nname = "cabin"\nlat = 37.66\nlon = -122.40\nairport = "KSFO"\nelevation_ft = 20\n'
                         '[kiosk]\nplace = "Cabin"\n')
-        ps = config.places(cfg)
+        ps = placing.places(cfg)
         self.assertEqual([p["place"]["id"] for p in ps], ["home", "cabin", "cabin-2"])
         self.assertEqual(ps[1]["home"]["elevation_ft"], 3070)           # the airport's, when not given
         self.assertEqual(ps[2]["home"]["elevation_ft"], 20)
         self.assertEqual(ps[1]["airport"]["iata"], "RDM")
-        self.assertEqual(config.kiosk_place(cfg, ps), "cabin")
+        self.assertEqual(placing.kiosk_place(cfg, ps), "cabin")
         self.assertEqual(ps[1]["kiosk"]["place"], "Cabin")              # shared settings carry over
         with self.assertRaisesRegex(ValueError, "needs lat and lon, or zip"):
-            config.places(dict(cfg, places=[{"name": "Boat", "lat": 1.0}]))
+            placing.places(dict(cfg, places=[{"name": "Boat", "lat": 1.0}]))
         with self.assertRaisesRegex(ValueError, "isn't in CloudWall's table"):
-            config.places(dict(cfg, places=[{"name": "Strip", "lat": 1.0, "lon": 2.0, "airport": "ZZZZ"}]))
+            placing.places(dict(cfg, places=[{"name": "Strip", "lat": 1.0, "lon": 2.0, "airport": "ZZZZ"}]))
 
     def test_a_field_with_no_iata_code_goes_by_its_local_one(self):
         cfg = self.load('[home]\nlat = 45.62\nlon = -122.65\n[airport]\nicao = "KVUO"\n')
-        ap = config.places(cfg)[0]["airport"]
+        ap = placing.places(cfg)[0]["airport"]
         self.assertEqual((ap["icao"], ap["iata"], ap["name"]), ("KVUO", "VUO", "Pearson Field"))   # not a blank code
         self.assertNotIn("VUO", [f["code"] for f in ap["others"]])       # and it isn't one of its own neighbours
 
     def test_settings_are_checked_when_the_file_is_read(self):
         for toml, said in (('[tracking]\npoll_seconds = "5"\n', "poll_seconds must be a number"),
-                           ('[tracking]\nwhen_idle = "puase"\n', 'must be "pause" or "log"'),
                            ('[kiosk]\ntracks = "off"\n', "tracks must be true or false"),
                            ('[extras]\nmilitary = 1\n', "military must be true or false"),
                            ('[tracking]\nradius_nm = 0\n', "more than 0"),
@@ -805,6 +806,13 @@ class PlacesTest(unittest.TestCase):
                            ('places = "cabin"\n', r"\[\[places\]\] sections")):
             with self.assertRaisesRegex(ValueError, said):
                 self.load(toml)
+        # a word it can't use is left out, said, and the default used: a CloudWall that ran goes on running
+        with self.assertLogs("cloudwall", "WARNING") as logs:
+            cfg = self.load('[tracking]\nwhen_idle = "puase"\n')
+        self.assertEqual(cfg["tracking"]["when_idle"], "pause")
+        self.assertIn('must be "pause" or "log"', cfg["_problems"][0])
+        self.assertIn("default", logs.output[0])
+        self.assertEqual(self.load('[tracking]\nwhen_idle = "Log"\n')["tracking"]["when_idle"], "log")   # case doesn't matter
         # a name CloudWall doesn't know is said, not refused: the rest of the file still counts
         with self.assertLogs("cloudwall", "WARNING") as logs:
             cfg = self.load('port = 5050\n[tracking]\nradious_nm = 20\npoll_seconds = 2.5\n[sound]\non = true\n')
@@ -814,15 +822,15 @@ class PlacesTest(unittest.TestCase):
         config.load(str(Path(config.EXAMPLE)))                           # the starter file passes its own check
 
     def test_zip_codes_and_the_closest_major_airport(self):
-        from cloudwall import airports
+        from cloudwall.reference import airports
         cfg = self.load('[home]\nzip = "98660"\n[[places]]\nname = "Cabin"\nzip = "97702"\n'
                         '[[places]]\nname = "Allston"\nzip = 2134\n')       # a number: TOML drops the leading 0
-        home, cabin, allston = config.places(cfg)
+        home, cabin, allston = placing.places(cfg)
         self.assertEqual((home["home"]["lat"], home["home"]["zip"], home["airport"]["icao"]), (45.6612, "98660", "KPDX"))
         self.assertEqual((cabin["airport"]["icao"], cabin["home"]["elevation_ft"]), ("KRDM", 3070))
         self.assertEqual((allston["home"]["zip"], allston["airport"]["icao"]), ("02134", "KBOS"))
         with self.assertRaisesRegex(ValueError, "isn't a US ZIP code CloudWall knows"):
-            config.places(dict(cfg, places=[{"zip": "00501"}]))
+            placing.places(dict(cfg, places=[{"zip": "00501"}]))
         # the closest major airport: a large one within 30 nm wins over a nearer smaller one
         self.assertEqual(airports.pick_airport(61.22, -149.86), "PANC")    # not Merrill Field, 1 nm away
         self.assertEqual(airports.pick_airport(47.98, -122.20), "KPAE")    # Everett: Paine Field, SEA is 32 nm
@@ -833,7 +841,7 @@ class PlacesTest(unittest.TestCase):
 
     def test_runway_flow_at_any_airport(self):
         cfg = self.load('[home]\nlat = 37.66\nlon = -122.40\n[airport]\nicao = "KSFO"\n')
-        t = Tracker(config.places(cfg)[0], Store(":memory:"), StubEnricher())
+        t = Tracker(placing.places(cfg)[0], Store(":memory:"), StubEnricher())
         sfo = {"lat": 37.62, "lon": -122.37}
         t.update([plane("w1", "UAL1", -3.0, alt=2500, gs=150, track=298, home=sfo)], "test")
         self.assertEqual(t.flow, {"dir": "west", "label": "West flow", "runways": "28L / 28R"})
@@ -841,7 +849,7 @@ class PlacesTest(unittest.TestCase):
         self.assertEqual(t.flow["runways"], "10L / 10R")
 
     def test_the_map_is_served_around_every_place(self):
-        from cloudwall import tiles as T
+        from cloudwall.gather import tiles as T
         t = T.Tiles(config.load(), "/tmp/x")
         sfo = (12, 655, 1583)                                            # a zoom-12 tile over SFO
         self.assertFalse(t.allowed(*sfo))
@@ -852,7 +860,7 @@ class PlacesTest(unittest.TestCase):
 class TilesTest(unittest.TestCase):
     def test_cache_area_limit_and_stale_fallback(self):
         import tempfile
-        from cloudwall import tiles as T
+        from cloudwall.gather import tiles as T
         with tempfile.TemporaryDirectory() as d:
             t = T.Tiles(config.load(), d)
             calls = []
@@ -881,7 +889,7 @@ class TilesTest(unittest.TestCase):
             self.assertIsNone(t.get(11, 327, 731))                    # never fetched and offline
 
     def test_template_placeholders(self):
-        from cloudwall import tiles as T
+        from cloudwall.gather import tiles as T
         cfg = config.load()
         cfg["map"] = dict(cfg["map"], url="https://{s}.example.com/dark/{z}/{x}/{y}{r}.png?api_key=k")
         t = T.Tiles(cfg, "/tmp/x")
@@ -891,20 +899,21 @@ class TilesTest(unittest.TestCase):
             headers = {"Content-Type": "image/png"}
             def __enter__(self): return self
             def __exit__(self, *a): pass
-            def read(self): return b"x"
+            def read(self, n=-1): return b"x"
 
-        real = T.urllib.request.urlopen
-        T.urllib.request.urlopen = lambda req, timeout=0: seen.append(req.full_url) or Resp()
+        import urllib.request
+        real = urllib.request.urlopen
+        urllib.request.urlopen = lambda req, timeout=0: seen.append(req.full_url) or Resp()
         try:
             t._download(11, 326, 731)
         finally:
-            T.urllib.request.urlopen = real
+            urllib.request.urlopen = real
         self.assertEqual(seen, ["https://a.example.com/dark/11/326/731.png?api_key=k"])
         cfg["map"]["url"] = "https://basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png?key=k"
         self.assertEqual(T.Tiles(cfg, "/tmp/x").info()["style"], "carto-dark")
 
     def test_styles_and_off(self):
-        from cloudwall import tiles as T
+        from cloudwall.gather import tiles as T
         cfg = config.load()
         self.assertIn("Esri", T.Tiles(cfg, "/tmp/x").attribution)
         self.assertIn("World_Dark_Gray_Base", T.Tiles(cfg, "/tmp/x").url)
@@ -917,7 +926,7 @@ class TilesTest(unittest.TestCase):
 
 
     def test_tiles_reach_the_corners_of_the_longest_range(self):
-        from cloudwall import tiles as T
+        from cloudwall.gather import tiles as T
         t = T.Tiles(config.load(), "/tmp/x")
         h = config.load()["home"]
         # the zoom-9 tile under the ATC square's north-east corner at 30 nm, 42 nm out
@@ -931,7 +940,7 @@ class TilesTest(unittest.TestCase):
 
 class ChartsTest(unittest.TestCase):
     def charts(self, d, **m):
-        from cloudwall.charts import Charts
+        from cloudwall.gather.charts import Charts
         cfg = config.load()
         cfg["map"] = dict(cfg["map"], **m)
         return Charts(cfg, d)
@@ -1020,7 +1029,7 @@ class ChartsTest(unittest.TestCase):
 
 class WakeTest(unittest.TestCase):
     def test_categories(self):
-        from cloudwall import aircraft
+        from cloudwall.reference import aircraft
         self.assertEqual([aircraft.wake(t) for t in ("A388", "B77W", "B738", "e75l", "C172")], ["A", "B", "F", "G", "I"])
         self.assertIsNone(aircraft.wake(None))
         self.assertIsNone(aircraft.wake("NOPE"))
@@ -1030,7 +1039,7 @@ class AboutTest(unittest.TestCase):
     """The write-ups a tap on a type opens (cloudwall/data/types/), held to their format."""
 
     def test_every_file_is_sound(self):
-        from cloudwall import about
+        from cloudwall.reference import about
         self.assertEqual(about.problems(), [])
         self.assertGreater(len(about.covered()), 0)
 
@@ -1038,16 +1047,17 @@ class AboutTest(unittest.TestCase):
         """Every type CloudWall draws or counts the seats of (data/types.csv, data/seats.csv) opens a
         written page, not just its drawing: a type added to either needs its write-up too."""
         import csv
-        from cloudwall import about
+        from cloudwall.core import paths
+        from cloudwall.reference import about
 
         def codes(name):
-            with open(Path(about.__file__).parent / "data" / name, encoding="utf-8") as f:
+            with open(paths.DATA / name, encoding="utf-8") as f:
                 return {r["type"] for r in csv.DictReader(line for line in f if not line.startswith("#"))}
         self.assertEqual(sorted((codes("types.csv") | codes("seats.csv")) - set(about.covered())), [],
                          "types with no write-up in cloudwall/data/types/")
 
     def test_a_variant_adds_to_its_family(self):
-        from cloudwall import about
+        from cloudwall.reference import about
         long, short = about.entry("b753"), about.entry("B752")
         self.assertEqual((long["name"], long["family"], short["family"]), ("Boeing 757-300", "Boeing 757", "Boeing 757"))
         self.assertEqual(long["text"][:len(short["text"])], short["text"])          # the family's text, then its own
@@ -1060,7 +1070,7 @@ class AboutTest(unittest.TestCase):
     def test_the_737s_and_a320s_each_have_their_own_write_up(self):
         """The models over the house every day don't share their family's page: each has a write-up
         of its own, no paragraph of it its sister's, with its own first flight and delivery years."""
-        from cloudwall import about
+        from cloudwall.reference import about
         families = {"Boeing 737 Next Generation": ("B736", "B737", "B738", "B739"), "Boeing 737 MAX": ("B37M", "B38M", "B39M", "B3XM"),
                     "Airbus A320 family": ("A318", "A319", "A320", "A321"), "Airbus A320neo family": ("A19N", "A20N", "A21N")}
         for family, codes in families.items():
@@ -1077,7 +1087,7 @@ class AboutTest(unittest.TestCase):
 
     def test_what_is_wrong_is_said(self):
         import tempfile
-        from cloudwall import about
+        from cloudwall.reference import about
         good = 'name = "X"\ntypes = ["XA1", "XB2"]\nchecked = "2026-11"\nsources = ["https://example.com"]\ntext = "One.\\n\\nTwo."\n'
         files = {
             "good.toml": good,
@@ -1109,7 +1119,7 @@ class AboutTest(unittest.TestCase):
         self.assertEqual((entries["WA1"]["text"], entries["WB2"]["text"]), (["A."], ["B."]))
 
     def test_paragraphs(self):
-        from cloudwall.about import paragraphs
+        from cloudwall.reference.about import paragraphs
         self.assertEqual(paragraphs("  First line\n wrapped here.\n\n\nSecond.\n"), ["First line wrapped here.", "Second."])
         self.assertEqual(paragraphs(None), [])
 
@@ -1205,7 +1215,7 @@ class LiveFirstTest(unittest.TestCase):
 
 class LogosTest(unittest.TestCase):
     def test_airline_codes(self):
-        from cloudwall.airlines import iata_for
+        from cloudwall.reference.airlines import iata_for
         self.assertEqual(iata_for("DAL2008"), "DL")
         self.assertEqual(iata_for("QXE2162"), "AS")            # Horizon flies as Alaska
         self.assertEqual(iata_for("XYZ123", "XY"), "XY")       # unknown airline: trust the database code
@@ -1214,16 +1224,17 @@ class LogosTest(unittest.TestCase):
 
     def test_cache_and_missing(self):
         import tempfile, urllib.error
-        from cloudwall import logos as L
+        from cloudwall.gather import logos as L
         with tempfile.TemporaryDirectory() as d:
             lg = L.Logos(config.load(), d)
             calls = []
 
             class Resp:
+                headers = {}
                 def __init__(self, data): self.data = data
                 def __enter__(self): return self
                 def __exit__(self, *a): pass
-                def read(self): return self.data
+                def read(self, n=-1): return self.data
 
             def fake(req, timeout=0):
                 calls.append(req.full_url)
@@ -1231,7 +1242,7 @@ class LogosTest(unittest.TestCase):
                     raise urllib.error.HTTPError(req.full_url, 404, "nope", None, None)
                 return Resp(b"\x89PNG fake")
 
-            real, L.urllib.request.urlopen = L.urllib.request.urlopen, fake
+            real, urllib.request.urlopen = urllib.request.urlopen, fake
             try:
                 self.assertTrue(lg.get("DL").startswith(b"\x89PNG"))
                 lg.get("DL")
@@ -1239,14 +1250,14 @@ class LogosTest(unittest.TestCase):
                 self.assertIsNone(lg.get("QX"))
                 self.assertIsNone(lg.get("../etc"))
             finally:
-                L.urllib.request.urlopen = real
+                urllib.request.urlopen = real
             self.assertEqual(len(calls), 2)                     # one download each, misses remembered
 
 
 class BudgetTest(unittest.TestCase):
     def provider(self, today, **settings):
         import datetime as dt
-        from cloudwall import flightradar24
+        from cloudwall.gather import flightradar24
         cfg = config.load()
         cfg["flightradar24"] = dict(cfg["flightradar24"], api_key="tok", **settings)
         p = flightradar24.Flightradar24(cfg, Store(":memory:"))
@@ -1262,7 +1273,7 @@ class BudgetTest(unittest.TestCase):
 
     def test_billing_period(self):
         import datetime as dt
-        from cloudwall.live import billing_period
+        from cloudwall.gather.live import billing_period
         d = dt.date
         self.assertEqual(billing_period(d(2026, 11, 17), 1), (d(2026, 11, 1), d(2026, 12, 1)))
         self.assertEqual(billing_period(d(2026, 11, 17), 20), (d(2026, 10, 20), d(2026, 11, 20)))
@@ -1311,7 +1322,7 @@ class PresentationDataTest(unittest.TestCase):
         self.t = Tracker(config.load(), self.store, self.enricher)
 
     def test_flight_number_and_partner_airline(self):
-        from cloudwall.airlines import flight_number
+        from cloudwall.reference.airlines import flight_number
         self.assertEqual([flight_number(c) for c in ("ASA508", "SKW3108", "DAL0012", "N733NV")], ["AS508", "OO3108", "DL12", None])
         apt = lambda code, ll: {"iata": code, "city": code, "lat": ll[0], "lon": ll[1]}
         self.enricher.routes["SKW3108"] = {"flight": "AS3108", "airline": None, "source": "fr24", "painted_as": "ASA",
@@ -1346,7 +1357,7 @@ class PresentationDataTest(unittest.TestCase):
 
 class WeatherTest(unittest.TestCase):
     def test_decoding(self):
-        from cloudwall import weather as W
+        from cloudwall.gather import weather as W
         self.assertEqual([W.parse_vis(v) for v in ("10+", "1 1/2", "1/4", 6, None)], [10, 1.5, 0.25, 6, None])
         self.assertEqual(W.ceiling([{"cover": "FEW", "base": 900}, {"cover": "BKN", "base": 2100}, {"cover": "OVC", "base": 6000}]), 2100)
         self.assertEqual([W.category(400, 10), W.category(900, 10), W.category(3000, 10), W.category(None, 4), W.category(None, 10)],
@@ -1358,7 +1369,7 @@ class WeatherTest(unittest.TestCase):
         self.assertAlmostEqual(W.density_altitude(23, 9.0, 1018.7), -836, delta=20)   # cool, high pressure: well below field
 
     def test_real_shapes(self):
-        from cloudwall import weather as W
+        from cloudwall.gather import weather as W
         m = {"icaoId": "KPDX", "obsTime": 1794890160, "temp": 8.9, "dewp": 6.7, "wdir": 0, "wspd": 0, "visib": "10+",
              "altim": 1018.7, "metarType": "SPECI", "rawOb": "SPECI KPDX ...", "elev": 7, "cover": "BKN", "fltCat": "VFR",
              "clouds": [{"cover": "FEW", "base": 2000}, {"cover": "SCT", "base": 2500}, {"cover": "BKN", "base": 6000}]}
@@ -1371,7 +1382,7 @@ class WeatherTest(unittest.TestCase):
         self.assertEqual((p["category"], p["wind"]["variable"], p["visibility"]), ("VFR", True, 6))
 
     def test_demo(self):
-        from cloudwall import weather as W
+        from cloudwall.gather import weather as W
         short, full = W.demo()
         self.assertEqual(len(full["history"]), 25)
         self.assertTrue(full["taf"]["periods"])
@@ -1383,11 +1394,11 @@ class FeedExtrasTest(unittest.TestCase):
         raw = {"hex": "ac32f2", "flight": "SWA4083 ", "r": "N8851Q", "t": "B38M", "desc": "BOEING 737 MAX 8", "year": "2023",
                "ownOp": "SOUTHWEST AIRLINES CO", "alt_baro": 9000, "gs": 300, "lat": 45.6, "lon": -122.5, "baro_rate": -1200,
                "nav_altitude_mcp": 6016, "nav_modes": ["autopilot", "althold", "lnav"], "dbFlags": 8}
-        a = sources.normalise(raw)
+        a = feeds.normalise(raw)
         self.assertEqual((a["desc"], a["year"], a["target_alt"], a["modes"]), ("Boeing 737 MAX 8", 2023, 6016, ["autopilot", "althold", "lnav"]))
         self.assertTrue(a["private_owner"])                       # LADD flag
-        self.assertEqual(sources.tidy_type("CESSNA 172S SKYHAWK SP"), "Cessna 172S Skyhawk SP")
-        self.assertEqual(sources.tidy_type("Airbus A321neo"), "Airbus A321neo")
+        self.assertEqual(feeds.tidy_type("CESSNA 172S SKYHAWK SP"), "Cessna 172S Skyhawk SP")
+        self.assertEqual(feeds.tidy_type("Airbus A321neo"), "Airbus A321neo")
 
     def test_owner_hidden_for_privacy_aircraft(self):
         t = Tracker(config.load(), Store(":memory:"), StubEnricher())
@@ -1416,7 +1427,7 @@ class FeedExtrasTest(unittest.TestCase):
 class PhotoTest(unittest.TestCase):
     def test_photo_comes_from_planespotters_with_its_credit(self):
         from unittest import mock
-        from cloudwall import enrich
+        from cloudwall.gather import enrich
         answer = {"photos": [
             {"id": "1", "thumbnail_large": {"src": "javascript:alert(1)"},       # not an image link
              "link": "https://www.planespotters.net/photo/1/n24706", "photographer": "A. Spotter"},
@@ -1441,7 +1452,7 @@ class PhotoTest(unittest.TestCase):
     def test_registry_photo_is_not_used(self):
         # adsbdb's photo is filed by tail number and can show an older aircraft that wore it
         from unittest import mock
-        from cloudwall import enrich
+        from cloudwall.gather import enrich
         answer = {"response": {"aircraft": {"type": "737NG 724/W", "manufacturer": "Boeing", "registration": "N24706",
                                             "registered_owner": "United Airlines",
                                             "url_photo": "https://image.airport-data.com/aircraft/826984.jpg"}}}
@@ -1468,7 +1479,7 @@ class PhotoTest(unittest.TestCase):
 class ActivityTest(unittest.TestCase):
     def test_idle_and_wake(self):
         import threading
-        from cloudwall.activity import Activity
+        from cloudwall.core.activity import Activity
         a = Activity(idle_after=1)
         self.assertTrue(a.idle())                         # nobody has looked yet
         woke = []
@@ -1503,17 +1514,17 @@ class ServerTest(unittest.TestCase):
     def serve(self, cfg, saved=None, charts=None):
         """A server over every place in cfg, with no threads started and no network lookups."""
         import threading
-        from cloudwall.place import Place, Places
-        from cloudwall.server import make_server
+        from cloudwall.app.place import Place, Places
+        from cloudwall.serve.server import make_server
         cfg["server"]["host"], cfg["server"]["port"] = "127.0.0.1", 0
 
         def make(pc):
-            place = Place(pc, Store(":memory:"), sources.Demo())
+            place = Place(pc, Store(":memory:"), demo.Demo())
             place.tracker.enricher = StubEnricher()
             place.start = lambda: None
             return place
         places = Places(cfg, make, saved)
-        for pc in config.places(cfg):
+        for pc in placing.places(cfg):
             places.add_config(pc)
         places.load_saved()
         srv = make_server(cfg, places, charts)
@@ -1570,51 +1581,52 @@ class ServerTest(unittest.TestCase):
         self.assertEqual(len(places.summaries()), 1)                                    # nothing was added or removed
 
     def test_a_key_worth_having(self):
-        from cloudwall import access
-        keys = {access.new_key() for _ in range(50)}
-        self.assertEqual(len(keys), 50)
-        for key in keys:
+        from cloudwall.core import keys
+        from cloudwall.serve import access
+        made = {keys.new_key() for _ in range(50)}
+        self.assertEqual(len(made), 50)
+        for key in made:
             self.assertRegex(key, r"^([bdfghjkmnprstvz][aeiou]){2}(-([bdfghjkmnprstvz][aeiou]){2}){3}$")      # typed once, said aloud
-            self.assertIsNone(access.problem(key))
-        self.assertIsNone(access.problem(""))                                           # none set: open, as on a home network
+            self.assertIsNone(keys.problem(key))
+        self.assertIsNone(keys.problem(""))                                           # none set: open, as on a home network
         for bad in ("short-key", "has spaces in the key", "slash/in/the/key/x", 12345678901234):
-            self.assertTrue(access.problem(bad), bad)
+            self.assertTrue(keys.problem(bad), bad)
         for bad in ("letmein", "a key with spaces"):
             with self.assertRaises(ValueError):
                 config.check("server", {"key": bad})
-        self.assertEqual(access.admit("/k/Tafo-Kemi-Luza-Nobe/api/state?range=15", access.tidy("tafo-kemi-luza-nobe")), ("in", "/api/state?range=15"))
+        self.assertEqual(access.admit("/k/Tafo-Kemi-Luza-Nobe/api/state?range=15", keys.tidy("tafo-kemi-luza-nobe")), ("in", "/api/state?range=15"))
 
     def test_it_names_itself_with_a_way_to_reach_it(self):
         # planespotters.net refuses a User-Agent with no contact URL or email: no photos at all
-        from cloudwall.http import UA
+        from cloudwall.core.http import UA
         self.assertRegex(UA, r"^CloudWall/[\d.]+ \(\+https://\S+\)$")
 
     def test_the_private_link_is_written_into_the_config(self):
         import tempfile
         from pathlib import Path
-        from cloudwall import access
+        from cloudwall.operate import privatelink
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "config.toml"
             # a [server] section with no key: added after its settings, ahead of the comment below them
             p.write_text('[home]\nlat = 45.6\n\n[server]\nport = 5051\n# a note\n\n[storage]\ndb_path = ""\n')
-            access.write_key(p, "tafo-kemi-luza-nobe")
+            privatelink.write_key(p, "tafo-kemi-luza-nobe")
             text = p.read_text()
             self.assertIn('port = 5051\nkey = "tafo-kemi-luza-nobe"\n# a note', text)
             self.assertEqual(config.load(str(p))["server"]["key"], "tafo-kemi-luza-nobe")
-            access.write_key(p, "bado-fegi-huja-kalo")                   # a new one replaces it, in place
+            privatelink.write_key(p, "bado-fegi-huja-kalo")                   # a new one replaces it, in place
             self.assertEqual(p.read_text(), text.replace("tafo-kemi-luza-nobe", "bado-fegi-huja-kalo"))
-            access.write_key(p, "")                                      # off: open again
+            privatelink.write_key(p, "")                                      # off: open again
             self.assertEqual(config.load(str(p))["server"]["key"], "")
             q = Path(d) / "other.toml"                                   # no [server] at all: one is added
             q.write_text('[home]\nlat = 45.6\n')
-            access.write_key(q, "tafo-kemi-luza-nobe")
+            privatelink.write_key(q, "tafo-kemi-luza-nobe")
             self.assertEqual(q.read_text(), '[home]\nlat = 45.6\n\n[server]\nkey = "tafo-kemi-luza-nobe"\n')
             # the example config, with its commented-out key, takes one too
             e = Path(d) / "example.toml"
             e.write_text(config.EXAMPLE.read_text())
-            access.write_key(e, "tafo-kemi-luza-nobe")
+            privatelink.write_key(e, "tafo-kemi-luza-nobe")
             self.assertEqual(config.load(str(e))["server"]["key"], "tafo-kemi-luza-nobe")
-        links = dict(access.links("tafo-kemi-luza-nobe", "192.168.1.20", 5050))
+        links = dict(privatelink.links("tafo-kemi-luza-nobe", "192.168.1.20", 5050))
         self.assertEqual(links["The wall panel"], "http://192.168.1.20:5050/k/tafo-kemi-luza-nobe/kiosk")
 
     def test_a_screen_asks_for_its_radar_range(self):
@@ -1638,7 +1650,7 @@ class ServerTest(unittest.TestCase):
     def test_chart_layers_are_served_by_name(self):
         import tempfile
         import urllib.error
-        from cloudwall.charts import Charts
+        from cloudwall.gather.charts import Charts
         with tempfile.TemporaryDirectory() as d:
             cfg = config.load()
             charts = Charts(cfg, d)
@@ -1657,7 +1669,7 @@ class ServerTest(unittest.TestCase):
             self.assertIn("charts", s)
 
     def test_screens_are_told_when_the_code_has_changed_since_it_started(self):
-        from cloudwall import server as S
+        from cloudwall.serve import server as S
         base, _ = self.serve(config.load())
         self.assertFalse(json.loads(self.get(base + "/api/state"))["restart"])
         watch = S.CodeWatch()
@@ -1774,20 +1786,20 @@ class ServerTest(unittest.TestCase):
 
     def test_a_new_place_doesnt_carry_on_in_a_removed_places_logbook(self):
         import tempfile
-        from cloudwall.place import Place, Places
-        from cloudwall.store import another_places
+        from cloudwall.app.place import Place, Places
+        from cloudwall.core.db import another_places
         folder = Path(tempfile.mkdtemp())
         db_for = lambda pid: folder / f"cloudwall-{pid}.db"
 
-        def make(pc):                                                   # as cloudwall.__main__ makes them
+        def make(pc):                                                   # as cloudwall.app.main makes them
             store = Store(str(db_for(pc["place"]["id"])))
             self.addCleanup(store.close)
             store.claim(pc["home"])
-            place = Place(pc, store, sources.Demo(), demo=True)
+            place = Place(pc, store, demo.Demo(), demo=True)
             place.start = lambda: None
             return place
         places = Places(config.load(), make, None, elsewhere=lambda pid, home: another_places(db_for(pid), home))
-        for pc in config.places(config.load()):
+        for pc in placing.places(config.load()):
             places.add_config(pc)
         self.assertEqual(places.add({"name": "Cabin", "zip": "97702"}).id, "cabin")              # near Bend
         places.remove("cabin")                                          # its logbook stays: cloudwall-cabin.db
@@ -1798,7 +1810,7 @@ class ServerTest(unittest.TestCase):
 
 class SeatsTest(unittest.TestCase):
     def test_airline_layout_then_type_then_cargo(self):
-        from cloudwall.seats import seats
+        from cloudwall.reference.seats import seats
         self.assertEqual(seats("ASA", "B39M"), {"n": 178, "lo": 178, "hi": 178, "basis": "airline"})
         self.assertEqual(seats("SKW", "E75L")["n"], 76)                     # regional partner's own layout
         self.assertEqual(seats("XYZ", "B738")["basis"], "type")            # unknown airline: typical for the type
@@ -1870,19 +1882,19 @@ class PathTest(unittest.TestCase):
 
 class VideoMapTest(unittest.TestCase):
     def test_portlands_class_c_and_the_vors_around_it(self):
-        from cloudwall import airports
+        from cloudwall.reference import airports
         home = config.DEFAULTS["home"]
         areas = airports.airspace_near(home["lat"], home["lon"], own="PDX")
         self.assertEqual(sorted((a["id"], a["class"], a["floor"], a["ceiling"]) for a in areas),
                          [("PDX", "C", f, 4000) for f in (0, 1100, 1700, 1800, 2000, 2300)])
         self.assertTrue(all(len(r) >= 3 and len(r[0]) == 2 for a in areas for r in a["rings"]))
         self.assertEqual([n["ident"] for n in airports.navaids_near(home["lat"], home["lon"])], ["CBU", "BTG", "UBG"])
-        cfg = config.complete_place(config.load())
+        cfg = placing.complete_place(config.load())
         self.assertEqual(len(cfg["airport"]["airspace"]), 6)
         self.assertEqual(cfg["airport"]["navaids"][1]["type"], "VORTAC")
 
     def test_class_d_only_for_the_places_own_airport(self):
-        from cloudwall import airports
+        from cloudwall.reference import airports
         rdm = airports.lookup("KRDM")
         self.assertEqual({a["class"] for a in airports.airspace_near(rdm["lat"], rdm["lon"], own="RDM")}, {"D"})
         self.assertEqual(airports.airspace_near(rdm["lat"], rdm["lon"], own="XXX"), [])
@@ -1902,7 +1914,7 @@ class VideoMapTest(unittest.TestCase):
 
 class SmallFieldTest(unittest.TestCase):
     def test_light_aircraft_at_pearson(self):
-        from cloudwall import airports
+        from cloudwall.reference import airports
         t = Tracker(config.load(), Store(":memory:"), StubEnricher())
         vuo = airports.lookup("VUO")
         a = plane("g1", "N733NV", 0, alt=900, typ="C172", category="A1", vrate=-500, track=260)
@@ -1916,7 +1928,7 @@ class SmallFieldTest(unittest.TestCase):
         self.assertNotIn("local_field", b)
 
     def test_light_aircraft_at_grove_field(self):
-        from cloudwall import airports
+        from cloudwall.reference import airports
         t = Tracker(config.load(), Store(":memory:"), StubEnricher())
         grove = airports.lookup("1W1")                                   # Camas, 429 ft
         a = plane("g2", "N12345", 0, alt=1300, typ="C172", category="A1", vrate=-400, track=250)
@@ -1933,7 +1945,7 @@ class TFRTest(unittest.TestCase):
       </aseTFRArea></TFRAreaGroup></TfrNot><txtDescrUSNS>FULL TEXT</txtDescrUSNS></Not></Add></Group></XNOTAM-Update>"""
 
     def test_parse_detail(self):
-        from cloudwall.tfr import parse_detail
+        from cloudwall.gather.tfr import parse_detail
         d = parse_detail(self.XML)
         self.assertEqual(d["name"], "Parade Portland, OR DHS - UAS Only")
         self.assertTrue(d["drones_only"])
@@ -1942,7 +1954,7 @@ class TFRTest(unittest.TestCase):
         self.assertEqual(d["end"] - d["start"], 7 * 3600 + 59 * 60)
 
     def test_nearby_only_and_cached(self):
-        from cloudwall.tfr import TFRs
+        from cloudwall.gather.tfr import TFRs
         home = {"lat": 45.59, "lon": -122.47}
         square = lambda lat, lon, r: {"type": "Polygon", "coordinates": [[[lon - r, lat - r], [lon + r, lat - r], [lon + r, lat + r], [lon - r, lat + r], [lon - r, lat - r]]]}
         shapes = {"features": [
@@ -1963,7 +1975,7 @@ class TFRTest(unittest.TestCase):
     def test_the_records_the_faa_issues_now(self):
         """A paragraph after the regulation, drone restrictions under 49 U.S.C. 44812 with the
         requesting office's reference before the name, and records named only by their number."""
-        from cloudwall.tfr import TFRs, parse_detail
+        from cloudwall.gather.tfr import TFRs, parse_detail
         drones = parse_detail(self.XML.replace("261121 Parade Portland, OR DHS - UAS Only", "2026-44812-CSA-0138 MDW Mag Mile Lights")
                               .replace("99.7", "44812"))
         self.assertEqual((drones["name"], drones["drones_only"]), ("MDW Mag Mile Lights", True))
@@ -1982,7 +1994,7 @@ class TFRTest(unittest.TestCase):
 
 class ContrailTest(unittest.TestCase):
     def test_schmidt_appleman(self):
-        from cloudwall.contrails import level, for_altitude
+        from cloudwall.gather.contrails import level, for_altitude
         self.assertEqual(level(250, -30, 100, 10400)["state"], "none")          # too warm at any humidity
         self.assertEqual(level(250, -55, 20, 10400)["state"], "short")          # cold but dry: forms, fades
         self.assertEqual(level(250, -55, 110, 10400)["state"], "persistent")    # ice-saturated: lingers
@@ -1993,7 +2005,7 @@ class ContrailTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(time, "tzset"), "needs tzset")
     def test_the_forecast_hours_are_utc(self):
         import os
-        from cloudwall import contrails
+        from cloudwall.gather import contrails
         hours = {"time": [f"2026-07-15T{h:02d}:00" for h in range(24)]}
         for p in contrails.LEVELS:                                      # each hour a degree colder, to tell them apart
             hours.update({f"temperature_{p}hPa": [-30.0 - h for h in range(24)], f"relative_humidity_{p}hPa": [50] * 24,
@@ -2018,14 +2030,14 @@ class MilitaryTest(unittest.TestCase):
             {"hex": "ae0001", "t": "F15", "alt_baro": 15000, "rr_lat": 45.6, "rr_lon": -122.6, "seen": 2, "dbFlags": 1},
             {"hex": "ae0002", "t": "F15", "alt_baro": 15000, "rr_lat": 47.6, "rr_lon": -122.3, "seen": 2, "dbFlags": 1},   # Seattle
             {"hex": "ae0003", "t": "C17", "alt_baro": 30000, "lat": 45.6, "lon": -122.6, "seen": 1, "dbFlags": 1}]}      # has a position
-        real = sources.get_json
-        sources.get_json = lambda url, timeout: feed
+        real = feeds.get_json
+        feeds.get_json = lambda url, timeout: feed
         try:
-            heard = sources.military_unplaced()                          # one request, whatever the places
-            out = sources.heard_near(heard, {"lat": 45.59, "lon": -122.47}, 40)
-            self.assertEqual([a["hex"] for a in sources.heard_near(heard, {"lat": 47.6, "lon": -122.3}, 40)], ["ae0002"])
+            heard = feeds.military_unplaced()                          # one request, whatever the places
+            out = feeds.heard_near(heard, {"lat": 45.59, "lon": -122.47}, 40)
+            self.assertEqual([a["hex"] for a in feeds.heard_near(heard, {"lat": 47.6, "lon": -122.3}, 40)], ["ae0002"])
         finally:
-            sources.get_json = real
+            feeds.get_json = real
         self.assertEqual([(a["hex"], a["alt"], a["military"]) for a in out], [("ae0001", 15000, True)])
 
 
@@ -2049,7 +2061,7 @@ class PaidLookupTroubleTest(unittest.TestCase):
         self.fail("the lookup never finished")
 
     def test_a_failed_lookup_waits_before_it_is_tried_again(self):
-        from cloudwall import enrich
+        from cloudwall.gather import enrich
         calls = []
 
         def route(p, callsign):
@@ -2076,7 +2088,7 @@ class PaidLookupTroubleTest(unittest.TestCase):
         self.assertFalse(e.store.cache_get("live_route", "fake:ASA512", 3600)[0])
 
     def test_a_flight_the_provider_hasnt_caught_up_with_is_asked_about_again(self):
-        from cloudwall.live import NotYet
+        from cloudwall.gather.live import NotYet
 
         def route(p, callsign):                                         # just after takeoff: it only knows the leg before
             raise NotYet(callsign)
@@ -2162,7 +2174,7 @@ class FollowedThroughGapsTest(unittest.TestCase):
         with self.assertLogs("cloudwall.tracker", "WARNING"):
             self.t.update([odd, plane("a1", "ASA1", 1.0)], "test")
         self.assertEqual(([a["hex"] for a in self.t.aircraft], self.t.status["ok"]), (["a1"], True))
-        n = sources.normalise({"hex": "A1", "gs": "fast", "lat": "45.6", "lon": -122.5, "track": True, "dbFlags": None})
+        n = feeds.normalise({"hex": "A1", "gs": "fast", "lat": "45.6", "lon": -122.5, "track": True, "dbFlags": None})
         self.assertEqual((n["gs"], n["lat"], n["track"], n["military"]), (None, None, None, False))
 
     def test_finished_flyovers_and_stale_runways_are_forgotten(self):
@@ -2196,7 +2208,7 @@ class HousekeepingTest(unittest.TestCase):
         self.assertTrue(s.cache_get("place", "home", float("inf"))[0])
 
     def test_lookups_in_memory_are_bounded(self):
-        from cloudwall import enrich
+        from cloudwall.gather import enrich
         e = Enricher(Store(":memory:"), demo=object())                  # (demo: no worker threads)
         with e.lock:
             for i in range(enrich.MEM_MAX + 10):
@@ -2208,15 +2220,15 @@ class HousekeepingTest(unittest.TestCase):
 
 class PlaceThreadsTest(unittest.TestCase):
     def place(self, source):
-        from cloudwall.place import Place
-        [pc] = config.places(config.load())
+        from cloudwall.app.place import Place
+        [pc] = placing.places(config.load())
         place = Place(pc, Store(":memory:"), source, demo=True)         # demo: no lookups, no weather
         place.tracker.enricher = StubEnricher()
         place.activity.sleep = place.stopped.wait = lambda seconds: None
         return place
 
     def test_a_loop_that_trips_is_started_again(self):
-        place, runs = self.place(sources.Demo()), []
+        place, runs = self.place(demo.Demo()), []
 
         def loop():
             runs.append(1)
@@ -2247,7 +2259,7 @@ class SharedTest(unittest.TestCase):
     """What isn't about one place is fetched once for all of them."""
 
     def test_one_fetch_serves_every_asker(self):
-        from cloudwall.shared import Shared
+        from cloudwall.gather.shared import Shared
         shared, fetched = Shared(StubEnricher()), []
         fetch = lambda: fetched.append(1) or len(fetched)
         self.assertEqual([shared.once("list", 60, fetch) for _ in range(3)], [1, 1, 1])
@@ -2258,8 +2270,8 @@ class SharedTest(unittest.TestCase):
         self.assertEqual(shared.once("other", 60, lambda: "ok"), "ok")
 
     def test_two_places_one_list_and_one_weather_report(self):
-        from cloudwall import weather
-        from cloudwall.shared import Shared
+        from cloudwall.gather import weather
+        from cloudwall.gather.shared import Shared
         shared, asked = Shared(StubEnricher()), []
         ring = [[-122.5, 45.5], [-122.4, 45.5], [-122.4, 45.7], [-122.5, 45.7], [-122.5, 45.5]]
         shared.tfrs.fetch_json = lambda url, timeout: asked.append("list") or {"features": [
@@ -2267,7 +2279,7 @@ class SharedTest(unittest.TestCase):
         shared.tfrs.fetch_text = lambda url, timeout: TFRTest.XML
         home, cabin = {"lat": 45.59, "lon": -122.47}, {"lat": 44.06, "lon": -121.31}
         from unittest import mock
-        with mock.patch("cloudwall.tfr.time.time", return_value=1e9):  # as the other restriction tests: before TFRTest.XML's dates, not after them
+        with mock.patch("cloudwall.gather.tfr.time.time", return_value=1e9):  # as the other restriction tests: before TFRTest.XML's dates, not after them
             self.assertEqual([len(shared.restrictions(p, 30)) for p in (home, cabin, home)], [1, 0, 1])
         real, weather.fetch_all = weather.fetch_all, lambda icao: asked.append(icao) or ({"station": icao}, {})
         try:
@@ -2279,8 +2291,8 @@ class SharedTest(unittest.TestCase):
         self.assertEqual(asked, ["list", "KPDX", "KRDM"])
 
     def test_a_flight_two_places_can_see_is_looked_up_and_paid_for_once(self):
-        from cloudwall.place import Place
-        from cloudwall.shared import Shared
+        from cloudwall.app.place import Place
+        from cloudwall.gather.shared import Shared
         calls = []
 
         class Provider:
@@ -2294,7 +2306,7 @@ class SharedTest(unittest.TestCase):
         shared = Shared(Enricher(cache, live=Provider()))
         cfg = config.load()
         cfg["places"] = [{"name": "Next door", "lat": cfg["home"]["lat"] + 0.01, "lon": cfg["home"]["lon"]}]
-        home, neighbour = [Place(pc, Store(":memory:"), sources.Demo(), shared) for pc in config.places(cfg)]
+        home, neighbour = [Place(pc, Store(":memory:"), demo.Demo(), shared) for pc in placing.places(cfg)]
         self.assertIs(home.tracker.enricher, neighbour.tracker.enricher)
         for place in (home, neighbour):
             place.tracker.update([plane("a1", "ASA512", 1.0)], "test")
@@ -2308,9 +2320,9 @@ class PlaceStateTest(unittest.TestCase):
     """A place gives a screen everything it draws; the tracker only tracks."""
 
     def test_a_screen_gets_the_board_with_the_places_own_weather_and_airspace(self):
-        from cloudwall.place import Place
-        [pc] = config.places(config.load())
-        place = Place(pc, Store(":memory:"), sources.Demo(), demo=True)
+        from cloudwall.app.place import Place
+        [pc] = placing.places(config.load())
+        place = Place(pc, Store(":memory:"), demo.Demo(), demo=True)
         self.assertEqual(place.state()["weather"], None)                 # nothing fetched yet: still a full answer
         place.start = lambda: None
         place.weather, place.weather_full = {"station": "KPDX"}, {"now": {"category": "VFR"}}
@@ -2336,7 +2348,7 @@ class ReferenceTablesTest(unittest.TestCase):
     """One table of airlines and one of aircraft types, on the server; the display keeps none."""
 
     def test_airlines(self):
-        from cloudwall import airlines
+        from cloudwall.reference import airlines
         self.assertEqual((airlines.code("ASA512"), airlines.code("N733NV"), airlines.code(None)), ("ASA", None, None))
         self.assertEqual((airlines.name("QXE"), airlines.name("ZZZ")), ("Horizon Air", None))
         self.assertEqual((airlines.cargo("FDX"), airlines.cargo("ASA"), airlines.cargo(None)), (True, False, False))
@@ -2349,7 +2361,7 @@ class ReferenceTablesTest(unittest.TestCase):
         self.assertEqual((airlines.iata_for("EJA512", "1I"), airlines.iata_for("CLX4", "CV")), ("1I", "CV"))
 
     def test_aircraft_types(self):
-        from cloudwall import aircraft
+        from cloudwall.reference import aircraft
         self.assertEqual(aircraft.shape("B738"), {"shape": "narrow", "length": 39.5, "known": True})
         self.assertEqual(aircraft.shape("zzzz", "A7"), {"shape": "heli", "length": 12, "known": False})   # by its category
         self.assertEqual(aircraft.shape(None), {"shape": "narrow", "length": 36, "known": False})
@@ -2360,9 +2372,9 @@ class ReferenceTablesTest(unittest.TestCase):
         self.assertEqual([aircraft.rare(t) for t in ("A388", "CONC", "B738", None)], [True, True, False, False])
 
     def test_each_record_the_display_draws_carries_them(self):
-        from cloudwall.place import Place
-        [pc] = config.places(config.load())
-        place = Place(pc, Store(":memory:"), sources.Demo(), demo=True)
+        from cloudwall.app.place import Place
+        [pc] = placing.places(config.load())
+        place = Place(pc, Store(":memory:"), demo.Demo(), demo=True)
         place.tracker.enricher = place.tracker.details.enricher = StubEnricher()
         place.tracker.update([plane("a1", "SWA1420", 1.0, typ="B37M"), plane("a2", "N733NV", 9.0, typ="C172", category="A1")], "test")
         hero = place.state()["hero"]
@@ -2383,7 +2395,7 @@ class MedicalTest(unittest.TestCase):
             "lat": 45.49916, "lon": -122.68517, "elevation_ft": 621}
 
     def setUp(self):
-        from cloudwall import medical
+        from cloudwall.picture import medical
         self.m = medical
         medical._said.clear()
 
@@ -2429,7 +2441,7 @@ class MedicalTest(unittest.TestCase):
         self.assertEqual((left["hospital"]["state"], left.get("medical")), ("left", True))
         self.assertNotIn("hospital", plain)
         self.assertNotIn("medical", plain)
-        from cloudwall import situation
+        from cloudwall.picture import situation
         self.assertEqual(situation.notable(landing), "medical")
 
     def test_a_helicopter_descending_past_a_hospital_is_not_medical(self):
@@ -2452,7 +2464,7 @@ class MedicalTest(unittest.TestCase):
             self.m.mark([a], [self.EMANUEL], said)
         self.assertEqual(a["hospital"]["state"], "landing")
         coasted = dict(a, coasting=time.time(), notable="medical", seq=2, lands_s=40)
-        from cloudwall import situation
+        from cloudwall.picture import situation
         situation.describe([coasted], {"iata": "PDX", "helipads": [self.EMANUEL]}, None, said)
         self.assertNotIn("hospital", coasted)
         self.assertNotIn("seq", coasted)
@@ -2473,7 +2485,7 @@ class MedicalTest(unittest.TestCase):
         """An air ambulance overhead is logged MEDICAL, and one known to be medical only after its
         entry was started has the badge added."""
         store = Store(":memory:")
-        t = Tracker(config.load(), store, Enricher(store, demo=sources.Demo()))
+        t = Tracker(config.load(), store, Enricher(store, demo=demo.Demo()))
         home = config.DEFAULTS["home"]
         over = {"hex": "ab1", "callsign": "LIFE3", "lat": home["lat"] + 0.004, "lon": home["lon"], "alt": 1500, "gs": 110,
                 "track": 90, "vrate": 0, "category": "A7", "type": "EC35", "on_ground": False}
@@ -2495,7 +2507,7 @@ class MedicalTest(unittest.TestCase):
         self.assertNotEqual((h or {}).get("state"), "landing")
 
     def test_helipads_near_home(self):
-        from cloudwall import airports
+        from cloudwall.reference import airports
         near = {p["code"]: p for p in airports.helipads_near(45.52, -122.68, 5)}
         self.assertEqual((near["9OR6"]["short"], near["7OR5"]["name"]), ("OHSU", "Emanuel Hospital"))
         self.assertTrue(all(isinstance(p["lat"], float) and isinstance(p["elevation_ft"], int) for p in near.values()))
@@ -2517,11 +2529,11 @@ class MedicalTest(unittest.TestCase):
 
     def test_demo_air_ambulance(self):
         """The demo's air ambulance flies to a hospital's helipad, and the tracker says so."""
-        demo = sources.Demo()
+        sim = demo.Demo()
         store = Store(":memory:")
-        t = Tracker(config.load(), store, Enricher(store, demo=demo))
+        t = Tracker(config.load(), store, Enricher(store, demo=sim))
         home = config.DEFAULTS["home"]
-        t.update(demo.fetch(home["lat"], home["lon"], 15), "demo")
+        t.update(sim.fetch(home["lat"], home["lon"], 15), "demo")
         life = next(a for a in t.snapshot()["aircraft"] if a.get("callsign") == "LIFE3")
         self.assertEqual((life["medical"], life["notable"], life["hospital"]["state"]), (True, "medical", "heading"))
         self.assertGreater(life["hospital"]["eta_s"], 60)
@@ -2530,9 +2542,11 @@ class MedicalTest(unittest.TestCase):
 class KioskQuietTest(unittest.TestCase):
     def test_density_is_checked(self):
         self.assertTrue(config.check("kiosk", {"density": "detailed"}))
-        for bad in ("Detailed", "detail"):
-            with self.assertRaises(ValueError):
-                config.check("kiosk", {"density": bad})
+        given = {"density": "Detailed"}
+        self.assertTrue(config.check("kiosk", given))
+        self.assertEqual(given["density"], "detailed")                  # as the page compares it
+        with self.assertRaises(ValueError):
+            config.check("kiosk", {"density": "detail"})
 
     def test_quiet_hours_are_checked(self):
         for ok in ("", "23:00-06:30", "0:00 - 7:15", "22:30-23:45"):
@@ -2541,3 +2555,188 @@ class KioskQuietTest(unittest.TestCase):
             with self.assertRaises(ValueError, msg=bad):
                 config.check("kiosk", {"quiet": bad})
         self.assertEqual(config.DEFAULTS["kiosk"]["quiet"], "")
+
+
+class FaultToleranceTest(unittest.TestCase):
+    """What the review of the whole system found, held to: a fault in one part is reported and
+    the rest carries on, nothing grows without bound, and a mistake in the config is named."""
+
+    def test_a_logbook_that_cant_be_written_doesnt_stop_the_board(self):
+        store = Store(":memory:")
+        t = Tracker(config.load(), store, StubEnricher())
+
+        def full(**f):
+            raise OSError(28, "No space left on device")
+        store.add_sighting = full
+        with self.assertLogs("cloudwall", "ERROR") as logs:
+            t.update([plane("a1", "ASA512", 1.0)], "test")
+        s = t.snapshot()
+        self.assertTrue(s["status"]["ok"])                              # the board is up
+        self.assertEqual(s["hero"]["hex"], "a1")
+        self.assertIn("No space left", s["status"]["storage"])          # and says what it couldn't keep
+        self.assertIn("carries on", logs.output[0])
+        t.update([plane("a1", "ASA512", 0.9)], "test")                  # said once, not on every update
+        del store.add_sighting
+        t.update([plane("b2", "UAL1", 0.8)], "test")
+        self.assertIsNone(t.snapshot()["status"]["storage"])            # and clears when it works again
+
+    def test_todays_count_survives_a_restart(self):
+        store = Store(":memory:")
+        Tracker(config.load(), store, StubEnricher()).update([plane("a1", "ASA512", 1.0)], "test")
+        self.assertEqual(Tracker(config.load(), store, StubEnricher()).snapshot()["today"], 1)
+
+    def test_followed_flights_are_capped(self):
+        from cloudwall.picture import tracker
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        for i in range(tracker.MAX_PINS + 20):
+            t.want_pin(f"{i:06x}")
+        self.assertEqual(len(t.pins), tracker.MAX_PINS)
+        t.want_pin("000000")                                            # one already followed still counts
+        self.assertIn("000000", t.pins)
+
+    def test_a_hanging_feed_is_skipped(self):
+        import threading
+        release = threading.Event()
+        real = feeds.get_json
+
+        def fake(url, timeout=0):
+            if url == RX:
+                release.wait(5)                                         # the receiver hangs
+                return {"now": 0, "aircraft": []}
+            return {"now": time.time() * 1000, "ac": [{"hex": "abc123", "lat": 45.6, "lon": -122.6,
+                                                       "alt_baro": 9000, "seen_pos": 0}]}
+        feeds.get_json = fake
+        m = feeds.Merged([RX, PUB])
+        old, feeds.MERGE_WAIT_S = feeds.MERGE_WAIT_S, 0.2
+        try:
+            with self.assertLogs("cloudwall.feeds", "WARNING"):
+                got = m.fetch(45.6, -122.6, 15)
+            self.assertEqual([a["hex"] for a in got], ["abc123"])       # the public feed's answer, on time
+        finally:
+            feeds.MERGE_WAIT_S, feeds.get_json = old, real
+            release.set()
+            m.close()
+
+    def test_tile_cache_is_kept_within_bounds(self):
+        import os
+        import tempfile
+        from cloudwall.gather import tiles
+        with tempfile.TemporaryDirectory() as d:
+            now = time.time()
+            for i in range(10):
+                p = Path(d, "layer", "12", str(i), "1.tile")
+                p.parent.mkdir(parents=True)
+                p.write_bytes(b"x" * 1000)
+                os.utime(p, (now - i * 3600, now - i * 3600))           # tile 9 is the oldest
+            stale = Path(d, "layer", "12", "old.tile")
+            stale.write_bytes(b"x")
+            os.utime(stale, (now - 3 * tiles.MAX_AGE,) * 2)
+            Path(d, "layer", "half.tmp").write_bytes(b"x")
+            removed, kept = tiles.sweep(d, 5000, now)
+            self.assertLessEqual(kept, 4500)
+            left = sorted(int(p.parent.name) for p in Path(d).rglob("*.tile"))
+            self.assertEqual(left, list(range(len(left))))              # the newest are the ones kept
+            self.assertFalse(stale.exists() or Path(d, "layer", "half.tmp").exists())
+            self.assertFalse(Path(d, "layer", "12", "9").exists())      # emptied folders go too
+
+    def test_restrictions_the_faa_dropped_are_forgotten(self):
+        from cloudwall.gather.tfr import TFRs
+        feature = {"properties": {"NOTAM_KEY": "6/1111-1-FDC-F"}}
+        t = TFRs(fetch_json=lambda url, timeout=0: {"features": [feature]})
+        t.details = {"6/1111": ("x", {}), "6/2222": ("y", {})}
+        t.fetch()
+        self.assertEqual(list(t.details), ["6/1111"])
+
+    def test_a_removed_place_lets_go_of_its_file(self):
+        from cloudwall.app.place import Place
+        [pc] = placing.places(config.load())
+        store = Store(":memory:")
+        place = Place(pc, store, demo.Demo(), demo=True)
+        closed = []
+        store.close = lambda: closed.append(True)
+        place.retire()
+        for _ in range(50):
+            if closed:
+                break
+            time.sleep(0.05)
+        self.assertEqual(closed, [True])
+
+
+class ConfigMistakesTest(unittest.TestCase):
+    def load(self, text):
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f:
+            f.write(text)
+        self.addCleanup(Path(f.name).unlink)
+        return config.load(f.name)
+
+    def test_a_word_cloudwall_doesnt_know_is_left_out_by_name(self):
+        for section, key, bad, toml, words in (
+                ("flightradar24", "mode", "alwyas", '"alwyas"', "[flightradar24] mode must be"),
+                ("kiosk", "view", "radr", '"radr"', "[kiosk] view must be"),
+                ("map", "style", "sattelite", '"sattelite"', "[map] style must be"),
+                ("map", "opacity", 4, "4", "[map] opacity must be from 0 to 1")):
+            with self.assertLogs("cloudwall", "WARNING"):
+                cfg = self.load(f"[{section}]\n{key} = {toml}")       # it still starts
+            self.assertIn(words, cfg["_problems"][0])
+            self.assertEqual(cfg[section][key], config.DEFAULTS[section][key])
+            with self.assertRaises(ValueError):                         # but isn't written that way (Setup)
+                config.check(section, {key: bad})
+        self.assertEqual(self.load('[flightradar24]\nmode = "Always"')["flightradar24"]["mode"], "always")   # case doesn't matter
+
+    def test_a_config_file_that_isnt_there_is_said_plainly(self):
+        with self.assertRaises(ValueError) as e:
+            config.load("/nonexistent/cloudwall.toml")
+        self.assertIn("no such file", str(e.exception))
+
+    def test_zip_beside_lat_and_lon_is_warned_about(self):
+        with self.assertLogs("cloudwall", "WARNING") as logs:
+            cfg = self.load('[home]\nzip = "97702"\nlat = 45.59\nlon = -122.47')
+        self.assertEqual(cfg["home"]["lat"], 45.59)
+        self.assertIn("ZIP code ignored", logs.output[0])
+
+    def test_both_names_for_a_monthly_allowance_are_taken(self):
+        from cloudwall.gather.flightradar24 import Flightradar24
+        for name in ("monthly_credits", "monthly_limit"):
+            cfg = self.load(f'[flightradar24]\n{name} = 30000')
+            self.assertEqual(Flightradar24(cfg, Store(":memory:")).monthly_limit, 30000)
+
+    def test_a_written_config_is_readable_by_its_owner_only(self):
+        import os
+        import stat
+        import tempfile
+        from cloudwall.operate import privatelink
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d, "config.toml")
+            privatelink.write_key(p, "tafo-kemi-luza-nobe")
+            self.assertEqual(stat.S_IMODE(os.stat(p).st_mode), 0o600)
+            os.chmod(p, 0o644)
+            privatelink.write_key(p, "")
+            self.assertEqual(stat.S_IMODE(os.stat(p).st_mode), 0o640)   # world-readable no longer (the group keeps its read)
+            path, _ = config.init(Path(d, "new.toml"))
+            self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o600)
+
+
+class DatabaseTest(unittest.TestCase):
+    def test_a_file_is_migrated_once_and_says_so(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            path = str(Path(d, "logbook.db"))
+            s = Store(path)
+            self.assertEqual(s.version, 1)
+            s.close()
+            s = Store(path)                                             # opened again: nothing re-run
+            self.assertEqual(s.version, 1)
+            s.close()
+
+    def test_a_damaged_file_is_set_aside_not_fatal(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, "logbook.db")
+            path.write_bytes(b"this is not a database at all" * 100)
+            with self.assertLogs("cloudwall.db", "ERROR") as logs:
+                s = Store(str(path))
+            self.addCleanup(s.close)
+            self.assertEqual(s.count("1"), 0)                           # a fresh logbook, working
+            self.assertEqual(len(list(Path(d).glob("logbook.db.damaged-*"))), 1)
+            self.assertIn("moved aside", logs.output[0])

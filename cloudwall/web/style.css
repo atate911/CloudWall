@@ -2062,3 +2062,10 @@ html.desk:not(.phone) .hero-card.fit-tight .h-type { font-size: min(2rem, 6.8cqi
 html.desk:not(.phone) .hero-card.fit-tight .h-what { gap: .35rem; }
 html.desk:not(.phone) .hero-card.fit-tight .h-top > .logo-tile { height: min(3.3rem, 11cqi); }
 html.desk:not(.phone) .hero-card.fit-tight .metric { padding-top: .5rem; padding-bottom: .55rem; }
+
+/* CloudWall's check of itself: a problem that stops it working, across the top of every screen */
+.trouble { position: sticky; top: 0; z-index: 50; background: #9b1c14; color: #fff; padding: .55rem 1rem;
+           font-weight: 700; line-height: 1.35; }
+.trouble span { font-weight: 400; }
+.trouble small { font-weight: 400; opacity: .9; white-space: nowrap; }
+.kiosk .trouble { font-size: 3vh; padding: 1.4vh 6.4vh; }

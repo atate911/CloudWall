@@ -11,13 +11,13 @@ dependencies = []
 dynamic = ["version"]
 
 [project.scripts]
-cloudwall = "cloudwall.__main__:main"
+cloudwall = "cloudwall.app.main:main"
 
-[tool.setuptools]
-packages = ["cloudwall"]
+[tool.setuptools.packages.find]
+include = ["cloudwall", "cloudwall.*"]        # every layer's folder, found rather than listed
 
 [tool.setuptools.package-data]
-cloudwall = ["web/*", "web/js/*", "web/js/profiles/*", "web/maps/*", "web/fonts/*", "data/*", "data/types/*", "config.example.toml"]
+cloudwall = ["web/*", "web/js/*", "web/js/profiles/*", "web/maps/*", "web/fonts/*", "data/*", "data/types/*", "radio/README.md", "config.example.toml"]
 
 [tool.setuptools.dynamic]
 version = { attr = "cloudwall.__version__" }

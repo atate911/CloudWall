@@ -35,6 +35,9 @@ jobs:
         run: python -m unittest discover -s tests
         env:
           CLOUDWALL_BROWSER_TESTS: "1"      # the browser tests must run here, not be skipped
+      - name: Coverage3D's tests (until it is folded into CloudWall)
+        run: python -m unittest discover -s tests
+        working-directory: coverage3d
       - name: Installs and starts as a package
         run: |
           pip install .

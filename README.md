@@ -190,51 +190,90 @@ aircraft comes overhead, with a different one for rare, military or emergency tr
 Badges mark the interesting ones: `NEW TYPE`, `NEW AIRLINE`, `RARE TYPE`, `HEAVY`,
 `HELICOPTER`, `MILITARY`, repeat visitors (`3rd VISIT`) and emergency squawks.
 
-## Install (Linux dev server)
+## Install
 
-Needs Python 3.11+ with the `venv` module and `make`.
+Needs Linux with systemd and Python 3.11 or later (Raspberry Pi OS Bookworm, Debian 12, Ubuntu
+22.04 and later all have it). Nothing else is installed: CloudWall uses Python's own library only.
 
 ```sh
 git clone https://github.com/atate911/CloudWall.git && cd CloudWall
-make install      # creates .venv and installs CloudWall in editable mode
-make demo         # simulated traffic, works offline
+sudo python3 -m cloudwall install
 ```
 
-Open `http://<server>:5050`. For real traffic:
+That sets the machine up and starts CloudWall as a service. Set your house in the settings file
+it made, then restart:
 
 ```sh
-make config       # writes ~/.config/cloudwall/config.toml; set [home] lat/lon or zip
-make run
+sudoedit /etc/cloudwall/config.toml      # [home] lat and lon, or zip
+sudo systemctl restart cloudwall
+cloudwall doctor                         # checks every part and says what to do about anything wrong
 ```
 
-CloudWall checks the file as it starts. A setting it can't use (text where a number belongs,
-say) stops it with a line naming the setting; a name it doesn't know, most often a typo, gets a
-warning in the log and is otherwise ignored.
+Open `http://<this machine>:5050`. Run `install` again whenever you like: it changes only what
+isn't so already.
 
-The install is editable, so changes to the Python or to `cloudwall/web/` take effect
-without reinstalling: restart for Python changes, just reload the browser for the
-web files.
+**After an update** (`git pull`): `sudo python3 -m cloudwall upgrade`. It backs up first, puts the
+new code in place beside the old and restarts into it, but only once it has checked your settings
+start with the new code; if they wouldn't, it says what to change and leaves the running CloudWall
+alone. `sudo cloudwall rollback` goes back to the release before.
 
-After an update (`git pull`), restart CloudWall: `make restart` for the service below, or stop
-`make run` and start it again. Until then the server keeps running the old code while browsers
-load the new pages, so anything new on both sides (such as setting a location) can't work; the
-header says **Updated: restart CloudWall** while that's so.
+**Coming from `make service`** (the old per-user setup): the same `sudo python3 -m cloudwall upgrade`
+moves your settings and logbooks over and turns the old service off; [MIGRATION.md](MIGRATION.md)
+walks through it, server and receiver. Your old files stay where they were until you delete them.
+Until you move, `git pull` and `make restart` keep working the old way.
 
-To keep it running in the background across logouts and reboots:
+**The control board:** set the owner's password (`sudo cloudwall owner`), then open
+`http://<this machine>:5050/admin`. Every part of CloudWall at a glance, every setting with what it
+does, and every problem it finds with what to do, fixable from the page.
 
-```sh
-make service      # systemd user service; `make logs` to follow, `make service-remove` to undo
-```
+**To try it without installing:** `make demo` runs on simulated traffic from the checkout.
 
-`make help` lists every task. Without make: `pip install -e .` then `cloudwall`.
+| Command | What it does |
+|---|---|
+| `sudo cloudwall upgrade` | From whatever runs here now to this code, in place: backs up, updates, moves an old setup over, checks (`rollback` goes back) |
+| `sudo cloudwall owner` | Sets the owner's password for the control board (`/admin`) |
+| `sudo cloudwall install` | Sets the machine up, or brings it up to date (`--role panel` for a wall panel, `--public NAME` for the internet through Caddy; `--dry-run` says what it would change) |
+| `cloudwall doctor` | Checks every part (settings, storage, the service, the feeds, the receiver, the tunnel, Caddy, backups) and, for anything wrong, says what it means, why it usually happens and what to do |
+| `sudo cloudwall doctor --fix` | Goes through each problem with you: repairs what it can, asks for what only you know, walks you through the rest |
+| `sudo cloudwall backup` | Settings and logbooks into one file (`restore` puts one back) |
+| `cloudwall report` | A report to paste when asking for help, with keys and positions masked |
+| `sudo cloudwall uninstall` | Takes CloudWall off the machine; settings and logbooks are kept unless `--purge` |
 
 ### Where things live
 
 | What | Where |
 |---|---|
-| Settings | `--config`, `$CLOUDWALL_CONFIG`, `./config.toml`, then `~/.config/cloudwall/config.toml` |
-| Logbook database | `~/.local/share/cloudwall/cloudwall.db` (or `[storage] db_path`, or `--db`); each extra place gets its own beside it, such as `cloudwall-cabin.db`, and places set up on the desktop are in `places.json` there |
-| Port | 5050 (`[server] port`, or `--port`) |
+| Settings | `/etc/cloudwall/config.toml` (and `config.toml.good`, the last copy that started, which CloudWall falls back on if an edit breaks the file) |
+| Logbooks | `/var/lib/cloudwall/`: `cloudwall.db` for the house, one more for each extra place (`cloudwall-cabin.db`), `places.json` for places set up on a screen, `health.db` (the incident log), `backups/` |
+| Map tiles and logos | `/var/cache/cloudwall/`, downloaded once and kept (tiles a month, within `[map] cache_mb`) |
+| The code | `/opt/cloudwall/current`, the release in use (the last three are kept) |
+| Port | 5050 (`[server] port`) |
+
+Run from a checkout instead (`make run`, for working on CloudWall), the settings are
+`./config.toml` or `~/.config/cloudwall/config.toml` and the logbooks `~/.local/share/cloudwall/`.
+
+## Keeping it healthy
+
+CloudWall checks itself every 30 seconds while it runs, and `cloudwall doctor` checks it from outside.
+Both look for problems in two kinds of way:
+
+- **Is it working?** A feed down, the logbook not saving, the disk filling, a settings file
+  edited into one that wouldn't start, a part that keeps failing.
+- **Is it true?** Problems where the screens look right but aren't: a feed giving the same answer
+  over and over (its aircraft frozen), your receiver answering but hearing almost nothing (an
+  antenna or SDR fault), positions arriving late, this machine's clock or time zone off, the paid
+  provider's sample data taken for real, an old weather report, a house no aircraft ever comes near
+  (its position probably wrong).
+
+A problem that stops CloudWall doing its job is said loudly: a red banner on every screen, the wall
+panel too; an error in the log; `systemctl status cloudwall`; and, with `[health] notify_url` set
+(an [ntfy.sh](https://ntfy.sh) topic, say), on your phone. One the screens can't show is a chip in
+the header. Safe repairs are made at once (trimming the map cache when the disk fills, reopening a
+logbook file that stopped saving); systemd restarts CloudWall if it ever hangs. Each problem's start
+and end are kept in the incident log.
+
+Every problem CloudWall knows is written up once (`cloudwall/core/troubles.py`): what it means, its
+usual causes, and the steps. That is what `doctor`, the screens and the log say.
 
 ## Locations
 
@@ -329,11 +368,17 @@ airline's layout; rows for a specific airline win over the typical ones.
 These use free services (adsb.fi, tfr.faa.gov, api.open-meteo.com) and pause when no screen is open.
 Turn any of them off in `[extras]`.
 
-## Production on dedicated hardware
+## A wall panel
 
-On the Pi, install the same way and run `make service`. Then start `deploy/kiosk.sh`
-from the desktop autostart to open the board full-screen. To drive a display from a
-board running elsewhere, set `CLOUDWALL_URL=http://<server>:5050` for the kiosk script.
+On the machine with the display (a Pi with a screen, say), as the desktop's user:
+
+```sh
+sudo python3 -m cloudwall install --role panel --wall http://<the wall>:5050/k/<key>
+```
+
+It opens the board full-screen whenever that user logs in to the desktop. On the wall's own
+machine, leave out `--wall`: it finds its own address and key. (A panel set up the old way, with
+`deploy/kiosk.sh` in the desktop's autostart, keeps working.)
 
 ## Three layouts
 
@@ -372,15 +417,13 @@ where the house is, let them add and remove places, and spend any paid route loo
 link keeps it yours without a password to type each time: the key is part of the address, so a
 bookmark or a favourite carries it.
 
-From CloudWall's folder, run:
+Run:
 
-    make private-link
+    sudo cloudwall --private-link
 
-(or `.venv/bin/cloudwall --private-link`). It makes a key that is easy to type once on a
+(from a checkout run with `make run`: `.venv/bin/cloudwall --private-link`). It makes a key that is easy to type once on a
 touchscreen and hard to guess, sixteen lower-case letters in four groups you can say aloud such
-as `tafo-kemi-luza-nobe`; writes it into the config file under `[server]` (starting one at
-`~/.config/cloudwall/config.toml` if there is none); restarts CloudWall if it runs as a service
-(`make service`); and prints the links to open, with this machine's address filled in:
+as `tafo-kemi-luza-nobe`; writes it into the settings under `[server]`; restarts CloudWall's service; and prints the links to open, with this machine's address filled in:
 
 ```
   On the home network (a PC, a phone):   http://192.168.1.20:5050/k/tafo-kemi-luza-nobe/
@@ -402,9 +445,9 @@ To do it by hand instead: `cloudwall --new-key` prints a key; put it in the conf
 
 What to know:
 
-- **Every screen needs the link once a key is set**, the ones at home too. The wall panel
-  started by `deploy/kiosk.sh` on CloudWall's own machine finds the key in the config by itself;
-  one on another machine is started with `CLOUDWALL_URL=http://<server>:5050/k/<key>`. Any other
+- **Every screen needs the link once a key is set**, the ones at home too. A wall panel on
+  CloudWall's own machine finds the key by itself when installed (`cloudwall install --role panel`);
+  one on another machine is given the link with `--wall http://<server>:5050/k/<key>`. Any other
   address, for the page or for its data, answers only "This CloudWall is private".
 - **Nothing expires.** The key travels in the address of everything the page asks for, so there
   is no cookie to be cleared and nothing to sign in to again.
@@ -557,7 +600,7 @@ no requests (or, with `"log"`, only the slow position check).
   `[map] route` can be `light`, `dark`, `osm`, or `off` for the plain arc. Its tiles come from
   zoom 0 to 6 only, the one map CloudWall serves for the whole world, cached the same way.
 - The charts are the FAA Aeronautical Information Services' own tiled charts (public domain),
-  current to the 56-day chart cycle within a month. `cloudwall/charts.py` keeps every map and
+  current to the 56-day chart cycle within a month. `cloudwall/gather/charts.py` keeps every map and
   chart in one place and serves each at `/tiles/<layer>/z/x/y`, so a new use for a chart is a
   layer name in the display.
 - Runways are drawn from the bundled runway table, with extended centrelines for the main

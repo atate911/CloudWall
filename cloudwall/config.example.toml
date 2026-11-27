@@ -71,7 +71,10 @@ sandbox = false        # true with a sandbox token: free, but returns fixed samp
 
 [flightaware]          # FlightAware AeroAPI (billed per lookup)
 api_key = ""           # your AeroAPI key (or set CLOUDWALL_FLIGHTAWARE_KEY)
-monthly_limit = 0      # same budget settings as above; without one, 30 lookups a day
+monthly_limit = 0      # lookups your plan allows each month (the same budget settings as above);
+                       # without one, 30 lookups a day
+safety_margin = 0.15
+billing_day = 1
 daily_limit = 0
 mode = "always"
 general_aviation = false
@@ -108,6 +111,8 @@ route = "satellite"    # the map behind the flight's route on its card: "satelli
                        # grey, "osm", or "off" for the plain arc
 atc = "off"            # a chart under the ATC-style radar: "off" (a controller's screen has only
                        # its video map), or "ifr-low" (IFR Enroute Low), "ifr-high", "sectional", "terminal"
+cache_mb = 2000        # the most disk the downloaded map and chart tiles may take, all together;
+                       # the oldest are removed once a day to stay under it (0: no limit)
 # Any other raster tile service, e.g. CARTO with your API key. Paste the provider's
 # raster URL template; {z} {x} {y} (and {s} {r}) are filled in. The key stays on
 # your server: the browser only ever loads tiles from CloudWall.
@@ -137,6 +142,16 @@ port = 5050
 # that is easy to type and hard to guess, writes it here, restarts the service and prints the links;
 # one of your own needs at least 12 letters and digits. Leave it out on a home network.
 # key = "tafo-kemi-luza-nobe"
+# The name CloudWall has on the internet, served over HTTPS by Caddy in front of it, for the links it
+# prints. `sudo cloudwall install --public cloudwall.example.com` sets it, and sets up Caddy.
+# address = "cloudwall.example.com"
 
 [storage]
-db_path = ""           # empty: ~/.local/share/cloudwall/cloudwall.db
+db_path = ""           # empty: cloudwall.db in the data folder (/var/lib/cloudwall when installed with
+                       # `cloudwall install`, else ~/.local/share/cloudwall)
+cache_dir = ""         # where downloaded map tiles and logos go; empty: /var/cache/cloudwall when
+                       # installed, else beside the logbook
+
+[health]               # CloudWall checks itself every 30 s: `cloudwall doctor` and the screens say what it finds
+notify_url = ""        # a web address told (a JSON POST) when a major problem starts and ends, such as
+                       # an ntfy.sh topic ("https://ntfy.sh/<your-topic>") to get it on your phone

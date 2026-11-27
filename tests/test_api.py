@@ -18,12 +18,14 @@ import unittest
 import urllib.request
 from pathlib import Path
 
-from cloudwall import config, contrails, sources, weather
-from cloudwall.place import Place, Places
-from cloudwall.server import API, make_server
-from cloudwall.store import Store
-from cloudwall.tfr import TFRs
-from cloudwall.tracker import Tracker
+from cloudwall.core import config
+from cloudwall.gather import contrails, demo, feeds, weather
+from cloudwall.reference import placing
+from cloudwall.app.place import Place, Places
+from cloudwall.serve.server import API, make_server
+from cloudwall.memory.store import Store
+from cloudwall.gather.tfr import TFRs
+from cloudwall.picture.tracker import Tracker
 
 DOC = Path(__file__).resolve().parent.parent / "API.md"
 
@@ -45,14 +47,14 @@ def shape(name):
 
 def plane(hexid, callsign, north_nm, east_nm=0.0, **more):
     home = config.DEFAULTS["home"]
-    return dict(sources.normalise({"hex": hexid, "flight": callsign, "t": "B739", "alt_baro": 3000, "gs": 180, "track": 280,
+    return dict(feeds.normalise({"hex": hexid, "flight": callsign, "t": "B739", "alt_baro": 3000, "gs": 180, "track": 280,
                                    "baro_rate": -700, "lat": home["lat"] + north_nm / 60, "lon": home["lon"] + east_nm / 42,
                                    "squawk": "1234", "category": "A3"}), **more)
 
 
 def fr24_route():
     """A route as flightradar24.py makes it from Flightradar24's answer."""
-    from cloudwall import flightradar24, live
+    from cloudwall.gather import flightradar24, live
     row = {"flight": "AS3400", "callsign": "SKW3400", "operating_as": "SKW", "painted_as": "ASA", "orig_icao": "KSFO",
            "dest_icao": "KPDX", "datetime_takeoff": "2026-11-17T02:41:09", "datetime_landed": None, "flight_ended": False}
     return _provider_route(flightradar24.Flightradar24, "flightradar24", {"data": [row]}, "SKW3400", live)
@@ -60,7 +62,7 @@ def fr24_route():
 
 def flightaware_route():
     """And as flightaware.py makes it from FlightAware's."""
-    from cloudwall import flightaware, live
+    from cloudwall.gather import flightaware, live
     end = lambda c: {"code": "K" + c, "code_icao": "K" + c, "code_iata": c, "name": c, "city": c}
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     flight = {"ident": "DAL178", "ident_iata": "DL178", "origin": end("SEA"), "destination": end("PDX"), "scheduled_off": now,
@@ -141,7 +143,7 @@ class ShapeTest(unittest.TestCase):
     # -- an aircraft, and its route ------------------------------------------------------------
     @classmethod
     def setUpClass(cls):
-        cfg = config.places(config.load())[0]
+        cfg = placing.places(config.load())[0]
         field = cfg["airport"]["others"][0]                     # a small field nearby
         home = cfg["home"]
         t = cls.tracker = Tracker(cfg, Store(":memory:"), Lookups())
@@ -198,15 +200,15 @@ class ShapeTest(unittest.TestCase):
         self.held("route", routes)
 
     def test_military_heard(self):
-        heard = sources.heard_near([{"hex": "ae0001", "t": "F15", "alt_baro": 15000, "rr_lat": self.home["lat"],
+        heard = feeds.heard_near([{"hex": "ae0001", "t": "F15", "alt_baro": 15000, "rr_lat": self.home["lat"],
                                      "rr_lon": self.home["lon"], "dbFlags": 1}], self.home, 40)
         self.assertEqual(set(heard[0]), set(shape("aircraft.feed")) | {"rough_nm"})
-        self.assertEqual(set(sources.demo_heard()[0]), set(heard[0]))       # the demo's are the same shape
+        self.assertEqual(set(demo.demo_heard()[0]), set(heard[0]))       # the demo's are the same shape
 
     def test_every_source_gives_the_same_record(self):
-        demo = sources.Demo().fetch(self.home["lat"], self.home["lon"], 15)[0]
-        self.assertEqual(set(demo), set(shape("aircraft.feed")))
-        self.assertEqual(set(sources.normalise({"hex": "a1"})), set(shape("aircraft.feed")))
+        simulated = demo.Demo().fetch(self.home["lat"], self.home["lon"], 15)[0]
+        self.assertEqual(set(simulated), set(shape("aircraft.feed")))
+        self.assertEqual(set(feeds.normalise({"hex": "a1"})), set(shape("aircraft.feed")))
 
     def test_a_flight_restriction(self):
         found = restrictions(self.home)
@@ -227,14 +229,14 @@ class ShapeTest(unittest.TestCase):
         cfg["server"]["host"], cfg["server"]["port"] = "127.0.0.1", 0
 
         def make(pc):
-            place = Place(pc, Store(":memory:"), sources.Demo(), demo=True)
+            place = Place(pc, Store(":memory:"), demo.Demo(), demo=True)
             place.tracker = self.tracker                        # the traffic above, logbook and all
             place.store = self.tracker.store
             place.weather, place.weather_full = weather.demo("KPDX", "Portland")
-            place.tfrs, place.contrails, place.heard = restrictions(pc["home"]), contrails.demo(), sources.demo_heard()
+            place.tfrs, place.contrails, place.heard = restrictions(pc["home"]), contrails.demo(), demo.demo_heard()
             return place
         places = Places(cfg, make, None)
-        for pc in config.places(cfg):
+        for pc in placing.places(cfg):
             places.add_config(pc)
         srv = make_server(cfg, places)
         threading.Thread(target=srv.serve_forever, daemon=True).start()

@@ -178,9 +178,12 @@ if age > 30: print("  [WARN] the data is stale: the decoder on the Pi may have s
   say "  bash deploy/feed-tunnel/vps-tunnel.sh cloudwall"
 }
 
+SYSTEM_UNIT=/etc/systemd/system/cloudwall.service    # the system install (`cloudwall install`)
+
 find_config() {
   [ -n "$CONFIG" ] && { echo "$CONFIG"; return; }
   [ -n "${CLOUDWALL_CONFIG:-}" ] && { echo "$CLOUDWALL_CONFIG"; return; }
+  [ -e "$SYSTEM_UNIT" ] && [ -e /etc/cloudwall/config.toml ] && { echo /etc/cloudwall/config.toml; return; }
   local unit="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/cloudwall.service" wd
   if [ -e "$unit" ]; then
     wd=$(sed -n 's/^WorkingDirectory=//p' "$unit" | head -1)
@@ -192,7 +195,9 @@ find_config() {
 }
 
 edit_config() {   # add|remove
-  if [ "$(id -u)" -eq 0 ] && [ -z "$CONFIG" ]; then
+  if [ -e "$SYSTEM_UNIT" ]; then
+    [ "$(id -u)" -eq 0 ] || die "CloudWall is installed as a system service: run this with sudo"
+  elif [ "$(id -u)" -eq 0 ] && [ -z "$CONFIG" ]; then
     die "run this as the user that runs CloudWall (not with sudo), or pass --config PATH"
   fi
   local cfg; cfg=$(find_config) || die "couldn't find CloudWall's config.toml; pass --config PATH"
@@ -235,12 +240,16 @@ got = tomllib.loads(result).get("source", {})
 assert got.get("urls") == new and bool(got.get("merge")) == merge, f"rewrite check failed: {got}"
 bak = f"{path}.bak-{time.strftime('%Y%m%d-%H%M%S')}"
 shutil.copy2(path, bak)
-open(path, "w").write(result)
+open(path, "w").write(result)            # (written in place: the file keeps its owner and mode)
 print(f"  [OK]   backed up to {bak}")
 print("  [OK]   [source] urls is now:"); [print("           " + u) for u in new]
 print(f"  [OK]   merge = {'true: your receiver and the public feeds combined' if merge else 'off: feeds tried in order'}")
 PY
-  if systemctl --user is-active --quiet cloudwall 2>/dev/null; then
+  if [ -e "$SYSTEM_UNIT" ]; then
+    systemctl restart cloudwall && ok "restarted CloudWall (systemctl restart cloudwall)"
+    sleep 8
+    journalctl -u cloudwall -n 30 --no-pager 2>/dev/null | grep -iE "feed|source|127\.0\.0\.1" | tail -5 | sed 's/^/    /' || true
+  elif systemctl --user is-active --quiet cloudwall 2>/dev/null; then
     systemctl --user restart cloudwall && ok "restarted CloudWall (systemctl --user restart cloudwall)"
     sleep 8
     journalctl --user -u cloudwall -n 30 --no-pager 2>/dev/null | grep -iE "feed|source|127\.0\.0\.1" | tail -5 | sed 's/^/    /' || true

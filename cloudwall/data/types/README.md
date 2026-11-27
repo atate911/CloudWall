@@ -2,7 +2,7 @@
 
 What the panel a tap on an aircraft's drawing opens says about its type: a short write-up, a few
 facts chosen for that type, and the years it was delivered. One TOML file per family, named for it
-(`b737max.toml`, `e175.toml`). `cloudwall/about.py` reads them, and `tests/test_cloudwall.py` holds
+(`b737max.toml`, `e175.toml`). `cloudwall/reference/about.py` reads them, and `tests/test_cloudwall.py` holds
 every file to this format. `python3 tools/type_notes.py` lists which types have a write-up and which
 still need one, the ones seen most over the house first.
 

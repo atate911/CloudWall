@@ -7,7 +7,7 @@ import subprocess
 import unittest
 from pathlib import Path
 
-from cloudwall import aircraft
+from cloudwall.reference import aircraft
 
 WEB = Path(__file__).resolve().parent.parent / "cloudwall" / "web" / "js"
 
@@ -103,9 +103,9 @@ class IconKindTest(unittest.TestCase):
             self.assertEqual(aircraft.icon(craft.get("type"), craft.get("desc"), craft.get("category")), want, craft)
 
     def test_each_aircraft_on_the_radar_carries_its_icon(self):
-        from cloudwall import config
-        from cloudwall.store import Store
-        from cloudwall.tracker import Tracker
+        from cloudwall.core import config
+        from cloudwall.memory.store import Store
+        from cloudwall.picture.tracker import Tracker
 
         class NoLookups:
             live = None

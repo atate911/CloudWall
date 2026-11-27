@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="trouble" id="trouble" role="alert" hidden></div>
 <header>
   <div class="brand">CloudWall<button class="station" id="station" aria-haspopup="menu" aria-expanded="false" disabled></button>
     <div class="place-menu" id="place-menu" role="menu" aria-label="Places" hidden></div></div>
@@ -20,7 +21,8 @@
     <button class="chip em-chip" id="em-chip" hidden></button>
     <span class="chip" id="tfr-chip" hidden></span>
     <span class="chip warn" id="link" hidden>Flight data offline</span>
-    <span class="chip warn" id="restart" hidden title="CloudWall's code changed after it started (an update), so the server is still running the old version. Restart it to finish: make restart, or systemctl --user restart cloudwall">Updated: restart CloudWall</span>
+    <span class="chip warn" id="looks-off" hidden></span>
+    <span class="chip warn" id="restart" hidden title="CloudWall's code changed after it started (an update), so the server is still running the old version. Restart it to finish: sudo systemctl restart cloudwall (or sudo cloudwall install again)">Updated: restart CloudWall</span>
   </div>
   <div class="next-line" id="next-line" aria-live="off"></div>
   <div class="seg dens" id="dens-seg" role="group" aria-label="How much to show">

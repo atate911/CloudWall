@@ -1,0 +1,6 @@
+# Coverage3D needs nothing beyond the Python 3.11+ standard library
+# (sqlite3, http.server, tomllib, urllib). Nothing to pin.
+#
+# Browser libraries are loaded from a CDN at fixed versions (see coverage3d/web/index.html):
+#   maplibre-gl 4.7.1   deck.gl 9.0.38
+# Test runner (optional):  pytest  (python -m unittest discover -s tests also works)
