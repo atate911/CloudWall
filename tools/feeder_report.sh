@@ -7,6 +7,8 @@
 # Run it ON THE PI, as root so it can read adsb.im's settings and the feeders' logs:
 #
 #   sudo bash feeder_report.sh          # prints the report and saves it to ./feeder-report.txt
+#   sudo bash feeder_report.sh --short  # the essentials, short enough to paste into a message
+#                                       # (saved to ./feeder-report-short.txt)
 #
 # It only reads: nothing is restarted, changed or installed.
 #
@@ -21,8 +23,10 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 command -v python3 >/dev/null 2>&1 || { echo "python3 is needed" >&2; exit 2; }
 
-OUT="${PWD}/feeder-report.txt"
-python3 - "$OUT" <<'PY' 2>&1 | tee "$OUT"
+MODE=full
+[ "${1:-}" = "--short" ] && MODE=short
+OUT="${PWD}/feeder-report$([ "$MODE" = short ] && echo -short).txt"
+python3 - "$OUT" "$MODE" <<'PY' 2>&1 | tee "$OUT"
 import glob, json, math, os, re, shutil, statistics, subprocess, sys, time, urllib.request
 from collections import Counter
 
@@ -89,7 +93,12 @@ def get(url_or_path):
     except Exception:
         return None
 
-print(f"feeder_report {time.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+SHORT = len(sys.argv) > 2 and sys.argv[2] == "short"
+# in the short report, only the settings that bear on sharing: location, height, MLAT, which feeders are on, keys
+WANTED = re.compile(r"(lat|lon|long|alt|mlat|enable|_is_|fr24|piaware|flightaware|radarbox|planefinder|opensky|adsbx|exchange|"
+                    r"airplanes|adsb_?fi|adsb_?lol|adsbhub|planewatch|1090uk|tat|key|feeder_?id|gain|privacy|version)", re.I)
+wanted = lambda k: not SHORT or bool(WANTED.search(k))
+print(f"feeder_report {time.strftime('%Y-%m-%d %H:%M:%S %Z')}{' (short)' if SHORT else ''}")
 
 # ---------------------------------------------------------------- the Pi
 section("System")
@@ -162,7 +171,8 @@ for f in cfgs:
                 k, _, v = line.partition("=")
                 items.append((k.strip(), v.strip().strip('"').strip("'")))
     for k, v in items:
-        print(f"  {k} = {setting(k, v)}")
+        if wanted(k):
+            print(f"  {k} = {setting(k, v)}")
 
 # ---------------------------------------------------------------- the containers and what they feed
 section("Containers")
@@ -217,13 +227,13 @@ if docker:
             print(f"  {mask(host):<34} {flags:<20} {'; '.join(row['other'])}")
         print(f"\n-- other settings of {ultra} (secrets masked) --")
         for k in sorted(env):
-            if k not in BORING and k != "ULTRAFEEDER_CONFIG":
+            if k not in BORING and k != "ULTRAFEEDER_CONFIG" and wanted(k):
                 print(f"  {k} = {setting(k, env[k])}")
     for n in names:
         if n == ultra:
             continue
         env = env_of(n)
-        shown = {k: v for k, v in env.items() if k not in BORING}
+        shown = {k: v for k, v in env.items() if k not in BORING and wanted(k)}
         if shown:
             print(f"\n-- settings of {n} (secrets masked) --")
             for k in sorted(shown):
@@ -234,10 +244,16 @@ if docker:
                       r"position|location|altitude|unknown|not found|key|online|offline|server status|beast|uploading|feed)", re.I)
     for n in names:
         lines = run([docker, "logs", "--tail", "600", n], timeout=30).splitlines()
-        hits = [l for l in lines if keep.search(l)]
+        hits = [mask(l) for l in lines if keep.search(l)]
+        # lines that differ only in their numbers (timestamps, counts, peers) shown once, the latest, with how many
+        groups = {}
+        for l in hits:
+            k = re.sub(r"\d+", "#", l)
+            n_, _ = groups.pop(k, (0, l))
+            groups[k] = (n_ + 1, l)
         print(f"\n-- {n}: {len(lines)} recent lines, {len(hits)} of interest --")
-        for l in hits[-25:]:
-            print("  " + mask(l)[:220])
+        for count, l in list(groups.values())[-(5 if SHORT else 25):]:
+            print("  " + l[:220] + (f"   (x{count})" if count > 1 else ""))
 
 # ---------------------------------------------------------------- what the receiver hears
 section("Reception")
@@ -273,21 +289,27 @@ else:
             print(f"Farthest heard directly right now: {d[-1][0]:.0f} nm ({(d[-1][1].get('flight') or d[-1][1].get('hex', '')).strip()}, "
                   f"{d[-1][1].get('alt_baro')} ft); median {statistics.median(x for x, _ in d):.0f} nm")
     fields = Counter(k for a in seen for k in a)
-    print("\nFields present (how many of the aircraft carry each):")
-    print("  " + ", ".join(f"{k} {n}" for k, n in sorted(fields.items(), key=lambda kv: (-kv[1], kv[0]))))
+    if not SHORT:
+        print("\nFields present (how many of the aircraft carry each):")
+        print("  " + ", ".join(f"{k} {n}" for k, n in sorted(fields.items(), key=lambda kv: (-kv[1], kv[0]))))
     watch = ["ias", "tas", "mach", "oat", "tat", "wd", "ws", "nav_qnh", "nav_heading", "nav_altitude_mcp", "nav_altitude_fms",
              "nav_modes", "roll", "track_rate", "mag_heading", "true_heading", "rssi", "messages", "category", "emergency"]
     print("Weather and flight-deck fields:", ", ".join(f"{k}: {fields.get(k, 0)}" for k in watch))
-    rich = sorted(seen, key=lambda a: -len(a))[:2]
+    rich = [] if SHORT else sorted(seen, key=lambda a: -len(a))[:2]
     for a in rich:
         print("\nExample record (of the two carrying the most fields):")
         print("  " + json.dumps({k: (round(v, 2) if k in ("lat", "lon") and isinstance(v, float) else v) for k, v in a.items()}, sort_keys=True))
     st = get(f"{base}/stats.json")
     if st:
         print("\nstats.json sections:", ", ".join(st.keys()))
-        for part in ("last1min", "last15min", "total"):
+        for part in (("last15min",) if SHORT else ("last1min", "last15min", "total")):
             if isinstance(st.get(part), dict):
-                print(f"stats {part}: " + json.dumps(st[part], sort_keys=True)[:1800])
+                d = st[part]
+                if SHORT:           # the receiver's own levels, message rate and range
+                    d = {k: d[k] for k in ("local", "messages", "max_distance", "remote") if k in d}
+                    if isinstance(d.get("local"), dict):
+                        d["local"] = {k: v for k, v in d["local"].items() if k in ("signal", "noise", "peak_signal", "strong_signals", "accepted", "samples_dropped")}
+                print(f"stats {part}: " + json.dumps(d, sort_keys=True)[:1800])
     else:
         print("\nNo stats.json at", base)
     for extra in ("outline.json", "globeMil_42777.json", "chunks/chunks.json"):
@@ -297,4 +319,5 @@ else:
 print("\n(end of report)")
 PY
 echo
-echo "Saved to $OUT. Read it over, then paste it into the conversation."
+echo "Saved to $OUT ($(wc -l <"$OUT") lines). Read it over, then paste it into the conversation."
+[ "$MODE" = full ] && echo "Too long to paste? sudo bash $0 --short gives the essentials only." 
