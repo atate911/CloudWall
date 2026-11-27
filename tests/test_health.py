@@ -122,11 +122,13 @@ class WatchTest(unittest.TestCase):
         self.addCleanup(m.close)
         return FakePlace(self.clock, m), m
 
-    def answer(self, feed, n, moving=True, now=None, seen_pos=0.5, same_positions=False):
+    def answer(self, feed, n, moving=True, now=None, seen_pos=0.5, same_positions=False, stamped=True):
         data = {"now": now if now is not None else self.clock(),
                 "aircraft": [{"hex": f"a{i:05x}", "lat": 45.6 + (0 if same_positions else i * 0.01 + (self.clock() % 1000) * 1e-4),
                               "lon": -122.6, "gs": 300 if moving else 0, "alt_baro": 10000, "seen_pos": seen_pos}
                              for i in range(n)]}
+        if not stamped:
+            del data["now"]
         feed.vitals.answered(data, feeds.placed_with_times(data, self.clock()), self.clock(), "host")
 
     def codes(self, w):
@@ -159,10 +161,32 @@ class WatchTest(unittest.TestCase):
         self.assertIn("feeds.no-positions", self.codes(w))
 
     def test_a_frozen_feed_is_found(self):
+        """The same answer again and again: its time stamp doesn't move on."""
+        place, m = self.merged_place()
+        w = watch([place], clock=self.clock)
+        made = self.clock()
+        for _ in range(4):
+            self.answer(m.receiver, 12, now=made)                       # the decoder hung at `made`
+            self.answer(m.public, 12)
+            self.clock.t += 5
+        self.assertIn("feeds.frozen", self.codes(w))
+
+    def test_one_aircraft_out_of_range_isnt_a_frozen_feed(self):
+        """At night: the receiver's one aircraft has gone out of range and is listed at its last
+        position while it ages, but each answer is made afresh. (Seen on the production server.)"""
+        place, m = self.merged_place()
+        w = watch([place], clock=self.clock)
+        for i in range(6):
+            self.answer(m.receiver, 1, same_positions=True, seen_pos=5 * i)
+            self.answer(m.public, 1)
+            self.clock.t += 5
+        self.assertNotIn("feeds.frozen", self.codes(w))
+
+    def test_a_feed_with_no_time_stamp_is_judged_by_many_moving_aircraft(self):
         place, m = self.merged_place()
         w = watch([place], clock=self.clock)
         for _ in range(4):
-            self.answer(m.public, 12, same_positions=True)
+            self.answer(m.public, 12, same_positions=True, stamped=False)
             self.answer(m.receiver, 12)
             self.clock.t += 5
         self.assertIn("feeds.frozen", self.codes(w))
