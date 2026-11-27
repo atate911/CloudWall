@@ -3,13 +3,13 @@ import unittest
 from coverage3d import config, filters, geo
 
 CFG = config.DEFAULTS["sampler"]
-ST = (45.636284, -122.677496, 27.0, 23.0)
+ST = (45.590000, -122.474000, 27.0, 23.0)
 NOW = 1_764_101_933.6
 
 
 def ac(**kw):
     d = {"hex": "a3539d", "type": "adsb_icao", "flight": "SKW3997 ", "alt_baro": 2550, "alt_geom": 2525,
-         "lat": 45.667099, "lon": -122.766657, "seen_pos": 0.27, "nac_p": 10, "rssi": -6.5}
+         "lat": 45.620815, "lon": -122.563161, "seen_pos": 0.27, "nac_p": 10, "rssi": -6.5}
     d.update(kw)
     return d
 
@@ -49,8 +49,8 @@ class PointFilterTests(unittest.TestCase):
         self.assertIsNotNone(p)
         self.assertEqual(p.callsign, "SKW3997")
         self.assertEqual(p.alt, 2525)                   # alt_geom preferred
-        self.assertAlmostEqual(p.dist_nm, 4.17, delta=0.1)     # real example: r_dst 4.168
-        self.assertAlmostEqual(p.brg, 296.3, delta=0.5)        # real example: r_dir 296.3
+        self.assertAlmostEqual(p.dist_nm, 4.17, delta=0.1)     # r_dst 4.168 in the real record this is moved from
+        self.assertAlmostEqual(p.brg, 296.3, delta=0.5)        # r_dir 296.3 likewise
         self.assertEqual(p.t, round(NOW - 0.27))
 
     def test_alt_falls_back_to_baro(self):
@@ -82,7 +82,7 @@ class PointFilterTests(unittest.TestCase):
         f = flt()
         self.assertIsNone(f.process(ac(alt_geom=70000), NOW))
         self.assertIsNone(f.process(ac(hex="b00001", alt_geom=-2000, alt_baro=-2000), NOW))
-        la, lo = geo.destination(45.636284, -122.677496, 10, 450)
+        la, lo = geo.destination(45.590000, -122.474000, 10, 450)
         self.assertIsNone(f.process(ac(hex="b00002", lat=la, lon=lo), NOW))
 
     def test_duplicate_update_skipped(self):
@@ -92,7 +92,7 @@ class PointFilterTests(unittest.TestCase):
         self.assertIsNone(f.process(ac(seen_pos=1.27), NOW + 1.0))
         self.assertEqual(f.stats["reject_duplicate"], 1)
         # a genuinely new position is accepted
-        self.assertIsNotNone(f.process(ac(lat=45.668, seen_pos=0.2), NOW + 2.0))
+        self.assertIsNotNone(f.process(ac(lat=45.6217, seen_pos=0.2), NOW + 2.0))
 
     def test_speed_jump_rejected_then_recovers(self):
         f = flt()

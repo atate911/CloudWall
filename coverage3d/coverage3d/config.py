@@ -21,8 +21,8 @@ DEFAULTS: dict = {
     "station": {
         # Truth values (WGS84). The live position comes from receiver.json; these
         # are the defaults and the reference for the "wrong position" warning.
-        "lat": 45.636284,
-        "lon": -122.677496,
+        "lat": 45.590000,
+        "lon": -122.474000,
         "ground_elevation_m": 23.0,      # ground elevation above mean sea level
         "antenna_height_m": 4.0,         # antenna above ground (update after moving it outside)
         "position_warn_m": 100.0,        # warn if receiver.json differs from lat/lon by more

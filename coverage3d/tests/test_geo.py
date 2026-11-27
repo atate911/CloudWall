@@ -16,11 +16,11 @@ class GeoTests(unittest.TestCase):
         self.assertAlmostEqual(a, b, places=9)
 
     def test_known_pair_station_to_sea(self):
-        # station -> SEA is roughly 109 nm to the north (bearing about 8 deg)
-        d = geo.haversine_nm(45.636284, -122.677496, 47.4502, -122.3088)
-        self.assertAlmostEqual(d, 109.3, delta=1.5)
-        b = geo.bearing_deg(45.636284, -122.677496, 47.4502, -122.3088)
-        self.assertAlmostEqual(b, 7.8, delta=0.3)
+        # station -> SEA is roughly 112 nm to the north (bearing about 3 deg)
+        d = geo.haversine_nm(45.590000, -122.474000, 47.4502, -122.3088)
+        self.assertAlmostEqual(d, 111.9, delta=1.5)
+        b = geo.bearing_deg(45.590000, -122.474000, 47.4502, -122.3088)
+        self.assertAlmostEqual(b, 3.4, delta=0.3)
 
     def test_bearing_cardinals(self):
         self.assertAlmostEqual(geo.bearing_deg(45, -122, 46, -122), 0.0, places=6)
@@ -30,9 +30,9 @@ class GeoTests(unittest.TestCase):
 
     def test_destination_roundtrip(self):
         for brg in (0, 33, 90, 177, 250, 359):
-            la, lo = geo.destination(45.636284, -122.677496, brg, 123.0)
-            self.assertAlmostEqual(geo.haversine_nm(45.636284, -122.677496, la, lo), 123.0, places=4)
-            diff = (geo.bearing_deg(45.636284, -122.677496, la, lo) - brg + 180) % 360 - 180
+            la, lo = geo.destination(45.590000, -122.474000, brg, 123.0)
+            self.assertAlmostEqual(geo.haversine_nm(45.590000, -122.474000, la, lo), 123.0, places=4)
+            diff = (geo.bearing_deg(45.590000, -122.474000, la, lo) - brg + 180) % 360 - 180
             self.assertAlmostEqual(diff, 0.0, delta=0.01)
 
     def test_elevation_angle_overhead_and_horizon(self):

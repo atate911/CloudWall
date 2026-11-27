@@ -5,8 +5,8 @@
 # The true position (WGS84). The live position is read from the decoder's receiver.json at start-up
 # and hourly; if it is more than position_warn_m away from this, a warning is logged (a wrong
 # position set in the decoder makes every distance and bearing wrong).
-lat = 45.636284
-lon = -122.677496
+lat = 45.590000
+lon = -122.474000
 ground_elevation_m = 23.0        # ground elevation above mean sea level, metres
 antenna_height_m = 4.0           # antenna above the ground. UPDATE THIS after mounting the antenna outside.
                                  # antenna height above sea level = ground_elevation_m + antenna_height_m

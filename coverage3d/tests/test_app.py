@@ -31,7 +31,7 @@ class FakeFeed:
             {"hex": "a00003", "type": "mode_s", "alt_baro": 3000}]}
 
     def receiver(self):
-        return {"lat": 45.63629, "lon": -122.67749}
+        return {"lat": 45.59000, "lon": -122.47400}
 
     def stats(self):
         return {"last1min": {"messages": 600, "local": {"signal": -12.0, "noise": -36.0, "strong_signals": 6}}}
@@ -58,7 +58,7 @@ class AppTests(unittest.TestCase):
     def test_demo_api(self):
         cfg = config.load(None)
         store = Store(":memory:")
-        st = Station(45.636284, -122.677496, 23.0, 4.0)
+        st = Station(45.590000, -122.474000, 23.0, 4.0)
         n = demo.fill_database(cfg, store, st, days=2)
         self.assertGreater(n, 1000)
         s = Sampler(cfg, store, [demo.DemoFeed(st)])
@@ -85,20 +85,20 @@ class AppTests(unittest.TestCase):
         cfg = config.load(None)
         with tempfile.TemporaryDirectory() as d:
             env = Path(d) / ".env"
-            env.write_text("SECRET_TOKEN=hunter2\nFEEDER_LAT=45.63629\nFEEDER_LONG=-122.67749\nFEEDER_ALT_M=27\n")
-            self.assertEqual(read_adsb_im_env(str(env)), {"FEEDER_LAT": 45.63629, "FEEDER_LONG": -122.67749, "FEEDER_ALT_M": 27.0})
+            env.write_text("SECRET_TOKEN=hunter2\nFEEDER_LAT=45.59000\nFEEDER_LONG=-122.47400\nFEEDER_ALT_M=27\n")
+            self.assertEqual(read_adsb_im_env(str(env)), {"FEEDER_LAT": 45.59000, "FEEDER_LONG": -122.47400, "FEEDER_ALT_M": 27.0})
             cfg.station["adsb_im_env"] = str(env)
             with self.assertLogs("coverage3d.station", "WARNING") as cm:
-                build_station(cfg, {"lat": 45.70, "lon": -122.67749})
+                build_station(cfg, {"lat": 45.70, "lon": -122.47400})
             self.assertTrue(any("wrong station position" in m for m in cm.output))
             self.assertNotIn("hunter2", "".join(cm.output))
-            st = build_station(cfg, {"lat": 45.63629, "lon": -122.67749})
+            st = build_station(cfg, {"lat": 45.59000, "lon": -122.47400})
             self.assertAlmostEqual(st.antenna_asl_m, 27.0)
 
     def test_import_history(self):
         cfg = config.load(None)
         store = Store(":memory:")
-        st = Station(45.636284, -122.677496, 23.0, 4.0)
+        st = Station(45.590000, -122.474000, 23.0, 4.0)
         with tempfile.TemporaryDirectory() as d:
             snap = lambda now: {"now": now, "messages": 1, "aircraft": [
                 {"hex": "a1b2c3", "type": "adsb_icao", "alt_baro": 8000, "lat": 45.9 + (now - 5000) * 1e-5, "lon": -122.6, "seen_pos": 0.5, "nac_p": 9, "rssi": -20}]}

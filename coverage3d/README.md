@@ -42,7 +42,7 @@ sudo systemctl restart coverage3d      # after editing the config
 sudoedit /etc/coverage3d/config.toml
 ```
 
-Open `http://192.168.3.3:8090/` from the LAN. Never forward this port to the internet (see the
+Open `http://<the Pi's address>:8090/` from the LAN. Never forward this port to the internet (see the
 tunnel section for remote viewing).
 
 **First start:** if the database is empty, the app imports tar1090's recent history from
