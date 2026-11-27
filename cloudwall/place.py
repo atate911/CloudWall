@@ -1,7 +1,7 @@
 """One place CloudWall watches: its tracker and logbook, its weather and airspace, the threads
 that keep them fed, and what a screen showing it is given.
 
-Several places can run at once (config.places), each fetching data only while a screen is
+Several places can run at once (placing.places), each fetching data only while a screen is
 showing it, so a place nobody is looking at costs nothing. What isn't particular to a place
 (lookups of routes and airframes, the country's flight restrictions, an airport's weather) is
 fetched once for all of them: see shared.py.
@@ -13,7 +13,7 @@ import threading
 import time
 from pathlib import Path
 
-from . import about, aircraft, airports, config, contrails, seats, sources, tfr, weather
+from . import about, aircraft, airports, contrails, demo, feeds, placing, seats, tfr, weather
 from .activity import Activity
 from .enrich import Enricher
 from .shared import Shared
@@ -143,7 +143,7 @@ class Place:
         if self.demo:
             self.weather, self.weather_full = weather.demo(ap["icao"], ap.get("name") or ap.get("city") or ap["icao"])
             self.tfrs, self.contrails = tfr.demo(self.cfg["home"]), contrails.demo()
-            self.heard = sources.demo_heard()
+            self.heard = demo.demo_heard()
         else:
             self._thread(self._weather, "wx")
             self._thread(self._extras, "extras")
@@ -200,7 +200,7 @@ class Place:
         cfg, ex, shared = self.cfg, self.cfg["extras"], self.shared
         jobs = [  # (enabled, every seconds, name, what it sets, fetch)
             (ex["military"], 60, "military aircraft", "heard",
-             lambda: sources.heard_near(shared.military(ex["military_url"]), cfg["home"], ex["military_radius_nm"])),
+             lambda: feeds.heard_near(shared.military(ex["military_url"]), cfg["home"], ex["military_radius_nm"])),
             (ex["tfr"], 900, "flight restrictions", "tfrs", lambda: shared.restrictions(cfg["home"], ex["tfr_radius_nm"])),
             (ex["contrails"], 3600, "contrail forecast", "contrails",
              lambda: contrails.fetch(cfg["home"]["lat"], cfg["home"]["lon"])),
@@ -251,7 +251,7 @@ class Places:
         return self.places.get(pid)
 
     def kiosk(self):
-        return self.places[config.kiosk_place(self.cfg, [p.cfg for p in self])]
+        return self.places[placing.kiosk_place(self.cfg, [p.cfg for p in self])]
 
     def summaries(self):
         return [p.summary() for p in self]
@@ -295,14 +295,14 @@ class Places:
         with self.lock:
             if len(self.places) >= self.LIMIT:
                 raise ValueError(f"CloudWall watches up to {self.LIMIT} places: remove one first")
-            home, ap = config.entry(e, "That place")
+            home, ap = placing.entry(e, "That place")
             if str(ap.get("icao", "auto")).lower() != "auto" and not airports.lookup(ap["icao"]):
                 raise ValueError(f"{ap['icao'].upper()} isn't an airport CloudWall knows")
             if not (isinstance(pid, str) and re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", pid) and pid not in self.places):
                 # the next free id that doesn't lead to the logbook a removed place left behind,
                 # unless it is this very place coming back: then it carries on in its own logbook
-                pid = config.unique_id(home["name"], self.places, lambda i: self.elsewhere(i, home))
-            place = self.make(config.place_config(self.cfg, pid, home, ap))
+                pid = placing.unique_id(home["name"], self.places, lambda i: self.elsewhere(i, home))
+            place = self.make(placing.place_config(self.cfg, pid, home, ap))
             place.added = True
             self.places[pid] = place
             self.added[pid] = {"id": pid, "name": home["name"], "lat": home["lat"], "lon": home["lon"], "zip": home.get("zip"),

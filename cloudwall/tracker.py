@@ -10,7 +10,7 @@ import re
 import threading
 import time
 
-from . import aircraft, airlines, config, contrails as contrail_mod, geo, situation
+from . import aircraft, airlines, contrails as contrail_mod, geo, placing, situation
 from .details import Details
 from .logbook import Logbook
 from .tracks import Tracks
@@ -46,8 +46,8 @@ MAX_PINS = 40             # flights followed at once, across every screen
 
 class Tracker:
     def __init__(self, cfg, store, enricher):
-        if "runways" not in cfg["airport"]:      # not yet filled in by config.places (tests, scripts)
-            cfg = config.complete_place(cfg)
+        if "runways" not in cfg["airport"]:      # not yet filled in by placing.places (tests, scripts)
+            cfg = placing.complete_place(cfg)
         self.cfg, self.store, self.enricher = cfg, store, enricher
         self.home = cfg["home"]
         self.details = Details(cfg, enricher)                       # routes, airframes, arriving or leaving

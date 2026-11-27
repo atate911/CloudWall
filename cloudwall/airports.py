@@ -5,10 +5,11 @@ import csv
 import json
 import math
 import threading
-from pathlib import Path
 
-_TABLE = Path(__file__).resolve().parent / "data" / "airports.csv"
-_FIELDS = Path(__file__).resolve().parent / "data" / "fields.csv"
+from . import paths
+
+_TABLE = paths.DATA / "airports.csv"
+_FIELDS = paths.DATA / "fields.csv"
 _by_code = None
 _lock = threading.Lock()
 
@@ -53,7 +54,7 @@ def describe(icao=None, iata=None):
 
 
 # -- runways (OurAirports, public domain; see tools/build_data.py) ------------
-_RUNWAYS = Path(__file__).resolve().parent / "data" / "runways.csv"
+_RUNWAYS = paths.DATA / "runways.csv"
 _runways = None
 
 
@@ -113,8 +114,8 @@ def nearby(lat, lon, radius_nm, exclude=()):
 
 
 # -- airline airports (OurAirports) and ZIP codes (Census) -----------------------
-_AIRLINE = Path(__file__).resolve().parent / "data" / "airline_airports.csv"
-_ZIPS = Path(__file__).resolve().parent / "data" / "zips.csv"
+_AIRLINE = paths.DATA / "airline_airports.csv"
+_ZIPS = paths.DATA / "zips.csv"
 _airline = None
 _zips = None
 BIG_AIRPORT_NM = 30       # a large airport this close wins over a nearer smaller one
@@ -182,9 +183,9 @@ def locate(text):
 
 
 # -- airspace and navaids (FAA NASR), for the ATC-style radar's video map ----------
-_AIRSPACE = Path(__file__).resolve().parent / "data" / "airspace.json"
-_NAVAIDS = Path(__file__).resolve().parent / "data" / "navaids.csv"
-_HELIPADS = Path(__file__).resolve().parent / "data" / "helipads.csv"
+_AIRSPACE = paths.DATA / "airspace.json"
+_NAVAIDS = paths.DATA / "navaids.csv"
+_HELIPADS = paths.DATA / "helipads.csv"
 _airspace = None
 _navaids = None
 _helipads = None

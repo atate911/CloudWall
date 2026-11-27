@@ -9,9 +9,10 @@ tools/build_data.py). The display keeps no table of its own: each record it draw
 import csv
 import re
 import threading
-from pathlib import Path
 
-_DATA = Path(__file__).resolve().parent / "data"
+from . import paths
+
+_DATA = paths.DATA
 _types = None
 _cwt = None
 _lock = threading.Lock()

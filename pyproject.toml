@@ -13,8 +13,8 @@ dynamic = ["version"]
 [project.scripts]
 cloudwall = "cloudwall.__main__:main"
 
-[tool.setuptools]
-packages = ["cloudwall", "cloudwall.radio"]
+[tool.setuptools.packages.find]
+include = ["cloudwall", "cloudwall.*"]        # every layer's folder, found rather than listed
 
 [tool.setuptools.package-data]
 cloudwall = ["web/*", "web/js/*", "web/js/profiles/*", "web/maps/*", "web/fonts/*", "data/*", "data/types/*", "radio/README.md", "config.example.toml"]

@@ -11,9 +11,10 @@ import logging
 import re
 import threading
 import tomllib
-from pathlib import Path
 
-FOLDER = Path(__file__).resolve().parent / "data" / "types"
+from . import paths
+
+FOLDER = paths.DATA / "types"
 CODE = re.compile(r"^[A-Z][A-Z0-9]{1,3}$")          # an ICAO type designator: B39M, C172, F15
 MONTH = re.compile(r"^\d{4}-\d{2}$")
 KEYS = {"name", "types", "text", "facts", "production", "variants", "sources", "checked"}

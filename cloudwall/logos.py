@@ -9,10 +9,9 @@ import re
 import threading
 import time
 import urllib.error
-import urllib.request
 from pathlib import Path
 
-from .http import UA
+from .http import fetch
 
 log = logging.getLogger("cloudwall.logos")
 MAX_AGE = 90 * 86400
@@ -37,9 +36,7 @@ class Logos:
             return None
         if not (path.exists() and now - path.stat().st_mtime < MAX_AGE):
             try:
-                req = urllib.request.Request(self.url.format(iata=code), headers={"User-Agent": UA})
-                with urllib.request.urlopen(req, timeout=10) as r:
-                    data = r.read()
+                data, _ = fetch(self.url.format(iata=code), timeout=10, max_bytes=1024 * 1024, retries=1)
                 if not data.startswith(b"\x89PNG"):
                     raise ValueError("not a PNG")
                 with self.lock:

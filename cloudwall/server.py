@@ -6,13 +6,12 @@ import mimetypes
 import re
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from . import about, access, airports
+from . import about, access, airports, keys, paths
 
-CODE = Path(__file__).resolve().parent
-WEB = CODE / "web"
+CODE = paths.PACKAGE
+WEB = paths.WEB
 CODE_CHECK_S = 60
 MAX_BODY = 16 * 1024        # bytes: a place to set up is a few dozen
 # The shape of what the API answers, as API.md sets it out. Raised when a key is taken away or
@@ -26,11 +25,11 @@ PRIVATE = (b"<!doctype html><meta charset=utf-8><meta name=viewport content='wid
 
 
 def code_stamp():
-    """A fingerprint of CloudWall's Python code as it is on disk now."""
+    """A fingerprint of CloudWall's Python code as it is on disk now, every layer's."""
     h = hashlib.sha1()
-    for f in sorted(CODE.glob("*.py")):
+    for f in sorted(CODE.rglob("*.py")):
         try:
-            h.update(f.name.encode() + b"\0" + f.read_bytes())
+            h.update(str(f.relative_to(CODE)).encode() + b"\0" + f.read_bytes())
         except OSError:
             pass
     return h.hexdigest()
@@ -63,7 +62,7 @@ def make_server(cfg, places, charts=None, logos=None):
     [server] key set, all of it is answered only under /k/<key>/ (access.py)."""
 
     code_changed = CodeWatch()
-    key = access.tidy(cfg["server"].get("key"))          # a private link: nothing is answered outside /k/<key>/
+    key = keys.tidy(cfg["server"].get("key"))          # a private link: nothing is answered outside /k/<key>/
     # what the displays may draw with, the same for every place: the radar's map, the chart layers, logos
     display = {"basemap": charts.map.info() if charts else None, "charts": charts.info() if charts else None,
                "logos": bool(logos and logos.enabled)}

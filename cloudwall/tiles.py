@@ -12,11 +12,10 @@ import os
 import threading
 import time
 import urllib.error
-import urllib.request
 from pathlib import Path
 
 from .geo import haversine_nm
-from .http import UA
+from .http import fetch
 
 log = logging.getLogger("cloudwall.tiles")
 MAX_AGE = 30 * 86400
@@ -165,9 +164,8 @@ class Tiles:
         # Templates copied from map providers often carry {s} (server letter) and {r}
         # (retina suffix) as well as {z}/{x}/{y}; fill those in too.
         url = self.url.format_map({"z": z, "x": x, "y": y, "s": "a", "r": "", "-y": 2 ** z - 1 - y})
-        req = urllib.request.Request(url, headers={"User-Agent": UA})
-        with urllib.request.urlopen(req, timeout=10) as r:
-            return r.read(), r.headers.get("Content-Type", "image/png")
+        data, ctype = fetch(url, timeout=10, max_bytes=4 * 1024 * 1024, retries=1)
+        return data, ctype or "image/png"
 
     def get(self, z, x, y):
         """(bytes, content type) for a tile, or None if it is outside the area or unavailable.

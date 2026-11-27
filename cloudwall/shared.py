@@ -12,7 +12,7 @@ What belongs to one place stays with it: its positions, its logbook, its contrai
 import threading
 import time
 
-from . import sources, tfr, weather
+from . import feeds, tfr, weather
 
 # How old an answer may be before the next place to ask fetches it again: a little under how
 # often a place asks (place.py), so a place by itself gets a fresh one every time.
@@ -45,8 +45,8 @@ class Shared:
         return self.once(("weather", icao), WEATHER_S, lambda: weather.fetch_all(icao))
 
     def military(self, url):
-        """Military aircraft heard anywhere with no position (sources.heard_near picks a place's)."""
-        return self.once(("military", url), MILITARY_S, lambda: sources.military_unplaced(url))
+        """Military aircraft heard anywhere with no position (feeds.heard_near picks a place's)."""
+        return self.once(("military", url), MILITARY_S, lambda: feeds.military_unplaced(url))
 
     def restrictions(self, home, radius_nm):
         """The flight restrictions near a place, from the country's one list."""

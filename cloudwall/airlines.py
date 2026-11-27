@@ -8,9 +8,10 @@ one. The airline's logo is fetched by logos.py, under the code this gives it.
 import csv
 import re
 import threading
-from pathlib import Path
 
-_TABLE = Path(__file__).resolve().parent / "data" / "airlines.csv"
+from . import paths
+
+_TABLE = paths.DATA / "airlines.csv"
 _airlines = None
 _lock = threading.Lock()
 
