@@ -66,7 +66,7 @@ export function setting(section, key) {
   if (!s) return null;
   const running = S.settings.running?.[section]?.[key];
   const waiting = s.secret ? S.secretsSaved.has(`${section}.${key}`) : JSON.stringify(running) !== JSON.stringify(s.value);
-  return { ...s, section, sectionLabel: sec.label, running, waiting };
+  return { ...s, section, sectionLabel: sec.label, page: sec.page, running, waiting, live: (S.settings.live || []).includes(section) };
 }
 export const value = (section, key) => setting(section, key)?.value;
 
@@ -89,10 +89,16 @@ export async function save(section, key, v) {
 }
 
 // -- saying things --------------------------------------------------------------------------------------
-export function toast(text, bad) {
+/** Say something for a few seconds; with `action` ({label, fn}), a button to act on it (Undo). */
+export function toast(text, bad, action) {
   const t = $("#toast");
   t.textContent = text; t.className = "toast" + (bad ? " bad" : ""); t.hidden = false;
-  clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, bad ? 9000 : 4500);
+  if (action) {
+    const b = el(`<button type="button" class="toast-act">${esc(action.label)}</button>`);
+    b.onclick = async () => { t.hidden = true; try { await action.fn(); } catch (e) { if (e.message !== "signed out") toast(e.message, true); } };
+    t.append(b);
+  }
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, bad ? 9000 : action ? 8000 : 4500);
 }
 
 /** A button that runs `fn`, disabled while it does, saying what went wrong if it fails. */

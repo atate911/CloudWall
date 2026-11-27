@@ -648,10 +648,10 @@ const SCENARIOS = {
     out.railMarked = await page.$$eval("#nav a.warn, #nav a.fail", (a) => a.map((x) => x.getAttribute("href").slice(1)));
     out.troubles = await page.$$eval(".needs .trouble", (t) => t.length);
     out.pages = {};
-    for (const p of ["receiver", "positions", "places", "routes", "look", "access", "safekeeping", "health", "server"]) {
+    for (const p of ["receiver", "positions", "places", "routes", "look", "access", "safekeeping", "health", "settings", "server"]) {
       await page.evaluate((h) => { location.hash = h; }, p);
       await page.waitForSelector(`.page-${p} h1`, { timeout: 8000 });
-      out.pages[p] = await page.$$eval(`.page-${p} [data-setting]`, (r) => r.length);
+      out.pages[p] = await page.$$eval(`.page-${p} [data-setting], .page-${p} [data-row]`, (r) => r.length);
     }
     // the tracking radius, by its ring on the map: the handle takes the arrow keys
     await page.evaluate(() => { location.hash = "places"; });
@@ -668,6 +668,24 @@ const SCENARIOS = {
     await page.keyboard.press("Enter");
     await page.waitForSelector('.page-look [data-setting="kiosk.quiet"].found', { timeout: 8000 });
     out.found = await page.evaluate(() => location.hash);
+    // all settings: every line, the setup in words, the stray line moved, the dock's list and Undo
+    const r = out.review = {};
+    await page.evaluate(() => { location.hash = "settings"; });
+    await page.waitForSelector(".page-settings .row");
+    r.rows = await page.$$eval(".page-settings .row", (l) => l.length);
+    r.said = await page.$eval(".setup-said", (s) => s.textContent.replace(/\s+/g, " "));
+    r.strays = await page.$$eval(".strays li code", (l) => l.map((c) => c.textContent.replace(/ =.*/, "")));
+    await page.click('.strays button[data-act="move"]');
+    await page.waitForFunction(() => !document.querySelector(".strays"), null, { timeout: 8000 });
+    r.straysAfter = await page.$$eval(".strays li", (l) => l.length);
+    await page.click("#dock-text");
+    await page.waitForSelector("#dock-list:not([hidden]) li");
+    r.dock = await page.$$eval("#dock-list li", (l) => l.map((x) => x.textContent.replace(/\s+/g, " ").trim()));
+    await page.click('#dock-list [data-undo="0"]');
+    await page.waitForFunction(() => document.querySelectorAll("#dock-list li").length === 1, null, { timeout: 8000 });
+    r.dockAfterUndo = await page.$$eval("#dock-list li", (l) => l.length);
+    await page.click(".explain-toggle");
+    r.explained = await page.evaluate(() => [...document.querySelectorAll(".page-settings .row-key")].every((k) => getComputedStyle(k).display !== "none"));
     await page.close();
     return out;
   },

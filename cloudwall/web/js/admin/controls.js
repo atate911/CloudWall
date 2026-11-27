@@ -3,8 +3,9 @@
 // slider for a share. Every one is drawn in the board's "yours to set" blue, saves itself the
 // moment it's changed, says in a sentence what the value now means, and has its full explanation
 // one tap away. A setting saved but not yet in use is marked until CloudWall restarts.
-import { $, el, esc, setting, save, num, on } from "./core.js";
+import { $, el, esc, setting, save, num, on, toast } from "./core.js";
 import { icon } from "./icons.js";
+import { say } from "./words.js";
 
 let serial = 0;
 
@@ -19,40 +20,52 @@ function frame(section, key, opt, body) {
   const node = el(`<div class="set ${opt.cls || ""}" data-setting="${esc(section)}.${esc(key)}">
     <div class="set-head">
       <span class="set-label" id="${id}">${opt.labelHtml || esc(opt.label || s.label)}</span>
-      <button class="set-info" type="button" aria-expanded="false" aria-controls="${id}-help" title="What this is">${icon("info")}<span class="sr">About ${esc(opt.label || s.label)}</span></button>
+      <span class="set-mine" hidden></span>
+      <button class="set-info" type="button" aria-expanded="false" aria-controls="${id}-help" title="What this is, and its default">${icon("info")}<span class="sr">About ${esc(opt.label || s.label)}</span></button>
       <span class="set-wait" title="Saved. CloudWall uses it once it restarts.">after a restart</span>
     </div>
     <div class="set-body"></div>
     <p class="set-says"></p>
     <p class="set-error" role="alert" hidden></p>
-    <div class="set-help" id="${id}-help" hidden></div>
+    <div class="set-help" id="${id}-help"></div>
   </div>`);
   node.labelId = id;
-  const help = $(".set-help", node), info = $(".set-info", node);
+  const info = $(".set-info", node);
   info.onclick = () => {
-    const open = help.hidden;
-    help.hidden = !open; info.setAttribute("aria-expanded", String(open));
-    if (open) fillHelp(node, section, key, opt);
+    const open = !node.classList.contains("helping");
+    node.classList.toggle("helping", open); info.setAttribute("aria-expanded", String(open));
   };
   node.refresh = () => {
     const now = setting(section, key);
     node.classList.toggle("waiting", !!now.waiting);
+    const mine = $(".set-mine", node);
+    mine.hidden = !(now.changed && !now.secret && now.default !== null && now.default !== undefined);
+    mine.title = mine.hidden ? "" : `Set by you: the default is ${say(now, now.default)}`;
     const says = typeof opt.says === "function" ? opt.says(now.value, now) : opt.says;
     $(".set-says", node).innerHTML = says || "";
     $(".set-says", node).hidden = !says;
-    if (!help.hidden) fillHelp(node, section, key, opt);
+    fillHelp(node, section, key, opt);
   };
-  /** Save a new value: the control shows it at once, and goes back if the server refuses it. */
-  node.commit = async (v) => {
-    const err = $(".set-error", node);
+  /** Save a new value: the control shows it at once, and goes back if the server refuses it. A
+   *  change that cuts screens off (a port, a private link) is asked about first; any other is
+   *  saved at once, with an Undo for a few seconds. */
+  node.commit = async (v, { quiet } = {}) => {
+    const err = $(".set-error", node), before = setting(section, key);
     err.hidden = true;
+    if (/screen|bookmark|link/.test(before.costs || "") && JSON.stringify(v) !== JSON.stringify(before.value)
+        && !confirm(`${before.label}: changing it means ${before.costs}. Change it?`)) { body.render?.(); return; }
     node.classList.add("saving");
     try {
       await save(section, key, v);
       node.classList.remove("saving");
       node.classList.add("saved");
       setTimeout(() => node.classList.remove("saved"), 1400);
-      opt.saved?.(setting(section, key).value);
+      const now = setting(section, key);
+      opt.saved?.(now.value);
+      if (!quiet && !before.secret) {
+        toast(`${before.label}: ${say(now)}${now.live ? "" : ". In use once CloudWall restarts"}`, false,
+              { label: "Undo", fn: () => node.commit(before.value, { quiet: true }) });
+      }
     } catch (e) {
       node.classList.remove("saving");
       if (e.message === "signed out") return;
@@ -71,12 +84,12 @@ function frame(section, key, opt, body) {
 
 function fillHelp(node, section, key, opt) {
   const s = setting(section, key);
-  const def = s.secret || s.default === null || s.default === undefined ? null : show(s, s.default);
+  const def = s.secret || s.default === null || s.default === undefined ? null : say(s, s.default);
   const bits = [`<p>${esc(opt.help || s.help)}</p>`];
   if (s.range) bits.push(`<p class="dim">From ${esc(show(s, s.range[0]))} to ${esc(show(s, s.range[1]))}.</p>`);
   if (s.costs) bits.push(`<p class="costs">Changing it: ${esc(s.costs)}.</p>`);
-  if (s.waiting && !s.secret) bits.push(`<p class="dim">CloudWall is running with ${esc(show(s, s.running))} until it restarts.</p>`);
-  bits.push(`<p class="help-foot"><span>In the settings file: <code>[${esc(section)}] ${esc(key)}</code>${def !== null ? `, ${esc(def)} unless set` : ""}</span>${def !== null && s.changed ? `<button class="link" type="button" data-default>Use ${esc(def)}</button>` : ""}</p>`);
+  bits.push(`<p class="dim">${s.live ? "Takes effect as soon as it's saved." : s.waiting && !s.secret ? `Saved; CloudWall is running with ${esc(say(s, s.running))} until it restarts.` : "Takes effect when CloudWall restarts."}</p>`);
+  bits.push(`<p class="help-foot"><span>In the settings file: <code>[${esc(section)}] ${esc(key)}</code>${def !== null ? `; the default is ${esc(def)}` : ""}</span>${def !== null && s.changed ? `<button class="link" type="button" data-default>Go back to the default</button>` : ""}</p>`);
   const help = $(".set-help", node);
   help.innerHTML = bits.join("");
   const d = $("[data-default]", help);
@@ -213,7 +226,7 @@ export function stepper(section, key, opt = {}) {
     const b = e.target.closest("button");
     if (!b) return;
     const cur = parseFloat(input.value) || 0;
-    const v = b.dataset.p !== undefined ? +b.dataset.p : clamp(+(Math.round((cur + step * +b.dataset.d) / step) * step).toFixed(4));
+    const v = b.dataset.p !== undefined ? +b.dataset.p : clamp(+(cur + step * +b.dataset.d).toFixed(4));
     input.value = shown(v); input.size = Math.max(2, input.value.length);
     wrap.querySelectorAll("[data-p]").forEach((x) => x.classList.toggle("on", +x.dataset.p === v));
     later(v);
@@ -249,7 +262,7 @@ export function text(section, key, opt = {}) {
   if (opt.mono) wrap.classList.add("mono");
   wrap.render = () => {
     const v = setting(section, key).value;
-    showB.innerHTML = v ? esc(opt.format ? opt.format(v) : v) : `<span class="unset">${esc(opt.empty || "Not set")}</span>`;
+    showB.innerHTML = (v ? esc(opt.format ? opt.format(v) : v) : `<span class="unset">${esc(opt.empty || "Not set")}</span>`) + icon("edit", "txt-pen");
     showB.title = "Change it";
   };
   const edit = (on) => { form.hidden = !on; showB.hidden = on; if (on) { input.value = setting(section, key).value ?? ""; input.focus(); input.select(); } };
@@ -292,6 +305,9 @@ export function secret(section, key, opt = {}) {
   return node;
 }
 
+// how far one press of a stepper moves a number, by its unit
+const STEP = { nm: 0.5, ft: 500, s: 5, share: 0.05, MB: 250, credits: 1000, lookups: 100, "°": 0.001, credits_day: 10 };
+
 /** Whatever control suits a setting's kind, for the list of every setting. */
 export function any(section, key, opt = {}) {
   const s = setting(section, key);
@@ -299,7 +315,7 @@ export function any(section, key, opt = {}) {
   if (s.secret) return secret(section, key, opt);
   if (s.kind === "bool") return toggle(section, key, opt);
   if (s.kind === "choice") return s.choices.length <= 4 ? segmented(section, key, opt) : select(section, key, opt);
-  if (s.kind === "number") return stepper(section, key, { step: s.unit === "share" ? 0.05 : 1, min: s.range?.[0], max: s.range?.[1], ...opt });
+  if (s.kind === "number") return stepper(section, key, { step: STEP[s.unit] || 1, min: s.range?.[0] ?? 0, max: s.range?.[1], ...opt });
   if (s.kind === "list") return listText(section, key, opt);
   return text(section, key, opt);
 }

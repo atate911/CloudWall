@@ -1,7 +1,8 @@
 // Home: CloudWall as one picture. The sky on the left, the ways positions reach the server in the
 // middle, what the server feeds on the right, each part lit by how it is doing and each a door to
 // its page. Under it, only what needs doing; nothing to set here.
-import { el, esc, S, sky, problems, house, ownFeed, ago, lasted, num, plural, button, runDoctor, call, toast, loadOverview, value } from "../core.js";
+import { el, esc, S, sky, problems, house, ownFeed, ago, lasted, num, plural, button, runDoctor, call, toast, loadOverview, value, on } from "../core.js";
+import { setup } from "../words.js";
 import { icon } from "../icons.js";
 import { scope, timeline } from "../draw.js";
 import { head, trouble } from "../parts.js";
@@ -112,6 +113,8 @@ export default {
       if (!st) { say.textContent = "The board's data isn't answering"; return; }
       const n = (st.aircraft || []).filter((a) => !a.on_ground && a.dist <= st.tracking.radius_nm).length;
       say.textContent = `${plural(n, "aircraft")} within ${num(st.tracking.radius_nm, 1)} nm` + (st.hero ? `, ${st.hero.callsign || st.hero.hex} overhead` : "");
+      const said = page.querySelector(".setup-said");
+      if (said && !said.dataset.sky) { said.dataset.sky = "1"; said.innerHTML = `<header><h2>How it's set up</h2><a href="#settings">Every setting</a></header>${setup()}`; }
     };
     update();
     // the receiver's own answer, when one is set up but isn't feeding positions (it takes a moment)
@@ -131,6 +134,11 @@ export default {
       list.forEach((f) => needs.append(trouble(f)));
       page.append(needs);
     }
+
+    // the setup in words: a sentence that reads wrong is the thing to click
+    const said = el(`<section class="setup-said"><header><h2>How it's set up</h2><a href="#settings">Every setting</a></header>${setup()}</section>`);
+    page.append(said);
+    on("settings", () => { if (said.isConnected) said.innerHTML = `<header><h2>How it's set up</h2><a href="#settings">Every setting</a></header>${setup()}`; });
 
     const lower = el(`<section class="home-lower">
       <div class="panel week"><h2>The last seven days</h2><div class="week-chart"></div><p class="dim small">Each bar is a problem, from when it started to when it ended. <a href="#health">Every problem, and alerts</a></p></div>

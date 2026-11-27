@@ -2,7 +2,8 @@
 // doing right now under its name, so the rail alone answers "is everything all right?"; each page
 // opens with a picture of what it looks after and keeps its rare settings behind shades. Saved
 // settings wait for a restart, gathered in one dock at the bottom.
-import { $, el, esc, S, call, on, toast, waiting, restart, loadOverview, loadSettings, whenSignedOut, plural, pageState } from "./core.js";
+import { $, el, esc, S, call, on, toast, waiting, restart, loadOverview, loadSettings, whenSignedOut, plural, pageState, save } from "./core.js";
+import { say } from "./words.js";
 import { icon } from "./icons.js";
 import { finder, reveal } from "./finder.js";
 import home from "./pages/home.js";
@@ -15,8 +16,11 @@ import access from "./pages/access.js";
 import safekeeping from "./pages/safekeeping.js";
 import health from "./pages/health.js";
 import server from "./pages/server.js";
+import settings from "./pages/settings.js";
 
-const PAGES = [home, receiver, positions, places, routes, look, access, safekeeping, health, server];
+// Home; then a page for each part of CloudWall; then the ones across all of it (null: a gap between)
+const RAIL = [home, null, receiver, positions, places, routes, look, access, safekeeping, null, health, settings, server];
+const PAGES = RAIL.filter(Boolean);
 // the old pages' addresses, for bookmarks
 const MOVED = { overview: "home", maps: "look", screens: "look", storage: "safekeeping", system: "server", log: "server", problems: "health" };
 
@@ -24,8 +28,9 @@ let current = null;
 
 function rail() {
   const nav = $("#nav");
-  nav.innerHTML = PAGES.map((p) => {
-    const st = pageState(p.id);
+  nav.innerHTML = RAIL.map((p) => {
+    if (!p) return `<hr>`;
+    const st = p.id === "settings" ? ((S.settings?.strays || []).length + (S.settings?.left_out || []).length ? "warn" : "") : pageState(p.id);
     let live = "";
     try { live = p.live?.() || ""; } catch { /* the line waits for its data */ }
     return `<a href="#${p.id}" class="${current?.id === p.id ? "on" : ""} ${st}" ${current?.id === p.id ? 'aria-current="page"' : ""}>
@@ -34,14 +39,27 @@ function rail() {
   $("#version").textContent = S.overview ? `CloudWall ${S.overview.version}` : "";
 }
 
+// Saved settings waiting for a restart: gathered here, each one's value now and after the restart
+// on a list the dock opens, with an Undo for each
 function dock() {
   const list = waiting();
   const d = $("#dock");
   d.hidden = !list.length;
-  if (!list.length) return;
+  if (!list.length) { $("#dock-list").hidden = true; return; }
   const names = list.map((s) => s.label.toLowerCase());
-  $("#dock-text").innerHTML = `<b>${plural(list.length, "change")} saved</b> <span>${esc(names.slice(0, 3).join(", "))}${names.length > 3 ? ` and ${names.length - 3} more` : ""}: ${S.overview?.under_systemd ? "in use once CloudWall restarts" : "restart CloudWall by hand to use them"}</span>`;
+  $("#dock-text").innerHTML = `<b>${plural(list.length, "change")} waiting for a restart</b> <span>${esc(names.slice(0, 2).join(", "))}${names.length > 2 ? ` and ${names.length - 2} more` : ""}${S.overview?.under_systemd ? "" : ": restart CloudWall by hand to use them"}</span><span class="dock-more">Review</span>`;
   $("#dock-restart").hidden = !S.overview?.under_systemd;
+  $("#dock-list").innerHTML = `<ul>${list.map((st, i) => `<li><span class="dl-what"><b>${esc(st.label)}</b><small>${esc(st.sectionLabel)}</small></span>
+      <span class="dl-change">${st.secret ? "replaced" : `<s>${esc(say(st, st.running))}</s> <span aria-hidden="true">to</span> <b>${esc(say(st))}</b>`}</span>
+      ${st.secret ? "" : `<button class="btn small quiet" data-undo="${i}" title="Put back ${esc(say(st, st.running))}, which CloudWall is running with">Undo</button>`}</li>`).join("")}</ul>`;
+  $("#dock-list").onclick = async (e) => {
+    const b = e.target.closest("[data-undo]");
+    if (!b) return;
+    const st = list[+b.dataset.undo];
+    b.disabled = true;
+    try { await save(st.section, st.key, st.running); toast(`${st.label}: back to ${say(st, st.running)}`); }
+    catch (err) { if (err.message !== "signed out") toast(err.message, true); b.disabled = false; }
+  };
 }
 
 async function go() {
@@ -113,5 +131,13 @@ on("page", () => go());
 document.querySelector(".rail nav").before(finder());
 $("#signout").onclick = async () => { await call("signout", {}); location.reload(); };
 $("#dock-restart").onclick = restart;
+$("#dock-text").onclick = () => {
+  const l = $("#dock-list"), open = l.hidden;
+  l.hidden = !open; $("#dock-text").setAttribute("aria-expanded", String(open));
+};
+// every setting's explanation shown under it, for reading the board through (remembered here)
+const explain = (on) => { document.body.classList.toggle("explain", on); $("#explain").checked = on; try { localStorage.setItem("cloudwall.explain", on ? "1" : ""); } catch { /* fine */ } };
+$("#explain").onchange = (e) => explain(e.target.checked);
+try { explain(!!localStorage.getItem("cloudwall.explain")); } catch { /* fine */ }
 addEventListener("hashchange", go);
 start();

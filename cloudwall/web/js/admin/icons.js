@@ -35,6 +35,9 @@ const P = {
   military: '<path d="M12 3 14 9h6l-5 3.8 2 6.2-5-3.9L7 19l2-6.2L4 9h6z"/>',
   tfr: '<circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/>',
   contrail: '<path d="M4 18 18 6"/><path d="M4 14l8-7M8 19l7-6" stroke-dasharray="1.5 2.5"/><path d="m17 4 3 1-1 3"/>',
+  edit: '<path d="M4.5 19.5 5.5 15 15.8 4.7a1.8 1.8 0 0 1 2.5 0l1 1a1.8 1.8 0 0 1 0 2.5L9 18.5z"/><path d="m13.8 6.7 3.5 3.5"/>',
+  list: '<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.8" cy="6.5" r="1.1" class="fill"/><circle cx="4.8" cy="12" r="1.1" class="fill"/><circle cx="4.8" cy="17.5" r="1.1" class="fill"/>',
+  undo: '<path d="M9 14 4.5 9.5 9 5"/><path d="M4.5 9.5H15a5 5 0 0 1 0 10h-3"/>',
   logo: '<rect x="4" y="6" width="16" height="12" rx="3"/><path d="M8 14.5 12 9l4 5.5"/>',
 };
 

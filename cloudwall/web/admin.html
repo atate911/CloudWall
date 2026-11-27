@@ -19,16 +19,20 @@
     </a>
     <nav id="nav"></nav>
     <div class="rail-foot">
-      <button class="quiet-btn" id="signout" hidden>Sign out</button>
-      <span id="version"></span>
+      <label class="explain-toggle" title="Show every setting's full explanation, its default and when it takes effect, under it">
+        <input type="checkbox" id="explain"><span class="explain-track"><span class="knob"></span></span>Explain every setting</label>
+      <div class="rail-foot-row"><span id="version"></span><button class="quiet-btn" id="signout" hidden>Sign out</button></div>
     </div>
   </aside>
   <main id="main" tabindex="-1"><p class="loading">Loading the board…</p></main>
 </div>
 <div class="dock" id="dock" hidden role="region" aria-label="Changes waiting for a restart">
-  <span class="dock-dot" aria-hidden="true"></span>
-  <span class="dock-text" id="dock-text"></span>
-  <button class="btn" id="dock-restart">Restart now</button>
+  <div class="dock-list" id="dock-list" hidden></div>
+  <div class="dock-bar">
+    <span class="dock-dot" aria-hidden="true"></span>
+    <button class="dock-text" id="dock-text" type="button" aria-expanded="false" aria-controls="dock-list"></button>
+    <button class="btn" id="dock-restart">Restart now</button>
+  </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <script type="module" src="js/admin/main.js"></script>

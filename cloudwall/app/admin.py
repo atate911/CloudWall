@@ -104,6 +104,8 @@ class Admin:
             return self.settings()
         if method == "POST" and name == "settings":
             return self.set_setting(body)
+        if method == "POST" and name == "tidy":
+            return self.tidy(body)
         if get and name == "health":
             return self.watch.report() if self.watch else {"open": [], "findings": []}
         if get and name == "incidents":
@@ -342,7 +344,40 @@ class Admin:
                 if f'{s["name"]}.{st["key"]}' in self.cfg.get("_cli", []):
                     running[s["name"]][st["key"]] = st["value"]
         return {"file": path, "pages": [{"name": n, "label": l} for n, l in schema.PAGES],
-                "sections": schema.describe(on_disk), "live": sorted(LIVE), "running": running}
+                "sections": schema.describe(on_disk), "live": sorted(LIVE), "running": running,
+                "strays": [dict(x, value=x["value"] if not re.search(r"key|token|password|secret|url", x["key"]) else "(hidden)")
+                           for x in config.strays(path)] if path else [],
+                "left_out": on_disk.get("_problems", [])}
+
+    def tidy(self, body):
+        """A line of the settings file that does nothing: moved under the heading it belongs to (only
+        when the setting isn't already set there), or taken out."""
+        path = self.cfg.get("_path")
+        section, key, action = str(body.get("section") or ""), str(body.get("key") or ""), body.get("action")
+        stray = next((x for x in config.strays(path) if x["section"] == section and x["key"] == key), None) if path else None
+        if not stray:
+            raise ValueError(f"[{section}] {key} isn't a stray line in the settings file")
+        if action == "move":
+            home = stray["belongs"]
+            if not home:
+                raise ValueError(f"{key} isn't a setting of any one section: it can only be taken out")
+            here = config.load(path)
+            import tomllib
+            with open(path, "rb") as f:
+                already = key in tomllib.load(f).get(home, {})
+            if already:
+                config.remove_setting(path, section, key)
+                return {"ok": True, "said": f"[{home}] {key} was already set (to {here[home][key]!r}): the stray line under [{section}] is taken out",
+                        "restart": True}
+            config.write_setting(path, home, key, stray["value"])
+            config.remove_setting(path, section, key)
+            self._saved = (0, None)
+            return {"ok": True, "said": f"{key} moved from [{section}] to [{home}]. Restart CloudWall for it to take effect.", "restart": True}
+        if action == "remove":
+            config.remove_setting(path, section, key)
+            self._saved = (0, None)
+            return {"ok": True, "said": f"[{section}] {key} taken out of the settings file (it did nothing)"}
+        raise ValueError("action must be move or remove")
 
     def set_setting(self, body):
         section, key = str(body.get("section") or ""), str(body.get("key") or "")

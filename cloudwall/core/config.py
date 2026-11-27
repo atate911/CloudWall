@@ -365,6 +365,79 @@ def write_setting(path, section, key, value):
     os.replace(tmp, path)
 
 
+# names too plain to say where a stray setting belongs ([source] name was a feed's name, not the house's)
+GENERIC = {"name", "enabled", "url", "urls", "key", "host", "port", "mode", "style", "path"}
+
+
+def known(section, key):
+    """Is `[section] key` a setting CloudWall uses?"""
+    if section == "airport":
+        return True
+    return key in DEFAULTS.get(section, {}) or key in OPTIONAL.get(section, {})
+
+
+def strays(path):
+    """Lines in the settings file that do nothing: a setting under the wrong heading (most often),
+    a name CloudWall doesn't know, a heading it doesn't know. Each with the section it belongs in,
+    when its name is a setting of exactly one other section: [{"section", "key", "value", "belongs"}]."""
+    path = Path(path) if path else None
+    if not path or not path.exists():
+        return []
+    try:
+        with open(path, "rb") as f:
+            data = tomllib.load(f)
+    except (OSError, tomllib.TOMLDecodeError):
+        return []
+    out = []
+    for section, values in data.items():
+        if section == "places" or not isinstance(values, dict):
+            continue
+        for key, v in values.items():
+            if section in DEFAULTS and known(section, key):
+                continue
+            homes = [sec for sec in DEFAULTS if sec not in ("airport", "places") and known(sec, key)]
+            # a name as plain as "name" or "url" means something different under each heading: never moved
+            out.append({"section": section, "key": key, "value": v,
+                        "belongs": homes[0] if len(homes) == 1 and key not in GENERIC else None})
+    return out
+
+
+def remove_setting(path, section, key):
+    """Take `[section] key` out of the settings file (the setting's own line; a heading left with
+    nothing under it goes too). Checked as write_setting is: if the file wouldn't read as TOML, or
+    the setting is still there (a value over several lines), nothing is written."""
+    path = Path(path)
+    lines = path.read_text().splitlines()
+    head = next((i for i, l in enumerate(lines) if re.match(rf"^\s*\[{re.escape(section)}\]\s*(#.*)?$", l)), None)
+    if head is None:
+        raise ValueError(f"there's no [{section}] in {path}")
+    end = next((i for i in range(head + 1, len(lines)) if re.match(r"^\s*\[", lines[i])), len(lines))
+    at = next((i for i in range(head + 1, end) if re.match(rf"^\s*{re.escape(key)}\s*=", lines[i])), None)
+    if at is None:
+        raise ValueError(f"[{section}] {key} isn't in {path}")
+    del lines[at]
+    end -= 1
+    if not any(lines[i].strip() and not lines[i].lstrip().startswith("#") for i in range(head + 1, end)):
+        del lines[head:end]                        # the heading, now with nothing under it
+    new = "\n".join(lines).rstrip("\n") + "\n"
+    try:
+        got = tomllib.loads(new)
+    except tomllib.TOMLDecodeError:
+        raise ValueError(f"[{section}] {key} runs over several lines: take it out of {path} by hand") from None
+    if key in got.get(section, {}):
+        raise ValueError(f"[{section}] {key} is set twice in {path}: take it out by hand")
+    st = path.stat()
+    tmp = path.with_name(path.name + ".tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, st.st_mode & 0o770)
+    with os.fdopen(fd, "w") as f:
+        f.write(new)
+    os.chmod(tmp, st.st_mode & 0o770)
+    if os.geteuid() == 0:
+        os.chown(tmp, st.st_uid, st.st_gid)
+    shutil.copy2(path, path.with_name(path.name + ".before"))
+    os.replace(tmp, path)
+
+
 def init(path=None):
     """Write a starter config file. Returns (path, created)."""
     path = Path(path) if path else user_config_path()

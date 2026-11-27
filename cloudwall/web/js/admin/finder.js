@@ -3,9 +3,9 @@
 // any of those jobs; chosen, it opens the page, opens the shade the setting is under, and shows it.
 import { el, esc, S } from "./core.js";
 import { icon } from "./icons.js";
+import { APART } from "./words.js";
 
-// each section's settings are on its page (core/schema.py says which); these few live apart from theirs
-const APART = { "tracking.poll_seconds": "positions", "tracking.idle_after_seconds": "positions", "tracking.when_idle": "positions", "map.cache_mb": "safekeeping" };
+// each section's settings are on its page (core/schema.py says which); a few live apart (words.js)
 // what people come to do, said the way they'd say it
 const TASKS = [
   ["Change what the wall panel shows", "look", "kiosk.view", "panel kiosk screen card radar layout"],
@@ -27,6 +27,8 @@ const TASKS = [
   ["Back up now", "safekeeping", "", "backup copy save download restore"],
   ["Get alerts on your phone", "health", "health.notify_url", "ntfy notify alert phone push webhook"],
   ["See what went wrong lately", "health", "", "problems incidents history errors"],
+  ["Review every setting", "settings", "", "all settings review list changed defaults file config"],
+  ["See what's waiting for a restart", "settings", "", "pending restart saved changes waiting"],
   ["Read the log", "server", "", "log journal messages errors"],
   ["Restart CloudWall", "server", "", "restart reboot service"],
 ];
@@ -41,7 +43,7 @@ function entries() {
   return out;
 }
 
-const PAGES = { places: "The house", positions: "Position feeds", routes: "Route lookups", look: "The wall", receiver: "Your receiver", access: "Who can see it", safekeeping: "Safekeeping", health: "Problems and alerts", server: "This server" };
+const PAGES = { settings: "All settings", places: "The house", positions: "Position feeds", routes: "Route lookups", look: "The wall", receiver: "Your receiver", access: "Who can see it", safekeeping: "Safekeeping", health: "Problems and alerts", server: "This server" };
 
 export function finder() {
   const box = el(`<div class="finder" role="search">
@@ -63,7 +65,7 @@ export function finder() {
     }
     at = Math.min(at, Math.max(0, hits.length - 1));
     list.innerHTML = (q ? "" : `<li class="finder-head">What people come here to do</li>`) + (hits.map((e, i) => `<li role="option" data-i="${i}" aria-selected="${i === at}">
-      ${icon(e.kind === "task" ? "check" : "info")}<span><b>${esc(e.label)}</b><small>${esc(e.sub ? `${e.sub}, on ${PAGES[e.page] || e.page}` : PAGES[e.page] || e.page)}</small></span></li>`).join("") || `<li class="finder-none">Nothing by that name. Every setting is listed under This server, Every setting.</li>`);
+      ${icon(e.kind === "task" ? "check" : "info")}<span><b>${esc(e.label)}</b><small>${esc(e.sub ? `${e.sub}, on ${PAGES[e.page] || e.page}` : PAGES[e.page] || e.page)}</small></span></li>`).join("") || `<li class="finder-none">Nothing by that name. Every setting is listed on All settings.</li>`);
     list.hidden = false; input.setAttribute("aria-expanded", "true");
   };
   const choose = (e) => {

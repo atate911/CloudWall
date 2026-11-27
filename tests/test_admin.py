@@ -30,7 +30,9 @@ class StubEnricher:
         return None
 
 
-class AdminTest(unittest.TestCase):
+class Served(unittest.TestCase):
+    """A CloudWall serving the board, with a settings file of its own, and a way to call it."""
+
     def setUp(self):
         self.dir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.dir)
@@ -80,6 +82,9 @@ class AdminTest(unittest.TestCase):
         except urllib.error.HTTPError as e:
             return e.code, json.loads(e.read() or b"{}")
 
+
+
+class AdminTest(Served):
     def test_with_no_owner_this_machine_may_and_a_proxied_visitor_may_not(self):
         self.serve()
         code, who = self.call("/api/admin/whoami")
@@ -214,7 +219,7 @@ class AdminTest(unittest.TestCase):
                 self.assertIn(b"CloudWall", r.read())
 
 
-class BoardPagesTest(AdminTest):
+class BoardPagesTest(Served):
     """What the board's pages are drawn from: the overview's figures, settings that need no restart,
     the test alert."""
 
@@ -258,6 +263,57 @@ class BoardPagesTest(AdminTest):
         self.assertEqual(code, 200)
         self.assertEqual(sent[0][0], "https://ntfy.example/cw-test")
         self.assertEqual(sent[0][1]["event"], "test")
+
+
+class StrayLinesTest(Served):
+    """Lines of the settings file that do nothing (a setting under the wrong heading, an old name),
+    found and put right from the board."""
+
+    def setUp(self):
+        super().setUp()
+        with open(self.cfg_path, "a") as f:
+            f.write('[map]\nstyle = "dark"\nwhen_idle = "log"\n[source]\nname = "my receiver"\n[kiosk]\nidle_after_seconds = 120\n')
+
+    def test_they_are_found_with_where_they_belong(self):
+        found = {(x["section"], x["key"]): x["belongs"] for x in config.strays(self.cfg_path)}
+        self.assertEqual(found, {("map", "when_idle"): "tracking", ("source", "name"): None,      # never moved: a feed's name
+                                 ("kiosk", "idle_after_seconds"): "tracking"})
+
+    def test_one_is_moved_where_it_belongs(self):
+        self.serve()
+        code, got = self.call("/api/admin/tidy", {"section": "map", "key": "when_idle", "action": "move"})
+        self.assertEqual(code, 200)
+        cfg = config.load(self.cfg_path)
+        self.assertEqual(cfg["tracking"]["when_idle"], "log")
+        self.assertEqual(cfg["map"]["style"], "dark")                                   # its neighbour stays
+        self.assertNotIn(("map", "when_idle"), [(x["section"], x["key"]) for x in config.strays(self.cfg_path)])
+
+    def test_one_already_set_where_it_belongs_is_only_taken_out(self):
+        self.serve()
+        config.write_setting(self.cfg_path, "tracking", "idle_after_seconds", 300)
+        code, got = self.call("/api/admin/tidy", {"section": "kiosk", "key": "idle_after_seconds", "action": "move"})
+        self.assertIn("already set", got["said"])
+        self.assertEqual(config.load(self.cfg_path)["tracking"]["idle_after_seconds"], 300)  # what was there wins
+
+    def test_one_with_nowhere_to_go_is_taken_out_and_its_heading_with_it(self):
+        self.serve()
+        self.assertEqual(self.call("/api/admin/tidy", {"section": "source", "key": "name", "action": "move"})[0], 400)
+        code, got = self.call("/api/admin/tidy", {"section": "source", "key": "name", "action": "remove"})
+        self.assertEqual(code, 200)
+        self.assertNotIn("[source]", self.cfg_path.read_text())                          # nothing left under it
+        self.assertEqual(oct(self.cfg_path.stat().st_mode & 0o777), "0o640")              # still the owner's only
+
+    def test_only_a_stray_line_can_be_taken_out(self):
+        self.serve()
+        code, got = self.call("/api/admin/tidy", {"section": "map", "key": "style", "action": "remove"})
+        self.assertEqual(code, 400)
+        self.assertEqual(config.load(self.cfg_path)["map"]["style"], "dark")
+
+    def test_the_settings_say_what_they_found(self):
+        self.serve()
+        got = self.call("/api/admin/settings")[1]
+        self.assertEqual(len(got["strays"]), 3)
+        self.assertEqual(got["left_out"], [])
 
 
 class BudgetDaysTest(unittest.TestCase):
