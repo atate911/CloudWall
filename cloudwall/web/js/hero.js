@@ -611,8 +611,37 @@ const heatLegend = (night) => `linear-gradient(90deg, ${HEAT_RAMP[night ? "night
 // fully at its middle, partly at its anti-aliased edges, and counts once per flight where its
 // segments meet), then coloured: on a log scale, as a handful of busy corridors carry most of the
 // day, scaled so the busiest corridor (not its single busiest pixel) reaches the top of the ramp.
+//
+// Smoothed without blurring: where the lines are stays pixel-sharp, but the count each pixel is
+// coloured by is the average over the lines within a few pixels of it (`soft`, in device pixels),
+// weighted by how much of each pixel a line covers, so the empty map around doesn't thin it out. A
+// lone line keeps its colour exactly; where two cross there is no bright bead; and a corridor of
+// many lines shades evenly across its width instead of in streaks a flight apart.
 let heatDrawn = null;
-function heatImage(heat, size, k, width, night) {
+
+// Three passes of a box blur, near enough a Gaussian, along the rows and then the columns, each
+// pass in time proportional to the pixels whatever the radius.
+function smooth(a, size, r) {
+  const tmp = new Float32Array(a.length), w = 2 * r + 1;
+  const pass = (src, dst, stride, step) => {
+    for (let line = 0; line < size; line++) {
+      const base = line * stride;
+      let acc = 0;
+      for (let i = -r; i <= r; i++) acc += src[base + Math.min(size - 1, Math.max(0, i)) * step];
+      const last = base + (size - 1) * step, first = src[base], end = src[last];
+      for (let i = 0, o = base; i < size; i++, o += step) {
+        dst[o] = acc / w;
+        // the pixel entering the window and the one leaving it, held at the edge beyond the image
+        const inn = i + r + 1 < size ? src[o + (r + 1) * step] : end, out = i - r >= 0 ? src[o - r * step] : first;
+        acc += inn - out;
+      }
+    }
+  };
+  for (let n = 0; n < 3; n++) { pass(a, tmp, size, 1); pass(tmp, a, 1, size); }
+  return a;
+}
+
+function heatImage(heat, size, k, width, night, soft) {
   const buf = new Float32Array(size * size), mine = new Float32Array(size * size), touched = [];
   const mid = size / 2, unit = heat.unit || 100, hw = width / 2, edge2 = (hw + 0.5) ** 2;
   for (const p of heat.paths) {
@@ -636,12 +665,19 @@ function heatImage(heat, size, k, width, night) {
     for (const j of touched) { buf[j] += mine[j]; mine[j] = 0; }
     touched.length = 0;
   }
+  // each lit pixel's count, smoothed over the lines near it (the line's own coverage is kept in buf,
+  // for the opacity of its edges): sum of counts over sum of coverage, both smoothed alike
+  const cover = new Float32Array(buf.length);
+  for (let j = 0; j < buf.length; j++) cover[j] = buf[j] > 1 ? 1 : buf[j];
+  const num = smooth(Float32Array.from(buf), size, soft), den = smooth(Float32Array.from(cover), size, soft);
+  const lvl = new Float32Array(buf.length);
+  for (let j = 0; j < buf.length; j++) if (buf[j] > 0 && den[j] > 1e-4) lvl[j] = Math.max(1, num[j] / den[j]);
   // the busiest corridor's level: the 99.5th percentile of the lit pixels, from a histogram (sorting a
   // million pixels is too slow for a Raspberry Pi)
   let max = 0, lit = 0;
-  for (let j = 0; j < buf.length; j++) if (buf[j] > max) max = buf[j];
+  for (let j = 0; j < lvl.length; j++) if (lvl[j] > max) max = lvl[j];
   const bins = new Uint32Array(1024), lmax = Math.log1p(max) || 1;
-  for (let j = 0; j < buf.length; j++) if (buf[j] > 0.5) { bins[Math.min(1023, (Math.log1p(buf[j]) / lmax) * 1024 | 0)]++; lit++; }
+  for (let j = 0; j < lvl.length; j++) if (buf[j] > 0.5) { bins[Math.min(1023, (Math.log1p(lvl[j]) / lmax) * 1024 | 0)]++; lit++; }
   let level = lmax, above = lit * 0.005;
   for (let i = 1023; i >= 0 && above > 0; i--) { above -= bins[i]; if (above <= 0) level = ((i + 0.5) / 1024) * lmax; }
   const top = Math.max(Math.log1p(8), level), lut = heatLut(night);
@@ -652,15 +688,17 @@ function heatImage(heat, size, k, width, night) {
   c.width = c.height = size;
   const img = c.getContext("2d").createImageData(size, size), d = img.data;
   for (let j = 0; j < buf.length; j++) {
-    const b = buf[j];
+    const b = buf[j], v = lvl[j];
     if (b <= 0) continue;
-    // a pixel only partly covered by a single flight keeps its colour and takes the coverage as opacity
-    const t = night ? Math.min(1, Math.log1p(Math.max(b, 1)) / top) ** 1.1 : Math.min(1, Math.log(Math.max(b, 1)) / dayTop);
+    // coloured by the smoothed count; a pixel only partly covered takes the coverage as opacity
+    const t = night ? Math.min(1, Math.log1p(v) / top) ** 1.1 : Math.min(1, Math.log(v) / dayTop);
     const i = Math.max(night ? 1 : 0, Math.round(t * 255)) * 4, o = j * 4;
-    d[o] = lut[i]; d[o + 1] = lut[i + 1]; d[o + 2] = lut[i + 2]; d[o + 3] = lut[i + 3] * Math.min(1, b);
+    d[o] = lut[i]; d[o + 1] = lut[i + 1]; d[o + 2] = lut[i + 2]; d[o + 3] = lut[i + 3] * (b > 1 ? 1 : b);
   }
   c.getContext("2d").putImageData(img, 0, 0);
-  return { canvas: c, buf, max };
+  let flights = 0;                     // the most flights over any one spot, as counted, for the busiest route's mark
+  for (let j = 0; j < buf.length; j++) if (buf[j] > flights) flights = buf[j];
+  return { canvas: c, buf: lvl, cover, max, flights };
 }
 
 // The heatmap is square, as large as its half of the card allows: beside the caption on a wide
@@ -727,7 +765,7 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   // line about one and a half CSS pixels wide
   // kept between the slide's turns: drawn again only for new data (a minute at most), a new size or the night chart
   if (!(heatDrawn && heatDrawn.heat === heat && heatDrawn.size === size && heatDrawn.night === night))
-    heatDrawn = { heat, size, night, img: heatImage(heat, size, k, Math.max(1.2, 1.5 * u) * dpr, night) };
+    heatDrawn = { heat, size, night, img: heatImage(heat, size, k, Math.max(1.2, 1.5 * u) * dpr, night, Math.max(1, Math.round(0.8 * u * dpr))) };
   canvas._heat = heatDrawn.img;
   g.drawImage(canvas._heat.canvas, 0, 0);
   // the place names, over the traffic: light lettering by night, dark by day
@@ -787,7 +825,7 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
 // The busiest route, marked with how many flights passed: among the busiest pixels, the one whose
 // mark and count sit clearest of the other names, well inside the edge.
 function busiest(g, heat, size, mid, rad, avoid, unit, lab, ink) {
-  const flights = Math.round(heat.max);
+  const flights = Math.round(heat.flights);
   if (flights < 5) return;
   const text = `${flights.toLocaleString()} flights`;
   g.font = `700 ${Math.round(9 * unit)}px ${getComputedStyle(g.canvas).fontFamily || "sans-serif"}`;
@@ -796,7 +834,7 @@ function busiest(g, heat, size, mid, rad, avoid, unit, lab, ink) {
   let best = null;
   const step = Math.max(1, Math.round(unit * 2));          // every few pixels is plenty to choose from
   for (let py = 0; py < size; py += step) for (let px = 0; px < size; px += step) {
-    if (heat.buf[py * size + px] < heat.max * 0.9 || Math.hypot(px - mid, py - mid) > rad * 0.7) continue;
+    if (heat.cover[py * size + px] < 0.99 || heat.buf[py * size + px] < heat.max * 0.8 || Math.hypot(px - mid, py - mid) > rad * 0.7) continue;
     // the count above or below the mark, to its left or right
     for (const [sx, sy] of [[1, -1], [-1, -1], [1, 1], [-1, 1]]) {
       const tx = px + sx * 7 * unit, ty = py + (sy < 0 ? -6 * unit : 6 * unit + h);
