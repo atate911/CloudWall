@@ -1,0 +1,32 @@
+[Unit]
+Description=Coverage3D: 3D antenna-coverage map for the ADS-B receiver
+Documentation=file:///opt/coverage3d/README.md
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=coverage3d
+Group=coverage3d
+WorkingDirectory=/opt/coverage3d/app
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/coverage3d/venv/bin/python -m coverage3d --config /etc/coverage3d/config.toml
+Restart=always
+RestartSec=5
+# The app only reads readsb's output; it never talks to docker. It must keep working while
+# ultrafeeder restarts, so there is no hard dependency on docker.service (only start ordering).
+MemoryHigh=300M
+MemoryMax=500M
+Nice=5
+# Hardening: read-only system, writable only in its own state directory
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/coverage3d
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target
