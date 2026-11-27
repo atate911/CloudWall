@@ -577,11 +577,11 @@ function lastSlide(s) {
 // ---- today's traffic: every position since midnight, as a heatmap over the map around home ----
 // The colour ramp from a cell flown through once to the busiest corridor: transparent, then a cool
 // violet, magenta, amber and (by night) a pale gold at the hottest, so the eye goes straight to the
-// routes used again and again. Each stop is [t, colour, opacity]. By day the ramp is a shade deeper,
-// so it holds up on the pale chart.
+// routes used again and again. Each stop is [t, colour, opacity]. By day the ramp darkens at the
+// top instead (to a deep red), as gold would fade into the pale chart.
 const HEAT_RAMP = {
   night: [[0, "#4b3aa8", 0], [0.06, "#5a46c0", 0.2], [0.25, "#7a3cb0", 0.5], [0.5, "#d0407e", 0.86], [0.78, "#f6853a", 0.97], [1, "#ffe7a3", 1]],
-  day: [[0, "#5b67c4", 0], [0.06, "#5b67c4", 0.2], [0.25, "#6a3fae", 0.5], [0.5, "#b8306e", 0.84], [0.78, "#e2582a", 0.95], [1, "#f2a531", 1]],
+  day: [[0, "#5b67c4", 0], [0.06, "#5b67c4", 0.2], [0.25, "#6a3fae", 0.5], [0.5, "#b8306e", 0.84], [0.75, "#d9461f", 0.95], [1, "#7c1416", 1]],
 };
 const hex3 = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const rampCache = {};
@@ -670,10 +670,11 @@ function drawHeat(canvas, state, heat) {
   const bm = state.basemap, names = state.charts && state.charts.layers && state.charts.layers.places;
   if (!bm || !bm.enabled) return paintHeat(canvas, state, heat, null);
   const R = heat.radius_nm, px = heatSize(canvas) * (window.devicePixelRatio || 1);
-  // (the names a zoom closer than the map, so their lettering comes out smaller)
+  // (the names at the zoom for the screen's CSS pixels, not its device pixels, so their lettering
+  // comes out at its own size, not half of it on a sharp screen)
   const load = (layer, sharp = 1) => tileLayout(state.home, R, (sharp * px) / (2 * R), layer).tiles.map((t) => ({ ...t, img: new Image() }));
   // the map, and the names of the towns and roads over the traffic, so the lines are somewhere
-  const tiles = load(state.charts && state.charts.map), labels = names && names.enabled ? load(names, 1.8) : [];
+  const tiles = load(state.charts && state.charts.map), labels = names && names.enabled ? load(names, 1.15 / (window.devicePixelRatio || 1)) : [];
   let pending = tiles.length + labels.length;
   const done = () => { if (--pending === 0 && canvas.isConnected) paintHeat(canvas, state, heat, tiles, labels); };
   for (const t of [...tiles, ...labels]) { t.img.onload = t.img.onerror = done; t.img.src = t.url; }
@@ -720,7 +721,7 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   // the place names, over the traffic: light lettering by night, dark by day
   if (labels.length) {
     const s = rad / R;
-    g.globalAlpha = night ? 0.62 : 0.6;
+    g.globalAlpha = night ? 0.75 : 0.68;
     g.filter = night ? "grayscale(1) brightness(.95)" : "grayscale(1) invert(1) brightness(1.1)";
     for (const t of labels) if (t.img.complete && t.img.naturalWidth) g.drawImage(t.img, mid + t.x0 * s, mid - t.y0 * s, (t.x1 - t.x0) * s + 0.5, (t.y0 - t.y1) * s + 0.5);
     g.globalAlpha = 1; g.filter = "none";
@@ -732,10 +733,11 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   fade.addColorStop(1, `rgba(${disc},1)`);
   g.fillStyle = fade; g.fillRect(0, 0, size, size);
   // range rings, faint, with their distance at the upper right
-  const step = R <= 20 ? 5 : 10, ink = v("--ink"), font = (px, w = 400) => `${w} ${Math.round(px * u * dpr)}px "B612 Mono", monospace`;
+  const sans = getComputedStyle(canvas).fontFamily || "sans-serif";
+  const step = R <= 20 ? 5 : 10, ink = v("--ink"), font = (px, w = 400) => `${w} ${Math.round(px * u * dpr)}px ${sans}`;
   g.strokeStyle = `color-mix(in srgb, ${ink} ${night ? 22 : 26}%, transparent)`;
   g.lineWidth = Math.max(1, 0.8 * u * dpr); g.setLineDash([2 * u * dpr, 3 * u * dpr]);
-  g.font = font(8.5); g.fillStyle = v("--slate"); g.textAlign = "left";
+  g.font = font(7.5); g.fillStyle = `color-mix(in srgb, ${v("--slate")} 80%, transparent)`; g.textAlign = "left";
   for (let r = step; r < R - 0.01; r += step) {
     g.beginPath(); g.arc(mid, mid, r * k, 0, 7); g.stroke();
     const d = r * k * Math.SQRT1_2;
@@ -752,18 +754,52 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   g.restore();
   const [ax, ay] = XY(state.airport.lat, state.airport.lon), lab = (text, x, y, align, weight = 700, px = 10) => {
     g.font = font(px, weight); g.textAlign = align; g.lineJoin = "round";
-    g.lineWidth = 3 * u * dpr; g.strokeStyle = `color-mix(in srgb, ${v("--disc")} 85%, transparent)`; g.strokeText(text, x, y);
+    g.lineWidth = 3.2 * u * dpr; g.strokeStyle = `color-mix(in srgb, ${v("--disc")} 85%, transparent)`; g.strokeText(text, x, y);
     g.fillStyle = ink; g.fillText(text, x, y);
   };
-  if (Math.hypot(ax - mid, ay - mid) < rad * 0.92) lab(state.airport.iata, ax, ay + 17 * u * dpr, "center");
+  if (Math.hypot(ax - mid, ay - mid) < rad * 0.92) lab(state.airport.iata, ax, ay + 16 * u * dpr, "center", 700, 9.5);
+  // what the busiest route's mark keeps clear of: the airport and its code, and home and its name
+  const U = u * dpr;
+  busiest(g, heat, mid, rad, [{ x0: ax - 14 * U, x1: ax + 14 * U, y0: ay - 8 * U, y1: ay + 19 * U },
+    { x0: mid - 8 * U, x1: mid + 40 * U, y0: mid - 9 * U, y1: mid + 8 * U }], U, lab, ink);
   // home: a ring and a dot, named
   g.lineWidth = Math.max(1, 1.4 * u * dpr); g.strokeStyle = ink; g.fillStyle = ink;
   g.beginPath(); g.arc(mid, mid, 5 * u * dpr, 0, 7); g.stroke();
   g.beginPath(); g.arc(mid, mid, 1.8 * u * dpr, 0, 7); g.fill();
-  lab("Home", mid + 9 * u * dpr, mid + 3.5 * u * dpr, "left", 400, 9);
+  lab("Home", mid + 8.5 * u * dpr, mid + 3.3 * u * dpr, "left", 600, 9);
   // the rim, and north
   g.strokeStyle = v("--rule"); g.lineWidth = Math.max(1, dpr); g.beginPath(); g.arc(mid, mid, rad, 0, 7); g.stroke();
   lab("N", mid, 14 * u * dpr, "center", 700, 9);
+}
+
+// The busiest route, marked with how many flights passed: among the busiest squares, the one whose
+// mark and count sit clearest of the other names, well inside the edge.
+function busiest(g, heat, mid, rad, avoid, unit, lab, ink) {
+  const max = Math.max(0, ...heat.cells.map((c) => c[2]));
+  if (max < 5) return;
+  const cell = (2 * rad) / heat.grid, text = `${max.toLocaleString()} flights`;
+  g.font = `700 ${Math.round(9 * unit)}px ${getComputedStyle(g.canvas).fontFamily || "sans-serif"}`;
+  const w = g.measureText(text).width, h = 9 * unit;
+  const hit = (b) => avoid.reduce((n, a) => n + Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0)), 0);
+  let best = null;
+  for (const [x, y, n] of heat.cells) {
+    if (n < max * 0.9) continue;
+    const px = mid - rad + (x + 0.5) * cell, py = mid - rad + (y + 0.5) * cell;
+    if (Math.hypot(px - mid, py - mid) > rad * 0.7) continue;
+    // the count above or below the mark, to its left or right
+    for (const [sx, sy] of [[1, -1], [-1, -1], [1, 1], [-1, 1]]) {
+      const tx = px + sx * 7 * unit, ty = py + (sy < 0 ? -6 * unit : 6 * unit + h);
+      const box = { x0: sx > 0 ? tx : tx - w, x1: sx > 0 ? tx + w : tx, y0: ty - h, y1: ty + 2 * unit };
+      const ring = { x0: px - 6 * unit, x1: px + 6 * unit, y0: py - 6 * unit, y1: py + 6 * unit };
+      const inside = Math.max(...[[box.x0, box.y0], [box.x1, box.y1], [box.x0, box.y1], [box.x1, box.y0]].map(([qx, qy]) => Math.hypot(qx - mid, qy - mid))) < rad * 0.9;
+      const score = hit(box) + hit(ring) + (inside ? 0 : 1e9) + n * -0.01;
+      if (!best || score < best.score) best = { px, py, tx, ty, align: sx > 0 ? "left" : "right", score };
+    }
+  }
+  if (!best || best.score > 1) return;           // nowhere clear: left unmarked
+  g.lineWidth = Math.max(1, 1.3 * unit); g.strokeStyle = ink;
+  g.beginPath(); g.arc(best.px, best.py, 4.5 * unit, 0, 7); g.stroke();
+  lab(text, best.tx, best.ty, best.align, 700, 9);
 }
 
 function showIdle(el, state) {
