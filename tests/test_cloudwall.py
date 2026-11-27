@@ -9,6 +9,7 @@ from cloudwall.enrich import Enricher
 from cloudwall.store import Store
 from cloudwall.logbook import ordinal
 from cloudwall.tracker import Tracker
+from cloudwall.tracks import Tracks
 
 PDX = (45.5887, -122.5975)
 SFO = (37.619, -122.375)
@@ -642,6 +643,20 @@ if __name__ == "__main__":
 
 
 class TracksTest(unittest.TestCase):
+    def test_heat_lines_are_simplified_and_split_at_gaps(self):
+        from cloudwall.tracks import _simplified
+        bent = [(0, 0), (1, 0.001), (2, 0), (2, 1), (2, 2)]
+        self.assertEqual(_simplified(bent), [(0, 0), (2, 0), (2, 2)])   # the corner kept, the wobble and the straights dropped
+        t = Tracks(15, Store(":memory:"))
+        pos = lambda north: [{"hex": "a1", "lat": 45, "lon": -122, "dist": north, "brg": 0}]
+        t.remember(pos(5.0), 1000); t.remember(pos(4.0), 1005)
+        t.remember(pos(3.0), 1200)                                      # the feed lost it for over a minute
+        t.remember(pos(2.0), 1205)
+        self.assertEqual(t.heatmap()["paths"], [[0, 500, 0, 400], [0, 300, 0, 200]])   # two lines, not one across the gap
+        t.remember([], 1210)                                            # gone: its line is finished, and kept
+        self.assertEqual(len(t.heatmap()["paths"]), 2)
+        self.assertEqual(t.heatmap()["aircraft"], 1)
+
     def test_trails_heatmap_and_photo(self):
         store = Store(":memory:")
         t = Tracker(config.load(), store, StubEnricher())
@@ -652,14 +667,10 @@ class TracksTest(unittest.TestCase):
         self.assertGreater(trail[0][0], trail[-1][0])                 # moving south toward home
         heat = t.heatmap()
         self.assertEqual(heat["aircraft"], 1)                         # the parked aircraft isn't counted
-        self.assertTrue(all(c[0] == heat["grid"] // 2 for c in heat["cells"]))   # due north: centre column
-        rows = sorted(c[1] for c in heat["cells"])
-        self.assertEqual(rows, list(range(rows[0], rows[-1] + 1)))    # one unbroken line from 3 nm to 1 nm out,
-        self.assertEqual(rows[-1] - rows[0] + 1, round(2 / (2 * 15) * heat["grid"]) + 1)
-        self.assertTrue(all(c[2] == 1 for c in heat["cells"]))        # each square crossed once
+        self.assertEqual(heat["paths"], [[0, 300, 0, 100]])           # one line, due north, 3 nm to 1 nm out: straight, so two points
         for _ in range(3):
-            t.update([plane("a1", "ASA1", 1.0)], "test")              # hovering where it is: no more passes
-        self.assertEqual(sum(c[2] for c in t.heatmap()["cells"]), len(rows))
+            t.update([plane("a1", "ASA1", 1.0)], "test")              # hovering where it is: nothing more to draw
+        self.assertEqual(t.heatmap()["paths"], [[0, 300, 0, 100]])
         t.update([], "test")
         self.assertEqual(t.tracks.trails, {})                                # gone from range: trail dropped
         self.assertIn("photo", {r["name"] for r in store.db.execute("PRAGMA table_info(sightings)")})
@@ -2315,7 +2326,7 @@ class PlaceStateTest(unittest.TestCase):
         self.assertIsNone(s["live_routes"])
         w = place.weather_report()
         self.assertEqual((w["now"], len(w["contrails"]["levels"]), w["tfrs"]), ({"category": "VFR"}, 1, [{"id": "6/1"}]))
-        self.assertEqual(place.heatmap()["grid"], 240)
+        self.assertEqual(place.heatmap()["unit"], 100)
         self.assertEqual(place.logbook()["total"], 1)                    # and its flyover is in the place's logbook
         # the tracker knows none of it
         self.assertFalse({"weather", "tfrs", "heard", "contrails", "basemap", "charts", "logos"} & set(place.tracker.snapshot()))

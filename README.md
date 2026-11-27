@@ -158,9 +158,10 @@ in the address, and `[kiosk] density` sets the wall panel's.
   screen shows it.
 - **Quiet sky** – when nothing is overhead the card rotates through the next inbound
   aircraft (with its drawing, so you know what to look for), a heatmap of the day's traffic
-  (every aircraft's path since midnight, drawn as lines on an eighth-of-a-mile grid over a grey
-  map with the towns named, coloured by how many flights passed: a faint violet thread for a
-  one-off flight, magenta and amber for the corridors flown all day, glowing at night),
+  (every aircraft's path since midnight, drawn as a sharp line at the screen's own resolution
+  over a grey map with the towns named, each pixel coloured by how many flights crossed it: a
+  violet thread for a one-off flight, magenta and amber (deep red by day) for the corridors flown
+  all day, the busiest marked with its count),
   today's fleet (every type seen since midnight, side by side at true relative size, from a
   Cessna to a 777), the day's records and the last flyover. Tap to skip ahead.
 - **Board** – departure-board list of everything airborne in range. Tap a row (or a

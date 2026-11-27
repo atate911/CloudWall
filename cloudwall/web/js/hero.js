@@ -604,49 +604,57 @@ function heatLut(night) {
 const heatLegend = (night) => `linear-gradient(90deg, ${HEAT_RAMP[night ? "night" : "day"].slice(1)
   .map(([t, c, a]) => `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transparent) ${Math.round(t * 100)}%`).join(", ")})`;
 
-// The density field: how many times aircraft crossed each square, softened by a fraction of a square
-// (no more: the squares are an eighth of a mile, and the lines should stay sharp), on a log scale (a
-// handful of busy corridors carry most of the day's passes), and scaled so the busiest corridor (not
-// its single busiest square) reaches the top of the ramp.
-function heatField(heat) {
-  const n = heat.grid, raw = new Float32Array(n * n);
-  for (const [x, y, c] of heat.cells) if (x >= 0 && y >= 0 && x < n && y < n) raw[y * n + x] = c;
-  const sigma = 0.5, R = 2, w = [];
-  for (let i = -R; i <= R; i++) w.push(Math.exp(-(i * i) / (2 * sigma * sigma)));
-  const sum = w.reduce((a, b) => a + b), tmp = new Float32Array(n * n), out = new Float32Array(n * n);
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    let v = 0;
-    for (let i = -R; i <= R; i++) { const xx = x + i; if (xx >= 0 && xx < n) v += raw[y * n + xx] * w[i + R]; }
-    tmp[y * n + x] = v / sum;
-  }
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    let v = 0;
-    for (let i = -R; i <= R; i++) { const yy = y + i; if (yy >= 0 && yy < n) v += tmp[yy * n + x] * w[i + R]; }
-    out[y * n + x] = Math.log1p(v / sum);
-  }
-  const lit = [...out].filter((v) => v > 0.02).sort((a, b) => a - b);
-  const top = Math.max(Math.log1p(8), lit.length ? lit[Math.floor(lit.length * 0.995)] : 1);
-  for (let i = 0; i < out.length; i++) out[i] = Math.min(1, out[i] / top) ** 1.1;
-  return out;
-}
-
-// The field coloured, on a canvas a few times the grid's size, sampled smoothly between cells.
-function heatImage(heat, night) {
-  const n = heat.grid, f = heatField(heat), up = Math.max(2, Math.ceil(720 / n)), m = n * up, lut = heatLut(night);
-  const c = document.createElement("canvas");
-  c.width = c.height = m;
-  const img = c.getContext("2d").createImageData(m, m), d = img.data;
-  for (let py = 0; py < m; py++) {
-    const gy = clamp((py + 0.5) / up - 0.5, 0, n - 1), y0 = Math.floor(gy), y1 = Math.min(n - 1, y0 + 1), fy = gy - y0;
-    for (let px = 0; px < m; px++) {
-      const gx = clamp((px + 0.5) / up - 0.5, 0, n - 1), x0 = Math.floor(gx), x1 = Math.min(n - 1, x0 + 1), fx = gx - x0;
-      const v = (f[y0 * n + x0] * (1 - fx) + f[y0 * n + x1] * fx) * (1 - fy) + (f[y1 * n + x0] * (1 - fx) + f[y1 * n + x1] * fx) * fy;
-      const i = Math.round(v * 255) * 4, o = (py * m + px) * 4;
-      d[o] = lut[i]; d[o + 1] = lut[i + 1]; d[o + 2] = lut[i + 2]; d[o + 3] = lut[i + 3];
+// The traffic, drawn at the screen's own sharpness: every flight's line laid down on a buffer of
+// the canvas's device pixels, each pixel counting how many flights crossed it (a line covers a pixel
+// fully at its middle, partly at its anti-aliased edges, and counts once per flight where its
+// segments meet), then coloured: on a log scale, as a handful of busy corridors carry most of the
+// day, scaled so the busiest corridor (not its single busiest pixel) reaches the top of the ramp.
+let heatDrawn = null;
+function heatImage(heat, size, k, width, night) {
+  const buf = new Float32Array(size * size), mine = new Float32Array(size * size), touched = [];
+  const mid = size / 2, unit = heat.unit || 100, hw = width / 2, edge2 = (hw + 0.5) ** 2;
+  for (const p of heat.paths) {
+    for (let i = 2; i < p.length; i += 2) {
+      const x0 = mid + (p[i - 2] / unit) * k, y0 = mid - (p[i - 1] / unit) * k, x1 = mid + (p[i] / unit) * k, y1 = mid - (p[i + 1] / unit) * k;
+      const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy || 1e-9, reach = hw + 1;
+      const bx0 = Math.max(0, Math.floor(Math.min(x0, x1) - reach)), bx1 = Math.min(size - 1, Math.ceil(Math.max(x0, x1) + reach));
+      const by0 = Math.max(0, Math.floor(Math.min(y0, y1) - reach)), by1 = Math.min(size - 1, Math.ceil(Math.max(y0, y1) + reach));
+      for (let py = by0; py <= by1; py++) for (let px = bx0; px <= bx1; px++) {
+        const cx = px + 0.5, cy = py + 0.5;
+        let t = ((cx - x0) * dx + (cy - y0) * dy) / L2;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        const ex = cx - x0 - dx * t, ey = cy - y0 - dy * t, d2 = ex * ex + ey * ey;
+        if (d2 >= edge2) continue;                     // clear of the line: no square root needed
+        const cover = hw + 0.5 - Math.sqrt(d2);
+        const j = py * size + px, c = cover > 1 ? 1 : cover;
+        if (mine[j] === 0) touched.push(j);
+        if (c > mine[j]) mine[j] = c;
+      }
     }
+    for (const j of touched) { buf[j] += mine[j]; mine[j] = 0; }
+    touched.length = 0;
+  }
+  // the busiest corridor's level: the 99.5th percentile of the lit pixels, from a histogram (sorting a
+  // million pixels is too slow for a Raspberry Pi)
+  let max = 0, lit = 0;
+  for (let j = 0; j < buf.length; j++) if (buf[j] > max) max = buf[j];
+  const bins = new Uint32Array(1024), lmax = Math.log1p(max) || 1;
+  for (let j = 0; j < buf.length; j++) if (buf[j] > 0.5) { bins[Math.min(1023, (Math.log1p(buf[j]) / lmax) * 1024 | 0)]++; lit++; }
+  let level = lmax, above = lit * 0.005;
+  for (let i = 1023; i >= 0 && above > 0; i--) { above -= bins[i]; if (above <= 0) level = ((i + 0.5) / 1024) * lmax; }
+  const top = Math.max(Math.log1p(8), level), lut = heatLut(night);
+  const c = document.createElement("canvas");
+  c.width = c.height = size;
+  const img = c.getContext("2d").createImageData(size, size), d = img.data;
+  for (let j = 0; j < buf.length; j++) {
+    const b = buf[j];
+    if (b <= 0) continue;
+    // a pixel only partly covered by a single flight keeps its colour and takes the coverage as opacity
+    const t = Math.min(1, Math.log1p(Math.max(b, 1)) / top) ** 1.1, i = Math.max(1, Math.round(t * 255)) * 4, o = j * 4;
+    d[o] = lut[i]; d[o + 1] = lut[i + 1]; d[o + 2] = lut[i + 2]; d[o + 3] = lut[i + 3] * Math.min(1, b);
   }
   c.getContext("2d").putImageData(img, 0, 0);
-  return c;
+  return { canvas: c, buf, max };
 }
 
 // The heatmap is square, as large as its half of the card allows: beside the caption on a wide
@@ -663,7 +671,7 @@ function heatSize(canvas) {
 // Load the map tiles for the heatmap, then draw (and draw again once they arrive).
 function drawHeat(canvas, state, heat) {
   const night = document.body.classList.contains("night");
-  canvas._heat = heatImage(heat, night);
+  canvas._heat = null;          // drawn at the canvas's size, once it is known (paintHeat)
   canvas._night = night;
   const legend = canvas.closest(".idle.heat").querySelector(".heat-legend i");
   if (legend) legend.style.background = heatLegend(night);
@@ -709,15 +717,13 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
     g.strokeStyle = v("--water"); g.lineCap = g.lineJoin = "round";
     for (const w of map.water || []) { g.lineWidth = Math.max(2, w.width_nm * k); g.beginPath(); w.line.forEach(([la, lo], i) => { const [x, y] = XY(la, lo); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); }
   }
-  // the traffic: by night a soft glow under it first, so the busy corridors seem to give off light
-  g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
-  const img = canvas._heat, ext = 2 * rad;          // the grid spans the radius each way
-  if (night) {
-    g.globalCompositeOperation = "lighter"; g.globalAlpha = 0.3; g.filter = `blur(${(3 * u * dpr).toFixed(1)}px)`;
-    g.drawImage(img, mid - ext / 2, mid - ext / 2, ext, ext);
-    g.globalCompositeOperation = "source-over"; g.globalAlpha = 1; g.filter = "none";
-  }
-  g.drawImage(img, mid - ext / 2, mid - ext / 2, ext, ext);
+  // the traffic, pixel for pixel (drawn again only when the canvas changes size); each flight's
+  // line about one and a half CSS pixels wide
+  // kept between the slide's turns: drawn again only for new data (a minute at most), a new size or the night chart
+  if (!(heatDrawn && heatDrawn.heat === heat && heatDrawn.size === size && heatDrawn.night === night))
+    heatDrawn = { heat, size, night, img: heatImage(heat, size, k, Math.max(1.2, 1.5 * u) * dpr, night) };
+  canvas._heat = heatDrawn.img;
+  g.drawImage(canvas._heat.canvas, 0, 0);
   // the place names, over the traffic: light lettering by night, dark by day
   if (labels.length) {
     const s = rad / R;
@@ -726,8 +732,8 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
     for (const t of labels) if (t.img.complete && t.img.naturalWidth) g.drawImage(t.img, mid + t.x0 * s, mid - t.y0 * s, (t.x1 - t.x0) * s + 0.5, (t.y0 - t.y1) * s + 0.5);
     g.globalAlpha = 1; g.filter = "none";
   }
-  // a soft edge, the map falling away into the disc
-  const fade = g.createRadialGradient(mid, mid, rad * 0.88, mid, mid, rad);
+  // a soft edge, the map falling away into the disc at the rim
+  const fade = g.createRadialGradient(mid, mid, rad * 0.965, mid, mid, rad);     // a thin rim, not a fog
   const disc = /^#[0-9a-f]{6}$/i.test(v("--disc")) ? hex3(v("--disc")).join(",") : "128,128,128";    // faded from the disc's own colour, not from black
   fade.addColorStop(0, `rgba(${disc},0)`);
   fade.addColorStop(1, `rgba(${disc},1)`);
@@ -760,7 +766,7 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   if (Math.hypot(ax - mid, ay - mid) < rad * 0.92) lab(state.airport.iata, ax, ay + 16 * u * dpr, "center", 700, 9.5);
   // what the busiest route's mark keeps clear of: the airport and its code, and home and its name
   const U = u * dpr;
-  busiest(g, heat, mid, rad, [{ x0: ax - 14 * U, x1: ax + 14 * U, y0: ay - 8 * U, y1: ay + 19 * U },
+  busiest(g, canvas._heat, size, mid, rad, [{ x0: ax - 14 * U, x1: ax + 14 * U, y0: ay - 8 * U, y1: ay + 19 * U },
     { x0: mid - 8 * U, x1: mid + 40 * U, y0: mid - 9 * U, y1: mid + 8 * U }], U, lab, ink);
   // home: a ring and a dot, named
   g.lineWidth = Math.max(1, 1.4 * u * dpr); g.strokeStyle = ink; g.fillStyle = ink;
@@ -772,27 +778,26 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   lab("N", mid, 14 * u * dpr, "center", 700, 9);
 }
 
-// The busiest route, marked with how many flights passed: among the busiest squares, the one whose
+// The busiest route, marked with how many flights passed: among the busiest pixels, the one whose
 // mark and count sit clearest of the other names, well inside the edge.
-function busiest(g, heat, mid, rad, avoid, unit, lab, ink) {
-  const max = Math.max(0, ...heat.cells.map((c) => c[2]));
-  if (max < 5) return;
-  const cell = (2 * rad) / heat.grid, text = `${max.toLocaleString()} flights`;
+function busiest(g, heat, size, mid, rad, avoid, unit, lab, ink) {
+  const flights = Math.round(heat.max);
+  if (flights < 5) return;
+  const text = `${flights.toLocaleString()} flights`;
   g.font = `700 ${Math.round(9 * unit)}px ${getComputedStyle(g.canvas).fontFamily || "sans-serif"}`;
   const w = g.measureText(text).width, h = 9 * unit;
   const hit = (b) => avoid.reduce((n, a) => n + Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0)), 0);
   let best = null;
-  for (const [x, y, n] of heat.cells) {
-    if (n < max * 0.9) continue;
-    const px = mid - rad + (x + 0.5) * cell, py = mid - rad + (y + 0.5) * cell;
-    if (Math.hypot(px - mid, py - mid) > rad * 0.7) continue;
+  const step = Math.max(1, Math.round(unit * 2));          // every few pixels is plenty to choose from
+  for (let py = 0; py < size; py += step) for (let px = 0; px < size; px += step) {
+    if (heat.buf[py * size + px] < heat.max * 0.9 || Math.hypot(px - mid, py - mid) > rad * 0.7) continue;
     // the count above or below the mark, to its left or right
     for (const [sx, sy] of [[1, -1], [-1, -1], [1, 1], [-1, 1]]) {
       const tx = px + sx * 7 * unit, ty = py + (sy < 0 ? -6 * unit : 6 * unit + h);
       const box = { x0: sx > 0 ? tx : tx - w, x1: sx > 0 ? tx + w : tx, y0: ty - h, y1: ty + 2 * unit };
       const ring = { x0: px - 6 * unit, x1: px + 6 * unit, y0: py - 6 * unit, y1: py + 6 * unit };
       const inside = Math.max(...[[box.x0, box.y0], [box.x1, box.y1], [box.x0, box.y1], [box.x1, box.y0]].map(([qx, qy]) => Math.hypot(qx - mid, qy - mid))) < rad * 0.9;
-      const score = hit(box) + hit(ring) + (inside ? 0 : 1e9) + n * -0.01;
+      const score = hit(box) + hit(ring) + (inside ? 0 : 1e9);
       if (!best || score < best.score) best = { px, py, tx, ty, align: sx > 0 ? "left" : "right", score };
     }
   }
@@ -810,7 +815,7 @@ function showIdle(el, state) {
   if ((state.heard || []).length) slides.unshift("military");
   if ((state.tfrs || []).some((t) => t.active && !t.drones_only)) slides.push("airspace");
   if (W && W.now) slides.push("weather");
-  if (H && H.cells.length > 8) slides.push("heat");
+  if (H && H.paths && H.paths.length >= 3) slides.push("heat");
   const fleet = fleetToday(L);
   if (fleet.length >= 2) slides.push("fleet");
   if (L && L.today > 0) slides.push("records");

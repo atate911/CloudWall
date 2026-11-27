@@ -14,9 +14,11 @@ TRAIL_POINTS = 30           # recent reported positions, for the ATC style's his
 PATH_STEP_NM = 0.15         # an aircraft's full path keeps a point each time it has moved this far,
 PATH_CLIMB_FT = 300         # or climbed or descended this much,
 PATH_POINTS = 1500          # up to this many (hours of circling); the radar draws the selected one's
-HEAT_GRID = 240            # the heatmap's squares across the tracking radius's width: an eighth of a nm at 15 nm
-HEAT_JOIN_S = 90           # a position this soon after the last is joined to it on the heatmap,
-HEAT_JOIN_NM = 3           # if it is this near; otherwise (a gap in the feed) it stands alone
+HEAT_JOIN_S = 90           # on the day's heatmap, a position this soon after the last continues its line,
+HEAT_JOIN_NM = 3           # if it is this near; otherwise (a gap in the feed) a new line starts
+HEAT_STEP_NM = 0.05        # a line keeps a point each time the aircraft has moved this far,
+HEAT_TOLERANCE_NM = 0.02   # and, once finished, only the points it needs to stay this close to its path
+HEAT_UNIT = 100            # the lines are sent in hundredths of a nm east and north of home
 PRUNE_EVERY_S = 6 * 3600    # how often cached values past their use are cleared from the place's database
 
 
@@ -26,19 +28,19 @@ class Tracks:
         self.trails = {}          # hex -> deque of (lat, lon), every update
         self.paths = {}           # hex -> deque of (lat, lon, alt in hundreds of ft), since it came in range
         self.heat_day = time.strftime("%Y-%m-%d")
-        # the day's heatmap: how many times aircraft crossed each square, and which aircraft flew today
-        # (kept as "heat-lines", so a heatmap kept the old way, positions on a coarser grid, isn't misread)
-        saved = store.cache_get("heat-lines", self.heat_day, 2 * 86400)[1] or {}
-        fits = saved.get("grid") == HEAT_GRID
-        self.heat = {tuple(map(int, k.split(","))): v for k, v in (saved.get("cells") or {}).items()} if fits else {}
-        self.heat_seen = set(saved.get("seen") or ()) if fits else set()
-        self.heat_last = {}       # hex -> (x, y in nm from home, time): where each was last put on the heatmap
+        # the day's heatmap: every aircraft's path within the radius since midnight, as lines (the
+        # page draws them at its screen's own sharpness), and which aircraft flew today. Kept as
+        # "heat-paths", so a heatmap kept the old way, as a grid of squares, isn't misread.
+        saved = store.cache_get("heat-paths", self.heat_day, 2 * 86400)[1] or {}
+        self.heat = list(saved.get("paths") or ())    # finished lines, each flat [x0, y0, x1, y1, ...] in HEAT_UNITs
+        self.heat_seen = set(saved.get("seen") or ())
+        self.heat_live = {}       # hex -> [(x, y), ...] in nm, and the time of its last point: the line still being flown
         self.heat_saved = time.time()
         self.pruned = time.time() - PRUNE_EVERY_S + 300    # first a few minutes in, then every few hours
 
     def remember(self, airborne, now, beyond=()):
         """Each aircraft's recent positions (the ATC style's history dots) and its whole path since
-        it came in range or took off, with its altitude, and a coarse all-day grid for the traffic
+        it came in range or took off, with its altitude, and its line on the day's traffic
         heatmap. The radar draws only the selected aircraft's track, but every one's is kept, so one
         that is tapped shows all of it at once. Aircraft beyond the tracking radius (shown only on a
         radar set to a longer range) get trails and paths but stay off the heatmap."""
@@ -46,7 +48,7 @@ class Tracks:
         r = self.radius_nm
         day = time.strftime("%Y-%m-%d", time.localtime(now))
         if day != self.heat_day:
-            self.heat, self.heat_seen, self.heat_day = {}, set(), day
+            self.heat, self.heat_seen, self.heat_live, self.heat_day = [], set(), {}, day
         for a in list(beyond) + airborne:
             seen.add(a["hex"])
             if a.get("coasting"):       # carried on from its last report: nothing new to remember, nothing forgotten
@@ -67,45 +69,69 @@ class Tracks:
         for hexid in [h for h in self.trails if h not in seen]:
             del self.trails[hexid]
             self.paths.pop(hexid, None)
-        for hexid in [h for h in self.heat_last if h not in seen]:
-            del self.heat_last[hexid]
+        flying = {a["hex"] for a in airborne}         # (one coasting on keeps its line open)
+        for hexid in [h for h in self.heat_live if h not in flying]:     # gone from the radius, or landed
+            self._finish(hexid)
         if now - self.heat_saved > 60:
             self.heat_saved = now
-            self.store.cache_put("heat-lines", self.heat_day, {"grid": HEAT_GRID, "seen": sorted(self.heat_seen),
-                                                                "cells": {f"{x},{y}": n for (x, y), n in self.heat.items()}})
+            self.store.cache_put("heat-paths", self.heat_day, {"seen": sorted(self.heat_seen), "paths": self.heat})
         if now - self.pruned > PRUNE_EVERY_S:      # yesterday's heatmaps and the like, in this place's file
             self.pruned = now
             self.store.prune()
 
-    def _cell(self, x, y):
-        r = self.radius_nm
-        return int((x + r) / (2 * r) * HEAT_GRID), int((r - y) / (2 * r) * HEAT_GRID)
-
     def _heat_line(self, hexid, x, y, now):
-        """Put an aircraft's move since its last position on the heatmap: every square its line
-        crosses counts once, so a route reads as a continuous line however far apart the reports are,
-        and a square's count is how many times aircraft passed through it, not how long they lingered
-        there (a helicopter hovering for an hour adds nothing after its first pass)."""
-        last = self.heat_last.get(hexid)
-        self.heat_last[hexid] = (x, y, now)
+        """Carry an aircraft's line on the heatmap to where it is now. A gap in the feed (too long,
+        or too far) finishes the line and starts another, rather than draw a straight line across
+        where it was never seen."""
         self.heat_seen.add(hexid)
-        end = self._cell(x, y)
-        if last and now - last[2] <= HEAT_JOIN_S and math.hypot(x - last[0], y - last[1]) <= HEAT_JOIN_NM:
-            start = self._cell(last[0], last[1])
-            # sampled at a third of a square, so no square on the line is skipped
-            steps = max(1, math.ceil(math.hypot(x - last[0], y - last[1]) / (2 * self.radius_nm / HEAT_GRID) * 3))
-            cells = {self._cell(last[0] + (x - last[0]) * i / steps, last[1] + (y - last[1]) * i / steps) for i in range(steps + 1)}
-            cells.discard(start)        # counted when it got there
-        else:
-            cells = {end}
-        for c in cells:
-            if 0 <= c[0] < HEAT_GRID and 0 <= c[1] < HEAT_GRID:
-                self.heat[c] = self.heat.get(c, 0) + 1
+        live = self.heat_live.get(hexid)
+        if live and (now - live[1] > HEAT_JOIN_S or math.hypot(x - live[0][-1][0], y - live[0][-1][1]) > HEAT_JOIN_NM):
+            self._finish(hexid)
+            live = None
+        if not live:
+            self.heat_live[hexid] = [[(x, y)], now]
+            return
+        live[1] = now
+        if math.hypot(x - live[0][-1][0], y - live[0][-1][1]) >= HEAT_STEP_NM:
+            live[0].append((x, y))
+
+    def _finish(self, hexid):
+        live = self.heat_live.pop(hexid, None)
+        if live and len(live[0]) > 1:
+            self.heat.append(_packed(live[0]))
 
     def heatmap(self):
-        return {"grid": HEAT_GRID, "radius_nm": self.radius_nm, "aircraft": len(self.heat_seen),
-                "cells": [[x, y, n] for (x, y), n in self.heat.items()]}
+        """Today's lines: those finished, and those still being flown."""
+        paths = self.heat + [_packed(pts) for pts, _ in self.heat_live.values() if len(pts) > 1]
+        return {"radius_nm": self.radius_nm, "aircraft": len(self.heat_seen), "unit": HEAT_UNIT, "paths": paths}
 
     def of(self, hexid):
         """An aircraft's whole path and its recent positions, for the one a screen has selected."""
         return list(self.paths.get(hexid, ())), list(self.trails.get(hexid, ()))
+
+
+def _simplified(pts, tol=HEAT_TOLERANCE_NM):
+    """The fewest points that keep a line within tol of where it went (Douglas-Peucker): a straight
+    crossing keeps its two ends, a turn as many points as its curve needs."""
+    if len(pts) < 3:
+        return list(pts)
+    keep, stack = {0, len(pts) - 1}, [(0, len(pts) - 1)]
+    while stack:
+        i, j = stack.pop()
+        (x0, y0), (x1, y1) = pts[i], pts[j]
+        L = math.hypot(x1 - x0, y1 - y0)
+        far, at = 0.0, None
+        for k in range(i + 1, j):
+            px, py = pts[k]
+            d = abs((x1 - x0) * (y0 - py) - (x0 - px) * (y1 - y0)) / L if L else math.hypot(px - x0, py - y0)
+            if d > far:
+                far, at = d, k
+        if at is not None and far > tol:
+            keep.add(at)
+            stack += [(i, at), (at, j)]
+    return [pts[k] for k in sorted(keep)]
+
+
+def _packed(pts):
+    """A line as one flat list of whole hundredths of a nm: [x0, y0, x1, y1, ...], east and north."""
+    return [round(v * HEAT_UNIT) for p in _simplified(pts) for v in p]
