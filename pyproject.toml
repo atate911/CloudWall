@@ -14,10 +14,10 @@ dynamic = ["version"]
 cloudwall = "cloudwall.__main__:main"
 
 [tool.setuptools]
-packages = ["cloudwall"]
+packages = ["cloudwall", "cloudwall.radio"]
 
 [tool.setuptools.package-data]
-cloudwall = ["web/*", "web/js/*", "web/js/profiles/*", "web/maps/*", "web/fonts/*", "data/*", "data/types/*", "config.example.toml"]
+cloudwall = ["web/*", "web/js/*", "web/js/profiles/*", "web/maps/*", "web/fonts/*", "data/*", "data/types/*", "radio/README.md", "config.example.toml"]
 
 [tool.setuptools.dynamic]
 version = { attr = "cloudwall.__version__" }
