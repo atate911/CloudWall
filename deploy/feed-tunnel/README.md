@@ -149,14 +149,17 @@ Expect something like `[OK] 27 aircraft, 26 with positions, data 0s old`.
 
 **Step 5, on the VPS: point CloudWall at it**
 
-Run this as the user that runs CloudWall (not with sudo):
+With CloudWall installed as a system service (`sudo cloudwall install`), run it with sudo; with the
+older per-user service (`make service`), as the user that runs CloudWall, without sudo:
 ```bash
-bash deploy/feed-tunnel/vps-tunnel.sh cloudwall
+sudo bash deploy/feed-tunnel/vps-tunnel.sh cloudwall
 ```
-It finds CloudWall's `config.toml` (same order as CloudWall: `$CLOUDWALL_CONFIG`, the service's
-working directory, then `~/.config/cloudwall/config.toml`; or pass `--config PATH`), backs it up,
-puts the tunnel first in `[source] urls` keeping the existing feeds after it, turns on
-`merge = true`, checks the result parses, and restarts CloudWall (`systemctl --user restart cloudwall`).
+It finds CloudWall's `config.toml` (`$CLOUDWALL_CONFIG`, then `/etc/cloudwall/config.toml` for the
+system install, then the per-user service's working directory, then `~/.config/cloudwall/config.toml`;
+or pass `--config PATH`), backs it up, puts the tunnel first in `[source] urls` keeping the existing
+feeds after it, turns on `merge = true`, checks the result parses, and restarts CloudWall.
+`cloudwall doctor` then checks the receiver answers through the tunnel, and while CloudWall runs it
+watches that your receiver is up, believable (not frozen, not deaf, not lagging) and says so if not.
 
 The result looks like:
 ```toml

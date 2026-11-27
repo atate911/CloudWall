@@ -72,6 +72,9 @@ class Tracker:
         self.storage_said = 0.0   # when the logbook's file last couldn't be written or read
         self.storage_error = None # why, while it can't (for the screens and the health check)
         self.today = (0, 0)       # flyovers and seats logged today, as last read
+        # for the health watcher: since when, how many aircraft-updates, and the closest any came
+        # (hours of traffic and none near the house means the house is in the wrong place)
+        self.vitals = {"since": time.time(), "updates": 0, "aircraft": 0, "closest_nm": None}
         self._stored("the logbook", lambda: setattr(self, "today", self.logbook.today()))
         self.status = {"source": None, "ok": False, "updated": 0, "error": None, "storage": None}
         self.emergency_seen = {}  # hex -> (consecutive updates squawking, first seen)
@@ -300,6 +303,12 @@ class Tracker:
                 except Exception as e:
                     self._left_out("the activity", a, e)
         by_hex = {a["hex"]: a for a in raw}
+        v = self.vitals
+        v["updates"] += 1
+        v["aircraft"] += len(airborne)
+        if airborne:
+            near = airborne[0]["dist"]
+            v["closest_nm"] = near if v["closest_nm"] is None else min(v["closest_nm"], near)
         with self.lock:
             self.storage_error = None
             self.hero_hex = self._pick_hero(by_hex)

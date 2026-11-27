@@ -20,6 +20,8 @@ MAX_BODY = 16 * 1024        # bytes: a place to set up is a few dozen
 # comes to mean something else, so that anything else reading it can tell; adding a key doesn't.
 API = 1
 log = logging.getLogger("cloudwall")
+# How things stand, before the health watcher has looked (or where there is none, as in some tests)
+QUIET = {"worst": "ok", "problems": 0, "checked": None, "major": None, "major_title": None, "subtle": None}
 # What a request without the key is told (access.py): that there is a key, and nothing else.
 PRIVATE = (b"<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>CloudWall</title>"
            b"<body style='font:1.1rem system-ui,sans-serif;margin:18vh auto;max-width:26rem;padding:0 1.5rem;line-height:1.5'>"
@@ -157,7 +159,10 @@ def make_server(cfg, places, charts=None, logos=None):
                     reach = 1.0
                 reach = reach if reach == reach else 1.0                 # not NaN
                 return self._send(200, dict(place.state(pin, nm, q.get("square") == ["1"], reach), **display, api=API,
-                                            places=places.summaries(), restart=code_changed()))
+                                            places=places.summaries(), restart=code_changed(),
+                                            health=srv.watch.monitor.summary() if srv.watch else QUIET))
+            if path == "/api/health":
+                return self._send(200, srv.watch.report() if srv.watch else dict(QUIET, open=[], findings=[]))
             if path == "/api/weather":
                 return self._send(200, place.weather_report())
             if path == "/api/heat":
@@ -253,4 +258,7 @@ def make_server(cfg, places, charts=None, logos=None):
             return self._send(200, {"places": places.summaries()})
 
     s = cfg["server"]
-    return ThreadingHTTPServer((s["host"], s["port"]), Handler)
+    srv = ThreadingHTTPServer((s["host"], s["port"]), Handler)
+    srv.watch = None                    # the health watcher (app/watch.py), set once it is made
+    srv.code_changed = code_changed
+    return srv

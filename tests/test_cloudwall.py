@@ -798,7 +798,6 @@ class PlacesTest(unittest.TestCase):
 
     def test_settings_are_checked_when_the_file_is_read(self):
         for toml, said in (('[tracking]\npoll_seconds = "5"\n', "poll_seconds must be a number"),
-                           ('[tracking]\nwhen_idle = "puase"\n', 'must be "pause" or "log"'),
                            ('[kiosk]\ntracks = "off"\n', "tracks must be true or false"),
                            ('[extras]\nmilitary = 1\n', "military must be true or false"),
                            ('[tracking]\nradius_nm = 0\n', "more than 0"),
@@ -807,6 +806,13 @@ class PlacesTest(unittest.TestCase):
                            ('places = "cabin"\n', r"\[\[places\]\] sections")):
             with self.assertRaisesRegex(ValueError, said):
                 self.load(toml)
+        # a word it can't use is left out, said, and the default used: a CloudWall that ran goes on running
+        with self.assertLogs("cloudwall", "WARNING") as logs:
+            cfg = self.load('[tracking]\nwhen_idle = "puase"\n')
+        self.assertEqual(cfg["tracking"]["when_idle"], "pause")
+        self.assertIn('must be "pause" or "log"', cfg["_problems"][0])
+        self.assertIn("default", logs.output[0])
+        self.assertEqual(self.load('[tracking]\nwhen_idle = "Log"\n')["tracking"]["when_idle"], "log")   # case doesn't matter
         # a name CloudWall doesn't know is said, not refused: the rest of the file still counts
         with self.assertLogs("cloudwall", "WARNING") as logs:
             cfg = self.load('port = 5050\n[tracking]\nradious_nm = 20\npoll_seconds = 2.5\n[sound]\non = true\n')
@@ -2536,9 +2542,11 @@ class MedicalTest(unittest.TestCase):
 class KioskQuietTest(unittest.TestCase):
     def test_density_is_checked(self):
         self.assertTrue(config.check("kiosk", {"density": "detailed"}))
-        for bad in ("Detailed", "detail"):
-            with self.assertRaises(ValueError):
-                config.check("kiosk", {"density": bad})
+        given = {"density": "Detailed"}
+        self.assertTrue(config.check("kiosk", given))
+        self.assertEqual(given["density"], "detailed")                  # as the page compares it
+        with self.assertRaises(ValueError):
+            config.check("kiosk", {"density": "detail"})
 
     def test_quiet_hours_are_checked(self):
         for ok in ("", "23:00-06:30", "0:00 - 7:15", "22:30-23:45"):
@@ -2662,15 +2670,19 @@ class ConfigMistakesTest(unittest.TestCase):
         self.addCleanup(Path(f.name).unlink)
         return config.load(f.name)
 
-    def test_a_word_cloudwall_doesnt_know_is_refused_by_name(self):
-        for text, words in (('[flightradar24]\nmode = "alwyas"', "[flightradar24] mode must be"),
-                            ('[kiosk]\nview = "radr"', "[kiosk] view must be"),
-                            ('[map]\nstyle = "sattelite"', "[map] style must be"),
-                            ('[map]\nopacity = 4', "[map] opacity must be from 0 to 1")):
-            with self.assertRaises(ValueError) as e:
-                self.load(text)
-            self.assertIn(words, str(e.exception))
-        self.assertEqual(self.load('[map]\nstyle = "Satellite"')["map"]["style"], "Satellite")   # case is the map's own
+    def test_a_word_cloudwall_doesnt_know_is_left_out_by_name(self):
+        for section, key, bad, toml, words in (
+                ("flightradar24", "mode", "alwyas", '"alwyas"', "[flightradar24] mode must be"),
+                ("kiosk", "view", "radr", '"radr"', "[kiosk] view must be"),
+                ("map", "style", "sattelite", '"sattelite"', "[map] style must be"),
+                ("map", "opacity", 4, "4", "[map] opacity must be from 0 to 1")):
+            with self.assertLogs("cloudwall", "WARNING"):
+                cfg = self.load(f"[{section}]\n{key} = {toml}")       # it still starts
+            self.assertIn(words, cfg["_problems"][0])
+            self.assertEqual(cfg[section][key], config.DEFAULTS[section][key])
+            with self.assertRaises(ValueError):                         # but isn't written that way (Setup)
+                config.check(section, {key: bad})
+        self.assertEqual(self.load('[flightradar24]\nmode = "Always"')["flightradar24"]["mode"], "always")   # case doesn't matter
 
     def test_a_config_file_that_isnt_there_is_said_plainly(self):
         with self.assertRaises(ValueError) as e:

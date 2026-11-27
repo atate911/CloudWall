@@ -235,6 +235,22 @@ function setView(v) {
   if (phone() === "stack") scrollTo(0, 0);        // each tab starts at its top
   render();
 }
+// CloudWall's check of itself (/api/health): a problem that stops it doing its job is said on every
+// screen, the wall panel too, in a banner nobody can miss; one the screens can't show, where what they
+// show looks right but isn't (a frozen feed, a deaf receiver), in a chip. What to do is in
+// `cloudwall doctor` on the server, which the words point to.
+function showHealth(h) {
+  const t = $("trouble"), off = $("looks-off");
+  t.hidden = !h.major;
+  document.body.classList.toggle("in-trouble", !!h.major);
+  if (h.major) t.innerHTML = `<b>CloudWall has a problem: ${esc(h.major_title || "see the server")}.</b> <span>${esc(h.major)}</span> <small>On the server, \`cloudwall doctor\` says what to do.</small>`;
+  off.hidden = !h.subtle || !!h.major;
+  if (h.subtle) {
+    off.textContent = `Check: ${h.subtle}`;
+    off.title = "What the screens show looks right but may not be. On the server, `cloudwall doctor` says why and what to do.";
+  }
+}
+
 // Sound and night mode live in one small menu behind the settings button in the header.
 function renderToggles() {
   const on = soundOn(), night = store("night") || "auto";
@@ -293,6 +309,7 @@ function render() {
   if (w) $("wx").innerHTML = `${w.temp_c == null ? "" : `${degF(w.temp_c)}, `}wind ${w.wind_kt ?? 0} kt <b class="cat-${esc(w.category)}">${esc(w.category || "")}</b>`;
   $("link").hidden = state.status.ok || !state.status.source;
   $("restart").hidden = !state.restart;
+  showHealth(state.health || {});
   const tfr = (state.tfrs || []).find((t) => t.active && !t.drones_only);
   $("tfr-chip").hidden = !tfr;
   if (tfr) $("tfr-chip").textContent = `Flight restriction ${tfr.dist_nm < 0.5 ? "overhead" : `${Math.round(tfr.dist_nm)} nm`}`;

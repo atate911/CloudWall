@@ -67,6 +67,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `charts` | always | The chart layers the server can serve as tiles: `map`, `atc` (or null) and `layers` by name, among them `world`, the flight card's route map, served everywhere at zooms 0 to 6 (absent when `[map] route` is off). |
 | `logos` | always | Whether airline logos are served at `/logos/<IATA>`. |
 | `restart` | always | True when the server's code has changed on disk since it started: it wants restarting. |
+| `health` | always | How CloudWall's own check of itself stands (`/api/health` has it in full): `worst` ("ok", "warn" or "fail"), `problems` (how many open), `checked` (when it last looked, or null before it has), `major` (the summary of a problem that stops CloudWall doing its job, or null: every screen says it), `major_title` (that problem in a few words) and `subtle` (the title of a problem the screens don't show, where what they show looks right but isn't, such as a frozen feed or a deaf receiver; or null). |
 
 ### An aircraft
 
@@ -365,6 +366,7 @@ to draw it, and what this place's logbook knows of it.
 
 | Request | Answer |
 |---|---|
+| `GET /api/health` | CloudWall's check of itself in full, every 30 s (app/watch.py): what `health` in the state says, plus `open`, each problem now open as a finding with `since` and `seen` (how many checks running), and `findings`, everything the last check found. A finding: `part`, `state`, `summary`, `detail` (what it means), `fix`, `code` (the known problem, in core/troubles.py), `major`, `subtle` (looks right on the screens but isn't), `steps`, `causes`, `repair`, `auto`. |
 | `GET /api/heat` | Today's traffic within the tracking radius, as lines: `radius_nm`, `aircraft` (how many flew within it today), `unit` (100: coordinates are in hundredths of a nm), and `paths`, each one flight's line as a flat list `[x0, y0, x1, y1, ...]`, east and north of home, simplified to the points it needs to stay within 0.02 nm of where it went. A gap in the feed of over 90 seconds or 3 nm ends one line and starts another. The page draws them at its screen's own resolution, each pixel coloured by how many flights crossed it. |
 | `GET /api/locate?q=` | Where a US ZIP code ("98683") or coordinates ("45.63, -122.66") are: `lat`, `lon`, `zip`; `auto`, the airport CloudWall would choose; and `airports`, the airline airports nearest (`icao`, `iata`, `name`, `city`, `size`, `dist_nm`). 400 with `error` when it is neither. |
 | `POST /api/places` | Set up a place: a JSON body with `q` (as for locate), and optionally `name` and `airport` (an ICAO code; "auto" when left out). Answers `place`, its summary as in `places`; 400 with `error` in words fit to show. Refused (403) from another site's page. |

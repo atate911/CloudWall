@@ -42,6 +42,7 @@ class Place:
             self.activity.idle = lambda: False      # demo traffic costs nothing
         self.stopped = threading.Event()
         self.threads = []
+        self.restarts = []                          # when a thread last tripped and was started again
         self.added = False                          # set up from a screen rather than the config file
         # what its threads fetch, beside the tracker's positions
         self.weather = None         # the airport's latest report, in short (the header, the idle card)
@@ -131,6 +132,8 @@ class Place:
                 return loop()
             except Exception:
                 log.exception("%s%s stopped on an unexpected error: starting it again", self.tag, loop.__name__.strip("_"))
+                self.restarts.append(time.time())               # (the health watcher counts these)
+                self.restarts[:] = self.restarts[-20:]
                 self.stopped.wait(5)
 
     def _thread(self, loop, name):

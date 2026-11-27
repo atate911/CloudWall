@@ -142,6 +142,16 @@ port = 5050
 # that is easy to type and hard to guess, writes it here, restarts the service and prints the links;
 # one of your own needs at least 12 letters and digits. Leave it out on a home network.
 # key = "tafo-kemi-luza-nobe"
+# The name CloudWall has on the internet, served over HTTPS by Caddy in front of it, for the links it
+# prints. `sudo cloudwall install --public cloudwall.example.com` sets it, and sets up Caddy.
+# address = "cloudwall.example.com"
 
 [storage]
-db_path = ""           # empty: ~/.local/share/cloudwall/cloudwall.db
+db_path = ""           # empty: cloudwall.db in the data folder (/var/lib/cloudwall when installed with
+                       # `cloudwall install`, else ~/.local/share/cloudwall)
+cache_dir = ""         # where downloaded map tiles and logos go; empty: /var/cache/cloudwall when
+                       # installed, else beside the logbook
+
+[health]               # CloudWall checks itself every 30 s: `cloudwall doctor` and the screens say what it finds
+notify_url = ""        # a web address told (a JSON POST) when a major problem starts and ends, such as
+                       # an ntfy.sh topic ("https://ntfy.sh/<your-topic>") to get it on your phone

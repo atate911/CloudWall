@@ -96,6 +96,8 @@ class Feeds:
         self.current = 0
         self.name = self._host(self.urls[0])
         self.quiet = quiet          # the caller reports failures itself (Merged)
+        self.vitals = Vitals()
+        self.parts = {"the position feed": self}      # (Merged has two: your receiver and the public feed)
 
     @staticmethod
     def _host(url):
@@ -120,8 +122,51 @@ class Feeds:
             if i != self.current:
                 log.info("switched position feed to %s", self._host(url))
             self.current, self.name = i, self._host(url)
-            return placed_with_times(data, clock())
+            received = clock()
+            placed = placed_with_times(data, received)
+            self.vitals.answered(data, placed, received, self.name)
+            return placed
+        self.vitals.failed(last, clock())
         raise last
+
+
+class Vitals:
+    """How a feed has been answering, for the health watcher (app/watch.py): not whether it answers
+    (failures are said as they happen) but whether what it says is believable. A feed whose answer
+    is the same every time has frozen; one whose clock is far from ours places aircraft wrongly
+    (and feed_time quietly ignores a clock over five minutes off, so it is measured here); one
+    whose positions are old draws aircraft where they were."""
+
+    def __init__(self):
+        self.ok_at = None           # when it last answered
+        self.failed_at = None       # when it last failed, and why
+        self.error = None
+        self.down_since = None      # failing since (None while it answers)
+        self.count = 0              # aircraft with a position in its last answer
+        self.moving = 0             # of which moving (over 50 kt), which must change between answers
+        self.same = 0               # answers in a row identical to the one before
+        self.skew_s = None          # its clock less ours, when its answer says when it was made
+        self.lag_s = None           # the median age of its positions when they arrived
+        self.host = None
+        self._signature = None
+
+    def answered(self, data, placed, received, host):
+        self.ok_at, self.down_since, self.error, self.host = received, None, None, host
+        self.count = len(placed)
+        self.moving = sum(1 for a, _ in placed if (a.get("gs") or 0) > 50)
+        signature = hash(tuple(sorted((a["hex"], round(a["lat"], 5), round(a["lon"], 5)) for a, _ in placed)))
+        self.same = self.same + 1 if signature == self._signature and self.moving else 0
+        self._signature = signature
+        now = (data or {}).get("now")
+        if isinstance(now, (int, float)) and not isinstance(now, bool):
+            self.skew_s = round((now / 1000 if now > 1e11 else now) - received, 1)
+        ages = sorted(_num(a.get("seen_pos")) for a in (data or {}).get("ac") or (data or {}).get("aircraft") or []
+                      if _num(a.get("seen_pos")) is not None and a.get("lat") is not None)
+        self.lag_s = ages[len(ages) // 2] if ages else None
+
+    def failed(self, error, at):
+        self.failed_at, self.error = at, str(error)
+        self.down_since = self.down_since or at
 
 
 def feed_time(data, received):
@@ -183,6 +228,8 @@ class Merged:
     def __init__(self, urls, clock=time.time):
         self.receiver = Feeds(urls[:1], quiet=True)
         self.public = Feeds(urls[1:]) if len(urls) > 1 else None
+        self.parts = {"your receiver": self.receiver, "the public feed": self.public} if self.public \
+            else {"your receiver": self.receiver}
         self.clock = clock
         self.name = " + ".join(f.name for f in (self.receiver, self.public) if f)
         self.last = {}               # hex -> (time of the position used last, that record)
@@ -195,11 +242,12 @@ class Merged:
         """The place is gone: let the workers go."""
         self.pool.shutdown(wait=False, cancel_futures=True)
 
-    def _answer(self, future, label):
+    def _answer(self, future, label, feed):
         try:
             return future.result(timeout=MERGE_WAIT_S)
         except WaitedTooLong:
             e = TimeoutError(f"no answer in {MERGE_WAIT_S} s")
+            feed.vitals.failed(e, self.clock())
             if label not in self.down:
                 self.down.add(label)
                 log.warning("merged feeds: %s isn't answering (%s); carrying on with the other", label, e)
@@ -221,7 +269,7 @@ class Merged:
     def fetch(self, lat, lon, radius_nm):
         jobs = [(self.receiver, "your receiver")] + ([(self.public, "the public feed")] if self.public else [])
         futures = [self.pool.submit(self._ask, f, lat, lon, radius_nm, label) for f, label in jobs]
-        answers = [self._answer(fu, label) for fu, (_, label) in zip(futures, jobs)]
+        answers = [self._answer(fu, label, feed) for fu, (feed, label) in zip(futures, jobs)]
         now = self.clock()
         if all(got is None for got, _ in answers):
             raise answers[0][1]

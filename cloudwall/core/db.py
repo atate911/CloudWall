@@ -98,6 +98,18 @@ class Database:
             self.db.execute("CREATE TABLE IF NOT EXISTS cache(kind TEXT, key TEXT, json TEXT, ts REAL, PRIMARY KEY(kind, key))")
         self._migrate()
 
+    def reopen(self):
+        """Close the file and open it again (moving it aside if SQLite can't read it now): the
+        health watcher's repair when writing to it keeps failing."""
+        with self.lock:
+            try:
+                self.db.close()
+            except Exception:
+                pass
+            self.db = open_or_set_aside(self.path)
+            self.db.execute("CREATE TABLE IF NOT EXISTS cache(kind TEXT, key TEXT, json TEXT, ts REAL, PRIMARY KEY(kind, key))")
+        self._migrate()
+
     def _migrate(self):
         have = self.db.execute("PRAGMA user_version").fetchone()[0]
         for version, step in self.MIGRATIONS:

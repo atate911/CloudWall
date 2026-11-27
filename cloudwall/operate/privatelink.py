@@ -3,56 +3,15 @@ makes a key (keys.py), writes it into the config file, restarts the service and 
 What the key does to requests is access.py's.
 """
 import os
-import re
 import socket
 import subprocess
-import tomllib
-from pathlib import Path
 
 from ..core import config, keys
 
-KEY_LINE = re.compile(r"^\s*key\s*=")
-SECTION = re.compile(r"^\s*\[")
-
-
 def write_key(path, key):
     """Set (or, with key "", clear) `[server] key` in the config file at `path`, leaving every other
-    line as it was: the key's line replaced where there is one, added under [server] where there
-    isn't, and a [server] section added where there's none. The file must still read as TOML after,
-    or it is left as it was."""
-    path = Path(path)
-    text = path.read_text() if path.exists() else ""
-    lines = text.splitlines()
-    line = f'key = "{key}"'
-    head = next((i for i, l in enumerate(lines) if re.match(r"^\s*\[server\]\s*(#.*)?$", l)), None)
-    if head is None:
-        lines += ([""] if lines and lines[-1].strip() else []) + ["[server]", line]
-    else:
-        end = next((i for i in range(head + 1, len(lines)) if SECTION.match(lines[i])), len(lines))
-        at = next((i for i in range(head + 1, end) if KEY_LINE.match(lines[i])), None)
-        if at is not None:
-            lines[at] = line
-        else:
-            # after the section's last setting, ahead of the comments and blank lines before the next one
-            last = max((i for i in range(head, end) if lines[i].strip() and not lines[i].lstrip().startswith("#")), default=head)
-            lines.insert(last + 1, line)
-    new = "\n".join(lines) + "\n"
-    try:
-        got = tomllib.loads(new).get("server", {}).get("key")
-    except tomllib.TOMLDecodeError as e:
-        raise ValueError(f"{path} would no longer read as TOML: {e}") from None
-    if got != key:
-        raise ValueError(f"{path}: couldn't set [server] key (it reads {got!r})")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    # written whole and then put in place, so a crash halfway never leaves half a config; and not
-    # readable by other users, since the file now holds a key (its group keeps what it had)
-    mode = (path.stat().st_mode & 0o770) if path.exists() else 0o600
-    tmp = path.with_name(path.name + ".tmp")
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
-    with os.fdopen(fd, "w") as f:
-        f.write(new)
-    os.chmod(tmp, mode)
-    os.replace(tmp, path)
+    line as it was (config.write_setting)."""
+    config.write_setting(path, "server", "key", key)
 
 
 def lan_address():
@@ -76,11 +35,16 @@ def links(key, host, port):
 
 
 def restart_service():
-    """Restart CloudWall's systemd user service (`make service`) if it is running, so a new key
-    takes effect. True when restarted, False when it isn't running as one, or None when systemd
-    isn't there to ask."""
+    """Restart CloudWall's service, if it runs as one, so a new key takes effect. True when
+    restarted, False when it isn't running as a service (or this user may not restart it), None
+    when systemd isn't there to ask. The system install's service (`cloudwall install`) first; the
+    older per-user one (`make service`) after."""
+    quiet = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
     try:
-        quiet = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
+        if os.path.exists("/etc/systemd/system/cloudwall.service"):
+            if os.geteuid() != 0:
+                return False
+            return subprocess.run(["systemctl", "restart", "cloudwall"], timeout=30, **quiet).returncode == 0
         if subprocess.run(["systemctl", "--user", "is-active", "--quiet", "cloudwall"], timeout=10, **quiet).returncode != 0:
             return False
         return subprocess.run(["systemctl", "--user", "restart", "cloudwall"], timeout=30).returncode == 0
@@ -113,7 +77,7 @@ def private_link(path, what):
               f"{'set to ' + key if key else 'cleared'}.")
         restarted = restart_service()
         print("CloudWall's service restarted, so it takes effect now." if restarted
-              else "Restart CloudWall (make restart, or stop and start it) for it to take effect." if restarted is False
+              else "Restart CloudWall (sudo systemctl restart cloudwall) for it to take effect." if restarted is False
               else "Restart CloudWall for it to take effect.")
         if key and what == "new":
             print("Any link made before stops working: open the new one on each screen.")

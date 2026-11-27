@@ -69,8 +69,12 @@ DEFAULTS = {
     "kiosk": {"place": "", "view": "card", "radar": "chart", "tracks": True, "range_nm": 0, "density": "simple", "quiet": ""},
     # key: with one set, CloudWall answers only under /k/<key>/ (access.py, keys.py): a private link for
     # reaching it from outside the house. Empty: open to whoever can reach it, as on a home network.
-    "server": {"host": "0.0.0.0", "port": 5050, "key": ""},
-    "storage": {"db_path": ""},   # empty: <user data dir>/cloudwall/cloudwall.db
+    # address: the name CloudWall has on the internet (behind Caddy), for the links it prints
+    "server": {"host": "0.0.0.0", "port": 5050, "key": "", "address": ""},
+    # db_path empty: <data dir>/cloudwall.db (config.data_dir); cache_dir empty: beside it
+    "storage": {"db_path": "", "cache_dir": ""},
+    # notify_url: a webhook told when a major problem starts and ends (e.g. an ntfy.sh topic's URL)
+    "health": {"notify_url": ""},
 }
 
 
@@ -110,11 +114,17 @@ def _fits(v, want):
     return isinstance(v, kinds) and (bool in kinds or not isinstance(v, bool))
 
 
-def check(section, values):
+def check(section, values, problems=None):
     """Refuse a setting CloudWall can't use, in words that name it: text where a number is wanted
     would otherwise surface later as a thread that stops, with nothing on screen to say why. A
     name CloudWall doesn't know (most often a typo) is only warned about. True if the section is
-    one to take in."""
+    one to take in.
+
+    A word or a number CloudWall can't use is refused too, except when the file is read to run
+    (problems is a list): then it is left out, the default used in its place, and what happened
+    added to problems. A CloudWall that worked must go on working after an update that checks more
+    than the last did; the screens and `cloudwall doctor` say what was left out. Case doesn't
+    matter in a word ("Always" is "always")."""
     if section == "places":
         if not isinstance(values, list) or not all(isinstance(v, dict) for v in values):
             raise ValueError("places must be [[places]] sections, one for each place")
@@ -142,15 +152,22 @@ def check(section, values):
             raise ValueError(f"[{section}] {key} must be {words}, not {v!r}")
         if key in MORE_THAN_ZERO.get(section, ()) and v <= 0:
             raise ValueError(f"[{section}] {key} must be more than 0, not {v!r}")
-    for key, v in values.items():
+    for key, v in list(values.items()):
         words = CHOICES.get((section, key))
-        # exactly as written, except where the code itself ignores case (the map styles, when_idle)
-        if words and (str(v).lower() if section == "map" or key == "when_idle" else v) not in words:
+        wrong = None
+        if words and isinstance(v, str) and v.lower() in words:
+            values[key] = v.lower()
+        elif words:
             listed = ", ".join(f'"{w}"' for w in words[:-1]) + f' or "{words[-1]}"'
-            raise ValueError(f"[{section}] {key} must be {listed}, not {v!r}")
+            wrong = f"[{section}] {key} must be {listed}, not {v!r}"
         span = BETWEEN.get((section, key))
         if span and isinstance(v, NUMBER) and not span[0] <= v <= span[1]:
-            raise ValueError(f"[{section}] {key} must be from {span[0]} to {span[1]}, not {v!r}")
+            wrong = f"[{section}] {key} must be from {span[0]} to {span[1]}, not {v!r}"
+        if wrong and problems is None:
+            raise ValueError(wrong)
+        if wrong:
+            del values[key]
+            problems.append(f"{wrong}: left out, so it is {DEFAULTS[section].get(key)!r}, the default")
     if section == "kiosk" and not re.fullmatch(r"\s*|\s*([01]?\d|2[0-3]):[0-5]\d\s*-\s*([01]?\d|2[0-3]):[0-5]\d\s*", str(values.get("quiet", ""))):
         raise ValueError(f'[kiosk] quiet must be a span of hours like "23:00-06:30", or "" for none, not {values["quiet"]!r}')
     if section == "server" and "port" in values and not (isinstance(values["port"], int) and 0 < values["port"] < 65536):
@@ -170,8 +187,24 @@ def user_config_path():
     return _xdg("XDG_CONFIG_HOME", ".config") / "config.toml"
 
 
+def data_dir():
+    """Where the logbooks and places.json are kept: $CLOUDWALL_DATA (set by the system install to
+    /var/lib/cloudwall), else the user's data folder (~/.local/share/cloudwall)."""
+    return Path(os.environ["CLOUDWALL_DATA"]) if os.environ.get("CLOUDWALL_DATA") else _xdg("XDG_DATA_HOME", ".local/share")
+
+
 def default_db_path():
-    return _xdg("XDG_DATA_HOME", ".local/share") / "cloudwall.db"
+    return data_dir() / "cloudwall.db"
+
+
+def cache_dir(cfg, db):
+    """Where downloaded tiles and logos are kept: $CLOUDWALL_CACHE (the system install's
+    /var/cache/cloudwall), else [storage] cache_dir, else beside the logbook."""
+    if os.environ.get("CLOUDWALL_CACHE"):
+        return Path(os.environ["CLOUDWALL_CACHE"])
+    if cfg["storage"].get("cache_dir"):
+        return Path(cfg["storage"]["cache_dir"]).expanduser()
+    return Path(db).parent if db != ":memory:" else data_dir()
 
 
 def find(path=None):
@@ -191,10 +224,11 @@ def load(path=None):
     path = find(path)
     if path and not path.exists():          # named by --config or $CLOUDWALL_CONFIG, but not there
         raise ValueError("no such file (cloudwall --init-config writes one to start from)")
+    problems = []
     if path:
         with open(path, "rb") as f:
             for section, values in tomllib.load(f).items():
-                if not check(section, values):
+                if not check(section, values, problems):
                     continue
                 if section == "places":
                     cfg["places"] = [dict(v) for v in values] if isinstance(values, list) else []
@@ -212,7 +246,72 @@ def load(path=None):
     if src.get("url"):                      # older single-feed setting: try it first
         src["urls"] = [src["url"]] + [u for u in src["urls"] if u != src["url"]]
     cfg["_path"] = str(path) if path else None
+    cfg["_problems"] = problems
+    for p in problems:
+        log.warning("config: %s", p)
     return cfg
+
+
+def _toml_value(v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return repr(v)
+    if isinstance(v, str):
+        return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    if isinstance(v, list):
+        return "[" + ", ".join(_toml_value(x) for x in v) + "]"
+    raise ValueError(f"can't write {v!r} into the config")
+
+
+def write_setting(path, section, key, value):
+    """Set `[section] key` in the config file at `path`, leaving every other line as it was: the
+    setting's line replaced where there is one (its comment kept), added under [section] where
+    there isn't, and the section added where there's none. The new file must read as TOML, give
+    the value asked for and pass check(); otherwise nothing is written. Written whole and put in
+    place, so a crash halfway never leaves half a config, and readable by its owner and group
+    only, since the file may hold keys."""
+    path = Path(path)
+    text = path.read_text() if path.exists() else ""
+    lines = text.splitlines()
+    line = f"{key} = {_toml_value(value)}"
+    is_key = re.compile(rf"^\s*{re.escape(key)}\s*=")
+    is_section = re.compile(r"^\s*\[")
+    head = next((i for i, l in enumerate(lines) if re.match(rf"^\s*\[{re.escape(section)}\]\s*(#.*)?$", l)), None)
+    if head is None:
+        lines += ([""] if lines and lines[-1].strip() else []) + [f"[{section}]", line]
+    else:
+        end = next((i for i in range(head + 1, len(lines)) if is_section.match(lines[i])), len(lines))
+        at = next((i for i in range(head + 1, end) if is_key.match(lines[i])), None)
+        if at is not None:
+            # a comment after the old value stays after the new one
+            m = re.match(r'^\s*[\w-]+\s*=\s*(?:"(?:[^"\\]|\\.)*"|[^#"]*?)(\s+#.*)?$', lines[at])
+            lines[at] = line + (m.group(1) or "" if m else "")
+        else:
+            # after the section's last setting, ahead of the comments and blank lines before the next one
+            last = max((i for i in range(head, end) if lines[i].strip() and not lines[i].lstrip().startswith("#")), default=head)
+            lines.insert(last + 1, line)
+    new = "\n".join(lines) + "\n"
+    try:
+        got = tomllib.loads(new)
+    except tomllib.TOMLDecodeError as e:
+        raise ValueError(f"{path} would no longer read as TOML: {e}") from None
+    if got.get(section, {}).get(key) != value:
+        raise ValueError(f"{path}: couldn't set [{section}] {key} (it reads {got.get(section, {}).get(key)!r})")
+    check(section, got[section])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    st = path.stat() if path.exists() else None
+    mode = (st.st_mode & 0o770) if st else 0o600
+    tmp = path.with_name(path.name + ".tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+    with os.fdopen(fd, "w") as f:
+        f.write(new)
+    os.chmod(tmp, mode)
+    if st and os.geteuid() == 0:         # root rewriting the service's file: it stays the service's
+        os.chown(tmp, st.st_uid, st.st_gid)
+    if path.exists():                    # the file as it was, to go back to if the new one won't start
+        shutil.copy2(path, path.with_name(path.name + ".before"))
+    os.replace(tmp, path)
 
 
 def init(path=None):

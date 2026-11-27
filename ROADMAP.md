@@ -175,6 +175,27 @@ public feed, not replayed.
 9. **Radio:** hardware session first; Sensor interface; calls store; Radio tab; transcription.
 10. **Docs** rewritten around the new shape; old scripts deleted.
 
+## The control board (added after stage 4)
+
+One web console for the whole system, used for troubleshooting and fixing as well as settings,
+with the command line kept for when the web side itself is down.
+
+- **At a glance:** the Overview: every part's state, open incidents, the worst first, major ones
+  unmissable.
+- **Drill down:** a section for each part (places, positions, receiver and link, radio, coverage,
+  routes and budget, maps, screens, access, storage and backups, the system), plain controls first,
+  then the raw settings, where each value comes from, logs and diagnostics.
+- **Help when asked:** each setting's explanation, unit, safe range and consequence from the
+  settings schema; each problem's meaning, causes and steps from the catalogue; proficient by
+  default, never in the way.
+- **Fix from the page:** guided fixes as forms (troubles.Ask, through guide.answer, the same code
+  the terminal uses); repairs as buttons. The service stays unprivileged: repairs that need root
+  are requested through a root helper (a systemd path unit) that accepts only an allow-list, and
+  logs each.
+- **Owner only:** everything that changes anything needs the owner's sign-in.
+- **Then a final review:** completeness over the whole app, help and tooltips, organisation and
+  presentation.
+
 ## 5. Verification
 
 - `python3 -m unittest discover -s tests` green at every stage; new tests: layer rule, schema
@@ -194,4 +215,6 @@ public feed, not replayed.
 | 1. Fix in place | Done |
 | 2. Seams | Done: keys/access/privatelink, config/placing, db/store, feeds/demo, paths, http.fetch, layer test |
 | 3. Move | Done: every module in its layer's folder |
-| 4. Install and operate | In progress |
+| 4. Install and operate | Done: `cloudwall install/uninstall/doctor/backup/restore/migrate-legacy/report`, hardened system unit (notify + watchdog), releases, upgrade preflight, settings that started kept as `.good` and fallen back on, tolerant reading of words an update newly checks |
+| 4b. Health | Done: problem catalogue (core/troubles.py), watcher in the running server (app/watch.py) with plausibility checks for subtle failures, incident log, banner on every screen for major problems, systemd status, webhook alerts, safe repairs made at once, survey of any machine's setup (operate/survey.py), `doctor --fix` guided walk-through (operate/guide.py) |
+| 5. Control board | Next: owner sign-in, a root helper for allow-listed repairs requested from the web, the admin console (see below) |

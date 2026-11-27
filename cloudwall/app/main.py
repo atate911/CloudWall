@@ -2,18 +2,23 @@
 watched and the HTTP server, and joins them together (`cloudwall`, `python3 -m cloudwall`)."""
 import argparse
 import logging
+import os
+import sys
+import time
 from pathlib import Path
 
 from .. import __version__
 from ..core import config, keys
 from ..gather import demo, feeds
-from ..operate import privatelink
+from ..operate import cli, privatelink
 from ..reference import placing
 from ..gather.flightaware import FlightAware
 from ..gather.flightradar24 import Flightradar24
 from ..serve.server import make_server
 from ..gather.logos import Logos
 from .place import AnyActivity, Place, Places
+from .watch import Watch, sd_notify
+from ..memory.incidents import Incidents
 from ..gather.charts import Charts
 from ..gather.tiles import keep_tidy
 from ..gather.enrich import KINDS, Enricher
@@ -24,8 +29,47 @@ from ..memory.store import Store
 log = logging.getLogger("cloudwall")
 
 
+def load_settings(path):
+    """The settings to run on: the file, or, when it can't be used (a mistake made while editing it,
+    or a setting an update no longer takes), the last copy of it that started, said loudly in the
+    log and by `cloudwall doctor`. Without a copy that worked, CloudWall stops with the mistake named.
+    (cfg, True if the copy is what is used)."""
+    try:
+        cfg = config.load(path)
+        placing.places(cfg)                    # (a place it can't work out is a mistake in the file too)
+        return cfg, False
+    except (ValueError, OSError) as e:         # a mistake in the file (TOML's own errors are ValueErrors too)
+        file = config.find(path)
+        good = Path(f"{file}.good") if file else None
+        if not good or not good.exists():
+            raise SystemExit(f"cloudwall: {file}: {e}")
+        cfg = config.load(good)
+        cfg["_problems"].insert(0, f"{file} can't be used ({e}): running on the last settings that started, {good}")
+        log.error("config: %s", cfg["_problems"][0])
+        return cfg, True
+
+
+def keep_good(path):
+    """A copy of a settings file that started, beside it, as <file>.good."""
+    if not path:
+        return
+    try:
+        p, good = Path(path), Path(f"{path}.good")
+        if not good.exists() or good.read_bytes() != p.read_bytes():
+            tmp = good.with_name(good.name + ".tmp")
+            tmp.write_bytes(p.read_bytes())
+            os.chmod(tmp, p.stat().st_mode & 0o770)
+            tmp.replace(good)
+    except OSError as e:
+        log.info("config: couldn't keep a copy of the settings that started (%s)", e)
+
+
 def main():
-    ap = argparse.ArgumentParser(prog="cloudwall", description="Flight board for the sky over your house")
+    if cli.is_command(sys.argv[1:]):          # cloudwall install | doctor | backup | ...
+        cli.main(sys.argv[1:])
+        return
+    ap = argparse.ArgumentParser(prog="cloudwall", description="Flight board for the sky over your house",
+                                 epilog="Setting up and looking after it: cloudwall {%s} --help" % ",".join(cli.COMMANDS))
     ap.add_argument("--config", help="path to config.toml (default: ./config.toml if present)")
     ap.add_argument("--demo", action="store_true", help="simulated traffic, no network needed")
     ap.add_argument("--host", help="address to listen on (default 0.0.0.0)")
@@ -59,10 +103,7 @@ def main():
         print(f"{'Wrote' if created else 'Already exists, left unchanged:'} {path}")
         return
 
-    try:
-        cfg = config.load(args.config)
-    except ValueError as e:                # a mistake in the file (TOML's own errors are ValueErrors too)
-        raise SystemExit(f"cloudwall: {config.find(args.config)}: {e}")
+    cfg, from_good = load_settings(args.config)
     if args.host:
         cfg["server"]["host"] = args.host
     if args.port:
@@ -86,7 +127,7 @@ def main():
         return str(p.with_name(f"{p.stem}-{pid}{p.suffix or '.db'}"))
 
     store0 = Store(db_for(first_id))
-    tiles_dir = (Path(db).parent if db != ":memory:" else config.default_db_path().parent) / "tiles"
+    tiles_dir = config.cache_dir(cfg, db) / "tiles"
     charts = Charts(cfg, tiles_dir)   # the radar's map and the FAA charts
     keep_tidy(tiles_dir, cfg["map"]["cache_mb"])
     logos = Logos(cfg, tiles_dir.parent / "logos")
@@ -130,6 +171,8 @@ def main():
     if fa:
         fa.start(AnyActivity(places))      # e.g. Flightradar24's hourly usage check, which waits for a screen
     server = make_server(cfg, places, charts, logos)
+    if not from_good and not args.demo:
+        keep_good(cfg["_path"])            # these settings started: the ones to fall back on next time
     log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"],
              places.first.source.name)
     for place in places:
@@ -149,6 +192,14 @@ def main():
     if cfg["server"]["key"]:
         # the key itself is not logged: logs are read by more people and kept longer than the config
         log.info("private link: answering only under /k/<key>/ (cloudwall --private-link show prints the links)")
+    # CloudWall checking itself while it runs (app/watch.py), its incidents kept beside the logbooks
+    incidents = Incidents(":memory:" if db == ":memory:" else str(Path(db).with_name("health.db")))
+    incidents.close_all(time.time())
+    watch = Watch(cfg, places, fa, demo=args.demo, code_changed=server.code_changed, incidents=incidents,
+                  data_dir=None if db == ":memory:" else Path(db).parent, cache_dir=tiles_dir.parent)
+    server.watch = watch
+    watch.start()
+    sd_notify("READY=1")                   # (systemd's Type=notify: answering now)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
