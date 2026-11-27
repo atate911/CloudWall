@@ -8,3 +8,6 @@ build/
 dist/
 *.egg-info/
 node_modules/
+
+# a proxy CA copied in only to build the rehearsal image
+tools/rehearse/*.crt

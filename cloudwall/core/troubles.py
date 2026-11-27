@@ -202,19 +202,20 @@ CATALOGUE = {
         "two CloudWalls are set up on this machine",
         "They fight over the port: one fails, and which one runs can change at each boot.",
         ["the old per-user service (`make service`) was left on after the system install"],
-        ["`sudo cloudwall migrate-legacy` moves the old one's logbooks in and turns it off."], major=True,
+        ["`sudo python3 -m cloudwall upgrade` (from the checkout) moves the old one's logbooks in and turns it off."], major=True,
         asks=[Ask("migrate", "Move the old per-user CloudWall's logbooks into the system install and turn it off?", "yes")]),
     "service.legacy": _t(
         "CloudWall runs as the old per-user service",
         "It works, but lives in a home folder: a rebuild or a new machine means setting it up by hand again.",
         ["it was set up with `make service`, before `cloudwall install` existed"],
-        ["`sudo python3 -m cloudwall install` from the checkout, then `sudo cloudwall migrate-legacy`."],
+        ["From the checkout: `sudo python3 -m cloudwall upgrade --dry-run` to see what it would do, then "
+         "`sudo python3 -m cloudwall upgrade` (MIGRATION.md walks through it)."],
         asks=[Ask("migrate", "Move it to the system install now? (logbooks and settings come too)", "yes")]),
     "service.no-linger": _t(
         "the per-user service won't start after a reboot",
         "It runs only while its user is logged in: after a reboot or power cut the board stays dark.",
         ["`loginctl enable-linger` failed when it was set up (the old Makefile ignored that)"],
-        ["`sudo loginctl enable-linger <user>` (or move to the system install: `sudo cloudwall migrate-legacy`)."],
+        ["`sudo loginctl enable-linger <user>` (or move to the system install: `sudo python3 -m cloudwall upgrade`)."],
         repair="enable-linger"),
     "service.restart-needed": _t(
         "CloudWall's code was updated but the old version is still running",
