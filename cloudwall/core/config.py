@@ -207,12 +207,21 @@ def cache_dir(cfg, db):
     return Path(db).parent if db != ":memory:" else data_dir()
 
 
+INSTALLED = Path("/etc/cloudwall/config.toml")
+INSTALLED_UNIT = Path("/etc/systemd/system/cloudwall.service")
+
+
 def find(path=None):
-    """Which config file applies: --config, $CLOUDWALL_CONFIG, ./config.toml, then the user one."""
+    """Which config file applies: --config, $CLOUDWALL_CONFIG, the system install's (once
+    `cloudwall install` has set this machine up, whatever folder a command is run from: a checkout
+    keeps an old config.toml after a migration, and reading that would be reading the wrong
+    settings), ./config.toml, then the user one."""
     if path:
         return Path(path)
     if os.environ.get("CLOUDWALL_CONFIG"):
         return Path(os.environ["CLOUDWALL_CONFIG"])
+    if INSTALLED_UNIT.exists() and INSTALLED.exists():
+        return INSTALLED
     for p in (Path("config.toml"), user_config_path()):
         if p.exists():
             return p
@@ -250,6 +259,26 @@ def load(path=None):
     for p in problems:
         log.warning("config: %s", p)
     return cfg
+
+
+def kind_of(section, key):
+    """What kind of value a setting takes: bool, number, list or text (str), from its default, or
+    from OPTIONAL for those without one."""
+    default = DEFAULTS.get(section, {}).get(key)
+    if isinstance(default, bool):
+        return "bool"
+    if isinstance(default, (int, float)):
+        return "number"
+    if isinstance(default, list):
+        return "list"
+    want = OPTIONAL.get(section, {}).get(key)
+    if want is not None:
+        kinds = want if isinstance(want, tuple) else (want,)
+        if str in kinds:
+            return "text"
+        if int in kinds or float in kinds:
+            return "number"
+    return "text"
 
 
 def _toml_value(v):
@@ -298,7 +327,9 @@ def write_setting(path, section, key, value):
         raise ValueError(f"{path} would no longer read as TOML: {e}") from None
     if got.get(section, {}).get(key) != value:
         raise ValueError(f"{path}: couldn't set [{section}] {key} (it reads {got.get(section, {}).get(key)!r})")
-    check(section, got[section])
+    # the setting written is checked strictly; the rest of its section only as it is when read (a
+    # word CloudWall tolerates in another setting is no reason to refuse this one)
+    check(section, {k: v for k, v in got[section].items() if k == key or (section, k) not in CHOICES and (section, k) not in BETWEEN})
     path.parent.mkdir(parents=True, exist_ok=True)
     st = path.stat() if path.exists() else None
     mode = (st.st_mode & 0o770) if st else 0o600

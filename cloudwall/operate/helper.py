@@ -1,8 +1,8 @@
 """The root helper: how the control board gets something done that needs root, while CloudWall
 itself runs unprivileged (and can't gain privileges: its unit sets NoNewPrivileges).
 
-The board writes a request (a small JSON file) into /var/lib/cloudwall/requests/. systemd notices
-(cloudwall-helper.path) and runs `cloudwall helper` as root (cloudwall-helper.service), which takes
+The board writes a request (a small JSON file) into /var/lib/cloudwall/requests/. systemd notices a
+*.json there (cloudwall-helper.path) and runs `cloudwall helper` as root (cloudwall-helper.service), which takes
 each request, checks it against ALLOWED (a fixed list of actions, each with its arguments
 checked), does it, writes the result beside it in done/, and logs it. Anything not on the list is
 refused. The board shows the result when it appears.
@@ -110,7 +110,9 @@ PATH_UNIT = f"""# Written by `cloudwall install`: runs the root helper when Clou
 Description=CloudWall's root helper: requests from the control board
 
 [Path]
-DirectoryNotEmpty={REQUESTS}
+# a request file waiting (not the folder merely holding something: done/ is in it, and a request
+# being written is a .tmp until it is whole)
+PathExistsGlob={REQUESTS}/*.json
 MakeDirectory=no
 
 [Install]

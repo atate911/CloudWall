@@ -220,24 +220,38 @@ def make_public(system, name, port):
     system.run(["systemctl", "reload-or-restart", "caddy"], check=False)
 
 
-def preflight(system):
+def preflight(system, path=None, what=None):
     """Before restarting into new code: would the settings start with it? If not, the running
     CloudWall is left running (its new code waits in place) and what to change is said. Settings
-    it can start with, but with something left out, are said and the restart goes ahead."""
+    it can start with, but with something left out, are said and the restart goes ahead.
+    path: a settings file other than the installed one (an old setup's, before it is moved in)."""
     from ..reference import placing
-    path = system.path(CONFIG)
+    path = Path(path) if path else system.path(CONFIG)
     if not path.exists():
         return
     try:
         cfg = config.load(path)
         placing.places(cfg)
     except Exception as e:
-        raise SystemExit(f"cloudwall install: the new code is in place, but CloudWall wasn't restarted into it:\n"
-                         f"  {CONFIG}: {e}\n"
-                         f"Correct that (sudoedit {CONFIG}), then run `sudo cloudwall install` again. The CloudWall "
-                         f"running now carries on until then.")
+        raise SystemExit(f"cloudwall: {what or 'the new code is in place, but CloudWall wasn\'t restarted into it'}:\n"
+                         f"  {path}: {e}\n"
+                         f"Correct that (sudoedit {path}), then run the command again. The CloudWall running now "
+                         f"carries on until then.")
     for p in cfg.get("_problems", []):
         system.say(f"note: {p}")
+
+
+def start_service(system, restart=True):
+    """Start (or restart) the service and say plainly if it didn't come up: the reason from its log,
+    and the way back. True if it is running."""
+    got = system.run(["systemctl", "restart" if restart else "start", "cloudwall"], check=False)
+    if got.returncode == 0:
+        return True
+    log = system.ask(["journalctl", "-u", "cloudwall", "-n", "15", "--no-pager", "-o", "cat"])
+    raise SystemExit("cloudwall: CloudWall's service didn't start. The end of its log:\n"
+                     + "\n".join("  " + l for l in ((log.stdout if log else "") or "(no log)").strip().splitlines()[-15:])
+                     + "\nFix what it says and run `sudo systemctl restart cloudwall`, or go back to the release "
+                       "before: `sudo cloudwall rollback`. `cloudwall doctor` says more.")
 
 
 def wall(system, opts):
@@ -268,11 +282,11 @@ def wall(system, opts):
         preflight(system)
     if opts.start:
         if code or unit or opts.public:
-            system.run(["systemctl", "restart", "cloudwall"])
+            start_service(system)
         else:
             active = system.ask(["systemctl", "is-active", "cloudwall"])
             if active is not None and active.stdout.strip() != "active":
-                system.run(["systemctl", "start", "cloudwall"])
+                start_service(system, restart=False)
 
 
 def unwall(system, purge=False):

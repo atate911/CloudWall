@@ -135,10 +135,28 @@ class WatchTest(unittest.TestCase):
     def test_a_watched_board_with_no_positions_fails_loudly(self):
         place = FakePlace(self.clock)
         w = watch([place], clock=self.clock)
+        w.checks()                                                      # (it looks as it starts, as Watch.start does)
         self.clock.t += 600
         self.assertIn("feeds.no-positions", self.codes(w))
         place.tracker.status["updated"] = self.clock()
         self.assertNotIn("feeds.no-positions", self.codes(w))
+
+    def test_a_screen_opening_after_an_idle_pause_is_no_alarm(self):
+        """Overnight with no screen (when_idle = pause), the last positions are hours old. The first
+        screen of the morning wakes the poller; until its first answer, that is no fault."""
+        place = FakePlace(self.clock)
+        idle = [True]
+        place.activity.idle = lambda: idle[0]
+        w = watch([place], clock=self.clock)
+        self.clock.t += 8 * 3600                                        # the night
+        self.assertNotIn("feeds.no-positions", self.codes(w))
+        idle[0] = False                                                 # the wall panel wakes
+        self.clock.t += 2
+        self.assertNotIn("feeds.no-positions", self.codes(w))           # seconds later: not yet judged
+        self.clock.t += 30
+        self.assertNotIn("feeds.no-positions", self.codes(w))
+        self.clock.t += 120                                             # but two minutes of nothing is
+        self.assertIn("feeds.no-positions", self.codes(w))
 
     def test_a_frozen_feed_is_found(self):
         place, m = self.merged_place()

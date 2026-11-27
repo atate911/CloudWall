@@ -35,9 +35,13 @@ def _files(cfg, config_path):
     out = []
     if config_path and Path(config_path).exists():
         out.append(("settings", Path(config_path), "config/config.toml"))
-        good = Path(str(config_path) + ".good")
-        if good.exists():
-            out.append(("settings (last good)", good, "config/config.toml.good"))
+        for suffix, what in ((".good", "settings (the last that started)"), (".before", "settings (before the last change)")):
+            extra = Path(str(config_path) + suffix)
+            if extra.exists():
+                out.append((what, extra, f"config/config.toml{suffix}"))
+        owner = Path(config_path).with_name("owner")
+        if owner.exists():
+            out.append(("the owner's password (hashed)", owner, "config/owner"))
     panel = Path(config_path).with_name("panel.conf") if config_path else None
     if panel and panel.exists():
         out.append(("the panel's address", panel, "config/panel.conf"))
@@ -110,6 +114,7 @@ def restore(archive, config_path=None, yes=False, system=None, say=print):
         cfg = copy.deepcopy(config.DEFAULTS)
     db = Path(cfg["storage"]["db_path"] or config.default_db_path()).expanduser()
     where = {"config/config.toml": Path(path), "config/config.toml.good": Path(str(path) + ".good"),
+             "config/config.toml.before": Path(str(path) + ".before"), "config/owner": Path(path).with_name("owner"),
              "config/panel.conf": Path(path).with_name("panel.conf")}
     plan = []
     for f in manifest["files"]:

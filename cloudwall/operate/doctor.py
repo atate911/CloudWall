@@ -31,8 +31,13 @@ class Context:
         self.offline = offline
         self.ask = ask                      # run a read-only command: System.ask (None: don't)
         self.error = None
+        self.unreadable = False
         try:
             self.cfg = config.load(config_path)
+        except PermissionError:             # the installed settings are the service's: not ours to read
+            self.unreadable = True
+            self.cfg = copy.deepcopy(config.DEFAULTS)
+            self.cfg["_problems"] = []
         except Exception as e:              # a broken file: the other checks go on with the defaults
             self.error = e
             self.cfg = copy.deepcopy(config.DEFAULTS)
@@ -45,6 +50,10 @@ class Context:
 
 def settings(ctx):
     path = ctx.config_path
+    if ctx.unreadable:
+        yield Finding("settings", health.WARN, f"{path} is the service's and you can't read it, so the settings weren't checked",
+                      "Only the settings, and what depends on them, go unchecked.", "Run it with sudo: `sudo cloudwall doctor`.")
+        return
     if ctx.error:
         good = Path(f"{path}.good")
         yield trouble("settings.broken", f"{path} can't be used: {ctx.error}"

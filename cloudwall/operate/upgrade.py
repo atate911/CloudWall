@@ -27,6 +27,13 @@ def upgrade(system, source=None, say=print):
     sysinst = next((i for i in found if i["kind"] == "system"), None)
     say("Found: " + ("; ".join(f"the {i['kind']} service ({i['user']})" for i in found) or "nothing set up yet"))
 
+    # 1b. the settings that will run, checked against this code before anything changes
+    if old and old.get("config"):
+        inst.preflight(system, system.path(old["config"]), "the old setup's settings wouldn't start with this "
+                       "code, so nothing was changed")
+    elif sysinst:
+        inst.preflight(system, None, "the settings wouldn't start with this code, so nothing was changed")
+
     # 2. a backup first, of whichever setup holds the settings and logbooks now
     src = sysinst or old
     if src and src.get("config") and not system.dry_run:
@@ -44,8 +51,9 @@ def upgrade(system, source=None, say=print):
             else:
                 os.environ["CLOUDWALL_DATA"] = saved
 
-    # 3. install or update in place (it checks the settings before restarting)
-    inst.install(inst.Options("wall", source=source), system)
+    # 3. install or update in place. With an old per-user service still running, nothing is started
+    #    yet: it holds the port, and the new service would make an empty logbook of its own first.
+    inst.install(inst.Options("wall", source=source, start=not old), system)
 
     # 4. the old per-user setup moved over
     if old:

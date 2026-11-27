@@ -61,6 +61,7 @@ class Owner:
         if not stored:
             raise ValueError("No owner password is set yet: set one at the machine with `sudo cloudwall owner`")
         if not password_matches(password or "", stored):
+            self.failures = {a: t for a, t in self.failures.items() if t and now - t[-1] < TRIES_S}   # (forget the old)
             self.failures[address] = recent + [now]
             raise ValueError("That isn't the owner's password")
         self.failures.pop(address, None)
@@ -103,9 +104,16 @@ class Owner:
             return "owner" if self.valid(cookies.get(COOKIE)) else "viewer"
         return "owner" if is_local(address) and not proxied else "viewer"
 
-    def host_ok(self, host):
+    def host_ok(self, host, proxied=False):
         """Is this a name CloudWall answers to? (Only for the control board: the screens are told
-        nothing that matters to an attacker.)"""
+        nothing that matters to an attacker.) The danger is DNS rebinding: a page elsewhere has the
+        browser call CloudWall under the attacker's own name, so the browser sends it no cookie, but
+        a request straight from this machine counts as the owner's while there is no owner. Through
+        a proxy (Caddy, which serves CloudWall at whatever name it was given) a request never counts
+        as local and must carry the owner's cookie, which the browser keeps for the real name only,
+        so any name will do there."""
+        if proxied:
+            return True
         name = (host or "").rsplit(":", 1)[0].strip("[]").lower()
         if not name:
             return False

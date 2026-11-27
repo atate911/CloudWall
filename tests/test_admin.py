@@ -139,6 +139,23 @@ class AdminTest(unittest.TestCase):
         self.assertNotIn("fr24-secret", json.dumps(got))
         self.assertEqual(code, 200)
 
+    def test_a_setting_with_no_default_is_saved_as_its_kind(self):
+        self.serve()
+        code, got = self.call("/api/admin/settings", {"section": "home", "key": "elevation_ft", "value": "100"})
+        self.assertEqual(code, 200, got)
+        self.assertEqual(config.load(self.cfg_path)["home"]["elevation_ft"], 100)
+        [home] = [x for x in self.call("/api/admin/settings")[1]["sections"] if x["name"] == "home"]
+        self.assertEqual({st["key"]: st["kind"] for st in home["settings"]}["elevation_ft"], "number")
+
+    def test_another_settings_tolerated_word_doesnt_block_a_save(self):
+        with open(self.cfg_path, "a") as f:
+            f.write('[kiosk]\nview = "radr"\n')                              # read with a warning, left out
+        self.serve()
+        code, got = self.call("/api/admin/settings", {"section": "kiosk", "key": "quiet", "value": "23:00-06:30"})
+        self.assertEqual(code, 200, got)
+        code, got = self.call("/api/admin/settings", {"section": "kiosk", "key": "view", "value": "nonsense"})
+        self.assertEqual(code, 400)                                         # the one written is still checked
+
     def test_a_guided_fix_from_the_page(self):
         self.serve()
         code, got = self.call("/api/admin/fix", {"code": "settings.placeholder", "name": "home", "value": "nowhere"})
@@ -152,6 +169,17 @@ class AdminTest(unittest.TestCase):
         self.serve()
         code, _ = self.call("/api/admin/whoami", headers={"Host": "evil.example.com"})
         self.assertEqual(code, 403)
+
+    def test_through_caddy_any_name_works_but_needs_the_owner(self):
+        """Caddy serves CloudWall at the name it was given ([server] address unset, as when Caddy was
+        set up by hand): the board answers there, and a request through it is never the machine's own."""
+        self.serve(owner="correct horse battery")
+        via = {"Host": "sky.example.com", "X-Forwarded-For": "203.0.113.9", "X-Forwarded-Proto": "https"}
+        code, who = self.call("/api/admin/whoami", headers=via)
+        self.assertEqual((code, who["role"]), (200, "viewer"))
+        code, _ = self.call("/api/admin/signin", {"password": "correct horse battery"}, headers=via)
+        self.assertEqual(code, 200)
+        self.assertEqual(self.call("/api/admin/overview", headers=via)[0], 200)
 
     def test_another_sites_page_cant_change_anything(self):
         self.serve()
@@ -206,3 +234,15 @@ class HelperTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HelperUnitTest(unittest.TestCase):
+    def test_the_path_unit_waits_for_a_request_not_for_anything_in_the_folder(self):
+        # done/ lives in the requests folder: a unit firing on "not empty" would fire for ever
+        self.assertIn(f"PathExistsGlob={helper.REQUESTS}/*.json", helper.PATH_UNIT)
+        self.assertNotIn("DirectoryNotEmpty", helper.PATH_UNIT)
+        self.assertEqual(helper.DONE.parent, helper.REQUESTS)
+        with tempfile.TemporaryDirectory() as d:
+            rid = helper.ask("enable-service", folder=d)
+            self.assertEqual([p.name for p in Path(d).glob("*.json")], [f"{rid}.json"])   # whole, and named so
+            self.assertEqual(list(Path(d).glob(".*.tmp")), [])

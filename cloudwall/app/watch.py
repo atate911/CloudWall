@@ -78,6 +78,7 @@ class Watch:
         self.config_path = Path(path) if path else None
         self.config_stamp = self._stamp()
         self.deaf = {}              # place id -> checks in a row its receiver has heard almost nothing
+        self.watched_since = {}     # place id -> when a screen (or "log") began keeping it fetching
         self.storage_failures = {}  # place id -> checks in a row its logbook couldn't be saved
         self.notify_url = cfg.get("health", {}).get("notify_url") or ""
         self.stopped = threading.Event()
@@ -164,9 +165,17 @@ class Watch:
         """One place: are positions arriving, and is each feed's answer believable?"""
         now = self.clock()
         watched = not place.activity.idle() or place.when_idle == "log"
+        if not watched:
+            self.watched_since.pop(place.id, None)
+        else:
+            self.watched_since.setdefault(place.id, now)
         st = place.tracker.status
-        if watched and not self.demo and now - self.started > NO_POSITIONS_S and now - (st.get("updated") or 0) > NO_POSITIONS_S:
-            yield health.trouble("feeds.no-positions", f"{place.name}: no positions for {now - (st.get('updated') or self.started):.0f} s"
+        # judged only once it has been fetching for a while: positions from before an idle pause are
+        # hours old in the seconds before the first answer after it, and that is no fault
+        fetching = now - max(self.watched_since.get(place.id, now), self.started)
+        since = max(st.get("updated") or 0, self.watched_since.get(place.id, now), self.started)
+        if watched and not self.demo and fetching > NO_POSITIONS_S and now - since > NO_POSITIONS_S:
+            yield health.trouble("feeds.no-positions", f"{place.name}: no positions for {now - since:.0f} s"
                                  + (f" ({st['error']})" if st.get("error") else ""))
         parts = getattr(place.source, "parts", {}) or {}
         merged = "the public feed" in parts

@@ -36,7 +36,49 @@ def find_old(home, checkout):
             "unit": unit if unit.exists() else None}
 
 
-def migrate(system, home, user, checkout, force=False, say=print):
+def stop_user_service(system, user):
+    """Stop and disable a user's own CloudWall service, as root. systemd 248 and later can reach a
+    user's manager directly (-M user@); older ones are asked through runuser."""
+    got = system.run(["systemctl", "--user", "-M", f"{user}@", "disable", "--now", "cloudwall"], check=False)
+    if got.returncode != 0:
+        uid = system.ask(["id", "-u", user])
+        runtime = f"/run/user/{uid.stdout.strip()}" if uid is not None and uid.returncode == 0 else ""
+        system.run(["runuser", "-u", user, "--", "env", f"XDG_RUNTIME_DIR={runtime}",
+                    "systemctl", "--user", "disable", "--now", "cloudwall"], check=False)
+
+
+def port_free(system, port=5050, wait_s=15):
+    """Is the port free for the new service? Waits a little for the old one to let go; says what
+    holds it if something still does."""
+    import socket
+    import time
+    if not system.real or system.dry_run:
+        return
+    for _ in range(wait_s):
+        with socket.socket() as s:
+            if s.connect_ex(("127.0.0.1", port)) != 0:
+                return
+        time.sleep(1)
+    held = system.ask(["ss", "-ltnpH", f"sport = :{port}"])
+    raise SystemExit(f"cloudwall: port {port} is still in use, so the new service wasn't started:\n  "
+                     + ((held.stdout.strip() if held else "") or "(ss couldn't say by what)")
+                     + "\nStop that program, then `sudo systemctl start cloudwall`.")
+
+
+def empty_logbook(path):
+    """A logbook file with no flyovers in it (as the new service makes on its first start)."""
+    try:
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            has = con.execute("SELECT 1 FROM sqlite_master WHERE name='sightings'").fetchone()
+            return not has or con.execute("SELECT COUNT(*) FROM sightings").fetchone()[0] == 0
+        finally:
+            con.close()
+    except sqlite3.Error:
+        return False
+
+
+def migrate(system, home, user, checkout, force=False, say=print, start=True):
     old = find_old(home, checkout)
     if not any(old.values()):
         say("Nothing of the old setup found: nothing to do.")
@@ -44,10 +86,7 @@ def migrate(system, home, user, checkout, force=False, say=print):
     if not system.exists(inst.CONFIG) and not system.dry_run:
         raise SystemExit("cloudwall migrate-legacy: run `sudo cloudwall install` first, then this")
     if old["unit"]:
-        uid = system.ask(["id", "-u", user])
-        runtime = f"/run/user/{uid.stdout.strip()}" if uid is not None and uid.returncode == 0 else ""
-        system.run(["runuser", "-u", user, "--", "env", f"XDG_RUNTIME_DIR={runtime}",
-                    "systemctl", "--user", "disable", "--now", "cloudwall"], check=False)
+        stop_user_service(system, user)
     if old["config"]:
         current = system.read(inst.CONFIG) or ""
         example = inst.paths.EXAMPLE.read_text()
@@ -58,12 +97,14 @@ def migrate(system, home, user, checkout, force=False, say=print):
     if old["data"]:
         for db in sorted(Path(old["data"]).glob("*.db")):
             target = system.path(f"{inst.VAR}/{db.name}")
-            if target.exists() and not force:
-                say(f"{inst.VAR}/{db.name} is there already: kept (--force replaces it)")
+            if target.exists() and not force and not empty_logbook(target):
+                say(f"{inst.VAR}/{db.name} has a logbook of its own already: kept (--force replaces it)")
                 continue
             system._did(f"copy logbook {db} to {inst.VAR}/{db.name}")
             if not system.dry_run:
                 target.parent.mkdir(parents=True, exist_ok=True)
+                for suffix in ("", "-wal", "-shm"):      # a fresh empty one (the new service made it) goes
+                    Path(f"{target}{suffix}").unlink(missing_ok=True)
                 src, dst = sqlite3.connect(f"file:{db}?mode=ro", uri=True), sqlite3.connect(target)
                 try:
                     src.backup(dst)
@@ -83,7 +124,9 @@ def migrate(system, home, user, checkout, force=False, say=print):
                     shutil.move(str(src), system.path(f"{inst.CACHE}/{name}"))
                     if system.real:
                         system.run(["chown", "-R", f"{inst.USER}:{inst.USER}", f"{inst.CACHE}/{name}"], quiet=True)
-    system.run(["systemctl", "restart", "cloudwall"], check=False)
+    if start:
+        port_free(system)
+        inst.start_service(system)
     say("Done. The old files are still where they were; delete them once the new install is seen to work:")
     for what in ("config", "data", "unit"):
         if old[what]:

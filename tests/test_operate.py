@@ -164,6 +164,15 @@ class BackupTest(unittest.TestCase):
         self.assertNotIn("# changed", self.cfg.read_text())
         self.assertEqual(Store(str(self.db)).count("1"), 1)
 
+    def test_the_owners_password_comes_back_with_a_backup(self):
+        from cloudwall.core import keys
+        keys.set_password("correct horse battery", self.cfg)
+        out = backup.backup(self.cfg, self.dir / "b.tar.gz", say=lambda *a: None)
+        self.assertIn("config/owner", {f["name"] for f in backup.read_manifest(out)["files"]})
+        (self.dir / "owner").unlink()
+        backup.restore(out, self.cfg, yes=True, say=lambda *a: None)
+        self.assertTrue(keys.password_matches("correct horse battery", (self.dir / "owner").read_text()))
+
     def test_backups_in_the_default_folder_are_kept_to_a_few(self):
         folder = backup.default_folder(config.load(self.cfg))
         folder.mkdir()
@@ -194,8 +203,28 @@ class LegacyTest(MachineTest):
         self.assertEqual(con.execute("SELECT COUNT(*) FROM sightings").fetchone()[0], 1)
         con.close()
         self.assertTrue(self.at(f"{inst.CACHE}/tiles/x").is_dir())
-        self.assertTrue(any("systemctl --user disable --now cloudwall" in d for d in system.done))
+        self.assertTrue(any("disable --now cloudwall" in d and "--user" in d for d in system.done))
         self.assertTrue((home / ".config/cloudwall/config.toml").exists())    # the old files are left
+
+
+class FindTest(unittest.TestCase):
+    def test_on_an_installed_machine_the_installed_settings_are_read_from_anywhere(self):
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d:
+            installed, unit = Path(d, "etc-config.toml"), Path(d, "cloudwall.service")
+            installed.write_text("[tracking]\nradius_nm = 20\n")
+            old = Path(d, "checkout")
+            old.mkdir()
+            (old / "config.toml").write_text("[tracking]\nradius_nm = 9\n")      # left behind by a migration
+            cwd = os.getcwd()
+            os.chdir(old)
+            try:
+                with mock.patch.object(config, "INSTALLED", installed), mock.patch.object(config, "INSTALLED_UNIT", unit):
+                    self.assertEqual(config.find(), Path("config.toml"))    # not installed: the checkout's
+                    unit.write_text("[Service]\n")
+                    self.assertEqual(config.find(), installed)              # installed: the system's
+            finally:
+                os.chdir(cwd)
 
 
 class DoctorTest(unittest.TestCase):
@@ -450,6 +479,69 @@ class UpgradeInPlaceTest(MachineTest):
         con = sqlite3.connect(self.at(f"{inst.VAR}/cloudwall.db"))
         self.assertEqual(con.execute("SELECT COUNT(*) FROM sightings").fetchone()[0], 1)
         con.close()
+
+    def test_a_fresh_empty_logbook_doesnt_block_the_real_one(self):
+        """The new service, started once before the move, makes an empty logbook of its own: the
+        old one must still come in over it. One with flyovers of its own is never overwritten."""
+        home = self.root / "home" / "pi"
+        old = home / ".local/share/cloudwall"
+        old.mkdir(parents=True)
+        (home / ".config/cloudwall").mkdir(parents=True)
+        (home / ".config/cloudwall/config.toml").write_text('[home]\nlat = 44.06\nlon = -121.31\n')
+        s = Store(str(old / "cloudwall.db"))
+        s.add_sighting(ts=1.0, day="2026-11-27", hex="a1", callsign="ASA1")
+        s.close()
+        inst.install(inst.Options("wall"), self.system())
+        Store(str(self.at(f"{inst.VAR}/cloudwall.db"))).close()              # what the new service made
+        legacy.migrate(self.system(), home, "pi", self.root / "checkout", say=self.said.append)
+        con = sqlite3.connect(self.at(f"{inst.VAR}/cloudwall.db"))
+        self.assertEqual(con.execute("SELECT COUNT(*) FROM sightings").fetchone()[0], 1)
+        con.close()
+        theirs = Store(str(self.at(f"{inst.VAR}/cloudwall.db")))
+        theirs.add_sighting(ts=2.0, day="2026-11-28", hex="b2", callsign="UAL2")
+        theirs.close()
+        legacy.migrate(self.system(), home, "pi", self.root / "checkout", say=self.said.append)
+        con = sqlite3.connect(self.at(f"{inst.VAR}/cloudwall.db"))
+        self.assertEqual(con.execute("SELECT COUNT(*) FROM sightings").fetchone()[0], 2)   # kept, not replaced
+        con.close()
+
+    def test_the_new_service_starts_only_after_the_move(self):
+        home = self.root / "home" / "pi"
+        (home / ".config/systemd/user/default.target.wants").mkdir(parents=True)
+        (home / ".config/systemd/user/cloudwall.service").write_text("[Service]\nWorkingDirectory=/home/pi/CloudWall\n")
+        (home / ".config/systemd/user/default.target.wants/cloudwall.service").write_text("")
+        (home / ".config/cloudwall").mkdir(parents=True)
+        (home / ".config/cloudwall/config.toml").write_text('[home]\nlat = 44.06\nlon = -121.31\n')
+        (home / ".local/share/cloudwall").mkdir(parents=True)
+        Store(str(home / ".local/share/cloudwall/cloudwall.db")).close()
+        self.at("/etc/passwd").parent.mkdir(parents=True, exist_ok=True)
+        self.at("/etc/passwd").write_text("pi:x:1000:1000::/home/pi:/bin/bash\n")
+        from cloudwall.operate.upgrade import upgrade
+        system = self.system()
+        upgrade(system, say=self.said.append)
+        done = system.done
+        stop = next(i for i, d in enumerate(done) if "disable --now cloudwall" in d)
+        copy = next(i for i, d in enumerate(done) if d.startswith("copy logbook"))
+        start = [i for i, d in enumerate(done) if d in ("run systemctl restart cloudwall", "run systemctl start cloudwall")]
+        self.assertEqual(len(start), 1)                                  # started once,
+        self.assertLess(stop, start[0])                                  # after the old one stopped
+        self.assertLess(copy, start[0])                                  # and the logbook came in
+
+    def test_settings_that_wouldnt_start_stop_the_upgrade_before_it_begins(self):
+        home = self.root / "home" / "pi"
+        (home / ".config/systemd/user").mkdir(parents=True)
+        (home / ".config/systemd/user/cloudwall.service").write_text("[Service]\n")
+        (home / ".config/cloudwall").mkdir(parents=True)
+        (home / ".config/cloudwall/config.toml").write_text('[tracking]\nradius_nm = "far"\n')
+        self.at("/etc/passwd").parent.mkdir(parents=True, exist_ok=True)
+        self.at("/etc/passwd").write_text("pi:x:1000:1000::/home/pi:/bin/bash\n")
+        from cloudwall.operate.upgrade import upgrade
+        system = self.system()
+        with self.assertRaises(SystemExit) as e:
+            upgrade(system, say=self.said.append)
+        self.assertIn("nothing was changed", str(e.exception))
+        self.assertEqual(system.done, [])
+        self.assertFalse(self.at("/opt").exists())
 
     def test_again_and_back(self):
         src = self.root / "src" / "cloudwall"

@@ -133,8 +133,7 @@ def describe(cfg):
             value = cfg.get(sec.name, {}).get(st.key, default)
             choices = config.CHOICES.get((sec.name, st.key))
             span = config.BETWEEN.get((sec.name, st.key))
-            kind = ("secret" if st.secret else "choice" if choices else "bool" if isinstance(default, bool)
-                    else "list" if isinstance(default, list) else "number" if isinstance(default, (int, float)) else "text")
+            kind = "secret" if st.secret else "choice" if choices else config.kind_of(sec.name, st.key)
             items.append(dict(asdict(st), kind=kind, choices=list(choices) if choices else None,
                               range=list(span) if span else None,
                               value={"set": bool(value)} if st.secret else value,

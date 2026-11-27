@@ -36,9 +36,12 @@ class Admin:
         self.lock = threading.Lock()
 
     # -- who may ----------------------------------------------------------------------------
+    @staticmethod
+    def proxied(h):
+        return any(h.headers.get(k) for k in ("X-Forwarded-For", "X-Real-IP", "Forwarded"))
+
     def role(self, h):
-        proxied = any(h.headers.get(k) for k in ("X-Forwarded-For", "X-Real-IP", "Forwarded"))
-        return self.owner.role(auth.cookies_of(h.headers.get("Cookie")), h.client_address[0], proxied)
+        return self.owner.role(auth.cookies_of(h.headers.get("Cookie")), h.client_address[0], self.proxied(h))
 
     def may_change(self, h):
         """For the screens' own changes (places): anyone, until there is an owner; then the owner."""
@@ -51,8 +54,10 @@ class Admin:
     def handle(self, h, method, path):
         q = parse_qs(urlsplit(h.path).query)
         name = path[len("/api/admin/"):].strip("/")
-        if not self.owner.host_ok(h.headers.get("Host")):
-            return h._send(403, {"error": "CloudWall doesn't answer to that name for its control board"})
+        if not self.owner.host_ok(h.headers.get("Host"), self.proxied(h)):
+            return h._send(403, {"error": "The control board answers only to this machine's own names and addresses "
+                                          "(or through a proxy such as Caddy). Open it by the machine's address, or set "
+                                          "[server] address to the name you use."})
         if method != "GET" and h._foreign():
             return h._send(403, {"error": "Only CloudWall's own page can do that"})
         if name == "whoami":
@@ -188,15 +193,15 @@ class Admin:
             path = str(config.user_config_path())
             config.init(path)
         value = body.get("value")
-        default = config.DEFAULTS.get(section, {}).get(key)
-        if isinstance(default, bool):
-            value = bool(value)
-        elif isinstance(default, (int, float)) and not isinstance(default, bool) and isinstance(value, str):
+        kind = config.kind_of(section, key)
+        if kind == "bool":
+            value = value in (True, "true", "on", "1", 1)
+        elif kind == "number" and isinstance(value, str):
             try:
-                value = float(value) if "." in value else int(value)
+                value = float(value) if "." in value or "e" in value.lower() else int(value)
             except ValueError:
-                raise ValueError(f"[{section}] {key} must be a number") from None
-        elif isinstance(default, list) and isinstance(value, str):
+                raise ValueError(f"{st.label} must be a number") from None
+        elif kind == "list" and isinstance(value, str):
             value = [v.strip() for v in value.splitlines() if v.strip()]
         if key == "key" and section == "server" and value and keys.problem(value):
             raise ValueError(f"the key {keys.problem(value)}")
