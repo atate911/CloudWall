@@ -148,7 +148,11 @@ class BrowserTest(unittest.TestCase):
         self.assertIn("atc", c["atc"]["scope"])
         self.assertGreaterEqual(c["atc"]["status"], 3)                       # the status area's lines
         self.assertGreaterEqual(c["atc"]["blocks"], 1)
-        self.assertEqual(c["buttons"], ["radar", "map"])                    # no sky view
+        self.assertEqual(c["buttons"], ["radar", "map", "sky"])
+        self.assertEqual(c["sky"]["box"], "-112 -112 224 224")               # the dome, in the radar's square
+        self.assertEqual(c["sky"]["tiles"], 0)                               # no map under the sky
+        self.assertEqual(c["sky"]["tools"], "none")                          # nor the radar's options
+        self.assertIn("straight up", c["sky"]["legend"])
         m = c["map"]
         self.assertEqual(m["layers"], ["places", "roads", "sat"])            # satellite, with roads and names over it
         self.assertEqual(c["streets"], ["streets"])

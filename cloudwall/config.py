@@ -56,7 +56,7 @@ DEFAULTS = {
     "extras": {"military": True, "military_radius_nm": 40, "military_url": "https://opendata.adsb.fi/api/v2/mil",
                "tfr": True, "tfr_radius_nm": 30, "contrails": True},
     # The kiosk has no buttons: its place and radar are set here. place: a place's name (empty for
-    # the first); view: "card" (the aircraft overhead across the whole screen), or "radar" or "map"
+    # the first); view: "card" (the aircraft overhead across the whole screen), or "radar", "map" or "sky"
     # to put the radar, or the flights on an everyday map, beside it; radar: "chart" or
     # "atc" (drawn like an air traffic control screen); tracks: the
     # selected aircraft's track and one-minute lines; range_nm: 0 for the tracking radius, or 20 or 30 to see further;

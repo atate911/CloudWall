@@ -493,14 +493,17 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 .idle .next { font-size: 1.25rem; line-height: 1.45; max-width: 34em; }
 .idle .raw { font: .66rem var(--mono); color: var(--slate); }
 .idle .rec { max-width: 40rem; }
-.idle.heat { flex-direction: row; align-items: center; gap: 1.8rem; }
-.idle.heat > div { flex: 1; display: flex; flex-direction: column; gap: .9rem; }
-.idle.heat canvas { flex: none; }
-.heat-text { font-size: .98rem; line-height: 1.55; color: var(--ink-2); max-width: 28em; }
+.idle.heat { flex-direction: row; align-items: stretch; gap: 2rem; }
+.heat-copy { flex: 1 1 0; min-width: 14rem; max-width: 26rem; display: flex; flex-direction: column; justify-content: center; gap: .85rem; }
+.heat-fig { flex: 1.6 1 0; position: relative; min-width: 0; min-height: 0; }
+.heat-fig canvas { position: absolute; inset: 0; margin: auto; }
+.idle.heat.stack { flex-direction: column; gap: 1.1rem; padding-bottom: 1.2rem; }
+.idle.heat.stack .heat-copy { flex: none; max-width: none; }
+.idle.heat.stack h1 { font-size: 2.1rem; }
+.idle.heat.stack .heat-fig { flex: 1 1 auto; }
+.heat-text { font-size: .98rem; line-height: 1.55; color: var(--ink-2); max-width: 30em; }
 .heat-legend { display: flex; align-items: center; gap: .6rem; font-size: .72rem; color: var(--slate); white-space: nowrap; }
-.heat-legend i { flex: 0 0 7rem; height: .35rem; border-radius: 99px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--blue) 30%, transparent), var(--blue) 45%, var(--magenta)); }
-.heat-key { font-size: .8rem; }
+.heat-legend i { flex: 0 1 9rem; height: .5rem; border-radius: 99px; box-shadow: inset 0 0 0 1px var(--frame); }
 .idle.last { flex-direction: row; align-items: center; justify-content: flex-start; gap: 1.8rem; }
 .idle.last .photo { width: 45%; aspect-ratio: 3 / 2; flex: none; }
 .idle.last .last-plate { width: 45%; height: auto; aspect-ratio: 3 / 2; flex: none; border: 1px solid var(--frame); }
@@ -567,6 +570,7 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
   border-left: 1px solid var(--rule); display: flex; align-items: center; }
 /* each view shows its own options: the radar its style and tracks, the Map view satellite or streets */
 #scope:not(.map) #mapstyle-seg, #scope.map #style-seg, #scope.map #btn-tracks { display: none; }
+#scope.sky .scope-tools { display: none; }
 .attrib:empty { display: none; }
 #radar { width: 100%; height: 100%; overflow: visible; }
 #radar.fade-in { animation: fade .45s ease-out; }
@@ -586,6 +590,19 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 #radar .apt-label { fill: var(--ink); font-size: 4.6px; font-weight: 700; }
 #radar .apt-mark { fill: none; stroke: var(--slate); stroke-width: .8; }
 #radar .home-mark { fill: none; stroke: var(--ink); stroke-width: .7; }
+/* the Sky view: a dome looking straight up from home, the horizon its edge */
+#scope.sky #radar .scope-bg { fill: url(#sky-grad); }
+#radar .sky-z { stop-color: #cfe0ef; } #radar .sky-h { stop-color: #f2f1e8; }
+body.night #radar .sky-z { stop-color: #060f1e; } body.night #radar .sky-h { stop-color: #17283c; }
+#radar .ring.horizon { stroke: var(--slate); stroke-width: .7; }
+#radar .sun { fill: #e3b23c; } #radar .sun-glow { fill: #e3b23c; opacity: .18; }
+body.night #radar .sun { fill: #c99a3a; }
+#radar .sky-path { fill: none; stroke: var(--magenta); stroke-width: .9; stroke-dasharray: 2 2.4; stroke-linecap: round; }
+#radar .sky-path.past { stroke-dasharray: none; opacity: .35; }
+#radar .sky-peak { fill: var(--disc); stroke: var(--magenta); stroke-width: .7; }
+#radar .peak-label { font-size: 4.2px; fill: var(--magenta); }
+.sky-moon .moon-dark { fill: #6d7a88; } .sky-moon .moon-lit { fill: #f3f0e2; }
+.sky-moon { filter: drop-shadow(0 0 1.5px rgba(243, 240, 226, .6)); }
 /* the selected aircraft's whole track since it came in range (overhead, or tapped), in its
    magenta, strongest near the ground and stepping toward the disc with height: 0-2, 2-5, 5-10,
    10-18, 18-28 and 28+ thousand ft */
@@ -1386,7 +1403,6 @@ html.phone:not(.land) .idle { height: auto; }
 html.phone .idle h1 { font-size: 1.9rem; }
 /* a slide taller than its sheet runs off the foot, where the sheet scrolls, not off the top */
 html.phone .idle { justify-content: safe center; }
-html.phone .idle.heat { align-items: safe center; }
 html.phone .fleet-head h1 { font-size: 1.7rem; }
 html.phone .idle .next, html.phone .nu-look { font-size: 1rem; }
 html.phone .nu-row { gap: 1rem; }
@@ -1397,8 +1413,7 @@ html.phone .countdown.big b { font-size: 1.3rem; }
 html.phone .nu-route { font-size: 1.6rem; }
 html.phone .nu-plate { height: 4rem; }
 html.phone .heat-text { font-size: .92rem; }
-html.phone:not(.land) :is(.idle.heat, .idle.last) { flex-direction: column; align-items: stretch; gap: 1rem; }
-html.phone:not(.land) .idle.heat canvas { align-self: center; }
+html.phone:not(.land) .idle.last { flex-direction: column; align-items: stretch; gap: 1rem; }
 html.phone:not(.land) .idle.last :is(.photo, .last-plate) { width: 100%; }
 html.phone:not(.land) .fleet-box { height: 15rem; }
 /* the weather slide keeps the windsock and the forecast; its summary already names the cloud */
@@ -1431,7 +1446,7 @@ html.phone #radar .tag-sub { font-size: 5.6px; stroke-width: 1.7px; }
 html.phone #radar .compass { font-size: 7px; }
 html.phone #radar :is(.ring-label, .place) { font-size: 5px; }
 html.phone #radar .bearing { font-size: 4.3px; }
-html.phone #radar :is(.apt-label, .field-label, .tfr-label) { font-size: 5.4px; }
+html.phone #radar :is(.apt-label, .field-label, .tfr-label, .peak-label) { font-size: 5.4px; }
 html.phone #radar .heard-note { font-size: 5.8px; }
 html.phone #radar :is(.legend, .status) { display: none; }
 /* the STARS display: data blocks, position symbols, the status area (whose size scope.js's ssa()

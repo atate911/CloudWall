@@ -103,7 +103,10 @@ in the address, and `[kiosk] density` sets the wall panel's.
   On a short screen the map gives way first, then the drawing. A card with room for only one of
   the two shows the map, and a switch in its corner (*Route*, *Aircraft*) puts the drawing in the
   map's place; each screen remembers how it was last set.
-- **Radar / Map** – beside the card, a radar scope over a street map, or the Map view: the
+- **Radar / Map / Sky** – beside the card, a radar scope over a street map, the Sky view (a dome
+  of the sky above home, looking up: centre straight up, the edge the horizon, with the sun, the
+  moon, each aircraft by how high it stands in the sky, and the path the one overhead takes across
+  it, with its highest point), or the Map view: the
   same flights on an everyday map for anyone, satellite photos with roads and place names (or a
   street map), filling the panel, every aircraft labelled in words ("Delta 178", "to Denver ·
   12,000 ft", "Small plane", "Helicopter"), with home and the airport marked and no rings,
@@ -143,7 +146,7 @@ in the address, and `[kiosk] density` sets the wall panel's.
   the least important go first (an arrival keeps its landing number, in a ring); the map's own
   names (towns, range rings, the airport, airfields) give way instead, fading while an aircraft
   or its label is over them.
-  The Radar / Map switch picks the view; an emergency always shows on the radar.
+  The Radar / Map / Sky switch picks the view (the wall panel's is `[kiosk] view`); an emergency always shows on the radar.
   Along the foot of the radar, Chart / ATC picks its look (ATC draws it as a controller's STARS
   screen; see [The ATC radar](#the-atc-radar)), Tracks turns the tracks and one-minute lines on
   or off, and 15 / 20 / 30 sets the range in nm. Past the tracking radius
@@ -151,7 +154,9 @@ in the address, and `[kiosk] density` sets the wall panel's.
   the logbook and route lookups stay within it, and the longer range is fetched only while a
   screen shows it.
 - **Quiet sky** – when nothing is overhead the card rotates through the next inbound
-  aircraft (with its drawing, so you know what to look for), a heatmap of the day's traffic,
+  aircraft (with its drawing, so you know what to look for), a heatmap of the day's traffic
+  (every position since midnight over a grey map, smoothed and coloured from a faint violet for a
+  one-off flight to magenta and amber for the corridors flown all day, glowing at night),
   today's fleet (every type seen since midnight, side by side at true relative size, from a
   Cessna to a 777), the day's records and the last flyover. Tap to skip ahead.
 - **Board** – departure-board list of everything airborne in range. Tap a row (or a

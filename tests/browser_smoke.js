@@ -189,6 +189,11 @@ const SCENARIOS = {
     await page.click('#mapstyle-seg button[data-map="streets"]');
     await page.waitForFunction(() => [...document.querySelectorAll("#s-base image")].some((i) => i.getAttribute("href").startsWith("tiles/streets/")));
     out.streets = (await mapFacts()).layers;
+    // the Sky view: a dome of the sky above home, no map under it, the radar's options put away
+    await page.click('#scope-seg button[data-mode="sky"]');
+    await page.waitForFunction(() => document.getElementById("scope").classList.contains("sky") && document.querySelector("#radar .ring.horizon"));
+    out.sky = await page.evaluate(() => ({ box: document.getElementById("radar").getAttribute("viewBox"), tiles: document.querySelectorAll("#s-base image").length,
+      tools: getComputedStyle(document.querySelector("#scope .scope-tools")).display, legend: (document.querySelector("#radar .legend") || {}).textContent || "" }));
     await page.click('#scope-seg button[data-mode="radar"]');
     await page.waitForFunction(() => document.getElementById("radar").getAttribute("viewBox") === "-112 -112 224 224");
     out.backToRadar = true;
