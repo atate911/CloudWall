@@ -581,7 +581,9 @@ function lastSlide(s) {
 // top instead (to a deep red), as gold would fade into the pale chart.
 const HEAT_RAMP = {
   night: [[0, "#4b3aa8", 0], [0.06, "#5a46c0", 0.2], [0.25, "#7a3cb0", 0.5], [0.5, "#d0407e", 0.86], [0.78, "#f6853a", 0.97], [1, "#ffe7a3", 1]],
-  day: [[0, "#5b67c4", 0], [0.06, "#5b67c4", 0.2], [0.25, "#6a3fae", 0.5], [0.5, "#b8306e", 0.84], [0.75, "#d9461f", 0.95], [1, "#7c1416", 1]],
+  // by day, t is the flights on a log scale from one (see heatImage): a lone flight at the bottom, a
+  // greyed lavender barely over the map, deepening with each doubling to the corridors' deep red
+  day: [[0, "#9a9cc4", 0.12], [0.18, "#8571c4", 0.24], [0.4, "#8a3fae", 0.5], [0.62, "#c0306a", 0.8], [0.82, "#d9461f", 0.94], [1, "#7c1416", 1]],
 };
 const hex3 = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const rampCache = {};
@@ -601,7 +603,7 @@ function heatLut(night) {
   return (rampCache[k] = lut);
 }
 // the legend's bar, from the same ramp
-const heatLegend = (night) => `linear-gradient(90deg, ${HEAT_RAMP[night ? "night" : "day"].slice(1)
+const heatLegend = (night) => `linear-gradient(90deg, ${HEAT_RAMP[night ? "night" : "day"].filter(([, , a]) => a > 0)
   .map(([t, c, a]) => `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transparent) ${Math.round(t * 100)}%`).join(", ")})`;
 
 // The traffic, drawn at the screen's own sharpness: every flight's line laid down on a buffer of
@@ -643,6 +645,9 @@ function heatImage(heat, size, k, width, night) {
   let level = lmax, above = lit * 0.005;
   for (let i = 1023; i >= 0 && above > 0; i--) { above -= bins[i]; if (above <= 0) level = ((i + 0.5) / 1024) * lmax; }
   const top = Math.max(Math.log1p(8), level), lut = heatLut(night);
+  // by day the scale starts at one flight: log(n) / log(busiest), so a lone track sits at the ramp's
+  // faint foot and each doubling climbs an even step (by night, as it was: lone tracks a little up it)
+  const dayTop = Math.log(Math.max(8, Math.expm1(level)));
   const c = document.createElement("canvas");
   c.width = c.height = size;
   const img = c.getContext("2d").createImageData(size, size), d = img.data;
@@ -650,7 +655,8 @@ function heatImage(heat, size, k, width, night) {
     const b = buf[j];
     if (b <= 0) continue;
     // a pixel only partly covered by a single flight keeps its colour and takes the coverage as opacity
-    const t = Math.min(1, Math.log1p(Math.max(b, 1)) / top) ** 1.1, i = Math.max(1, Math.round(t * 255)) * 4, o = j * 4;
+    const t = night ? Math.min(1, Math.log1p(Math.max(b, 1)) / top) ** 1.1 : Math.min(1, Math.log(Math.max(b, 1)) / dayTop);
+    const i = Math.max(night ? 1 : 0, Math.round(t * 255)) * 4, o = j * 4;
     d[o] = lut[i]; d[o + 1] = lut[i + 1]; d[o + 2] = lut[i + 2]; d[o + 3] = lut[i + 3] * Math.min(1, b);
   }
   c.getContext("2d").putImageData(img, 0, 0);
