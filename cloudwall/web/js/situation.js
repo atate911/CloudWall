@@ -239,8 +239,8 @@ function rowHtml(a, state, heroHex, multi) {
     const soon = overheadSoon(a, state);
     lead = catIcon(a.activity || "pass", a);
     // a medical helicopter's cross and helicopter say what it is: the row has room for where it's going
-    detail = a.activity === "loc" ? `${a.medical ? medIcon(13) : ""}${esc(a.hospital ? cap(hospitalShort(a.hospital)) : cap(kind(a)))}`
-      : `${a.medical ? medIcon(13) : ""}${r ? `${esc(r.origin.iata || city(r.origin))}–${esc(r.dest.iata || city(r.dest))}` : "en route"}${ty}`;
+    detail = a.activity === "loc" ? `${a.medical ? medIcon(16) : ""}${esc(a.hospital ? cap(hospitalShort(a.hospital)) : cap(kind(a)))}`
+      : `${a.medical ? medIcon(16) : ""}${r ? `${esc(r.origin.iata || city(r.origin))}–${esc(r.dest.iata || city(r.dest))}` : "en route"}${ty}`;
     right = `<span class="alt">${num(a.alt)}${arr}</span>` +
       (soon ? `<span class="when soon"><b data-oh="${a.cpa_s}">${mmss(Math.max(0, a.cpa_s - since(state)))}</b><small>overhead</small></span>`
         : `<span class="when"><b>${a.dist.toFixed(1)}</b><small>nm ${esc(a.compass)}</small></span>`);
@@ -292,7 +292,7 @@ function overHtml(state, { compact = false } = {}) {
   const look = skyLook(a, state);
   return `<section class="ss-over${compact ? " compact" : ""}"><div class="so-head"><span class="label">${label}</span>${state.pinned ? '<button class="so-let" data-let>Back to overhead</button>' : ""}</div>
     <div class="so-id"><div class="flaps so-flight" data-hex="${esc(a.hex)}" data-flight="${esc(flightName(a))}"></div>${state.logos && a.airline_iata ? `<span class="logo-tile"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(a.airline || "")}"></span>` : ""}</div>
-    <p class="so-what">${esc(doing(a, state))}</p>
+    <p class="so-what">${a.medical ? medIcon(18) : ""}${esc(doing(a, state))}</p>
     <div class="so-row">${compact || !a.known ? "" : `<div class="so-plate sil-box">${plate(typeInfo(a), { share: 0.98, dim: false })}</div>`}
       <div class="so-nums">${first}<div><b>${a.alt == null ? "–" : num(a.alt)}<small> ft</small></b><span>${trend(a)}</span></div>${look ? `<div class="so-look">${look.svg}<span class="sl-w">${esc(look.words)}</span><span class="sl-b">${esc(look.brief)}</span></div>` : ""}</div></div></section>`;
 }

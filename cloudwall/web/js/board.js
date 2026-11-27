@@ -32,9 +32,9 @@ function routeHtml(a, state) {
   const r = plausible(a);
   if (a.activity === "loc") {
     const w = a.hospital ? hospitalShort(a.hospital) : where(a, state, { town: true });
-    return `${a.medical ? medIcon(14) : ""}${esc(kind(a)[0].toUpperCase() + kind(a).slice(1))}${w ? `<small>${esc(w[0].toUpperCase() + w.slice(1))}</small>` : ""}`;
+    return `${a.medical ? medIcon(17) : ""}${esc(kind(a)[0].toUpperCase() + kind(a).slice(1))}${w ? `<small>${esc(w[0].toUpperCase() + w.slice(1))}</small>` : ""}`;
   }
-  if (r) return `${a.medical ? medIcon(14) : ""}<b>${esc(r.origin.iata)}</b> <span class="b-to">to</span> <b>${esc(r.dest.iata)}</b><small>${esc(city(r.origin))} to ${esc(city(r.dest))}</small>`;
+  if (r) return `${a.medical ? medIcon(17) : ""}<b>${esc(r.origin.iata)}</b> <span class="b-to">to</span> <b>${esc(r.dest.iata)}</b><small>${esc(city(r.origin))} to ${esc(city(r.dest))}</small>`;
   return `<span class="dim">${a.activity === "arr" ? `Landing at ${esc(state.airport.iata)}` : a.activity === "dep" ? `Just took off from ${esc(state.airport.iata)}` : "—"}</span>`;
 }
 
@@ -82,7 +82,7 @@ function phoneBoardHtml(state) {
     return `<button class="pb-row${a.hex === heroHex ? " hero" : ""}" data-hex="${esc(a.hex)}">
       <span class="pb-k">${a.activity === "arr" && a.seq ? `<span class="seq">${a.seq}</span>` : catIcon(a.activity || "pass", a, 18)}</span>
       <span class="pb-id">${esc(boardFlight(ident(a)))}</span>
-      <span class="pb-rt">${a.medical ? medIcon(13) : ""}${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}` : `<span class="dim">${esc(a.activity === "loc" ? (a.hospital ? `${kind(a)[0].toUpperCase() + kind(a).slice(1)}, ${hospitalShort(a.hospital)}` : kind(a)[0].toUpperCase() + kind(a).slice(1)) : a.activity === "arr" ? "Landing" : a.activity === "dep" ? "Just took off" : "")}</span>`}</span>
+      <span class="pb-rt">${a.medical ? medIcon(15) : ""}${r ? `${esc(r.origin.iata)} <span class="dim">to</span> ${esc(r.dest.iata)}` : `<span class="dim">${esc(a.activity === "loc" ? (a.hospital ? `${kind(a)[0].toUpperCase() + kind(a).slice(1)}, ${hospitalShort(a.hospital)}` : kind(a)[0].toUpperCase() + kind(a).slice(1)) : a.activity === "arr" ? "Landing" : a.activity === "dep" ? "Just took off" : "")}</span>`}</span>
       <span class="pb-when${soon || a.seq ? " soon" : ""}">${when}</span>
       <span class="pb-l2"><span class="pb-sub">${logo}${name ? `<span class="pb-name">${esc(name)}</span>` : ""}${a.type ? `<span class="pb-type">${esc(a.type)}</span>` : ""}</span>
       <span class="pb-data">${altText(a)}<small> ft</small>${arrowOf(a)}<span class="pb-gs">${num(a.gs)}<small> kt</small></span></span></span></button>`;

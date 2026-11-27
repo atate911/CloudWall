@@ -74,7 +74,7 @@ function routeHtml(a, state) {
   }
   if (a.medical && (!r || !r.plausible)) {
     // a medical flight: the hospital it's going to, or has just left, when that's known
-    return `<div class="noroute med">${medIcon(22)}<span>${esc(a.hospital ? hospitalLine(a.hospital, state) : `${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}, no flight plan filed`)}` +
+    return `<div class="noroute med">${medIcon(28)}<span>${esc(a.hospital ? hospitalLine(a.hospital, state) : `${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}, no flight plan filed`)}` +
       `${a.hospital ? `<small>${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}</small>` : ""}</span></div>`;
   }
   if (a.local === "local") {
