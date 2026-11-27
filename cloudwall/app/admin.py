@@ -21,6 +21,7 @@ from ..core import config, keys, logs, schema, troubles
 from ..operate import backup as backups, doctor as doc, guide, helper, repair
 from ..operate.survey import Machine, installs
 from ..operate.system import System
+from ..sense import station
 from ..serve import auth
 
 # Sections only the control board uses: read from the file as saved, so they need no restart.
@@ -179,21 +180,8 @@ class Admin:
 
     def receiver_urls(self, cfg=None):
         """(the receiver's web server, Coverage3D's), as reached from this machine, or None each."""
-        cfg = cfg or self.saved()
-        r = cfg.get("receiver") or {}
-        url = (r.get("url") or "").rstrip("/")
-        src = cfg["source"]
-        if not url and src.get("merge") and src["urls"]:
-            first = src["urls"][0]
-            url = first.split("/data/")[0] if "/data/" in first else ""
-        cov = (r.get("coverage_url") or "").rstrip("/")
-        if not cov and url:
-            m = re.match(r"^(https?://[^/:]+):(\d+)$", url)
-            # through the tunnel the receiver is 127.0.0.1:18080 and Coverage3D the port after the
-            # receiver's own (18090); at home, the receiver's address on Coverage3D's own port, 8090
-            cov = f"{m.group(1)}:{int(m.group(2)) + 10}" if m and m.group(2) == "18080" else \
-                (f"{m.group(1)}:8090" if m else "")
-        return url or None, cov or None
+        url, cov, _ = station.urls(cfg or self.saved())
+        return url, cov
 
     def receiver(self):
         """How the receiver is doing, from its own files (receiver.json, stats.json, outline.json),
@@ -210,6 +198,7 @@ class Admin:
             out["reachable"] = True
         except Exception as e:
             out["error"] = str(e)
+            out.update(self.station())          # the station can say why, when the receiver can't
             return out
         try:
             outline = get_json(f"{url}/data/outline.json", timeout=8) or {}
@@ -238,6 +227,25 @@ class Admin:
                 out["coverage"] = got is not None
             except Exception:
                 out["coverage"] = False
+        out.update(self.station())
+        return out
+
+    def station(self):
+        """The receiver's CloudWall station: what its machine says (sense/station.py), and what this
+        CloudWall makes of it."""
+        from ..core.http import get_json
+        _, _, url = station.urls(self.saved())
+        out = {"station_url": url, "station": None, "station_findings": []}
+        if not url:
+            return out
+        try:
+            facts = get_json(f"{url}/station.json", timeout=6)
+        except Exception as e:
+            out["station_error"] = str(e)
+            return out
+        if isinstance(facts, dict) and facts.get("format"):
+            out["station"] = facts
+            out["station_findings"] = [f.to_dict() for f in station.findings(facts, now=time.time())]
         return out
 
     def relay(self, h, path):

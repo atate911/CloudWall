@@ -1,4 +1,4 @@
-"""`sudo cloudwall install --role wall|panel`: one command that sets a machine up the same way
+"""`sudo cloudwall install --role wall|station|panel`: one command that sets a machine up the same way
 every time, and changes only what isn't so already. Run it again after an update and it puts the
 new code in place and restarts; run it on a new machine and, with `cloudwall restore`, the old
 one is back.
@@ -12,11 +12,13 @@ Where everything goes, on every machine:
     /var/cache/cloudwall/                     downloaded map tiles and logos
     /usr/local/bin/cloudwall                  the command, for doctor, backup and the rest
     cloudwall.service                         the wall, as the system user `cloudwall`
+    cloudwall-station.service                 a receiver's station, as the same user
 
-The roles (ROLES) are what a machine does: a wall serves the screens; a panel is a screen
-(a browser full-screen at a wall). The station, a receiver's own process, joins them later
-(see ROADMAP.md). Each role is a list of steps on a System (system.py), so a test can run any of
-them against a folder instead of a machine.
+The roles (ROLES) are what a machine does: a wall serves the screens; a station is a receiver's
+own CloudWall, saying how the receiver is (app/station.py) for the wall's control board; a panel
+is a screen (a browser full-screen at a wall). A machine may be more than one. Each role is a list
+of steps on a System (system.py), so a test can run any of them against a folder instead of a
+machine.
 """
 import os
 import sys
@@ -35,6 +37,7 @@ PANEL_CONF = f"{ETC}/panel.conf"
 BIN = "/usr/local/bin/cloudwall"
 KIOSK_BIN = "/usr/local/bin/cloudwall-kiosk"
 UNIT = "/etc/systemd/system/cloudwall.service"
+STATION_UNIT = "/etc/systemd/system/cloudwall-station.service"
 CADDY_SITE = "/etc/caddy/cloudwall.caddy"
 CADDYFILE = "/etc/caddy/Caddyfile"
 USER = "cloudwall"
@@ -108,6 +111,38 @@ exec "$BROWSER" --kiosk --noerrdialogs --disable-infobars --disable-session-cras
 """
 
 
+def station_unit_text(groups):
+    return f"""# Written by `cloudwall install --role station`: changes here are replaced on the next install.
+[Unit]
+Description=CloudWall station (this receiver's state, for the wall)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=notify
+NotifyAccess=main
+User={USER}
+Group={USER}
+# video: the Pi's firmware (vcgencmd), for its power supply and temperature
+{"SupplementaryGroups=" + " ".join(groups) if groups else "# (no video group here: power and temperature from the kernel's files)"}
+ExecStart={BIN} station
+Restart=always
+RestartSec=10
+# it only reads: nothing here may be written, and it answers on 127.0.0.1 only
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
+"""
+
+
 def caddy_site(name, port):
     return (f"# Written by `cloudwall install --public {name}`: CloudWall on the internet, over HTTPS.\n"
             f"{name} {{\n\tencode gzip\n\treverse_proxy 127.0.0.1:{port}\n}}\n")
@@ -170,7 +205,9 @@ def rollback(system):
     system.symlink(previous, f"{OPT}/current")
     if now:
         system.write(f"{OPT}/previous", now + "\n")
-    system.run(["systemctl", "restart", "cloudwall"])
+    for unit, name in ((UNIT, "cloudwall"), (STATION_UNIT, "cloudwall-station")):
+        if system.exists(unit):
+            system.run(["systemctl", "restart", name])
     return previous
 
 
@@ -312,6 +349,49 @@ def unwall(system, purge=False):
             system.run(["userdel", USER], check=False)
 
 
+# -- a station: on a receiver ----------------------------------------------------------------
+
+def station(system, opts):
+    """A receiver's own CloudWall: the code (as a wall has it), and cloudwall-station.service
+    answering on 127.0.0.1:8095. Needs no settings."""
+    check_python(system)
+    system.add_system_user(USER, VAR)
+    system.mkdir(OPT, 0o755)
+    system.mkdir(f"{OPT}/releases", 0o755)
+    code = put_release(system, opts.source)
+    system.write(BIN, COMMAND_TEXT, mode=0o755)
+    got = system.ask(["getent", "group", "video"])
+    groups = ["video"] if (got is not None and got.returncode == 0) or not system.real else []
+    unit = system.write(STATION_UNIT, station_unit_text(groups))
+    if unit:
+        system.run(["systemctl", "daemon-reload"])
+    enabled = system.ask(["systemctl", "is-enabled", "cloudwall-station"])
+    if unit or (enabled is not None and enabled.stdout.strip() != "enabled"):
+        system.run(["systemctl", "enable", "cloudwall-station"], check=False)
+    if opts.start:
+        active = system.ask(["systemctl", "is-active", "cloudwall-station"])
+        if code or unit or (active is not None and active.stdout.strip() != "active"):
+            got = system.run(["systemctl", "restart", "cloudwall-station"], check=False)
+            if got.returncode != 0:
+                log = system.ask(["journalctl", "-u", "cloudwall-station", "-n", "15", "--no-pager", "-o", "cat"])
+                raise SystemExit("cloudwall: the station didn't start. The end of its log:\n"
+                                 + "\n".join("  " + l for l in ((log.stdout if log else "") or "(no log)").strip().splitlines()[-15:]))
+    system.say("The station answers on 127.0.0.1:8095: `cloudwall station --check` says how this receiver is. "
+               "For the wall to see it, the tunnel carries it: pi-tunnel.sh install ... --station "
+               "(and vps-tunnel.sh setup ... --station on the server).")
+
+
+def unstation(system, purge=False):
+    system.run(["systemctl", "disable", "--now", "cloudwall-station"], check=False)
+    system.remove(STATION_UNIT)
+    system.run(["systemctl", "daemon-reload"], check=False)
+    if not system.exists(UNIT):                 # no wall here either: the code and the command go too
+        system.remove(BIN)
+        system.remove(OPT)
+        if purge and system.user_exists(USER):
+            system.run(["userdel", USER], check=False)
+
+
 # -- a panel ----------------------------------------------------------------------------------
 
 def panel(system, opts):
@@ -347,7 +427,7 @@ def unpanel(system, desktop_user=None):
             system.write(autostart, "".join(l for l in current.splitlines(True) if KIOSK_BIN not in l))
 
 
-ROLES = {"wall": (wall, unwall), "panel": (panel, unpanel)}
+ROLES = {"wall": (wall, unwall), "station": (station, unstation), "panel": (panel, unpanel)}
 
 
 def install(opts, system=None):
@@ -364,6 +444,8 @@ def uninstall(role, purge=False, desktop_user=None, system=None):
         raise SystemExit("cloudwall uninstall changes the system: run it with sudo")
     if role == "panel":
         unpanel(system, desktop_user)
+    elif role == "station":
+        unstation(system, purge)
     else:
         unwall(system, purge)
     return system

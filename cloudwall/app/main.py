@@ -66,11 +66,15 @@ def keep_good(path):
 
 
 def main():
+    if sys.argv[1:2] == ["station"]:          # cloudwall station: a receiver's own state, for the wall
+        from .station import main as station_main
+        station_main(sys.argv[2:])
+        return
     if cli.is_command(sys.argv[1:]):          # cloudwall install | doctor | backup | ...
         cli.main(sys.argv[1:])
         return
     ap = argparse.ArgumentParser(prog="cloudwall", description="Flight board for the sky over your house",
-                                 epilog="Setting up and looking after it: cloudwall {%s} --help" % ",".join(cli.COMMANDS))
+                                 epilog="Setting up and looking after it: cloudwall {%s} --help" % ",".join(cli.COMMANDS + ("station",)))
     ap.add_argument("--config", help="path to config.toml (default: ./config.toml if present)")
     ap.add_argument("--demo", action="store_true", help="simulated traffic, no network needed")
     ap.add_argument("--host", help="address to listen on (default 0.0.0.0)")

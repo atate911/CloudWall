@@ -110,6 +110,9 @@ SECTIONS = (
          "the first feed when combining is on (the tunnel's http://127.0.0.1:18080).", example="http://127.0.0.1:18080"),
        S("coverage_url", "Coverage3D", "Where Coverage3D answers from this machine. Empty: beside the receiver's (through the "
          "tunnel, http://127.0.0.1:18090).", example="http://127.0.0.1:18090", advanced=True),
+       S("station_url", "Station", "Where the receiver's CloudWall station (its power, temperature, clock, SD card, stick "
+         "and feeders) answers from this machine. Empty: beside the receiver's (through the tunnel, http://127.0.0.1:18095).",
+         example="http://127.0.0.1:18095", advanced=True),
        S("home_url", "Its address at home", "The receiver's address on your home network (adsb.im's setup page and its own "
          "maps). The board links to these, for use at home; it never opens them to the internet.", example="http://192.168.3.3")),
     _s("server", "Network", "access", "Who can reach CloudWall, and how.",

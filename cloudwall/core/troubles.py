@@ -259,6 +259,78 @@ CATALOGUE = {
         "Distances and directions from your receiver's data are worked out from the wrong place.",
         ["the receiver's location was set wrongly (or [home] was)"],
         ["Check the location in adsb.im's setup page against [home]."]),
+    # -- the receiver's own machine (sense/station.py: a CloudWall station on the receiver) --------
+    "receiver.undervoltage": _t(
+        "the receiver's power supply is too weak",
+        "The Pi's voltage has dropped: the USB stick can drop out, the SD card can be corrupted, and reception comes and goes.",
+        ["a phone charger or a thin USB cable instead of the Pi's own power supply",
+         "the receiver stick (a Pro Stick draws real current) and other USB devices on top"],
+        ["Use the official Raspberry Pi power supply for its model, plugged straight in.",
+         "Use a powered USB hub for anything else on USB.",
+         "Then reboot the receiver: under-voltage since it started is only cleared by a restart."]),
+    "receiver.throttled": _t(
+        "the receiver is slowing itself down",
+        "The Pi is running slower than it should to protect itself, from heat or a weak power supply: it may miss messages.",
+        ["too hot (no airflow, a closed case in the sun)", "a weak power supply"],
+        ["Check its temperature and power on this page.", "Give it airflow, a heatsink, or a case with a fan."]),
+    "receiver.hot": _t(
+        "the receiver is running hot",
+        "Above 80 °C the Pi slows itself down, and a stick that gets hot drifts and hears less.",
+        ["a closed case, in the sun or an attic", "no heatsink or fan"],
+        ["Move it somewhere cooler or shaded, or give it a heatsink or a fan."]),
+    "receiver.clock": _t(
+        "the receiver's clock isn't synchronised",
+        "Positions look normal, but MLAT (aircraft placed by timing, without ADS-B) needs an accurate clock: they can be wrong or missing.",
+        ["no network time service running", "the network blocks NTP (UDP port 123)"],
+        ["On the receiver: `timedatectl` (it should say \"System clock synchronized: yes\").",
+         "`sudo timedatectl set-ntp true`, then wait a few minutes."], subtle=True),
+    "receiver.disk": _t(
+        "the receiver's SD card is nearly full",
+        "When it fills, the decoder and the feeders can stop, and the card can be corrupted.",
+        ["logs that grew (often from a feeder failing over and over)", "old images or files left behind"],
+        ["On the receiver: `sudo journalctl --vacuum-size=100M` and `df -h /`.",
+         "adsb.im: its setup page's System tab can clear its logs."]),
+    "receiver.no-sdr": _t(
+        "no receiver stick on the receiver's USB",
+        "Without the USB stick there's nothing to hear: no positions come from your receiver.",
+        ["the stick came loose or failed", "a weak power supply made it drop out"],
+        ["Check the stick is firmly in, and that the Pi's power supply is the right one.",
+         "Unplug it and plug it back in, then restart the decoder (or the receiver)."]),
+    "receiver.dvb-driver": _t(
+        "the TV-tuner driver can take the receiver stick",
+        "Linux's own TV driver may grab the stick before the decoder does; then the decoder hears nothing.",
+        ["the driver isn't blacklisted on this system"],
+        ["On the receiver: `echo blacklist dvb_usb_rtl28xxu | sudo tee /etc/modprobe.d/rtl-sdr-blacklist.conf`, then reboot."]),
+    "receiver.service-failed": _t(
+        "a service on the receiver has stopped",
+        "The decoder or a feeder isn't running: your receiver's positions, or its data sharing, stop with it.",
+        ["it crashed and gave up restarting", "the stick it needs is missing"],
+        ["On the receiver: `systemctl status <the service>` and `journalctl -u <the service> -n 50`.",
+         "Restart it: `sudo systemctl restart <the service>` (adsb.im: its setup page restarts its containers)."]),
+    "receiver.no-decoder": _t(
+        "no decoder's data on the receiver",
+        "Nothing decodes what the stick hears: no positions come from your receiver.",
+        ["the decoder (readsb, dump1090-fa, or adsb.im's ultrafeeder) isn't running", "adsb.im's set-up wasn't finished"],
+        ["On the receiver: `sudo bash tools/adsb_check.sh` names what is and isn't running.",
+         "adsb.im: open its setup page at home and finish or restart it."]),
+    "receiver.decoder-stuck": _t(
+        "the receiver's decoder has stopped updating",
+        "Its web server still answers, so it looks alive, but the aircraft in its data are old.",
+        ["the decoder hung", "the stick stopped delivering samples"],
+        ["Restart the decoder: `sudo systemctl restart readsb` (or dump1090-fa; adsb.im: `sudo docker restart ultrafeeder`)."],
+        subtle=True),
+    "receiver.feeder-down": _t(
+        "a feeder on the receiver isn't connected",
+        "Your receiver's data isn't reaching that site: its statistics stop, and so may the free account it gives you.",
+        ["the receiver's internet is down", "the feeder's key or account was changed", "the feeder's service stopped"],
+        ["On the receiver: `piaware-status` (FlightAware) or `fr24feed-status` (Flightradar24).",
+         "adsb.im: its setup page shows each feeder's state."]),
+    "receiver.station-down": _t(
+        "the receiver's CloudWall station isn't answering",
+        "This page can't see the receiver's power, temperature, clock, SD card, stick or feeders any more.",
+        ["the station's service stopped", "the tunnel no longer carries its port"],
+        ["On the receiver: `systemctl status cloudwall-station`.",
+         "Is the tunnel up? On the receiver: `sudo bash deploy/feed-tunnel/pi-tunnel.sh status`."]),
     "tunnel.down": _t(
         "the tunnel from the receiver is down",
         "CloudWall here gets only the public feeds.",

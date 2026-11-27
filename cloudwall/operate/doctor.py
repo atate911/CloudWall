@@ -275,6 +275,10 @@ def doctor(config_path=None, offline=False, ask=None, machine=None):
     """(findings, the worst state): every registered check of CloudWall's settings and parts, the
     running CloudWall's own findings, and the survey of this machine (operate/survey.py)."""
     from .survey import Machine, survey
+    m = machine or Machine(ask=ask)
+    if m.read("/etc/systemd/system/cloudwall-station.service") is not None and m.read("/etc/systemd/system/cloudwall.service") is None:
+        found = survey(m)               # a receiver, with no wall: its own checks, not a wall's settings and feeds
+        return found, health.worst(found)
     ctx = Context(config_path, offline, ask)
     found = health.run(ctx)
     # what the running CloudWall says and doctor's own checks find the same problems: said once
@@ -282,7 +286,7 @@ def doctor(config_path=None, offline=False, ask=None, machine=None):
     found = [f for f in found if not (f.part.startswith("running:") and f.code in own)]
     mine = {(f.code, _file(f.summary)) for f in found if f.code}
     # the survey looks at every install's files: one this check has already said is said once
-    found += [f for f in survey(machine or Machine(ask=ask)) if not (f.code and (f.code, _file(f.summary)) in mine)]
+    found += [f for f in survey(m) if not (f.code and (f.code, _file(f.summary)) in mine)]
     return found, health.worst(found)
 
 

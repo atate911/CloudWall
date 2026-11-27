@@ -31,7 +31,8 @@ def parser():
                        description="Set this machine up for CloudWall, or bring it up to date: run it again after "
                                    "an update (from the new code) and only what changed is changed.")
     p.add_argument("--role", choices=sorted(inst.ROLES), default="wall",
-                   help="wall: serves the screens (the default); panel: a screen, full-screen at a wall")
+                   help="wall: serves the screens (the default); station: on a receiver, says how it is for the "
+                        "wall's control board; panel: a screen, full-screen at a wall")
     p.add_argument("--public", metavar="NAME", help="(wall) put it on the internet at this name, through Caddy")
     p.add_argument("--wall", metavar="URL", help="(panel) the wall it shows, with its key if it has one")
     p.add_argument("--desktop-user", metavar="USER", help="(panel) whose desktop shows it (default: who ran sudo)")

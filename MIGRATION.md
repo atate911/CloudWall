@@ -104,8 +104,54 @@ python3 -m cloudwall doctor --offline
 ```
 
 It recognises the tunnel's receiver end, Coverage3D installed on its own, and the sharing page if it
-was left running as root (stop it with Ctrl-C where it was started). The receiver gets its own part of
-CloudWall in a later stage (ROADMAP.md, "station"); until then it stays as it is.
+was left running as root (stop it with Ctrl-C where it was started).
+
+### The receiver on the control board
+
+CloudWall's **station** lets the server's control board see the receiver's own machine: its power
+supply (under-voltage), temperature, clock (which MLAT needs), SD card, USB stick, decoder, feeders
+(FlightAware, Flightradar24) and tunnel. Its problems then show on the board's Overview and Receiver
+pages and reach your alerts like any other. It only reads, and answers only on the Pi itself; the
+tunnel carries it to the server.
+
+On the receiver:
+
+```bash
+cd ~/CloudWall && git pull
+```
+
+```bash
+sudo python3 -m cloudwall install --role station
+```
+
+```bash
+cloudwall station --check
+```
+
+The last says how the receiver stands, at the terminal. For the server to see it, the tunnel carries
+one more port. Show the receiver's tunnel key:
+
+```bash
+sudo cat /etc/adsb-tunnel/id_ed25519.pub
+```
+
+On the server, authorise the key again with the station's port (add `--coverage` if the tunnel carries
+Coverage3D too):
+
+```bash
+sudo bash deploy/feed-tunnel/vps-tunnel.sh setup "ssh-ed25519 AAAA… adsb-tunnel@…" --station
+```
+
+Then on the receiver, start the tunnel again with it (the server's address as before; add
+`--coverage` to match):
+
+```bash
+sudo bash ~/CloudWall/deploy/feed-tunnel/pi-tunnel.sh install YOUR-SERVER --station
+```
+
+The Receiver page's **Receiver machine** group fills in within a minute. Updating the receiver from
+then on is `git pull` and `sudo python3 -m cloudwall upgrade`, as on the server: on a receiver it
+updates the station and sets up nothing else.
 
 ## A wall panel
 
@@ -126,8 +172,8 @@ cd ~/CloudWall && git pull
 sudo python3 -m cloudwall upgrade
 ```
 
-Every time: a backup first, the new code beside the old, your settings checked before the restart,
-a check after. The control board shows a lamp lit if anything is wrong, and with `[health] notify_url`
+On the server: a backup first, the new code beside the old, your settings checked before the restart,
+a check after. On a receiver with the station: the station's code, and nothing else. The control board shows a lamp lit if anything is wrong, and with `[health] notify_url`
 set (an [ntfy.sh](https://ntfy.sh) topic, say) a problem that stops CloudWall reaches your phone.
 
 ## If something goes wrong

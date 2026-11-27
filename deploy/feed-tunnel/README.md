@@ -240,7 +240,8 @@ command, a different listen port, a public bind and a `-L` connection to a VPS s
 | **Rotate the key** (e.g. once a year, or if the Pi was lost) | On the Pi: `sudo rm /etc/adsb-tunnel/id_ed25519*`, then `sudo bash pi-tunnel.sh keygen`, then step 2 on the VPS with the new key (it replaces the old one), then `sudo bash pi-tunnel.sh restart`. |
 | **Stop combining; receiver only, public feeds as backup** | Set `merge = false` in `[source]`; restart CloudWall. |
 | **Public feeds only, receiver as backup** | Set `merge = false` and move the tunnel URL below the public feeds; restart CloudWall. (With `merge = true`, the receiver must be first.) |
-| **Forward a second Pi service** (e.g. a future app on port 8090) | Add another `-R 127.0.0.1:18090:127.0.0.1:8090` to the unit's `ExecStart`, and add `permitlisten="127.0.0.1:18090"` (comma-separated, alongside the first) to the key's options on the VPS. Then `sudo systemctl daemon-reload && sudo systemctl restart adsb-tunnel`. |
+| **Carry Coverage3D or CloudWall's station too** | Add `--coverage` (Coverage3D, the VPS's 18090 → the Pi's 8090) and/or `--station` (the station, 18095 → 8095) to both: `sudo bash deploy/feed-tunnel/vps-tunnel.sh setup "<the Pi's key>" --coverage --station` on the VPS first, then `sudo bash pi-tunnel.sh install VPS_HOST --coverage --station` on the Pi. The key's restrictions then allow exactly those ports. |
+| **Forward another Pi service by hand** (e.g. a future app on port 8100) | Add another `-R 127.0.0.1:18100:127.0.0.1:8100` to the unit's `ExecStart`, and add `permitlisten="127.0.0.1:18100"` (comma-separated, alongside the first) to the key's options on the VPS. Then `sudo systemctl daemon-reload && sudo systemctl restart adsb-tunnel`. |
 
 ## 8. Removing it
 
