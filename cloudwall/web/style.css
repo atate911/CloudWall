@@ -266,7 +266,7 @@ nav button span { color: var(--slate); font-weight: 400; margin-left: .4rem; }
 .h-type .about-link i { font-weight: 400; }
 .h-who { min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .85rem; row-gap: .3rem; font-size: .95rem; font-weight: 700; white-space: nowrap; }
 .h-who > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.h-who > [hidden], .h-top > [hidden] { display: none; }
+.h-who > [hidden], .h-top > [hidden], .h-who > small:empty { display: none; }      /* an empty note would still cost the tags a second gap */
 .h-who > .tags { margin: 0; align-self: center; }
 .h-who:not(:has(> .flaps:not([hidden]), > span:not([hidden]):not(:empty), > small:not(:empty), .badge)) { display: none; }      /* nothing to say of who flies it */
 .flight { font-size: 1.15rem; letter-spacing: 0; color: var(--ink); white-space: pre; flex: none; }
@@ -299,7 +299,8 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
   border-radius: var(--corner); border: 1px solid color-mix(in srgb, currentColor 38%, transparent); color: var(--ink-2); }
 .badge.new { color: var(--blue); } .badge.rare { color: var(--magenta); }
 .badge.hot { color: var(--sheet); background: var(--red); border-color: var(--red); font-weight: 700; }
-.badge.med { color: #fff; background: var(--med); border-color: var(--med); }
+.badge.med { color: var(--med); }      /* the cross on the line below is the solid mark; the tag only names it */
+body.night .badge.med { color: #8fb3f0; }
 .noroute.med { flex-direction: row; align-items: flex-start; gap: .8rem; font-size: 1.4rem; line-height: 1.22; }
 .noroute.med > span { display: flex; flex-direction: column; gap: .4rem; }
 .noroute.med .ci.med { flex: none; margin-top: .2rem; }
