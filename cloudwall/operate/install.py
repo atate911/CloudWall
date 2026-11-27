@@ -146,12 +146,32 @@ def put_release(system, source):
     if not system.exists(f"{folder}/cloudwall/__init__.py"):
         system.copy_tree(source, f"{folder}/cloudwall")
         system.run([PYTHON, "-m", "compileall", "-q", system.path(folder).as_posix()], check=False, quiet=True)
+    link = system.path(f"{OPT}/current")
+    before = os.readlink(link) if link.is_symlink() else None
     changed = system.symlink(f"releases/{rid}", f"{OPT}/current")     # relative: right under any root
+    if changed and before:                     # what `cloudwall rollback` goes back to
+        system.write(f"{OPT}/previous", before + "\n")
     releases = sorted(system.path(f"{OPT}/releases").iterdir(), key=lambda p: p.stat().st_mtime) \
         if system.path(f"{OPT}/releases").is_dir() else []
-    for old in [r for r in releases if r.name != rid][:-(KEEP_RELEASES - 1) or None]:
+    keep = {rid, Path(before).name if before else None}
+    for old in [r for r in releases if r.name not in keep][:-(KEEP_RELEASES - 2) or None]:
         system.remove(f"{OPT}/releases/{old.name}")
     return changed
+
+
+def rollback(system):
+    """Back to the release in use before the last update (its settings fall back on .good if they
+    no longer suit it). Returns the release now in use."""
+    previous = (system.read(f"{OPT}/previous") or "").strip()
+    if not previous or not system.exists(f"{OPT}/{previous}/cloudwall/__init__.py"):
+        raise SystemExit("cloudwall rollback: there is no earlier release kept to go back to")
+    link = system.path(f"{OPT}/current")
+    now = os.readlink(link) if link.is_symlink() else None
+    system.symlink(previous, f"{OPT}/current")
+    if now:
+        system.write(f"{OPT}/previous", now + "\n")
+    system.run(["systemctl", "restart", "cloudwall"])
+    return previous
 
 
 def put_config(system):
@@ -234,6 +254,8 @@ def wall(system, opts):
     put_config(system)
     system.write(BIN, COMMAND_TEXT, mode=0o755)
     unit = system.write(UNIT, UNIT_TEXT)
+    from . import helper
+    helper.install_units(system)              # what the control board may ask root for
     if opts.public:
         port = config.load(system.path(CONFIG))["server"]["port"] if system.exists(CONFIG) else 5050
         make_public(system, opts.public, port)
@@ -254,6 +276,8 @@ def wall(system, opts):
 
 
 def unwall(system, purge=False):
+    from . import helper
+    helper.remove_units(system)
     system.run(["systemctl", "disable", "--now", "cloudwall"], check=False)
     system.remove(UNIT)
     system.run(["systemctl", "daemon-reload"], check=False)

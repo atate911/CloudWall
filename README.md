@@ -212,19 +212,26 @@ cloudwall doctor                         # checks every part and says what to do
 Open `http://<this machine>:5050`. Run `install` again whenever you like: it changes only what
 isn't so already.
 
-**After an update** (`git pull`): `sudo python3 -m cloudwall install` again. It puts the new code
-in place beside the old and restarts into it, but first checks your settings start with the new
-code; if they wouldn't, it says what to change and leaves the running CloudWall alone.
+**After an update** (`git pull`): `sudo python3 -m cloudwall upgrade`. It backs up first, puts the
+new code in place beside the old and restarts into it, but only once it has checked your settings
+start with the new code; if they wouldn't, it says what to change and leaves the running CloudWall
+alone. `sudo cloudwall rollback` goes back to the release before.
 
-**Coming from `make service`** (the old per-user setup): `make migrate` installs the system service,
-moves your settings and logbooks into it and turns the old service off. Your old files stay where
-they were until you delete them. Until you migrate, `git pull` and `make restart` keep working
-the old way.
+**Coming from `make service`** (the old per-user setup): the same `sudo python3 -m cloudwall upgrade`
+moves your settings and logbooks over and turns the old service off; [MIGRATION.md](MIGRATION.md)
+walks through it, server and receiver. Your old files stay where they were until you delete them.
+Until you move, `git pull` and `make restart` keep working the old way.
+
+**The control board:** set the owner's password (`sudo cloudwall owner`), then open
+`http://<this machine>:5050/admin`. Every part of CloudWall at a glance, every setting with what it
+does, and every problem it finds with what to do, fixable from the page.
 
 **To try it without installing:** `make demo` runs on simulated traffic from the checkout.
 
 | Command | What it does |
 |---|---|
+| `sudo cloudwall upgrade` | From whatever runs here now to this code, in place: backs up, updates, moves an old setup over, checks (`rollback` goes back) |
+| `sudo cloudwall owner` | Sets the owner's password for the control board (`/admin`) |
 | `sudo cloudwall install` | Sets the machine up, or brings it up to date (`--role panel` for a wall panel, `--public NAME` for the internet through Caddy; `--dry-run` says what it would change) |
 | `cloudwall doctor` | Checks every part (settings, storage, the service, the feeds, the receiver, the tunnel, Caddy, backups) and, for anything wrong, says what it means, why it usually happens and what to do |
 | `sudo cloudwall doctor --fix` | Goes through each problem with you: repairs what it can, asks for what only you know, walks you through the rest |

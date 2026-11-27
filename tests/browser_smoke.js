@@ -631,6 +631,34 @@ const SCENARIOS = {
     return out;
   },
 
+  // the control board (/admin): the lamps, each page, and a setting saved
+  async admin(browser, errors) {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 900 } }), out = {};
+    page.on("console", (m) => { if (m.type() === "error") errors.push(`console: ${m.text()}`); });
+    page.on("pageerror", (e) => errors.push(`page: ${e.message}`));
+    page.on("request", (r) => { if (!r.url().startsWith(BASE) && !/^(data|blob|about):/.test(r.url())) errors.push(`left the machine: ${r.url()}`); });
+    await page.goto(BASE + "/admin");
+    await page.waitForSelector(".lamp");
+    out.lamps = await page.$$eval(".lamp", (l) => l.length);
+    out.lit = await page.$$eval(".lamp.warn, .lamp.fail", (l) => l.map((x) => x.querySelector(".lamp-name").textContent));
+    out.checklists = await page.$$eval(".checklist", (l) => l.length);
+    out.pages = {};
+    for (const p of ["places", "positions", "routes", "maps", "screens", "access", "storage", "health", "system", "log"]) {
+      await page.evaluate((h) => { location.hash = h; }, p);
+      await page.waitForFunction((h) => document.querySelector("#nav a.on")?.getAttribute("href") === "#" + h
+        && document.querySelector("main h1, main h2"), p, { timeout: 8000 });
+      out.pages[p] = await page.$$eval("main .row", (r) => r.length);
+    }
+    await page.evaluate(() => { location.hash = "positions"; });
+    await page.waitForSelector("#set-tracking-radius_nm");
+    await page.fill("#set-tracking-radius_nm", "16");
+    await page.click("#set-tracking-radius_nm ~ .save");
+    await page.waitForFunction(() => !document.getElementById("toast").hidden && /saved/i.test(document.getElementById("toast").textContent));
+    out.saved = await page.evaluate(() => !document.getElementById("restart-bar").hidden);
+    await page.close();
+    return out;
+  },
+
   // the server stops answering: the page says so
   async offline(browser, errors) {
     const mine = [], page = await open(browser, "desktop", "/", mine), out = {};

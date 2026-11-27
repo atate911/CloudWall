@@ -320,6 +320,15 @@ class BrowserTest(unittest.TestCase):
         self.assertNotIn("Traceback", log)
         self.assertNotRegex(log, r"(?m)^\S+ \S+ \S+ .*(failed|couldn't)")
 
+    def test_the_control_board(self):
+        a = self.scenario("admin")
+        self.assertEqual(a["lamps"], 9)                                     # a lamp for each part
+        self.assertIn("Screens", a["lit"])                                  # the demo's simulated traffic, said
+        self.assertGreaterEqual(a["checklists"], 1)
+        for page in ("positions", "routes", "maps", "screens", "access", "storage"):
+            self.assertGreaterEqual(a["pages"][page], 1, page)              # each with its settings
+        self.assertTrue(a["saved"])                                         # a setting saved, and a restart offered
+
 
 if __name__ == "__main__":
     unittest.main()

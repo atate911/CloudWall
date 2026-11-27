@@ -373,3 +373,24 @@ to draw it, and what this place's logbook knows of it.
 | `DELETE /api/places?id=` | Remove a place set up that way (not one from the config file). Answers `places`. |
 | `GET /tiles/<layer>/<z>/<x>/<y>` | A map or chart tile around a watched place, cached; `/tiles/<z>/<x>/<y>` is the radar's own map. 404 outside the area or where the layer has none. |
 | `GET /logos/<IATA>` | An airline's logo as a PNG, cached; 404 when there isn't one. |
+
+## The control board's API
+
+`/api/admin/...` is the control board's (`/admin`, app/admin.py). Everything but `whoami`, `signin`
+and `signout` is the owner's alone: with an owner password set (`sudo cloudwall owner`), a session
+from `signin`; without one, a request from the machine itself and not through a proxy. A request
+naming a host CloudWall doesn't answer to is refused (403), and so is a change a browser says comes
+from another site. It may change between versions without notice: the board and the server are one
+release.
+
+| Request | Answer |
+|---|---|
+| `GET whoami` | `role` ("owner" or "viewer"), `owner_set`, `local`, `version`, `demo`. |
+| `POST signin` / `signout` | `{"password"}`: sets (or clears) the session cookie. Five wrong in five minutes from one address and it waits. |
+| `GET overview` | Everything at a glance: the health report, recent incidents, each place's status and feeds' vitals, the paid provider, storage, how CloudWall is installed here. |
+| `GET settings`, `POST settings` | Every setting with its words, kind, allowed values, value (secrets as `{"set"}` only) and default, as in the file and as running; `{"section", "key", "value"}` saves one, checked as the file is. |
+| `GET health`, `incidents`, `doctor`, `catalogue`, `log` | CloudWall's check of itself; the incident log; doctor's checks of the whole machine (`?fresh=1` runs them again); every known problem; the last lines of the log (`?level=warning`). |
+| `POST fix`, `POST repair` | `{"code", "name", "value"}` answers a problem's question (as `doctor --fix` asks it); `{"name"}` makes a repair. One that needs root is filed with the root helper and answers `request`, whose result is at `GET requests/<id>`. |
+| `GET backups`, `POST backups`, `GET backups/<name>` | The backups kept; make one; download one. |
+| `POST private-link`, `POST password`, `POST restart` | `{"action": "new" / "off" / "show"}`; the owner's new password; restart (under systemd). |
+

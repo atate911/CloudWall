@@ -268,3 +268,24 @@ class SystemdTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SchemaTest(unittest.TestCase):
+    def test_every_setting_is_explained(self):
+        from cloudwall.core import schema
+        described = {(s.name, st.key) for s in schema.SECTIONS for st in s.settings}
+        missing = [(sec, key) for sec, keys in config.DEFAULTS.items() for key in keys if (sec, key) not in described]
+        self.assertEqual(missing, [], "add these to core/schema.py, with what they do")
+        for s in schema.SECTIONS:
+            self.assertIn(s.page, dict(schema.PAGES))
+            for st in s.settings:
+                self.assertTrue(st.label and len(st.help) > 20, (s.name, st.key))
+
+    def test_secrets_are_never_shown_back(self):
+        from cloudwall.core import schema
+        cfg = config.load(None)
+        cfg["flightradar24"]["api_key"] = "fr24-secret"
+        text = repr(schema.describe(cfg))
+        self.assertNotIn("fr24-secret", text)
+        [fr] = [s for s in schema.describe(cfg) if s["name"] == "flightradar24"]
+        self.assertEqual(fr["settings"][0]["value"], {"set": True})

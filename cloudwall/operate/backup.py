@@ -60,10 +60,11 @@ def backup(config_path=None, to=None, say=print):
     path = config.find(config_path)
     cfg = config.load(config_path)
     data, files = _files(cfg, path)
-    folder = Path(to).parent if to and not Path(to).is_dir() else Path(to or default_folder(cfg))
+    to_file = bool(to) and str(to).endswith(".tar.gz")          # a file named, or else a folder to put it in
+    folder = Path(to).parent if to_file else Path(to or default_folder(cfg))
     folder.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
-    out = Path(to) if to and not Path(to).is_dir() else folder / f"cloudwall-{socket.gethostname()}-{stamp}.tar.gz"
+    out = Path(to) if to_file else folder / f"cloudwall-{socket.gethostname()}-{stamp}.tar.gz"
     manifest = {"cloudwall": __version__, "made": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "host": socket.gethostname(),
                 "files": [{"what": what, "name": name, "from": str(p)} for what, p, name in files]}
     fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)      # it holds keys: the owner's alone
@@ -87,7 +88,7 @@ def backup(config_path=None, to=None, say=print):
             else:
                 tar.add(p, name)
             say(f"  {what}: {p}")
-    if not to:                         # the default folder keeps the last few
+    if not to_file:                    # a folder of them keeps the last few
         for old in sorted(folder.glob("cloudwall-*.tar.gz"))[:-KEEP]:
             old.unlink()
     say(f"Backup written: {out}")

@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 from .. import __version__
-from ..core import config, keys
+from ..core import config, keys, logs
 from ..gather import demo, feeds
 from ..operate import cli, privatelink
 from ..reference import placing
@@ -17,6 +17,7 @@ from ..gather.flightradar24 import Flightradar24
 from ..serve.server import make_server
 from ..gather.logos import Logos
 from .place import AnyActivity, Place, Places
+from .admin import Admin
 from .watch import Watch, sd_notify
 from ..memory.incidents import Incidents
 from ..gather.charts import Charts
@@ -87,6 +88,7 @@ def main():
     ap.add_argument("--version", action="version", version=f"cloudwall {__version__}")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+    logs.attach()                          # the last few hundred lines, for the control board's Log page
 
     if args.new_key:
         key = keys.new_key()
@@ -198,6 +200,7 @@ def main():
     watch = Watch(cfg, places, fa, demo=args.demo, code_changed=server.code_changed, incidents=incidents,
                   data_dir=None if db == ":memory:" else Path(db).parent, cache_dir=tiles_dir.parent)
     server.watch = watch
+    server.admin = Admin(cfg, places, watch, store0, incidents, fa, charts, demo=args.demo)
     watch.start()
     sd_notify("READY=1")                   # (systemd's Type=notify: answering now)
     try:

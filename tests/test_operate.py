@@ -423,3 +423,43 @@ class GuideTest(unittest.TestCase):
                 guide.answer("server.port-taken", "port", str(taken), self.ctx)
         with self.assertRaises(guide.Answered):
             guide.answer("server.port-taken", "port", "80", self.ctx)
+
+
+class UpgradeInPlaceTest(MachineTest):
+    """`cloudwall upgrade` from each starting point, and `cloudwall rollback`."""
+
+    def test_from_the_old_per_user_setup(self):
+        home = self.root / "home" / "pi"
+        (home / ".config/systemd/user/default.target.wants").mkdir(parents=True)
+        (home / ".config/systemd/user/cloudwall.service").write_text("[Service]\nWorkingDirectory=/home/pi/CloudWall\n")
+        (home / ".config/systemd/user/default.target.wants/cloudwall.service").write_text("")
+        (home / "CloudWall").mkdir()
+        (home / "CloudWall/config.toml").write_text('[home]\nlat = 44.06\nlon = -121.31\n')
+        old = home / ".local/share/cloudwall"
+        old.mkdir(parents=True)
+        s = Store(str(old / "cloudwall.db"))
+        s.add_sighting(ts=1.0, day="2026-11-27", hex="a1", callsign="ASA1")
+        s.close()
+        self.at("/etc/passwd").parent.mkdir(parents=True, exist_ok=True)
+        self.at("/etc/passwd").write_text("pi:x:1000:1000::/home/pi:/bin/bash\n")
+        from cloudwall.operate.upgrade import upgrade
+        upgrade(self.system(), say=self.said.append)
+        self.assertTrue(any("Backed up first" in s for s in self.said))
+        self.assertTrue(list((old / "backups").glob("cloudwall-*.tar.gz")))      # the old setup's, before anything changed
+        self.assertIn("44.06", self.at(inst.CONFIG).read_text())                    # its settings moved over
+        con = sqlite3.connect(self.at(f"{inst.VAR}/cloudwall.db"))
+        self.assertEqual(con.execute("SELECT COUNT(*) FROM sightings").fetchone()[0], 1)
+        con.close()
+
+    def test_again_and_back(self):
+        src = self.root / "src" / "cloudwall"
+        shutil.copytree(paths.PACKAGE, src, ignore=shutil.ignore_patterns("__pycache__"))
+        inst.install(inst.Options("wall", source=src), self.system())
+        first = os.readlink(self.at("/opt/cloudwall/current"))
+        (src / "edition.py").write_text("N = 2\n")
+        inst.install(inst.Options("wall", source=src), self.system())
+        second = os.readlink(self.at("/opt/cloudwall/current"))
+        self.assertNotEqual(first, second)
+        self.assertEqual(inst.rollback(self.system()), first)
+        self.assertEqual(os.readlink(self.at("/opt/cloudwall/current")), first)
+        self.assertEqual(inst.rollback(self.system()), second)                      # and forward again

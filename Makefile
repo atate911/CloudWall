@@ -36,8 +36,8 @@ private-link: ## Set up a private link (to reach CloudWall from outside the hous
 system: ## Install CloudWall on this machine as a service (sudo cloudwall install)
 	sudo python3 -m cloudwall install
 
-update: ## After `git pull`: put the new code in place and restart (the same as `system`)
-	sudo python3 -m cloudwall install
+update: ## After `git pull`: back up, put the new code in place, restart, check (`sudo cloudwall rollback` undoes)
+	sudo python3 -m cloudwall upgrade
 
 doctor: ## Check every part of CloudWall on this machine, and say what to do about anything wrong
 	python3 -m cloudwall doctor
@@ -63,9 +63,8 @@ service: ## (old) Now `make system`: says so, and how to move an existing per-us
 	@echo "CloudWall now installs as a system service: make system   (sudo cloudwall install)"
 	@echo "Already running it with the old 'make service'? make migrate   moves it, logbooks and all."
 
-migrate: ## Move an old `make service` setup onto the system install
-	sudo python3 -m cloudwall install
-	sudo python3 -m cloudwall migrate-legacy
+migrate: ## Move an old `make service` setup onto the system install (MIGRATION.md)
+	sudo python3 -m cloudwall upgrade
 
 clean: ## Remove the virtualenv and build leftovers
 	rm -rf $(VENV) build dist *.egg-info

@@ -11,12 +11,21 @@ from ..core import config, health
 from . import backup as backups, doctor as doc, install as inst, legacy
 from .system import System
 
-COMMANDS = ("install", "uninstall", "doctor", "backup", "restore", "migrate-legacy", "report")
+COMMANDS = ("upgrade", "rollback", "install", "uninstall", "doctor", "backup", "restore", "migrate-legacy", "report",
+            "owner", "helper")
 
 
 def parser():
     ap = argparse.ArgumentParser(prog="cloudwall", description="Set up and look after CloudWall.")
     sub = ap.add_subparsers(dest="command", required=True)
+
+    p = sub.add_parser("upgrade", help="from whatever runs here now to this code, in place: back up, update, move an "
+                                       "old setup over, check (run with sudo, from the new code)")
+    p.add_argument("--root", default="/", help=argparse.SUPPRESS)
+    p.add_argument("--dry-run", action="store_true", help="say what would change, change nothing")
+
+    p = sub.add_parser("rollback", help="back to the release before the last update")
+    p.add_argument("--root", default="/", help=argparse.SUPPRESS)
 
     p = sub.add_parser("install", help="set this machine up (run with sudo); again after an update",
                        description="Set this machine up for CloudWall, or bring it up to date: run it again after "
@@ -57,6 +66,11 @@ def parser():
     p.add_argument("--dry-run", action="store_true")
 
     sub.add_parser("report", help="a report to paste when asking for help (keys and positions masked)")
+
+    p = sub.add_parser("owner", help="set the owner's password for the control board (/admin)")
+    p.add_argument("--remove", action="store_true", help="take the owner's password away")
+
+    sub.add_parser("helper", help=argparse.SUPPRESS)        # run by cloudwall-helper.service, as root
     for p in sub.choices.values():
         p.add_argument("--config", help="the settings file (default: as CloudWall finds it)")
     return ap
@@ -75,6 +89,15 @@ def mask(text):
 def main(argv=None):
     args = parser().parse_args(argv)
     cmd = args.command
+    if cmd == "upgrade":
+        from .upgrade import upgrade
+        upgrade(System(args.root, args.dry_run))
+        return
+    if cmd == "rollback":
+        if args.root == "/" and os.geteuid() != 0:
+            raise SystemExit("cloudwall rollback changes the system: run it with sudo")
+        print(f"Back on {inst.rollback(System(args.root))}. `cloudwall doctor` says how it stands.")
+        return
     if cmd == "install":
         system = System(args.root, args.dry_run)
         inst.install(inst.Options(args.role, args.public, args.wall, args.desktop_user, start=not args.no_start), system)
@@ -119,6 +142,28 @@ def main(argv=None):
         user = legacy.legacy_user()
         home = Path(os.path.expanduser(f"~{user}"))
         legacy.migrate(System("/", args.dry_run), home, user, Path.cwd(), args.force)
+    elif cmd == "owner":
+        import getpass
+        from ..core import keys as auth
+        path = auth.owner_file(args.config)
+        if args.remove:
+            path.unlink(missing_ok=True)
+            print(f"The owner's password is taken away ({path}). Until one is set again, the control board "
+                  "changes things only from this machine.")
+            return
+        first = getpass.getpass("The owner's password (at least %d characters): " % auth.MIN_PASSWORD)
+        if getpass.getpass("Again: ") != first:
+            raise SystemExit("cloudwall owner: the two didn't match; nothing changed")
+        try:
+            where = auth.set_password(first, args.config)
+        except (ValueError, OSError) as e:
+            raise SystemExit(f"cloudwall owner: {e}")
+        print(f"Set ({where}). Sign in on the control board: http://<this machine>:5050/admin")
+    elif cmd == "helper":
+        from . import helper
+        if os.geteuid() != 0:
+            raise SystemExit("cloudwall helper is run by systemd, as root")
+        helper.run_pending()
     elif cmd == "report":
         found, _ = doc.doctor(args.config, offline=False, ask=System().ask)
         path = config.find(args.config)

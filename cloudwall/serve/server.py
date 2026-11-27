@@ -83,15 +83,28 @@ def make_server(cfg, places, charts=None, logos=None):
             except (BrokenPipeError, ConnectionResetError):
                 self.close_connection = True
 
-        def _send(self, code, body, ctype="application/json"):
+        def _send(self, code, body, ctype="application/json", headers=None):
             if not isinstance(body, bytes):
                 body = json.dumps(body).encode()
             self.send_response(code)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
+            for k, v in (headers or {}).items():
+                self.send_header(k, v)
             self.end_headers()
             self.wfile.write(body)
+
+        def _admin(self, method):
+            """The control board's API (app/admin.py), handed in once it is made."""
+            path = self.path.split("?")[0]
+            if not path.startswith("/api/admin/"):
+                return False
+            if srv.admin is None:
+                self._send(404, {"error": "the control board isn't running"})
+            else:
+                srv.admin.handle(self, method, path)
+            return True
 
         def _admitted(self):
             """With a key set, only what is asked for under /k/<key>/ is answered, as if the prefix
@@ -140,7 +153,7 @@ def make_server(cfg, places, charts=None, logos=None):
             return urlsplit(origin).netloc not in ours
 
         def do_GET(self):
-            if not self._admitted():
+            if not self._admitted() or self._admin("GET"):
                 return
             path = self.path.split("?")[0]
             q = parse_qs(urlsplit(self.path).query)
@@ -189,6 +202,8 @@ def make_server(cfg, places, charts=None, logos=None):
                 return self.wfile.write(data)
             if path.rstrip("/") == "/kiosk":
                 path = "/index.html"                  # same page; the script switches to kiosk mode
+            elif path.rstrip("/") == "/admin":
+                path = "/admin.html"                  # the control board
             f = (WEB / (path.lstrip("/") or "index.html")).resolve()
             if WEB not in f.parents or not f.is_file():
                 return self._send(404, {"error": "not found"})
@@ -223,13 +238,15 @@ def make_server(cfg, places, charts=None, logos=None):
             self.wfile.write(data)
 
         def do_POST(self):
-            if not self._admitted():
+            if not self._admitted() or self._admin("POST"):
                 return
             path = self.path.split("?")[0]
             if path != "/api/places":
                 return self._send(404, {"error": "not found"})
             if self._foreign():
                 return self._send(403, {"error": "Places can only be changed from CloudWall's own page"})
+            if srv.admin is not None and not srv.admin.may_change(self):
+                return self._send(403, {"error": "Only the owner can set up places: sign in on the control board (/admin)"})
             body = self._body()
             if body is None:
                 return self._send(400, {"error": "bad json"})
@@ -244,13 +261,15 @@ def make_server(cfg, places, charts=None, logos=None):
             return self._send(200, {"place": place.summary()})
 
         def do_DELETE(self):
-            if not self._admitted():
+            if not self._admitted() or self._admin("DELETE"):
                 return
             q = parse_qs(urlsplit(self.path).query)
             if self.path.split("?")[0] != "/api/places":
                 return self._send(404, {"error": "not found"})
             if self._foreign():
                 return self._send(403, {"error": "Places can only be changed from CloudWall's own page"})
+            if srv.admin is not None and not srv.admin.may_change(self):
+                return self._send(403, {"error": "Only the owner can remove places: sign in on the control board (/admin)"})
             try:
                 places.remove((q.get("id") or [""])[0])
             except ValueError as e:
@@ -260,5 +279,6 @@ def make_server(cfg, places, charts=None, logos=None):
     s = cfg["server"]
     srv = ThreadingHTTPServer((s["host"], s["port"]), Handler)
     srv.watch = None                    # the health watcher (app/watch.py), set once it is made
+    srv.admin = None                    # the control board's API (app/admin.py), likewise
     srv.code_changed = code_changed
     return srv
