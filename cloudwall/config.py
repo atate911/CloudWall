@@ -40,7 +40,9 @@ DEFAULTS = {
     "source": {"urls": ["https://opendata.adsb.fi/api/v3/lat/{lat}/lon/{lon}/dist/{radius}",
                         "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"],
                "merge": False},
-    "flightradar24": {"api_key": "", "monthly_limit": 0, "safety_margin": 0.15, "billing_day": 1,
+    # The monthly allowance: Flightradar24 counts credits (monthly_credits), FlightAware lookups
+    # (monthly_limit); either name is taken for either provider.
+    "flightradar24": {"api_key": "", "monthly_credits": 0, "safety_margin": 0.15, "billing_day": 1,
                       "daily_limit": 0, "mode": "always",
                       "general_aviation": False, "sandbox": False},
     "flightaware": {"api_key": "", "monthly_limit": 0, "safety_margin": 0.15, "billing_day": 1,
@@ -48,7 +50,8 @@ DEFAULTS = {
                     "general_aviation": False},
     # Map behind the radar: "dark", "light", "satellite", "osm" or "off" (or set url = a tile URL template)
     # route: the map behind the flight's route on its card, one of the same styles (not a url), or "off"
-    "map": {"style": "dark", "opacity": 0.45, "url": "", "attribution": "", "route": "satellite"},
+    # cache_mb: the most disk the downloaded map and chart tiles may take, all layers together
+    "map": {"style": "dark", "opacity": 0.45, "url": "", "attribution": "", "route": "satellite", "cache_mb": 2000},
     # Airline logos on the flight card, fetched by airline code and cached on disk
     "logos": {"enabled": True, "url": ""},
     # Extra free data: military jets heard without a position, temporary flight
@@ -77,10 +80,27 @@ NUMBER = (int, float)
 OPTIONAL = {
     "home": {"zip": (str, int), "elevation_ft": NUMBER},
     "source": {"url": str},
-    "flightradar24": {"monthly_credits": NUMBER},
+    "flightradar24": {"monthly_limit": NUMBER},
     "flightaware": {"monthly_credits": NUMBER},
     "map": {"atc": str},
 }
+# Settings that take one of a few words. (A word CloudWall doesn't know would otherwise quietly
+# act as one of the others, as an unknown provider mode acted as "fallback".)
+CHOICES = {
+    ("kiosk", "view"): ("card", "radar", "map", "sky"),
+    ("kiosk", "radar"): ("chart", "atc"),
+    ("kiosk", "density"): ("simple", "detailed"),
+    ("tracking", "when_idle"): ("pause", "log"),
+    ("flightradar24", "mode"): ("always", "fallback"),
+    ("flightaware", "mode"): ("always", "fallback"),
+    ("map", "style"): ("dark", "light", "satellite", "streets", "osm", "sectional", "terminal", "ifr-low", "ifr-high",
+                       "custom", "off"),
+    ("map", "route"): ("satellite", "dark", "light", "streets", "osm", "off"),
+    ("map", "atc"): ("off", "ifr-low", "ifr-high", "sectional", "terminal"),
+}
+BETWEEN = {("map", "opacity"): (0, 1), ("kiosk", "range_nm"): (0, 30), ("map", "cache_mb"): (0, 10 ** 6),
+           ("flightradar24", "safety_margin"): (0, 0.9), ("flightaware", "safety_margin"): (0, 0.9),
+           ("flightradar24", "billing_day"): (1, 28), ("flightaware", "billing_day"): (1, 28)}
 MORE_THAN_ZERO = {"tracking": ("radius_nm", "overhead_nm", "max_overhead_alt_ft", "poll_seconds", "idle_after_seconds")}
 
 
@@ -122,10 +142,15 @@ def check(section, values):
             raise ValueError(f"[{section}] {key} must be {words}, not {v!r}")
         if key in MORE_THAN_ZERO.get(section, ()) and v <= 0:
             raise ValueError(f"[{section}] {key} must be more than 0, not {v!r}")
-    if section == "tracking" and str(values.get("when_idle", "pause")).lower() not in ("pause", "log"):
-        raise ValueError(f'[tracking] when_idle must be "pause" or "log", not {values["when_idle"]!r}')
-    if section == "kiosk" and values.get("density", "simple") not in ("simple", "detailed"):
-        raise ValueError(f'[kiosk] density must be "simple" or "detailed", not {values["density"]!r}')
+    for key, v in values.items():
+        words = CHOICES.get((section, key))
+        # exactly as written, except where the code itself ignores case (the map styles, when_idle)
+        if words and (str(v).lower() if section == "map" or key == "when_idle" else v) not in words:
+            listed = ", ".join(f'"{w}"' for w in words[:-1]) + f' or "{words[-1]}"'
+            raise ValueError(f"[{section}] {key} must be {listed}, not {v!r}")
+        span = BETWEEN.get((section, key))
+        if span and isinstance(v, NUMBER) and not span[0] <= v <= span[1]:
+            raise ValueError(f"[{section}] {key} must be from {span[0]} to {span[1]}, not {v!r}")
     if section == "kiosk" and not re.fullmatch(r"\s*|\s*([01]?\d|2[0-3]):[0-5]\d\s*-\s*([01]?\d|2[0-3]):[0-5]\d\s*", str(values.get("quiet", ""))):
         raise ValueError(f'[kiosk] quiet must be a span of hours like "23:00-06:30", or "" for none, not {values["quiet"]!r}')
     if section == "server" and "port" in values and not (isinstance(values["port"], int) and 0 < values["port"] < 65536):
@@ -164,6 +189,8 @@ def find(path=None):
 def load(path=None):
     cfg = copy.deepcopy(DEFAULTS)
     path = find(path)
+    if path and not path.exists():          # named by --config or $CLOUDWALL_CONFIG, but not there
+        raise ValueError("no such file (cloudwall --init-config writes one to start from)")
     if path:
         with open(path, "rb") as f:
             for section, values in tomllib.load(f).items():
@@ -175,6 +202,10 @@ def load(path=None):
                     cfg["airport"] = dict(values)    # this airport only: nothing carries over from the defaults
                 elif section == "home" and "zip" in values and "lat" not in values and "lon" not in values:
                     cfg["home"] = dict(values, name=values.get("name", "Home"))   # placed by ZIP code, not the placeholder
+                elif section == "home" and "zip" in values:
+                    log.warning("config: [home] gives both zip and lat/lon: lat/lon are used and the ZIP code "
+                                "ignored (take out lat and lon to be placed by the ZIP code)")
+                    cfg["home"].update(values)
                 else:
                     cfg.setdefault(section, {}).update(values)
     src = cfg["source"]
@@ -334,4 +365,5 @@ def init(path=None):
         return path, False
     path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(EXAMPLE, path)
+    os.chmod(path, 0o600)            # it will hold keys: readable by its owner only
     return path, True

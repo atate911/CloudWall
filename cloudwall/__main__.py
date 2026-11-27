@@ -9,6 +9,7 @@ from .server import make_server
 from .logos import Logos
 from .place import AnyActivity, Place, Places
 from .charts import Charts
+from .tiles import keep_tidy
 from .enrich import KINDS, Enricher
 from .shared import Shared
 from .store import Store, another_places
@@ -121,6 +122,7 @@ def main():
     store0 = Store(db_for(first_id))
     tiles_dir = (Path(db).parent if db != ":memory:" else config.default_db_path().parent) / "tiles"
     charts = Charts(cfg, tiles_dir)   # the radar's map and the FAA charts
+    keep_tidy(tiles_dir, cfg["map"]["cache_mb"])
     logos = Logos(cfg, tiles_dir.parent / "logos")
     # What every place shares, kept in the first place's file: one paid provider with one budget,
     # and one lookup of each route, airframe and photo, whichever places see the flight.
@@ -179,7 +181,8 @@ def main():
              charts.atc.style if charts.atc else "off", tiles_dir)
     log.info("config: %s", cfg["_path"] or "built-in defaults")
     if cfg["server"]["key"]:
-        log.info("private: answering only under /k/%s/ (the wall panel at /k/%s/kiosk)", cfg["server"]["key"], cfg["server"]["key"])
+        # the key itself is not logged: logs are read by more people and kept longer than the config
+        log.info("private link: answering only under /k/<key>/ (cloudwall --private-link show prints the links)")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -140,8 +140,13 @@ class TFRs:
         self.details = {}          # NOTAM key -> (last modified, parsed detail)
 
     def fetch(self):
-        """Every restriction's outline, as the FAA's map service lists them."""
-        return (self.fetch_json(SHAPES, timeout=30) or {}).get("features") or []
+        """Every restriction's outline, as the FAA's map service lists them. Details of those the
+        FAA no longer lists are forgotten, so they don't pile up over months."""
+        features = (self.fetch_json(SHAPES, timeout=30) or {}).get("features") or []
+        listed = {((f.get("properties") or {}).get("NOTAM_KEY") or "").split("-")[0] for f in features}
+        if features:
+            self.details = {nid: d for nid, d in self.details.items() if nid in listed}
+        return features
 
     def near(self, features, home, radius_nm=30, now=None):
         """The restrictions among fetch()'s within radius_nm of home, with their details: those

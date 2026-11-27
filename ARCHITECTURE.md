@@ -171,9 +171,12 @@ In short:
 | `GET /tiles/<layer>/z/x/y`, `GET /logos/<IATA>` | Cached map/chart tile; cached airline logo. |
 | `GET /`, `/kiosk`, other paths | The page (`web/index.html`) and its files. |
 
-There is no authentication: CloudWall is meant for a home network. The two requests that change
-anything (`POST` and `DELETE /api/places`) are refused when a browser says they come from another
-site's page (`Origin`, `Sec-Fetch-Site`), and a request body over 16 KB isn't read.
+There are no user accounts yet: CloudWall is meant for a home network, and with `[server] key` set
+(`access.py`) it answers only under `/k/<key>/`, a password carried in the address. Anyone who can
+reach it, or holds the link, can do everything the page offers. (An owner sign-in for settings is
+planned: see [ROADMAP.md](ROADMAP.md).) The two requests that change anything (`POST` and
+`DELETE /api/places`) are refused when a browser says they come from another site's page
+(`Origin`, `Sec-Fetch-Site`), and a request body over 16 KB isn't read.
 
 ### What is stored where
 
@@ -184,7 +187,7 @@ site's page (`Origin`, `Sec-Fetch-Site`), and a request body over 16 KB isn't re
 | Both | The place the logbook is kept at. Cached rows past their ages are cleared. |
 | `places.json` beside them | Places added from a screen, each with its id. |
 | `tiles/`, `logos/` beside them | Downloaded tiles (a month) and logos (three months). |
-| Browser `localStorage` (`cloudwall.*`) | This screen's settings: place, scope, radar style, tracks, range, night, sound. |
+| Browser `localStorage` (`cloudwall.*`) | This screen's settings: place, scope, map style, radar style, tracks, range, night, sound, the Sky view's compass, the Nearby pane and its share, the card and its picture. |
 | Browser `sessionStorage` (`cloudwall.pin`) | The flight this tab follows. |
 
 ## The page (`cloudwall/web/`)

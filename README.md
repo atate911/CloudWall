@@ -234,6 +234,7 @@ make service      # systemd user service; `make logs` to follow, `make service-r
 |---|---|
 | Settings | `--config`, `$CLOUDWALL_CONFIG`, `./config.toml`, then `~/.config/cloudwall/config.toml` |
 | Logbook database | `~/.local/share/cloudwall/cloudwall.db` (or `[storage] db_path`, or `--db`); each extra place gets its own beside it, such as `cloudwall-cabin.db`, and places set up on the desktop are in `places.json` there |
+| Map tiles and airline logos | `tiles/` and `logos/` beside the logbook, downloaded once and kept (tiles a month, within `[map] cache_mb`; logos three months) |
 | Port | 5050 (`[server] port`, or `--port`) |
 
 ## Locations

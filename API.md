@@ -39,7 +39,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 |---|---|---|
 | `api` | always | The version of this shape: `1`. |
 | `now` | always | The server's clock when it answered. |
-| `status` | always | The position feed: `source` (its host), `ok`, `updated` (when positions were last received) and `error` (the last failure's words, or null). |
+| `status` | always | The position feed: `source` (its host), `ok`, `updated` (when positions were last received), `error` (the last failure's words, or null) and `storage` (why the logbook or heatmap couldn't be saved on the last update, or null: the board carries on without them). |
 | `place` | always | The id of the place this answer is for. |
 | `places` | always | Every place being watched: `id`, `name`, `icao`, `iata`, `city`, `zip`, `lat` and `lon` (to three decimals, a few hundred feet, so a screen using its own location can find a place already there), and `added` (true if it was set up from a screen, and so can be removed). |
 | `home` | always | The place itself: `name`, `lat`, `lon`, `elevation_ft` (and `zip` if it was set by one). |

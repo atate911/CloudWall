@@ -12,6 +12,7 @@ letters in four groups that can be said aloud ("tafo-kemi-luza-nobe"), about 50 
 or without the hyphens, in either case, it is the same key.
 """
 import hmac
+import os
 import re
 import secrets
 import socket
@@ -93,7 +94,15 @@ def write_key(path, key):
     if got != key:
         raise ValueError(f"{path}: couldn't set [server] key (it reads {got!r})")
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(new)
+    # written whole and then put in place, so a crash halfway never leaves half a config; and not
+    # readable by other users, since the file now holds a key (its group keeps what it had)
+    mode = (path.stat().st_mode & 0o770) if path.exists() else 0o600
+    tmp = path.with_name(path.name + ".tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+    with os.fdopen(fd, "w") as f:
+        f.write(new)
+    os.chmod(tmp, mode)
+    os.replace(tmp, path)
 
 
 def lan_address():

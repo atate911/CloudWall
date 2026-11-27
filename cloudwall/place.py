@@ -40,6 +40,7 @@ class Place:
         if demo:
             self.activity.idle = lambda: False      # demo traffic costs nothing
         self.stopped = threading.Event()
+        self.threads = []
         self.added = False                          # set up from a screen rather than the config file
         # what its threads fetch, beside the tracker's positions
         self.weather = None         # the airport's latest report, in short (the header, the idle card)
@@ -103,6 +104,23 @@ class Place:
         self.stopped.set()
         self.activity.touch()                       # wakes the poller if it's waiting for a screen
 
+    def retire(self):
+        """Stopped for good, as a place removed from a screen: once its threads have ended (each
+        within its current step), its logbook file and its feed's workers are let go, so adding
+        and removing places doesn't leave connections and threads behind."""
+        self.stop()
+
+        def let_go():
+            for t in self.threads:
+                t.join(timeout=60)
+            for close in (getattr(self.source, "close", None), self.store.close):
+                if close:
+                    try:
+                        close()
+                    except Exception as e:
+                        log.warning("%sclosing up after removal: %s", self.tag, e)
+        threading.Thread(target=let_go, daemon=True, name=f"retire-{self.id}").start()
+
     def _keep_going(self, loop):
         """A thread's body. An error nobody foresaw is logged with where it happened and the loop
         starts again in a few seconds: otherwise the thread would end without a word, and the
@@ -115,7 +133,9 @@ class Place:
                 self.stopped.wait(5)
 
     def _thread(self, loop, name):
-        threading.Thread(target=self._keep_going, args=(loop,), daemon=True, name=f"{name}-{self.id}").start()
+        t = threading.Thread(target=self._keep_going, args=(loop,), daemon=True, name=f"{name}-{self.id}")
+        self.threads.append(t)
+        t.start()
 
     def start(self):
         self._thread(self._poll, "poll")
@@ -303,7 +323,7 @@ class Places:
             place = self.places.pop(pid)
             del self.added[pid]
             self._save()
-        place.stop()
+        place.retire()          # (its own logbook file: the first place, which others share, can't be removed)
         log.info("place %s removed", pid)
         if self.on_change:
             self.on_change()

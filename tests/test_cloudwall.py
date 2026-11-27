@@ -2541,3 +2541,159 @@ class KioskQuietTest(unittest.TestCase):
             with self.assertRaises(ValueError, msg=bad):
                 config.check("kiosk", {"quiet": bad})
         self.assertEqual(config.DEFAULTS["kiosk"]["quiet"], "")
+
+
+class FaultToleranceTest(unittest.TestCase):
+    """What the review of the whole system found, held to: a fault in one part is reported and
+    the rest carries on, nothing grows without bound, and a mistake in the config is named."""
+
+    def test_a_logbook_that_cant_be_written_doesnt_stop_the_board(self):
+        store = Store(":memory:")
+        t = Tracker(config.load(), store, StubEnricher())
+
+        def full(**f):
+            raise OSError(28, "No space left on device")
+        store.add_sighting = full
+        with self.assertLogs("cloudwall", "ERROR") as logs:
+            t.update([plane("a1", "ASA512", 1.0)], "test")
+        s = t.snapshot()
+        self.assertTrue(s["status"]["ok"])                              # the board is up
+        self.assertEqual(s["hero"]["hex"], "a1")
+        self.assertIn("No space left", s["status"]["storage"])          # and says what it couldn't keep
+        self.assertIn("carries on", logs.output[0])
+        t.update([plane("a1", "ASA512", 0.9)], "test")                  # said once, not on every update
+        del store.add_sighting
+        t.update([plane("b2", "UAL1", 0.8)], "test")
+        self.assertIsNone(t.snapshot()["status"]["storage"])            # and clears when it works again
+
+    def test_todays_count_survives_a_restart(self):
+        store = Store(":memory:")
+        Tracker(config.load(), store, StubEnricher()).update([plane("a1", "ASA512", 1.0)], "test")
+        self.assertEqual(Tracker(config.load(), store, StubEnricher()).snapshot()["today"], 1)
+
+    def test_followed_flights_are_capped(self):
+        from cloudwall import tracker
+        t = Tracker(config.load(), Store(":memory:"), StubEnricher())
+        for i in range(tracker.MAX_PINS + 20):
+            t.want_pin(f"{i:06x}")
+        self.assertEqual(len(t.pins), tracker.MAX_PINS)
+        t.want_pin("000000")                                            # one already followed still counts
+        self.assertIn("000000", t.pins)
+
+    def test_a_hanging_feed_is_skipped(self):
+        import threading
+        release = threading.Event()
+        real = sources.get_json
+
+        def fake(url, timeout=0):
+            if url == RX:
+                release.wait(5)                                         # the receiver hangs
+                return {"now": 0, "aircraft": []}
+            return {"now": time.time() * 1000, "ac": [{"hex": "abc123", "lat": 45.6, "lon": -122.6,
+                                                       "alt_baro": 9000, "seen_pos": 0}]}
+        sources.get_json = fake
+        m = sources.Merged([RX, PUB])
+        old, sources.MERGE_WAIT_S = sources.MERGE_WAIT_S, 0.2
+        try:
+            with self.assertLogs("cloudwall.sources", "WARNING"):
+                got = m.fetch(45.6, -122.6, 15)
+            self.assertEqual([a["hex"] for a in got], ["abc123"])       # the public feed's answer, on time
+        finally:
+            sources.MERGE_WAIT_S, sources.get_json = old, real
+            release.set()
+            m.close()
+
+    def test_tile_cache_is_kept_within_bounds(self):
+        import os
+        import tempfile
+        from cloudwall import tiles
+        with tempfile.TemporaryDirectory() as d:
+            now = time.time()
+            for i in range(10):
+                p = Path(d, "layer", "12", str(i), "1.tile")
+                p.parent.mkdir(parents=True)
+                p.write_bytes(b"x" * 1000)
+                os.utime(p, (now - i * 3600, now - i * 3600))           # tile 9 is the oldest
+            stale = Path(d, "layer", "12", "old.tile")
+            stale.write_bytes(b"x")
+            os.utime(stale, (now - 3 * tiles.MAX_AGE,) * 2)
+            Path(d, "layer", "half.tmp").write_bytes(b"x")
+            removed, kept = tiles.sweep(d, 5000, now)
+            self.assertLessEqual(kept, 4500)
+            left = sorted(int(p.parent.name) for p in Path(d).rglob("*.tile"))
+            self.assertEqual(left, list(range(len(left))))              # the newest are the ones kept
+            self.assertFalse(stale.exists() or Path(d, "layer", "half.tmp").exists())
+            self.assertFalse(Path(d, "layer", "12", "9").exists())      # emptied folders go too
+
+    def test_restrictions_the_faa_dropped_are_forgotten(self):
+        from cloudwall.tfr import TFRs
+        feature = {"properties": {"NOTAM_KEY": "6/1111-1-FDC-F"}}
+        t = TFRs(fetch_json=lambda url, timeout=0: {"features": [feature]})
+        t.details = {"6/1111": ("x", {}), "6/2222": ("y", {})}
+        t.fetch()
+        self.assertEqual(list(t.details), ["6/1111"])
+
+    def test_a_removed_place_lets_go_of_its_file(self):
+        from cloudwall.place import Place
+        [pc] = config.places(config.load())
+        store = Store(":memory:")
+        place = Place(pc, store, sources.Demo(), demo=True)
+        closed = []
+        store.close = lambda: closed.append(True)
+        place.retire()
+        for _ in range(50):
+            if closed:
+                break
+            time.sleep(0.05)
+        self.assertEqual(closed, [True])
+
+
+class ConfigMistakesTest(unittest.TestCase):
+    def load(self, text):
+        import tempfile
+        with tempfile.NamedTemporaryFile("w", suffix=".toml", delete=False) as f:
+            f.write(text)
+        self.addCleanup(Path(f.name).unlink)
+        return config.load(f.name)
+
+    def test_a_word_cloudwall_doesnt_know_is_refused_by_name(self):
+        for text, words in (('[flightradar24]\nmode = "alwyas"', "[flightradar24] mode must be"),
+                            ('[kiosk]\nview = "radr"', "[kiosk] view must be"),
+                            ('[map]\nstyle = "sattelite"', "[map] style must be"),
+                            ('[map]\nopacity = 4', "[map] opacity must be from 0 to 1")):
+            with self.assertRaises(ValueError) as e:
+                self.load(text)
+            self.assertIn(words, str(e.exception))
+        self.assertEqual(self.load('[map]\nstyle = "Satellite"')["map"]["style"], "Satellite")   # case is the map's own
+
+    def test_a_config_file_that_isnt_there_is_said_plainly(self):
+        with self.assertRaises(ValueError) as e:
+            config.load("/nonexistent/cloudwall.toml")
+        self.assertIn("no such file", str(e.exception))
+
+    def test_zip_beside_lat_and_lon_is_warned_about(self):
+        with self.assertLogs("cloudwall", "WARNING") as logs:
+            cfg = self.load('[home]\nzip = "97702"\nlat = 45.59\nlon = -122.47')
+        self.assertEqual(cfg["home"]["lat"], 45.59)
+        self.assertIn("ZIP code ignored", logs.output[0])
+
+    def test_both_names_for_a_monthly_allowance_are_taken(self):
+        from cloudwall.flightradar24 import Flightradar24
+        for name in ("monthly_credits", "monthly_limit"):
+            cfg = self.load(f'[flightradar24]\n{name} = 30000')
+            self.assertEqual(Flightradar24(cfg, Store(":memory:")).monthly_limit, 30000)
+
+    def test_a_written_config_is_readable_by_its_owner_only(self):
+        import os
+        import stat
+        import tempfile
+        from cloudwall import access
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d, "config.toml")
+            access.write_key(p, "tafo-kemi-luza-nobe")
+            self.assertEqual(stat.S_IMODE(os.stat(p).st_mode), 0o600)
+            os.chmod(p, 0o644)
+            access.write_key(p, "")
+            self.assertEqual(stat.S_IMODE(os.stat(p).st_mode), 0o640)   # world-readable no longer (the group keeps its read)
+            path, _ = config.init(Path(d, "new.toml"))
+            self.assertEqual(stat.S_IMODE(os.stat(path).st_mode), 0o600)

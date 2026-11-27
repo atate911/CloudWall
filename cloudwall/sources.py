@@ -4,6 +4,7 @@ import math
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as WaitedTooLong
 from urllib.parse import urlparse
 
 from .geo import haversine_nm
@@ -146,6 +147,7 @@ def placed_with_times(data, received):
 
 
 MERGE_MAX_AGE_S = 60        # a position older than this is left out, as readsb itself drops it
+MERGE_WAIT_S = 25           # the longest an update waits for either side: one that hangs is skipped
 MERGE_PROJECT_MAX_S = 15    # carry a position along its track for at most this long
 
 
@@ -183,7 +185,23 @@ class Merged:
         self.name = " + ".join(f.name for f in (self.receiver, self.public) if f)
         self.last = {}               # hex -> (time of the position used last, that record)
         self.down = set()            # feeds known to be failing, so each is complained of once
-        self.pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="feed")
+        # four, not two: a feed that hangs past MERGE_WAIT_S still holds its worker until its own
+        # timeout, and the next update mustn't queue behind it
+        self.pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="feed")
+
+    def close(self):
+        """The place is gone: let the workers go."""
+        self.pool.shutdown(wait=False, cancel_futures=True)
+
+    def _answer(self, future, label):
+        try:
+            return future.result(timeout=MERGE_WAIT_S)
+        except WaitedTooLong:
+            e = TimeoutError(f"no answer in {MERGE_WAIT_S} s")
+            if label not in self.down:
+                self.down.add(label)
+                log.warning("merged feeds: %s isn't answering (%s); carrying on with the other", label, e)
+            return None, e
 
     def _ask(self, feed, lat, lon, radius_nm, label):
         try:
@@ -201,7 +219,7 @@ class Merged:
     def fetch(self, lat, lon, radius_nm):
         jobs = [(self.receiver, "your receiver")] + ([(self.public, "the public feed")] if self.public else [])
         futures = [self.pool.submit(self._ask, f, lat, lon, radius_nm, label) for f, label in jobs]
-        answers = [fu.result() for fu in futures]
+        answers = [self._answer(fu, label) for fu, (_, label) in zip(futures, jobs)]
         now = self.clock()
         if all(got is None for got, _ in answers):
             raise answers[0][1]

@@ -8,6 +8,7 @@ internet outages, and means the display only ever talks to your own server.
 import hashlib
 import logging
 import math
+import os
 import threading
 import time
 import urllib.error
@@ -34,6 +35,63 @@ STYLES = {
     # OpenStreetMap's own tiles: fine for light personal use like this, with the cache
     "osm": ("https://tile.openstreetmap.org/{z}/{x}/{y}.png", OSM),
 }
+
+
+def sweep(root, max_bytes, now=None):
+    """Keep the tile cache within bounds: tiles past twice their age (they would be fetched again
+    anyway) and leftovers from interrupted writes go, then the oldest until the whole cache is
+    under max_bytes. Returns (files removed, bytes kept)."""
+    now = now or time.time()
+    files, removed = [], 0
+    for dirpath, _, names in os.walk(root):
+        for name in names:
+            p = os.path.join(dirpath, name)
+            try:
+                st = os.stat(p)
+            except OSError:
+                continue
+            if name.endswith(".tmp") or now - st.st_mtime > 2 * MAX_AGE:
+                try:
+                    os.remove(p)
+                    removed += 1
+                except OSError:
+                    pass
+            else:
+                files.append((st.st_mtime, st.st_size, p))
+    total = sum(f[1] for f in files)
+    if total > max_bytes:
+        for _, size, p in sorted(files):
+            try:
+                os.remove(p)
+            except OSError:
+                continue
+            removed += 1
+            total -= size
+            if total <= max_bytes * 0.9:        # a little under, so it isn't swept again tomorrow
+                break
+    for dirpath, dirs, names in os.walk(root, topdown=False):
+        if dirpath != str(root) and not dirs and not names:
+            try:
+                os.rmdir(dirpath)
+            except OSError:
+                pass
+    return removed, total
+
+
+def keep_tidy(root, max_mb, every_s=86400):
+    """Sweep the cache a minute after starting and then once a day, on a thread of its own."""
+    def loop():
+        time.sleep(60)
+        while True:
+            try:
+                removed, kept = sweep(root, max_mb * 1e6)
+                if removed:
+                    log.info("tile cache: %d old files removed, %.0f MB kept", removed, kept / 1e6)
+            except Exception as e:
+                log.warning("tile cache sweep failed: %s", e)
+            time.sleep(every_s)
+    if max_mb and max_mb > 0:
+        threading.Thread(target=loop, daemon=True, name="tile-sweep").start()
 
 
 def tile_corner(z, x, y):

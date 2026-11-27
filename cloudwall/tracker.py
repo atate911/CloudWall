@@ -41,6 +41,9 @@ def emergency_code(a):
     return a.get("squawk") if a.get("squawk") in EMERGENCIES else EMERGENCY_STATUS.get(a.get("emergency_status"))
 
 
+MAX_PINS = 40             # flights followed at once, across every screen
+
+
 class Tracker:
     def __init__(self, cfg, store, enricher):
         if "runways" not in cfg["airport"]:      # not yet filled in by config.places (tests, scripts)
@@ -63,7 +66,11 @@ class Tracker:
         self.flow = None
         self.flow_at = 0.0        # when an arrival last showed which way the airport is landing
         self.complained = 0.0     # when a record that couldn't be used was last reported
-        self.status = {"source": None, "ok": False, "updated": 0, "error": None}
+        self.storage_said = 0.0   # when the logbook's file last couldn't be written or read
+        self.storage_error = None # why, while it can't (for the screens and the health check)
+        self.today = (0, 0)       # flyovers and seats logged today, as last read
+        self._stored("the logbook", lambda: setattr(self, "today", self.logbook.today()))
+        self.status = {"source": None, "ok": False, "updated": 0, "error": None, "storage": None}
         self.emergency_seen = {}  # hex -> (consecutive updates squawking, first seen)
         self.emergency = []
 
@@ -192,6 +199,8 @@ class Tracker:
     def want_pin(self, hexid):
         """A screen following this aircraft asked for data."""
         if isinstance(hexid, str) and re.fullmatch(r"[~0-9a-z]{1,10}", hexid):
+            if hexid not in self.pins and len(self.pins) >= MAX_PINS:
+                return          # (more than any household's screens: someone is asking for every aircraft)
             self.pins[hexid] = time.time()
 
     def _pins_wanted(self, now):
@@ -227,6 +236,20 @@ class Tracker:
             self.complained = time.time()
             log.warning("%s of %s couldn't be worked out (%s: %s): going on without",
                         what, a.get("hex"), type(e).__name__, e)
+
+    def _stored(self, what, write):
+        """Write to (or read from) the place's file without letting a failure stop the board: a
+        full disk or a locked or damaged file loses that flyover or that minute of the heatmap,
+        and is said once every ten minutes, while the screens go on showing the traffic."""
+        try:
+            write()
+            return True
+        except Exception as e:
+            self.storage_error = f"{what} couldn't be saved ({type(e).__name__}: {e})"
+            if time.time() - self.storage_said > 600:
+                self.storage_said = time.time()
+                log.error("%s: the board carries on without it", self.storage_error)
+            return False
 
     def update(self, raw, source, idle=False, contrails=None):
         """A new answer from the feed. idle: no screen is open, so no lookup is paid for.
@@ -275,18 +298,23 @@ class Tracker:
                     self._left_out("the activity", a, e)
         by_hex = {a["hex"]: a for a in raw}
         with self.lock:
+            self.storage_error = None
             self.hero_hex = self._pick_hero(by_hex)
-            self.tracks.remember(airborne, now, beyond)
+            self._stored("the heatmap", lambda: self.tracks.remember(airborne, now, beyond))
             self._update_flow(raw, now)
             self._describe(raw, beyond)       # before the logbook: its MEDICAL badge is worked out here
-            for a in airborne:
-                if self._overhead(a) and not a.get("coasting"):     # the logbook takes reported positions only
-                    self.logbook.record(a, now)
-            self.logbook.tidy(now)
+
+            def log_overhead():
+                for a in airborne:
+                    if self._overhead(a) and not a.get("coasting"):     # the logbook takes reported positions only
+                        self.logbook.record(a, now)
+                self.logbook.tidy(now)
+                self.today = self.logbook.today()
+            self._stored("the logbook", log_overhead)
             self.aircraft = raw
             self.beyond = beyond
             self.emergency = emergency
-            self.status = {"source": source, "ok": True, "updated": now, "error": None}
+            self.status = {"source": source, "ok": True, "updated": now, "error": None, "storage": self.storage_error}
 
     def _describe(self, raw, beyond):
         """What each aircraft is doing and the arrivals' landing order (situation.py), and the
@@ -349,7 +377,7 @@ class Tracker:
                 inbound = [a for a in self.aircraft if not a["on_ground"] and a["cpa_s"] > 0
                            and a["cpa_nm"] <= self.cfg["tracking"]["overhead_nm"]]
                 nxt = min(inbound, key=lambda a: a["cpa_s"], default=None)
-            today, seats_today = self.logbook.today()
+            today, seats_today = self.today
             return {
                 "now": time.time(), "home": self.home, "airport": self.cfg["airport"],
                 "tracking": self.cfg["tracking"], "hero": hero, "pinned": chosen and chosen["hex"],
