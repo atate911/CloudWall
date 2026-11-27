@@ -529,8 +529,9 @@ class UpgradeInPlaceTest(MachineTest):
 
     def test_settings_that_wouldnt_start_stop_the_upgrade_before_it_begins(self):
         home = self.root / "home" / "pi"
-        (home / ".config/systemd/user").mkdir(parents=True)
+        (home / ".config/systemd/user/default.target.wants").mkdir(parents=True)
         (home / ".config/systemd/user/cloudwall.service").write_text("[Service]\n")
+        (home / ".config/systemd/user/default.target.wants/cloudwall.service").write_text("")   # enabled, as `make service` left it
         (home / ".config/cloudwall").mkdir(parents=True)
         (home / ".config/cloudwall/config.toml").write_text('[tracking]\nradius_nm = "far"\n')
         self.at("/etc/passwd").parent.mkdir(parents=True, exist_ok=True)
@@ -542,6 +543,17 @@ class UpgradeInPlaceTest(MachineTest):
         self.assertIn("nothing was changed", str(e.exception))
         self.assertEqual(system.done, [])
         self.assertFalse(self.at("/opt").exists())
+
+    def test_running_it_again_after_the_move_changes_nothing(self):
+        """Once moved, the old service is left disabled with its files kept: it isn't an old setup to
+        move again."""
+        self.test_the_new_service_starts_only_after_the_move()
+        # what `systemctl --user disable` did on the real machine (here the command is only recorded)
+        (self.root / "home/pi/.config/systemd/user/default.target.wants/cloudwall.service").unlink()
+        from cloudwall.operate.upgrade import upgrade
+        system = self.system()
+        upgrade(system, say=self.said.append)
+        self.assertFalse([d for d in system.done if "disable --now" in d or d.startswith("copy logbook")])
 
     def test_again_and_back(self):
         src = self.root / "src" / "cloudwall"

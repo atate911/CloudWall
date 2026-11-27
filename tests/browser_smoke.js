@@ -647,6 +647,8 @@ const SCENARIOS = {
       await page.evaluate((h) => { location.hash = h; }, p);
       await page.waitForFunction((h) => document.querySelector("#nav a.on")?.getAttribute("href") === "#" + h
         && document.querySelector("main h1, main h2"), p, { timeout: 8000 });
+      if (["positions", "routes", "maps", "screens", "access", "storage"].includes(p))    // the settings come after the page
+        await page.waitForSelector("main .row", { state: "attached", timeout: 8000 });
       out.pages[p] = await page.$$eval("main .row", (r) => r.length);
     }
     await page.evaluate(() => { location.hash = "positions"; });

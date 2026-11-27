@@ -104,7 +104,10 @@ def check_installs(m):
         where = f"{i['kind']} service ({i['unit']})"
         yield health.ok("install", f"{where}: settings {i['config'] or 'none'}, data {i['data']}"
                         + ("" if i["active"] is None else ", running" if i["active"] else ", not running"))
-        if i["kind"] == "user":
+        if i["kind"] == "user" and not (i["enabled"] or i["active"]):
+            yield health.off("install", f"{i['user']}'s old per-user service is turned off (its files can go: MIGRATION.md, "
+                                        "'When you're happy')")
+        elif i["kind"] == "user":
             yield health.trouble("service.legacy", f"CloudWall runs as {i['user']}'s per-user service from {i.get('checkout')}")
             if i["enabled"] and not i["linger"]:
                 f = health.trouble("service.no-linger", f"{i['user']}'s CloudWall starts only while {i['user']} is logged in")

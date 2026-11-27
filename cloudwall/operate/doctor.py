@@ -124,6 +124,9 @@ def cache(ctx):
 
 
 def server(ctx):
+    if ctx.unreadable:                  # without the settings, the private link's key isn't known
+        yield off("server", "not checked: the settings aren't yours to read (run it with sudo)")
+        return
     s = ctx.cfg["server"]
     port, key = s["port"], s["key"]
     try:
@@ -138,6 +141,9 @@ def server(ctx):
         age = time.time() - (st.get("updated") or 0)
         if st.get("ok"):
             yield ok("server", f"answering on port {port}; positions from {st.get('source')} {age:.0f} s ago")
+        elif not st.get("updated"):
+            yield trouble("feeds.no-positions", f"answering on port {port}, but no positions have arrived since it started"
+                          + (f": {st.get('error')}" if st.get("error") else ""))
         elif age > 300:
             yield trouble("feeds.no-positions", f"answering on port {port}, but no positions for {age / 60:.0f} min"
                           + (f": {st.get('error')}" if st.get("error") else ""))
@@ -150,6 +156,9 @@ def server(ctx):
 
 
 def feeds(ctx):
+    if ctx.unreadable:
+        yield off("feeds", "not checked: the settings aren't yours to read (run it with sudo)")
+        return
     if ctx.offline:
         yield off("feeds", "not checked (--offline)")
         return
@@ -233,6 +242,8 @@ def python(ctx):
 def from_server(ctx):
     """What the running CloudWall's own watcher has found (app/watch.py), when it is running: the
     problems only it can see (a frozen feed, a deaf receiver, a logbook that stopped saving)."""
+    if ctx.unreadable:
+        return
     s = ctx.cfg["server"]
     try:
         got = get_json(f"http://127.0.0.1:{s['port']}" + (f"/k/{s['key']}" if s["key"] else "") + "/api/health", timeout=10)
@@ -254,5 +265,18 @@ def doctor(config_path=None, offline=False, ask=None, machine=None):
     running CloudWall's own findings, and the survey of this machine (operate/survey.py)."""
     from .survey import Machine, survey
     ctx = Context(config_path, offline, ask)
-    found = health.run(ctx) + survey(machine or Machine(ask=ask))
+    found = health.run(ctx)
+    # what the running CloudWall says and doctor's own checks find the same problems: said once
+    own = {f.code for f in found if f.code and not f.part.startswith("running:")}
+    found = [f for f in found if not (f.part.startswith("running:") and f.code in own)]
+    mine = {(f.code, _file(f.summary)) for f in found if f.code}
+    # the survey looks at every install's files: one this check has already said is said once
+    found += [f for f in survey(machine or Machine(ask=ask)) if not (f.code and (f.code, _file(f.summary)) in mine)]
     return found, health.worst(found)
+
+
+def _file(text):
+    """The first file a finding names, as an absolute path (for telling two findings of it apart)."""
+    import re
+    m = re.search(r"(/[\w./-]+|[\w.-]+\.toml)", text or "")
+    return str(Path(m.group(1)).resolve()) if m else None

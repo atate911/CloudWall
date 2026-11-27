@@ -82,6 +82,8 @@ def run(context, checks=None):
     for part, check in checks if checks is not None else CHECKS:
         try:
             out += list(check(context))
+        except PermissionError as e:        # not this user's to look at: no fault, but said
+            out.append(Finding(part, OFF, f"not checked: {e.filename or 'a file'} isn't yours to read (run it with sudo)"))
         except Exception as e:
             out.append(Finding(part, FAIL, f"the check itself failed: {type(e).__name__}: {e}",
                                "This is a fault in CloudWall's own check, not necessarily in what it checks.",

@@ -23,7 +23,8 @@ def upgrade(system, source=None, say=print):
     if system.real and os.geteuid() != 0 and not system.dry_run:
         raise SystemExit("cloudwall upgrade changes the system: run it with sudo")
     found = installs(Machine(system.root))
-    old = next((i for i in found if i["kind"] == "user"), None)
+    # an old per-user setup still in use (one already moved over is left disabled, its files kept)
+    old = next((i for i in found if i["kind"] == "user" and (i["enabled"] or i["active"])), None)
     sysinst = next((i for i in found if i["kind"] == "system"), None)
     say("Found: " + ("; ".join(f"the {i['kind']} service ({i['user']})" for i in found) or "nothing set up yet"))
 
@@ -42,6 +43,9 @@ def upgrade(system, source=None, say=print):
         try:
             out = backups.backup(system.path(src["config"]), Path(system.path(inst.VAR)) / "backups"
                                  if sysinst else system.path(src["data"]) / "backups", say=lambda *a: None)
+            owner = inst.USER if sysinst else old["user"]       # the folder stays its owner's to write in
+            for p in (out.parent, out):
+                system.chown("/" + str(p.relative_to(system.root)), owner, owner)
             say(f"Backed up first: {out}")
         except Exception as e:
             raise SystemExit(f"cloudwall upgrade: the backup failed, so nothing was changed: {e}")

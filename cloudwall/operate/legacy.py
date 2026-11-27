@@ -125,6 +125,7 @@ def migrate(system, home, user, checkout, force=False, say=print, start=True):
                     if system.real:
                         system.run(["chown", "-R", f"{inst.USER}:{inst.USER}", f"{inst.CACHE}/{name}"], quiet=True)
     if start:
+        system.run(["systemctl", "stop", "cloudwall"], check=False)     # (our own, if it ran: not in the way)
         port_free(system)
         inst.start_service(system)
     say("Done. The old files are still where they were; delete them once the new install is seen to work:")

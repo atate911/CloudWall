@@ -233,7 +233,8 @@ def preflight(system, path=None, what=None):
         cfg = config.load(path)
         placing.places(cfg)
     except Exception as e:
-        raise SystemExit(f"cloudwall: {what or 'the new code is in place, but CloudWall wasn\'t restarted into it'}:\n"
+        what = what or "the new code is in place, but CloudWall wasn't restarted into it"
+        raise SystemExit(f"cloudwall: {what}:\n"
                          f"  {path}: {e}\n"
                          f"Correct that (sudoedit {path}), then run the command again. The CloudWall running now "
                          f"carries on until then.")
@@ -263,6 +264,7 @@ def wall(system, opts):
     # to a panel's own file but list nothing, and config.toml itself is the owner's and group's only
     system.mkdir(ETC, 0o771, "root", USER)
     system.mkdir(VAR, 0o750, USER, USER)
+    system.mkdir(f"{VAR}/backups", 0o750, USER, USER)      # the board's "Back up now" writes here
     system.mkdir(CACHE, 0o750, USER, USER)
     code = put_release(system, opts.source)
     put_config(system)
