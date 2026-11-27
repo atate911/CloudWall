@@ -18,12 +18,14 @@ import unittest
 import urllib.request
 from pathlib import Path
 
-from cloudwall import config, contrails, demo, feeds, placing, weather
-from cloudwall.place import Place, Places
-from cloudwall.server import API, make_server
-from cloudwall.store import Store
-from cloudwall.tfr import TFRs
-from cloudwall.tracker import Tracker
+from cloudwall.core import config
+from cloudwall.gather import contrails, demo, feeds, weather
+from cloudwall.reference import placing
+from cloudwall.app.place import Place, Places
+from cloudwall.serve.server import API, make_server
+from cloudwall.memory.store import Store
+from cloudwall.gather.tfr import TFRs
+from cloudwall.picture.tracker import Tracker
 
 DOC = Path(__file__).resolve().parent.parent / "API.md"
 
@@ -52,7 +54,7 @@ def plane(hexid, callsign, north_nm, east_nm=0.0, **more):
 
 def fr24_route():
     """A route as flightradar24.py makes it from Flightradar24's answer."""
-    from cloudwall import flightradar24, live
+    from cloudwall.gather import flightradar24, live
     row = {"flight": "AS3400", "callsign": "SKW3400", "operating_as": "SKW", "painted_as": "ASA", "orig_icao": "KSFO",
            "dest_icao": "KPDX", "datetime_takeoff": "2026-11-17T02:41:09", "datetime_landed": None, "flight_ended": False}
     return _provider_route(flightradar24.Flightradar24, "flightradar24", {"data": [row]}, "SKW3400", live)
@@ -60,7 +62,7 @@ def fr24_route():
 
 def flightaware_route():
     """And as flightaware.py makes it from FlightAware's."""
-    from cloudwall import flightaware, live
+    from cloudwall.gather import flightaware, live
     end = lambda c: {"code": "K" + c, "code_icao": "K" + c, "code_iata": c, "name": c, "city": c}
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     flight = {"ident": "DAL178", "ident_iata": "DL178", "origin": end("SEA"), "destination": end("PDX"), "scheduled_off": now,

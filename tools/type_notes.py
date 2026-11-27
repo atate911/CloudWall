@@ -15,7 +15,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from cloudwall import about, config  # noqa: E402
+from cloudwall.core import config  # noqa: E402
+from cloudwall.reference import about  # noqa: E402
 
 
 def logbook_counts(path):

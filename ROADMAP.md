@@ -191,4 +191,7 @@ public feed, not replayed.
 | Stage | State |
 |---|---|
 | 0. Gather | Done: feeder tools, radio and Coverage3D merged; station coordinates removed |
-| 1. Fix in place | In progress |
+| 1. Fix in place | Done |
+| 2. Seams | Done: keys/access/privatelink, config/placing, db/store, feeds/demo, paths, http.fetch, layer test |
+| 3. Move | Done: every module in its layer's folder |
+| 4. Install and operate | In progress |

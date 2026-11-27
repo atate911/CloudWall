@@ -10,7 +10,7 @@ rules; then what the transcripts teach (an aircraft's callsign heard on a channe
 the time, so each approach sector is learned by direction and height); then the handoff itself
 ("contact Portland Tower one one eight point seven"), which names the next channel outright.
 """
-from .. import geo
+from ..core import geo
 
 TOWER_NM = 6             # inside this and below TOWER_AGL_FT, an airborne aircraft is the tower's
 TOWER_AGL_FT = 3000

@@ -1,10 +1,9 @@
 """CloudWall's layers, held to: each module imports only from its own layer and those below it,
 and the three middle layers (what is sensed, what is gathered, what is remembered) don't import
 each other. ROADMAP.md sets out why; a module in a layer's folder (cloudwall/core/geo.py) is in
-that layer, and one still at the top of the package is placed by FLAT below.
+that layer, and the few still at the top of the package are placed by FLAT below.
 
-To add a module: put it in the folder of the layer it belongs to (or, until the move, add it to
-FLAT). If the test then fails, the module reaches upward: pass in what it needs instead (as the
+To add a module: put it in the folder of the layer it belongs to. If the test then fails, the module reaches upward: pass in what it needs instead (as the
 tracker is given its store), or move the shared part down a layer."""
 import ast
 import unittest
@@ -16,22 +15,8 @@ PACKAGE = Path(__file__).resolve().parent.parent / "cloudwall"
 RANK = {"core": 0, "reference": 1, "sense": 2, "gather": 2, "memory": 2, "picture": 3,
         "serve": 4, "operate": 4, "share": 4, "app": 5}
 
-# modules not yet moved into a layer's folder
-FLAT = {
-    "__init__": "core", "paths": "core", "http": "core", "geo": "core", "activity": "core",
-    "keys": "core", "config": "core", "db": "core",
-    "airports": "reference", "airlines": "reference", "aircraft": "reference", "seats": "reference",
-    "about": "reference", "placing": "reference",
-    "feeds": "gather", "demo": "gather", "enrich": "gather", "live": "gather", "flightradar24": "gather",
-    "flightaware": "gather", "weather": "gather", "tfr": "gather", "contrails": "gather", "tiles": "gather",
-    "charts": "gather", "logos": "gather", "shared": "gather",
-    "store": "memory", "logbook": "memory", "tracks": "memory",
-    "tracker": "picture", "details": "picture", "situation": "picture", "medical": "picture",
-    "radio": "picture",
-    "server": "serve", "access": "serve",
-    "privatelink": "operate",
-    "place": "app", "__main__": "app",
-}
+# modules outside a layer's folder: the package's own, and the radio until it is joined to the app
+FLAT = {"__init__": "core", "__main__": "app", "radio": "picture"}
 
 
 def module_name(path):
@@ -72,7 +57,7 @@ def files():
 class LayersTest(unittest.TestCase):
     def test_every_module_has_a_layer(self):
         missing = [str(p.relative_to(PACKAGE)) for p in files() if layer_of(module_name(p)) is None]
-        self.assertEqual(missing, [], "put these in a layer's folder, or add them to FLAT")
+        self.assertEqual(missing, [], "put these in a layer's folder")
 
     def test_imports_only_go_down(self):
         wrong = []

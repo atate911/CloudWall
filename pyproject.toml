@@ -11,7 +11,7 @@ dependencies = []
 dynamic = ["version"]
 
 [project.scripts]
-cloudwall = "cloudwall.__main__:main"
+cloudwall = "cloudwall.app.main:main"
 
 [tool.setuptools.packages.find]
 include = ["cloudwall", "cloudwall.*"]        # every layer's folder, found rather than listed

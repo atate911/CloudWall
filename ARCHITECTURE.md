@@ -39,49 +39,57 @@ every screen (desktop, phone, wall panel) is the same page with a different layo
 
 ## The server (`cloudwall/`)
 
-It is layered, each layer using only those below it:
+It is layered: each module is in its layer's folder and imports only from its own layer and those
+below it, and the three middle layers don't import each other (`tests/test_layers.py` holds the
+code to this; [ROADMAP.md](ROADMAP.md) says where it is going).
 
 ```
- __main__      start-up: builds everything below and joins it together
- server        HTTP; asks a place for its state, weather report, heatmap and logbook
- place         one watched place: its threads, its weather and airspace, what a screen is given
- tracker       positions into the board        shared    what every place shares
- details  logbook  tracks                      enrich    lookups, cached, never blocking
- sources  weather  tfr  contrails  live/flightradar24/flightaware     the services, one module each
- airlines  aircraft  airports  seats  geo  store  http  activity      tables, sums and storage
+ app/        start-up (main), each watched place and its threads (place)
+ serve/      the HTTP server (server) and who it answers (access)    operate/  the private link
+ picture/    positions into the board (tracker), what each aircraft is (details), what it is
+             doing (situation), medical flights (medical)
+ gather/     feeds, demo, enrich, live/flightradar24/flightaware,   memory/   the logbook's table
+             weather, tfr, contrails, tiles, charts, logos, shared             (store), flyovers
+                                                                               (logbook), trails and
+                                                                               the heatmap (tracks)
+ reference/  the bundled tables: airports, airlines, aircraft, seats, about; placing works each
+             place out from them
+ core/       settings (config), files (db), requests (http), geo, keys, activity, paths
 ```
+
+The airband radio (`radio/`) is a package of its own, not yet joined to the app.
 
 | Module | What it owns |
 |---|---|
-| `__main__.py` | Start-up: reads the config, builds the stores, the charts and logos, the paid provider, the `Shared` services, a `Place` for each place, and the HTTP server. |
-| `server.py` | `ThreadingHTTPServer`: the JSON API, the tile and logo proxies, and the static page. All it asks of a place is `state()`, `weather_report()`, `heatmap()` and `logbook()`; it adds what is the same for every place (the map, the chart layers, logos). |
-| `place.py` | `Place`: one watched place. Its three threads (positions, weather, extras), restarted if one trips on an error nobody foresaw; what they fetch (weather, restrictions, military heard, contrail forecast); and the four things a screen asks for. `Places`: the set of them, including those added from a screen (`places.json`). `AnyActivity`: "is any screen open at all". |
-| `shared.py` | `Shared`: what is the same wherever it is asked from, fetched once for every place: the `Enricher`, an airport's weather, the FAA's list of restrictions, the military feed. `once(key, max_age, fetch)` is the whole mechanism. |
-| `tracker.py` | The feed's positions into the board: distance, bearing, elevation angle and closest approach from here, the aircraft overhead, the flights screens follow (and carrying one over a gap in the feed), runway flow, radar range, emergencies. `update()` takes an answer from the feed; `snapshot()` is the board as it stands. |
-| `details.py` | What is known of an aircraft beyond its position: airframe, photo, airline, seats, its route checked against where it actually is, the paid route when there is one, and whether it is arriving at or leaving the airport. |
-| `logbook.py` | Which flyovers are logged: one entry a pass, its badges, back-filling what is learned later. (The rows and the Logbook tab's totals are `store.py`'s.) |
-| `tracks.py` | Each aircraft's recent positions and whole path, and the day's heatmap. |
-| `situation.py` | The traffic picture: each aircraft arriving, departing, flying locally or passing over; the arrivals' landing order, runway, time to touchdown and gap to the one ahead; what's worth a look; every aircraft's last two minutes of track. |
-| `medical.py` | Medical flights: by transponder (lifeguard), operator or callsign, or a helicopter landing at or leaving a hospital's helipad (`data/helipads.csv`); and the helipad a helicopter is landing at, has left or (a medical one) is heading for, said only when no other helipad is on its line, and kept while it stays on course. Run by `situation.describe` for every airborne aircraft. |
-| `enrich.py` | `Enricher`: non-blocking lookups, one for the process. Returns what is cached now and fetches the rest on two worker threads: routes and airframes (adsbdb), photos (planespotters), the paid provider's route. What it holds in memory is bounded. |
-| `live.py`, `flightradar24.py`, `flightaware.py` | The optional paid route providers. `LiveProvider` holds the key, the credit budget (monthly allowance spread over the days left) and the back-off; the two subclasses know each API. |
-| `sources.py` | Position feeds: `Feeds` (readsb-style JSON with failover), `normalise()` into CloudWall's aircraft shape, the military "heard, no position" feed, and `Demo` (simulated traffic). |
-| `weather.py`, `tfr.py`, `contrails.py` | Fetch and decode METAR/TAF, FAA flight restrictions, and the contrail forecast into plain values and words. |
-| `airlines.py`, `aircraft.py` | The two reference tables everything asks: airlines (`data/airlines.csv`: code, name, freight-only, colours) and aircraft types (`data/types.csv`: shape, length, rarity, radar icon; `data/cwt.csv`: wake category). `aircraft.icon()` also decides which kind of traffic an aircraft is drawn as on the radar. |
-| `access.py` | The private link: with `[server] key` set, the server answers only under `/k/<key>/` and goes on as if the prefix weren't there (the page's addresses are all relative, so each carries the key; no cookie). Makes keys that are easy to type and hard to guess, and refuses a weak one in the config. |
-| `about.py` | What's worth knowing about a type, for the panel a tap on one opens: a write-up, facts chosen for it and the years it was delivered, written by hand one file per family in `data/types/` (its README sets out the format and how they're written). Read once, at the start; a file with a problem is left out with a warning, and the tests list every problem. `tools/type_notes.py` says which types still want one, the most seen first. |
-| `airports.py`, `seats.py`, `geo.py` | The other bundled tables (airports, runways, ZIP codes, airspace, navaids, seats) and the geometry helpers. `tools/build_data.py` rebuilds the generated ones. |
-| `store.py` | SQLite: the `sightings` table (the logbook and its queries) and a `cache` table of JSON values by kind and key. One connection, one lock. `prune()` clears cached values past their use; each logbook notes the place it is kept at (`claim`, `another_places`). |
-| `tiles.py`, `charts.py`, `logos.py` | Disk-cached proxies: map and chart tiles (only around the watched places, except the route map's world layer at zoom 6 and out), and airline logos. |
-| `config.py` | Defaults overlaid with the TOML file; turns `[home]`, `[airport]` and `[[places]]` into one complete config per place. The file's settings are checked as it is read (`check`): a wrong kind of value is refused by name, an unknown name warned about. |
-| `activity.py`, `http.py` | `Activity`: when a screen last asked for data; everything that costs a request checks it. `get_json` / `get_text` with CloudWall's User-Agent. |
+| `app/main.py` | Start-up: reads the config, builds the stores, the charts and logos, the paid provider, the `Shared` services, a `Place` for each place, and the HTTP server. |
+| `serve/server.py` | `ThreadingHTTPServer`: the JSON API, the tile and logo proxies, and the static page. All it asks of a place is `state()`, `weather_report()`, `heatmap()` and `logbook()`; it adds what is the same for every place (the map, the chart layers, logos). |
+| `app/place.py` | `Place`: one watched place. Its three threads (positions, weather, extras), restarted if one trips on an error nobody foresaw; what they fetch (weather, restrictions, military heard, contrail forecast); and the four things a screen asks for. `Places`: the set of them, including those added from a screen (`places.json`). `AnyActivity`: "is any screen open at all". |
+| `gather/shared.py` | `Shared`: what is the same wherever it is asked from, fetched once for every place: the `Enricher`, an airport's weather, the FAA's list of restrictions, the military feed. `once(key, max_age, fetch)` is the whole mechanism. |
+| `picture/tracker.py` | The feed's positions into the board: distance, bearing, elevation angle and closest approach from here, the aircraft overhead, the flights screens follow (and carrying one over a gap in the feed), runway flow, radar range, emergencies. `update()` takes an answer from the feed; `snapshot()` is the board as it stands. |
+| `picture/details.py` | What is known of an aircraft beyond its position: airframe, photo, airline, seats, its route checked against where it actually is, the paid route when there is one, and whether it is arriving at or leaving the airport. |
+| `memory/logbook.py` | Which flyovers are logged: one entry a pass, its badges, back-filling what is learned later. (The rows and the Logbook tab's totals are `memory/store.py`'s.) |
+| `memory/tracks.py` | Each aircraft's recent positions and whole path, and the day's heatmap. |
+| `picture/situation.py` | The traffic picture: each aircraft arriving, departing, flying locally or passing over; the arrivals' landing order, runway, time to touchdown and gap to the one ahead; what's worth a look; every aircraft's last two minutes of track. |
+| `picture/medical.py` | Medical flights: by transponder (lifeguard), operator or callsign, or a helicopter landing at or leaving a hospital's helipad (`data/helipads.csv`); and the helipad a helicopter is landing at, has left or (a medical one) is heading for, said only when no other helipad is on its line, and kept while it stays on course. Run by `situation.describe` for every airborne aircraft. |
+| `gather/enrich.py` | `Enricher`: non-blocking lookups, one for the process. Returns what is cached now and fetches the rest on two worker threads: routes and airframes (adsbdb), photos (planespotters), the paid provider's route. What it holds in memory is bounded. |
+| `gather/live.py`, `gather/flightradar24.py`, `gather/flightaware.py` | The optional paid route providers. `LiveProvider` holds the key, the credit budget (monthly allowance spread over the days left) and the back-off; the two subclasses know each API. |
+| `gather/feeds.py`, `gather/demo.py` | Position feeds: `Feeds` (readsb-style JSON with failover), `Merged` (your receiver and the public feeds together), `normalise()` into CloudWall's aircraft shape, and the military "heard, no position" feed; `Demo`, the simulated traffic. |
+| `gather/weather.py`, `gather/tfr.py`, `gather/contrails.py` | Fetch and decode METAR/TAF, FAA flight restrictions, and the contrail forecast into plain values and words. |
+| `reference/airlines.py`, `reference/aircraft.py` | The two reference tables everything asks: airlines (`data/airlines.csv`: code, name, freight-only, colours) and aircraft types (`data/types.csv`: shape, length, rarity, radar icon; `data/cwt.csv`: wake category). `aircraft.icon()` also decides which kind of traffic an aircraft is drawn as on the radar. |
+| `serve/access.py`, `core/keys.py`, `operate/privatelink.py` | The private link: with `[server] key` set, the server answers only under `/k/<key>/` and goes on as if the prefix weren't there (the page's addresses are all relative, so each carries the key; no cookie). `keys` makes keys that are easy to type and hard to guess and refuses a weak one in the config; `privatelink` sets one up from the command line. |
+| `reference/about.py` | What's worth knowing about a type, for the panel a tap on one opens: a write-up, facts chosen for it and the years it was delivered, written by hand one file per family in `data/types/` (its README sets out the format and how they're written). Read once, at the start; a file with a problem is left out with a warning, and the tests list every problem. `tools/type_notes.py` says which types still want one, the most seen first. |
+| `reference/airports.py`, `reference/seats.py`, `core/geo.py` | The other bundled tables (airports, runways, ZIP codes, airspace, navaids, seats) and the geometry helpers. `tools/build_data.py` rebuilds the generated ones. |
+| `core/db.py`, `memory/store.py` | SQLite. `db`: a file opened in WAL mode with a busy timeout, brought up to date by numbered migrations (its `user_version`), moved aside and started afresh if SQLite can't read it; a `cache` table of JSON values by kind and key, `prune()` clearing those past their use; each file notes the place it is kept at (`claim`, `another_places`). `store`: the `sightings` table, the logbook and its queries. One connection, one lock. |
+| `gather/tiles.py`, `gather/charts.py`, `gather/logos.py` | Disk-cached proxies: map and chart tiles (only around the watched places, except the route map's world layer at zoom 6 and out), and airline logos. |
+| `core/config.py`, `reference/placing.py` | Defaults overlaid with the TOML file, checked as it is read (`check`): a wrong kind of value, a word it doesn't know or a number out of range is refused by name, an unknown name warned about. `placing` turns `[home]`, `[airport]` and `[[places]]` into one complete config per place. |
+| `core/activity.py`, `core/http.py` | `Activity`: when a screen last asked for data; everything that costs a request checks it. `get_json` / `get_text` with CloudWall's User-Agent. |
 
 ### What belongs to a place, and what to the process
 
 A place watches one spot, but much of what it shows isn't about that spot, and is fetched once
 however many places there are:
 
-| One for each place | One for the process (`shared.py`, `__main__.py`) |
+| One for each place | One for the process (`gather/shared.py`, `app/main.py`) |
 |---|---|
 | The position feed's answer, the tracker and its board | Lookups of routes, airframes and photos, and their cache |
 | The logbook, the heatmap, trails and paths | The paid route provider and its budget |
@@ -235,7 +243,7 @@ toward each new report. Countdowns use the same clock (`since(state)` in `util.j
 ## Where to add things
 
 - **A data source for positions:** a class with `name` and `fetch(lat, lon, radius_nm)` returning
-  `normalise()`d dicts, in `sources.py`.
+  `normalise()`d dicts, in `gather/feeds.py`.
 - **Something fetched now and then for a place (like restrictions):** a job in `Place._extras`
   setting a field on the place, and a key in `Place.state()`. If its answer is the same for every
   place, fetch it through `Shared.once`.

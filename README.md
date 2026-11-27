@@ -558,7 +558,7 @@ no requests (or, with `"log"`, only the slow position check).
   `[map] route` can be `light`, `dark`, `osm`, or `off` for the plain arc. Its tiles come from
   zoom 0 to 6 only, the one map CloudWall serves for the whole world, cached the same way.
 - The charts are the FAA Aeronautical Information Services' own tiled charts (public domain),
-  current to the 56-day chart cycle within a month. `cloudwall/charts.py` keeps every map and
+  current to the 56-day chart cycle within a month. `cloudwall/gather/charts.py` keeps every map and
   chart in one place and serves each at `/tiles/<layer>/z/x/y`, so a new use for a chart is a
   layer name in the display.
 - Runways are drawn from the bundled runway table, with extended centrelines for the main
