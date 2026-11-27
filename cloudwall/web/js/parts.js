@@ -22,7 +22,9 @@ function badgeClass(b) {
 }
 // The server and the logbook keep tags in capitals ("NEW TYPE"); they're shown in sentence case ("New type").
 const tagWords = (b) => b.charAt(0) + b.slice(1).toLowerCase();
-export const badges = (list) => (list || []).map((b) => `<span class="badge ${badgeClass(b)}">${esc(tagWords(b))}</span>`).join("");
+// the medical tag carries the cross, white on its blue
+const MED_GLYPH = `<svg viewBox="-2 -2 4 4" aria-hidden="true"><path d="M-.5,-1.75H.5V-.5H1.75V.5H.5V1.75H-.5V.5H-1.75V-.5H-.5Z"/></svg>`;
+export const badges = (list) => (list || []).map((b) => `<span class="badge ${badgeClass(b)}">${b === "MEDICAL" ? MED_GLYPH : ""}${esc(tagWords(b))}</span>`).join("");
 
 // "AS508" -> "AS 508", the way departure boards set flight numbers
 export function boardFlight(f) {

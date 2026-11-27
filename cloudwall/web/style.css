@@ -266,7 +266,7 @@ nav button span { color: var(--slate); font-weight: 400; margin-left: .4rem; }
 .h-type .about-link i { font-weight: 400; }
 .h-who { min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .85rem; row-gap: .3rem; font-size: .95rem; font-weight: 700; white-space: nowrap; }
 .h-who > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.h-who > [hidden], .h-top > [hidden] { display: none; }
+.h-who > [hidden], .h-top > [hidden], .h-who > small:empty { display: none; }      /* an empty note would still cost the tags a second gap */
 .h-who > .tags { margin: 0; align-self: center; }
 .h-who:not(:has(> .flaps:not([hidden]), > span:not([hidden]):not(:empty), > small:not(:empty), .badge)) { display: none; }      /* nothing to say of who flies it */
 .flight { font-size: 1.15rem; letter-spacing: 0; color: var(--ink); white-space: pre; flex: none; }
@@ -299,7 +299,9 @@ body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { hei
   border-radius: var(--corner); border: 1px solid color-mix(in srgb, currentColor 38%, transparent); color: var(--ink-2); }
 .badge.new { color: var(--blue); } .badge.rare { color: var(--magenta); }
 .badge.hot { color: var(--sheet); background: var(--red); border-color: var(--red); font-weight: 700; }
-.badge.med { color: #fff; background: var(--med); border-color: var(--med); }
+.badge.med { display: inline-flex; align-items: center; gap: .32em; color: #fff; background: var(--med); border-color: var(--med); }      /* the one solid tag: the cross and the word, white on the medical blue */
+.badge.med svg { width: .8em; height: .8em; fill: currentColor; flex: none; }
+.noroute.med small { color: var(--med-ink); font-weight: 700; }
 .noroute.med { flex-direction: row; align-items: flex-start; gap: .8rem; font-size: 1.4rem; line-height: 1.22; }
 .noroute.med > span { display: flex; flex-direction: column; gap: .4rem; }
 .noroute.med .ci.med { flex: none; margin-top: .2rem; }
@@ -1558,11 +1560,15 @@ html.phone .em-hide { padding: .7rem 1rem; }
    least 3:1 on it (green and orange a step darker by day for that), every pair told apart with full colour
    vision and with colour blindness; the overflights' grey is meant to carry no colour */
 :root { --c-arr: #2a78d6; --c-dep: #15966b; --c-loc: #d85a20; --c-pass: #526070; --land: #edf0e6; --advisory: #865709; }
-body.night { --c-arr: #3987e5; --c-dep: #199e70; --c-loc: #d95926; --c-pass: #9aa6b2; --land: #172636; --advisory: #d6a04a; --med: #2c5fbf; }
+body.night { --c-arr: #3987e5; --c-dep: #199e70; --c-loc: #d95926; --c-pass: #9aa6b2; --land: #172636; --advisory: #d6a04a; --med: #2c5fbf; --med-ink: #8fb3f0; }
 /* a medical flight: a white cross on a deep blue square, darker than the arrivals' blue; its shape carries the meaning */
-:root { --med: #163f8c; }
+:root { --med: #163f8c; --med-ink: var(--med); }      /* --med-ink: the medical blue as lettering, lifted at night */
 .ci.med rect { fill: var(--med); } .ci.med path { fill: #fff; }
-:is(.det, .rt, .pb-rt) .ci.med { vertical-align: -.18em; margin-right: .4em; }
+:is(.det, .rt, .pb-rt, .so-what) .ci.med { vertical-align: -.18em; margin-right: .4em; }
+/* a medical flight's words in the lists and on the radar, in its blue */
+.tr .det:has(.ci.med), td.rt:has(.ci.med), .pb-rt:has(.ci.med) .dim, .so-what:has(.ci.med) { color: var(--med-ink); font-weight: 700; }
+td.rt:has(.ci.med) small { color: var(--med-ink); }
+#radar:not(.atc) .craft.medc:not(.hero) .tag, #radar:not(.atc) .craft.medc .tag-sub { fill: var(--med-ink); font-weight: 700; }
 .to-h { color: var(--ink-2); margin-left: .25em; }
 #radar .med rect { fill: var(--med); stroke: var(--disc); stroke-width: .7; }
 #radar .med path { fill: #fff; }

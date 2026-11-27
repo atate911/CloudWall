@@ -1033,9 +1033,9 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       c.icon.setAttribute("transform", `rotate(${c.ic.upright ? 0 : c.rot.toFixed(1)}) scale(${size})`);
     }
     const medOn = !opt.atc && !!a.medical;
-    if (medOn !== !!c.medOn) { c.medOn = medOn; c.med.style.display = medOn ? "" : "none"; }
+    if (medOn !== !!c.medOn) { c.medOn = medOn; c.med.style.display = medOn ? "" : "none"; c.g.classList.toggle("medc", medOn); }
     if (medOn) {             // off the icon's upper left corner, as large as the icon is boosted; never turned
-      const s = 0.95 * boost, d = (c.reach || 4.5) * 0.62 + 1.1;
+      const s = 1.45 * boost, d = (c.reach || 4.5) * 0.62 + 2.1;
       c.medX = -d; c.medY = -d; c.medR = 2.6 * s;
       c.med.setAttribute("transform", `translate(${(-d).toFixed(2)},${(-d).toFixed(2)}) scale(${s.toFixed(2)})`);
     }
@@ -1093,7 +1093,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       const r = a.route && a.route.plausible ? a.route : null;
       text = ident(a);
       c.subs = [p.sub + (a.activity === "arr" && a.rwy ? ` ${a.rwy}${a.seq ? ` #${a.seq}` : ""}` : a.activity === "dep" && r && r.dest.iata ? ` ${r.dest.iata}`
-        : a.hospital ? ` ${a.hospital.state === "left" ? "from" : "to"} ${a.hospital.short}` : "")];
+        : a.hospital ? ` ${a.hospital.state === "left" ? "from" : "to"} ${a.hospital.short}` : a.medical ? " medical" : "")];
       c.full = { text, sub: c.subs[0] };
       // an arrival whose whole label found no room keeps its landing number until the next update
       if (c.fallback && c.seqNum) { text = String(c.seqNum); c.subs = [""]; seqtag = true; }
