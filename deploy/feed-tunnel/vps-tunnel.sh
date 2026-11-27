@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# vps-tunnel.sh: the VPS half of the CloudWall feed tunnel.
+# vps-tunnel.sh: the VPS half of the CloudWall feed tunnel. RUN IT ON THE VPS ONLY (where CloudWall
+# runs); its partner pi-tunnel.sh runs on the receiver Pi.
 #
 # Creates a locked-down SSH account that the receiver Pi logs in to. Its key can do exactly one
 # thing: open 127.0.0.1:18080 on this VPS, leading back to the Pi's aircraft data. No shell,
@@ -41,13 +42,47 @@ parse_opts() {
   done
 }
 
+# The VPS's address as the Pi should use it: the public IPv4 address this machine sends from
+# (worked out locally, no outside lookup), or its full hostname if that address is a private one.
+public_address() {
+  local ip; ip=$(ip -4 route get 1.1.1.1 2>/dev/null | sed -nE 's/.* src ([0-9.]+).*/\1/p')
+  case "$ip" in
+    ""|10.*|192.168.*|172.1[6-9].*|172.2[0-9].*|172.3[01].*|100.6[4-9].*|100.[7-9][0-9].*|100.1[01][0-9].*|100.12[0-7].*)
+      echo "";;
+    *) echo "$ip";;
+  esac
+}
+
+ssh_port() { sshd -T 2>/dev/null | awk '$1=="port"{print $2; exit}'; }
+
 cmd_setup() {
   need_root
   local key="${ARGS[0]:-}"
-  [ -n "$key" ] || die "usage: sudo bash vps-tunnel.sh setup \"ssh-ed25519 AAAA... comment\""
+  [ -n "$key" ] || die "usage: sudo bash vps-tunnel.sh setup \"ssh-ed25519 AAAA... comment\" (the line 'pi-tunnel.sh keygen' printed on the Pi)"
+  case "$key" in
+    *"…"*|*"..."*|*"<"*|*"AAAA… "*)
+      die "that's the example from the instructions, not a real key: paste the whole line that 'sudo bash pi-tunnel.sh keygen' printed on the receiver Pi";;
+  esac
   local tmp; tmp=$(mktemp); printf '%s\n' "$key" > "$tmp"
-  ssh-keygen -lf "$tmp" >/dev/null 2>&1 || { rm -f "$tmp"; die "that isn't a valid public key line (copy the whole line from pi-tunnel.sh keygen)"; }
+  ssh-keygen -lf "$tmp" >/dev/null 2>&1 || { rm -f "$tmp"; die "that isn't a valid public key line (copy the whole line from 'pi-tunnel.sh keygen' on the Pi)"; }
   rm -f "$tmp"
+  # a key made on this very machine means pi-tunnel.sh keygen ran here instead of on the Pi
+  local made_on; made_on=$(awk '{print $3}' <<<"$key" | sed -n 's/^adsb-tunnel@//p')
+  if [ -n "$made_on" ] && [ "$made_on" = "$(hostname)" ]; then
+    warn "This key was made on THIS machine ('$made_on'), so 'pi-tunnel.sh keygen' ran on the VPS, not the Pi."
+    warn "Undo it here:   sudo bash pi-tunnel.sh uninstall --purge   (or deploy/feed-tunnel/pi-tunnel.sh)"
+    warn "then run 'sudo bash pi-tunnel.sh keygen' on the receiver Pi and bring its line here."
+    die "stopped: that isn't the Pi's key"
+  fi
+  if [ -e /etc/adsb-tunnel/id_ed25519 ]; then
+    warn "pi-tunnel.sh's files are on this VPS (/etc/adsb-tunnel): keygen ran here by mistake at some point."
+    warn "They do no harm, but remove them with: sudo bash pi-tunnel.sh uninstall --purge"
+  fi
+  if curl -fsm 3 http://127.0.0.1:8080/data/aircraft.json -o /dev/null 2>/dev/null || [ -d /opt/adsb ]; then
+    warn "This machine ($(hostname)) looks like the ADS-B receiver (it has aircraft data or adsb.im)."
+    warn "vps-tunnel.sh belongs on the VPS where CloudWall runs; on the Pi, use pi-tunnel.sh."
+    if [ -t 0 ]; then read -r -p "  Carry on here anyway? [y/N] " a; [[ "$a" =~ ^[Yy] ]] || die "stopped"; else die "stopped"; fi
+  fi
 
   say "1. OpenSSH"
   local v; v=$(ssh -V 2>&1 | sed -nE 's/^OpenSSH_([0-9]+)\.([0-9]+).*/\1 \2/p')
@@ -98,10 +133,24 @@ cmd_setup() {
   say "4. This VPS's host key fingerprints (the Pi will ask you to compare these):"
   for f in /etc/ssh/ssh_host_*_key.pub; do [ -e "$f" ] && ssh-keygen -lf "$f" | sed 's/^/    /'; done
   local ed; ed=$(ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub 2>/dev/null | awk '{print $2}')
+  local addr; addr=$(public_address)
+  local port; port=$(ssh_port); local portopt=""; [ -n "$port" ] && [ "$port" != 22 ] && portopt=" --port $port"
   say ""
-  say "Next, on the Pi:"
-  say "  sudo bash pi-tunnel.sh install $(hostname -f 2>/dev/null || hostname)${ed:+ --fingerprint $ed}"
-  say "  (use the VPS's public hostname or IP if that name isn't reachable from your home)"
+  say "NEXT: on the RECEIVER PI (not this machine, '$(hostname)'), run:"
+  say ""
+  if [ -n "$addr" ]; then
+    say "  sudo bash pi-tunnel.sh install $addr$portopt${ed:+ --fingerprint $ed}"
+    say ""
+    say "  ($addr is this VPS's public address as seen from here; if you reach it from home by another"
+    say "   address or domain, use that instead.)"
+  else
+    say "  sudo bash pi-tunnel.sh install YOUR.VPS.PUBLIC.ADDRESS$portopt${ed:+ --fingerprint $ed}"
+    say ""
+    say "  (put in the address or domain you use to ssh to this VPS from home; this machine only knows"
+    say "   a private address for itself)"
+  fi
+  [ -n "$port" ] && [ "$port" != 22 ] && say "  SSH here listens on port $port, hence --port $port."
+  say "  The provider's firewall (in their web panel) must allow SSH from your home."
 }
 
 cmd_test() {
@@ -110,7 +159,9 @@ cmd_test() {
     if ss -ltnH 2>/dev/null | awk '{print $4}' | grep -qx "127.0.0.1:$RPORT"; then
       ok "something is listening on 127.0.0.1:$RPORT (the tunnel is up)"
     else
-      warn "nothing listens on 127.0.0.1:$RPORT: the Pi isn't connected (check 'pi-tunnel.sh status' on the Pi)"
+      warn "nothing listens on 127.0.0.1:$RPORT: the Pi isn't connected."
+      warn "On the receiver Pi, run 'sudo bash pi-tunnel.sh install ...' (the line 'setup' printed),"
+      warn "or 'sudo bash pi-tunnel.sh status' if you already did."
     fi
   fi
   local body; body=$(curl -fsm 8 "$url" 2>/dev/null) || die "no answer from $url"
@@ -121,6 +172,10 @@ pos = sum("lat" in a for a in ac); age = time.time() - d.get("now", 0)
 print(f"  [OK]   {len(ac)} aircraft, {pos} with positions, data {age:.0f}s old")
 if age > 30: print("  [WARN] the data is stale: the decoder on the Pi may have stopped")
 ' <<<"$body"
+  [ "${1:-}" = quiet ] && return
+  say ""
+  say "NEXT: as the user that runs CloudWall (no sudo), from your CloudWall folder:"
+  say "  bash deploy/feed-tunnel/vps-tunnel.sh cloudwall"
 }
 
 find_config() {
@@ -209,7 +264,7 @@ parse_opts "$@"
 case "$cmd" in
   setup) cmd_setup;;
   test) cmd_test;;
-  status) id "$TUSER" >/dev/null 2>&1 && ok "account '$TUSER' exists" || warn "no '$TUSER' account (run setup)"; cmd_test;;
+  status) id "$TUSER" >/dev/null 2>&1 && ok "account '$TUSER' exists" || warn "no '$TUSER' account (run setup)"; cmd_test quiet;;
   cloudwall) edit_config add;;
   cloudwall-remove) edit_config remove;;
   remove) cmd_remove;;

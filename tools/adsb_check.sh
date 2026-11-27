@@ -335,6 +335,37 @@ PY
 fi
 
 # ---------------------------------------------------------------------------------
+section "Outbound SSH and the CloudWall feed tunnel"
+# Some adsb.im images ship a line in /etc/ssh/ssh_config (e.g. "IPQoS 0x00") that newer OpenSSH
+# rejects, which stops every ssh command run FROM this Pi (scp, git over ssh, older tunnels).
+if have ssh; then
+  if ! sshcfg=$(ssh -G localhost </dev/null 2>&1 >/dev/null); then
+    warn "Outgoing ssh from this Pi fails: $(grep -m1 -i 'config' <<<"$sshcfg" || head -1 <<<"$sshcfg")"
+    if grep -qi ipqos <<<"$sshcfg"; then
+      hint "Comment out the bad line (keeps a backup): sudo sed -i.bak 's/^\(\s*IPQoS\s.*\)/# \1/' /etc/ssh/ssh_config"
+    else
+      hint "Fix or comment out the line it names in /etc/ssh/ssh_config"
+    fi
+    hint "(the CloudWall tunnel ignores that file, so it isn't affected)"
+  else
+    pass "Outgoing ssh settings are valid"
+  fi
+fi
+if systemctl list-unit-files adsb-tunnel.service 2>/dev/null | grep -q '^adsb-tunnel.service'; then
+  dest=$(sed -n 's/^VPS_HOST=//p' /etc/adsb-tunnel/tunnel.conf 2>/dev/null)
+  if systemctl is-active --quiet adsb-tunnel; then
+    pass "CloudWall feed tunnel is running${dest:+ (to $dest)}"
+  else
+    fail "CloudWall feed tunnel is installed but not running"
+    hint "sudo bash pi-tunnel.sh status   (or: journalctl -u adsb-tunnel -n 20)"
+  fi
+  e=$($SUDO journalctl -u adsb-tunnel --since "-15 min" --no-pager 2>/dev/null | grep -iE 'denied|failed|refused|timed out|verification' | tail -2 || true)
+  [ -n "$e" ] && { warn "Recent tunnel errors:"; sed 's/^/           /' <<<"$e"; }
+else
+  info "No CloudWall feed tunnel on this Pi (see deploy/feed-tunnel/README.md to set one up)"
+fi
+
+# ---------------------------------------------------------------------------------
 section "Summary"
 echo "  ${G}${NPASS} passed${N}, ${Y}${NWARN} warnings${N}, ${R}${NFAIL} failed${N}"
 ip=$(hostname -I 2>/dev/null | awk '{print $1}')

@@ -90,36 +90,60 @@ Nothing else changes on the VPS: no new open ports, and no changes to `sshd_conf
 
 ## 4. Setting it up with the scripts
 
-Copy `pi-tunnel.sh` to the Pi and `vps-tunnel.sh` to the VPS (or download them from this
-repository). The steps go back and forth once, because each side needs something from the other.
+### Before you start: which machine is which
 
-**Step 1, on the Pi: create the key**
+You'll be in two terminals. **Check the prompt before every command**: most setup problems come
+from running a step on the wrong machine, because both scripts are in the same repository.
+
+| Machine | What runs there | How to recognise it | Script |
+|---|---|---|---|
+| **Receiver Pi** (at home) | adsb.im, readsb, the antenna | its prompt, e.g. `atate@Cloudwall-Home`; `hostname` says the Pi's name | `pi-tunnel.sh` only |
+| **VPS** (in the cloud) | CloudWall | its prompt, e.g. `atate@ubuntu`; has your CloudWall folder | `vps-tunnel.sh` only |
+
+Both scripts now check this and stop if they're run on the wrong kind of machine.
+
+You'll also need the **VPS's public address**: whatever you type to `ssh` to it from home (for a
+cloud VPS, the IP shown in the provider's panel). A VPS's own hostname, such as `ubuntu`, usually
+means nothing from home. `deploy/feed-tunnel/vps-tunnel.sh setup` works out the public address and prints it in the
+command it gives you for step 3.
+
+### The steps
+
+The steps go back and forth once, because each side needs something from the other. Each step
+prints the exact command for the next one, labelled with the machine it's for: copy from there
+rather than from this page, where `…` marks text that differs for you.
+
+**Step 1, on the Pi: get the script and create the key**
 ```bash
+curl -fsSLO https://raw.githubusercontent.com/atate911/CloudWall/main/deploy/feed-tunnel/pi-tunnel.sh
 sudo bash pi-tunnel.sh keygen
 ```
-It creates the `adsbtunnel` user and the key, then prints a ready-made command for step 2,
-containing the Pi's **public** key (safe to copy).
+It checks this really is the receiver, creates the `adsbtunnel` user and the key, then prints a
+ready-made command for step 2 containing the Pi's **public** key (safe to copy). GitHub caches
+these downloads for up to 5 minutes, so right after an update you may get the previous version.
 
-**Step 2, on the VPS: authorise the key**
+**Step 2, on the VPS: authorise the key** (in your CloudWall folder, after `git pull`)
 ```bash
-sudo bash vps-tunnel.sh setup "ssh-ed25519 AAAA…  adsb-tunnel@yourpi"
+sudo bash deploy/feed-tunnel/vps-tunnel.sh setup "ssh-ed25519 AAAA…your Pi's key…  adsb-tunnel@yourpi"
 ```
-It creates the `adsbtunnel` account, installs the key with its restrictions, checks the SSH
-server's settings for anything that would block forwarding, and prints the VPS's **host key
-fingerprints** plus a ready-made command for step 3.
+Paste the whole line step 1 printed; the example above won't work (the script recognises it and
+says so). It creates the `adsbtunnel` account, installs the key with its restrictions, checks the
+SSH server's settings for anything that would block forwarding, and prints the VPS's **host key
+fingerprint** plus a ready-made command for step 3, with this VPS's public address and SSH port
+filled in. It refuses a key that was made on the VPS itself (step 1 run on the wrong machine).
 
 **Step 3, on the Pi: verify, test and start**
 ```bash
-sudo bash pi-tunnel.sh install VPS_HOST --fingerprint SHA256:…
+sudo bash pi-tunnel.sh install VPS_PUBLIC_ADDRESS --fingerprint SHA256:…
 ```
-Use the VPS's public hostname or IP. Add `--port N` if its SSH isn't on port 22. It checks the
-local feed, compares the VPS's host key with the fingerprint, makes an 8-second test
-connection, then installs and starts the service. (Without `--fingerprint` it shows the keys and
-asks you to compare them by eye.)
+Add `--port N` if the VPS's SSH isn't on port 22. It checks the local feed and that the Pi can
+look the address up, compares the VPS's host key with the fingerprint, makes an 8-second test
+connection, then installs and starts the service. If the test fails, it says what the error
+means and what to do. (Without `--fingerprint` it shows the keys and asks you to compare them.)
 
 **Step 4, on the VPS: check the data arrives**
 ```bash
-bash vps-tunnel.sh test
+bash deploy/feed-tunnel/vps-tunnel.sh test
 ```
 Expect something like `[OK] 27 aircraft, 26 with positions, data 0s old`.
 
@@ -127,7 +151,7 @@ Expect something like `[OK] 27 aircraft, 26 with positions, data 0s old`.
 
 Run this as the user that runs CloudWall (not with sudo):
 ```bash
-bash vps-tunnel.sh cloudwall
+bash deploy/feed-tunnel/vps-tunnel.sh cloudwall
 ```
 It finds CloudWall's `config.toml` (same order as CloudWall: `$CLOUDWALL_CONFIG`, the service's
 working directory, then `~/.config/cloudwall/config.toml`; or pass `--config PATH`), backs it up,
@@ -198,7 +222,7 @@ command, a different listen port, a public bind and a `-L` connection to a VPS s
 |---|---|---|
 | Pi | `sudo bash pi-tunnel.sh status` | "service is running" and recent log lines without errors |
 | Pi | `journalctl -u adsb-tunnel -f` | Live log; quiet when healthy |
-| VPS | `bash vps-tunnel.sh status` | The account exists, port 18080 listening, aircraft count |
+| VPS | `bash deploy/feed-tunnel/vps-tunnel.sh status` | The account exists, port 18080 listening, aircraft count |
 | VPS | `curl -s http://127.0.0.1:18080/data/receiver.json` | The receiver's details (`lat`, `lon`, `version`) |
 | VPS | `journalctl --user -u cloudwall -n 30` | CloudWall's feed messages; on screen the feed name shows `127.0.0.1` |
 
@@ -206,10 +230,10 @@ command, a different listen port, a public bind and a `-L` connection to a VPS s
 
 | Change | What to do |
 |---|---|
-| **VPS hostname, IP or SSH port changed** | On the Pi: `sudo bash pi-tunnel.sh install NEW_HOST [--port N] --fingerprint …` (the fingerprint from `sudo bash vps-tunnel.sh setup "<same key>"`, or `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` on the VPS). The key stays the same. |
+| **VPS hostname, IP or SSH port changed** | On the Pi: `sudo bash pi-tunnel.sh install NEW_HOST [--port N] --fingerprint …` (the fingerprint from `sudo bash deploy/feed-tunnel/vps-tunnel.sh setup "<same key>"`, or `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` on the VPS). The key stays the same. |
 | **VPS reinstalled / moved to a new VPS** | Its host key changes, so the Pi will refuse it (correctly). Repeat steps 2–5 on the new VPS, then step 3 on the Pi. |
 | **Pi re-flashed or replaced** | The key is gone. Repeat steps 1–3; the new `setup` replaces the old key on the VPS (the old `authorized_keys` is backed up). |
-| **Use a different port than 18080** | Use the same `--remote-port N` on all three: `vps-tunnel.sh setup … --remote-port N`, `pi-tunnel.sh install … --remote-port N`, `vps-tunnel.sh cloudwall --remote-port N`. Then remove the old URL with `vps-tunnel.sh cloudwall-remove --remote-port 18080`. |
+| **Use a different port than 18080** | Use the same `--remote-port N` on all three: `deploy/feed-tunnel/vps-tunnel.sh setup … --remote-port N`, `pi-tunnel.sh install … --remote-port N`, `deploy/feed-tunnel/vps-tunnel.sh cloudwall --remote-port N`. Then remove the old URL with `deploy/feed-tunnel/vps-tunnel.sh cloudwall-remove --remote-port 18080`. |
 | **Rotate the key** (e.g. once a year, or if the Pi was lost) | On the Pi: `sudo rm /etc/adsb-tunnel/id_ed25519*`, then `sudo bash pi-tunnel.sh keygen`, then step 2 on the VPS with the new key (it replaces the old one), then `sudo bash pi-tunnel.sh restart`. |
 | **Stop combining; receiver only, public feeds as backup** | Set `merge = false` in `[source]`; restart CloudWall. |
 | **Public feeds only, receiver as backup** | Set `merge = false` and move the tunnel URL below the public feeds; restart CloudWall. (With `merge = true`, the receiver must be first.) |
@@ -217,29 +241,43 @@ command, a different listen port, a public bind and a `-L` connection to a VPS s
 
 ## 8. Removing it
 
-1. VPS, as the CloudWall user: `bash vps-tunnel.sh cloudwall-remove` (takes the URL out of CloudWall's feeds, with a backup).
-2. VPS: `sudo bash vps-tunnel.sh remove` (deletes the `adsbtunnel` account and its key).
+1. VPS, as the CloudWall user: `bash deploy/feed-tunnel/vps-tunnel.sh cloudwall-remove` (takes the URL out of CloudWall's feeds, with a backup).
+2. VPS: `sudo bash deploy/feed-tunnel/vps-tunnel.sh remove` (deletes the `adsbtunnel` account and its key).
 3. Pi: `sudo bash pi-tunnel.sh uninstall --purge` (stops and removes the service, key, settings and local user).
 
 To pause instead: on the Pi, `sudo systemctl disable --now adsb-tunnel`; CloudWall falls back
 to the public feeds on its own. Resume with `sudo systemctl enable --now adsb-tunnel`.
 
-## 9. Troubleshooting
+## 9. Easy mistakes, and how to undo them
+
+These all happened during the first setup; the scripts now catch each one.
+
+| Mistake | What you'd see | Undo / fix |
+|---|---|---|
+| **`pi-tunnel.sh keygen` run on the VPS** (both scripts are in the repo, and the VPS has it checked out) | keygen stops: "doesn't look like the ADS-B receiver". With an older copy: the key ends in `adsb-tunnel@<VPS name>`, and `deploy/feed-tunnel/vps-tunnel.sh setup` now refuses it | On the VPS: `sudo bash deploy/feed-tunnel/pi-tunnel.sh uninstall --purge` (removes the Pi-side files; keeps the VPS's own `adsbtunnel` account if `setup` already made it). Then run step 1 on the Pi. |
+| **The example key from the instructions pasted** (`AAAA…`) | setup: "that's the example from the instructions, not a real key" | Paste the whole line step 1 printed on the Pi |
+| **The VPS's own hostname used in step 3** (e.g. `ubuntu`) | install: "this Pi can't look up 'ubuntu'" | Use the VPS's public IP or domain; `setup` prints it in the step-3 command |
+| **A step-3 line run on the VPS** (copied from the VPS's own output) | `pi-tunnel.sh: No such file or directory`, or keygen/install stops: not a receiver | Run it on the Pi. Every script's "NEXT:" line names the machine. |
+| **Provider firewall blocks SSH** (set in the provider's web panel, separate from the server, e.g. IONOS Cloud Panel → Network → Firewall Policies) | install: "no SSH answer from …" | Allow TCP 22 (or your SSH port) from your home IP in the panel |
+| **Bad line in the Pi's `/etc/ssh/ssh_config`** (some adsb.im images ship `IPQoS 0x00`) | `Bad IPQoS value: 0x00` … `terminating, 1 bad configuration options` (older `pi-tunnel.sh` only) | Download `pi-tunnel.sh` again: the tunnel now ignores that file. `tools/adsb_check.sh` warns about the line, since it still breaks other ssh commands run from the Pi; to fix it: `sudo sed -i.bak 's/^\(\s*IPQoS\s.*\)/# \1/' /etc/ssh/ssh_config` |
+| **`deploy/feed-tunnel/vps-tunnel.sh cloudwall` run with sudo** | "run this as the user that runs CloudWall" | Run it without sudo, as that user |
+
+## 10. Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | `Bad IPQoS value` / `terminating, 1 bad configuration options` | An older copy of `pi-tunnel.sh` reading a bad line in the Pi's `/etc/ssh/ssh_config` | Download `pi-tunnel.sh` again (it now ignores that file) and rerun `install` |
 | `Host key verification failed` (Pi log) | The VPS's host key changed (reinstall, new VPS), or the wrong host | Confirm the new fingerprint on the VPS, then rerun `pi-tunnel.sh install … --fingerprint …` |
-| `Permission denied (publickey)` | Key not authorised, wrong account, or an `AllowUsers`/`AllowGroups` rule | Rerun `vps-tunnel.sh setup "<key>"` and read its warnings; check `sudo tail /var/log/auth.log` on the VPS |
+| `Permission denied (publickey)` | Key not authorised, wrong account, or an `AllowUsers`/`AllowGroups` rule | Rerun `deploy/feed-tunnel/vps-tunnel.sh setup "<key>"` and read its warnings; check `sudo tail /var/log/auth.log` on the VPS |
 | `remote port forwarding failed for listen port 18080` | Port mismatch with `permitlisten`, forwarding disabled in sshd, or an old tunnel still holding the port | Use the same `--remote-port` everywhere; read `setup`'s sshd warnings; wait 1–2 minutes for a dead session to time out |
-| `Connection timed out` / `No route to host` | VPS down, wrong host or port, or a VPS firewall blocking SSH from your home IP | `ssh -p PORT you@VPS_HOST` from home to check SSH works at all |
+| `Connection timed out` / `No route to host` / "no SSH answer" | VPS down, wrong host or port, or a firewall blocking SSH from your home: on the server, or in the provider's web panel | `ssh -p PORT you@VPS_HOST` from home to check SSH works at all; check the provider's firewall policy |
 | `test` on the VPS says nothing listens on 18080 | The tunnel isn't connected | `sudo bash pi-tunnel.sh status` on the Pi |
 | `test` works, but data is stale | The decoder on the Pi stopped | `sudo docker ps` on the Pi, check the adsb.im page |
-| CloudWall still shows adsb.fi | Config not updated, CloudWall not restarted, or the tunnel was down at that moment | `bash vps-tunnel.sh cloudwall`; check `journalctl --user -u cloudwall` |
-| Feed name on screen shows only `opendata.adsb.fi` | Your receiver isn't answering through the tunnel | `bash vps-tunnel.sh test`; `pi-tunnel.sh status` on the Pi |
+| CloudWall still shows adsb.fi | Config not updated, CloudWall not restarted, or the tunnel was down at that moment | `bash deploy/feed-tunnel/vps-tunnel.sh cloudwall`; check `journalctl --user -u cloudwall` |
+| Feed name on screen shows only `opendata.adsb.fi` | Your receiver isn't answering through the tunnel | `bash deploy/feed-tunnel/vps-tunnel.sh test`; `pi-tunnel.sh status` on the Pi |
 | Fewer aircraft than expected, feed name shows only `127.0.0.1` | `merge = true` is missing, or the public feed isn't answering | Check `[source]` in `config.toml`; `journalctl --user -u cloudwall` |
 
-## 10. Doing it by hand (what the scripts automate)
+## 11. Doing it by hand (what the scripts automate)
 
 **Pi:**
 ```bash
