@@ -23,6 +23,9 @@ from ..core.health import Finding, off, ok, trouble
 from ..core.http import get_json
 
 
+WAKE_S = 20                     # how long a woken CloudWall is given to fetch its first positions
+
+
 class Context:
     """What the checks look at: the settings as CloudWall would read them, and where its files are."""
 
@@ -136,8 +139,16 @@ def server(ctx):
         yield trouble("server.not-answering", f"nothing is answering on port {port}")
         return
     try:
-        state = get_json(f"http://127.0.0.1:{port}" + (f"/k/{key}" if key else "") + "/api/state", timeout=10)
-        st = (state or {}).get("status") or {}
+        url = f"http://127.0.0.1:{port}" + (f"/k/{key}" if key else "") + "/api/state"
+        st = (get_json(url, timeout=10) or {}).get("status") or {}
+        # Asking counts as a screen looking: a CloudWall paused with no screen open (or only just
+        # started) wakes and fetches. Give it a moment to before judging, or it would always look
+        # offline to the first doctor after a quiet spell or a restart.
+        waited = 0
+        while not st.get("ok") and waited < WAKE_S:
+            time.sleep(2)
+            waited += 2
+            st = (get_json(url, timeout=10) or {}).get("status") or {}
         age = time.time() - (st.get("updated") or 0)
         if st.get("ok"):
             yield ok("server", f"answering on port {port}; positions from {st.get('source')} {age:.0f} s ago")

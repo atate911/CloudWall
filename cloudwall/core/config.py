@@ -108,6 +108,20 @@ BETWEEN = {("map", "opacity"): (0, 1), ("kiosk", "range_nm"): (0, 30), ("map", "
 MORE_THAN_ZERO = {"tracking": ("radius_nm", "overhead_nm", "max_overhead_alt_ft", "poll_seconds", "idle_after_seconds")}
 
 
+_said = set()
+_reading = [None]           # the file being read, so each of its warnings is said once
+
+
+def _warn(fmt, *args):
+    """A warning about the settings, said once for each file however often it is read (an upgrade
+    reads it several times)."""
+    text = fmt % args if args else fmt
+    key = (_reading[0], text)
+    if _reading[0] is None or key not in _said:
+        _said.add(key)
+        log.warning("%s", text)
+
+
 def _fits(v, want):
     """Is v the kind of value wanted? (true and false aren't numbers, though Python counts them so.)"""
     kinds = want if isinstance(want, tuple) else (want,)
@@ -131,9 +145,9 @@ def check(section, values, problems=None):
         return True
     if section not in DEFAULTS:
         if isinstance(values, dict):
-            log.warning("config: [%s] isn't a section CloudWall knows: left out", section)
+            _warn("config: [%s] isn't a section CloudWall knows: left out", section)
         else:
-            log.warning("config: %s is set outside any section (settings go under a [section] heading): left out", section)
+            _warn("config: %s is set outside any section (settings go under a [section] heading): left out", section)
         return False
     if not isinstance(values, dict):
         raise ValueError(f"{section} must be a section: write [{section}] and its settings on the lines under it")
@@ -145,7 +159,7 @@ def check(section, values, problems=None):
         if want is None and default is not None:      # the kind of value its default is
             want = type(default) if isinstance(default, bool) or not isinstance(default, NUMBER) else NUMBER
         if want is None:
-            log.warning("config: [%s] %s isn't a setting CloudWall knows (a typo?): it has no effect", section, key)
+            _warn("config: [%s] %s isn't a setting CloudWall knows (a typo?): it has no effect", section, key)
             continue
         if not _fits(v, want):
             words = {bool: "true or false", str: "text in quotes", list: "a list", NUMBER: "a number"}.get(want, "text or a number")
@@ -234,6 +248,7 @@ def load(path=None):
     if path and not path.exists():          # named by --config or $CLOUDWALL_CONFIG, but not there
         raise ValueError("no such file (cloudwall --init-config writes one to start from)")
     problems = []
+    _reading[0] = str(Path(path).resolve()) if path else None
     if path:
         with open(path, "rb") as f:
             for section, values in tomllib.load(f).items():
@@ -246,7 +261,7 @@ def load(path=None):
                 elif section == "home" and "zip" in values and "lat" not in values and "lon" not in values:
                     cfg["home"] = dict(values, name=values.get("name", "Home"))   # placed by ZIP code, not the placeholder
                 elif section == "home" and "zip" in values:
-                    log.warning("config: [home] gives both zip and lat/lon: lat/lon are used and the ZIP code "
+                    _warn("config: [home] gives both zip and lat/lon: lat/lon are used and the ZIP code "
                                 "ignored (take out lat and lon to be placed by the ZIP code)")
                     cfg["home"].update(values)
                 else:
@@ -257,7 +272,7 @@ def load(path=None):
     cfg["_path"] = str(path) if path else None
     cfg["_problems"] = problems
     for p in problems:
-        log.warning("config: %s", p)
+        _warn("config: %s", p)
     return cfg
 
 
