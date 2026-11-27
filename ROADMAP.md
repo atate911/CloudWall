@@ -180,11 +180,16 @@ public feed, not replayed.
 One web console for the whole system, used for troubleshooting and fixing as well as settings,
 with the command line kept for when the web side itself is down.
 
-- **At a glance:** the Overview: every part's state, open incidents, the worst first, major ones
-  unmissable.
-- **Drill down:** a section for each part (places, positions, receiver and link, radio, coverage,
-  routes and budget, maps, screens, access, storage and backups, the system), plain controls first,
-  then the raw settings, where each value comes from, logs and diagnostics.
+- **At a glance:** Home draws the system as one picture (the sky, the receiver and feeds, the
+  server, the screens, the logbook, alerts), each part lit by its state and a door to its page;
+  under it only what needs doing. The rail says each part's state under its name.
+- **Drill down:** a page for each part, each opening with a picture of what it looks after (the
+  receiver's reach, the feeds' chain, the house's map with its rings, the allowance as a fuel
+  gauge, the wall panel live, the doors in, the backups along a month, problems along a week);
+  each setting changed in the form that fits it (a ring dragged, a dial, pictures, cards, a
+  switch), the frequent first, the set-once as facts with a change link, the rare under shades
+  whose covers say how they stand; every setting also in one searchable list, and a finder for
+  any setting or job from any page.
 - **Help when asked:** each setting's explanation, unit, safe range and consequence from the
   settings schema; each problem's meaning, causes and steps from the catalogue; proficient by
   default, never in the way.
@@ -219,3 +224,4 @@ with the command line kept for when the web side itself is down.
 | 4b. Health | Done: problem catalogue (core/troubles.py), watcher in the running server (app/watch.py) with plausibility checks for subtle failures, incident log, banner on every screen for major problems, systemd status, webhook alerts, safe repairs made at once, survey of any machine's setup (operate/survey.py), `doctor --fix` guided walk-through (operate/guide.py) |
 | Production readiness | Done for stages 0 to 5: a high-effort review of the branch (10 findings, all fixed with tests); the move rehearsed on real systemd (Ubuntu 24.04) from the old `make service` setup, upgrade, second upgrade, the board, the root helper, restart, watchdog, update and rollback, doctor (`tools/rehearse/`); the suite run on Python 3.11 and 3.13 |
 | 5. Control board | First version done: owner sign-in (`cloudwall owner`), the root helper, the settings schema, the board at /admin (annunciator, checklists, every setting, backups, log, restart); `cloudwall upgrade` and `rollback`, MIGRATION.md. Next: a design pass for delight, then the station |
+| 5b. The board, redesigned | Done: a page for each job, each opening with a live picture of what it looks after, settings in the form that fits them and sorted by how often they change, the receiver's health, live map and Coverage3D on the board (`/receiver/`, `/coverage/`, the tunnel's `--coverage`), alerts set up and tested from the page, a finder for any setting or job; light, dark and phone |

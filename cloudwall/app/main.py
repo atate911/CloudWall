@@ -106,10 +106,14 @@ def main():
         return
 
     cfg, from_good = load_settings(args.config)
+    # what the command line says wins over the file; the control board is told, so it doesn't take
+    # the difference for a saved setting waiting for a restart
     if args.host:
         cfg["server"]["host"] = args.host
+        cfg.setdefault("_cli", []).append("server.host")
     if args.port:
         cfg["server"]["port"] = args.port
+        cfg.setdefault("_cli", []).append("server.port")
     try:
         place_cfgs = placing.places(cfg)
     except ValueError as e:

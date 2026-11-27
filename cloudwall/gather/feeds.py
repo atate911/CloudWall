@@ -154,10 +154,21 @@ class Vitals:
         self.ok_at, self.down_since, self.error, self.host = received, None, None, host
         self.count = len(placed)
         self.moving = sum(1 for a, _ in placed if (a.get("gs") or 0) > 50)
-        signature = hash(tuple(sorted((a["hex"], round(a["lat"], 5), round(a["lon"], 5)) for a, _ in placed)))
-        self.same = self.same + 1 if signature == self._signature and self.moving else 0
-        self._signature = signature
+        # Frozen is the whole answer not being made afresh: readsb and the community feeds stamp each
+        # answer with when it was made ("now"), so the same stamp again is the same answer again (a
+        # decoder that hung while its web server goes on, or a cache in between). One aircraft at
+        # the same position several times is no sign: a decoder lists an aircraft that has gone out of
+        # range at its last position for up to a minute while it ages. Only a feed with no stamp is
+        # judged by its positions, and then only with several aircraft moving.
         now = (data or {}).get("now")
+        if isinstance(now, (int, float)) and not isinstance(now, bool):
+            signature = ("now", now)
+        elif self.moving >= 3:
+            signature = hash(tuple(sorted((a["hex"], round(a["lat"], 5), round(a["lon"], 5)) for a, _ in placed)))
+        else:
+            signature = None
+        self.same = self.same + 1 if signature is not None and signature == self._signature else 0
+        self._signature = signature
         if isinstance(now, (int, float)) and not isinstance(now, bool):
             self.skew_s = round((now / 1000 if now > 1e11 else now) - received, 1)
         ages = sorted(_num(a.get("seen_pos")) for a in (data or {}).get("ac") or (data or {}).get("aircraft") or []

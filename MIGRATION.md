@@ -67,7 +67,8 @@ sudo cloudwall owner
 ```
 
 Then open `http://<the server>:5050/admin` (with your private link: `.../k/<key>/admin`) and sign in.
-Its Overview shows a lamp for each part of CloudWall; anything lit has its steps under it.
+Its Home page draws CloudWall as one picture, each part lit by how it's doing; anything that needs you
+is listed under it with its steps. The box at the top of the rail finds any setting by name.
 
 **4. Let it put right what it found:**
 

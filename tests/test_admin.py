@@ -30,7 +30,9 @@ class StubEnricher:
         return None
 
 
-class AdminTest(unittest.TestCase):
+class Served(unittest.TestCase):
+    """A CloudWall serving the board, with a settings file of its own, and a way to call it."""
+
     def setUp(self):
         self.dir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.dir)
@@ -80,6 +82,9 @@ class AdminTest(unittest.TestCase):
         except urllib.error.HTTPError as e:
             return e.code, json.loads(e.read() or b"{}")
 
+
+
+class AdminTest(Served):
     def test_with_no_owner_this_machine_may_and_a_proxied_visitor_may_not(self):
         self.serve()
         code, who = self.call("/api/admin/whoami")
@@ -202,6 +207,129 @@ class AdminTest(unittest.TestCase):
         with urllib.request.urlopen(self.base + "/admin", timeout=5) as r:
             self.assertIn(b"CloudWall", r.read())
 
+    def test_a_slash_after_admin_or_kiosk_is_sent_to_the_address_without_it(self):
+        """With the slash the page's relative addresses would point into a folder that isn't there
+        and it would load unstyled: so it is redirected, under a private link as well."""
+        with open(self.cfg_path, "a") as f:
+            f.write('[server]\nkey = "tafo-kemi-luza-nobe"\n')
+        self.serve()
+        for page in ("admin", "kiosk"):
+            with urllib.request.urlopen(f"{self.base}/k/tafo-kemi-luza-nobe/{page}/", timeout=5) as r:
+                self.assertEqual(r.url, f"{self.base}/k/tafo-kemi-luza-nobe/{page}")    # followed to here
+                self.assertIn(b"CloudWall", r.read())
+
+
+class BoardPagesTest(Served):
+    """What the board's pages are drawn from: the overview's figures, settings that need no restart,
+    the test alert."""
+
+    def test_the_overview_has_what_the_pages_draw(self):
+        self.serve()
+        o = self.call("/api/admin/overview")[1]
+        self.assertEqual((o["home"]["lat"], o["home"]["lon"]), (45.62, -122.66))     # the house's map
+        self.assertEqual(o["tracking"]["radius_nm"], config.DEFAULTS["tracking"]["radius_nm"])
+        self.assertIn("cache", o["storage"])                                            # the disk's bar
+        self.assertIsNone(o["storage"]["last_backup"])                                  # never backed up
+        self.assertFalse(o["alerts"])
+
+    def test_the_receivers_settings_take_effect_as_saved(self):
+        self.serve()
+        code, got = self.call("/api/admin/settings", {"section": "receiver", "key": "home_url", "value": "http://192.0.2.7"})
+        self.assertNotIn("restart", got)
+        s = self.call("/api/admin/settings")[1]
+        self.assertEqual(s["running"]["receiver"]["home_url"], "http://192.0.2.7")     # nothing waits for a restart
+        self.assertEqual(self.call("/api/admin/receiver")[1]["home_url"], "http://192.0.2.7")
+        self.call("/api/admin/settings", {"section": "tracking", "key": "radius_nm", "value": 21})
+        s = self.call("/api/admin/settings")[1]
+        self.assertNotEqual(s["running"]["tracking"]["radius_nm"], 21)                  # this one does
+
+    def test_what_the_command_line_gave_isnt_a_change_waiting(self):
+        srv = self.serve()
+        srv.admin.cfg["_cli"] = ["server.port"]                       # as --port leaves it (app/main.py)
+        s = self.call("/api/admin/settings")[1]
+        saved = next(st for sec in s["sections"] if sec["name"] == "server" for st in sec["settings"] if st["key"] == "port")
+        self.assertEqual(s["running"]["server"]["port"], saved["value"])
+
+    def test_a_test_alert_goes_to_the_saved_address_before_a_restart(self):
+        self.serve()
+        code, got = self.call("/api/admin/alert-test", {})
+        self.assertEqual(code, 400)
+        self.assertIn("No alert address", got["error"])
+        self.call("/api/admin/settings", {"section": "health", "key": "notify_url", "value": "https://ntfy.example/cw-test"})
+        sent = []
+        from unittest import mock
+        with mock.patch("cloudwall.core.http.post_json", lambda url, body, timeout=10: sent.append((url, body))):
+            code, got = self.call("/api/admin/alert-test", {})
+        self.assertEqual(code, 200)
+        self.assertEqual(sent[0][0], "https://ntfy.example/cw-test")
+        self.assertEqual(sent[0][1]["event"], "test")
+
+
+class StrayLinesTest(Served):
+    """Lines of the settings file that do nothing (a setting under the wrong heading, an old name),
+    found and put right from the board."""
+
+    def setUp(self):
+        super().setUp()
+        with open(self.cfg_path, "a") as f:
+            f.write('[map]\nstyle = "dark"\nwhen_idle = "log"\n[source]\nname = "my receiver"\n[kiosk]\nidle_after_seconds = 120\n')
+
+    def test_they_are_found_with_where_they_belong(self):
+        found = {(x["section"], x["key"]): x["belongs"] for x in config.strays(self.cfg_path)}
+        self.assertEqual(found, {("map", "when_idle"): "tracking", ("source", "name"): None,      # never moved: a feed's name
+                                 ("kiosk", "idle_after_seconds"): "tracking"})
+
+    def test_one_is_moved_where_it_belongs(self):
+        self.serve()
+        code, got = self.call("/api/admin/tidy", {"section": "map", "key": "when_idle", "action": "move"})
+        self.assertEqual(code, 200)
+        cfg = config.load(self.cfg_path)
+        self.assertEqual(cfg["tracking"]["when_idle"], "log")
+        self.assertEqual(cfg["map"]["style"], "dark")                                   # its neighbour stays
+        self.assertNotIn(("map", "when_idle"), [(x["section"], x["key"]) for x in config.strays(self.cfg_path)])
+
+    def test_one_already_set_where_it_belongs_is_only_taken_out(self):
+        self.serve()
+        config.write_setting(self.cfg_path, "tracking", "idle_after_seconds", 300)
+        code, got = self.call("/api/admin/tidy", {"section": "kiosk", "key": "idle_after_seconds", "action": "move"})
+        self.assertIn("already set", got["said"])
+        self.assertEqual(config.load(self.cfg_path)["tracking"]["idle_after_seconds"], 300)  # what was there wins
+
+    def test_one_with_nowhere_to_go_is_taken_out_and_its_heading_with_it(self):
+        self.serve()
+        self.assertEqual(self.call("/api/admin/tidy", {"section": "source", "key": "name", "action": "move"})[0], 400)
+        code, got = self.call("/api/admin/tidy", {"section": "source", "key": "name", "action": "remove"})
+        self.assertEqual(code, 200)
+        self.assertNotIn("[source]", self.cfg_path.read_text())                          # nothing left under it
+        self.assertEqual(oct(self.cfg_path.stat().st_mode & 0o777), "0o640")              # still the owner's only
+
+    def test_only_a_stray_line_can_be_taken_out(self):
+        self.serve()
+        code, got = self.call("/api/admin/tidy", {"section": "map", "key": "style", "action": "remove"})
+        self.assertEqual(code, 400)
+        self.assertEqual(config.load(self.cfg_path)["map"]["style"], "dark")
+
+    def test_the_settings_say_what_they_found(self):
+        self.serve()
+        got = self.call("/api/admin/settings")[1]
+        self.assertEqual(len(got["strays"]), 3)
+        self.assertEqual(got["left_out"], [])
+
+
+class BudgetDaysTest(unittest.TestCase):
+    def test_each_days_use_this_period(self):
+        import datetime as dt
+        from cloudwall.gather.flightradar24 import Flightradar24 as FR24
+        cfg = config.load(None)
+        cfg["flightradar24"].update(api_key="k", monthly_credits=30000, billing_day=1)
+        p = FR24(cfg, Store(":memory:"))
+        p._today = lambda: dt.date(2026, 3, 5)
+        p.store.cache_put("flightradar24_usage", "2026-03-02", 40)
+        p.store.cache_put("flightradar24_usage", "2026-03-05", 7)
+        b = p.budget()
+        self.assertEqual(b["days"], [["2026-03-01", 0], ["2026-03-02", 40], ["2026-03-03", 0], ["2026-03-04", 0], ["2026-03-05", 7]])
+        self.assertEqual((b["period_used"], b["used_today"], b["starts"]), (47, 7, "2026-03-01"))
+
 
 class HelperTest(unittest.TestCase):
     def test_only_what_is_on_the_list_is_done(self):
@@ -246,3 +374,98 @@ class HelperUnitTest(unittest.TestCase):
             rid = helper.ask("enable-service", folder=d)
             self.assertEqual([p.name for p in Path(d).glob("*.json")], [f"{rid}.json"])   # whole, and named so
             self.assertEqual(list(Path(d).glob(".*.tmp")), [])
+
+
+class ReceiverTest(AdminTest):
+    """The receiver on the control board: its health read from its own files, its map and Coverage3D
+    passed through for the owner, as they would come through the tunnel."""
+
+    def fake_receiver(self):
+        import gzip
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        seen = self.seen = []
+        files = {
+            "/": (b"<!doctype html><title>tar1090</title><script src=script.js></script>", "text/html", None),
+            "/script.js": (gzip.compress(b"console.log('map')"), "application/javascript", "gzip"),
+            "/data/receiver.json": (json.dumps({"lat": 45.6, "lon": -122.6, "version": "readsb 3.16"}).encode(), "application/json", None),
+            "/data/stats.json": (json.dumps({"now": 1e9, "gain_db": 49.6, "estimated_ppm": 0.8, "aircraft_with_pos": 12,
+                                             "aircraft_without_pos": 3, "aircraft_count_by_type": {"adsb_icao": 11, "mlat": 1, "tisb_icao": 0},
+                                             "last1min": {"messages": 1200, "max_distance": 185200,
+                                                          "local": {"accepted": [900, 100], "signal": -12.0, "noise": -32.0,
+                                                                    "peak_signal": -2.0, "strong_signals": 30}},
+                                             "last15min": {"messages": 9000, "max_distance": 370400, "local": {}}}).encode(), "application/json", None),
+            "/data/outline.json": (json.dumps({"actualRange": {"last24h": {"points": [[46.5, -122.6, 30000], [45.6, -121.0, 25000]]}}}).encode(), "application/json", None),
+            "/healthz": (b'{"ok": true}', "application/json", None),
+        }
+
+        class Receiver(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                seen.append((self.path, self.headers.get("Cookie"), self.headers.get("Accept-Encoding")))
+                body, ctype, enc = files.get(self.path.split("?")[0], (b"not here", "text/plain", None))
+                self.send_response(200 if self.path.split("?")[0] in files else 404)
+                self.send_header("Content-Type", ctype)
+                if enc:
+                    self.send_header("Content-Encoding", enc)
+                self.end_headers()
+                self.wfile.write(body)
+        rx = ThreadingHTTPServer(("127.0.0.1", 0), Receiver)
+        threading.Thread(target=rx.serve_forever, daemon=True).start()
+        self.addCleanup(rx.shutdown)
+        port = rx.server_address[1]
+        with open(self.cfg_path, "a") as f:
+            f.write(f'[receiver]\nurl = "http://127.0.0.1:{port}"\ncoverage_url = "http://127.0.0.1:{port}"\nhome_url = "http://192.168.3.3"\n')
+        return port
+
+    def test_the_receivers_health_as_the_board_reads_it(self):
+        self.fake_receiver()
+        self.serve()
+        code, r = self.call("/api/admin/receiver")
+        self.assertEqual(code, 200)
+        self.assertTrue(r["reachable"] and r["coverage"])
+        self.assertEqual((r["gain_db"], r["with_pos"], r["by_type"]), (49.6, 12, {"adsb_icao": 11, "mlat": 1}))
+        m = r["last1min"]
+        self.assertEqual((m["messages_s"], m["max_nm"], m["strong_pct"]), (20.0, 100.0, 3.0))
+        self.assertEqual(r["last15min"]["max_nm"], 200.0)
+        self.assertEqual(len(r["outline"]), 2)
+        self.assertEqual(r["home_url"], "http://192.168.3.3")
+
+    def test_the_map_is_passed_through_for_the_owner_only_without_the_cookie(self):
+        self.fake_receiver()
+        self.serve(owner="correct horse battery")
+        with self.assertRaises(urllib.error.HTTPError) as e:                     # a viewer
+            urllib.request.urlopen(self.base + "/receiver/", timeout=5)
+        self.assertEqual(e.exception.code, 401)
+        self.call("/api/admin/signin", {"password": "correct horse battery"})
+        req = urllib.request.Request(self.base + "/receiver/script.js",
+                                     headers={"Cookie": self.cookie, "Accept-Encoding": "gzip"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            self.assertEqual(r.headers.get("Content-Encoding"), "gzip")         # passed back as it came
+            import gzip
+            self.assertEqual(gzip.decompress(r.read()), b"console.log('map')")
+        path, cookie, enc = self.seen[-1]
+        self.assertEqual((path, cookie, enc), ("/script.js", None, "gzip"))     # the board's cookie never goes on
+        req = urllib.request.Request(self.base + "/receiver", headers={"Cookie": self.cookie})
+        with urllib.request.urlopen(req, timeout=5) as r:                        # followed to /receiver/
+            self.assertIn(b"tar1090", r.read())
+        for bad in ("/receiver/../etc/passwd", "/receiver/http://evil.example/x", "/receiver//etc/passwd"):
+            req = urllib.request.Request(self.base + bad, headers={"Cookie": self.cookie})
+            with self.assertRaises(urllib.error.HTTPError) as e:
+                urllib.request.urlopen(req, timeout=5)
+            self.assertIn(e.exception.code, (400, 404))
+
+    def test_without_a_receiver_the_page_says_so(self):
+        self.serve()
+        code, r = self.call("/api/admin/receiver")
+        self.assertEqual((code, r["url"], r["reachable"]), (200, None, False))
+        self.assertEqual(self.call("/receiver/")[0], 404)
+
+    def test_the_tunnels_receiver_and_coverage3d_are_found_from_the_feeds(self):
+        from cloudwall.app.admin import Admin
+        cfg = config.load(None)
+        cfg["source"].update(urls=["http://127.0.0.1:18080/data/aircraft.json", "https://opendata.adsb.fi/{lat}"], merge=True)
+        self.assertEqual(Admin(cfg, []).receiver_urls(), ("http://127.0.0.1:18080", "http://127.0.0.1:18090"))
+        cfg["source"].update(urls=["http://192.168.3.3:8080/data/aircraft.json", "https://x/{lat}"])
+        self.assertEqual(Admin(cfg, []).receiver_urls(), ("http://192.168.3.3:8080", "http://192.168.3.3:8090"))

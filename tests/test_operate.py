@@ -6,6 +6,7 @@ import socket
 import sqlite3
 import stat
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -238,6 +239,37 @@ class DoctorTest(unittest.TestCase):
         self.assertIn("radius_nm", bad.summary)
         self.assertTrue(bad.detail and bad.fix)                             # says what it means and what to do
         self.assertTrue(any(f.part == "storage" for f in found))
+
+    def test_a_cloudwall_woken_by_the_asking_isnt_called_offline(self):
+        """A CloudWall paused with no screen open (or just started) has no positions at the moment
+        doctor first asks; the asking wakes it. doctor waits for it, rather than say it is offline."""
+        import json
+        import threading
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        asked = []
+
+        class Wall(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                asked.append(self.path)
+                woke = len(asked) >= 2                                   # positions by the second ask
+                body = json.dumps({"status": {"ok": woke, "updated": time.time() if woke else 0,
+                                              "source": "opendata.adsb.fi", "error": None}}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(body)
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), Wall)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        self.addCleanup(srv.shutdown)
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d, "config.toml")
+            p.write_text(f"[server]\nport = {srv.server_address[1]}\n")
+            found = list(doctor.server(doctor.Context(p, offline=True)))
+        self.assertEqual([(f.part, f.state) for f in found], [("server", health.OK)])
+        self.assertGreaterEqual(len(asked), 2)
 
     def test_a_check_that_breaks_is_a_finding_not_a_crash(self):
         def broken(ctx):

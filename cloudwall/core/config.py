@@ -51,7 +51,7 @@ DEFAULTS = {
     # Map behind the radar: "dark", "light", "satellite", "osm" or "off" (or set url = a tile URL template)
     # route: the map behind the flight's route on its card, one of the same styles (not a url), or "off"
     # cache_mb: the most disk the downloaded map and chart tiles may take, all layers together
-    "map": {"style": "dark", "opacity": 0.45, "url": "", "attribution": "", "route": "satellite", "cache_mb": 2000},
+    "map": {"style": "dark", "opacity": 0.45, "url": "", "attribution": "", "route": "satellite", "atc": "off", "cache_mb": 2000},
     # Airline logos on the flight card, fetched by airline code and cached on disk
     "logos": {"enabled": True, "url": ""},
     # Extra free data: military jets heard without a position, temporary flight
@@ -75,6 +75,11 @@ DEFAULTS = {
     "storage": {"db_path": "", "cache_dir": ""},
     # notify_url: a webhook told when a major problem starts and ends (e.g. an ntfy.sh topic's URL)
     "health": {"notify_url": ""},
+    # Your own receiver, as the control board shows it. url: where its web server answers from here
+    # (empty: worked out from [source] urls when merge is on); coverage_url: Coverage3D's (empty: the
+    # port after the receiver's: the tunnel's 18090 beside its 18080); home_url: its address on the
+    # home network, for adsb.im's own pages, which the board links to but never opens to the internet.
+    "receiver": {"url": "", "coverage_url": "", "home_url": ""},
 }
 
 
@@ -108,6 +113,20 @@ BETWEEN = {("map", "opacity"): (0, 1), ("kiosk", "range_nm"): (0, 30), ("map", "
 MORE_THAN_ZERO = {"tracking": ("radius_nm", "overhead_nm", "max_overhead_alt_ft", "poll_seconds", "idle_after_seconds")}
 
 
+_said = set()
+_reading = [None]           # the file being read, so each of its warnings is said once
+
+
+def _warn(fmt, *args):
+    """A warning about the settings, said once for each file however often it is read (an upgrade
+    reads it several times)."""
+    text = fmt % args if args else fmt
+    key = (_reading[0], text)
+    if _reading[0] is None or key not in _said:
+        _said.add(key)
+        log.warning("%s", text)
+
+
 def _fits(v, want):
     """Is v the kind of value wanted? (true and false aren't numbers, though Python counts them so.)"""
     kinds = want if isinstance(want, tuple) else (want,)
@@ -131,9 +150,9 @@ def check(section, values, problems=None):
         return True
     if section not in DEFAULTS:
         if isinstance(values, dict):
-            log.warning("config: [%s] isn't a section CloudWall knows: left out", section)
+            _warn("config: [%s] isn't a section CloudWall knows: left out", section)
         else:
-            log.warning("config: %s is set outside any section (settings go under a [section] heading): left out", section)
+            _warn("config: %s is set outside any section (settings go under a [section] heading): left out", section)
         return False
     if not isinstance(values, dict):
         raise ValueError(f"{section} must be a section: write [{section}] and its settings on the lines under it")
@@ -145,7 +164,7 @@ def check(section, values, problems=None):
         if want is None and default is not None:      # the kind of value its default is
             want = type(default) if isinstance(default, bool) or not isinstance(default, NUMBER) else NUMBER
         if want is None:
-            log.warning("config: [%s] %s isn't a setting CloudWall knows (a typo?): it has no effect", section, key)
+            _warn("config: [%s] %s isn't a setting CloudWall knows (a typo?): it has no effect", section, key)
             continue
         if not _fits(v, want):
             words = {bool: "true or false", str: "text in quotes", list: "a list", NUMBER: "a number"}.get(want, "text or a number")
@@ -234,6 +253,7 @@ def load(path=None):
     if path and not path.exists():          # named by --config or $CLOUDWALL_CONFIG, but not there
         raise ValueError("no such file (cloudwall --init-config writes one to start from)")
     problems = []
+    _reading[0] = str(Path(path).resolve()) if path else None
     if path:
         with open(path, "rb") as f:
             for section, values in tomllib.load(f).items():
@@ -246,7 +266,7 @@ def load(path=None):
                 elif section == "home" and "zip" in values and "lat" not in values and "lon" not in values:
                     cfg["home"] = dict(values, name=values.get("name", "Home"))   # placed by ZIP code, not the placeholder
                 elif section == "home" and "zip" in values:
-                    log.warning("config: [home] gives both zip and lat/lon: lat/lon are used and the ZIP code "
+                    _warn("config: [home] gives both zip and lat/lon: lat/lon are used and the ZIP code "
                                 "ignored (take out lat and lon to be placed by the ZIP code)")
                     cfg["home"].update(values)
                 else:
@@ -257,7 +277,7 @@ def load(path=None):
     cfg["_path"] = str(path) if path else None
     cfg["_problems"] = problems
     for p in problems:
-        log.warning("config: %s", p)
+        _warn("config: %s", p)
     return cfg
 
 
@@ -342,6 +362,79 @@ def write_setting(path, section, key, value):
         os.chown(tmp, st.st_uid, st.st_gid)
     if path.exists():                    # the file as it was, to go back to if the new one won't start
         shutil.copy2(path, path.with_name(path.name + ".before"))
+    os.replace(tmp, path)
+
+
+# names too plain to say where a stray setting belongs ([source] name was a feed's name, not the house's)
+GENERIC = {"name", "enabled", "url", "urls", "key", "host", "port", "mode", "style", "path"}
+
+
+def known(section, key):
+    """Is `[section] key` a setting CloudWall uses?"""
+    if section == "airport":
+        return True
+    return key in DEFAULTS.get(section, {}) or key in OPTIONAL.get(section, {})
+
+
+def strays(path):
+    """Lines in the settings file that do nothing: a setting under the wrong heading (most often),
+    a name CloudWall doesn't know, a heading it doesn't know. Each with the section it belongs in,
+    when its name is a setting of exactly one other section: [{"section", "key", "value", "belongs"}]."""
+    path = Path(path) if path else None
+    if not path or not path.exists():
+        return []
+    try:
+        with open(path, "rb") as f:
+            data = tomllib.load(f)
+    except (OSError, tomllib.TOMLDecodeError):
+        return []
+    out = []
+    for section, values in data.items():
+        if section == "places" or not isinstance(values, dict):
+            continue
+        for key, v in values.items():
+            if section in DEFAULTS and known(section, key):
+                continue
+            homes = [sec for sec in DEFAULTS if sec not in ("airport", "places") and known(sec, key)]
+            # a name as plain as "name" or "url" means something different under each heading: never moved
+            out.append({"section": section, "key": key, "value": v,
+                        "belongs": homes[0] if len(homes) == 1 and key not in GENERIC else None})
+    return out
+
+
+def remove_setting(path, section, key):
+    """Take `[section] key` out of the settings file (the setting's own line; a heading left with
+    nothing under it goes too). Checked as write_setting is: if the file wouldn't read as TOML, or
+    the setting is still there (a value over several lines), nothing is written."""
+    path = Path(path)
+    lines = path.read_text().splitlines()
+    head = next((i for i, l in enumerate(lines) if re.match(rf"^\s*\[{re.escape(section)}\]\s*(#.*)?$", l)), None)
+    if head is None:
+        raise ValueError(f"there's no [{section}] in {path}")
+    end = next((i for i in range(head + 1, len(lines)) if re.match(r"^\s*\[", lines[i])), len(lines))
+    at = next((i for i in range(head + 1, end) if re.match(rf"^\s*{re.escape(key)}\s*=", lines[i])), None)
+    if at is None:
+        raise ValueError(f"[{section}] {key} isn't in {path}")
+    del lines[at]
+    end -= 1
+    if not any(lines[i].strip() and not lines[i].lstrip().startswith("#") for i in range(head + 1, end)):
+        del lines[head:end]                        # the heading, now with nothing under it
+    new = "\n".join(lines).rstrip("\n") + "\n"
+    try:
+        got = tomllib.loads(new)
+    except tomllib.TOMLDecodeError:
+        raise ValueError(f"[{section}] {key} runs over several lines: take it out of {path} by hand") from None
+    if key in got.get(section, {}):
+        raise ValueError(f"[{section}] {key} is set twice in {path}: take it out by hand")
+    st = path.stat()
+    tmp = path.with_name(path.name + ".tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, st.st_mode & 0o770)
+    with os.fdopen(fd, "w") as f:
+        f.write(new)
+    os.chmod(tmp, st.st_mode & 0o770)
+    if os.geteuid() == 0:
+        os.chown(tmp, st.st_uid, st.st_gid)
+    shutil.copy2(path, path.with_name(path.name + ".before"))
     os.replace(tmp, path)
 
 

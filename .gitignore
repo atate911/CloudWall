@@ -8,3 +8,9 @@ build/
 dist/
 *.egg-info/
 node_modules/
+
+# a proxy CA copied in only to build the rehearsal image
+tools/rehearse/*.crt
+# reports the receiver tools save where they are run (they hold masked, but still personal, details)
+feeder-report*.txt
+coverage3d_facts.txt

@@ -52,8 +52,8 @@ async function loadCoverage() {
     if (s.compare) {
       const day = (v, end) => Math.floor(new Date(v + (end ? "T23:59:59" : "T00:00:00")).getTime() / 1000);
       const q = commonQuery(new URLSearchParams({ a_from: day(s.aFrom), a_to: day(s.aTo, true), b_from: day(s.bFrom), b_to: day(s.bTo, true) }));
-      const r = await getJSON("/api/compare?" + q); a = r.a; b = r.b;
-    } else a = await getJSON("/api/coverage?" + commonQuery(rangeQuery()));
+      const r = await getJSON("api/compare?" + q); a = r.a; b = r.b;
+    } else a = await getJSON("api/coverage?" + commonQuery(rangeQuery()));
     if (my !== seq.cov) return;
     st.cov = a; st.covB = b; st.covKey++;
     st.maxR = clamp(Math.ceil(Math.max(200, a.summary.max_nm, b?.summary.max_nm || 0) / 50) * 50, 200, 400);
@@ -68,29 +68,29 @@ async function loadPoints() {
     if (S.settings.compare) { const day = (v, e) => Math.floor(new Date(v + (e ? "T23:59:59" : "T00:00:00")).getTime() / 1000); q = new URLSearchParams({ from: day(S.settings.aFrom), to: day(S.settings.aTo, true) }); }
     q.set("limit", 100000);
     q.set("source", commonQuery(new URLSearchParams()).get("source"));
-    const p = await getJSON("/api/points?" + q);
+    const p = await getJSON("api/points?" + q);
     if (my === seq.pts) { st.points = p; pushMap(); }
   } catch (e) { banner("Points: " + e.message); }
 }
 async function loadVertical() {
-  try { vert = await getJSON("/api/vertical?" + commonQuery(rangeQuery())); drawPlots(); } catch (e) { /* plot stays empty */ }
+  try { vert = await getJSON("api/vertical?" + commonQuery(rangeQuery())); drawPlots(); } catch (e) { /* plot stays empty */ }
 }
 async function loadStats() {
   try {
-    const d = await getJSON("/api/stats?" + commonQuery(rangeQuery()));
+    const d = await getJSON("api/stats?" + commonQuery(rangeQuery()));
     S.stats = d; renderStats();
   } catch (e) { /* ignore */ }
 }
 async function loadLive() {
   try {
-    const d = await getJSON("/api/live");
+    const d = await getJSON("api/live");
     st.live = d.aircraft; setStatus(d.up.every(Boolean) ? "ok" : "bad", d.up.every(Boolean) ? "feed OK" : "readsb feed unavailable");
     if (S.settings.live) pushMap();
   } catch (e) { setStatus("bad", "cannot reach the Pi"); }
 }
 async function loadOutline() {
   if (!S.settings.readsbOutline) { st.outline = null; return pushMap(); }
-  try { const o = await getJSON("/api/outline"); st.outline = o?.actualRange?.last24h?.points || null; pushMap(); } catch (e) { /* none */ }
+  try { const o = await getJSON("api/outline"); st.outline = o?.actualRange?.last24h?.points || null; pushMap(); } catch (e) { /* none */ }
 }
 function setStatus(cls, title) { const e = $("status"); e.className = cls; e.title = title; }
 const refreshAll = () => { loadCoverage(); loadPoints(); loadVertical(); loadStats(); loadOutline(); };
@@ -131,7 +131,7 @@ async function onClick(info) {
     showInfo(`${head}Bearing ${sc.brg0}°–${sc.brg1}°<br>${st.cov.stat === "max" ? "Max" : "95th pct"} range: <b>${fmtDist(sc.dist_nm, u)}</b> (p95 ${sc.p95_nm} nm, max ${sc.max_nm} nm)<br>${sc.count.toLocaleString()} points · median ${sc.rssi_med ?? "–"} dBFS · weakest ${sc.rssi_min ?? "–"} dBFS<br>${fmtTime(sc.first)} → ${fmtTime(sc.last)}`, x, y);
   } else if (info.kind === "point") {
     const P = st.points, i = info.object;
-    let name = ""; try { name = (await getJSON("/api/aircraft?hex=" + P.hex[i])).callsign || ""; } catch (e) { /* none */ }
+    let name = ""; try { name = (await getJSON("api/aircraft?hex=" + P.hex[i])).callsign || ""; } catch (e) { /* none */ }
     showInfo(`<b class="t">${name || P.hex[i]}</b>${P.hex[i]}<br>${fmtTime(P.t[i])}<br>${fmtAlt(P.alt[i])} · ${fmtDist(P.dist[i], S.settings.units)}<br>RSSI ${P.rssi[i] ?? "–"} dBFS`, x, y);
   } else if (info.kind === "live") {
     const a = info.object;
@@ -210,10 +210,10 @@ function bindSel(id, after, num = false) {
 function bindDate(id, after) { const el = $(id); el.value = S.settings[id] || ""; el.onchange = () => { S.settings[id] = el.value; save(); after(); }; }
 
 async function init() {
-  cfg = await getJSON("/api/config");
+  cfg = await getJSON("api/config");
   st.station = cfg.station;
   if (cfg.demo) $("demo-badge").hidden = false;
-  st.ref = await getJSON("/api/reference").catch(() => null);
+  st.ref = await getJSON("api/reference").catch(() => null);
   const s = S.settings;
   if (!s.sector) s.sector = cfg.coverage.sector_deg;
   if (!s.bandFt) s.bandFt = cfg.coverage.band_ft;

@@ -7,7 +7,7 @@
 # no other forwarding, nothing new open to the internet. Read README.md in this folder first.
 #
 #   sudo bash vps-tunnel.sh setup "ssh-ed25519 AAAA... adsb-tunnel@pi"   # 2. authorise the Pi's key
-#        [--remote-port 18080]
+#        [--remote-port 18080] [--coverage]               #    --coverage: Coverage3D too (18090)
 #   bash vps-tunnel.sh test        [--remote-port 18080]   # 4. is the Pi's data arriving?
 #   bash vps-tunnel.sh cloudwall   [--remote-port 18080] [--config PATH]
 #                                                         # 5. put the Pi first in CloudWall's feeds
@@ -21,6 +21,7 @@ set -euo pipefail
 TUSER="${TUSER:-adsbtunnel}"
 THOME="${THOME:-/var/lib/$TUSER}"
 RPORT=18080
+COVER=""          # --coverage: the Pi may also open the port after RPORT (18090), for Coverage3D
 CONFIG=""
 
 say()  { printf '%s\n' "$*"; }
@@ -36,6 +37,7 @@ parse_opts() {
   while [ $# -gt 0 ]; do
     case "$1" in
       --remote-port) RPORT="$2"; shift 2;;
+      --coverage) COVER=1; shift;;
       --config) CONFIG="$2"; shift 2;;
       *) ARGS+=("$1"); shift;;
     esac
@@ -108,10 +110,14 @@ cmd_setup() {
     echo "# restrict: no shell, pty, agent or X11.  port-forwarding: re-allow forwarding, then limit it:"
     echo "# permitlisten: the only port the Pi may open here.  permitopen 127.0.0.1:9: an unused port,"
     echo "# so the key can't make connections out to anything on this VPS (blocks ssh -L)."
-    printf 'restrict,port-forwarding,permitlisten="127.0.0.1:%s",permitopen="127.0.0.1:9" %s\n' "$RPORT" "$key"
+    if [ -n "$COVER" ]; then
+      printf 'restrict,port-forwarding,permitlisten="127.0.0.1:%s",permitlisten="127.0.0.1:%s",permitopen="127.0.0.1:9" %s\n' "$RPORT" "$(( RPORT + 10 ))" "$key"
+    else
+      printf 'restrict,port-forwarding,permitlisten="127.0.0.1:%s",permitopen="127.0.0.1:9" %s\n' "$RPORT" "$key"
+    fi
   } > "$ak"
   chown "$TUSER":"$TUSER" "$ak"; chmod 600 "$ak"
-  ok "authorised the Pi's key: it may only listen on 127.0.0.1:$RPORT (no shell, no other forwarding)"
+  ok "authorised the Pi's key: it may only listen on 127.0.0.1:$RPORT${COVER:+ and 127.0.0.1:$(( RPORT + 10 )) (Coverage3D)} (no shell, no other forwarding)"
 
   say "3. SSH server settings that could block it"
   if command -v sshd >/dev/null; then

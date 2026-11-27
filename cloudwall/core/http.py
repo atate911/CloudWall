@@ -64,3 +64,27 @@ def post_json(url, body, timeout=12):
                                  headers={"User-Agent": UA, "Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read(64 * 1024)
+
+
+PASSED_ON = ("Accept", "Accept-Encoding", "Accept-Language", "If-Modified-Since", "If-None-Match", "Range")
+PASSED_BACK = ("Content-Type", "Content-Encoding", "Cache-Control", "ETag", "Last-Modified", "Expires",
+               "Content-Range", "Accept-Ranges")
+
+
+def relay(url, request_headers, timeout=20, max_bytes=64 * 1024 * 1024):
+    """GET url on behalf of a browser, for a page CloudWall shows from another machine (the
+    receiver's live map, Coverage3D): only the request headers that shape the answer are passed on
+    (never cookies), and only those that describe it are passed back. Returns (status, headers,
+    body); an HTTP error is an answer like any other (a 304, a 404)."""
+    headers = {k: request_headers[k] for k in PASSED_ON if request_headers.get(k)}
+    req = urllib.request.Request(url, headers={"User-Agent": UA, **headers})
+    try:
+        r = urllib.request.urlopen(req, timeout=timeout)
+    except urllib.error.HTTPError as e:
+        r = e
+    with r:
+        data = r.read(max_bytes + 1)
+        if len(data) > max_bytes:
+            raise TooBig(f"{url}: more than {max_bytes // 1024 // 1024} MB")
+        back = {k: r.headers[k] for k in PASSED_BACK if r.headers.get(k)}
+        return r.status if hasattr(r, "status") else r.code, back, data

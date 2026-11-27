@@ -17,7 +17,7 @@ cloudwall = "cloudwall.app.main:main"
 include = ["cloudwall", "cloudwall.*"]        # every layer's folder, found rather than listed
 
 [tool.setuptools.package-data]
-cloudwall = ["web/*", "web/js/*", "web/js/profiles/*", "web/maps/*", "web/fonts/*", "data/*", "data/types/*", "radio/README.md", "config.example.toml"]
+cloudwall = ["web/*", "web/js/*", "web/js/admin/*", "web/js/admin/pages/*", "web/js/profiles/*", "web/maps/*", "web/fonts/*", "data/*", "data/types/*", "radio/README.md", "config.example.toml"]
 
 [tool.setuptools.dynamic]
 version = { attr = "cloudwall.__version__" }

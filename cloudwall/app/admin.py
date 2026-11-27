@@ -23,6 +23,9 @@ from ..operate.survey import Machine, installs
 from ..operate.system import System
 from ..serve import auth
 
+# Sections only the control board uses: read from the file as saved, so they need no restart.
+LIVE = {"receiver"}
+
 UNDER_SYSTEMD = bool(os.environ.get("INVOCATION_ID"))
 
 
@@ -101,6 +104,8 @@ class Admin:
             return self.settings()
         if method == "POST" and name == "settings":
             return self.set_setting(body)
+        if method == "POST" and name == "tidy":
+            return self.tidy(body)
         if get and name == "health":
             return self.watch.report() if self.watch else {"open": [], "findings": []}
         if get and name == "incidents":
@@ -136,7 +141,132 @@ class Admin:
         if method == "POST" and name == "password":
             keys.set_password(str(body.get("password") or ""), self.cfg.get("_path"))
             return {"ok": True, "said": "the owner's password is changed"}
+        if get and name == "receiver":
+            return self.receiver()
+        if method == "POST" and name == "alert-test":
+            return self.alert_test()
         return None
+
+    def alert_test(self):
+        """Send a test alert to [health] notify_url, so the owner sees it arrive on their phone."""
+        from ..core.http import post_json
+        url = (self.saved().get("health") or {}).get("notify_url")      # as saved: test it before restarting
+        if not url:
+            raise ValueError("No alert address is saved yet")
+        try:
+            post_json(url, {"cloudwall": __version__, "event": "test", "major": False,
+                            "title": "A test alert from CloudWall's control board",
+                            "means": "If this reached you, problems that stop CloudWall working will too."}, timeout=10)
+        except Exception as e:
+            raise ValueError(f"The alert address didn't take it: {e}") from None
+        return {"ok": True, "said": "Test alert sent: it should reach you within a few seconds"}
+
+    # -- your receiver ---------------------------------------------------------------------------
+    def saved(self):
+        """The settings as saved (not as running): for the settings only the board uses, which
+        take effect as soon as they're saved. Read again at most every few seconds."""
+        at, cfg = getattr(self, "_saved", (0, None))
+        path = self.cfg.get("_path")
+        if not path:
+            return self.cfg
+        if time.time() - at > 3 or cfg is None:
+            try:
+                cfg = config.load(path)
+            except Exception:
+                cfg = self.cfg
+            self._saved = (time.time(), cfg)
+        return cfg
+
+    def receiver_urls(self, cfg=None):
+        """(the receiver's web server, Coverage3D's), as reached from this machine, or None each."""
+        cfg = cfg or self.saved()
+        r = cfg.get("receiver") or {}
+        url = (r.get("url") or "").rstrip("/")
+        src = cfg["source"]
+        if not url and src.get("merge") and src["urls"]:
+            first = src["urls"][0]
+            url = first.split("/data/")[0] if "/data/" in first else ""
+        cov = (r.get("coverage_url") or "").rstrip("/")
+        if not cov and url:
+            m = re.match(r"^(https?://[^/:]+):(\d+)$", url)
+            # through the tunnel the receiver is 127.0.0.1:18080 and Coverage3D the port after the
+            # receiver's own (18090); at home, the receiver's address on Coverage3D's own port, 8090
+            cov = f"{m.group(1)}:{int(m.group(2)) + 10}" if m and m.group(2) == "18080" else \
+                (f"{m.group(1)}:8090" if m else "")
+        return url or None, cov or None
+
+    def receiver(self):
+        """How the receiver is doing, from its own files (receiver.json, stats.json, outline.json),
+        with the board's own reading of them."""
+        from ..core.http import get_json
+        url, cov = self.receiver_urls()
+        out = {"url": url, "coverage_url": cov, "home_url": (self.saved().get("receiver") or {}).get("home_url") or None,
+               "reachable": False, "coverage": False}
+        if not url:
+            return out
+        try:
+            rec = get_json(f"{url}/data/receiver.json", timeout=8) or {}
+            stats = get_json(f"{url}/data/stats.json", timeout=8) or {}
+            out["reachable"] = True
+        except Exception as e:
+            out["error"] = str(e)
+            return out
+        try:
+            outline = get_json(f"{url}/data/outline.json", timeout=8) or {}
+        except Exception:
+            outline = {}
+        out["receiver"] = {"lat": rec.get("lat"), "lon": rec.get("lon"), "version": rec.get("version")}
+        out["now"] = stats.get("now")
+        out["gain_db"] = stats.get("gain_db")
+        out["ppm"] = stats.get("estimated_ppm")
+        out["with_pos"] = stats.get("aircraft_with_pos")
+        out["without_pos"] = stats.get("aircraft_without_pos")
+        out["by_type"] = {k: v for k, v in (stats.get("aircraft_count_by_type") or {}).items() if v}
+        for span, secs in (("last1min", 60), ("last15min", 900)):
+            p = stats.get(span) or {}
+            local = p.get("local") or {}
+            accepted = sum(local.get("accepted") or [0])
+            out[span] = {"messages_s": round((p.get("messages") or 0) / secs, 1), "signal": local.get("signal"),
+                         "noise": local.get("noise"), "peak": local.get("peak_signal"),
+                         "strong_pct": round(100 * (local.get("strong_signals") or 0) / accepted, 1) if accepted else None,
+                         "max_nm": round((p.get("max_distance") or 0) / 1852, 1) if p.get("max_distance") else None}
+        pts = (((outline.get("actualRange") or {}).get("last24h") or {}).get("points")) or outline.get("points") or []
+        out["outline"] = [[round(p[0], 4), round(p[1], 4)] for p in pts if isinstance(p, list) and len(p) >= 2][:720]
+        if cov:
+            try:
+                got = get_json(f"{cov}/healthz", timeout=4)
+                out["coverage"] = got is not None
+            except Exception:
+                out["coverage"] = False
+        return out
+
+    def relay(self, h, path):
+        """/receiver/... and /coverage/...: the receiver's live map and Coverage3D, as pages of the
+        board, for the owner. Only GET; only below the address set; nothing of the board's own
+        (its cookie) passed on."""
+        from ..core.http import relay
+        if self.role(h) != "owner":
+            return h._send(401, b"<!doctype html><meta charset=utf-8><p style='font:1rem sans-serif;margin:2rem'>"
+                                b"Sign in on the control board first.</p>", "text/html; charset=utf-8")
+        which, _, rest = path.lstrip("/").partition("/")
+        url, cov = self.receiver_urls()
+        base = url if which == "receiver" else cov
+        if not base:
+            return h._send(404, {"error": f"no {which} is set up: see the control board's Your receiver page"})
+        query = urlsplit(h.path).query
+        if ".." in rest.split("/") or "://" in rest or rest.startswith("/"):
+            return h._send(400, {"error": "not a path"})
+        try:
+            status, back, data = relay(f"{base}/{rest}" + (f"?{query}" if query else ""), h.headers)
+        except Exception as e:
+            return h._send(502, {"error": f"the {which} didn't answer: {e}"})
+        h.send_response(status)
+        for k, v in back.items():
+            h.send_header(k, v)
+        h.send_header("Content-Length", str(len(data)))
+        h.end_headers()
+        if h.command != "HEAD":
+            h.wfile.write(data)
 
     # -- what the board shows ------------------------------------------------------------------
     def whoami(self, h):
@@ -173,15 +303,81 @@ class Admin:
                 "health": self.watch.report() if self.watch else None,
                 "incidents": self.incidents.recent(20) if self.incidents else [],
                 "places": places, "provider": self.provider.status() if self.provider and self.provider.enabled else None,
-                "storage": {"folder": str(data), "disk": disk, "files": files}, "helper": helper.available(),
-                "installs": installs(Machine()), "private_link": bool(self.cfg["server"]["key"])}
+                "storage": {"folder": str(data), "disk": disk, "files": files, "cache": self.cache_size(),
+                            "last_backup": self.last_backup()}, "helper": helper.available(),
+                "installs": installs(Machine()), "private_link": bool(self.cfg["server"]["key"]),
+                "home": {k: self.cfg["home"].get(k) for k in ("name", "lat", "lon")},
+                "tracking": {k: self.cfg["tracking"][k] for k in ("radius_nm", "overhead_nm", "when_idle")},
+                "map": {"style": self.cfg["map"]["style"], "cache_mb": self.cfg["map"]["cache_mb"]},
+                "alerts": bool(self.cfg.get("health", {}).get("notify_url")),
+                "address": self.cfg["server"].get("address") or None}
+
+    def cache_size(self):
+        """The map tiles' and logos' size on disk (counted at most every ten minutes: it walks a folder)."""
+        at, size = getattr(self, "_cache_size", (0, None))
+        if time.time() - at > 600:
+            folder = config.cache_dir(self.cfg, str(self.cfg["storage"]["db_path"] or config.default_db_path()))
+            size = 0
+            for sub in ("tiles", "logos"):
+                for root, _, names in os.walk(folder / sub):
+                    for n in names:
+                        try:
+                            size += os.path.getsize(os.path.join(root, n))
+                        except OSError:
+                            pass
+            self._cache_size = (time.time(), size)
+        return size
+
+    def last_backup(self):
+        folder = backups.default_folder(self.cfg)
+        times = [p.stat().st_mtime for p in folder.glob("cloudwall-*.tar.gz")] if folder.is_dir() else []
+        return max(times) if times else None
 
     def settings(self):
         path = self.cfg.get("_path")
         on_disk = config.load(path) if path else self.cfg
+        running = {s["name"]: {st["key"]: st["value"] for st in s["settings"]} for s in schema.describe(self.cfg)}
+        for s in schema.describe(on_disk):
+            if s["name"] in LIVE:          # used as saved: nothing waits for a restart
+                running[s["name"]] = {st["key"]: st["value"] for st in s["settings"]}
+            for st in s["settings"]:       # given on the command line: not the file's to change
+                if f'{s["name"]}.{st["key"]}' in self.cfg.get("_cli", []):
+                    running[s["name"]][st["key"]] = st["value"]
         return {"file": path, "pages": [{"name": n, "label": l} for n, l in schema.PAGES],
-                "sections": schema.describe(on_disk),
-                "running": {s["name"]: {st["key"]: st["value"] for st in s["settings"]} for s in schema.describe(self.cfg)}}
+                "sections": schema.describe(on_disk), "live": sorted(LIVE), "running": running,
+                "strays": [dict(x, value=x["value"] if not re.search(r"key|token|password|secret|url", x["key"]) else "(hidden)")
+                           for x in config.strays(path)] if path else [],
+                "left_out": on_disk.get("_problems", [])}
+
+    def tidy(self, body):
+        """A line of the settings file that does nothing: moved under the heading it belongs to (only
+        when the setting isn't already set there), or taken out."""
+        path = self.cfg.get("_path")
+        section, key, action = str(body.get("section") or ""), str(body.get("key") or ""), body.get("action")
+        stray = next((x for x in config.strays(path) if x["section"] == section and x["key"] == key), None) if path else None
+        if not stray:
+            raise ValueError(f"[{section}] {key} isn't a stray line in the settings file")
+        if action == "move":
+            home = stray["belongs"]
+            if not home:
+                raise ValueError(f"{key} isn't a setting of any one section: it can only be taken out")
+            here = config.load(path)
+            import tomllib
+            with open(path, "rb") as f:
+                already = key in tomllib.load(f).get(home, {})
+            if already:
+                config.remove_setting(path, section, key)
+                return {"ok": True, "said": f"[{home}] {key} was already set (to {here[home][key]!r}): the stray line under [{section}] is taken out",
+                        "restart": True}
+            config.write_setting(path, home, key, stray["value"])
+            config.remove_setting(path, section, key)
+            self._saved = (0, None)
+            return {"ok": True, "said": f"{key} moved from [{section}] to [{home}]. Restart CloudWall for it to take effect.", "restart": True}
+        if action == "remove":
+            config.remove_setting(path, section, key)
+            self._saved = (0, None)
+            return {"ok": True, "said": f"[{section}] {key} taken out of the settings file (it did nothing)"}
+        raise ValueError("action must be move or remove")
 
     def set_setting(self, body):
         section, key = str(body.get("section") or ""), str(body.get("key") or "")
@@ -206,6 +402,9 @@ class Admin:
         if key == "key" and section == "server" and value and keys.problem(value):
             raise ValueError(f"the key {keys.problem(value)}")
         config.write_setting(path, section, key, value)
+        self._saved = (0, None)
+        if section in LIVE:
+            return {"ok": True, "said": f"{st.label} saved"}
         return {"ok": True, "said": f"{st.label} saved. Restart CloudWall for it to take effect."
                 + (f" Note: {st.costs}." if st.costs else ""), "restart": True}
 
@@ -249,7 +448,7 @@ class Admin:
                 said = "reopened every logbook file"
             return {"ok": True, "said": said or "nothing needed doing"}
         if name == "restart-service":
-            raise ValueError("use Restart on the System page")
+            raise ValueError("use Restart on the control board's System page")
         if root:
             if name not in helper.ALLOWED:
                 raise ValueError(f"{words}: do this at the machine (`sudo cloudwall doctor --fix`)")
