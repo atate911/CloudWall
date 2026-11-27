@@ -9,7 +9,7 @@
 // persistent elements, one per aircraft, moved every animation frame: positions are
 // dead-reckoned from the last report and eased toward each new one, so aircraft glide
 // instead of hopping between updates.
-import { esc, num, ident, projected, offset, azEl, clamp } from "./util.js";
+import { esc, num, ident, projected, offset, azEl, clamp, POINTS } from "./util.js";
 import { sky } from "./sky.js";
 import { moonPosition, moonPhase, moonGlyph } from "./astro.js";
 import { map, tileLayout, runwaysFor } from "./map.js";
@@ -22,7 +22,7 @@ import { kind, MED_CROSS, hospitalShort } from "./situation.js";
 // the others' last two minutes and the one-minute lines; range is how far out the radar shows, in nm
 // (the tracking radius, or longer); simple draws only what someone in the house wants to know: the
 // landing order as numbers, the selected aircraft and anything worth a look by name, no other labels.
-let opt = { atc: false, map: false, sky: false, tracks: true, range: 15, mapStyle: "sat", simple: false, wall: false };
+let opt = { atc: false, map: false, sky: false, heading: null, tracks: true, range: 15, mapStyle: "sat", simple: false, wall: false };
 const RAD = Math.PI / 180;
 
 // ---- the ATC style: a STARS display, the FAA's terminal radar, drawn to its conventions ----
@@ -273,18 +273,35 @@ function place(state, a, t) {
 }
 
 // ---- the Sky view: a dome looking straight up, centre the zenith, the edge the horizon ----
-const domeXY = (p) => { const r = ((90 - clamp(p.el, 0, 90)) / 90) * 100; return [r * Math.sin(p.az * RAD), -r * Math.cos(p.az * RAD)]; };
+// With the phone's compass on (opt.heading), the dome turns so the way the phone faces is at the top.
+const domeXY = (p) => {
+  const r = ((90 - clamp(p.el, 0, 90)) / 90) * 100, az = (p.az - (opt.heading || 0)) * RAD;
+  return [r * Math.sin(az), -r * Math.cos(az)];
+};
+// The compass round the dome: fixed with north up, or turned with the phone, its letters kept upright
+// and north picked out, and a mark at the top for the way the phone faces.
+function skyCompass() {
+  const h = opt.heading;
+  if (h == null) return COMPASS;
+  let s = `<g transform="rotate(${(-h).toFixed(1)})">${BEZEL}</g>`;
+  for (const [l, az] of [["N", 0], ["E", 90], ["S", 180], ["W", 270]]) {
+    const a = (az - h) * RAD;
+    s += `<text class="compass${l === "N" ? " north" : ""}" x="${(106.5 * Math.sin(a)).toFixed(1)}" y="${(-106.5 * Math.cos(a) + 2).toFixed(1)}" text-anchor="middle">${l}</text>`;
+  }
+  return s + `<path class="facing" d="M0,-96.2L-2.4,-92L2.4,-92Z"/>`;
+}
 const skyPos = (home, a, t) => azEl(home, projected(a, t), (a.alt || 0) + ((a.vrate || 0) * t) / 60);
 
 function domeStatic(state, dt) {
   placeBoxes = [];
-  let s = SPOKES(100 / 3);
+  let s = opt.heading == null ? SPOKES(100 / 3) : `<g transform="rotate(${(-opt.heading).toFixed(1)})">${SPOKES(100 / 3)}</g>`;
   for (const el of [30, 60]) {
     const r = ((90 - el) / 90) * 100;
     s += `<circle class="ring" r="${r}"/>${ringLabel(r, el + "°")}`;
   }
-  s += note("legend", -111, 110.5, "start", ["Sky view from home", "Centre: straight up", "Edge: the horizon"]);
-  s += `<circle class="ring horizon" r="100"/>${HOME}${COMPASS}`;
+  const facing = opt.heading == null ? "Sky view from home" : `Facing ${POINTS[Math.round(opt.heading / 22.5) % 16]}, ${String(Math.round(opt.heading) % 360).padStart(3, "0")}°`;
+  s += note("legend", -111, 110.5, "start", [facing, "Centre: straight up", "Edge: the horizon"]);
+  s += `<circle class="ring horizon" r="100"/>${HOME}${skyCompass()}`;
   placeBoxes.push({ x0: -5.5, x1: 5.5, y0: -5.5, y1: 5.5 });
   if (sky.sun.el > 0) {
     const [x, y] = domeXY(sky.sun);
@@ -790,7 +807,7 @@ const overlap = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0
 // the edge. Re-run on each data update, not every frame, and keep the current place unless it
 // is clearly worse, so labels don't flicker. The ATC style prefers its leaders pointing north.
 function placeLabels(heroHex) {
-  const placed = opt.atc || opt.map ? [...placeBoxes] : [...placeBoxes, ...BEARING_BOXES,
+  const placed = opt.atc || opt.map ? [...placeBoxes] : opt.heading != null ? [...placeBoxes, { x0: -6, x1: 6, y0: -98, y1: -91 }] : [...placeBoxes, ...BEARING_BOXES,
     { x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
   const all = [...live.values()].filter((c) => c.x != null), r = (c) => (opt.atc ? 3 : Math.max(3.5, c.reach || 4.5));
   const blips = all.map((c) => ({ x0: c.x - r(c), x1: c.x + r(c), y0: c.y - r(c), y1: c.y + r(c), c }));
@@ -948,7 +965,9 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   // they stop where they are (and fade: the page marks the data old) rather than fly on confidently
   const dt = Math.min(MOVE_ON_S, (now - stateAt) / 1000), frameDt = lastFrame ? Math.min(1, (now - lastFrame) / 1000) : 1;
   lastFrame = now;
-  opt = { atc: !!options.atc && mode === "radar", map: mode === "map", sky: mode === "sky", tracks: options.tracks !== false,
+  const turned = mode === "sky" && options.heading != null ? Math.round(options.heading) % 360 : null;
+  const spun = turned !== opt.heading;             // the phone turned: the sky turns with it at once
+  opt = { atc: !!options.atc && mode === "radar", map: mode === "map", sky: mode === "sky", heading: turned, tracks: options.tracks !== false,
     range: options.range || state.tracking.radius_nm, mapStyle: options.mapStyle || "sat", simple: !!options.simple, wall: !!options.wall };
   svg.classList.toggle("simple", opt.simple && !opt.atc && !opt.map && !opt.sky);
   if (!opt.map && svg.getAttribute("viewBox") !== SQUARE_BOX) { svg.setAttribute("viewBox", SQUARE_BOX); MX = MY = SQ; UI = []; }
@@ -962,7 +981,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     svg.classList.remove("fade-in"); void svg.getBBox(); svg.classList.add("fade-in");
   }
   drawBase(svg, state, mode);
-  const key = `${layer}|${stateAt}|${map ? 1 : 0}|${opt.tracks}|${opt.range}|${opt.simple}`;
+  const key = `${layer}|${stateAt}|${map ? 1 : 0}|${opt.tracks}|${opt.range}|${opt.simple}|${opt.heading}`;
   const fresh = key !== staticKey;
   if (fresh) {
     staticKey = key;
@@ -996,7 +1015,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     c.hex = a.hex;
     // ease toward the dead-reckoned position; jump if it's far off (new aircraft, big correction)
     const arrived = c.x == null;                 // new on the scope since the last update
-    if (arrived || Math.hypot(p.x - c.x, p.y - c.y) > 12) { c.x = p.x; c.y = p.y; c.rot = p.rot; }
+    if (arrived || spun || Math.hypot(p.x - c.x, p.y - c.y) > 12) { c.x = p.x; c.y = p.y; c.rot = p.rot; }
     else {
       c.x += (p.x - c.x) * ease; c.y += (p.y - c.y) * ease;
       c.rot += (((p.rot - c.rot + 540) % 360) - 180) * ease;

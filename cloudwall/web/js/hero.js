@@ -604,13 +604,14 @@ function heatLut(night) {
 const heatLegend = (night) => `linear-gradient(90deg, ${HEAT_RAMP[night ? "night" : "day"].slice(1)
   .map(([t, c, a]) => `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transparent) ${Math.round(t * 100)}%`).join(", ")})`;
 
-// The density field: the counts per cell, blurred a little so tracks read as smooth bands rather
-// than squares, on a log scale (a handful of busy corridors carry most of the day's positions), and
-// scaled so the busiest corridor (not its single busiest cell) reaches the top of the ramp.
+// The density field: how many times aircraft crossed each square, softened by a fraction of a square
+// (no more: the squares are an eighth of a mile, and the lines should stay sharp), on a log scale (a
+// handful of busy corridors carry most of the day's passes), and scaled so the busiest corridor (not
+// its single busiest square) reaches the top of the ramp.
 function heatField(heat) {
   const n = heat.grid, raw = new Float32Array(n * n);
   for (const [x, y, c] of heat.cells) if (x >= 0 && y >= 0 && x < n && y < n) raw[y * n + x] = c;
-  const sigma = 0.7, R = 3, w = [];
+  const sigma = 0.5, R = 2, w = [];
   for (let i = -R; i <= R; i++) w.push(Math.exp(-(i * i) / (2 * sigma * sigma)));
   const sum = w.reduce((a, b) => a + b), tmp = new Float32Array(n * n), out = new Float32Array(n * n);
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
@@ -624,14 +625,14 @@ function heatField(heat) {
     out[y * n + x] = Math.log1p(v / sum);
   }
   const lit = [...out].filter((v) => v > 0.02).sort((a, b) => a - b);
-  const top = Math.max(Math.log1p(3), lit.length ? lit[Math.floor(lit.length * 0.995)] : 1);
-  for (let i = 0; i < out.length; i++) out[i] = Math.min(1, out[i] / top) ** 1.3;
+  const top = Math.max(Math.log1p(8), lit.length ? lit[Math.floor(lit.length * 0.995)] : 1);
+  for (let i = 0; i < out.length; i++) out[i] = Math.min(1, out[i] / top) ** 1.1;
   return out;
 }
 
 // The field coloured, on a canvas a few times the grid's size, sampled smoothly between cells.
 function heatImage(heat, night) {
-  const n = heat.grid, f = heatField(heat), up = 4, m = n * up, lut = heatLut(night);
+  const n = heat.grid, f = heatField(heat), up = Math.max(2, Math.ceil(720 / n)), m = n * up, lut = heatLut(night);
   const c = document.createElement("canvas");
   c.width = c.height = m;
   const img = c.getContext("2d").createImageData(m, m), d = img.data;
@@ -666,17 +667,20 @@ function drawHeat(canvas, state, heat) {
   canvas._night = night;
   const legend = canvas.closest(".idle.heat").querySelector(".heat-legend i");
   if (legend) legend.style.background = heatLegend(night);
-  const bm = state.basemap;
+  const bm = state.basemap, names = state.charts && state.charts.layers && state.charts.layers.places;
   if (!bm || !bm.enabled) return paintHeat(canvas, state, heat, null);
   const R = heat.radius_nm, px = heatSize(canvas) * (window.devicePixelRatio || 1);
-  const tiles = tileLayout(state.home, R, px / (2 * R), state.charts && state.charts.map).tiles.map((t) => ({ ...t, img: new Image() }));
-  let pending = tiles.length;
-  const done = () => { if (--pending === 0 && canvas.isConnected) paintHeat(canvas, state, heat, tiles); };
-  for (const t of tiles) { t.img.onload = t.img.onerror = done; t.img.src = t.url; }
-  paintHeat(canvas, state, heat, tiles);
+  // (the names a zoom closer than the map, so their lettering comes out smaller)
+  const load = (layer, sharp = 1) => tileLayout(state.home, R, (sharp * px) / (2 * R), layer).tiles.map((t) => ({ ...t, img: new Image() }));
+  // the map, and the names of the towns and roads over the traffic, so the lines are somewhere
+  const tiles = load(state.charts && state.charts.map), labels = names && names.enabled ? load(names, 1.8) : [];
+  let pending = tiles.length + labels.length;
+  const done = () => { if (--pending === 0 && canvas.isConnected) paintHeat(canvas, state, heat, tiles, labels); };
+  for (const t of [...tiles, ...labels]) { t.img.onload = t.img.onerror = done; t.img.src = t.url; }
+  paintHeat(canvas, state, heat, tiles, labels);
 }
 
-function paintHeat(canvas, state, heat, tiles) {
+function paintHeat(canvas, state, heat, tiles, labels = []) {
   const css = heatSize(canvas), dpr = window.devicePixelRatio || 1;
   canvas.style.width = canvas.style.height = css + "px";
   const size = Math.round(css * dpr);
@@ -708,11 +712,19 @@ function paintHeat(canvas, state, heat, tiles) {
   g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high";
   const img = canvas._heat, ext = 2 * rad;          // the grid spans the radius each way
   if (night) {
-    g.globalCompositeOperation = "lighter"; g.globalAlpha = 0.45; g.filter = `blur(${(6 * u * dpr).toFixed(1)}px)`;
+    g.globalCompositeOperation = "lighter"; g.globalAlpha = 0.3; g.filter = `blur(${(3 * u * dpr).toFixed(1)}px)`;
     g.drawImage(img, mid - ext / 2, mid - ext / 2, ext, ext);
     g.globalCompositeOperation = "source-over"; g.globalAlpha = 1; g.filter = "none";
   }
   g.drawImage(img, mid - ext / 2, mid - ext / 2, ext, ext);
+  // the place names, over the traffic: light lettering by night, dark by day
+  if (labels.length) {
+    const s = rad / R;
+    g.globalAlpha = night ? 0.62 : 0.6;
+    g.filter = night ? "grayscale(1) brightness(.95)" : "grayscale(1) invert(1) brightness(1.1)";
+    for (const t of labels) if (t.img.complete && t.img.naturalWidth) g.drawImage(t.img, mid + t.x0 * s, mid - t.y0 * s, (t.x1 - t.x0) * s + 0.5, (t.y0 - t.y1) * s + 0.5);
+    g.globalAlpha = 1; g.filter = "none";
+  }
   // a soft edge, the map falling away into the disc
   const fade = g.createRadialGradient(mid, mid, rad * 0.88, mid, mid, rad);
   const disc = /^#[0-9a-f]{6}$/i.test(v("--disc")) ? hex3(v("--disc")).join(",") : "128,128,128";    // faded from the disc's own colour, not from black
@@ -790,9 +802,10 @@ function showIdle(el, state) {
     weatherSlide(el.querySelector(".wx-slot"), W, state);
   } else if (kind === "heat") {
     el.innerHTML = `<div class="idle heat"><div class="heat-copy"><div class="dim">Since midnight, within ${H.radius_nm} nm</div><h1>Today’s traffic</h1>
-      <div class="heat-text">Every aircraft tracked today, laid over one another. The glowing bands are the routes flown again
-      and again: the ${esc(state.airport.iata)} arrival and departure paths. The faint threads are one-off flights.</div>
-      <div class="heat-legend"><span>once</span><i></i><span>all day</span></div></div>
+      ${H.aircraft ? `<div class="heat-count"><b>${num(H.aircraft)}</b> aircraft</div>` : ""}
+      <div class="heat-text">Each one’s path drawn over the others. The bright lines are the routes flown again and again:
+      the ${esc(state.airport.iata)} arrival and departure paths. The faint threads are one-off flights.</div>
+      <div class="heat-legend"><span>1 flight</span><i></i><span>all day</span></div></div>
       <div class="heat-fig"><canvas id="heat" role="img" aria-label="Map of today's traffic around home"></canvas></div></div>${dots}`;
     drawHeat($("heat"), state, H);
   } else if (kind === "fleet") {

@@ -651,8 +651,15 @@ class TracksTest(unittest.TestCase):
         self.assertEqual(len(trail), 3)
         self.assertGreater(trail[0][0], trail[-1][0])                 # moving south toward home
         heat = t.heatmap()
-        self.assertEqual(sum(c[2] for c in heat["cells"]), 3)         # the parked aircraft isn't counted
+        self.assertEqual(heat["aircraft"], 1)                         # the parked aircraft isn't counted
         self.assertTrue(all(c[0] == heat["grid"] // 2 for c in heat["cells"]))   # due north: centre column
+        rows = sorted(c[1] for c in heat["cells"])
+        self.assertEqual(rows, list(range(rows[0], rows[-1] + 1)))    # one unbroken line from 3 nm to 1 nm out,
+        self.assertEqual(rows[-1] - rows[0] + 1, round(2 / (2 * 15) * heat["grid"]) + 1)
+        self.assertTrue(all(c[2] == 1 for c in heat["cells"]))        # each square crossed once
+        for _ in range(3):
+            t.update([plane("a1", "ASA1", 1.0)], "test")              # hovering where it is: no more passes
+        self.assertEqual(sum(c[2] for c in t.heatmap()["cells"]), len(rows))
         t.update([], "test")
         self.assertEqual(t.tracks.trails, {})                                # gone from range: trail dropped
         self.assertIn("photo", {r["name"] for r in store.db.execute("PRAGMA table_info(sightings)")})
@@ -675,7 +682,7 @@ class RadarRangeTest(unittest.TestCase):
         self.assertEqual([a["hex"] for a in s["beyond"]], ["f1"])
         self.assertEqual(len(t.tracks.trails["f1"]), 2)                      # its trail is kept, should it come in range
         self.assertNotIn("trail", s["beyond"][0])                     # but only the selected aircraft's is sent
-        self.assertEqual(sum(c[2] for c in t.heatmap()["cells"]), 2)  # but it stays off the heatmap
+        self.assertEqual(t.heatmap()["aircraft"], 1)                  # but it stays off the heatmap
         t.range_wanted[30] -= 120                                     # the screen stopped asking
         self.assertEqual(t.fetch_radius(), 15)
 
@@ -2308,7 +2315,7 @@ class PlaceStateTest(unittest.TestCase):
         self.assertIsNone(s["live_routes"])
         w = place.weather_report()
         self.assertEqual((w["now"], len(w["contrails"]["levels"]), w["tfrs"]), ({"category": "VFR"}, 1, [{"id": "6/1"}]))
-        self.assertEqual(place.heatmap()["grid"], 96)
+        self.assertEqual(place.heatmap()["grid"], 240)
         self.assertEqual(place.logbook()["total"], 1)                    # and its flyover is in the place's logbook
         # the tracker knows none of it
         self.assertFalse({"weather", "tfrs", "heard", "contrails", "basemap", "charts", "logos"} & set(place.tracker.snapshot()))

@@ -365,7 +365,7 @@ to draw it, and what this place's logbook knows of it.
 
 | Request | Answer |
 |---|---|
-| `GET /api/heat` | Today's traffic as a grid over the tracking radius: `grid` (cells a side, north up), `radius_nm`, and `cells`, each `[x, y, count]` counted from the north-west corner. |
+| `GET /api/heat` | Today's traffic as a grid over the tracking radius: `grid` (cells a side, north up: 240, an eighth of a nm at 15 nm), `radius_nm`, `aircraft` (how many flew within it today), and `cells`, each `[x, y, count]` counted from the north-west corner, the count being how many times aircraft crossed that cell (each one's path is drawn as a line between its reports). |
 | `GET /api/locate?q=` | Where a US ZIP code ("98683") or coordinates ("45.63, -122.66") are: `lat`, `lon`, `zip`; `auto`, the airport CloudWall would choose; and `airports`, the airline airports nearest (`icao`, `iata`, `name`, `city`, `size`, `dist_nm`). 400 with `error` when it is neither. |
 | `POST /api/places` | Set up a place: a JSON body with `q` (as for locate), and optionally `name` and `airport` (an ICAO code; "auto" when left out). Answers `place`, its summary as in `places`; 400 with `error` in words fit to show. Refused (403) from another site's page. |
 | `DELETE /api/places?id=` | Remove a place set up that way (not one from the config file). Answers `places`. |

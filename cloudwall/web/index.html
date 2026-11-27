@@ -52,6 +52,9 @@
         <button data-mode="map" title="The flights on an everyday map">Map</button>
         <button data-mode="sky" title="Looking up from home: where the aircraft are in the sky, with the sun and moon">Sky</button>
       </div>
+      <button class="compass-btn" id="btn-compass" aria-pressed="false" title="Turn the sky with the phone: point it where you're looking">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8"/><path class="needle" d="M10 3.6l2.2 6.4h-4.4z"/><path d="M10 16.4l2.2-6.4h-4.4z"/></svg>Compass</button>
+      <div class="compass-note" id="compass-note" role="status"></div>
       <div class="scope-tools">
         <div class="seg" id="mapstyle-seg" role="group" aria-label="Map style">
           <button data-map="sat" title="Satellite photos, with roads and place names">Satellite</button>

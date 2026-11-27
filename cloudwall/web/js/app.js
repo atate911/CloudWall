@@ -2,6 +2,7 @@
 import { $, esc, store, phone, api, runwayList, degF, since, dataAge, COUNT_STOP_S } from "./util.js";
 import { updateSky } from "./sky.js";
 import { drawScope, mapReach, flashCraft } from "./scope.js";
+import { compass, startCompass, stopCompass, facing } from "./compass.js";
 import { loadMap } from "./map.js";
 import { renderHero, tickHero, nextSlide, forgetHero, heroResized, setPicture, setMedia } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
@@ -153,8 +154,28 @@ function drawScopeNow(now = performance.now()) {
     $("scope").classList.toggle("sky", mode === "sky");     // the sky view has none: it is always the sky overhead
     $("scope-attrib").textContent = credit;
   }
-  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range, mapStyle: ms, simple: dens === "simple", wall: KIOSK });
+  // on a phone, the Sky view can turn with the phone's compass
+  const heading = mode === "sky" && phone() ? facing() : null;
+  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range, mapStyle: ms, simple: dens === "simple", wall: KIOSK, heading });
+  compassStatus(mode);
 }
+
+// The Sky view's compass switch, and a word while it waits for the compass (or finds there's none).
+function compassStatus(mode) {
+  const btn = $("btn-compass"), on = compass.on && mode === "sky";
+  if (btn.getAttribute("aria-pressed") !== String(on)) btn.setAttribute("aria-pressed", String(on));
+  const waiting = on && facing() == null && Date.now() - compass.at > 2500;
+  const text = compass.failed || (waiting ? "No reading from the compass yet: move the phone in a figure of eight" : "");
+  if ($("compass-note").textContent !== text) $("compass-note").textContent = text;
+}
+$("btn-compass").addEventListener("click", async () => {
+  if (compass.on) { stopCompass(); compass.failed = ""; store("skyCompass", "off"); return; }
+  if (await startCompass()) store("skyCompass", "on");
+  else setTimeout(() => { compass.failed = ""; }, 6000);      // say why, for a moment
+});
+// left on last time: back on by itself where the browser allows it without a tap (Android); an
+// iPhone asks the person again, so there it waits for a tap on the switch
+if (phone() && store("skyCompass") === "on") startCompass().then((ok) => { if (!ok) compass.failed = ""; });
 
 // Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi. On a phone
 // the radar can be scrolled out of sight under the card, and then it rests.

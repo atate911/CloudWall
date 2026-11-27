@@ -106,7 +106,10 @@ in the address, and `[kiosk] density` sets the wall panel's.
 - **Radar / Map / Sky** – beside the card, a radar scope over a street map, the Sky view (a dome
   of the sky above home, looking up: centre straight up, the edge the horizon, with the sun, the
   moon, each aircraft by how high it stands in the sky, and the path the one overhead takes across
-  it, with its highest point), or the Map view: the
+  it, with its highest point; on a phone, its Compass switch turns the dome with the phone, so
+  the way it faces is at the top and the aircraft sit where they are in the sky in front of you:
+  this needs CloudWall opened over HTTPS, as the location does, and the heading is magnetic, a
+  few degrees off true north), or the Map view: the
   same flights on an everyday map for anyone, satellite photos with roads and place names (or a
   street map), filling the panel, every aircraft labelled in words ("Delta 178", "to Denver ·
   12,000 ft", "Small plane", "Helicopter"), with home and the airport marked and no rings,
@@ -155,8 +158,9 @@ in the address, and `[kiosk] density` sets the wall panel's.
   screen shows it.
 - **Quiet sky** – when nothing is overhead the card rotates through the next inbound
   aircraft (with its drawing, so you know what to look for), a heatmap of the day's traffic
-  (every position since midnight over a grey map, smoothed and coloured from a faint violet for a
-  one-off flight to magenta and amber for the corridors flown all day, glowing at night),
+  (every aircraft's path since midnight, drawn as lines on an eighth-of-a-mile grid over a grey
+  map with the towns named, coloured by how many flights passed: a faint violet thread for a
+  one-off flight, magenta and amber for the corridors flown all day, glowing at night),
   today's fleet (every type seen since midnight, side by side at true relative size, from a
   Cessna to a 777), the day's records and the last flyover. Tap to skip ahead.
 - **Board** – departure-board list of everything airborne in range. Tap a row (or a

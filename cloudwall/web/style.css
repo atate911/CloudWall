@@ -501,6 +501,8 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 .idle.heat.stack .heat-copy { flex: none; max-width: none; }
 .idle.heat.stack h1 { font-size: 2.1rem; }
 .idle.heat.stack .heat-fig { flex: 1 1 auto; }
+.heat-count { font-size: 1.15rem; color: var(--ink-2); margin-top: -.3rem; }
+.heat-count b { font-size: 1.9rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; margin-right: .2rem; }
 .heat-text { font-size: .98rem; line-height: 1.55; color: var(--ink-2); max-width: 30em; }
 .heat-legend { display: flex; align-items: center; gap: .6rem; font-size: .72rem; color: var(--slate); white-space: nowrap; }
 .heat-legend i { flex: 0 1 9rem; height: .5rem; border-radius: 99px; box-shadow: inset 0 0 0 1px var(--frame); }
@@ -583,6 +585,20 @@ body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8)
 #radar :is(.ring-label, .apt-label, .field-label, .place, .tfr-label, .final-label, .helipad-label, .helipad) { transition: opacity .5s; }
 #radar .yield { opacity: 0; }
 #radar .compass { font-size: 5.6px; font-weight: 700; fill: var(--ink-2); }
+#radar .compass.north { fill: var(--magenta); }
+#radar .facing { fill: var(--magenta); }
+/* the Sky view's compass switch: a phone's, which can turn the sky with it */
+.compass-btn { position: absolute; top: .4rem; right: .3rem; z-index: 3; display: none; align-items: center; gap: .35rem;
+  font: .76rem var(--sans); color: var(--ink-2); background: var(--sheet); border: 1px solid var(--frame);
+  border-radius: var(--corner); padding: .4rem .6rem; cursor: pointer; }
+.compass-btn svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.compass-btn[aria-pressed="true"] { color: var(--ink); border-color: var(--magenta); box-shadow: inset 0 0 0 1px var(--magenta); }
+.compass-btn[aria-pressed="true"] svg .needle { fill: var(--magenta); stroke: none; }
+html.phone #scope.sky .compass-btn { display: flex; }
+html.phone #scope.sky .attrib { display: none; }
+.compass-note { position: absolute; top: 2.9rem; right: .3rem; z-index: 3; max-width: 70%; font: .72rem/1.35 var(--sans);
+  color: var(--ink-2); background: var(--sheet); border: 1px solid var(--frame); border-radius: var(--corner); padding: .4rem .55rem; text-align: right; }
+.compass-note:empty, #scope:not(.sky) .compass-note { display: none; }
 #radar .water { fill: none; stroke: var(--water); stroke-linecap: round; stroke-linejoin: round; }
 #radar .runway { stroke: var(--ink); stroke-width: 1.2; stroke-linecap: round; }
 #radar .approach { stroke: var(--ink-2); stroke-width: .3; stroke-dasharray: 1.5 2.5; opacity: .5; }

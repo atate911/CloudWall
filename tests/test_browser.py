@@ -284,6 +284,13 @@ class BrowserTest(unittest.TestCase):
         self.assertEqual(p["view"], "now")                                   # a tapped flight brings its card up
         self.assertGreaterEqual(p["queue"], 1)
 
+    def test_the_sky_view_turns_with_a_phones_compass(self):
+        c = self.scenario("compass")
+        self.assertIn("Sky view from home", c["before"])                  # north up until the compass is on
+        self.assertEqual(c["after"], "Facing ENE, 060°")
+        self.assertEqual(c["north"], -60)
+        self.assertTrue(c["off"])                                            # and back to north up
+
     def test_the_quiet_sky_slides(self):
         q = self.scenario("quiet")
         # the next flight or a quiet sky, the fighters heard, the restriction and the weather, at least
