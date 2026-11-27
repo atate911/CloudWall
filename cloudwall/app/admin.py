@@ -136,7 +136,100 @@ class Admin:
         if method == "POST" and name == "password":
             keys.set_password(str(body.get("password") or ""), self.cfg.get("_path"))
             return {"ok": True, "said": "the owner's password is changed"}
+        if get and name == "receiver":
+            return self.receiver()
         return None
+
+    # -- your receiver ---------------------------------------------------------------------------
+    def receiver_urls(self):
+        """(the receiver's web server, Coverage3D's), as reached from this machine, or None each."""
+        r = self.cfg.get("receiver") or {}
+        url = (r.get("url") or "").rstrip("/")
+        src = self.cfg["source"]
+        if not url and src.get("merge") and src["urls"]:
+            first = src["urls"][0]
+            url = first.split("/data/")[0] if "/data/" in first else ""
+        cov = (r.get("coverage_url") or "").rstrip("/")
+        if not cov and url:
+            m = re.match(r"^(https?://[^/:]+):(\d+)$", url)
+            # through the tunnel the receiver is 127.0.0.1:18080 and Coverage3D the port after the
+            # receiver's own (18090); at home, the receiver's address on Coverage3D's own port, 8090
+            cov = f"{m.group(1)}:{int(m.group(2)) + 10}" if m and m.group(2) == "18080" else \
+                (f"{m.group(1)}:8090" if m else "")
+        return url or None, cov or None
+
+    def receiver(self):
+        """How the receiver is doing, from its own files (receiver.json, stats.json, outline.json),
+        with the board's own reading of them."""
+        from ..core.http import get_json
+        url, cov = self.receiver_urls()
+        out = {"url": url, "coverage_url": cov, "home_url": (self.cfg.get("receiver") or {}).get("home_url") or None,
+               "reachable": False, "coverage": False}
+        if not url:
+            return out
+        try:
+            rec = get_json(f"{url}/data/receiver.json", timeout=8) or {}
+            stats = get_json(f"{url}/data/stats.json", timeout=8) or {}
+            out["reachable"] = True
+        except Exception as e:
+            out["error"] = str(e)
+            return out
+        try:
+            outline = get_json(f"{url}/data/outline.json", timeout=8) or {}
+        except Exception:
+            outline = {}
+        out["receiver"] = {"lat": rec.get("lat"), "lon": rec.get("lon"), "version": rec.get("version")}
+        out["now"] = stats.get("now")
+        out["gain_db"] = stats.get("gain_db")
+        out["ppm"] = stats.get("estimated_ppm")
+        out["with_pos"] = stats.get("aircraft_with_pos")
+        out["without_pos"] = stats.get("aircraft_without_pos")
+        out["by_type"] = {k: v for k, v in (stats.get("aircraft_count_by_type") or {}).items() if v}
+        for span, secs in (("last1min", 60), ("last15min", 900)):
+            p = stats.get(span) or {}
+            local = p.get("local") or {}
+            accepted = sum(local.get("accepted") or [0])
+            out[span] = {"messages_s": round((p.get("messages") or 0) / secs, 1), "signal": local.get("signal"),
+                         "noise": local.get("noise"), "peak": local.get("peak_signal"),
+                         "strong_pct": round(100 * (local.get("strong_signals") or 0) / accepted, 1) if accepted else None,
+                         "max_nm": round((p.get("max_distance") or 0) / 1852, 1) if p.get("max_distance") else None}
+        pts = (((outline.get("actualRange") or {}).get("last24h") or {}).get("points")) or outline.get("points") or []
+        out["outline"] = [[round(p[0], 4), round(p[1], 4)] for p in pts if isinstance(p, list) and len(p) >= 2][:720]
+        if cov:
+            try:
+                got = get_json(f"{cov}/healthz", timeout=4)
+                out["coverage"] = got is not None
+            except Exception:
+                out["coverage"] = False
+        return out
+
+    def relay(self, h, path):
+        """/receiver/... and /coverage/...: the receiver's live map and Coverage3D, as pages of the
+        board, for the owner. Only GET; only below the address set; nothing of the board's own
+        (its cookie) passed on."""
+        from ..core.http import relay
+        if self.role(h) != "owner":
+            return h._send(401, b"<!doctype html><meta charset=utf-8><p style='font:1rem sans-serif;margin:2rem'>"
+                                b"Sign in on the control board first.</p>", "text/html; charset=utf-8")
+        which, _, rest = path.lstrip("/").partition("/")
+        url, cov = self.receiver_urls()
+        base = url if which == "receiver" else cov
+        if not base:
+            return h._send(404, {"error": f"no {which} is set up: see the control board's Your receiver page"})
+        query = urlsplit(h.path).query
+        if ".." in rest.split("/") or "://" in rest or rest.startswith("/"):
+            return h._send(400, {"error": "not a path"})
+        try:
+            status, back, data = relay(f"{base}/{rest}" + (f"?{query}" if query else ""), h.headers)
+        except Exception as e:
+            return h._send(502, {"error": f"the {which} didn't answer: {e}"})
+        h.send_response(status)
+        for k, v in back.items():
+            h.send_header(k, v)
+        h.send_header("Content-Length", str(len(data)))
+        h.end_headers()
+        if h.command != "HEAD":
+            h.wfile.write(data)
 
     # -- what the board shows ------------------------------------------------------------------
     def whoami(self, h):

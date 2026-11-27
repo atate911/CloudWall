@@ -257,3 +257,98 @@ class HelperUnitTest(unittest.TestCase):
             rid = helper.ask("enable-service", folder=d)
             self.assertEqual([p.name for p in Path(d).glob("*.json")], [f"{rid}.json"])   # whole, and named so
             self.assertEqual(list(Path(d).glob(".*.tmp")), [])
+
+
+class ReceiverTest(AdminTest):
+    """The receiver on the control board: its health read from its own files, its map and Coverage3D
+    passed through for the owner, as they would come through the tunnel."""
+
+    def fake_receiver(self):
+        import gzip
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        seen = self.seen = []
+        files = {
+            "/": (b"<!doctype html><title>tar1090</title><script src=script.js></script>", "text/html", None),
+            "/script.js": (gzip.compress(b"console.log('map')"), "application/javascript", "gzip"),
+            "/data/receiver.json": (json.dumps({"lat": 45.6, "lon": -122.6, "version": "readsb 3.16"}).encode(), "application/json", None),
+            "/data/stats.json": (json.dumps({"now": 1e9, "gain_db": 49.6, "estimated_ppm": 0.8, "aircraft_with_pos": 12,
+                                             "aircraft_without_pos": 3, "aircraft_count_by_type": {"adsb_icao": 11, "mlat": 1, "tisb_icao": 0},
+                                             "last1min": {"messages": 1200, "max_distance": 185200,
+                                                          "local": {"accepted": [900, 100], "signal": -12.0, "noise": -32.0,
+                                                                    "peak_signal": -2.0, "strong_signals": 30}},
+                                             "last15min": {"messages": 9000, "max_distance": 370400, "local": {}}}).encode(), "application/json", None),
+            "/data/outline.json": (json.dumps({"actualRange": {"last24h": {"points": [[46.5, -122.6, 30000], [45.6, -121.0, 25000]]}}}).encode(), "application/json", None),
+            "/healthz": (b'{"ok": true}', "application/json", None),
+        }
+
+        class Receiver(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                seen.append((self.path, self.headers.get("Cookie"), self.headers.get("Accept-Encoding")))
+                body, ctype, enc = files.get(self.path.split("?")[0], (b"not here", "text/plain", None))
+                self.send_response(200 if self.path.split("?")[0] in files else 404)
+                self.send_header("Content-Type", ctype)
+                if enc:
+                    self.send_header("Content-Encoding", enc)
+                self.end_headers()
+                self.wfile.write(body)
+        rx = ThreadingHTTPServer(("127.0.0.1", 0), Receiver)
+        threading.Thread(target=rx.serve_forever, daemon=True).start()
+        self.addCleanup(rx.shutdown)
+        port = rx.server_address[1]
+        with open(self.cfg_path, "a") as f:
+            f.write(f'[receiver]\nurl = "http://127.0.0.1:{port}"\ncoverage_url = "http://127.0.0.1:{port}"\nhome_url = "http://192.168.3.3"\n')
+        return port
+
+    def test_the_receivers_health_as_the_board_reads_it(self):
+        self.fake_receiver()
+        self.serve()
+        code, r = self.call("/api/admin/receiver")
+        self.assertEqual(code, 200)
+        self.assertTrue(r["reachable"] and r["coverage"])
+        self.assertEqual((r["gain_db"], r["with_pos"], r["by_type"]), (49.6, 12, {"adsb_icao": 11, "mlat": 1}))
+        m = r["last1min"]
+        self.assertEqual((m["messages_s"], m["max_nm"], m["strong_pct"]), (20.0, 100.0, 3.0))
+        self.assertEqual(r["last15min"]["max_nm"], 200.0)
+        self.assertEqual(len(r["outline"]), 2)
+        self.assertEqual(r["home_url"], "http://192.168.3.3")
+
+    def test_the_map_is_passed_through_for_the_owner_only_without_the_cookie(self):
+        self.fake_receiver()
+        self.serve(owner="correct horse battery")
+        with self.assertRaises(urllib.error.HTTPError) as e:                     # a viewer
+            urllib.request.urlopen(self.base + "/receiver/", timeout=5)
+        self.assertEqual(e.exception.code, 401)
+        self.call("/api/admin/signin", {"password": "correct horse battery"})
+        req = urllib.request.Request(self.base + "/receiver/script.js",
+                                     headers={"Cookie": self.cookie, "Accept-Encoding": "gzip"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            self.assertEqual(r.headers.get("Content-Encoding"), "gzip")         # passed back as it came
+            import gzip
+            self.assertEqual(gzip.decompress(r.read()), b"console.log('map')")
+        path, cookie, enc = self.seen[-1]
+        self.assertEqual((path, cookie, enc), ("/script.js", None, "gzip"))     # the board's cookie never goes on
+        req = urllib.request.Request(self.base + "/receiver", headers={"Cookie": self.cookie})
+        with urllib.request.urlopen(req, timeout=5) as r:                        # followed to /receiver/
+            self.assertIn(b"tar1090", r.read())
+        for bad in ("/receiver/../etc/passwd", "/receiver/http://evil.example/x", "/receiver//etc/passwd"):
+            req = urllib.request.Request(self.base + bad, headers={"Cookie": self.cookie})
+            with self.assertRaises(urllib.error.HTTPError) as e:
+                urllib.request.urlopen(req, timeout=5)
+            self.assertIn(e.exception.code, (400, 404))
+
+    def test_without_a_receiver_the_page_says_so(self):
+        self.serve()
+        code, r = self.call("/api/admin/receiver")
+        self.assertEqual((code, r["url"], r["reachable"]), (200, None, False))
+        self.assertEqual(self.call("/receiver/")[0], 404)
+
+    def test_the_tunnels_receiver_and_coverage3d_are_found_from_the_feeds(self):
+        from cloudwall.app.admin import Admin
+        cfg = config.load(None)
+        cfg["source"].update(urls=["http://127.0.0.1:18080/data/aircraft.json", "https://opendata.adsb.fi/{lat}"], merge=True)
+        self.assertEqual(Admin(cfg, []).receiver_urls(), ("http://127.0.0.1:18080", "http://127.0.0.1:18090"))
+        cfg["source"].update(urls=["http://192.168.3.3:8080/data/aircraft.json", "https://x/{lat}"])
+        self.assertEqual(Admin(cfg, []).receiver_urls(), ("http://192.168.3.3:8080", "http://192.168.3.3:8090"))

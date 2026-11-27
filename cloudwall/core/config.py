@@ -75,6 +75,11 @@ DEFAULTS = {
     "storage": {"db_path": "", "cache_dir": ""},
     # notify_url: a webhook told when a major problem starts and ends (e.g. an ntfy.sh topic's URL)
     "health": {"notify_url": ""},
+    # Your own receiver, as the control board shows it. url: where its web server answers from here
+    # (empty: worked out from [source] urls when merge is on); coverage_url: Coverage3D's (empty: the
+    # port after the receiver's: the tunnel's 18090 beside its 18080); home_url: its address on the
+    # home network, for adsb.im's own pages, which the board links to but never opens to the internet.
+    "receiver": {"url": "", "coverage_url": "", "home_url": ""},
 }
 
 

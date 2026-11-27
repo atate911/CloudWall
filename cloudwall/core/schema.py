@@ -104,6 +104,13 @@ SECTIONS = (
        S("range_nm", "Radar range", "0 for the tracking radius, or 20 or 30 to see further.", "nm", "0"),
        S("density", "Labels", "simple names the aircraft that matter; detailed every one."),
        S("quiet", "Quiet hours", "Hours when it shows only a dim clock and what's next, waking for something coming over, an emergency or a tap.", example="23:00-06:30")),
+    _s("receiver", "Your receiver", "receiver", "Your own ADS-B receiver, its live map and Coverage3D, as the board shows them.",
+       S("url", "Its web server", "Where your receiver's web server (tar1090) answers from this machine. Empty: worked out from "
+         "the first feed when combining is on (the tunnel's http://127.0.0.1:18080).", example="http://127.0.0.1:18080"),
+       S("coverage_url", "Coverage3D", "Where Coverage3D answers from this machine. Empty: beside the receiver's (through the "
+         "tunnel, http://127.0.0.1:18090).", example="http://127.0.0.1:18090", advanced=True),
+       S("home_url", "Its address at home", "The receiver's address on your home network (adsb.im's setup page and its own "
+         "maps). The board links to these, for use at home; it never opens them to the internet.", example="http://192.168.3.3")),
     _s("server", "Access", "access", "Who can reach CloudWall, and how.",
        S("host", "Listen on", "0.0.0.0 for every address (a home network); 127.0.0.1 for this machine only (behind Caddy or a tunnel).", costs="screens may lose it", advanced=True),
        S("port", "Port", "The port screens connect to.", example="5050", costs="every bookmark changes", advanced=True),
@@ -118,7 +125,7 @@ SECTIONS = (
          example="https://ntfy.sh/your-topic", secret=True)),
 )
 
-PAGES = (("overview", "Overview"), ("places", "Places"), ("positions", "Positions"), ("routes", "Routes"),
+PAGES = (("overview", "Overview"), ("places", "Places"), ("positions", "Positions"), ("receiver", "Your receiver"), ("routes", "Routes"),
          ("maps", "Maps"), ("screens", "Screens"), ("access", "Access"), ("storage", "Storage and backups"),
          ("health", "Health"), ("system", "System"))
 

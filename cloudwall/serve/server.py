@@ -95,6 +95,12 @@ def make_server(cfg, places, charts=None, logos=None):
             self.end_headers()
             self.wfile.write(body)
 
+        def _redirect(self, to):
+            self.send_response(308)
+            self.send_header("Location", to)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
         def _admin(self, method):
             """The control board's API (app/admin.py), handed in once it is made."""
             path = self.path.split("?")[0]
@@ -156,6 +162,12 @@ def make_server(cfg, places, charts=None, logos=None):
             if not self._admitted() or self._admin("GET"):
                 return
             path = self.path.split("?")[0]
+            if path in ("/receiver", "/coverage"):          # (the pages want their closing slash)
+                return self._redirect(path.lstrip("/") + "/")
+            if path.startswith(("/receiver/", "/coverage/")):
+                if srv.admin is None:
+                    return self._send(404, {"error": "not found"})
+                return srv.admin.relay(self, path)
             q = parse_qs(urlsplit(self.path).query)
             if path == "/api/locate":
                 return self._locate((q.get("q") or [""])[0])
