@@ -202,6 +202,17 @@ class AdminTest(unittest.TestCase):
         with urllib.request.urlopen(self.base + "/admin", timeout=5) as r:
             self.assertIn(b"CloudWall", r.read())
 
+    def test_a_slash_after_admin_or_kiosk_is_sent_to_the_address_without_it(self):
+        """With the slash the page's relative addresses would point into a folder that isn't there
+        and it would load unstyled: so it is redirected, under a private link as well."""
+        with open(self.cfg_path, "a") as f:
+            f.write('[server]\nkey = "tafo-kemi-luza-nobe"\n')
+        self.serve()
+        for page in ("admin", "kiosk"):
+            with urllib.request.urlopen(f"{self.base}/k/tafo-kemi-luza-nobe/{page}/", timeout=5) as r:
+                self.assertEqual(r.url, f"{self.base}/k/tafo-kemi-luza-nobe/{page}")    # followed to here
+                self.assertIn(b"CloudWall", r.read())
+
 
 class HelperTest(unittest.TestCase):
     def test_only_what_is_on_the_list_is_done(self):

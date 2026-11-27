@@ -200,6 +200,15 @@ def make_server(cfg, places, charts=None, logos=None):
                 self.send_header("Cache-Control", "public, max-age=604800")
                 self.end_headers()
                 return self.wfile.write(data)
+            if path in ("/kiosk/", "/admin/"):
+                # with the slash, the page's relative addresses (its style, its script, its data)
+                # would point inside a folder that isn't there: sent to the address without it,
+                # relatively, so it works under a private link's /k/<key>/ and behind a proxy too
+                self.send_response(308)
+                self.send_header("Location", "../" + path.strip("/"))
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return None
             if path.rstrip("/") == "/kiosk":
                 path = "/index.html"                  # same page; the script switches to kiosk mode
             elif path.rstrip("/") == "/admin":
