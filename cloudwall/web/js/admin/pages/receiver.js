@@ -2,11 +2,12 @@
 // the house, the message rate, signal against noise), with the board's reading of those numbers in
 // words ("the gain looks right"); then its own live map and Coverage3D, as pages of this board; then
 // how it reaches this server. Without a receiver, the page is the way to connect one.
-import { el, esc, S, call, num, plural, ago, house, ownFeed, value, TITLES } from "../core.js";
+import { el, esc, S, call, num, plural, ago, lasted, bytes, house, ownFeed, value, problems, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { gauge, signalMeter, polar } from "../draw.js";
-import { head, pageTroubles, out, copyable } from "../parts.js";
-import { text, toggle, group, advanced } from "../controls.js";
+import { head, pageTroubles, out, copyable, trouble } from "../parts.js";
+import { text, toggle, group, advanced, line } from "../controls.js";
+import { machineGroupRows } from "../stationview.js";
 
 let tab = "hearing";
 
@@ -109,6 +110,20 @@ function shares(r) {
     </div>`)]);
 }
 
+/** The machine the ADS-B receiver runs on, as its station reports it (the shared rows: stationview.js). */
+function machine(r) {
+  const f = r.station;
+  if (!f) {
+    return group("Receiver machine", "No station reporting", [
+      line("Station", `<span class="line-val"><span class="dot"></span> Not reporting</span>
+        <span class="dim small">With CloudWall's station on the receiver, this page shows its power supply, temperature, clock, SD card, sticks, decoder, feeders and tunnel, and its problems reach Overview and your alerts.</span>
+        <a class="btn small" href="#stations">Add it on the Stations page</a>`),
+    ]);
+  }
+  return group("Receiver machine", r.station_name ? `${esc(r.station_name)}: reported ${ago(f.checked)}` : `Reported ${ago(f.checked)} through the tunnel`,
+    [...machineGroupRows(f), r.station_id ? line("Its station", `<a href="#stations">${esc(r.station_name)} on the Stations page</a>`) : null]);
+}
+
 function reaches(r, page) {
   return group("Connection", r.reachable ? `Answering${r.receiver?.version ? `: ${esc(r.receiver.version)}` : ""}` : `Not answering: ${esc(r.error || "no answer")}`, [
     text("receiver", "url", { label: "Web server", mono: true, empty: "Worked out from the first feed", saved: () => page.redraw(), says: () => r.url ? `In use: <code>${esc(r.url)}</code>${r.reachable ? "" : ". Is the tunnel up? On the receiver: <code>sudo bash pi-tunnel.sh status</code>"}` : "" }),
@@ -129,6 +144,10 @@ export default {
     page.append(head(TITLES.receiver, r.url ? "Your ADS-B receiver: reception, range, its live map and Coverage3D, and its connection to this server." : "Your own ADS-B receiver, used alongside the public feeds.", status));
     const t = pageTroubles("receiver");
     if (t) page.append(t);
+    // the station's own problems, as soon as it reports them (the watcher raises them within minutes)
+    const known = new Set(problems().map((f) => `${f.code}|${f.summary}`));
+    const fresh = (r.station_findings || []).filter((f) => (f.state === "warn" || f.state === "fail") && !known.has(`${f.code}|${f.summary}`));
+    if (fresh.length) { const box = el(`<section class="troubles"></section>`); fresh.forEach((f) => box.append(trouble(f))); page.append(box); }
     if (!r.url) { const g = connectGuide(page); copies(g); page.append(g); return; }
 
     const tabs = el(`<div class="tabs" role="tablist">
@@ -145,7 +164,7 @@ export default {
     };
     tabs.onclick = (e) => { const b = e.target.closest("[data-tab]"); if (b) { tab = b.dataset.tab; show(); } };
     show();
-    page.append(tabs, body, reaches(r, page), shares(r));
+    page.append(tabs, body, machine(r), reaches(r, page), shares(r));
 
     // the readings keep up while the page is open
     const timer = setInterval(async () => {

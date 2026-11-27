@@ -110,8 +110,19 @@ SECTIONS = (
          "the first feed when combining is on (the tunnel's http://127.0.0.1:18080).", example="http://127.0.0.1:18080"),
        S("coverage_url", "Coverage3D", "Where Coverage3D answers from this machine. Empty: beside the receiver's (through the "
          "tunnel, http://127.0.0.1:18090).", example="http://127.0.0.1:18090", advanced=True),
+       S("station_url", "Station", "Where the receiver's CloudWall station (its power, temperature, clock, SD card, stick "
+         "and feeders) answers from this machine. Empty: beside the receiver's (through the tunnel, http://127.0.0.1:18095).",
+         example="http://127.0.0.1:18095", advanced=True),
        S("home_url", "Its address at home", "The receiver's address on your home network (adsb.im's setup page and its own "
          "maps). The board links to these, for use at home; it never opens them to the internet.", example="http://192.168.3.3")),
+    _s("radio", "Radio", "radio", "The VHF airband radio: not active yet. Set up here, ready for when it is; each station "
+       "with a stick given to the radio writes its receiver's config from these.",
+       S("enabled", "Listen", "Not active in this version: when it is, the sticks given to the radio listen to these channels, "
+         "and the calls heard are kept and shown."),
+       S("mode", "How the sticks listen", "parked: each stick hears the 2 MHz slice holding most of the channels below, all of "
+         "them at once; scan: one stick hops through every channel, hearing one at a time."),
+       S("channels", "Channels", "One a line: the frequency in MHz, then its name. Tower and approach first; 121.5 (guard) "
+         "is added by itself.", example="118.700 PDX Tower")),
     _s("server", "Network", "access", "Who can reach CloudWall, and how.",
        S("host", "Listen on", "0.0.0.0 for every address (a home network); 127.0.0.1 for this machine only (behind Caddy or a tunnel).", costs="screens may lose it", advanced=True),
        S("port", "Port", "The port screens connect to.", example="5050", costs="every bookmark changes", advanced=True),
@@ -127,7 +138,7 @@ SECTIONS = (
 )
 
 # the control board's pages, as its rail names them (web/js/admin/main.js draws them)
-PAGES = (("home", "Overview"), ("receiver", "Receiver"), ("positions", "Feeds"), ("places", "Location"), ("routes", "Routes"),
+PAGES = (("home", "Overview"), ("stations", "Stations"), ("receiver", "ADS-B"), ("radio", "Radio"), ("positions", "Feeds"), ("places", "Location"), ("routes", "Routes"),
          ("look", "Display"), ("access", "Access"), ("safekeeping", "Backups"), ("health", "Health"), ("settings", "All settings"),
          ("server", "System"))
 

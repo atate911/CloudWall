@@ -57,13 +57,14 @@ def get_text(url, timeout=12):
     return data.decode("utf-8-sig", "replace")
 
 
-def post_json(url, body, timeout=12):
-    """POST a JSON document (an alert to a webhook). Returns the answer's bytes; raises on errors."""
+def post_json(url, body, timeout=12, headers=None, limit=64 * 1024):
+    """POST a JSON document (an alert to a webhook, a station's report). Returns the answer's bytes;
+    raises on errors."""
     data = json.dumps(body).encode()
     req = urllib.request.Request(url, data=data, method="POST",
-                                 headers={"User-Agent": UA, "Content-Type": "application/json"})
+                                 headers={"User-Agent": UA, "Content-Type": "application/json", **(headers or {})})
     with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read(64 * 1024)
+        return r.read(limit)
 
 
 PASSED_ON = ("Accept", "Accept-Encoding", "Accept-Language", "If-Modified-Since", "If-None-Match", "Range")

@@ -38,6 +38,8 @@ const P = {
   edit: '<path d="M4.5 19.5 5.5 15 15.8 4.7a1.8 1.8 0 0 1 2.5 0l1 1a1.8 1.8 0 0 1 0 2.5L9 18.5z"/><path d="m13.8 6.7 3.5 3.5"/>',
   list: '<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.8" cy="6.5" r="1.1" class="fill"/><circle cx="4.8" cy="12" r="1.1" class="fill"/><circle cx="4.8" cy="17.5" r="1.1" class="fill"/>',
   undo: '<path d="M9 14 4.5 9.5 9 5"/><path d="M4.5 9.5H15a5 5 0 0 1 0 10h-3"/>',
+  stations: '<path d="M12 21V11"/><path d="m8 21 4-10 4 10"/><path d="M9.3 17.5h5.4"/><circle cx="12" cy="9" r="1.4"/><path d="M8.9 5.9a4.4 4.4 0 0 0 0 6.2M15.1 5.9a4.4 4.4 0 0 1 0 6.2"/><rect x="2.5" y="3" width="5" height="4" rx="1"/><rect x="16.5" y="3" width="5" height="4" rx="1"/>',
+  radio: '<rect x="3" y="9" width="18" height="11" rx="2"/><path d="M7 9 17 4"/><circle cx="8.5" cy="14.5" r="2.5"/><path d="M14 13h4M14 16h4"/>',
   logo: '<rect x="4" y="6" width="16" height="12" rx="3"/><path d="M8 14.5 12 9l4 5.5"/>',
 };
 

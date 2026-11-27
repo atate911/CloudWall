@@ -168,12 +168,12 @@ export function ownFeed(p = house()) {
 }
 
 // each page's name: the rail, the page's own title, the finder and All settings all say it this way
-export const TITLES = { home: "Overview", receiver: "Receiver", positions: "Feeds", places: "Location", routes: "Routes", look: "Display",
+export const TITLES = { home: "Overview", stations: "Stations", receiver: "ADS-B", radio: "Radio", positions: "Feeds", places: "Location", routes: "Routes", look: "Display",
                         access: "Access", safekeeping: "Backups", health: "Health", settings: "All settings", server: "System" };
 
 // which of the checks' parts each page looks after, for the rail's marks and each page's problems
 export const PARTS = {
-  receiver: ["receiver", "tunnel"], positions: ["feeds"], places: ["home"], routes: ["routes"],
+  stations: ["receiver", "tunnel"], receiver: ["receiver", "tunnel"], positions: ["feeds"], places: ["home"], routes: ["routes"],
   look: ["display", "weather"], access: ["access", "caddy"], safekeeping: ["storage", "cache", "backup"],
   server: ["service", "install", "server", "system", "settings", "files", "clock"],
 };

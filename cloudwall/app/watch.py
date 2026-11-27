@@ -46,6 +46,8 @@ LAG_S = 8
 WEATHER_STALE_S = 3 * 3600
 SUSPECT_AFTER_S = 3 * 3600  # hours of traffic before "none came near" means anything
 SUSPECT_NM = 8
+STATION_S = 120             # the receiver's station is asked this often (its findings stand between)
+STATION_SILENT_S = 300      # a joined station that hasn't reported this long is a problem
 
 
 def sd_notify(message):
@@ -66,8 +68,9 @@ def sd_notify(message):
 
 class Watch:
     def __init__(self, cfg, places, provider=None, demo=False, code_changed=None, incidents=None,
-                 data_dir=None, cache_dir=None, clock=time.time):
+                 data_dir=None, cache_dir=None, clock=time.time, stations=None):
         self.cfg, self.places, self.provider, self.demo = cfg, places, provider, demo
+        self.stations = stations
         self.code_changed = code_changed
         self.data_dir = Path(data_dir) if data_dir else None
         self.cache_dir = Path(cache_dir) if cache_dir else None
@@ -82,6 +85,7 @@ class Watch:
         self.storage_failures = {}  # place id -> checks in a row its logbook couldn't be saved
         self.notify_url = cfg.get("health", {}).get("notify_url") or ""
         self.stopped = threading.Event()
+        self.station_at, self.station_found, self.station_seen = 0, [], False
 
     def _stamp(self):
         try:
@@ -94,7 +98,7 @@ class Watch:
     def checks(self):
         out = []
         for part, fn in (("settings", self.settings), ("storage", self.storage), ("service", self.service),
-                         ("routes", self.routes), ("clock", self.timezone)):
+                         ("routes", self.routes), ("clock", self.timezone), ("receiver", self.station)):
             out += health.run(None, [(part, lambda _ctx, fn=fn: fn())])
         for place in list(self.places):
             out += health.run(None, [("feeds", lambda _ctx, p=place: self.feeds(p))])
@@ -116,6 +120,38 @@ class Watch:
                 yield health.trouble("settings.changed-broken", f"{self.config_path} was changed and can't be used: {e}")
         if self.demo:
             yield health.trouble("display.demo", "CloudWall was started with --demo: every aircraft is simulated")
+
+    def station(self):
+        """The machines with antennas, as their CloudWall stations report them (sense/station.py).
+        Stations joined to this wall report every minute: each one's problems, and one silent for
+        STATION_SILENT_S, are said. Without any joined, a station the tunnel carries is asked every
+        STATION_S; one that answered before and stops is a problem, one never set up isn't."""
+        from ..sense import station
+        joined = self.stations.all() if self.stations else []
+        if joined:
+            out = []
+            for st in joined:
+                last = st.get("seen") or st.get("joined") or 0
+                if self.clock() - last > STATION_SILENT_S:
+                    out.append(health.trouble("receiver.station-down", f"{st['name']} hasn't reported "
+                                              + (f"for {(self.clock() - st['seen']) / 60:.0f} min" if st.get("seen") else "since it joined")))
+                elif st.get("facts"):                   # joined: a station by definition, whatever it has
+                    out += [f for f in station.findings(st["facts"], now=self.clock(), jobs=st["desired"].get("jobs")) if f.state != OK]
+            return out
+        _, _, url = station.urls(self.cfg)
+        if not url or self.demo:
+            return []
+        if self.clock() - self.station_at >= STATION_S:
+            self.station_at = self.clock()
+            try:
+                from ..core.http import get_json
+                facts = get_json(f"{url}/station.json", timeout=6)
+                self.station_seen = True
+                self.station_found = [f for f in station.findings(facts, now=self.clock()) if f.state != OK]
+            except Exception as e:
+                self.station_found = [health.trouble("receiver.station-down", f"the receiver's station at {url} isn't answering: {e}")] \
+                    if self.station_seen else []
+        return self.station_found
 
     def storage(self):
         if self.data_dir and self.data_dir.exists():

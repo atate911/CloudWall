@@ -17,9 +17,11 @@ import safekeeping from "./pages/safekeeping.js";
 import health from "./pages/health.js";
 import server from "./pages/server.js";
 import settings from "./pages/settings.js";
+import stations from "./pages/stations.js";
+import radio from "./pages/radio.js";
 
 // Home; then a page for each part of CloudWall; then the ones across all of it (null: a gap between)
-const RAIL = [home, null, receiver, positions, places, routes, look, access, safekeeping, null, health, settings, server];
+const RAIL = [home, null, stations, receiver, radio, positions, places, routes, look, access, safekeeping, null, health, settings, server];
 const PAGES = RAIL.filter(Boolean);
 // the old pages' addresses, for bookmarks
 const MOVED = { overview: "home", maps: "look", screens: "look", storage: "safekeeping", system: "server", log: "server", problems: "health" };

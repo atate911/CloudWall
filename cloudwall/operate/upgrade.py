@@ -9,6 +9,9 @@ in one command, as often as wanted.
   4. An old per-user setup found: move its settings and logbooks over and turn it off (legacy.py).
   5. Check the result (doctor) and say how it stands, and how to go back (`cloudwall rollback`).
 
+On a receiver with only CloudWall's station (`install --role station`), it updates the station
+and nothing else: no wall is set up there. A machine with both has both updated.
+
 MIGRATION.md walks through it for a server and a receiver as they were set up before.
 """
 import os
@@ -26,7 +29,15 @@ def upgrade(system, source=None, say=print):
     # an old per-user setup still in use (one already moved over is left disabled, its files kept)
     old = next((i for i in found if i["kind"] == "user" and (i["enabled"] or i["active"])), None)
     sysinst = next((i for i in found if i["kind"] == "system"), None)
-    say("Found: " + ("; ".join(f"the {i['kind']} service ({i['user']})" for i in found) or "nothing set up yet"))
+    station = system.exists(inst.STATION_UNIT)
+    if station and not sysinst and not old:          # a receiver: its station, and no wall to set up
+        say("Found: this receiver's CloudWall station")
+        inst.install(inst.Options("station", source=source), system)
+        say("The station is up to date. `cloudwall station --check` says how this receiver is; "
+            "`sudo cloudwall rollback` goes back to the code before.")
+        return
+    say("Found: " + ("; ".join(f"the {i['kind']} service ({i['user']})" for i in found) or "nothing set up yet")
+        + ("; this receiver's CloudWall station" if station else ""))
 
     # 1b. the settings that will run, checked against this code before anything changes
     if old and old.get("config"):
@@ -65,6 +76,10 @@ def upgrade(system, source=None, say=print):
         home = Path(old["data"]).parents[2]
         legacy.migrate(system, system.path(str(home)) if not system.real else home, old["user"],
                        old.get("checkout") or home, say=say)
+
+    # 4b. a station here too: the same code for it
+    if station:
+        inst.install(inst.Options("station", source=source), system)
 
     # 5. how it stands
     if system.real and not system.dry_run:

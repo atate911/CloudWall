@@ -75,11 +75,14 @@ DEFAULTS = {
     "storage": {"db_path": "", "cache_dir": ""},
     # notify_url: a webhook told when a major problem starts and ends (e.g. an ntfy.sh topic's URL)
     "health": {"notify_url": ""},
+    # The VHF airband radio (cloudwall/radio): not active yet. Its channels and how the sticks given
+    # to it (on the Stations page) listen; each station writes its receiver's config from them.
+    "radio": {"enabled": False, "mode": "parked", "channels": []},
     # Your own receiver, as the control board shows it. url: where its web server answers from here
     # (empty: worked out from [source] urls when merge is on); coverage_url: Coverage3D's (empty: the
     # port after the receiver's: the tunnel's 18090 beside its 18080); home_url: its address on the
     # home network, for adsb.im's own pages, which the board links to but never opens to the internet.
-    "receiver": {"url": "", "coverage_url": "", "home_url": ""},
+    "receiver": {"url": "", "coverage_url": "", "station_url": "", "home_url": ""},
 }
 
 
@@ -100,6 +103,7 @@ CHOICES = {
     ("kiosk", "radar"): ("chart", "atc"),
     ("kiosk", "density"): ("simple", "detailed"),
     ("tracking", "when_idle"): ("pause", "log"),
+    ("radio", "mode"): ("parked", "scan"),
     ("flightradar24", "mode"): ("always", "fallback"),
     ("flightaware", "mode"): ("always", "fallback"),
     ("map", "style"): ("dark", "light", "satellite", "streets", "osm", "sectional", "terminal", "ifr-low", "ifr-high",
@@ -131,6 +135,10 @@ def _fits(v, want):
     """Is v the kind of value wanted? (true and false aren't numbers, though Python counts them so.)"""
     kinds = want if isinstance(want, tuple) else (want,)
     return isinstance(v, kinds) and (bool in kinds or not isinstance(v, bool))
+
+
+# an airband channel as the settings write it: its frequency in MHz (118.000 to 136.975), then its name
+CHANNEL = re.compile(r"^\s*1(1[89]|2\d|3[0-6])\.\d{1,3}(\s+\S.*)?$")
 
 
 def check(section, values, problems=None):
@@ -193,6 +201,10 @@ def check(section, values, problems=None):
         raise ValueError(f"[server] port must be a whole number from 1 to 65535, not {values['port']!r}")
     if section == "server" and keys.problem(values.get("key", "")):
         raise ValueError(f"[server] key {keys.problem(values['key'])}")
+    if section == "radio" and "channels" in values:
+        bad = [c for c in values["channels"] if not isinstance(c, str) or not CHANNEL.match(c)]
+        if bad:
+            raise ValueError(f'[radio] channels are written as their frequency in MHz, then their name ("118.700 PDX Tower"), not {bad[0]!r}')
     if section == "source" and "urls" in values and not (values["urls"] and all(isinstance(u, str) for u in values["urls"])):
         raise ValueError("[source] urls must be a list of at least one address, each in quotes")
     return True

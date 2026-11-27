@@ -10,7 +10,7 @@ import { head } from "../parts.js";
 import { any } from "../controls.js";
 import { say, setup, APART } from "../words.js";
 
-const ICONS = { places: "places", positions: "feeds", receiver: "receiver", routes: "routes", look: "look", access: "access", safekeeping: "safekeeping", health: "problems" };
+const ICONS = { receiver: "receiver", radio: "radio", places: "places", positions: "feeds", routes: "routes", look: "look", access: "access", safekeeping: "safekeeping", health: "problems" };
 const PAGE_NAMES = Object.fromEntries(Object.entries(ICONS).map(([p, i]) => [p, [TITLES[p], i]]));
 let filter = "all";
 

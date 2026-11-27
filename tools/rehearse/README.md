@@ -15,6 +15,11 @@ owner would:
 - runs `cloudwall doctor` without and with sudo.
 
 Run it before a release. Read its output: it prints what it found rather than passing or failing.
+
+`bash tools/rehearse/station.sh` does the same for a receiver's station, on the same image: the Pi's own
+parts stood in for (`vcgencmd`, `lsusb`, a decoder, piaware's status, the tunnel's service), then
+`install --role station`, the service as it runs, `station.json`, `cloudwall station --check`,
+`cloudwall doctor`, `upgrade` (which must update the station and set up no wall) and `uninstall`.
 Behind an HTTPS-only proxy, pass apt's way out:
 `DOCKER_BUILD_ARGS="--build-arg APT_PROXY=http://127.0.0.1:3128 --build-arg CA=ca.crt --network host"`
 (with the proxy's CA certificate copied into this folder as `ca.crt`).

@@ -98,7 +98,8 @@ def installs(m):
 def check_installs(m):
     found = installs(m)
     if not found:
-        yield health.off("install", "CloudWall isn't set up as a service on this machine")
+        if m.read("/etc/systemd/system/cloudwall-station.service") is None:    # a receiver's station says itself
+            yield health.off("install", "CloudWall isn't set up as a service on this machine")
         return
     for i in found:
         where = f"{i['kind']} service ({i['unit']})"
@@ -202,7 +203,18 @@ def check_caddy(m):
 
 
 def check_receiver_side(m):
-    """What was set up around a receiver: Coverage3D on its own, the sharing page left running."""
+    """What was set up around a receiver: Coverage3D on its own, the sharing page left running, the
+    CloudWall station; and on a receiver itself, its own state (sense/station.py)."""
+    if m.read("/etc/systemd/system/cloudwall-station.service") is not None:
+        active = m.ask(["systemctl", "is-active", "cloudwall-station"])
+        state = active.stdout.strip() if active else None
+        yield (health.ok("receiver", "the CloudWall station is running (it reports this receiver to the wall)") if state in (None, "active")
+               else health.trouble("receiver.station-down", f"cloudwall-station.service is {state}"))
+    if m.real:
+        from ..sense import station
+        f = station.facts()
+        if station.is_receiver(f):
+            yield from station.findings(f)
     if m.read("/etc/systemd/system/coverage3d.service") is not None:
         yield health.trouble("coverage3d.separate")
     procs = m.ask(["pgrep", "-af", "sharing_guide.py"])

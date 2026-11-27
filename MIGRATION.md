@@ -104,8 +104,48 @@ python3 -m cloudwall doctor --offline
 ```
 
 It recognises the tunnel's receiver end, Coverage3D installed on its own, and the sharing page if it
-was left running as root (stop it with Ctrl-C where it was started). The receiver gets its own part of
-CloudWall in a later stage (ROADMAP.md, "station"); until then it stays as it is.
+was left running as root (stop it with Ctrl-C where it was started).
+
+### The receivers on the control board: stations
+
+CloudWall's **station** puts each machine with antennas on the server's control board: the Pi with
+the ADS-B stick, a Pi with VHF sticks for the radio, or one with both. Joined to the server, it
+reports every minute how it is (power supply, temperature, clock, SD card, sticks, decoder, feeders,
+tunnel), its problems show on the board and reach your alerts like any other, and what each of its
+sticks is for (ADS-B, the VHF radio, or spare) is set on the board's **Stations** page. It reports
+over HTTPS to the server's address, the way a browser would: nothing new is opened at home or on the
+server, and any number of stations work the same way.
+
+On the Pi:
+
+```bash
+cd ~/CloudWall && git pull
+```
+
+```bash
+sudo python3 -m cloudwall install --role station
+```
+
+```bash
+cloudwall station --check
+```
+
+The last says how the Pi stands, at the terminal. Then on the board's **Stations** page, press
+**Make a join code**, and on the Pi join with it (the page shows this command with the server's
+address and the code filled in):
+
+```bash
+sudo cloudwall station join https://<the server> <code>
+```
+
+It shows on the Stations page within a minute. A second Pi is the same: clone CloudWall into
+`~/CloudWall` as on the first, then the three commands above. Updating a Pi from then on is
+`git pull` and `sudo python3 -m cloudwall upgrade`, as on the server: on a Pi it updates the station
+and sets up nothing else.
+
+The VHF radio isn't active in this version: its channels and how its sticks listen are set on the
+board's **Radio** page, and a station with a stick given to the radio writes RTLSDR-Airband's config
+for it (`/var/lib/cloudwall/station/rtl_airband.conf`), ready for when it is.
 
 ## A wall panel
 
@@ -126,8 +166,8 @@ cd ~/CloudWall && git pull
 sudo python3 -m cloudwall upgrade
 ```
 
-Every time: a backup first, the new code beside the old, your settings checked before the restart,
-a check after. The control board shows a lamp lit if anything is wrong, and with `[health] notify_url`
+On the server: a backup first, the new code beside the old, your settings checked before the restart,
+a check after. On a receiver with the station: the station's code, and nothing else. The control board shows a lamp lit if anything is wrong, and with `[health] notify_url`
 set (an [ntfy.sh](https://ntfy.sh) topic, say) a problem that stops CloudWall reaches your phone.
 
 ## If something goes wrong

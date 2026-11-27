@@ -102,8 +102,15 @@ def make_server(cfg, places, charts=None, logos=None):
             self.end_headers()
 
         def _admin(self, method):
-            """The control board's API (app/admin.py), handed in once it is made."""
+            """The control board's API (app/admin.py), handed in once it is made; and the stations'
+            (a receiver's CloudWall joining and reporting: their own keys, not the owner's)."""
             path = self.path.split("?")[0]
+            if path.startswith("/api/stations/") and method == "POST":
+                if srv.admin is None:
+                    self._send(404, {"error": "stations aren't taken here"})
+                else:
+                    srv.admin.stations_api(self, path)
+                return True
             if not path.startswith("/api/admin/"):
                 return False
             if srv.admin is None:
@@ -134,11 +141,11 @@ def make_server(cfg, places, charts=None, logos=None):
         def _place(self, q):
             return places.get((q.get("place") or [""])[0]) or (places.kiosk() if q.get("kiosk") else places.first)
 
-        def _body(self):
+        def _body(self, limit=MAX_BODY):
             """The request's JSON object; None if it isn't one, or is longer than any real one."""
             try:
                 n = int(self.headers.get("Content-Length") or 0)
-                if not 0 <= n <= MAX_BODY:
+                if not 0 <= n <= limit:
                     return None
                 body = json.loads(self.rfile.read(n) or b"{}")
                 return body if isinstance(body, dict) else {}
