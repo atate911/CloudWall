@@ -58,13 +58,16 @@ own `127.0.0.1:8080`, where tar1090 serves the live aircraft data. CloudWall on 
 
 The service runs this command (the values are filled in by the script):
 ```
-/usr/bin/ssh -N -i /etc/adsb-tunnel/id_ed25519 -p 22 \
+/usr/bin/ssh -F /dev/null -N -i /etc/adsb-tunnel/id_ed25519 -p 22 \
   -o BatchMode=yes -o IdentitiesOnly=yes \
   -o UserKnownHostsFile=/etc/adsb-tunnel/known_hosts -o StrictHostKeyChecking=yes \
   -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
   -o ExitOnForwardFailure=yes -o ConnectTimeout=15 \
   -R 127.0.0.1:18080:127.0.0.1:8080 adsbtunnel@VPS_HOST
 ```
+- `-F /dev/null`: ignore the Pi's system-wide `/etc/ssh/ssh_config`; every option needed is on
+  this line. (Some adsb.im images ship `IPQoS 0x00` there, which newer OpenSSH rejects, stopping
+  every ssh command with "Bad IPQoS value".)
 - `-N`: no remote command; just the connection.
 - `-R 127.0.0.1:18080:127.0.0.1:8080`: on the VPS, listen on 127.0.0.1:18080 and send those
   connections back to this Pi's 127.0.0.1:8080.
@@ -225,6 +228,7 @@ to the public feeds on its own. Resume with `sudo systemctl enable --now adsb-tu
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
+| `Bad IPQoS value` / `terminating, 1 bad configuration options` | An older copy of `pi-tunnel.sh` reading a bad line in the Pi's `/etc/ssh/ssh_config` | Download `pi-tunnel.sh` again (it now ignores that file) and rerun `install` |
 | `Host key verification failed` (Pi log) | The VPS's host key changed (reinstall, new VPS), or the wrong host | Confirm the new fingerprint on the VPS, then rerun `pi-tunnel.sh install … --fingerprint …` |
 | `Permission denied (publickey)` | Key not authorised, wrong account, or an `AllowUsers`/`AllowGroups` rule | Rerun `vps-tunnel.sh setup "<key>"` and read its warnings; check `sudo tail /var/log/auth.log` on the VPS |
 | `remote port forwarding failed for listen port 18080` | Port mismatch with `permitlisten`, forwarding disabled in sshd, or an old tunnel still holding the port | Use the same `--remote-port` everywhere; read `setup`'s sshd warnings; wait 1–2 minutes for a dead session to time out |

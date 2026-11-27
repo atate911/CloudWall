@@ -56,7 +56,10 @@ cmd_keygen() {
 }
 
 ssh_args() {   # host port ruser rport lport
-  printf '%s\n' -N -i "$KEY" -p "$2" \
+  # -F /dev/null: ignore the system's ssh_config. Every option the tunnel needs is set here, and a
+  # bad line there (adsb.im images have shipped "IPQoS 0x00", which newer OpenSSH refuses) would
+  # otherwise stop ssh from starting at all.
+  printf '%s\n' -F /dev/null -N -i "$KEY" -p "$2" \
     -o BatchMode=yes -o IdentitiesOnly=yes \
     -o UserKnownHostsFile="$KNOWN" -o StrictHostKeyChecking=yes \
     -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
