@@ -148,7 +148,11 @@ class BrowserTest(unittest.TestCase):
         self.assertIn("atc", c["atc"]["scope"])
         self.assertGreaterEqual(c["atc"]["status"], 3)                       # the status area's lines
         self.assertGreaterEqual(c["atc"]["blocks"], 1)
-        self.assertEqual(c["buttons"], ["radar", "map"])                    # no sky view
+        self.assertEqual(c["buttons"], ["radar", "map", "sky"])
+        self.assertEqual(c["sky"]["box"], "-112 -112 224 224")               # the dome, in the radar's square
+        self.assertEqual(c["sky"]["tiles"], 0)                               # no map under the sky
+        self.assertEqual(c["sky"]["tools"], "none")                          # nor the radar's options
+        self.assertIn("straight up", c["sky"]["legend"])
         m = c["map"]
         self.assertEqual(m["layers"], ["places", "roads", "sat"])            # satellite, with roads and names over it
         self.assertEqual(c["streets"], ["streets"])
@@ -279,6 +283,13 @@ class BrowserTest(unittest.TestCase):
         self.assertGreaterEqual(p["boardRows"], 1)
         self.assertEqual(p["view"], "now")                                   # a tapped flight brings its card up
         self.assertGreaterEqual(p["queue"], 1)
+
+    def test_the_sky_view_turns_with_a_phones_compass(self):
+        c = self.scenario("compass")
+        self.assertIn("Sky view from home", c["before"])                  # north up until the compass is on
+        self.assertEqual(c["after"], "Facing ENE, 060°")
+        self.assertEqual(c["north"], -60)
+        self.assertTrue(c["off"])                                            # and back to north up
 
     def test_the_quiet_sky_slides(self):
         q = self.scenario("quiet")

@@ -189,6 +189,11 @@ const SCENARIOS = {
     await page.click('#mapstyle-seg button[data-map="streets"]');
     await page.waitForFunction(() => [...document.querySelectorAll("#s-base image")].some((i) => i.getAttribute("href").startsWith("tiles/streets/")));
     out.streets = (await mapFacts()).layers;
+    // the Sky view: a dome of the sky above home, no map under it, the radar's options put away
+    await page.click('#scope-seg button[data-mode="sky"]');
+    await page.waitForFunction(() => document.getElementById("scope").classList.contains("sky") && document.querySelector("#radar .ring.horizon"));
+    out.sky = await page.evaluate(() => ({ box: document.getElementById("radar").getAttribute("viewBox"), tiles: document.querySelectorAll("#s-base image").length,
+      tools: getComputedStyle(document.querySelector("#scope .scope-tools")).display, legend: (document.querySelector("#radar .legend") || {}).textContent || "" }));
     await page.click('#scope-seg button[data-mode="radar"]');
     await page.waitForFunction(() => document.getElementById("radar").getAttribute("viewBox") === "-112 -112 224 224");
     out.backToRadar = true;
@@ -368,6 +373,30 @@ const SCENARIOS = {
   },
 
   // a phone: the page stacked, the board as two lines a flight
+  // the Sky view on a phone, turned by its compass: the way it faces at the top
+  async compass(browser, errors) {
+    const page = await open(browser, "phone", "/", errors, null, (p) => p.addInitScript(() => localStorage.setItem("cloudwall.scope", "sky"))), out = {};
+    await page.context().grantPermissions(["accelerometer", "gyroscope", "magnetometer"]);
+    await page.$eval("#scope", (e) => e.scrollIntoView());
+    await page.waitForSelector("#radar .ring.horizon", { state: "attached" });
+    out.before = await page.evaluate(() => document.querySelector("#radar .legend").textContent);
+    await page.tap("#btn-compass");
+    await page.waitForFunction(() => document.getElementById("btn-compass").getAttribute("aria-pressed") === "true");
+    // the phone flat, its top toward the east-northeast (Android's reading: alpha counts anticlockwise)
+    for (let i = 0; i < 6; i++) {
+      await page.evaluate(() => window.dispatchEvent(new DeviceOrientationEvent("deviceorientationabsolute", { alpha: 300, beta: 5, gamma: 0, absolute: true })));
+      await page.waitForTimeout(80);
+    }
+    await page.waitForFunction(() => /Facing/.test(document.querySelector("#radar .legend").textContent));
+    out.after = await page.evaluate(() => document.querySelector("#radar .legend tspan").textContent);
+    // north, picked out, sits 60° anticlockwise from the top
+    out.north = await page.evaluate(() => { const n = document.querySelector("#radar .compass.north"); return Math.round(Math.atan2(+n.getAttribute("x"), -(+n.getAttribute("y") - 2)) * 180 / Math.PI); });
+    await page.tap("#btn-compass");
+    await page.waitForFunction(() => !/Facing/.test(document.querySelector("#radar .legend").textContent));
+    out.off = true;
+    return out;
+  },
+
   async phone(browser, errors) {
     const page = await open(browser, "phone", "/", errors), out = {};
     out.layout = await page.evaluate(() => document.documentElement.className);

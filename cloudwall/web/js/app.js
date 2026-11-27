@@ -2,6 +2,7 @@
 import { $, esc, store, phone, api, runwayList, degF, since, dataAge, COUNT_STOP_S } from "./util.js";
 import { updateSky } from "./sky.js";
 import { drawScope, mapReach, flashCraft } from "./scope.js";
+import { compass, startCompass, stopCompass, facing } from "./compass.js";
 import { loadMap } from "./map.js";
 import { renderHero, tickHero, nextSlide, forgetHero, heroResized, setPicture, setMedia } from "./hero.js";
 import { renderEmergency } from "./emergency.js";
@@ -88,15 +89,16 @@ function emergencies() {
 if (!KIOSK) paneDividers(() => { if (state && view === "now") renderMiniBoard(state); });
 placeMenu(() => state);
 
-// ---------- scope: the radar, or the Map view (the flights on a plain satellite or street map) ----------
+// ---------- scope: the radar, the Map view (the flights on a plain satellite or street map), or the
+// Sky view (a dome of the sky above home, looking up) ----------
 // The desktop's buttons choose for each screen; the kiosk takes [kiosk] view (or ?view= in its
 // address), where "card" leaves the scope off and gives the card the whole screen. An emergency
 // always shows on the radar, where the controllers' codes and the restrictions are.
-const kioskView = () => { const v = qs.get("view") || (state && state.kiosk && state.kiosk.view); return v === "radar" || v === "map" ? v : "card"; };
+const kioskView = () => { const v = qs.get("view") || (state && state.kiosk && state.kiosk.view); return ["radar", "map", "sky"].includes(v) ? v : "card"; };
 const cardOnly = () => KIOSK && kioskView() === "card";
 function scopePref() {
   const v = KIOSK ? kioskView() : store("scope");
-  return v === "map" ? "map" : "radar";
+  return v === "map" || v === "sky" ? v : "radar";
 }
 const scopeMode = () => (emergencies().length ? "radar" : scopePref());
 // the Map view's map: satellite imagery with roads and names over it, or a street map
@@ -134,7 +136,7 @@ function drawScopeNow(now = performance.now()) {
   const mode = scopeMode(), pref = scopePref(), ms = mapStyle(), { style, tracks, range } = radarPrefs();
   const atc = mode === "radar" && style === "atc";
   const charts = state.charts || { map: state.basemap }, layers = charts.layers || {};
-  const bm = mode === "map" ? layers[ms] : atc ? charts.atc : charts.map;
+  const bm = mode === "sky" ? null : mode === "map" ? layers[ms] : atc ? charts.atc : charts.map;      // the sky has no map
   const credit = bm && bm.enabled ? bm.attribution : "";
   const dens = density();
   const label = [pref, mode, ms, credit, style, tracks, range, state.ranges, dens].join("|");
@@ -149,10 +151,31 @@ function drawScopeNow(now = performance.now()) {
       `<span class="seg-unit">nm</span>`;
     $("scope").classList.toggle("atc", atc);
     $("scope").classList.toggle("map", mode === "map");     // the radar's own options give way to the map's
+    $("scope").classList.toggle("sky", mode === "sky");     // the sky view has none: it is always the sky overhead
     $("scope-attrib").textContent = credit;
   }
-  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range, mapStyle: ms, simple: dens === "simple", wall: KIOSK });
+  // on a phone, the Sky view can turn with the phone's compass
+  const heading = mode === "sky" && phone() ? facing() : null;
+  drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range, mapStyle: ms, simple: dens === "simple", wall: KIOSK, heading });
+  compassStatus(mode);
 }
+
+// The Sky view's compass switch, and a word while it waits for the compass (or finds there's none).
+function compassStatus(mode) {
+  const btn = $("btn-compass"), on = compass.on && mode === "sky";
+  if (btn.getAttribute("aria-pressed") !== String(on)) btn.setAttribute("aria-pressed", String(on));
+  const waiting = on && facing() == null && Date.now() - compass.at > 2500;
+  const text = compass.failed || (waiting ? "No reading from the compass yet: move the phone in a figure of eight" : "");
+  if ($("compass-note").textContent !== text) $("compass-note").textContent = text;
+}
+$("btn-compass").addEventListener("click", async () => {
+  if (compass.on) { stopCompass(); compass.failed = ""; store("skyCompass", "off"); return; }
+  if (await startCompass()) store("skyCompass", "on");
+  else setTimeout(() => { compass.failed = ""; }, 6000);      // say why, for a moment
+});
+// left on last time: back on by itself where the browser allows it without a tap (Android); an
+// iPhone asks the person again, so there it waits for a tap on the switch
+if (phone() && store("skyCompass") === "on") startCompass().then((ok) => { if (!ok) compass.failed = ""; });
 
 // Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi. On a phone
 // the radar can be scrolled out of sight under the card, and then it rests.
@@ -409,7 +432,8 @@ async function poll() {
     // (the ATC style's square and the Map view's rectangle reach further, into their corners)
     const shown = state && view === "now" ? scopeMode() : null, prefs = radarPrefs();
     const far = shown === "radar" && prefs.style === "atc" ? "&square=1" : shown === "map" ? `&reach=${mapReach().toFixed(2)}` : "";
-    const s = await (await api(`api/state?range=${shown ? prefs.range : 0}${far}` +
+    // (the sky view looks up at the aircraft within the tracking radius: it asks for no more)
+    const s = await (await api(`api/state?range=${shown && shown !== "sky" ? prefs.range : 0}${far}` +
       (asked ? `&pin=${encodeURIComponent(asked)}` : ""))).json();
     // answers can cross: keep the newest, and drop one asked for a flight no longer followed
     if (seq < shownSeq || asked !== myPin) return;

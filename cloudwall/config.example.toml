@@ -89,7 +89,8 @@ general_aviation = false
 [kiosk]                # the wall panel (/kiosk) has no buttons, so its place and radar are set here
 place = ""             # a place's name; empty for [home]
 view = "card"          # "card": the aircraft overhead across the whole screen; "radar" puts the radar
-                       # beside it, "map" the flights on an everyday satellite map
+                       # beside it, "map" the flights on an everyday satellite map, "sky" a dome
+                       # of the sky above home with the aircraft overhead crossing it
 radar = "chart"        # "chart", or "atc" to draw the radar like an air traffic control screen
 tracks = true          # the selected aircraft's track and lines to where aircraft will be in a minute
 range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see further

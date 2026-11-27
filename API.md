@@ -46,7 +46,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `airport` | always | Its airport: `icao`, `iata`, `name`, `city`, `lat`, `lon`, `elevation_ft`; `runways` (each `name`, `ends` as two `[lat, lon]`, `length_ft`); `others`, the small fields nearby (`code`, `icao`, `name`, `city`, `lat`, `lon`, `elevation_ft`, `runways`); `airspace` (Class B, C and its own D: `id`, `class`, `floor`, `ceiling`, `label`, `rings`); `navaids` (`ident`, `name`, `type`, `lat`, `lon`); `helipads`, the hospital helipads out past the radar's longest range (`code`, `name`, `short`, `city`, `lat`, `lon`, `elevation_ft`; the US only). |
 | `tracking` | always | The `[tracking]` settings in force: `radius_nm`, `overhead_nm`, `max_overhead_alt_ft`, `poll_seconds`, `when_idle`, `idle_after_seconds`. |
 | `ranges` | always | The ranges a radar can ask for, in nm: the tracking radius, then the longer ones. |
-| `kiosk` | always | The `[kiosk]` settings: `place`, `view` (`radar` or `map`), `radar`, `tracks`, `range_nm`, `density` (`simple` or `detailed`), `quiet` (the panel's quiet hours, "23:00-06:30", or ""). |
+| `kiosk` | always | The `[kiosk]` settings: `place`, `view` (`card`, `radar`, `map` or `sky`), `radar`, `tracks`, `range_nm`, `density` (`simple` or `detailed`), `quiet` (the panel's quiet hours, "23:00-06:30", or ""). |
 | `aircraft` | always | Every aircraft within the tracking radius, nearest first: [aircraft](#an-aircraft). |
 | `beyond` | always | Aircraft in the air past the tracking radius, there only while a longer `range` is asked for. They are for the radar alone: never looked up, never on the card. |
 | `hero` | always | The aircraft on the flight card: the one this screen follows, else the one overhead; else null. An [aircraft](#an-aircraft) with its track. |
@@ -365,7 +365,7 @@ to draw it, and what this place's logbook knows of it.
 
 | Request | Answer |
 |---|---|
-| `GET /api/heat` | Today's traffic as a grid over the tracking radius: `grid` (cells a side, north up), `radius_nm`, and `cells`, each `[x, y, count]` counted from the north-west corner. |
+| `GET /api/heat` | Today's traffic within the tracking radius, as lines: `radius_nm`, `aircraft` (how many flew within it today), `unit` (100: coordinates are in hundredths of a nm), and `paths`, each one flight's line as a flat list `[x0, y0, x1, y1, ...]`, east and north of home, simplified to the points it needs to stay within 0.02 nm of where it went. A gap in the feed of over 90 seconds or 3 nm ends one line and starts another. The page draws them at its screen's own resolution, each pixel coloured by how many flights crossed it. |
 | `GET /api/locate?q=` | Where a US ZIP code ("98683") or coordinates ("45.63, -122.66") are: `lat`, `lon`, `zip`; `auto`, the airport CloudWall would choose; and `airports`, the airline airports nearest (`icao`, `iata`, `name`, `city`, `size`, `dist_nm`). 400 with `error` when it is neither. |
 | `POST /api/places` | Set up a place: a JSON body with `q` (as for locate), and optionally `name` and `airport` (an ICAO code; "auto" when left out). Answers `place`, its summary as in `places`; 400 with `error` in words fit to show. Refused (403) from another site's page. |
 | `DELETE /api/places?id=` | Remove a place set up that way (not one from the config file). Answers `places`. |
