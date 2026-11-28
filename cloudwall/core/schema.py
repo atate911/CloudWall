@@ -4,6 +4,8 @@ never shown back. A test fails if a setting in config.DEFAULTS has no entry here
 """
 from dataclasses import asdict, dataclass
 
+import re
+
 from . import config
 
 
@@ -150,3 +152,36 @@ def find(section, key):
                 if st.key == key:
                     return st
     return None
+
+
+def starter():
+    """The settings file a new CloudWall starts with: every setting at its default with what it
+    does beside it, made from SECTIONS and config.DEFAULTS so it can't fall out of step with them.
+    Settings with no default (and secrets) are written commented out, with an example."""
+    out = ["# CloudWall settings. Every setting is optional: what is written here is the default.",
+           "# The control board (/admin) changes these and explains each; restart CloudWall after editing by hand.", ""]
+    for sec in SECTIONS:
+        out.append(f"[{sec.name}]".ljust(23) + f"# {sec.about}")
+        for st in sec.settings:
+            default = config.DEFAULTS.get(sec.name, {}).get(st.key)
+            words = st.help + (f" ({st.unit})" if st.unit else "")
+            if isinstance(default, list):
+                out += [f"{st.key} = [".ljust(23) + f"# {words}"] + [f"  {config._toml_value(v)}," for v in default] + ["]"]
+            elif default is None or st.secret:
+                shown = st.example if st.example else ""
+                value = shown if re.fullmatch(r"-?[\d.]+|true|false", shown) else config._toml_value(shown)
+                out.append(f"# {st.key} = {value}".ljust(23) + f"# {words}")
+            else:
+                out.append(f"{st.key} = {config._toml_value(default)}".ljust(23) + f"# {words}")
+        out += NOTES.get(sec.name, []) + [""]
+    return "\n".join(out)
+
+
+# what a section may hold beyond its settings, said where a reader of the file would look
+NOTES = {
+    "airport": ["# Only for an airport CloudWall's tables don't have: iata, city, lat, lon. Smaller fields",
+                "# nearby come from the tables too; to name your own, one [[airport.others]] each, with",
+                "# code, name, city, lat, lon and elevation_ft."],
+    "tracking": ["", "# More places to watch, such as a cabin (the desktop's menu adds them too): one [[places]] each,",
+                 "# with a name and lat and lon, or a zip; its airport is chosen as [airport]'s is unless given."],
+}

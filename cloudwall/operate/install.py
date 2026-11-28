@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from .. import __version__
-from ..core import config, keys, paths
+from ..core import config, keys, paths, schema
 from .system import System, tree_hash
 
 OPT = "/opt/cloudwall"
@@ -170,7 +170,7 @@ def rollback(system):
 def put_config(system):
     """The settings file: started from the example when there is none; never overwritten."""
     if not system.exists(CONFIG):
-        system.write(CONFIG, paths.EXAMPLE.read_text(), mode=0o640, owner=USER, group=USER)
+        system.write(CONFIG, schema.starter(), mode=0o640, owner=USER, group=USER)
     else:
         system.chown(CONFIG, USER, USER)
         system._mode(CONFIG, 0o640)

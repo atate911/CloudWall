@@ -9,7 +9,7 @@ import time
 import unittest
 from pathlib import Path
 
-from cloudwall.core import config, health, paths
+from cloudwall.core import config, health, paths, schema
 from cloudwall.memory.store import Store
 from cloudwall.operate import backup, cli, doctor, install as inst
 from cloudwall.operate.system import System
@@ -37,7 +37,7 @@ class InstallTest(MachineTest):
         s = inst.install(inst.Options("wall"), self.system())
         self.assertTrue(self.at("/opt/cloudwall/current/cloudwall/__init__.py").exists())
         self.assertTrue(os.readlink(self.at("/opt/cloudwall/current")).startswith("releases/"))
-        self.assertEqual(self.at(inst.CONFIG).read_text(), paths.EXAMPLE.read_text())
+        self.assertEqual(self.at(inst.CONFIG).read_text(), schema.starter())
         self.assertEqual(mode(self.at(inst.CONFIG)), 0o640)                  # it will hold keys
         self.assertEqual(mode(self.at(inst.VAR)), 0o750)
         unit = self.at(inst.UNIT).read_text()

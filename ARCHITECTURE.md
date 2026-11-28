@@ -266,7 +266,7 @@ toward each new report. Countdowns use the same clock (`since(state)` in `util.j
 - **A chart layer:** an entry in `charts.FAA_LAYERS`; the page asks for it by name.
 - **Something several displays say the same way:** `parts.js`, not one of the displays.
 - **A setting:** its default in `config.DEFAULTS` (which is also what says what kind of value it
-  takes), a line in `config.example.toml`.
+  takes) and its words in `core/schema.py`; the starter settings file is made from the two.
 - **A folder of files under `web/` or `data/`:** list it in `pyproject.toml`'s package data
   (a test checks this).
 

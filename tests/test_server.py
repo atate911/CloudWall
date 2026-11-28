@@ -2,7 +2,7 @@ import json
 import unittest
 from pathlib import Path
 
-from cloudwall.core import config
+from cloudwall.core import config, schema
 from cloudwall.gather import demo
 from cloudwall.memory.store import Store
 from cloudwall.reference import placing
@@ -124,9 +124,9 @@ class ServerTest(unittest.TestCase):
             q.write_text('[home]\nlat = 45.6\n')
             privatelink.write_key(q, "tafo-kemi-luza-nobe")
             self.assertEqual(q.read_text(), '[home]\nlat = 45.6\n\n[server]\nkey = "tafo-kemi-luza-nobe"\n')
-            # the example config, with its commented-out key, takes one too
+            # the starter config, with its commented-out key, takes one too
             e = Path(d) / "example.toml"
-            e.write_text(config.EXAMPLE.read_text())
+            e.write_text(schema.starter())
             privatelink.write_key(e, "tafo-kemi-luza-nobe")
             self.assertEqual(config.load(str(e))["server"]["key"], "tafo-kemi-luza-nobe")
         links = dict(privatelink.links("tafo-kemi-luza-nobe", "192.168.1.20", 5050))

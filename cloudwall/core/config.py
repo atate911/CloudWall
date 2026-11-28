@@ -8,11 +8,10 @@ import shutil
 import tomllib
 from pathlib import Path
 
-from . import keys, paths
+from . import keys
 
 log = logging.getLogger("cloudwall")
 
-EXAMPLE = paths.EXAMPLE
 
 DEFAULTS = {
     "home": {
@@ -429,6 +428,8 @@ def init(path=None):
     if path.exists():
         return path, False
     path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(EXAMPLE, path)
-    os.chmod(path, 0o600)            # it will hold keys: readable by its owner only
+    from . import schema             # (schema imports this module: asked for when needed)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)      # it will hold keys: readable by its owner only
+    with os.fdopen(fd, "w") as f:
+        f.write(schema.starter())
     return path, True

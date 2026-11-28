@@ -87,7 +87,21 @@ class PlacesTest(unittest.TestCase):
         self.assertEqual((cfg["tracking"]["radius_nm"], cfg["tracking"]["poll_seconds"]), (15, 2.5))
         self.assertNotIn("sound", cfg)
         self.assertEqual(len(logs.output), 3)
-        config.load(str(Path(config.EXAMPLE)))                           # the starter file passes its own check
+        import tempfile
+        import tomllib
+        from cloudwall.core import schema
+        with tempfile.TemporaryDirectory() as d:                         # the starter file passes its own check,
+            path, made = config.init(Path(d) / "config.toml")
+            self.assertTrue(made)
+            started = config.load(str(path))
+            written = tomllib.loads(path.read_text())
+        for section, values in written.items():                         # says only the defaults,
+            for key, value in values.items():
+                self.assertEqual(value, config.DEFAULTS[section][key], (section, key))
+        for sec in schema.SECTIONS:                                      # and names every setting there is
+            for st in sec.settings:
+                self.assertRegex(schema.starter(), rf"(?m)^(# )?{st.key} = ", (sec.name, st.key))
+        self.assertEqual(started["tracking"]["radius_nm"], 15)
 
     def test_zip_codes_and_the_closest_major_airport(self):
         from cloudwall.reference import airports

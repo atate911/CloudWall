@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from cloudwall.core import config
+from cloudwall.core import config, schema
 from cloudwall.memory.store import Store
 from cloudwall.reference import placing
 
@@ -143,7 +143,7 @@ class SettingsFileTest(unittest.TestCase):
 
     def test_a_list_over_several_lines_is_replaced_whole(self):
         import tomllib
-        self.path.write_text((Path(config.__file__).parent.parent / "config.example.toml").read_text())
+        self.path.write_text(schema.starter())
         config.write_setting(self.path, "source", "urls", ["http://pi:8080/data/aircraft.json"])
         got = tomllib.loads(self.path.read_text())
         self.assertEqual(got["source"]["urls"], ["http://pi:8080/data/aircraft.json"])
