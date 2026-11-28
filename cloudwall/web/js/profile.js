@@ -1,13 +1,6 @@
-// The side view along the runways: each aircraft at its height over the ground along the airport's
-// main runway direction, the arrivals numbered in landing order, the 3° approach drawn while the selected aircraft is an arrival, the cloud
-// layers from the airport's weather report, home and the airport on the ground line. Beside the
-// radar's view from above, it shows who is stacked over whom. Heights are to scale up to 6,000 ft,
-// where the approach and nearly all the traffic near an airport are, so the approach is a straight
-// line; above that, the top of the sheet is the rest of the sky pressed together (to 45,000 ft, each
-// step up worth more), tinted and set off by a double line, so an airliner passing at 36,000 ft sits
-// above a jet at 14,000. Each aircraft is tipped the way it is going, nose up in a climb and down in
-// a descent, and a line stands over home: whoever is on it is overhead. Aircraft well off the
-// runways' line are drawn faint: they are only passing the same distance along it.
+// The side view along the runways: each aircraft at its height along the main runway direction,
+// with the approach, cloud layers, home and the airport. Heights are to scale up to 6,000 ft (so
+// the 3° approach is a straight line); above that the sky to 45,000 ft is pressed together.
 import { esc, num, clamp, offset, ident } from "./util.js";
 import { drawing } from "./silhouette.js";
 import { boardFlight } from "./parts.js";
@@ -24,7 +17,6 @@ const DIR8 = ["north", "northeast", "east", "southeast", "south", "southwest", "
 const GLIDE_FT_PER_NM = 318.4;        // a 3° approach
 const f1 = (v) => v.toFixed(1);
 
-// An aircraft from the side, about its size: its drawing, or a balloon or glider drawn here.
 function sideOf(a, w) {
   if (a.icon === "balloon") return { html: `<g class="el-glyph"><ellipse cx="0" cy="${-w * 0.75}" rx="${w * 0.42}" ry="${w * 0.5}"/><path d="M${-w * 0.3},${-w * 0.38}L${-w * 0.1},${-w * 0.08}M${w * 0.3},${-w * 0.38}L${w * 0.1},${-w * 0.08}"/><rect x="${-w * 0.1}" y="${-w * 0.08}" width="${w * 0.2}" height="${w * 0.14}"/></g>`, h: w * 1.3, up: w * 1.3 };
   const d = drawing(a.type, a.shape || (a.icon === "heli" || a.icon === "tandem" ? "heli" : a.icon === "light" ? "piston" : "narrow"), a.length || 30, [a.model, a.type_name].filter(Boolean).join(" "));
@@ -33,8 +25,8 @@ function sideOf(a, w) {
   return { html: d.svg.replace("<svg", `<svg width="${f1(w)}" height="${f1(h)}" x="${f1(-w / 2)}" y="${f1(-h * 0.62)}"`), h, up: h * 0.62 };
 }
 
-// The runway the view runs along: the first in use, else the longest. Its axis points out along the
-// approach (east for an airport landing west), so arrivals come down from the right.
+// The first runway in use, else the longest. The axis points out along the approach (east for an
+// airport landing west), so arrivals come down from the right.
 function axis(state) {
   const ap = state.airport, names = String((state.flow && state.flow.runways) || "").split("/").map((s) => s.trim()).filter(Boolean);
   const ways = (ap.runways || []).map((r) => {
@@ -57,8 +49,7 @@ function axis(state) {
   const out = SHORT8[Math.round((((Math.atan2(ux, uy) / RAD) % 360) + 360) % 360 / 45) % 8];      // which way the axis points
   return { ux, uy, along, lateral, thr: along(thr), far: along(far), landing: names.length > 0, names, out, back: SHORT8[(SHORT8.indexOf(out) + 4) % 8] };
 }
-// Where the view is seen from, for the sheet's title: with the approach running out to the right
-// (southeast, say), from the southwest.
+// Where the view is seen from: with the approach running out to the southeast, from the southwest.
 export function profileFrom(state) {
   const ax = axis(state);
   return ax ? DIR8[(SHORT8.indexOf(ax.out) + 2) % 8] : "";
@@ -72,13 +63,11 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
   const ys = (alt) => (alt > TOP ? top0 - band * Math.min(1, Math.log(alt / TOP) / Math.log(CEIL / TOP)) : top0 + (H - top0 - padB) * (1 - clamp(alt, 0, TOP) / TOP));
   const xs = (nm) => padL + ((W - padL - padR) * (nm + range)) / (2 * range);
   const g0 = ys(0), heroHex = state.hero && state.hero.hex;
-  // the 3° approach is the selected aircraft's guide when it is arriving: with a departure or anything
-  // else selected, a path to the runway would be drawn for an aircraft that isn't flying one
+  // the 3° approach is drawn only while the selected aircraft is arriving
   const approach = ax.landing && !!state.hero && state.hero.activity === "arr";
   let s = `<defs><pattern id="pf-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="el-hatch" x1="0" y1="0" x2="0" y2="6"/></pattern></defs>`;
-  // the sky above the true scale, tinted, and the double line where the scale changes
   s += `<rect class="el-upper" x="${padL}" y="${padT}" width="${W - padL - padR}" height="${f1(band)}"><title>Above ${num(TOP)} ft the heights are pressed together</title></rect>`;
-  // the heights down the side, each only where it has room (a short sheet keeps the ones that say most)
+  // the heights down the side, each only where it has room
   const said = [top0];
   for (const alt of [40000, 2000, 4000, 10000, 20000]) {
     const y = ys(alt);
@@ -88,9 +77,7 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
   }
   s += `<path class="el-break" d="M${padL},${f1(top0)}H${W - padR}M${padL},${f1(top0 - 2.5)}H${W - padR}"/><text class="el-tick" x="${padL - 6}" y="${f1(top0 + 3.5)}" text-anchor="end">${num(TOP)} ft</text>`;
   s += `<rect x="${padL}" y="${g0}" width="${W - padL - padR}" height="${6 * fs}" fill="url(#pf-hatch)"/><line class="el-ground" x1="${padL}" x2="${W - padR}" y1="${g0}" y2="${g0}"/>`;
-  // miles along the ground, left out where the airport's and home's names sit
-  // (every five miles has its tick; a number only where it is clear of the names and of the others,
-  // the ends of the scale first)
+  // miles along the ground: a tick every five, a number only where clear of the names and the others
   const apX = ax.along(state.airport), side = (nm) => (nm > 0 ? ax.out : ax.back);
   const half = (text) => (text.length * 5.6 * fs) / 2 + 3 * fs, taken = [[xs(0), half("Home")], [xs(apX), half(state.airport.iata || "")]];
   for (const nm of [-15, 15, -10, 10, -5, 5].filter((n) => Math.abs(n) <= range)) {
@@ -100,7 +87,7 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
     taken.push([x, half(text)]);
     s += `<text class="el-tick" x="${f1(x)}" y="${f1(g0 + 16 * fs)}" text-anchor="middle">${text}</text>`;
   }
-  // the cloud layers, a row of small clouds as thick as the cover, and their base at the right
+  // the cloud layers
   const frac = { FEW: 0.25, SCT: 0.45, BKN: 0.75, OVC: 1 };
   let seed = 9;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -113,7 +100,7 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
     }
     s += `<text class="el-cloud-l" x="${W - padR + 8}" y="${f1(y + 3)}">${esc(COVER[c.cover] || c.cover)} ${num(c.base)}</text>`;
   }
-  // the runway on the ground, the 3° approach down to it, and home
+  // the runway, the approach and home
   s += `<line class="el-rwy" x1="${f1(xs(Math.min(ax.thr, ax.far)))}" x2="${f1(xs(Math.max(ax.thr, ax.far)))}" y1="${f1(g0 - 1.5)}" y2="${f1(g0 - 1.5)}"/>`;
   s += `<text class="el-apt" x="${f1(xs(apX))}" y="${f1(g0 + 16 * fs)}" text-anchor="middle">${esc(state.airport.iata)}</text>`;
   if (approach) {

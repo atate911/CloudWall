@@ -1,22 +1,8 @@
-"""`sudo cloudwall install --role wall|panel`: one command that sets a machine up the same way
-every time, and changes only what isn't so already. Run it again after an update and it puts the
-new code in place and restarts; run it on a new machine and, with `cloudwall restore`, the old
-one is back.
+"""`sudo cloudwall install --role wall|panel`: idempotent set-up; changes only what isn't so already.
 
-Where everything goes, on every machine:
-
-    /opt/cloudwall/releases/<version>-<id>/   the code, one folder a release (the last three kept)
-    /opt/cloudwall/current                    -> the release in use, switched in one step
-    /etc/cloudwall/config.toml                the settings (the service may rewrite it: Setup)
-    /var/lib/cloudwall/                       logbooks, places.json, backups
-    /var/cache/cloudwall/                     downloaded map tiles and logos
-    /usr/local/bin/cloudwall                  the command, for doctor, backup and the rest
-    cloudwall.service                         the wall, as the system user `cloudwall`
-
-The roles (ROLES) are what a machine does: a wall serves the screens; a panel is a screen
-(a browser full-screen at a wall). The station, a receiver's own process, joins them later
-(see ROADMAP.md). Each role is a list of steps on a System (system.py), so a test can run any of
-them against a folder instead of a machine.
+Code goes in /opt/cloudwall/releases/<version>-<id>/, with /opt/cloudwall/current a symlink to the
+release in use. Each role (ROLES) is a list of steps on a System (system.py), so tests can run it
+against a folder instead of a machine.
 """
 import os
 import shutil
@@ -31,7 +17,7 @@ OPT = "/opt/cloudwall"
 ETC = "/etc/cloudwall"
 VAR = "/var/lib/cloudwall"
 CACHE = "/var/cache/cloudwall"
-HELPER_VAR = "/var/lib/cloudwall-helper"    # root's own: the root helper's requests and results (operate/helper.py)
+HELPER_VAR = "/var/lib/cloudwall-helper"    # root's own (operate/helper.py)
 CONFIG = f"{ETC}/config.toml"
 PANEL_CONF = f"{ETC}/panel.conf"
 BIN = "/usr/local/bin/cloudwall"
@@ -118,14 +104,14 @@ def caddy_site(name, port):
 class Options:
     def __init__(self, role="wall", public=None, wall_url=None, desktop_user=None, source=None, start=True):
         self.role = role
-        self.public = public                # a name on the internet: Caddy in front (wall)
-        self.wall_url = wall_url            # the wall a panel shows
-        self.desktop_user = desktop_user    # the panel's desktop session's user
+        self.public = public                # (wall) a name on the internet: Caddy in front
+        self.wall_url = wall_url            # (panel) the wall it shows
+        self.desktop_user = desktop_user
         self.source = Path(source or paths.PACKAGE)
         self.start = start                  # start (or restart) the service when done
 
 
-# -- the wall -------------------------------------------------------------------------------
+# -- the wall --
 
 def check_python(system):
     """The service runs PYTHON: it must be 3.11 or later (tomllib)."""
@@ -141,12 +127,12 @@ def check_python(system):
 
 
 def put_release(system, source):
-    """The code in a release folder of its own, `current` switched to it; older ones beyond the
-    last KEEP_RELEASES removed. True if the code in use changed."""
+    """Copy the code to its release folder, switch `current` to it, prune old releases. True if
+    the code in use changed."""
     rid = f"{__version__}-{tree_hash(source)[:10]}"
     folder = f"{OPT}/releases/{rid}"
     if not system.exists(f"{folder}/cloudwall/__init__.py"):
-        # copied under another name and renamed when whole: a copy cut short is never taken for a release
+        # copied as .part and renamed when whole: a copy cut short is never taken for a release
         system.remove(f"{folder}.part")
         system.copy_tree(source, f"{folder}.part/cloudwall")
         system.run([PYTHON, "-m", "compileall", "-q", system.path(f"{folder}.part").as_posix()], check=False, quiet=True)
@@ -159,7 +145,7 @@ def put_release(system, source):
         system.write(f"{OPT}/previous", before + "\n")
     releases = sorted(system.path(f"{OPT}/releases").iterdir(), key=lambda p: p.stat().st_mtime) \
         if system.path(f"{OPT}/releases").is_dir() else []
-    kept = system.path(f"{OPT}/previous")          # (kept whichever run named it: rollback's way back)
+    kept = system.path(f"{OPT}/previous")          # never pruned: rollback's way back
     keep = {rid, Path(before).name if before else None,
             Path(kept.read_text().strip()).name if kept.is_file() else None}
     for old in [r for r in releases if r.name not in keep][:-(KEEP_RELEASES - 2) or None]:
@@ -168,8 +154,7 @@ def put_release(system, source):
 
 
 def rollback(system):
-    """Back to the release in use before the last update (its settings fall back on .good if they
-    no longer suit it). Returns the release now in use."""
+    """Back to the release in use before the last update. Returns the release now in use."""
     previous = (system.read(f"{OPT}/previous") or "").strip()
     if not previous or not system.exists(f"{OPT}/{previous}/cloudwall/__init__.py"):
         raise SystemExit("cloudwall rollback: there is no earlier release kept to go back to")
@@ -192,11 +177,9 @@ def put_config(system):
 
 
 def make_public(system, name, port):
-    """CloudWall on the internet at `name`, through Caddy: a site file of its own imported by the
-    Caddyfile (which is otherwise left as it is), CloudWall listening only for Caddy, and a
-    private link, so that only those given it see the wall."""
-    # Caddy first, the settings after: with no Caddy to answer for it, a CloudWall told to listen
-    # only for Caddy would be out of everyone's reach
+    """CloudWall on the internet at `name`, through Caddy: a site file imported by the Caddyfile,
+    CloudWall listening only for Caddy, and a private link."""
+    # Caddy first, settings after: a CloudWall listening only for a Caddy that isn't there is unreachable
     if system.real and not shutil.which("caddy"):
         raise SystemExit("cloudwall install: --public needs Caddy, and there is no `caddy` on this machine. "
                          "Install it (https://caddyserver.com/docs/install), then run this again. Nothing was changed.")
@@ -236,10 +219,9 @@ def make_public(system, name, port):
 
 
 def preflight(system, path=None, what=None):
-    """Before restarting into new code: would the settings start with it? If not, the running
-    CloudWall is left running (its new code waits in place) and what to change is said. Settings
-    it can start with, but with something left out, are said and the restart goes ahead.
-    path: a settings file other than the installed one (an old setup's, before it is moved in)."""
+    """Before restarting into new code: would the settings start with it? If not, exits saying
+    what to change, leaving the running CloudWall running. path: a settings file other than the
+    installed one."""
     from ..reference import placing
     path = Path(path) if path else system.path(CONFIG)
     if not path.exists():
@@ -258,8 +240,7 @@ def preflight(system, path=None, what=None):
 
 
 def start_service(system, restart=True):
-    """Start (or restart) the service and say plainly if it didn't come up: the reason from its log,
-    and the way back. True if it is running."""
+    """Start (or restart) the service; exits with the end of its log if it didn't come up."""
     got = system.run(["systemctl", "restart" if restart else "start", "cloudwall"], check=False)
     if got.returncode == 0:
         return True

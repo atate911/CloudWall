@@ -1,7 +1,6 @@
-"""Position feeds: readsb-style JSON (a public community API or your own receiver), read with
-failover (Feeds) or together (Merged), into CloudWall's aircraft shape (normalise); and the
-military feed's aircraft heard with no position. Each returns a list of normalised aircraft
-dicts. The simulated traffic for --demo is demo.py's."""
+"""Position feeds: readsb-style JSON read with failover (Feeds) or together with your own
+receiver (Merged), into CloudWall's aircraft shape (normalise); and the military feed's
+aircraft heard with no position."""
 import logging
 import math
 import time
@@ -30,16 +29,16 @@ def normalise(a):
         "type": a.get("t"),
         "alt": alt,
         "on_ground": on_ground,
-        "gs": _num(a.get("gs")),          # numbers or nothing: a feed's odd value mustn't reach the sums
+        "gs": _num(a.get("gs")),          # a number or None: a feed's odd value mustn't reach the sums
         "vrate": _num(vrate),
         "lat": _num(a.get("lat")),
         "lon": _num(a.get("lon")),
         "squawk": a.get("squawk"),
-        # the transponder's own emergency status: general, lifeguard, minfuel, nordo, unlawful, downed
+        # general, lifeguard, minfuel, nordo, unlawful, downed
         "emergency_status": a.get("emergency") if a.get("emergency") not in (None, "none") else None,
         "category": a.get("category"),
         "military": bool(flags & 1),
-        # privacy programmes (LADD, PIA): the owner asked not to be identified
+        # LADD, PIA: the owner asked not to be identified
         "private_owner": bool(flags & 12),
         "desc": tidy_type(a.get("desc")),
         "year": _year(a.get("year")),
@@ -63,14 +62,13 @@ def _year(v):
         return None
 
 
-# Words to keep in capitals when tidying "BOEING 737 MAX 8" into "Boeing 737 MAX 8".
 KEEP_UPPER = {"MAX", "NG", "ER", "LR", "SR", "XR", "ATR", "CRJ", "EMB", "ERJ", "MD", "DC", "II", "III", "IV",
               "SP", "XL", "XLS", "CJ", "CJ2", "CJ3", "CJ4", "LX", "GX", "EX", "BBJ", "TBM", "PC", "DHC", "RJ",
               "ACJ", "NEO", "CEO", "STOL", "VTOL", "AS", "EC", "SA", "AW", "UH", "CH", "KC", "C", "F", "G", "B", "A"}
 
 
 def tidy_type(desc):
-    """'BOEING 737 MAX 8' -> 'Boeing 737 MAX 8'; 'AIRBUS A-321neo' stays readable."""
+    """'BOEING 737 MAX 8' -> 'Boeing 737 MAX 8'; mixed case is left alone."""
     if not desc or not isinstance(desc, str):
         return None
     if desc != desc.upper():
@@ -85,11 +83,7 @@ def tidy_type(desc):
 
 
 class Feeds:
-    """One or more readsb-style JSON feeds, tried in order.
-
-    The free community APIs come and go, so when the feed in use fails we move
-    to the next one and stay there for as long as it keeps answering.
-    """
+    """readsb-style JSON feeds tried in order; on failure it moves to the next and stays there."""
 
     def __init__(self, urls, quiet=False):
         self.urls = list(urls)
@@ -97,7 +91,7 @@ class Feeds:
         self.name = self._host(self.urls[0])
         self.quiet = quiet          # the caller reports failures itself (Merged)
         self.vitals = Vitals()
-        self.parts = {"the position feed": self}      # (Merged has two: your receiver and the public feed)
+        self.parts = {"the position feed": self}      # Merged has two
 
     @staticmethod
     def _host(url):
@@ -114,7 +108,7 @@ class Feeds:
             url = self.urls[i].format(lat=f"{lat:.4f}", lon=f"{lon:.4f}", radius=int(radius_nm))
             try:
                 data = get_json(url, timeout=8)
-                if not isinstance(data, dict):     # a 404, or JSON that isn't a feed's: no answer at all
+                if not isinstance(data, dict):     # a 404 (None), or JSON that isn't a feed's
                     raise ValueError("no aircraft list in its answer")
             except Exception as e:
                 if not self.quiet:
@@ -133,22 +127,19 @@ class Feeds:
 
 
 class Vitals:
-    """How a feed has been answering, for the health watcher (app/watch.py): not whether it answers
-    (failures are said as they happen) but whether what it says is believable. A feed whose answer
-    is the same every time has frozen; one whose clock is far from ours places aircraft wrongly
-    (and feed_time quietly ignores a clock over five minutes off, so it is measured here); one
-    whose positions are old draws aircraft where they were."""
+    """Whether a feed's answers are believable (frozen, clock skew, old positions), for the
+    health watcher (app/watch.py)."""
 
     def __init__(self):
-        self.ok_at = None           # when it last answered
-        self.failed_at = None       # when it last failed, and why
+        self.ok_at = None
+        self.failed_at = None
         self.error = None
-        self.down_since = None      # failing since (None while it answers)
+        self.down_since = None      # None while it answers
         self.count = 0              # aircraft with a position in its last answer
-        self.moving = 0             # of which moving (over 50 kt), which must change between answers
+        self.moving = 0             # of which over 50 kt
         self.same = 0               # answers in a row identical to the one before
-        self.skew_s = None          # its clock less ours, when its answer says when it was made
-        self.lag_s = None           # the median age of its positions when they arrived
+        self.skew_s = None          # its clock less ours (measured here: feed_time ignores a clock over 5 min off)
+        self.lag_s = None           # the median age of its positions on arrival
         self.host = None
         self._signature = None
 

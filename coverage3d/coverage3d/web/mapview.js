@@ -194,7 +194,7 @@ export class MapView {
       set("airports", ref.airports.map((a) => ({ type: "Feature", properties: { code: a.code, name: a.name, rank: a.rank, pinned: pinned.has(a.code) }, geometry: { type: "Point", coordinates: [a.lon, a.lat] } })));
       set("peaks", ref.peaks.map((p) => ({ type: "Feature", properties: { label: `${p.name} · ${p.elev_ft.toLocaleString()} ft`, elev: -p.elev_ft }, geometry: { type: "Point", coordinates: [p.lon, p.lat] } })));
     }
-    // ground footprints of each altitude band, coloured like the 3D layers
+    // ground footprint of each altitude band
     const fp = (c, visible) => (c ? c.bands.filter((b) => visible(b) && b.sectors.length > 2).map((b) => ({ type: "Feature", properties: { color: this.bandCss(b, c) }, geometry: { type: "LineString", coordinates: this.ring(b, c, state.station).map((p) => [p[0], p[1]]) } })) : []);
     set("footprints", fp(cov, (b) => state.isVisible(b)));
     set("footprints-b", fp(covB, (b) => state.isVisible(b)));
@@ -205,8 +205,7 @@ export class MapView {
     return `rgb(${c[0]},${c[1]},${c[2]})`;
   }
 
-  /** Distance per sector. With "smooth" on: one- or two-sector gaps are bridged from their neighbours and a
-   *  light 1-2-1 average across neighbouring sectors removes spikes caused by thin data (clicks still show raw numbers). */
+  /** Distance per sector. "smooth" bridges 1-2 sector gaps and applies a 1-2-1 average (clicks still show raw numbers). */
   dists(band, cov) {
     const n = cov.n_sectors, raw = new Array(n).fill(0);
     for (const s of band.sectors) raw[s.s] = s.dist_nm;
@@ -219,12 +218,12 @@ export class MapView {
     return filled.map((v, i) => { if (v <= 0) return 0; const l = at(filled, i - 1) || v, r = at(filled, i + 1) || v; return (l + 2 * v + r) / 4; });
   }
 
-  /** Closed outline of a band: one vertex per sector (at its centre bearing) at the sector's distance. */
+  /** Closed outline of a band: one vertex per sector, at its centre bearing. */
   ring(band, cov, station, z = 0) {
     const n = cov.n_sectors, step = cov.sector_deg, d = this.dists(band, cov);
     const pts = [];
     for (let i = 0; i < n; i++) {
-      // no data in a sector = no coverage there (the outline pinches to the station)
+      // no data in a sector: the outline pinches to the station
       const [lo, la] = d[i] > 0 ? destination(station.lat, station.lon, (i + 0.5) * step, d[i]) : [station.lon, station.lat];
       pts.push([lo, la, z]);
     }
@@ -232,7 +231,7 @@ export class MapView {
     return pts;
   }
 
-  // ---- deck.gl layers ---------------------------------------------------------------------------------
+  // ---- deck.gl layers
   updateDeck(state) {
     if (!this.overlay) return;
     const L = this.buildLayers(state);
@@ -250,14 +249,12 @@ export class MapView {
 
     const cake = s.style === "cake";
     if (st.cov && s.fill && cake) {
-      // "Upside-down wedding cake": every altitude band is a solid tier from its floor to its ceiling,
-      // as wide as the coverage at that altitude. Higher tiers reach farther, so the cake widens upward.
+      // "Upside-down wedding cake": each altitude band is a solid tier as wide as its coverage
       const lo = (b) => b.lo_ft * FT_M * ex, hi = (b) => b.hi_ft * FT_M * ex;
       const data = covBands.map((b) => ({ band: b, polygon: this.ring(b, st.cov, stn, lo(b)), h: hi(b) - lo(b), color: [...altColor((b.lo_ft + b.hi_ft) / 2), alpha] }));
       layers.push(new deck.SolidPolygonLayer({ id: "cov-cake", data, ...common, extruded: true, getPolygon: (d) => d.polygon, getElevation: (d) => d.h, getFillColor: (d) => d.color,
         material: { ambient: 0.55, diffuse: 0.6, shininess: 4, specularColor: [40, 40, 40] }, pickable: true, onClick: (i) => this.h.onClick({ kind: "band", ...i }),
         updateTriggers: { getFillColor: [alpha], getPolygon: [ex, s.smooth], getElevation: [ex] } }));
-      // crisp rim on the top and bottom edge of every tier
       const rims = covBands.flatMap((b) => [{ path: this.ring(b, st.cov, stn, hi(b)), top: true }, { path: this.ring(b, st.cov, stn, lo(b)) }]);
       layers.push(new deck.PathLayer({ id: "cov-cake-rims", data: rims, ...common, getPath: (d) => d.path, getColor: (d) => (d.top ? [255, 255, 255, 230] : [20, 30, 45, 160]), widthUnits: "pixels", getWidth: (d) => (d.top ? 1.6 : 1), updateTriggers: { getPath: [ex, s.smooth] } }));
     }
@@ -318,14 +315,14 @@ export class MapView {
         radiusUnits: "pixels", getRadius: 5, pickable: true, onClick: (i) => this.h.onClick({ kind: "live", ...i }), updateTriggers: { getPosition: [ex] } }));
       if (s.liveLabels) layers.push(new deck.TextLayer({ id: "live-labels", data: A, ...common, getPosition: (a) => [a.lon, a.lat, alt(a)], getText: (a) => a.flight || a.hex, getSize: 12, getColor: [255, 255, 255, 255], outlineWidth: 3, outlineColor: [0, 0, 0, 220], fontSettings: { sdf: true }, getTextAnchor: "start", getPixelOffset: [9, 0], billboard: true, updateTriggers: { getPosition: [ex] } }));
     }
-    // antenna: a vertical line for the antenna height, and a faint axis up through the stack
+    // antenna line, and a faint axis up through the stack
     const antM = Math.max(stn.antenna_height_m, 0.5);
     layers.push(new deck.PathLayer({ id: "station-axis", data: [{ p: [[stn.lon, stn.lat, 0], [stn.lon, stn.lat, 45000 * FT_M * ex]] }], ...common, getPath: (d) => d.p, getColor: [255, 59, 107, 90], widthUnits: "pixels", getWidth: 1, updateTriggers: { getPath: [ex] } }));
     layers.push(new deck.PathLayer({ id: "station-antenna", data: [{ p: [[stn.lon, stn.lat, stn.ground_elevation_m], [stn.lon, stn.lat, stn.ground_elevation_m + antM + 30]] }], ...common, getPath: (d) => d.p, getColor: [255, 59, 107, 255], widthUnits: "pixels", getWidth: 4 }));
     return layers;
   }
 
-  // ---- camera ---------------------------------------------------------------------------------------
+  // ---- camera
   view2D() { this.stopOrbit(); this.map.easeTo({ pitch: 0, bearing: 0, duration: 800 }); }
   view3D() { this.stopOrbit(); this.map.easeTo({ pitch: 72, bearing: 0, duration: 800 }); }
   reset(station, nm = 200) {

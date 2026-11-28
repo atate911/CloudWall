@@ -186,8 +186,8 @@ class Enricher:
                     prune = time.time() - self.pruned > PRUNE_EVERY
                     if prune:
                         self.pruned = time.time()
-                if prune:           # as good a moment as any: rows nobody will read again
-                    try:            # (outside the lookup's own guard: a failure here mustn't end the worker)
+                if prune:
+                    try:            # a failure here mustn't end the worker
                         self.store.prune()
                     except Exception as e:
                         log.warning("clearing old lookups failed: %s", e)
