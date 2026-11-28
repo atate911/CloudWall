@@ -1,0 +1,40 @@
+/* ===================== desktop ===================== */
+/* sized for arm's length: a 1920-wide monitor shows more, not bigger */
+html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
+@media (max-aspect-ratio: 1/1) { html.desk { font-size: clamp(12px, 2.1vw, 18px); } }
+#mini-board, .pane-split, .col-split { display: none; }
+/* wide enough for a third panel, the traffic list, behind a divider (divider.js sets the radar's
+   and the list's columns). A second divider sets the card's width (--left-w, a share of the row).
+   Not on the phone layout, which a short, wide window also takes. */
+@media (min-width: 1500px) and (min-aspect-ratio: 1/1) {
+  html.desk:not(.phone) #view-now { column-gap: 0;
+    grid-template-columns: minmax(0, var(--left-w, var(--card-w, 1.3fr))) 1.4rem minmax(0, var(--scope-w, 1fr)) 1.4rem minmax(0, var(--mb-w, .85fr)); }
+  html.desk:not(.phone) .col-split { grid-column: 2; display: flex; }
+  html.desk:not(.phone) #view-now.animate { transition: grid-template-columns .22s ease-out; }
+  html.desk:not(.phone) #hero { grid-column: 1; }
+  html.desk:not(.phone) #scope { grid-column: 3; }
+  html.desk:not(.phone) .pane-split { grid-column: 4; display: flex; }
+  html.desk:not(.phone) #mini-board { grid-column: 5; display: block; padding: 1rem 1.1rem; overflow-x: hidden; }
+  /* while its column opens or closes, the list slides out from under the divider rather than re-wrapping */
+  html.desk:not(.phone) #mini-board > * { min-width: 10.5rem; }
+  html.desk:not(.phone) #view-now.nearby-closed #mini-board { display: none; }
+}
+.pane-split, .col-split { position: relative; justify-content: center; align-items: center; cursor: col-resize; touch-action: none; outline: none; }
+:is(.pane-split, .col-split)::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1px dashed var(--rule); }
+:is(.pane-split, .col-split):is(:hover, :focus-visible, .held)::before { border-left: 1px solid var(--ink-2); }
+.dragging, .dragging * { cursor: col-resize !important; }
+.dragging :is(#radar, #mini-board, #hero, #side) { pointer-events: none; }
+/* the card's divider hides nothing, so its tab is a grip rather than an arrow */
+.cs-grip { position: relative; width: .7rem; height: 2.6rem; background: var(--sheet); border: 1px solid var(--frame);
+  background-image: linear-gradient(90deg, transparent 30%, var(--slate) 30% calc(30% + 1px), transparent 0 calc(70% - 1px), var(--slate) 0 70%, transparent 0);
+  background-size: 100% 60%; background-position: center; background-repeat: no-repeat; }
+.col-split:is(:hover, :focus-visible, .held) .cs-grip { border-color: var(--ink-2); }
+.col-split:focus-visible .cs-grip { outline: 2px solid var(--blue); outline-offset: 2px; }
+.ps-toggle { position: relative; width: 1.15rem; height: 3.2rem; display: grid; place-items: center; cursor: pointer;
+  background: var(--sheet); border: 1px solid var(--frame); color: var(--slate); }
+.ps-toggle:hover, .pane-split:focus-visible .ps-toggle { color: var(--ink); border-color: var(--ink-2); }
+.ps-toggle svg { width: .62rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform .22s ease-out; }
+.nearby-closed .ps-toggle svg { transform: scaleX(-1); }
+.pane-split:focus-visible .ps-toggle { outline: 2px solid var(--blue); outline-offset: 2px; }
+#mini-board h2 { margin: 0 0 .5rem; }

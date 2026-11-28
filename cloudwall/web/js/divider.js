@@ -13,7 +13,7 @@ const ANIMATE_MS = 220;       // as the stylesheet's transition
 const CARD = 1.3;             // the card's column, in fr
 const RADAR_ASPECT = 1.04;    // the radar's drawing at its widest, for its height: the disc, and a little room either side
 
-// Which of style.css's layouts the Overhead view has: "wide", "laptop", "narrow" (all Detailed) or
+// Which of the stylesheets' layouts the Overhead view has: "wide", "laptop", "narrow" (all Detailed) or
 // "simple"; null where there is no card divider.
 const Q = {
   land: matchMedia("(min-aspect-ratio: 1/1)"), wide: matchMedia("(min-width: 1500px)"),

@@ -1,0 +1,166 @@
+/* ===================== emergency takeover ===================== */
+/* 7700 / 7600 / 7500: the whole page turns red, in day and night alike */
+body.emergency, body.night.emergency {
+  --paper: #8a1712; --sheet: #a01d17; --disc: #741410; --ink: #fff6f2; --ink-2: #ffe1da; --slate: #ffc2b8;
+  --rule: #c2443b; --blue: #ffd7cf; --magenta: #ffd84d; --water: #9a2a22; --halo: #741410;
+}
+body.emergency { animation: em-pulse 2.4s ease-in-out infinite; }
+@keyframes em-pulse { 50% { background-color: #a81d16; } }
+@media (prefers-reduced-motion: reduce) { body.emergency { animation: none; } }
+.em-chip { background: var(--red); color: #fff; border: 0; border-radius: 1px; padding: .2rem .6rem; font: 700 .8rem var(--sans); cursor: pointer; }
+body.emergency .em-chip { background: #fff6f2; color: #8a1712; }
+.em-card { display: flex; flex-direction: column; justify-content: center; gap: 1.1rem; padding: 2rem 2.2rem; background: var(--sheet); }
+.em-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 1.1rem; color: var(--ink-2); }
+.em-code b { font: 700 2.6rem var(--mono); margin-left: .4rem; color: #ffd84d; }
+.em-since { font-variant-numeric: tabular-nums; }
+.em-title { font-size: 4.2rem; line-height: 1; letter-spacing: -.02em; }
+.em-meaning { font-size: 1.3rem; color: var(--ink-2); max-width: 40em; }
+.em-id { display: flex; flex-wrap: wrap; align-items: baseline; gap: .4rem 1.2rem; border-top: 1px solid var(--rule); padding-top: 1rem; }
+.em-id b { font: 700 2.4rem var(--mono); }
+.em-id span, .em-where { font-size: 1.25rem; color: var(--ink-2); }
+.em-read { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--rule); padding-top: 1rem; }
+.em-read > div { display: flex; flex-direction: column; min-width: 0; }
+.em-read > div + div { padding-left: 1.2rem; border-left: 1px solid var(--rule); }
+.em-read b { font: 700 2.6rem/1.1 var(--sans); font-variant-numeric: tabular-nums; }
+.em-read span { font-size: .95rem; color: var(--slate); }
+.em-more { font-size: 1rem; color: var(--ink-2); }
+.em-hide { align-self: flex-start; background: transparent; color: var(--ink); border: 1px solid var(--ink-2); border-radius: var(--corner); padding: .45rem .9rem; font: .9rem var(--sans); cursor: pointer; }
+/* on the wall panel the takeover fills the card's place */
+.kiosk .em-card { padding: 0; gap: 1.1vh; justify-content: space-between; height: 100%; overflow: hidden; }
+.kiosk .em-top { font-size: 4.2vh; } .kiosk .em-code b { font-size: 7vh; line-height: 1; }
+.kiosk .em-title { font-size: 9.5vh; }
+.kiosk .em-meaning { flex-shrink: 0; font-size: 4.2vh; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.kiosk .em-id { padding-top: 1.2vh; } .kiosk .em-id b { font-size: 8vh; line-height: 1; } .kiosk .em-id span, .kiosk .em-where { font-size: 4.2vh; }
+.kiosk .em-id span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kiosk .em-read { display: flex; justify-content: space-between; gap: 3vh; padding-top: 1.2vh; }
+.kiosk .em-read > div + div { padding-left: 0; border-left: 0; }
+.kiosk .em-read b { font-size: min(8vh, 9cqi); line-height: 1.05; } .kiosk .em-read span { font-size: 4.2vh; }
+.kiosk .em-more { font-size: 4.2vh; }
+
+/* ===================== radar extras ===================== */
+.tfr { fill: url(#tfr-hatch); stroke: var(--red); stroke-width: .7; vector-effect: non-scaling-stroke; }
+.tfr.later { fill: none; stroke-dasharray: 3 2; opacity: .8; }
+#radar .tfr-label { font: 700 4.6px var(--sans); fill: var(--red); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
+.field { fill: none; stroke: var(--slate); stroke-width: .8; }
+.field-rwy { stroke: var(--ink-2); stroke-width: 1; stroke-linecap: butt; }
+.field-label { font: 4.6px var(--mono); fill: var(--slate); paint-order: stroke; stroke: var(--halo); stroke-width: 1.4px; }
+#radar .heard-note { font: 700 5px var(--sans); fill: var(--red); }
+/* the chart style leaves it to the words beside it (the strip, or what's worth a look); the ATC screen keeps its own */
+#scope:not(.atc) #radar .heard-note { display: none; }
+.kiosk #radar .heard-note { font-size: 6.5px; }
+/* red on the red takeover would vanish: use its light ink instead */
+body.emergency #scope:not(.atc) #radar :is(.heard-note, .tfr-label) { fill: var(--ink-2); }
+
+/* ===================== weather tab: sun and moon, contrails, airspace ===================== */
+.wx-more { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 2rem;
+  border-top: 1px solid var(--rule); padding-top: 1.2rem; }
+.wx-more h2 { margin: 0 0 .6rem; }
+.wx-more .sum { font-size: 1rem; margin-bottom: .6rem; }
+.wx-more .dim { font-size: .8rem; color: var(--slate); line-height: 1.45; }
+.sm-sun { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; margin-bottom: .3rem; }
+.sm-sun dd { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sm-moon { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
+.sm-moon > div { display: flex; flex-direction: column; gap: .15rem; font-size: .9rem; }
+.sm-moon b { font-size: 1.15rem; }
+.moon { flex: none; }
+.moon .moon-dark { fill: color-mix(in srgb, var(--ink) 18%, var(--sheet)); }
+.moon .moon-lit { fill: #efe9d2; stroke: color-mix(in srgb, var(--ink) 25%, transparent); stroke-width: .5; }
+body.night .moon .moon-lit { fill: #f3eedb; }
+table.ct { width: 100%; border-collapse: collapse; font-size: .85rem; font-variant-numeric: tabular-nums; margin-bottom: .6rem; }
+table.ct th { padding: 0 .4rem .3rem 0; }
+table.ct th small { font-size: inherit; }
+table.ct td { padding: .28rem .4rem .28rem 0; border-top: 1px solid var(--rule); white-space: nowrap; }
+.ct-bar { display: inline-block; width: 1.6rem; height: .5rem; border-radius: .25rem; margin-right: .45rem; vertical-align: .05rem; background: transparent; border: 1px solid var(--rule); }
+.ct-short .ct-bar { background: repeating-linear-gradient(90deg, var(--blue) 0 3px, transparent 3px 6px); border-color: var(--blue); }
+.ct-persistent .ct-bar { background: var(--blue); border-color: var(--blue); }
+.ct-persistent td { font-weight: 700; }
+.ct-none td:last-child { color: var(--slate); }
+.tfr-item { border-top: 1px solid var(--rule); padding: .6rem 0; font-size: .88rem; }
+.tfr-item p { margin-top: .2rem; }
+.tfr-top { display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; }
+.tfr-top b { font-size: .98rem; }
+.tfr-top .tag { font: .7rem var(--sans); border: 1px solid var(--rule); color: var(--slate); border-radius: 1px; padding: .05rem .35rem; }
+.tfr-top .tag.on { border-color: var(--red); color: var(--red); font-weight: 700; }
+.tfr-item details { margin-top: .3rem; font-size: .78rem; }
+.tfr-item summary { cursor: pointer; color: var(--blue); }
+.notam { font: .72rem/1.45 var(--mono); color: var(--ink-2); max-height: 12rem; overflow: auto; margin-top: .3rem; overflow-wrap: anywhere; }
+@media (max-aspect-ratio: 1/1) { .wx-more { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) and (min-aspect-ratio: 1/1) { .wx-more { grid-template-columns: 1fr 1fr; } .wx-more .panel-airspace { grid-column: 1 / -1; } }
+
+/* ===================== idle slides and board ===================== */
+.mil-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 1.15rem; padding: .5rem 0; border-top: 1px solid var(--rule); }
+.mil-row span { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.k-dim { color: var(--slate); }
+table.board tbody.heard th { padding-top: 1.2rem; position: static; }
+#tfr-chip { cursor: pointer; color: var(--red); }
+.tfr-hatch-line { stroke: var(--red); stroke-width: .6; opacity: .45; }
+body.emergency #tfr-chip { color: var(--ink-2); }
+
+/* ===================== radar: ATC style ===================== */
+/* Drawn like a STARS display, the FAA's terminal radar, day or night. Colours are STARS's
+   defaults, dimmed to about the brightness controllers run them at. */
+#scope.atc {
+  --sheet: #030403; --disc: #000; --halo: #000;
+  --ink: #dcdcdc; --ink-2: #8c8c8c; --slate: #6e6e6e; --rule: #1c1f1c; --red: #ff2a2a;
+  --tick: rgba(140, 140, 140, .45); --frame: #1a1d1a;
+  --st-grey: #8c8c8c; --st-owned: #fff; --st-unowned: #00e000; --st-list: #00e000; --st-alert: #ff2a2a;
+  --st-restrict: #e6e600; --st-target: #1e78ff; --st-ptl: #fff;
+  padding: 2.4rem .6rem 2.6rem;
+}
+#scope.atc #radar text { font-family: var(--mono); letter-spacing: 0; }
+#scope.atc #radar .scope-bg { fill: var(--disc); }
+/* the video map */
+#scope.atc #radar .vmap { fill: none; stroke: var(--st-grey); stroke-width: .35; stroke-linejoin: round; opacity: .4; }
+#scope.atc #radar .runway { stroke: var(--st-grey); stroke-width: .6; stroke-linecap: butt; }
+#scope.atc #radar :is(.approach, .approach-tick) { fill: none; stroke: var(--st-grey); stroke-width: .3; stroke-dasharray: none; opacity: .6; }
+#scope.atc #radar .field { stroke: var(--st-grey); stroke-width: .4; opacity: .7; }
+#scope.atc #radar .field-rwy { stroke: var(--st-grey); stroke-width: .5; }
+#scope.atc #radar .field-label { font-size: 3.2px; fill: var(--st-grey); stroke-width: 1px; }
+#scope.atc #radar .airspace { fill: none; stroke: var(--st-grey); stroke-width: .3; stroke-linejoin: round; opacity: .5; }
+#scope.atc #radar .airspace-label { font-size: 3px; fill: var(--st-grey); opacity: .75; }
+#scope.atc #radar .navaid { fill: none; stroke: var(--st-grey); stroke-width: .35; }
+#scope.atc #radar .navaid circle { fill: var(--st-grey); stroke: none; }
+#scope.atc #radar .navaid-label { font-size: 3.2px; fill: var(--st-grey); }
+#scope.atc #radar .ring { stroke: var(--st-grey); stroke-width: .3; opacity: .3; }
+#scope.atc #radar .compass-tick { fill: none; stroke: var(--st-grey); stroke-width: .35; }
+#scope.atc #radar .bearing { font-size: 3.3px; fill: var(--st-grey); }
+#scope.atc #radar .tfr { fill: none; stroke: var(--st-restrict); stroke-width: .5; opacity: .85; }
+#scope.atc #radar .tfr.later { stroke-dasharray: 2 1.6; opacity: .6; }
+#scope.atc #radar .tfr-label { font: 3.8px var(--mono); fill: var(--st-restrict); stroke-width: 1px; }
+/* the System Status Area and lists */
+#scope.atc #radar :is(.ssa, .heard-note) { font-size: 4px; fill: var(--st-list); text-transform: uppercase; }
+#scope.atc #radar .ssa .alert { fill: var(--st-alert); }
+#scope.atc #radar .ssa-mark rect { fill: none; stroke: var(--st-list); stroke-width: .35; }
+#scope.atc #radar .ssa-mark .tri { fill: var(--st-alert); }
+/* targets */
+#scope.atc #radar .blip { fill: var(--st-target); stroke: none; opacity: .85; }
+#scope.atc #radar .pos { font-size: 4.1px; font-weight: 700; fill: var(--st-unowned); paint-order: stroke; stroke: #000; stroke-width: .9px; }
+#scope.atc #radar .sym { fill: none; stroke: var(--st-unowned); stroke-width: .5; stroke-linecap: square; }
+#scope.atc #radar .hero .pos { fill: var(--st-owned); }
+#scope.atc #radar .hist circle { stroke: none; }
+#scope.atc #radar .hist .h0 { fill: rgb(30, 80, 200); }
+#scope.atc #radar .hist .h1 { fill: rgb(70, 70, 170); }
+#scope.atc #radar .hist .h2 { fill: rgb(50, 50, 130); }
+#scope.atc #radar .hist .h3 { fill: rgb(40, 40, 110); }
+#scope.atc #radar .hist .h4 { fill: rgb(30, 30, 90); }
+/* data blocks */
+#scope.atc #radar :is(.tag, .tag-sub, .tag-top) { font-size: 4.6px; font-weight: 400; fill: var(--st-unowned); stroke: #000; stroke-width: .8px; }
+#scope.atc #radar .hero :is(.tag, .tag-sub) { fill: var(--st-owned); }
+#scope.atc #radar .tag-top { fill: var(--st-alert); }
+#scope.atc #radar .leader { stroke: var(--st-unowned); stroke-width: .3; }
+#scope.atc #radar .hero .leader { stroke: var(--st-owned); }
+#scope.atc #radar .vec { stroke: var(--st-ptl); stroke-width: .3; opacity: .9; }
+/* the radar's buttons as the display control bar's */
+#scope.atc .seg { border: 0; border-radius: 0; gap: 2px; overflow: visible; }
+#scope.atc .seg :is(button, .seg-unit) { background: #002c00; color: #fff; border: 0;
+  box-shadow: inset 1px 1px 0 #323232, inset -1px -1px 0 #000; }
+#scope.atc .seg button + button { border-left: 0; }
+#scope.atc .seg button.on { background: #004e00; color: #fff; box-shadow: inset 1px 1px 0 #000, inset -1px -1px 0 #323232; }
+#scope.atc .seg .seg-unit { background: #001600; color: #808080; }
+#scope.atc .attrib { color: #6e6e6e; }
+.kiosk #scope.atc { padding: 1vh; }
+.kiosk #scope.atc #radar :is(.tag, .tag-sub, .tag-top) { font-size: 11px; stroke-width: 1.4px; }
+.kiosk #scope.atc #radar .pos { font-size: 8px; }
+.kiosk #scope.atc #radar :is(.ssa, .heard-note) { font-size: 8px; }
+.kiosk #scope.atc #radar .bearing { font-size: 6px; }
+.kiosk #scope.atc #radar :is(.airspace-label, .navaid-label, .field-label) { font-size: 6px; }

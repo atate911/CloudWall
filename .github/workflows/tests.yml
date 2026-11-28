@@ -31,6 +31,12 @@ jobs:
         run: |
           npm install --no-save playwright@1
           npx playwright install --with-deps chromium
+      - name: Lint (undefined and unused names, Python and JavaScript)
+        run: |
+          pip install --quiet pyflakes
+          python -m pyflakes cloudwall tests tools coverage3d
+          npm install --no-save eslint@9
+          npx eslint cloudwall/web/js coverage3d/coverage3d/web
       - name: Tests
         run: python -m unittest discover -s tests
         env:

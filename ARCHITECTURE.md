@@ -205,10 +205,10 @@ planned: see [ROADMAP.md](ROADMAP.md).) The two requests that change anything (`
 
 ## The page (`cloudwall/web/`)
 
-One `index.html`, one `style.css`, ES modules in `js/`. The layout (desktop, phone, kiosk) is
+One `index.html`, the stylesheets in `css/` (loaded in order: base, card, radar, tabs, desktop, kiosk, extras, phone, picture), ES modules in `js/`. The layout (desktop, phone, kiosk) is
 chosen by class names on `<html>`; the modules are the same for all three. Type is B612 for words
 and B612 Mono for codes (callsigns, airports, type designators, runways, raw reports), all in
-sentence case; the rule is stated at the top of `style.css`. The modules are layered too:
+sentence case; the rule is stated at the top of `css/base.css`. The modules are layered too:
 
 ```
  app                                         polling, the views, the radar's options, the wiring
@@ -277,7 +277,7 @@ on every pull request.
 
 | File | What it holds to account |
 |---|---|
-| `tests/test_cloudwall.py` | The server, with stubbed feeds and providers. It stays on the machine: `setUpModule` stops any request to another host and fails the run if one was tried. |
+| `tests/test_feeds.py`, `test_tracker.py`, `test_providers.py`, `test_places.py`, `test_maps.py`, `test_weather.py`, `test_server.py`, `test_settings.py` | The server by area, with stubbed feeds and providers; `tests/support.py` holds what they share. They stay on the machine: its `setUpModule` stops any request to another host and fails the run if one was tried. |
 | `tests/test_api.py` | The shape of every answer, against [API.md](API.md): a key added, dropped or renamed fails until the reference says so, and a key the reference lists that nothing sends fails too. |
 | `tests/test_browser.py`, `tests/browser_smoke.js` | The page, in headless Chromium against the demo: each layout and tab, following a flight, the radar's switches, the quiet-sky slides, an emergency, the server gone. Nothing on the console, nothing fetched from elsewhere. Needs Playwright (`npm install --no-save playwright && npx playwright install chromium`); skipped without it, except in the workflow. |
 | `tests/test_silhouettes.py`, `tests/test_icons.py` | The aircraft drawings and the radar's icons, run under Node. |

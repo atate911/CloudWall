@@ -1,0 +1,121 @@
+/* ---------- radar and Map view ---------- */
+.scope { display: flex; padding: 2.4rem .2rem 2.6rem; }
+.seg { position: absolute; top: .4rem; left: .2rem; z-index: 3; display: inline-flex; border: 1px solid var(--rule); border-radius: var(--corner); overflow: hidden; }
+.seg button { font: .76rem var(--sans); color: var(--slate); padding: .45rem .75rem; }
+.seg button + button { border-left: 1px solid var(--rule); }
+.seg button.on { color: var(--ink); font-weight: 700; background: color-mix(in srgb, var(--ink) 7%, transparent); }
+#radar .bezel { fill: none; stroke: var(--slate); stroke-width: .3; stroke-linecap: butt; opacity: .8; }
+#radar .bezel.major { stroke: var(--ink-2); stroke-width: .45; }
+#radar .bearing { font: 3.6px var(--sans); fill: var(--slate); }
+#radar .spoke { fill: none; stroke: var(--rule); stroke-width: .3; stroke-dasharray: .6 1.8; }
+#radar :is(.legend, .status) { font: 4.6px var(--sans); fill: var(--slate); }
+.attrib { position: absolute; right: .3rem; top: .55rem; font-size: .5rem; color: var(--slate); max-width: 45%; text-align: right; }
+.scope-tools { position: absolute; bottom: .4rem; left: .2rem; right: .2rem; z-index: 3; display: flex; gap: .5rem; }
+.scope-tools .seg { position: static; }
+.scope-tools #range-seg { margin-left: auto; }
+.seg .seg-unit { font: .76rem var(--sans); color: var(--slate); padding: .45rem .6rem;
+  border-left: 1px solid var(--rule); display: flex; align-items: center; }
+#scope:not(.map) #mapstyle-seg, #scope.map #style-seg, #scope.map #btn-tracks { display: none; }
+#scope.sky .scope-tools { display: none; }
+.attrib:empty { display: none; }
+#radar { width: 100%; height: 100%; overflow: visible; }
+#radar.fade-in { animation: fade .45s ease-out; }
+#radar text { font-family: var(--sans); fill: var(--slate); }
+#radar .scope-bg { fill: var(--disc); }
+#radar .ring { fill: none; stroke: var(--rule); stroke-width: .5; }
+#radar .ring.oh { stroke: var(--magenta); stroke-dasharray: 1.4 2.2; stroke-width: .6; opacity: .8; }
+#radar .ring-label { font-size: 4.2px; }
+#radar :is(.ring-label, .apt-label, .field-label, .place, .tfr-label, .final-label, .helipad-label, .helipad) { transition: opacity .5s; }
+#radar .yield { opacity: 0; }
+#radar .compass { font-size: 5.6px; font-weight: 700; fill: var(--ink-2); }
+#radar .compass.north { fill: var(--magenta); }
+#radar .facing { fill: var(--magenta); }
+.compass-btn { position: absolute; top: .4rem; right: .3rem; z-index: 3; display: none; align-items: center; gap: .35rem;
+  font: .76rem var(--sans); color: var(--ink-2); background: var(--sheet); border: 1px solid var(--frame);
+  border-radius: var(--corner); padding: .4rem .6rem; cursor: pointer; }
+.compass-btn svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 1.6; }
+.compass-btn[aria-pressed="true"] { color: var(--ink); border-color: var(--magenta); box-shadow: inset 0 0 0 1px var(--magenta); }
+.compass-btn[aria-pressed="true"] svg .needle { fill: var(--magenta); stroke: none; }
+html.phone #scope.sky .compass-btn { display: flex; }
+html.phone #scope.sky .attrib { display: none; }
+.compass-note { position: absolute; top: 2.9rem; right: .3rem; z-index: 3; max-width: 70%; font: .72rem/1.35 var(--sans);
+  color: var(--ink-2); background: var(--sheet); border: 1px solid var(--frame); border-radius: var(--corner); padding: .4rem .55rem; text-align: right; }
+.compass-note:empty, #scope:not(.sky) .compass-note { display: none; }
+#radar .water { fill: none; stroke: var(--water); stroke-linecap: round; stroke-linejoin: round; }
+#radar .runway { stroke: var(--ink); stroke-width: 1.2; stroke-linecap: round; }
+#radar .approach { stroke: var(--ink-2); stroke-width: .3; stroke-dasharray: 1.5 2.5; opacity: .5; }
+#radar .place { font-size: 4px; fill: var(--slate); letter-spacing: .04em; }
+#radar .apt-label { fill: var(--ink); font-size: 4.6px; font-weight: 700; }
+#radar .apt-mark { fill: none; stroke: var(--slate); stroke-width: .8; }
+#radar .home-mark { fill: none; stroke: var(--ink); stroke-width: .7; }
+/* the Sky view */
+#scope.sky #radar .scope-bg { fill: url(#sky-grad); }
+#radar .sky-z { stop-color: #cfe0ef; } #radar .sky-h { stop-color: #f2f1e8; }
+body.night #radar .sky-z { stop-color: #060f1e; } body.night #radar .sky-h { stop-color: #17283c; }
+#radar .ring.horizon { stroke: var(--slate); stroke-width: .7; }
+#radar .sun { fill: #e3b23c; } #radar .sun-glow { fill: #e3b23c; opacity: .18; }
+body.night #radar .sun { fill: #c99a3a; }
+#radar .sky-path { fill: none; stroke: var(--magenta); stroke-width: .9; stroke-dasharray: 2 2.4; stroke-linecap: round; }
+#radar .sky-path.past { stroke-dasharray: none; opacity: .35; }
+#radar .sky-peak { fill: var(--disc); stroke: var(--magenta); stroke-width: .7; }
+#radar .peak-label { font-size: 4.2px; fill: var(--magenta); }
+.sky-moon .moon-dark { fill: #6d7a88; } .sky-moon .moon-lit { fill: #f3f0e2; }
+.sky-moon { filter: drop-shadow(0 0 1.5px rgba(243, 240, 226, .6)); }
+/* the selected aircraft's track, fading with height in steps: 0-2, 2-5, 5-10, 10-18, 18-28 and 28+ thousand ft */
+#radar :is(.trk, .path-key) { --trk: var(--magenta); stroke: var(--trk); }
+#radar .trk :is(polyline, line) { fill: none; stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; }
+#radar :is(.trk, .path-key) .b1 { stroke: color-mix(in oklch, var(--trk) 86%, var(--disc)); }
+#radar :is(.trk, .path-key) .b2 { stroke: color-mix(in oklch, var(--trk) 73%, var(--disc)); }
+#radar :is(.trk, .path-key) .b3 { stroke: color-mix(in oklch, var(--trk) 61%, var(--disc)); }
+#radar :is(.trk, .path-key) .b4 { stroke: color-mix(in oklch, var(--trk) 51%, var(--disc)); }
+#radar :is(.trk, .path-key) .b5 { stroke: color-mix(in oklch, var(--trk) 42%, var(--disc)); }
+#radar .path-key line { stroke-width: 1.6; }
+#radar .path-key text { stroke: none; }
+#radar .craft { transition: opacity .6s; } #radar .craft.entering { opacity: 0; }
+/* aircraft: the halo is painted under the fill so the joins between an icon's parts don't show */
+#radar .blip { fill: var(--blue); stroke: var(--disc); stroke-width: 1; stroke-linejoin: round; paint-order: stroke; }
+#radar .hero .blip { fill: var(--magenta); }
+#radar .blip.gnd { fill: var(--slate); opacity: .4; stroke: none; }
+#radar .tag { fill: var(--ink); font-size: 5px; font-weight: 700; paint-order: stroke; stroke: var(--disc); stroke-width: 1.6px; stroke-linejoin: round; }
+#radar .tag-sub { font-family: var(--sans); font-size: 4.2px; fill: var(--slate); paint-order: stroke; stroke: var(--disc); stroke-width: 1.4px; }
+#radar .vec { stroke: var(--blue); stroke-width: .45; stroke-linecap: round; opacity: .7; }
+#radar .hero .vec { stroke: var(--magenta); stroke-width: .6; opacity: .9; }
+#radar .hero .tag { fill: var(--magenta); }
+/* the real map under the traffic */
+#radar .basemap { transition: opacity .6s; mix-blend-mode: multiply; }
+/* each filter ends in a slight blur over the whole map, so the tiles' edges don't show as seams */
+#radar .basemap.dark, #radar .basemap.carto-dark { filter: invert(1) hue-rotate(180deg) grayscale(.4) contrast(.8) brightness(1.25) blur(.3px); }
+#radar .basemap.light, #radar .basemap.carto-light { filter: grayscale(.3) contrast(1.05) blur(.3px); }
+#radar .basemap.satellite, #radar .basemap.osm, #radar .basemap.custom { filter: grayscale(.45) contrast(.95) brightness(1.1) blur(.3px); }
+body.night #radar .basemap { mix-blend-mode: screen; }
+body.night #radar .basemap.dark, body.night #radar .basemap.carto-dark { filter: grayscale(.2) brightness(1.75) blur(.3px); }
+body.night #radar .basemap.light, body.night #radar .basemap.carto-light { filter: invert(1) hue-rotate(180deg) grayscale(.2) brightness(.9) blur(.3px); }
+body.night #radar .basemap.satellite, body.night #radar .basemap.osm, body.night #radar .basemap.custom { filter: grayscale(.55) brightness(.7) blur(.3px); }
+/* the FAA's charts as the chart-style radar's map ([map] style): muted and softened; inverted at night */
+#radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) { filter: saturate(.4) contrast(.8) brightness(1.05) blur(.3px); }
+body.night #radar .basemap:is(.sectional, .terminal, .ifr-low, .ifr-high) {
+  filter: invert(1) hue-rotate(180deg) saturate(.4) contrast(.85) brightness(.85) blur(.3px); }
+/* the ATC style's chart: printed dark on white, so inverted, greyed and faint behind the data blocks */
+#scope.atc #radar .basemap.atc-chart { mix-blend-mode: normal; opacity: .26;
+  filter: invert(1) grayscale(1) blur(.6px) contrast(.9); }
+
+/* ---------- the Map view: the map is turned down so the aircraft and their labels (white on both maps) read ---------- */
+#scope.map #radar .basemap.plain-map { mix-blend-mode: normal; opacity: 1; filter: saturate(.62) brightness(.58) contrast(.96); }
+#scope.map #radar .basemap.plain-map .overlay { opacity: .55; }
+#scope.map #radar .basemap.plain-map.streets { filter: saturate(.3) contrast(.9) brightness(.52); }
+body.night #scope.map #radar .basemap.plain-map { filter: saturate(.45) brightness(.38) contrast(1.05); }
+body.night #scope.map #radar .basemap.plain-map .overlay { opacity: .5; }
+body.night #scope.map #radar .basemap.plain-map.streets { filter: invert(1) hue-rotate(180deg) saturate(.4) brightness(.62) contrast(.9); }
+#scope.map #radar .scope-bg { fill: #3a4a3e; }
+#scope.map #radar .blip { fill: #fff; stroke: rgb(10 20 30 / .85); stroke-width: 1.3; }
+#scope.map #radar .hero .blip { fill: var(--magenta); stroke: #fff; }
+#scope.map #radar .tag { fill: #fff; font-size: 5.4px; stroke: rgb(10 20 30 / .85); stroke-width: 1.9px; }
+#scope.map #radar .tag-sub { font-family: var(--sans); font-size: 4.4px; fill: #f1f4f6; stroke: rgb(10 20 30 / .85); stroke-width: 1.7px; }
+#scope.map #radar .hero .tag { fill: #ffd2e6; }
+#radar .map-home circle { fill: rgb(255 255 255 / .25); stroke: #fff; stroke-width: .8; }
+#radar .map-home .dot { fill: var(--blue); stroke: #fff; stroke-width: .6; }
+#radar .map-apt rect { fill: #2c5d9e; stroke: #fff; stroke-width: .5; }
+#radar .map-apt path { fill: #fff; }
+#radar .map-label { font-size: 4.6px; font-weight: 700; fill: #fff; paint-order: stroke; stroke: rgb(10 20 30 / .85); stroke-width: 1.6px; stroke-linejoin: round; }
+#radar .map-note rect { fill: rgb(10 20 30 / .6); }
+#radar .map-note text { font-size: 4px; fill: #fff; }
