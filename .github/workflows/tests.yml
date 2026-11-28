@@ -88,7 +88,7 @@ jobs:
           sudo $py -m cloudwall upgrade
           second=$(readlink /opt/cloudwall/current)
           test "$first" != "$second"
-          ls /var/lib/cloudwall/backups/cloudwall-*.tar.gz
+          sudo sh -c 'ls /var/lib/cloudwall/backups/cloudwall-*.tar.gz'      # (the folder is the service's alone)
           answers
 
           say "settings that wouldn't start stop an upgrade before it changes anything"
