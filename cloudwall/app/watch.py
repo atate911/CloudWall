@@ -16,12 +16,13 @@ from .. import __version__
 from ..core import config, health
 from ..core.health import OK
 from ..core.http import post_json
-from ..gather import tiles
+from ..gather import tiles, weather
 
 log = logging.getLogger("cloudwall.health")
 WATCH_S = 30
 DOWN_AFTER_S = 120          # a feed failing this long is a problem (a blip isn't)
 NO_POSITIONS_S = 120        # a watched board with no positions this long is offline
+WEATHER_GRACE_S = 900
 DEAF_CHECKS = 10            # checks in a row (5 minutes) of a receiver hearing almost nothing
 FROZEN_ANSWERS = 3          # identical answers in a row, with aircraft moving
 SKEW_S = 15
@@ -158,6 +159,13 @@ class Watch:
         if watched and not self.demo and fetching > NO_POSITIONS_S and now - since > NO_POSITIONS_S:
             yield health.trouble("feeds.no-positions", f"{place.name}: no positions for {now - since:.0f} s"
                                  + (f" ({st['error']})" if st.get("error") else ""))
+        # (the weather is asked for every 5 minutes while watched: none, or only an old report, after
+        # a quarter of an hour of that means the weather service isn't giving any)
+        w = place.weather
+        if watched and not self.demo and fetching > WEATHER_GRACE_S and (not w or weather.is_stale(w.get("time"), now)):
+            yield health.trouble("weather.old", f"{place.name}: " + (
+                f"the last report from {w.get('station') or 'the airport'} is {(now - w['time']) / 3600:.0f} h old" if w and w.get("time")
+                else f"no weather report for {place.cfg['airport'].get('icao') or 'the airport'} has come"), part="feeds")
         parts = getattr(place.source, "parts", {}) or {}
         merged = "the public feed" in parts
         for label, feed in parts.items():

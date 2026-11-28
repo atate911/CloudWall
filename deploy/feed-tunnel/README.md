@@ -149,15 +149,9 @@ Expect something like `[OK] 27 aircraft, 26 with positions, data 0s old`.
 
 **Step 5, on the VPS: point CloudWall at it**
 
-With CloudWall installed (`sudo cloudwall install`), run it with sudo (or set the feeds on the
-control board's Feeds page instead):
-```bash
-sudo bash deploy/feed-tunnel/vps-tunnel.sh cloudwall
-```
-It finds CloudWall's `config.toml` (`$CLOUDWALL_CONFIG`, then `/etc/cloudwall/config.toml` for the
-system install, then `./config.toml`, then `~/.config/cloudwall/config.toml`;
-or pass `--config PATH`), backs it up, puts the tunnel first in `[source] urls` keeping the existing
-feeds after it, turns on `merge = true`, checks the result parses, and restarts CloudWall.
+On CloudWall's control board (`/admin`), open **Feeds** and add your receiver
+(`http://127.0.0.1:18080/data/aircraft.json`) first, combined with the public feeds, then restart
+when the board asks.
 `cloudwall doctor` then checks the receiver answers through the tunnel, and while CloudWall runs it
 watches that your receiver is up, believable (not frozen, not deaf, not lagging) and says so if not.
 
@@ -236,7 +230,7 @@ command, a different listen port, a public bind and a `-L` connection to a VPS s
 | **VPS hostname, IP or SSH port changed** | On the Pi: `sudo bash pi-tunnel.sh install NEW_HOST [--port N] --fingerprint …` (the fingerprint from `sudo bash deploy/feed-tunnel/vps-tunnel.sh setup "<same key>"`, or `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` on the VPS). The key stays the same. |
 | **VPS reinstalled / moved to a new VPS** | Its host key changes, so the Pi will refuse it (correctly). Repeat steps 2–5 on the new VPS, then step 3 on the Pi. |
 | **Pi re-flashed or replaced** | The key is gone. Repeat steps 1–3; the new `setup` replaces the old key on the VPS (the old `authorized_keys` is backed up). |
-| **Use a different port than 18080** | Use the same `--remote-port N` on all three: `deploy/feed-tunnel/vps-tunnel.sh setup … --remote-port N`, `pi-tunnel.sh install … --remote-port N`, `deploy/feed-tunnel/vps-tunnel.sh cloudwall --remote-port N`. Then remove the old URL with `deploy/feed-tunnel/vps-tunnel.sh cloudwall-remove --remote-port 18080`. |
+| **Use a different port than 18080** | Use the same `--remote-port N` on both: `deploy/feed-tunnel/vps-tunnel.sh setup … --remote-port N` and `pi-tunnel.sh install … --remote-port N`; then put the new address in place of the old on the control board's Feeds page. |
 | **Rotate the key** (e.g. once a year, or if the Pi was lost) | On the Pi: `sudo rm /etc/adsb-tunnel/id_ed25519*`, then `sudo bash pi-tunnel.sh keygen`, then step 2 on the VPS with the new key (it replaces the old one), then `sudo bash pi-tunnel.sh restart`. |
 | **Stop combining; receiver only, public feeds as backup** | Set `merge = false` in `[source]`; restart CloudWall. |
 | **Public feeds only, receiver as backup** | Set `merge = false` and move the tunnel URL below the public feeds; restart CloudWall. (With `merge = true`, the receiver must be first.) |
@@ -244,7 +238,7 @@ command, a different listen port, a public bind and a `-L` connection to a VPS s
 
 ## 8. Removing it
 
-1. VPS, as the CloudWall user: `bash deploy/feed-tunnel/vps-tunnel.sh cloudwall-remove` (takes the URL out of CloudWall's feeds, with a backup).
+1. The control board's Feeds page: take your receiver out of the feeds.
 2. VPS: `sudo bash deploy/feed-tunnel/vps-tunnel.sh remove` (deletes the `adsbtunnel` account and its key).
 3. Pi: `sudo bash pi-tunnel.sh uninstall --purge` (stops and removes the service, key, settings and local user).
 
@@ -275,7 +269,7 @@ These all happened during the first setup; the scripts now catch each one.
 | `Connection timed out` / `No route to host` / "no SSH answer" | VPS down, wrong host or port, or a firewall blocking SSH from your home: on the server, or in the provider's web panel | `ssh -p PORT you@VPS_HOST` from home to check SSH works at all; check the provider's firewall policy |
 | `test` on the VPS says nothing listens on 18080 | The tunnel isn't connected | `sudo bash pi-tunnel.sh status` on the Pi |
 | `test` works, but data is stale | The decoder on the Pi stopped | `sudo docker ps` on the Pi, check the adsb.im page |
-| CloudWall still shows adsb.fi | Config not updated, CloudWall not restarted, or the tunnel was down at that moment | `bash deploy/feed-tunnel/vps-tunnel.sh cloudwall`; check `journalctl --user -u cloudwall` |
+| CloudWall still shows adsb.fi | Config not updated, CloudWall not restarted, or the tunnel was down at that moment | The control board's Feeds page; check `journalctl -u cloudwall` |
 | Feed name on screen shows only `opendata.adsb.fi` | Your receiver isn't answering through the tunnel | `bash deploy/feed-tunnel/vps-tunnel.sh test`; `pi-tunnel.sh status` on the Pi |
 | Fewer aircraft than expected, feed name shows only `127.0.0.1` | `merge = true` is missing, or the public feed isn't answering | Check `[source]` in `config.toml`; `journalctl --user -u cloudwall` |
 

@@ -135,6 +135,13 @@ CATALOGUE = {
         "CloudWall moves on to the next feed in [source] urls.",
         ["the community feed is down or has changed its address"],
         ["Usually passes within the hour.", "If it lasts a day, take it out of [source] urls."]),
+    "weather.old": _t(
+        "the airport's weather isn't arriving",
+        "The screens mark the last report as old, and the flight category and wind on them say how it was, not how it is.",
+        ["aviationweather.gov is out of reach or having trouble", "the airport's station has stopped reporting",
+         "the airport has no weather station (a small field)"],
+        ["It usually comes back by itself: CloudWall asks again every few minutes.",
+         "If it never has any, set [airport] icao to a nearby airport that reports weather."]),
     "feeds.stale": _t(
         "a feed answers with old data",
         "Its web server is up but its decoder has stopped, so its aircraft are frozen or missing.",
