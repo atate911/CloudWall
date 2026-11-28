@@ -44,7 +44,7 @@ export function drawVertical(canvas, data, unit) {
 
 /** Range by bearing for one altitude band (or the best over all bands). Optional compare series B (dashed). */
 export function drawPolar(canvas, covA, covB, bandIndex, unit, color) {
-  const { g, w, h, fg, muted, line } = setup(canvas);
+  const { g, w, h, muted, line } = setup(canvas);
   g.clearRect(0, 0, w, h);
   const cx = w / 2, cy = h / 2, rad = Math.min(w, h) / 2 - 22;
   const series = (cov) => {
