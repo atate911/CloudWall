@@ -308,8 +308,7 @@ function fitCard(el, again = false) {
   if (sw) sw.hidden = true;
   el.classList.remove("pic-plate");
   if (phone()) {
-    // a phone's card scrolls: its map as tall as the route needs, within reason, a north-south route
-    // in a taller map than an east-west one
+    // a phone's card scrolls: its map as tall as the route needs, within reason
     placeMap(el, map, "across");
     el.classList.remove(...FITS);
     if (map && map.clientWidth) map.style.height = `${Math.round(clamp(routeHeight(r, map.clientWidth), 176, Math.min(420, innerHeight * 0.55)))}px`;
@@ -328,9 +327,8 @@ function fitCard(el, again = false) {
     return map && !el.classList.contains("fit-nomap") ? routeScale(r, map.clientWidth, map.clientHeight) : 0;
   };
   if (!map) { fit("across"); return; }
-  // decided again only when the route, the card's size or the room its words take changes (a line
-  // more, a photo, the page's fonts arriving), so it doesn't flip back and forth from one update to
-  // the next or start the map's animation over
+  // decided again only when the route, the card's size or the room its words take changes, so it
+  // doesn't flip back and forth between updates or start the map's animation over
   const words = [".h-id", ".metrics"].map((q) => el.querySelector(q)?.offsetHeight).join(",");
   const key = `${cur.routeKey}|${el.clientWidth}x${el.clientHeight}|${words}|${$("h-facts").childElementCount}|${!!el.querySelector(".media.has-photo")}`;
   if (el._mapKey !== key) {
@@ -339,9 +337,8 @@ function fitCard(el, again = false) {
     el._mapAt = ["across", "beside", "wide"].find((how) => s[how] >= best * 0.85);
     el._mapBest = best;
   }
-  // The card's parts can go on settling after the place was chosen (the page's rows finding their
-  // heights, a line of the facts arriving) without any of the measures above changing: if the map
-  // has ended up much smaller than its place promised, choose again
+  // The card can go on settling after the place was chosen without the key changing: if the map
+  // has ended up much smaller than its place promised, choose again (once)
   if (fit(el._mapAt) < el._mapBest * 0.85 - 1e-6 && !again) { el._mapKey = null; fitCard(el, true); return; }
   // the map alone, the drawing left out for want of room: the switch, and the drawing if it's set to
   if (!sw || !el.classList.contains("fit-noplate") || el.classList.contains("fit-nomap") || document.body.classList.contains("kiosk")) return;
@@ -363,8 +360,7 @@ function fitCard(el, again = false) {
   }
 }
 
-// The page's fonts arrive after the card is first drawn and change the height of its lines, those
-// between the airports among them, which nothing else here measures: the card is fitted afresh.
+// The page's fonts arrive after the card is first drawn and change the height of its lines.
 if (document.fonts && document.fonts.addEventListener) {
   document.fonts.addEventListener("loadingdone", () => {
     const el = $("hero");
@@ -372,7 +368,6 @@ if (document.fonts && document.fonts.addEventListener) {
   });
 }
 
-// The switch in the photo's corner: the airframe's photo, or the type's drawing in its place.
 const mediaPick = () => (store("media") === "plate" ? "plate" : "photo");
 function showMedia(m) {
   const pick = mediaPick();
@@ -385,14 +380,13 @@ export function setMedia(which) {
   if (m) showMedia(m);
 }
 
-// The switch in the card's corner: the route map, or the aircraft's drawing in its place.
 export function setPicture(which) {
   store("card", which === "plate" ? "plate" : "map");
   const el = $("hero");
   if (el) fitCard(el);
 }
 
-// Put the route map in its place: at the foot of the route (across, wide) or beside the facts.
+// At the foot of the route (across, wide) or beside the facts.
 function placeMap(el, map, how) {
   const bottom = el.querySelector(".h-bottom"), route = el.querySelector(".route.mapped");
   el.classList.toggle("map-beside", !!map && how === "beside");
@@ -402,11 +396,10 @@ function placeMap(el, map, how) {
   if (map.parentElement !== home) home === bottom ? bottom.prepend(map) : route.append(map);
 }
 
-// A photo's credit: its photographer and a link to its page on planespotters.net, in the
-// photo's bottom right corner on its edge, as their terms ask
+// A photo's credit and link, as planespotters.net's terms ask
 const credit = (link, by) => `<a class="credit" href="${esc(link)}" target="_blank" rel="noopener noreferrer">© ${esc(by)} · planespotters.net</a>`;
 
-// "autopilot, approach" -> "On, flying the approach". Modes as the aircraft reports them.
+// "autopilot, approach" -> "On, flying the approach"
 function autopilotWords(modes) {
   if (!modes || !modes.length) return null;
   const m = new Set(modes), on = m.has("autopilot");

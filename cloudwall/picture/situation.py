@@ -49,8 +49,8 @@ def notable(a):
 
 
 def landing_ways(airport, flow):
-    """The runways arrivals land on, each as (name, threshold lat/lon, landing direction in degrees):
-    those in use when the flow is known, else every runway end."""
+    """[(name, threshold lat, lon, landing direction in degrees)]: the runways in use when the
+    flow is known, else every runway end."""
     ways = []
     for w in airport.get("runways") or []:
         (lat1, lon1), (lat2, lon2) = w["ends"]
@@ -64,19 +64,17 @@ def landing_ways(airport, flow):
 
 
 def _xy(lat0, lon0, lat, lon):
-    """Where a point is from another, in nm east and north."""
+    """A point from another, as (nm east, nm north)."""
     return (lon - lon0) * 60 * math.cos(math.radians(lat0)), (lat - lat0) * 60
 
 
 def _to_runway(a, ways):
-    """The runway an arrival is lining up for and how far it has to fly to touch down, in nm.
-    On final (close to the extended centreline, ahead of the threshold, pointing down it) that is
-    the distance along it; otherwise the way to a point FINAL_JOIN_NM out on the runway's final
-    whose direction suits it best, and then down it."""
+    """(runway an arrival is lining up for, nm to fly to touchdown): on final, the distance along
+    it; otherwise via a point FINAL_JOIN_NM out on the best-suited runway's final."""
     off = lambda x, y: abs((x - y + 180) % 360 - 180)
     best = None
     for name, lat, lon, hdg in ways:
-        ux, uy = math.sin(math.radians(hdg)), math.cos(math.radians(hdg))      # the landing direction
+        ux, uy = math.sin(math.radians(hdg)), math.cos(math.radians(hdg))
         px, py = _xy(lat, lon, a["lat"], a["lon"])
         along = -(px * ux + py * uy)                                          # nm out from the threshold
         lateral = abs(px * uy - py * ux)
@@ -85,7 +83,7 @@ def _to_runway(a, ways):
         if along > 0 and lateral < FINAL_LATERAL_NM and aligned:
             cost, togo = lateral, along
         else:
-            jx, jy = -ux * FINAL_JOIN_NM, -uy * FINAL_JOIN_NM                # the join point
+            jx, jy = -ux * FINAL_JOIN_NM, -uy * FINAL_JOIN_NM
             to_join = math.hypot(px - jx, py - jy)
             cost, togo = 10 + to_join, to_join + FINAL_JOIN_NM
         if not best or cost < best[0]:
@@ -94,9 +92,8 @@ def _to_runway(a, ways):
 
 
 def sequence(arrivals, airport, flow):
-    """Put the arrivals in landing order: each gets its runway ("rwy"), seconds to touchdown
-    ("lands_s", slowing as it comes in), its place in the order ("seq", from 1) and the seconds
-    since the one ahead lands ("gap_s", None for the first)."""
+    """Sort the arrivals into landing order, setting "rwy", "lands_s" (seconds to touchdown),
+    "seq" (from 1) and "gap_s" (seconds behind the one ahead; None for the first)."""
     ways = landing_ways(airport, flow)
     if not ways:
         return
@@ -110,8 +107,7 @@ def sequence(arrivals, airport, flow):
 
 
 def tail(points, trail_s):
-    """The last TAIL_S seconds of an aircraft's reported positions, as [lat, lon] pairs oldest
-    first, thinned to TAIL_POINTS: enough for the radar to draw a short fading track behind it."""
+    """The last TAIL_S seconds of positions as [lat, lon] pairs, oldest first, thinned to TAIL_POINTS."""
     n = max(2, math.ceil(TAIL_S / max(trail_s or 5, 1)))
     pts = list(points)[-n:]
     step = max(1, math.ceil(len(pts) / TAIL_POINTS))
