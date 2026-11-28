@@ -1,9 +1,6 @@
-// Parts that more than one of the displays is made of: the flight card, the wall panel's card,
-// the emergency takeover, the board and the logbook all say a flight number, an airline or a
-// landing the same way.
+// Parts shared by several displays: how a flight number, an airline or a landing is said.
 import { esc, num, ident } from "./util.js";
 
-// Show an airline's logo on its white tile; if there isn't one, show the name instead.
 export function showLogo(tile, img, state, code, nameEl) {
   tile.hidden = true;
   if (nameEl) nameEl.hidden = false;
@@ -20,13 +17,12 @@ function badgeClass(b) {
   if (/RARE/.test(b)) return "rare";
   return "";
 }
-// The server and the logbook keep tags in capitals ("NEW TYPE"); they're shown in sentence case ("New type").
+// "NEW TYPE" -> "New type"
 const tagWords = (b) => b.charAt(0) + b.slice(1).toLowerCase();
-// the medical tag carries the cross, white on its blue
 const MED_GLYPH = `<svg viewBox="-2 -2 4 4" aria-hidden="true"><path d="M-.5,-1.75H.5V-.5H1.75V.5H.5V1.75H-.5V.5H-1.75V-.5H-.5Z"/></svg>`;
 export const badges = (list) => (list || []).map((b) => `<span class="badge ${badgeClass(b)}">${b === "MEDICAL" ? MED_GLYPH : ""}${esc(tagWords(b))}</span>`).join("");
 
-// "AS508" -> "AS 508", the way departure boards set flight numbers
+// "AS508" -> "AS 508"
 export function boardFlight(f) {
   const m = /^([A-Z0-9]{2})(\d{1,4}[A-Z]?)$/.exec(f || "");
   return m && /[A-Z]/.test(m[1]) ? `${m[1]} ${m[2]}` : f;
@@ -43,8 +39,7 @@ export function localWords(a, state) {
     : a.local === "local" ? `Flying near ${p.name}` : "";
 }
 
-// "Boeing 737-800" and "Beechcraft King Air 350" stay; the database's long variants ("737NG 890/W")
-// are trimmed to the model
+// the database's long variants ("737NG 890/W") are trimmed to the model
 export function shortType(name) {
   if (!name) return "";
   return name.length > 24 ? name.split(/[\s/]/).slice(0, 3).join(" ") : name;
@@ -59,7 +54,7 @@ export function recordsHtml(title, r) {
   }).join("");
 }
 
-// "F15" -> "F-15": how people say military type codes
+// "F15" -> "F-15"
 export const milType = (code) => (/^[A-Z]{1,2}\d{1,3}[A-Z]?$/.test(code || "") ? code.replace(/^([A-Z]+)(\d)/, "$1-$2") : code || "military aircraft");
 
 export function heardGroups(heard) {
@@ -71,8 +66,7 @@ export function heardGroups(heard) {
   return [...by.values()];
 }
 
-// An aircraft in plain words, as anyone would say it: "Delta Air Lines" and flight DL178 make
-// "Delta 178"; without an airline, what kind of aircraft it is.
+// "Delta Air Lines" and flight DL178 make "Delta 178"; without an airline, the kind of aircraft.
 const KIND_WORDS = { light: "Small plane", twin: "Small plane", ultralight: "Small plane", seaplane: "Seaplane", glider: "Glider",
   turboprop: "Propeller plane", bizjet: "Private jet", heli: "Helicopter", gyro: "Gyrocopter", fighter: "Military jet",
   tandem: "Military helicopter", tiltrotor: "Military aircraft", balloon: "Balloon", airship: "Airship", drone: "Drone" };

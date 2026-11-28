@@ -1,10 +1,7 @@
-// All settings: for reviewing. The setup said in a paragraph first (a sentence that reads wrong is
-// the place to click); then every setting, one line each, grouped by the page it belongs to: its
-// value in words, its default beside it when you've set your own, whether it waits for a restart.
-// A line opens to change the setting there, with its explanation; "see it on its page" goes to the
-// picture it's part of. Filters narrow it to what you've set, what waits, and the lines in the
-// settings file that do nothing (with a fix for each).
-import { el, esc, S, setting, call, toast, loadSettings, plural, on, sky, TITLES } from "../core.js";
+// All settings page: the setup said in a paragraph, then every setting on one line, grouped by
+// page; a line opens to change it. Filters: what you've set, what waits for a restart, and the
+// settings file's lines that do nothing (with a fix for each).
+import { el, esc, S, setting, call, toast, loadSettings, plural, onPage, sky, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { head } from "../parts.js";
 import { any } from "../controls.js";
@@ -14,7 +11,7 @@ const ICONS = { places: "places", positions: "feeds", receiver: "receiver", rout
 const PAGE_NAMES = Object.fromEntries(Object.entries(ICONS).map(([p, i]) => [p, [TITLES[p], i]]));
 let filter = "all";
 
-/** Every setting, as [page, [setting...]] in the board's order. */
+/** [[page, [setting...]]] in the board's order. */
 function byPage() {
   const out = {};
   for (const sec of S.settings.sections) for (const s of sec.settings) {
@@ -37,7 +34,7 @@ function rowHtml(st) {
     <div class="row-edit" hidden></div></li>`;
 }
 
-/** The settings file's lines that do nothing, and the ones CloudWall couldn't use, each with its fix. */
+/** The settings file's lines that do nothing or couldn't be used, each with its fix. */
 function strays(page) {
   const list = S.settings.strays || [], out = S.settings.left_out || [];
   if (!list.length && !out.length) return null;
@@ -62,7 +59,7 @@ function strays(page) {
   return box;
 }
 
-/** A page's settings under their sections' names (Flightradar24 and FlightAware both have an API key). */
+/** Grouped under section names, since keys repeat (Flightradar24 and FlightAware both have an API key). */
 function sections(items) {
   const by = [];
   for (const st of items) {
@@ -80,7 +77,6 @@ export default {
     page.redraw = async () => { const fresh = el(`<div class="page page-settings"></div>`); await this.draw(fresh); page.replaceWith(fresh); };
     const groups = byPage(), all = groups.flatMap(([, l]) => l);
     const mine = all.filter((st) => st.changed && !st.secret && st.default !== null && st.default !== undefined), wait = all.filter((st) => st.waiting);
-    const odd = (S.settings.strays || []).length + (S.settings.left_out || []).length;
     page.append(head(TITLES.settings, `Every setting with its value, its default where you've changed it, and what's waiting for a restart. ${S.settings.file ? `File: <code>${esc(S.settings.file)}</code>` : "Nothing saved yet: these are the defaults."}`));
 
     page.append(el(`<section class="setup-said"><h2>Setup</h2>${setup()}<p class="dim small">Underlined values open their setting.</p></section>`));
@@ -125,7 +121,7 @@ export default {
       bar.querySelectorAll("[data-f]").forEach((x) => x.setAttribute("aria-checked", String(x === b)));
       apply();
     };
-    // a line opens to change its setting there, its explanation open; one at a time
+    // a line opens to change its setting; one at a time
     list.onclick = (e) => {
       const btn = e.target.closest(".row-main");
       if (!btn) return;
@@ -143,7 +139,6 @@ export default {
     };
     apply();
 
-    // when a setting is saved (here or by Undo), its line says so
     const repaint = () => {
       if (!list.isConnected) return;
       list.querySelectorAll(".row").forEach((r) => {
@@ -156,7 +151,7 @@ export default {
       const said = page.querySelector(".setup-said");
       if (said) said.innerHTML = `<h2>Setup</h2>${setup()}<p class="dim small">Underlined values open their setting.</p>`;
     };
-    on("settings", repaint);
+    onPage("settings", repaint);
 
     // #settings/<section>.<key> (from a "set it again" link): that line, open
     const target = (location.hash.split("/")[1] || "");

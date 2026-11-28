@@ -18,15 +18,21 @@ class Sampler(threading.Thread):
         self.cfg, self.store, self.feeds = cfg, store, feeds
         self.stop_event = threading.Event()
         self.lock = threading.Lock()
-        self.station = build_station(cfg, self._safe(feeds[0].receiver) if feeds else None)
+        rec = self._safe(feeds[0].receiver) if feeds else None
+        self.station = build_station(cfg, rec)
+        # with position_source "receiver", sample nothing until the receiver has given its position:
+        # distances from the config's stand-in position would be kept for good
+        self.placed = not feeds or cfg.station.get("position_source", "receiver") != "receiver" or self._has_position(rec)
+        if not self.placed:
+            log.warning("receiver.json isn't there yet: sampling waits until the receiver gives the station's position")
         self.filters = [self._new_filter(f) for f in feeds]
         self.last_now = [None] * len(feeds)
         self.up = [None] * len(feeds)                  # None = unknown, True/False = last state
         self.buffer = []
-        self.live = []                                 # latest compact aircraft list (for /api/live)
+        self.live = []                                 # for /api/live
+        self.live_by_feed = [[] for _ in feeds]
         self.live_time = 0.0
-        self.counters = Counter()                      # lifetime counters for /api/stats
-        self.recent_mode_s = 0
+        self.counters = Counter()                      # for /api/stats
         self.last_flush = time.time()
         self.last_hourly = time.time()
 
@@ -36,16 +42,23 @@ class Sampler(threading.Thread):
                            self.cfg.sampler, feed.band)
 
     @staticmethod
+    def _has_position(rec):
+        return bool(rec) and "lat" in rec and "lon" in rec
+
+    @staticmethod
     def _safe(fn):
         try:
             return fn()
         except Exception:
             return None
 
-    # ------------------------------------------------------------------------------------------
     def poll_once(self):
         """One poll of every feed. Public so tests can drive it."""
-        live = []
+        if not self.placed:
+            self.refresh_station()
+            if not self.placed:
+                return
+        fresh = False
         for i, feed in enumerate(self.feeds):
             try:
                 snap = feed.aircraft()
@@ -53,6 +66,7 @@ class Sampler(threading.Thread):
                 if self.up[i] is not False:
                     log.warning("[%s] live feed unavailable (%s); will keep retrying", feed.name, e)
                 self.up[i] = False
+                self.live_by_feed[i] = []
                 continue
             if self.up[i] is False:
                 log.info("[%s] live feed is back", feed.name)
@@ -62,7 +76,7 @@ class Sampler(threading.Thread):
                 continue                                # same snapshot as last poll
             self.last_now[i] = now
             flt = self.filters[i]
-            new = []
+            new, live, fresh = [], [], True
             for ac in snap.get("aircraft", ()):
                 if ac.get("type") == "mode_s":
                     self.counters["mode_s_seen"] += 1
@@ -75,11 +89,15 @@ class Sampler(threading.Thread):
                 with self.lock:
                     self.buffer.extend(new)
                 self.counters["points_sampled"] += len(new)
+            self.live_by_feed[i] = live
             if len(flt.last) > 5000 or int(now) % 300 == 0:
                 flt.prune(now)
-        if live or any(u for u in self.up):
-            with self.lock:
-                self.live, self.live_time = live, time.time()
+        # live_time moves only when a poll found a new snapshot
+        live = [entry for per_feed in self.live_by_feed for entry in per_feed]
+        with self.lock:
+            self.live = live
+            if fresh:
+                self.live_time = time.time()
 
     @staticmethod
     def _live_entry(ac, feed):
@@ -108,7 +126,12 @@ class Sampler(threading.Thread):
     def reject_stats(self) -> dict:
         tot = Counter()
         for f in self.filters:
-            tot.update(f.stats)
+            for _ in range(3):             # the sampler thread mutates these: retry if it did meanwhile
+                try:
+                    tot.update(dict(f.stats))
+                    break
+                except RuntimeError:
+                    continue
         return dict(tot)
 
     def maintenance(self):
@@ -121,6 +144,12 @@ class Sampler(threading.Thread):
 
     def refresh_station(self):
         rec = self._safe(self.feeds[0].receiver) if self.feeds else None
+        if self.cfg.station.get("position_source", "receiver") == "receiver" and self.feeds:
+            if not self._has_position(rec):
+                return                     # not answering: the station stays where it was
+            if not self.placed:
+                log.info("the receiver has given the station's position: sampling starts")
+            self.placed = True
         st = build_station(self.cfg, rec)
         if (st.lat, st.lon, st.antenna_asl_m) != (self.station.lat, self.station.lon, self.station.antenna_asl_m):
             log.warning("station position/height changed: now %.6f, %.6f, antenna %.1f m ASL",

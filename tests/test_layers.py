@@ -1,10 +1,5 @@
-"""CloudWall's layers, held to: each module imports only from its own layer and those below it,
-and the three middle layers (what is sensed, what is gathered, what is remembered) don't import
-each other. ROADMAP.md sets out why; a module in a layer's folder (cloudwall/core/geo.py) is in
-that layer, and the few still at the top of the package are placed by FLAT below.
-
-To add a module: put it in the folder of the layer it belongs to. If the test then fails, the module reaches upward: pass in what it needs instead (as the
-tracker is given its store), or move the shared part down a layer."""
+"""CloudWall's layers, held to (ROADMAP.md sets out why): each module imports only from its own layer and
+those below. If a new module fails this, pass in what it needs or move the shared part down a layer."""
 import ast
 import unittest
 from pathlib import Path
@@ -15,8 +10,8 @@ PACKAGE = Path(__file__).resolve().parent.parent / "cloudwall"
 RANK = {"core": 0, "reference": 1, "sense": 2, "gather": 2, "memory": 2, "picture": 3,
         "serve": 4, "operate": 4, "share": 4, "app": 5}
 
-# modules outside a layer's folder: the package's own, and the radio until it is joined to the app
-FLAT = {"__init__": "core", "__main__": "app", "radio": "picture"}
+# modules outside a layer's folder: the package's own
+FLAT = {"__init__": "core", "__main__": "app"}
 
 
 def module_name(path):

@@ -1,12 +1,6 @@
-"""Live routes from the official Flightradar24 API.
-
-Routes come from the flight-summary endpoint, which reports the flight actually in the
-air (origin, destination, takeoff time, operating and marketing airline) for 1 credit,
-an eighth of what the live-positions endpoint costs. Airport details come from the
-bundled airport table instead of the 50-credit airport endpoint.
-
-Published prices (credits): flight-summary/light 1 per live flight returned, 2 per
-finished flight up to 30 days old, and 1 for an empty result."""
+"""Live routes from the official Flightradar24 API's flight-summary/light endpoint: 1 credit per
+live flight returned, 2 per finished flight, 1 for an empty result. Airport details come from
+the bundled table, not the 50-credit airport endpoint."""
 import datetime as dt
 import logging
 import threading
@@ -47,7 +41,7 @@ class Flightradar24(LiveProvider):
     name, label, env_key = "flightradar24", "Flightradar24", "CLOUDWALL_FR24_KEY"
     unit = "credits"
     default_daily = 300
-    max_cost = 2          # one row, which costs 2 if it turns out to be a finished flight
+    max_cost = 2          # one row costs 2 if it is a finished flight
 
     def __init__(self, cfg, store):
         super().__init__(cfg, store)
@@ -62,7 +56,6 @@ class Flightradar24(LiveProvider):
     def headers(self):
         return {"Authorization": f"Bearer {self.key}", "Accept-Version": "v1"}
 
-    # -- what Flightradar24 says we've spent ------------------------------------
     def _usage_loop(self):
         checked = 0.0
         while True:
@@ -83,7 +76,6 @@ class Flightradar24(LiveProvider):
         log.info("Flightradar24 reports %s credits used in the last 24 h, %s in 30 days", out["24h"], out["30d"])
         return out
 
-    # -- routes -----------------------------------------------------------------
     def route(self, callsign):
         """Route of the flight in the air now with this callsign, or None. Raises NotYet when
         the latest flight it knows by that callsign has already landed."""
@@ -97,7 +89,6 @@ class Flightradar24(LiveProvider):
         f = next((r for r in rows if (r.get("callsign") or "").strip().upper() == callsign), None)
         if f is None and rows and self.sandbox:
             f = rows[0]          # the sandbox returns fixed sample data whatever you ask for
-        # Say what came back, so a surprise in the response is easy to spot.
         if not rows:
             log.info("Flightradar24: no flight found for %s", callsign)
             return None

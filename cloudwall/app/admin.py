@@ -1,14 +1,9 @@
-"""The control board's API (/api/admin/...): everything the owner can see and do from the web page,
-from how things stand to changing a setting, fixing a problem, backing up and restarting.
-
-It joins the layers below it: the settings (core/schema.py, config.write_setting), CloudWall's
-check of itself (app/watch.py and the incident log), doctor and its guided fixes (operate/doctor,
-guide, repair), backups, the private link, and the root helper for what needs root. The server
-hands every /api/admin/ request here (srv.admin), so the server itself knows nothing of it.
+"""The control board's API (/api/admin/...); the server hands every such request here (srv.admin).
 
 Everything but whoami and sign-in is the owner's alone (serve/auth.py). A request naming a host
 CloudWall doesn't answer to is refused, and so is one a browser says comes from another site.
 """
+import logging
 import os
 import re
 import threading
@@ -26,34 +21,43 @@ from ..serve import auth
 # Sections only the control board uses: read from the file as saved, so they need no restart.
 LIVE = {"receiver"}
 
+log = logging.getLogger("cloudwall")
 UNDER_SYSTEMD = bool(os.environ.get("INVOCATION_ID"))
 
 
 class Admin:
-    def __init__(self, cfg, places, watch=None, store=None, incidents=None, provider=None, charts=None, demo=False):
+    def __init__(self, cfg, places, watch=None, store=None, incidents=None, provider=None, demo=False):
         self.cfg, self.places, self.watch, self.incidents = cfg, places, watch, incidents
-        self.provider, self.charts, self.demo = provider, charts, demo
+        self.provider, self.demo = provider, demo
         self.owner = auth.Owner(cfg, store)
         self.started = time.time()
         self.doctor_cache = (0, None)
         self.lock = threading.Lock()
 
-    # -- who may ----------------------------------------------------------------------------
+    # -- who may --
     @staticmethod
     def proxied(h):
         return any(h.headers.get(k) for k in ("X-Forwarded-For", "X-Real-IP", "Forwarded"))
+
+    @staticmethod
+    def _visitor(h):
+        """Whose wrong passwords these count as: behind a local proxy (Caddy), the visitor it names,
+        else everyone would be one address and a stranger's guesses would lock the owner out."""
+        address = h.client_address[0]
+        said = (h.headers.get("X-Forwarded-For") or "").split(",")[-1].strip()
+        return said if said and auth.is_local(address) else address
 
     def role(self, h):
         return self.owner.role(auth.cookies_of(h.headers.get("Cookie")), h.client_address[0], self.proxied(h))
 
     def may_change(self, h):
-        """For the screens' own changes (places): anyone, until there is an owner; then the owner."""
+        """For the screens' own changes (places): anyone until there is an owner, then the owner."""
         return not self.owner.exists() or self.role(h) == "owner"
 
     def _secure(self, h):
         return h.headers.get("X-Forwarded-Proto") == "https"
 
-    # -- the API ----------------------------------------------------------------------------
+    # -- the API --
     def handle(self, h, method, path):
         q = parse_qs(urlsplit(h.path).query)
         name = path[len("/api/admin/"):].strip("/")
@@ -68,7 +72,7 @@ class Admin:
         if name == "signin" and method == "POST":
             body = h._body() or {}
             try:
-                token = self.owner.sign_in(str(body.get("password") or ""), h.client_address[0])
+                token = self.owner.sign_in(str(body.get("password") or ""), self._visitor(h))
             except ValueError as e:
                 time.sleep(0.5)
                 return h._send(403, {"error": str(e)})
@@ -78,15 +82,18 @@ class Admin:
             return h._send(200, {"ok": True}, headers={"Set-Cookie": auth.cookie_header("", self._secure(h), clear=True)})
         if self.role(h) != "owner":
             return h._send(401, {"error": "Sign in as the owner first", **self.whoami(h)})
-        body = h._body() if method in ("POST", "PUT", "DELETE") else {}
+        body = h._body() if method in ("POST", "DELETE") else {}
         if body is None:
             return h._send(400, {"error": "bad json"})
         try:
             got = self.route(method, name, q, body or {})
-        except guide.Answered as e:
+        except (guide.Answered, ValueError, PermissionError) as e:
             return h._send(400, {"error": str(e)})
-        except (ValueError, PermissionError) as e:
-            return h._send(400, {"error": str(e)})
+        except Exception as e:                 # still answered, not a dropped connection
+            log.exception("admin: %s %s failed", method, name)
+            return h._send(400 if isinstance(e, (KeyError, TypeError)) else 500, {"error": f"That didn't work ({type(e).__name__}: {e})"})
+        if method == "POST" and name == "password":      # sessions were the old password's: keep this one
+            self.owner.carry_over(auth.cookies_of(h.headers.get("Cookie")).get(auth.COOKIE))
         if isinstance(got, tuple) and got[0] == "file":
             _, data, ctype, filename = got
             return h._send(200, data, ctype, headers={"Content-Disposition": f'attachment; filename="{filename}"'})
@@ -132,7 +139,7 @@ class Admin:
         if get and name == "backups":
             return self.list_backups()
         if method == "POST" and name == "backups":
-            out = backups.backup(self.cfg.get("_path"), say=lambda *a: None)
+            out = backups.backup(self.cfg.get("_path"), say=lambda *a: None, cfg=self.cfg)
             return {"ok": True, "said": f"backup written: {out.name}", "name": out.name}
         if get and name.startswith("backups/"):
             return self.download_backup(name.split("/", 1)[1])
@@ -140,7 +147,7 @@ class Admin:
             return self.private_link(body)
         if method == "POST" and name == "password":
             keys.set_password(str(body.get("password") or ""), self.cfg.get("_path"))
-            return {"ok": True, "said": "the owner's password is changed"}
+            return {"ok": True, "said": "the owner's password is changed; anyone else signed in is signed out"}
         if get and name == "receiver":
             return self.receiver()
         if method == "POST" and name == "alert-test":
@@ -148,7 +155,6 @@ class Admin:
         return None
 
     def alert_test(self):
-        """Send a test alert to [health] notify_url, so the owner sees it arrive on their phone."""
         from ..core.http import post_json
         url = (self.saved().get("health") or {}).get("notify_url")      # as saved: test it before restarting
         if not url:
@@ -161,10 +167,9 @@ class Admin:
             raise ValueError(f"The alert address didn't take it: {e}") from None
         return {"ok": True, "said": "Test alert sent: it should reach you within a few seconds"}
 
-    # -- your receiver ---------------------------------------------------------------------------
+    # -- your receiver --
     def saved(self):
-        """The settings as saved (not as running): for the settings only the board uses, which
-        take effect as soon as they're saved. Read again at most every few seconds."""
+        """The settings as saved (not as running), for the LIVE sections; re-read at most every 3 s."""
         at, cfg = getattr(self, "_saved", (0, None))
         path = self.cfg.get("_path")
         if not path:
@@ -189,15 +194,13 @@ class Admin:
         cov = (r.get("coverage_url") or "").rstrip("/")
         if not cov and url:
             m = re.match(r"^(https?://[^/:]+):(\d+)$", url)
-            # through the tunnel the receiver is 127.0.0.1:18080 and Coverage3D the port after the
-            # receiver's own (18090); at home, the receiver's address on Coverage3D's own port, 8090
+            # through the tunnel the receiver is :18080 and Coverage3D :18090; at home Coverage3D is :8090
             cov = f"{m.group(1)}:{int(m.group(2)) + 10}" if m and m.group(2) == "18080" else \
                 (f"{m.group(1)}:8090" if m else "")
         return url or None, cov or None
 
     def receiver(self):
-        """How the receiver is doing, from its own files (receiver.json, stats.json, outline.json),
-        with the board's own reading of them."""
+        """How the receiver is doing, from its own receiver.json, stats.json and outline.json."""
         from ..core.http import get_json
         url, cov = self.receiver_urls()
         out = {"url": url, "coverage_url": cov, "home_url": (self.saved().get("receiver") or {}).get("home_url") or None,
@@ -231,7 +234,8 @@ class Admin:
                          "strong_pct": round(100 * (local.get("strong_signals") or 0) / accepted, 1) if accepted else None,
                          "max_nm": round((p.get("max_distance") or 0) / 1852, 1) if p.get("max_distance") else None}
         pts = (((outline.get("actualRange") or {}).get("last24h") or {}).get("points")) or outline.get("points") or []
-        out["outline"] = [[round(p[0], 4), round(p[1], 4)] for p in pts if isinstance(p, list) and len(p) >= 2][:720]
+        out["outline"] = [[round(p[0], 4), round(p[1], 4)] for p in pts
+                          if isinstance(p, list) and len(p) >= 2 and all(isinstance(x, (int, float)) for x in p[:2])][:720]
         if cov:
             try:
                 got = get_json(f"{cov}/healthz", timeout=4)
@@ -241,10 +245,11 @@ class Admin:
         return out
 
     def relay(self, h, path):
-        """/receiver/... and /coverage/...: the receiver's live map and Coverage3D, as pages of the
-        board, for the owner. Only GET; only below the address set; nothing of the board's own
-        (its cookie) passed on."""
+        """/receiver/... and /coverage/..., relayed for the owner. Only GET; only below the address
+        set; nothing of the board's own (its cookie) passed on."""
         from ..core.http import relay
+        if not self.owner.host_ok(h.headers.get("Host"), self.proxied(h)):
+            return h._send(403, {"error": "The control board answers only to this machine's own names and addresses"})
         if self.role(h) != "owner":
             return h._send(401, b"<!doctype html><meta charset=utf-8><p style='font:1rem sans-serif;margin:2rem'>"
                                 b"Sign in on the control board first.</p>", "text/html; charset=utf-8")
@@ -265,10 +270,9 @@ class Admin:
             h.send_header(k, v)
         h.send_header("Content-Length", str(len(data)))
         h.end_headers()
-        if h.command != "HEAD":
-            h.wfile.write(data)
+        h.wfile.write(data)
 
-    # -- what the board shows ------------------------------------------------------------------
+    # -- what the board shows --
     def whoami(self, h):
         return {"role": self.role(h), "owner_set": self.owner.exists(), "local": auth.is_local(h.client_address[0]),
                 "version": __version__, "demo": self.demo}
@@ -313,7 +317,7 @@ class Admin:
                 "address": self.cfg["server"].get("address") or None}
 
     def cache_size(self):
-        """The map tiles' and logos' size on disk (counted at most every ten minutes: it walks a folder)."""
+        """The map tiles' and logos' size on disk (cached ten minutes: it walks a folder)."""
         at, size = getattr(self, "_cache_size", (0, None))
         if time.time() - at > 600:
             folder = config.cache_dir(self.cfg, str(self.cfg["storage"]["db_path"] or config.default_db_path()))
@@ -350,8 +354,7 @@ class Admin:
                 "left_out": on_disk.get("_problems", [])}
 
     def tidy(self, body):
-        """A line of the settings file that does nothing: moved under the heading it belongs to (only
-        when the setting isn't already set there), or taken out."""
+        """Move a stray settings line under the heading it belongs to (unless set there), or remove it."""
         path = self.cfg.get("_path")
         section, key, action = str(body.get("section") or ""), str(body.get("key") or ""), body.get("action")
         stray = next((x for x in config.strays(path) if x["section"] == section and x["key"] == key), None) if path else None
@@ -379,16 +382,26 @@ class Admin:
             return {"ok": True, "said": f"[{section}] {key} taken out of the settings file (it did nothing)"}
         raise ValueError("action must be move or remove")
 
+    def _settings_file(self):
+        """The settings file changes go to: the one started from, else the user's own, begun now."""
+        if not self.cfg.get("_path"):
+            path = str(config.user_config_path())
+            config.init(path)
+            self.cfg["_path"] = path
+        return self.cfg["_path"]
+
     def set_setting(self, body):
         section, key = str(body.get("section") or ""), str(body.get("key") or "")
         st = schema.find(section, key)
         if not st:
             raise ValueError(f"[{section}] {key} isn't a setting")
-        path = self.cfg.get("_path")
-        if not path:
-            path = str(config.user_config_path())
-            config.init(path)
+        path = self._settings_file()
         value = body.get("value")
+        if value is None:                  # back to not set at all
+            config.remove_setting(path, section, key)
+            self._saved = (0, None)
+            return {"ok": True, "said": f"{st.label} is no longer set"} if section in LIVE else \
+                {"ok": True, "said": f"{st.label} is no longer set. Restart CloudWall for it to take effect.", "restart": True}
         kind = config.kind_of(section, key)
         if kind == "bool":
             value = value in (True, "true", "on", "1", 1)
@@ -426,7 +439,7 @@ class Admin:
             from ..core.health import trouble
             finding = trouble(code, str(body["summary"]))
         if code == "clock.timezone":                 # needs root: through the helper
-            zone = helper._zone({"zone": value})     # (raises ValueError, said to the owner, if it isn't one)
+            zone = helper._zone({"zone": value})     # raises ValueError if it isn't one
             if not helper.available():
                 raise ValueError(f"Set it at the machine: sudo timedatectl set-timezone {zone}")
             return {"ok": True, "request": helper.ask("set-timezone", {"zone": zone}), "said": "asked the root helper"}
@@ -471,14 +484,13 @@ class Admin:
 
     def private_link(self, body):
         action = body.get("action")
-        path = self.cfg.get("_path")
         if action == "new":
             key = keys.new_key()
-            config.write_setting(path, "server", "key", key)
+            config.write_setting(self._settings_file(), "server", "key", key)
             return {"ok": True, "key": key, "said": "A new private link is saved. Restart CloudWall, then open the new link on each screen.",
                     "restart": True}
         if action == "off":
-            config.write_setting(path, "server", "key", "")
+            config.write_setting(self._settings_file(), "server", "key", "")
             return {"ok": True, "said": "The private link is taken away (after a restart CloudWall is open to whoever can reach it).",
                     "restart": True}
         if action == "show":

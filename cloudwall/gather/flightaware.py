@@ -19,12 +19,9 @@ def _ts(value):
 
 
 def pick_flight(flights, now):
-    """AeroAPI returns several days of legs for one flight number: choose the one in the air.
-
-    Airborne means actual_off is set and actual_on is not. A flight that left the
-    runway a minute ago may not be marked yet, so otherwise take the leg whose
-    departure is closest to now (within three hours) and has not landed.
-    """
+    """Of AeroAPI's several days of legs, the one in the air (actual_off set, actual_on not);
+    else, since a fresh takeoff may not be marked yet, the unlanded leg departing closest to now
+    (within three hours)."""
     live = [f for f in flights if not f.get("cancelled") and not f.get("actual_on")]
     airborne = [f for f in live if f.get("actual_off")]
     if airborne:
@@ -46,8 +43,7 @@ class FlightAware(LiveProvider):
         return {"x-apikey": self.key}
 
     def _airport(self, a):
-        """Flight results carry airport codes but no coordinates. The bundled airport table
-        has nearly all of them; only the rest are looked up (billed) and kept."""
+        """Flight results carry no coordinates: from the bundled table, else looked up (billed) and cached."""
         local = airports.lookup(a.get("code_icao")) or airports.lookup(a.get("code_iata"))
         if local:
             return airports.describe(icao=local["icao"])

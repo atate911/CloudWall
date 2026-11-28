@@ -2,7 +2,7 @@
 // Profiles (profiles.js) are in metres: stations s run aft from the nose tip and heights z
 // run up from the keel. Fuselage outlines are given in fuselage heights (D) so that a
 // family's stretches share one nose and tail. The drawing faces right.
-import { profileFor } from "./profiles.js";
+import { profileFor, variesByName } from "./profiles.js";
 
 const tan = (deg) => Math.tan((deg * Math.PI) / 180);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -25,9 +25,8 @@ class Sketch {
     if (y > b[3]) b[3] = y;
     return [x, y];
   }
-  // A smooth path through [s, z, flags] points. Flag "l" draws a straight line to the next
-  // point; "c" makes a corner. Curves leave a straight neighbour along it, so a nose
-  // blends into the cabin without bulging.
+  // A smooth path through [s, z, flags] points. Flag "l": a straight line to the next point;
+  // "c": a corner. Curves leave a straight neighbour along it.
   curve(pts, closed = true) {
     const n = pts.length, P = pts.map(([s, z]) => this.xy(s, z));
     const at = (i) => (closed ? (i + n) % n : Math.max(0, Math.min(n - 1, i)));
@@ -67,8 +66,7 @@ class Sketch {
 
 // ---------- fuselage ----------
 
-// The outline as one closed loop: nose tip, crown, tail, keel (with the wing-to-body fairing
-// bulging under it), back to the nose.
+// The outline as one closed loop: nose tip, crown, tail, keel (with the fairing), back to the nose.
 function hull(f, fair) {
   const D = f.D, L = f.L, pts = [];
   if (f.body) return f.body.map(([s, z, fl]) => [s * D, z * D, fl]);
@@ -81,7 +79,6 @@ function hull(f, fair) {
   bot[bot.length - 1][2] = "l";
   pts.push(...bot);
   if (fair && fair.points) {
-    // a measured fairing outline: [s, z] points front to back (z negative below the keel)
     const p = fair.points;
     p.slice().reverse().forEach(([s, z], i) => pts.push([s, z, i === p.length - 1 ? "l" : ""]));
   } else if (fair) {
@@ -112,8 +109,7 @@ function edge(pts, upper) {
 
 // ---------- lifting surfaces ----------
 
-// Planform of one wing (or tailplane half): the section at fraction e of the exposed span,
-// placed back by the sweep and up by the dihedral.
+// Returns e -> the section at fraction e of the exposed span, placed by sweep and dihedral.
 function planform(w) {
   const y0 = w.root, y1 = w.span / 2, sw = tan(w.sweep), dh = tan(w.dih || 0);
   const [ek, ck] = w.kink || [0, w.cr];
@@ -163,12 +159,11 @@ function surface(sk, cls, w) {
   return sec;
 }
 
-// Wingtip devices at the tip section q. Heights and chords in metres; sweep of the
-// leading edge in degrees.
+// Wingtip devices at the tip section q. Metres; leading-edge sweep in degrees.
 function winglet(sk, q, t) {
   const le = q.le, c = q.c, z = upper(q, 0.3), sw = tan(t.sweep ?? 40);
   if (t.type === "fence") {
-    // Airbus wingtip fence: an arrowhead above and below the tip
+    // Airbus wingtip fence
     sk.poly("wl", [[le - c * 0.15, z - 0.02], [le + c * 0.62, z + t.h], [le + c * 1.02, z + t.h - 0.04], [le + c * 0.98, z],
       [le + c * 0.98, z - t.lo], [le + c * 0.6, z - t.lo + 0.04], [le - c * 0.15, z - 0.12]]);
     return;
@@ -216,7 +211,6 @@ function fan(sk, s0, zc, n) {
     ...(long ? [[S(0.6), zc - 0.93 * R * lo]] : []),
     [S(0.3), zc - R * lo], [S(0.07), zc - 0.95 * R * lo], [S(0), zc - 0.78 * R * lo, "l"],
   ]);
-  // the inlet seen slightly from ahead, and the cowl seams
   sk.ellipse("inlet", S(0.012), zc + 0.01 * R, 0.07 * R, 0.79 * R * (1 + lo) / 2);
   if (!long && !n.plain) {
     sk.poly("hl", [[S(0.24), zc + R * 0.99], [S(0.24), zc - R * lo * 0.99]], false);
@@ -277,9 +271,8 @@ function inset(pts, d) {
   });
 }
 
-// Antennas and probes as the airport-planning documents' "Antennas and Probes Location" figures draw
-// them. Stations s from the nose tip (s < 0: from the tail-cone end), metres. On the spine (dir 1) or
-// the belly (dir -1), sitting on the fuselage line:
+// Antennas and probes. Stations s from the nose tip (s < 0: from the tail-cone end), metres.
+// On the spine (dir 1) or the belly (dir -1):
 //   ["blade", s0, s1, h, dir]  a swept blade on a base from s0 to s1, its tip raked aft
 //   ["dome", s0, s1, h, dir]   a low radome;  ["flat", s0, s1, h, dir] a flush plate antenna
 //   ["stub", s0, s1, h, dir]   a short mast with a cap (the ATC transponder antennas)
@@ -352,17 +345,14 @@ function draw(f) {
     fan(sk, s0, zc, e);
   }
 
-  // fuselage, with a little roundness from the light above
+  // fuselage
   const hd = sk.smooth("hull", H);
   sk.path("shade", hd, ` fill="url(#${id})"`);
-  // one-off parts a profile draws itself; see kit below
-  // shaded(pts): a fuselage-coloured shape with the fuselage's shading (fairings, bulges)
   const shaded = (pts, cls = "hull") => { const d = sk.smooth(cls, pts); sk.path("shade", d, ` fill="url(#${id})"`); return d; };
   const kit = { sk, f, D, L, top, bottom, at, sec: null, fan, prop, propNacelle, surface, pylon, upper, lower, tan, lerp, shaded, gradient: id };
   kit.aerials = (list) => aerials(kit, list);
   for (const extra of f.extras || []) extra(kit);
 
-  // doors, cabin windows and the flight deck glazing
   const doors = (f.doors || []).map(([s, wd, kind = "D", anchor, h, sill]) => ({ s: anchor === "w" ? w.le + s : at(s), w: wd, kind, h, sill }));
   const floor = (f.floor ?? 0.36) * D;
   for (const d of doors) {
@@ -393,7 +383,6 @@ function draw(f) {
   // tailplane
   if (f.stab) {
     const t = f.stab, z = t.z === "T" ? finTop - (t.drop ?? 0.1) : t.fz != null ? lerp(finAt.zr, finTop, t.fz) : t.z * D;
-    // or its side view as traced off the type's drawing, like wingSide
     if (f.stabSide) for (const [cls, pts, closed = true] of f.stabSide) sk.smooth(cls, pts, closed);
     else surface(sk, "stab", { root: t.root ?? 0.3, ...t, le: L - t.le, z, t: [t.thick ?? 0.1, 0.08] });
     if (t.z === "T" && t.bullet) {
@@ -405,8 +394,7 @@ function draw(f) {
   // wing, its tips, the flap track fairings, then the engines in front of it
   let sec = null;
   if (w) {
-    // a family may give the wing's side view as traced off its drawing: [cls, [[s, z, flag]...], closed?]
-    // parts drawn instead of the computed one (the planform still places struts, engines and tips)
+    // a traced wingSide is drawn instead of the computed one (the planform still places struts, engines and tips)
     if (f.wingSide) {
       sec = kit.sec = planform(w);
       for (const [cls, pts, closed = true] of f.wingSide) sk.smooth(cls, pts, closed);
@@ -439,14 +427,13 @@ function draw(f) {
   const defs = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop class="g-hi" offset="0"/><stop class="g-mid" offset=".38"/><stop class="g-lo" offset="1"/></linearGradient></defs>`;
   return { inner: defs + sk.out.join(""), box: sk.box, L };
 }
-export { draw as _draw, profileFor as _profile };
+export { profileFor as _profile };
 
 function svg(d) {
   const [x0, y0, x1, y1] = d.box, m = (x1 - x0) * 0.015;
   return `<svg class="sil" viewBox="${(x0 - m).toFixed(2)} ${(y0 - m).toFixed(2)} ${(x1 - x0 + 2 * m).toFixed(2)} ${(y1 - y0 + 2 * m).toFixed(2)}" aria-hidden="true">${d.inner}</svg>`;
 }
 
-// Fixed undercarriage: a leg from the airframe to a wheel, with an optional spat.
 function gear(sk, g, D, at) {
   const s = at(g.s), r = g.r;
   if (g.skid) {
@@ -464,7 +451,6 @@ function gear(sk, g, D, at) {
   else sk.ellipse("hub", ws, wz, r * 0.4, r * 0.4);
 }
 
-// Main rotor seen from the side: mast, hub and the disc as a thin line; tail rotor disc.
 function rotor(sk, r, at) {
   const s = at(r.s), z = r.z, R = r.d / 2;
   sk.poly("strut", [[s - 0.09, z - r.mast], [s + 0.09, z - r.mast], [s + 0.07, z], [s - 0.07, z]]);
@@ -487,12 +473,11 @@ function rotor(sk, r, at) {
 
 const cache = new Map();
 let copies = 0;
-// The drawing for an aircraft type (ICAO code), falling back to a generic family for its
-// broad shape; length in metres sets the stretch; name (model names) picks a variant.
-// Returns { svg, w, h }: the markup and its drawn size in metres (margins included), so
-// drawings can be laid side by side at one scale.
+// Returns { svg, w, h }: the markup and its drawn size in metres (margins included).
 export function drawing(type, shape, length, name = "") {
-  const key = `${type}|${shape}|${length}|${name}`;
+  // the model names are in the key only where they choose the drawing: every registry's spelling
+  // of "737-8H4" would otherwise keep a copy of the same picture
+  const key = `${type}|${shape}|${length}|${variesByName(type) ? name : ""}`;
   if (!cache.has(key)) {
     const f = profileFor(type, shape, length, name);
     if (!f) cache.set(key, { svg: "", w: 0, h: 0 });
@@ -506,7 +491,5 @@ export function drawing(type, shape, length, name = "") {
   return { ...c, svg: c.svg.replace(/(id="|url\(#)(sil\d+)/g, `$1$2-${n}`) };
 }
 export const silhouette = (type, shape, length, name = "") => drawing(type, shape, length, name).svg;
-// Share of the available width a given aircraft should fill: a 777 across its sheet and a Cessna
-// well over half of it, so the larger is still plainly the larger but the smaller isn't lost in an
-// empty sheet (the dimension line under each says how long it really is)
+// Share of the available width an aircraft fills: size-compressed, so a Cessna isn't lost beside a 777.
 export const silhouetteScale = (lengthM) => 0.58 + 0.42 * Math.sqrt(Math.min(1, Math.max(0, (lengthM - 6) / 70)));

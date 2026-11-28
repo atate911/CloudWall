@@ -1,32 +1,14 @@
-"""Every problem CloudWall knows how to recognise, written once: what it is, why it happens, what
-it means for the owner, and what to do, step by step. A check that finds one names it by its code
-(health.trouble("feeds.all-down", ...)); `cloudwall doctor`, the screens' warning, the control board's Home
-page, the log and `cloudwall report` all take their words from here.
-
-subtle: nothing looks wrong on the screens, but what they show is false (a frozen feed, a deaf
-receiver, a clock or time zone that is off, sample data taken for real). These are found by
-checking what the data should look like, not whether it arrives, and are said with "this looks
-right but isn't" so the owner doesn't trust the screens meanwhile.
-
-major: the problem stops CloudWall doing its main job (showing the sky over the house, or keeping
-its logbook). Major problems are said loudly: an error in the log, a banner on every screen, the
-service's status line, `cloudwall doctor`'s exit code, and the alert webhook if one is set.
-
-repair: the name of a repair (operate/repair.py) that fixes it; "auto" ones CloudWall makes by
-itself as soon as it sees the problem, the others `cloudwall doctor --fix` makes when asked.
-
-To add a problem: an entry here, and a check that finds it. A test fails if a check names a code
-that isn't here, or an entry lacks its steps.
+"""Every problem CloudWall recognises, by code, with its words for the owner; checks name one
+with health.trouble(code). To add a problem: an entry here and a check that finds it (a test
+fails if a check names an unknown code, or an entry lacks steps).
 """
 from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class Ask:
-    """Something only the owner can tell CloudWall to fix a problem: `cloudwall doctor --fix` asks
-    it at the terminal, and the control board as a form. kind says how the answer is checked and
-    used: "place" (a ZIP code, or lat, lon), "secret" (typed unseen), "port", "timezone", "yes",
-    "choice" (one of a setting's words) or "text"."""
+    """A question only the owner can answer, asked by `cloudwall doctor --fix` or the control
+    board. kind: "place" (ZIP, or lat, lon), "secret", "port", "timezone", "yes", "choice" or "text"."""
     name: str
     question: str
     kind: str = "text"
@@ -35,15 +17,15 @@ class Ask:
 
 @dataclass(frozen=True)
 class Trouble:
-    title: str                  # what is wrong, in a few words
+    title: str
     means: str                  # what it means for the owner
-    causes: tuple = ()          # why it usually happens, most likely first
+    causes: tuple = ()          # most likely first
     steps: tuple = ()           # what to do, in order
-    major: bool = False
+    major: bool = False         # stops the main job (the sky over the house, the logbook): said loudly
     repair: str = None          # a repair's name in operate/repair.py
-    auto: bool = False          # made by CloudWall itself, without asking
-    subtle: bool = False        # the screens look right while showing something false: said as such
-    asks: tuple = ()            # what the owner is asked, to fix it with them (Ask)
+    auto: bool = False          # the repair is made without asking; else by `cloudwall doctor --fix`
+    subtle: bool = False        # the screens look right while showing something false
+    asks: tuple = ()            # Ask
 
 
 def _t(title, means, causes=(), steps=(), **kw):
@@ -53,7 +35,7 @@ def _t(title, means, causes=(), steps=(), **kw):
 
 
 CATALOGUE = {
-    # -- settings ------------------------------------------------------------------------------
+    # settings
     "settings.broken": _t(
         "the settings file can't be used",
         "CloudWall is running on the last settings that started, or not at all: changes made since aren't in use.",
@@ -93,7 +75,7 @@ CATALOGUE = {
         ["Correct what `cloudwall doctor` names before CloudWall next restarts (or a power cut restarts it).",
          "Or copy config.toml.good back over config.toml to undo the edit."], major=True),
 
-    # -- storage -------------------------------------------------------------------------------
+    # storage
     "storage.full": _t(
         "the disk is full",
         "Flyovers and the heatmap aren't being saved, and other programs on this machine may fail too.",
@@ -131,7 +113,7 @@ CATALOGUE = {
         ["a power cut or a full disk while it was being written"],
         ["Restore the latest backup (`cloudwall restore <file> --yes`) to get the history back."]),
 
-    # -- positions -----------------------------------------------------------------------------
+    # positions
     "feeds.no-positions": _t(
         "no positions are arriving",
         "The screens show no aircraft: the board is offline.",
@@ -145,7 +127,7 @@ CATALOGUE = {
         "CloudWall carries on with the public feeds, a few seconds behind and without what only your receiver hears.",
         ["the receiver is off or its decoder has stopped", "the tunnel from the receiver is down",
          "the receiver's address changed"],
-        ["On the receiver: `sudo bash tools/adsb_check.sh`.",
+        ["On the receiver: its own page (adsb.im's, at its address) says whether its decoder is running.",
          "The tunnel: `systemctl status adsb-tunnel` on the receiver, `bash deploy/feed-tunnel/vps-tunnel.sh status` here.",
          "Then `cloudwall doctor` here."]),
     "feeds.public-down": _t(
@@ -153,14 +135,21 @@ CATALOGUE = {
         "CloudWall moves on to the next feed in [source] urls.",
         ["the community feed is down or has changed its address"],
         ["Usually passes within the hour.", "If it lasts a day, take it out of [source] urls."]),
+    "weather.old": _t(
+        "the airport's weather isn't arriving",
+        "The screens mark the last report as old, and the flight category and wind on them say how it was, not how it is.",
+        ["aviationweather.gov is out of reach or having trouble", "the airport's station has stopped reporting",
+         "the airport has no weather station (a small field)"],
+        ["It usually comes back by itself: CloudWall asks again every few minutes.",
+         "If it never has any, set [airport] icao to a nearby airport that reports weather."]),
     "feeds.stale": _t(
         "a feed answers with old data",
         "Its web server is up but its decoder has stopped, so its aircraft are frozen or missing.",
         ["the receiver's decoder (readsb) stopped or lost its SDR"],
-        ["On the receiver: `sudo bash tools/adsb_check.sh`; it names a stopped container.",
+        ["On the receiver: its own page (adsb.im's) names a stopped container.",
          "Restarting the receiver usually brings it back."]),
 
-    # -- routes --------------------------------------------------------------------------------
+    # routes
     "routes.key-rejected": _t(
         "the paid route provider refuses the key",
         "Routes come from the free database meanwhile, which is sometimes wrong.",
@@ -174,7 +163,7 @@ CATALOGUE = {
         ["more traffic than the budget was set for", "a smaller plan"],
         ["Raise [flightradar24] safety_margin to spread them thinner, or set mode = \"fallback\"."]),
 
-    # -- the clock -----------------------------------------------------------------------------
+    # the clock
     "clock.unsynced": _t(
         "the clock isn't synchronised",
         "Positions are timed by the clock: a wrong one makes aircraft jump, or look stale and vanish.",
@@ -186,7 +175,7 @@ CATALOGUE = {
         ["this machine's clock (or the receiver's) is off"],
         ["`timedatectl` on each machine; `sudo timedatectl set-ntp true` where it isn't synchronised."]),
 
-    # -- the service and the install -----------------------------------------------------------
+    # the service and the install
     "service.down": _t(
         "the CloudWall service isn't running",
         "No screen gets anything.",
@@ -198,25 +187,6 @@ CATALOGUE = {
         "After a reboot or a power cut the board stays dark until someone starts it.",
         ["it was disabled by hand"],
         ["`sudo systemctl enable cloudwall`."], repair="enable-service"),
-    "service.duplicate": _t(
-        "two CloudWalls are set up on this machine",
-        "They fight over the port: one fails, and which one runs can change at each boot.",
-        ["the old per-user service (`make service`) was left on after the system install"],
-        ["`sudo python3 -m cloudwall upgrade` (from the checkout) moves the old one's logbooks in and turns it off."], major=True,
-        asks=[Ask("migrate", "Move the old per-user CloudWall's logbooks into the system install and turn it off?", "yes")]),
-    "service.legacy": _t(
-        "CloudWall runs as the old per-user service",
-        "It works, but lives in a home folder: a rebuild or a new machine means setting it up by hand again.",
-        ["it was set up with `make service`, before `cloudwall install` existed"],
-        ["From the checkout: `sudo python3 -m cloudwall upgrade --dry-run` to see what it would do, then "
-         "`sudo python3 -m cloudwall upgrade` (MIGRATION.md walks through it)."],
-        asks=[Ask("migrate", "Move it to the system install now? (logbooks and settings come too)", "yes")]),
-    "service.no-linger": _t(
-        "the per-user service won't start after a reboot",
-        "It runs only while its user is logged in: after a reboot or power cut the board stays dark.",
-        ["`loginctl enable-linger` failed when it was set up (the old Makefile ignored that)"],
-        ["`sudo loginctl enable-linger <user>` (or move to the system install: `sudo python3 -m cloudwall upgrade`)."],
-        repair="enable-linger"),
     "service.restart-needed": _t(
         "CloudWall's code was updated but the old version is still running",
         "Screens load the new pages from the old server, so anything new doesn't work yet.",
@@ -230,7 +200,7 @@ CATALOGUE = {
     "server.port-taken": _t(
         "another program has CloudWall's port",
         "CloudWall can't answer the screens.",
-        ["a second CloudWall (an old per-user one), or another program on the same port"],
+        ["another program on the same port"],
         ["See which: `sudo ss -ltnp | grep :5050`.", "Stop it, or move CloudWall to another [server] port."],
         major=True,
         asks=[Ask("port", "A port for CloudWall instead (screens and bookmarks will need it too)", "port", "5051")]),
@@ -240,7 +210,7 @@ CATALOGUE = {
         ["CloudWall isn't running", "it is on another port"],
         ["Start it (`sudo systemctl start cloudwall`), and check [server] port."]),
 
-    # -- access --------------------------------------------------------------------------------
+    # access
     "access.open": _t(
         "CloudWall is on the internet with nothing to keep strangers out",
         "Anyone who finds the address can watch, add places and spend paid lookups.",
@@ -253,7 +223,7 @@ CATALOGUE = {
         ["Make a new key: `sudo cloudwall --private-link new` (open the new link on each screen).",
          "Optionally clear old logs: `sudo journalctl --rotate --vacuum-time=1s`."],
         asks=[Ask("rotate", "Make a new private link now? Every screen will need the new link", "yes")]),
-    # -- the receiver, the tunnel and what else was set up around CloudWall ---------------------
+    # the receiver, the tunnel and what else was set up around CloudWall
     "receiver.moved": _t(
         "the receiver says it is somewhere else",
         "Distances and directions from your receiver's data are worked out from the wrong place.",
@@ -291,25 +261,20 @@ CATALOGUE = {
         "It works, but is set up and updated apart from CloudWall.",
         ["it was installed from its own branch before it was folded in"],
         ["Leave it for now: it is folded into CloudWall in a later stage (ROADMAP.md)."]),
-    "sharing.root-page": _t(
-        "the sharing page is running as root on the network",
-        "Anyone on the home network can change the receiver's data sharing through it.",
-        ["it was started by hand and left running"],
-        ["Stop it (Ctrl-C where it was started, or `sudo pkill -f sharing_guide.py`) when you're done with it."]),
 
-    # -- subtle: the screens look right, but aren't -------------------------------------------------
+    # subtle: the screens look right, but aren't
     "feeds.frozen": _t(
         "a feed keeps giving the same answer",
         "Its aircraft look fine but have stopped moving or updating: what the screens show is old.",
         ["the receiver's decoder hung while its web server goes on", "a proxy or cache in between serving a stored copy"],
-        ["On the receiver: `sudo bash tools/adsb_check.sh`.", "Restart the receiver's decoder (or the receiver)."],
+        ["Restart the receiver's decoder (or the receiver)."],
         subtle=True),
     "receiver.deaf": _t(
         "your receiver answers but hears almost nothing",
         "It is up and answering, so nothing looks wrong, but the aircraft on the screens come from the public feeds alone.",
         ["the antenna or its cable is disconnected or damaged", "the SDR failed or its gain is set far too low",
          "the receiver is set to a frequency other than 1090 MHz"],
-        ["On the receiver: `sudo bash tools/adsb_check.sh` (it shows the message rate and signal).",
+        ["The control board's Receiver page shows its message rate and signal.",
          "Check the antenna's cable at both ends.", "Unplug the SDR and plug it back in, then restart the receiver."],
         subtle=True),
     "receiver.lagging": _t(
@@ -347,7 +312,7 @@ CATALOGUE = {
         ["Check [home] against a map (lat is about 45 for Portland, lon about -122).", "Restart CloudWall after fixing it."],
         subtle=True),
 
-    # -- anticipating ------------------------------------------------------------------------------
+    # anticipating
     "backup.none": _t(
         "there is no recent backup",
         "If this machine's disk failed, the logbooks and settings would be gone.",

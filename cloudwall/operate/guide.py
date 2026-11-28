@@ -1,16 +1,5 @@
-"""Fixing problems with the owner: `cloudwall doctor --fix` at a terminal (and, with the same
-answer() underneath, the control board's forms).
-
-For each problem doctor found, worst first:
-  1. what it is and what it means, in plain words;
-  2. a repair CloudWall can make by itself, offered (yes or no);
-  3. what only the owner knows (the house's ZIP code, a new key, a free port, the time zone),
-     asked for, checked, and written where it belongs (troubles.Ask);
-  4. otherwise the steps, one at a time, checking again after each, until the problem is gone or
-     the owner moves on.
-
-answer(code, name, value, ...) is the one place an answer is checked and used: the terminal and
-the control board both go through it, so a ZIP code is checked the same way wherever it is typed.
+"""Fixing problems with the owner: `cloudwall doctor --fix` at a terminal (walk) and the control
+board's forms. answer() is the one place an answer is checked and used; both go through it.
 """
 import getpass
 import os
@@ -37,7 +26,7 @@ def _config_path(ctx):
 
 def answer(code, name, value, ctx, system=None, machine=None, finding=None):
     """Check one answer to a problem's question (troubles.Ask) and use it. Returns what was done,
-    in words; raises Answered with what is wrong with it."""
+    in words (None: left as it was); raises Answered with what is wrong with it."""
     value = (value or "").strip() if isinstance(value, str) else value
     path = _config_path(ctx)
     if code == "settings.placeholder":
@@ -101,17 +90,6 @@ def answer(code, name, value, ctx, system=None, machine=None, finding=None):
         key = keys.new_key()
         config.write_setting(path, "server", "key", key)
         return f"a new private link: .../k/{key}/  (open it on each screen; restart CloudWall to use it)"
-    if code in ("service.legacy", "service.duplicate"):
-        if not _yes(value):
-            return None
-        from . import legacy
-        from .survey import installs
-        old = next((i for i in installs(machine) if i["kind"] == "user"), None) if machine else None
-        if not old or system is None:
-            raise Answered("Run: sudo python3 -m cloudwall install, then sudo cloudwall migrate-legacy")
-        home = Path(old["data"]).parents[2]
-        legacy.migrate(system, home, old["user"], old.get("checkout") or home)
-        return "moved onto the system install"
     if code == "backup.none":
         if not _yes(value):
             return None
@@ -154,8 +132,8 @@ class Terminal:
 
 
 def walk(findings, io, ctx, system, machine, recheck):
-    """Go through the problems with the owner. recheck(): the findings now (doctor again).
-    Returns [(code or summary, what happened)]."""
+    """Go through the problems, worst first: offer a repair, else ask what only the owner knows,
+    else walk the steps. recheck(): the findings now. Returns [(code or summary, what happened)]."""
     from .repair import REPAIRS
     todo = sorted([f for f in findings if f.state in (WARN, FAIL)], key=lambda f: (not f.major, ORDER[f.state]))
     if not todo:

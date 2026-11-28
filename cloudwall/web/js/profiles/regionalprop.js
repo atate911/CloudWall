@@ -56,13 +56,7 @@ const marks = (parts) => ({ sk }) => {
 };
 
 // ---------- Embraer EMB 120 Brasilia ----------
-// Reference: Wikimedia Commons "Embraer EMB 120 Brasilia v1.0.png" (Julien Scavini; dimensioned
-// side, top, front and section views), its side view scaled to the published length of 20.00 m
-// (span 19.78 m, height 6.35 m: Wikipedia). The drawing sits nose-down on its gear: measured from
-// the fuselage datum, 1.6 degrees off its ground line. Slim tube with a long tapered nose, low wing
-// with marked dihedral, deep PW118 nacelles standing above the wing and running well past its
-// trailing edge, big swept T-tail on a long dorsal, airstair door ahead of the propeller and a
-// cargo door at the back on the left side.
+// Reference: Wikimedia Commons "Embraer EMB 120 Brasilia v1.0.png", scaled to the published length of 20.00 m
 F.e120 = {
   kind: "turboprop", L0: 18.84, over: 1.16, D: 2.24, W: 2.28, fwd: 0.5, fair: 0.04, fairFwd: 0.1, fairAft: 1.05, floor: 0.2,
   nose: {
@@ -100,16 +94,7 @@ F.e120 = {
 };
 
 // ---------- Fokker 50 ----------
-// Reference: Wikimedia Commons "KLM Fokker 50.png" (Marcusroos; a side-on profile drawing, 3,311 px
-// long), scaled to the published length of 25.25 m (span 29.00 m, height 8.32 m, propellers
-// 3.66 m: Wikipedia). The profile draws the fuselage 3% too deep and the nacelles too high, so the
-// heights are taken down to near side-on photos: the fuselage to the 2.7 m the I-SIXA photo below
-// gives, and the nacelles to where it and "Fokker 50, KLM Cityhopper AN1236546.jpg" (PH-LXR) show
-// them, hanging well down the fuselage side with the spinner at window height. The F27-500
-// airframe: high wing on top of a round fuselage, nacelles slung under it running far past the
-// trailing edge with the exhaust on their outer side, a broad fin on a long straight dorsal fillet,
-// and a low tailplane with strong dihedral. Twice the F27's windows, smaller, and six-bladed
-// propellers.
+// Reference: Wikimedia Commons "KLM Fokker 50.png", scaled to the published length of 25.25 m
 F.f50 = {
   kind: "turboprop", L0: 25.25, over: 0, D: 2.72, W: 2.7, fwd: 0.5, fair: 0, floor: 0.2,
   nose: {
@@ -142,12 +127,7 @@ F.f50 = {
   ],
 };
 
-// Fokker F27 Friendship, drawn as the F27-500 (25.06 m, the length Wikipedia gives and the model
-// most of the surviving fleet are): the same airframe 0.19 m shorter, half as many cabin windows,
-// each a large oval, Dart nacelles whose jet pipe ends in a cone at the back rather than the
-// Fokker 50's side exhaust, and four-bladed Dowty Rotol propellers of about 3.5 m (132 in in the UK
-// CAA's data sheet). Checked against near side-on Commons photos of I-SIXA ("Six Cargo I-SIXA
-// f27-500 Coventry 02-01-07") and OY-APA ("Maersk Air Fokker F-27-500 OY-APA.jpg").
+// Fokker F27 Friendship, drawn as the F27-500: the same airframe 0.19 m shorter, half as many cabin windows
 F.f27 = {
   ...F.f50, L0: 25.06,
   win: [{ z: 0.5, from: 7.0, to: 16.3, pitch: 0.927, w: 0.32, h: 0.48 }],
@@ -161,14 +141,7 @@ F.f27 = {
 };
 
 // ---------- Saab 340 ----------
-// Reference: Wikimedia Commons "Saab 340B-Plus, Japan Airlines - JAL (Japan Air Commuter - JAC)
-// AN1620908.jpg" (JA001C, a near side-on photo, taxiing), scaled to the published length of
-// 19.73 m from the nose to the fin tip (span 21.44 m, height 6.97 m, propellers 3.35 m:
-// Wikipedia), checked against "Regional Express Saab 340 VH-ORX Adelaide 2024 (01).jpg". A
-// round, short fuselage with a blunt nose, low wing with marked dihedral, deep CT7 nacelles over
-// the wing with the intake under the spinner, a big swept fin on a long dorsal, and a low
-// tailplane with strong dihedral; the airstair door ahead of the propellers, an overwing exit
-// and the cargo door at the back on the left.
+// Reference: a near side-on Commons photo of Saab 340B JA001C, scaled to the published length of 19.73 m
 F.sf34 = {
   kind: "turboprop", L0: 19.54, over: 0.19, D: 2.37, W: 2.31, fwd: 0.5, fair: 0.04, fairFwd: 0.1, fairAft: 1.05, floor: 0.2,
   nose: {
@@ -198,14 +171,7 @@ F.sf34 = {
 };
 
 // ---------- CASA/IPTN CN-235 ----------
-// Reference: Wikimedia Commons "EADS CASA CN-235.svg" (Sorruno; side and plan views), the side view
-// scaled to the published length of 21.40 m (span 25.81 m, height 8.18 m: Wikipedia) and the wing
-// and tailplane planforms taken off its plan view. A wide, deep fuselage under a high wing, the
-// nacelles riding level with the crown and running back over it, the main wheels in a long sponson
-// on the lower fuselage side, a passenger door at the back ahead of the upswept tail with its
-// loading ramp, a ventral strake, and a tall swept fin on a long straight dorsal. The drawing shows
-// the four-bladed Hamilton Standard 14RF propellers smaller than they are: they are drawn here at
-// 3.35 m, the diameter Jane's gives the 14RF on the Saab 340.
+// Reference: Wikimedia Commons "EADS CASA CN-235.svg", scaled to the published length of 21.40 m
 const cnSponson = ({ shaded }) => shaded([[5.91, 0.16, "c"], [6.51, 0.57], [7.44, 0.92], [8.59, 1.08], [9.65, 1.06], [10.46, 0.92],
   [11.04, 0.63], [11.35, 0.4, "c"], [11.16, 0.11], [10.69, -0.22], [9.42, -0.3], [7.68, -0.26], [6.51, -0.13], [6.05, 0.05]]);
 F.cn35 = {
@@ -245,13 +211,7 @@ F.cn35 = {
 };
 
 // ---------- Grumman Gulfstream I (G-159) ----------
-// Reference: Wikimedia Commons "Grumman G-159 Gulfstream I AN1488671.jpg" (N748AA taxiing, a near
-// side-on photo), scaled to the published length of 19.43 m, nose to rudder (span 23.92 m,
-// height 6.93 m: Wikipedia); the airstair door placed from "Bally's Park Place Casino Hotel Grumman
-// G-159 Gulfstream I N31CN.jpg". Wikimedia's small three-view ("Grumman Gulfstream I drawing.jpg")
-// is too rough to measure from. Low wing, long Dart nacelles reaching well ahead of it with
-// four-bladed Rotol propellers, a row of big oval cabin windows, a deep stand-up cabin under a
-// smooth crown with a small flight-deck hump, a rounded swept fin and a low tailplane.
+// Reference: Wikimedia Commons "Grumman G-159 Gulfstream I AN1488671.jpg", scaled to the published length of 19.43 m
 F.g159 = {
   kind: "turboprop", L0: 19.0, over: 0.43, D: 2.47, W: 2.4, fwd: 0.5, fair: 0.04, fairFwd: 0.1, fairAft: 1.05, floor: 0.2,
   nose: {
@@ -284,12 +244,7 @@ F.g159 = {
 };
 
 // ---------- Embraer EMB 110 Bandeirante ----------
-// Reference: Wikimedia Commons "G-OFLT Embraer EMB110 Bandeirante Flightline CVT 03-93
-// (46900426885).jpg" (a near side-on photo of an EMB 110P1), scaled to the published length of
-// 15.10 m to the tailplane tips (span 15.33 m, propellers 2.36 m: Wikipedia). A slim unpressurised
-// tube with square windows, a long tapering nose, low wing, slim PT6A nacelles slung well ahead of
-// it, a swept fin whose rudder overhangs the blunt tail cone, and a swept tailplane reaching
-// further back still.
+// Reference: Wikimedia Commons "G-OFLT Embraer EMB110 Bandeirante Flightline CVT 03-93 (46900426885).jpg"
 F.e110 = {
   kind: "turboprop", L0: 14.04, over: 1.06, D: 2.05, W: 1.7, fwd: 0.5, fair: 0, floor: 0.2,
   nose: {

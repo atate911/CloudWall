@@ -1,6 +1,5 @@
 """CloudWall checking itself (core/health.py, core/troubles.py, app/watch.py): each problem found,
-said once, repaired where that is safe, and the subtle ones, where the screens look right but
-aren't, found from what the data should look like."""
+said once, repaired where safe; the subtle ones found from what the data should look like."""
 import ast
 import os
 import socket
@@ -142,6 +141,21 @@ class WatchTest(unittest.TestCase):
         self.assertIn("feeds.no-positions", self.codes(w))
         place.tracker.status["updated"] = self.clock()
         self.assertNotIn("feeds.no-positions", self.codes(w))
+
+    def test_weather_that_stops_arriving_is_said(self):
+        place = FakePlace(self.clock)
+        place.weather = {"station": "KPDX", "time": self.clock()}
+        w = watch([place], clock=self.clock)
+        w.checks()
+        self.clock.t += 3600
+        place.tracker.status["updated"] = self.clock()
+        self.assertNotIn("weather.old", self.codes(w))                  # an hour old is how often a station reports
+        self.clock.t += 3 * 3600
+        place.tracker.status["updated"] = self.clock()
+        [found] = [f for f in w.checks() if f.code == "weather.old"]
+        self.assertIn("KPDX is 4 h old", found.summary)
+        place.weather = {"station": "KPDX", "time": self.clock()}
+        self.assertNotIn("weather.old", self.codes(w))
 
     def test_a_screen_opening_after_an_idle_pause_is_no_alarm(self):
         """Overnight with no screen (when_idle = pause), the last positions are hours old. The first

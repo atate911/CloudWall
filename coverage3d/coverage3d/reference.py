@@ -5,7 +5,6 @@ import csv
 import logging
 from pathlib import Path
 
-from . import geo
 
 log = logging.getLogger("coverage3d.reference")
 DATA = Path(__file__).parent / "data"
@@ -52,8 +51,3 @@ def load_peaks():
 
 def load_places():
     return [{"name": r["name"], "lat": float(r["lat"]), "lon": float(r["lon"])} for r in _read(DATA / "places.csv")]
-
-
-def nearest(places, lat, lon):
-    best = min(places, key=lambda p: geo.haversine_nm(lat, lon, p["lat"], p["lon"]))
-    return best, geo.haversine_nm(lat, lon, best["lat"], best["lon"])

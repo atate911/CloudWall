@@ -217,11 +217,6 @@ new code in place beside the old and restarts into it, but only once it has chec
 start with the new code; if they wouldn't, it says what to change and leaves the running CloudWall
 alone. `sudo cloudwall rollback` goes back to the release before.
 
-**Coming from `make service`** (the old per-user setup): the same `sudo python3 -m cloudwall upgrade`
-moves your settings and logbooks over and turns the old service off; [MIGRATION.md](MIGRATION.md)
-walks through it, server and receiver. Your old files stay where they were until you delete them.
-Until you move, `git pull` and `make restart` keep working the old way.
-
 **The control board:** set the owner's password (`sudo cloudwall owner`), then open
 `http://<this machine>:5050/admin`. Every part of CloudWall at a glance, every setting with what it
 does, and every problem it finds with what to do, fixable from the page.
@@ -230,7 +225,7 @@ does, and every problem it finds with what to do, fixable from the page.
 
 | Command | What it does |
 |---|---|
-| `sudo cloudwall upgrade` | From whatever runs here now to this code, in place: backs up, updates, moves an old setup over, checks (`rollback` goes back) |
+| `sudo cloudwall upgrade` | From whatever runs here now to this code, in place: backs up, updates, checks (`rollback` goes back) |
 | `sudo cloudwall owner` | Sets the owner's password for the control board (`/admin`) |
 | `sudo cloudwall install` | Sets the machine up, or brings it up to date (`--role panel` for a wall panel, `--public NAME` for the internet through Caddy; `--dry-run` says what it would change) |
 | `cloudwall doctor` | Checks every part (settings, storage, the service, the feeds, the receiver, the tunnel, Caddy, backups) and, for anything wrong, says what it means, why it usually happens and what to do |

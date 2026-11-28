@@ -1,7 +1,6 @@
-// The house on a map, with what its distances mean drawn where they reach: the tracking radius and
-// the overhead circle as rings around it, each with a handle to drag it bigger or smaller, the
-// airport where it is, and the aircraft in range now. The map is CloudWall's own tiles (/tiles/...,
-// fetched and cached by the server, only around places it watches); without them, a plain chart.
+// The house on a map with draggable rings (tracking radius, overhead circle), the airport and live
+// aircraft. Tiles are CloudWall's own (/tiles/..., cached by the server, only around watched places);
+// without them, a plain chart.
 import { el, esc, num } from "./core.js";
 import { distBrg } from "./draw.js";
 
@@ -94,7 +93,7 @@ export function houseMap(opt) {
     box.querySelector(".hmap-credit").textContent = o.credit || "";
   }
 
-  // dragging a ring's handle (or its line) sets its distance; snapped to its step
+  // dragging a ring's handle (or its line) sets its distance, snapped to its step
   over.addEventListener("pointerdown", (e) => {
     if (picking) return;
     const g = e.target.closest("[data-ring]");
@@ -117,7 +116,7 @@ export function houseMap(opt) {
   const drop = () => { if (!dragging) return; const r = dragging; dragging = null; box.classList.remove("dragging"); r.onDrop(r.nm); };
   over.addEventListener("pointerup", drop);
   over.addEventListener("pointercancel", drop);
-  // the keyboard: a focused handle moves by its step with the arrow keys
+  // arrow keys move a focused handle by its step
   over.addEventListener("keydown", (e) => {
     const g = e.target.closest("[data-ring]");
     if (!g) return;
@@ -129,7 +128,7 @@ export function houseMap(opt) {
     over.querySelector(`[data-ring="${ring.id}"] .ring-handle`)?.focus();
     clearTimeout(ring.kbTimer); ring.kbTimer = setTimeout(() => ring.onDrop(ring.nm), 700);
   });
-  // picking a new place for the house: a click on the map
+  // a click picks a new place for the house
   box.addEventListener("click", (e) => {
     if (!picking) return;
     const r = box.getBoundingClientRect();
@@ -149,7 +148,7 @@ export function houseMap(opt) {
   return box;
 }
 
-/** The tile around a place in a given layer at a given zoom, for a style's picture. */
+/** The tile URL around a place, for a style's picture. */
 export function tileAt(layer, lat, lon, z) {
   const [x, y] = world(lat, lon, z);
   return `tiles/${layer}/${z}/${Math.floor(x / TILE)}/${Math.floor(y / TILE)}`;

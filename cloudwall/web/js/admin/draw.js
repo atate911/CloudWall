@@ -1,7 +1,5 @@
-// The board's instruments, drawn in SVG from the numbers they show: a dial for a rate, a meter for
-// signal against noise, the receiver's reach as a polar plot, the paid allowance as a fuel gauge
-// with its reserve, the disk as one bar of what fills it, problems along a week, and the live scope.
-// Colours come from the page's own tokens (currentColor and CSS classes), so both themes hold.
+// The board's instruments, drawn in SVG: dial, signal meter, polar reach, fuel gauge, disk bar,
+// problem timeline, live scope. Colours come from CSS tokens (currentColor, classes), so both themes hold.
 import { esc, num, bytes } from "./core.js";
 
 const RAD = Math.PI / 180;
@@ -20,7 +18,7 @@ function arc(cx, cy, r, a0, a1) {
   return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${a1 - a0 > 180 ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
 }
 
-/** A dial: 240 degrees of sweep, coloured zones under the needle's arc, the value large in the middle. */
+/** A dial with 240 degrees of sweep. */
 export function gauge({ value, min = 0, max, unit = "", label = "", zones = [], fmt = (v) => num(v), ticks = 5 }) {
   const A0 = -120, A1 = 120, at = (v) => A0 + (Math.min(max, Math.max(min, v)) - min) / (max - min) * (A1 - A0);
   const known = value != null && !Number.isNaN(+value);
@@ -38,8 +36,7 @@ export function gauge({ value, min = 0, max, unit = "", label = "", zones = [], 
   </svg>`;
 }
 
-/** Signal against noise, in dBFS on one upright scale: the noise floor as a band, the average signal
- *  as a bar, the loudest as a tick at the top. (0 dBFS is the receiver's limit: everything is below it.) */
+/** Signal against noise in dBFS (0 is the receiver's limit: everything is below it). */
 export function signalMeter({ signal, noise, peak }) {
   const lo = -45, hi = 0, H = 150, y = (v) => 8 + (hi - Math.min(hi, Math.max(lo, v))) / (hi - lo) * H;
   const marks = [0, -10, -20, -30, -40].map((v) => `<text class="sm-mark" x="30" y="${y(v) + 3.5}" text-anchor="end">${v}</text><path class="sm-tick" d="M34 ${y(v)}h6"/>`).join("");
@@ -54,8 +51,7 @@ export function signalMeter({ signal, noise, peak }) {
   </svg>`;
 }
 
-/** The receiver's reach: the outline of its farthest positions over a day, as a shape around the
- *  house, with rings every 50 nm and the board's tracking radius drawn small in the middle. */
+/** The receiver's reach: the outline of its farthest positions over a day, with the tracking radius. */
 export function polar({ outline = [], at, radiusNm, maxNow, size = 360 }) {
   const c = size / 2, R = c - 22;
   const pts = at ? outline.map((p) => distBrg(at, { lat: p[0], lon: p[1] })) : [];
@@ -65,7 +61,7 @@ export function polar({ outline = [], at, radiusNm, maxNow, size = 360 }) {
   for (let n = 50; n <= scaleNm; n += 50) rings.push(n);
   const spokes = [0, 45, 90, 135, 180, 225, 270, 315].map((d) => { const [x, y] = polarXY(c, c, R, d); return `<path class="p-spoke" d="M${c} ${c}L${x.toFixed(1)} ${y.toFixed(1)}"/>`; }).join("");
   const shape = pts.length > 2 ? `<path class="p-reach" d="${pts.sort((a, b) => a[1] - b[1]).map(([d, b], i) => { const [x, y] = polarXY(c, c, d * k, b); return `${i ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`; }).join("")}Z"/>` : "";
-  // each ring's distance written where it crosses the south-east spoke, clear of the north
+  // ring labels on the south-east spoke, clear of the north
   const ringEls = rings.map((n) => { const [x, y] = polarXY(c, c, n * k, 135); return `<circle class="p-ring" cx="${c}" cy="${c}" r="${(n * k).toFixed(1)}"/><text class="p-ring-lab" x="${(x + 3).toFixed(1)}" y="${(y + 11).toFixed(1)}">${n}</text>`; }).join("") +
     (rings.length ? (() => { const n = rings[rings.length - 1], [x, y] = polarXY(c, c, n * k, 135); return `<text class="p-ring-lab" x="${(x + 3).toFixed(1)}" y="${(y + 23).toFixed(1)}">nm</text>`; })() : "");
   const card = [["N", 0], ["E", 90], ["S", 180], ["W", 270]].map(([t, d]) => { const [x, y] = polarXY(c, c, R + 12, d); return `<text class="p-card" x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle">${t}</text>`; }).join("");
@@ -75,9 +71,7 @@ export function polar({ outline = [], at, radiusNm, maxNow, size = 360 }) {
     ${spokes}${ringEls}${shape}${now}${track}<circle class="p-home" cx="${c}" cy="${c}" r="3.5"/>${card}</svg>`;
 }
 
-/** The paid allowance as a fuel gauge: what's been used, what's left to use, the reserve never
- *  touched, where today's even share ends, and where this rate of use would leave the month.
- *  Drawn 1000 wide, about the size it's shown, so its words are the page's size. */
+/** The paid allowance as a fuel gauge. Drawn 1000 wide, about the size it's shown, so its text is the page's size. */
 export function fuel({ budget, used, monthly, today, todayCap, starts, resets }) {
   if (!monthly) return "";
   const W = 1000, top = 26, h = 34, x = (v) => 4 + Math.min(1, Math.max(0, v / monthly)) * (W - 8);
@@ -100,7 +94,7 @@ export function fuel({ budget, used, monthly, today, todayCap, starts, resets })
   </svg>`;
 }
 
-/** Each day's use, as bars against today's even share. */
+/** Each day's use against today's even share. */
 export function burn(days = [], share) {
   if (!days.length) return "";
   const W = 1000, H = 120, base = H - 20, max = Math.max(1, share || 0, ...days.map((d) => d[1])) * 1.08, n = Math.max(days.length, 14), bw = (W - 8) / n;
@@ -112,7 +106,7 @@ export function burn(days = [], share) {
     <text class="b-lab" x="4" y="${H - 3}">${date(days[0][0])}</text><text class="b-lab" x="${4 + (days.length - 0.5) * bw}" y="${H - 3}" text-anchor="${days.length > n - 2 ? "end" : "middle"}">today</text></svg>`;
 }
 
-/** The disk as one bar: each part's share, then what's free. parts: [{label, bytes, cls}] */
+/** parts: [{label, bytes, cls}] */
 export function diskBar(parts, total) {
   const known = parts.filter((p) => p.bytes > 0);
   return `<div class="disk" role="img" aria-label="${known.map((p) => `${p.label} ${bytes(p.bytes)}`).join(", ")}">
@@ -121,7 +115,7 @@ export function diskBar(parts, total) {
   </div>`;
 }
 
-/** Problems over the last week: one lane per part, a bar from each problem's start to its end. */
+/** One lane per part, a bar from each problem's start to its end. */
 export function timeline(incidents = [], days = 7) {
   const now = Date.now() / 1000, t0 = now - days * 86400, W = 760, L = 120;
   const parts = [...new Set(incidents.filter((i) => (i.ended || now) > t0).map((i) => (i.part || "other").replace(/^running: /, "")))].slice(0, 8);
@@ -142,10 +136,7 @@ export function timeline(incidents = [], days = 7) {
   return `<svg class="timeline" viewBox="0 0 ${W} ${H}" role="img" aria-label="Problems over the last ${days} days">${grid}${lanes || `<text class="t-none" x="${(W + L) / 2}" y="${H / 2}" text-anchor="middle">Nothing in the last ${days} days</text>`}<path class="t-now" d="M${W - 8} 2V${H - 22}"/></svg>`;
 }
 
-// -- the live scope ------------------------------------------------------------------------------------
-/** The board's own picture of the sky around the house on a small radar, with a slow sweep (still,
- *  for anyone who asks for less motion): aircraft within the tracking radius, the one overhead in
- *  magenta as on the wall, the airport as a square. `get()` returns the latest /api/state. */
+/** A small radar of the sky around the house (sweep is still under reduced motion). `get()` returns the latest /api/state. */
 export function scope(canvas, get) {
   const ctx = canvas.getContext("2d"), t0 = performance.now();
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;

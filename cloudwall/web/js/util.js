@@ -7,29 +7,24 @@ export const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const RAD = Math.PI / 180;
 export const POINTS = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
 
-// The phone layout (app.js sets it from the screen's size): "stack" upright, where the panels take
-// their natural height and the page scrolls; "side" turned sideways, card and radar side by side.
+// The phone layout (set by app.js): "stack" upright, the page scrolls; "side" sideways, card and radar side by side.
 export function phone() {
   const c = document.documentElement.classList;
   return c.contains("phone") ? (c.contains("land") ? "side" : "stack") : null;
 }
 
 export const ident = (a) => a.flight_no || a.callsign || a.reg || a.hex.toUpperCase();
-// Seconds since the positions in a state were reported (app.js stamps each state with _at): what
-// to take off a countdown worked out at that moment.
-// How old the state's positions are, in seconds: from when the feed reported them.
+// Seconds since the state's positions were reported (app.js stamps each state with _at).
 export const dataAge = (state) => (state && state._at ? Math.max(0, (Date.now() - state._at) / 1000) : 0);
-// The same for the countdowns, which stop once the data is 20 s old rather than run on with nothing
-// new (the page marks it old): the server's times hold still between updates, so each redraw agrees.
+// The same for the countdowns, which stop once the data is 20 s old rather than run on with nothing new.
 export const COUNT_STOP_S = 20;
 export const since = (state) => Math.min(COUNT_STOP_S, dataAge(state));
-// The runways in use, in words: "28L / 28R" -> "28L and 28R"; "27C / 27L / 27R" -> "27C, 27L and 27R".
+// "28L / 28R" -> "28L and 28R"; "27C / 27L / 27R" -> "27C, 27L and 27R".
 export function runwayList(runways) {
   const r = String(runways || "").split(/\s*\/\s*/).filter(Boolean);
   return r.length > 1 ? `${r.slice(0, -1).join(", ")} and ${r[r.length - 1]}` : r.join("");
 }
-// A temperature for show: "54°F", or "–" when the report has none (a failed sensor does that),
-// which must not come out as 32°F.
+// "–" when the report has none (a failed sensor), which must not come out as 32°F.
 export const degF = (c) => (c == null ? "–" : `${Math.round((c * 9) / 5 + 32)}°F`);
 export const altText = (a) => (a.on_ground ? "GND" : a.alt == null ? "–" : num(a.alt));
 
@@ -71,17 +66,25 @@ export function store(key, value) {
   return value;
 }
 
-// Which place this screen shows, when CloudWall watches several: ?place= in the address, else
-// the desktop's choice from the place menu. Without either, the kiosk asks for the place its
-// settings name and any other screen gets the first. Every API call carries it.
+// Which place this screen shows: ?place= in the address, else the desktop's stored choice; without
+// either the server picks (the kiosk's setting, or the first). Every API call carries it.
 const PAGE = typeof location === "undefined" ? { search: "", pathname: "" } : location;   // no page: the tests' Node
 const PARAMS = new URLSearchParams(PAGE.search);
 const KIOSK_PAGE = /\/kiosk\/?$/.test(PAGE.pathname) || PARAMS.get("mode") === "kiosk";
 export const placeChoice = PARAMS.get("place") || (KIOSK_PAGE ? "" : store("place") || "");
+// A server that takes the connection and then says nothing would otherwise hold every poll open.
+const API_WAIT_MS = 15000;
 export function api(path, opts) {
   const q = placeChoice ? `place=${encodeURIComponent(placeChoice)}` : KIOSK_PAGE ? "kiosk=1" : "";
-  return fetch(q ? `${path}${path.includes("?") ? "&" : "?"}${q}` : path, opts);
+  const wait = !opts?.signal && typeof AbortSignal !== "undefined" && AbortSignal.timeout ? { signal: AbortSignal.timeout(API_WAIT_MS) } : null;
+  return fetch(q ? `${path}${path.includes("?") ? "&" : "?"}${q}` : path, wait ? { ...opts, ...wait } : opts);
 }
+
+// Airlines with no logo are left out for a while: the lists redraw every couple of seconds and each
+// would ask again (and flash an empty tile).
+const noLogo = new Map(), NO_LOGO_MS = 10 * 60 * 1000;
+export const logoFailed = (code) => { noLogo.set(String(code), Date.now()); };
+export const hasLogo = (code) => !!code && !(Date.now() - (noLogo.get(String(code)) || -Infinity) < NO_LOGO_MS);
 
 // "AERO MAINTENANCE INC" -> "Aero Maintenance Inc"; leaves mixed-case names alone.
 const KEEP_UPPER = new Set(["LLC", "LLP", "LP", "USA", "US", "FAA", "II", "III", "IV", "PDX", "CO.", "DBA"]);
@@ -92,7 +95,7 @@ export function tidyName(name) {
       : (w[0].toUpperCase() + w.slice(1)).replace(/^(O'|Mc)([a-z])/, (m, p, c) => p + c.toUpperCase()));
 }
 
-// Seats on board, from the bundled table: exact for a known airline layout, "about" for a type's typical count.
+// exact for a known airline layout, "about" for a type's typical count.
 export function seatWords(s) {
   if (!s) return null;
   if (s.basis === "cargo") return "Cargo, no passengers";

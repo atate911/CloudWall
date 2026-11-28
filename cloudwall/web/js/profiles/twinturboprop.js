@@ -50,14 +50,7 @@ const dorsal = (s0, z1, bulge = 0.5) => ({ sk, at, top, f, L, tan }) => {
 };
 
 // ---------- Piper PA-31T Cheyenne I and II ----------
-// Published dimensions (Wikipedia, from Jane's 1976-77): length 10.57 m (34 ft 8 in), span 13.01 m
-// over the tip tanks, height 3.89 m; propellers 2.36 m (7 ft 9 in), three blades. Stations of the
-// windshield, the two cabin windows, the airstair door, nacelles, tip tanks and fin measured off the
-// near side-on Commons photo "Piper PA-31T1 Cheyenne I Ursella, LUX Luxembourg (Findel), Luxembourg
-// PP1267311070.jpg" (HB-LQP), scaled by the overall length; door and window row checked against
-// "Piper PA-31T Cheyenne photo Don Ramey Logan.jpg". The Pressurized Navajo's fuselage with a long
-// pointed nose, low wing with long PT6A nacelles and tip tanks, swept fin over a low tailplane with
-// dihedral. The Cheyenne I and II share the airframe; the I has 500 shp PT6A-11s for the II's 620 shp.
+// Published dimensions (Wikipedia, from Jane's 1976-77): length 10.57 m (34 ft 8 in), span 13.01 m over the tip tanks
 F.pa31t = {
   kind: "turboprop", L0: 10.06, over: 0.51, D: 1.55, W: 1.35, fwd: 0.6, fair: 0,
   nose: {
@@ -83,13 +76,7 @@ F.pa31t = {
 };
 
 // ---------- Piper PA-42 Cheyenne III, IIIA and 400 ----------
-// Published dimensions (Wikipedia): length 13.23 m (43 ft 5 in), span 14.53 m (47 ft 8 in), height
-// 4.50 m, or 5.18 m for the 400, whose tail was enlarged; the 400's Dowty propellers are 2.69 m
-// (106 in) with four blades. Fuselage depth, nose, windshield, nacelles, tip tanks and the T-tail
-// measured off the side-on Commons photo "Piper PA-42-720 Cheyenne IIIA, Alitalia Flying School
-// AN0989651.jpg" (I-TREQ), scaled by the overall length; the five cabin windows and the 400's tail
-// off "Piper PA-42-1000 Cheyenne 400LS Private, LUX Luxembourg (Findel), Luxembourg PP1238521046.jpg"
-// (D-IUCN). A Cheyenne II stretched by about a metre, with a T-tail on a long dorsal fin.
+// Published dimensions (Wikipedia): length 13.23 m (43 ft 5 in), span 14.53 m (47 ft 8 in), height 4.50 m
 F.pa42 = {
   kind: "turboprop", L0: 12.57, over: 0.66, D: 1.7, W: 1.4, fwd: 0.6, fair: 0,
   nose: {
@@ -123,13 +110,7 @@ F.pa42k = {
 };
 
 // ---------- Cessna 425 Corsair / Conquest I ----------
-// Published dimensions (Wikipedia, from Jane's 1982-83): length 10.93 m (35 ft 10.25 in), span
-// 13.45 m (44 ft 1.5 in), height 3.84 m. Nose, windshield, the cabin's three large and two small
-// round windows, fin and tailplane measured off the Commons photo "Cessna 425 Corsair - Conquest
-// I.jpg" (N425SL), scaled by the overall length; the nacelle stations (the photo looks a little from
-// ahead) checked against "The Cessna 425 Corsair (544365691).jpg" and the Cessna 421's three-view
-// ("Cessna 421 3-view line drawing.png"), whose fuselage it shares. A Cessna 421 with PT6A turboprops
-// in long nacelles, no tip tanks, and a straight swept fin over a tailplane with dihedral.
+// Published dimensions (Wikipedia, from Jane's 1982-83): length 10.93 m (35 ft 10.25 in), span 13.45 m (44 ft 1.5 in)
 F.c425 = {
   kind: "turboprop", L0: 10.56, over: 0.37, D: 1.55, W: 1.4, fwd: 0.6, fair: 0,
   nose: {
@@ -155,12 +136,7 @@ F.c425 = {
 };
 
 // ---------- Cessna 441 Conquest II ----------
-// Published dimensions (Wikipedia, from Jane's 1982-83): length 11.89 m (39 ft 0 in), span 15.04 m
-// (49 ft 4 in), height 4.01 m. Fuselage depth, nose, windshield, the six oval cabin windows, the long
-// nacelles with the TPE331 exhaust on their outboard side, the fin and the tailplane measured off the
-// near side-on Commons photo "N16NW.jpg", scaled by the overall length, and checked against
-// "XB-KBI (6875689500).jpg". The Titan's fuselage, pressurised, on a long slender wing of high aspect
-// ratio; tall swept fin on a dorsal, tailplane with marked dihedral low on the tail cone.
+// Published dimensions (Wikipedia, from Jane's 1982-83): length 11.89 m (39 ft 0 in), span 15.04 m (49 ft 4 in)
 F.c441 = {
   kind: "turboprop", L0: 10.82, over: 1.07, D: 1.6, W: 1.45, fwd: 0.6, fair: 0,
   nose: {
@@ -186,13 +162,7 @@ F.c441 = {
 };
 
 // ---------- Mitsubishi MU-2 (long fuselage: MU-2G, J, L, N and Marquise) ----------
-// Published dimensions (Wikipedia, MU-2L from Jane's 1976-77): length 12.01 m, span 11.94 m over the
-// tip tanks, height 4.17 m; propellers 2.29 m. Drawn as the long-fuselage models, 1.91 m longer than
-// the short ones (the Solitaire and earlier), which share its designator; their table length is the
-// long one's. Fuselage, the long drooping nose, windshield, cabin windows, the nacelles riding on the
-// high wing, the main-gear sponsons and the sharply swept fin measured off the side-on Commons photo
-// "Mitsubishi MU-2B belonging to Thunder Airlines.jpg" (C-GZNS, a Marquise), scaled by the overall
-// length; the airstair door off "Mitsubishi MU-2B AN1706942.jpg" (LY-ZDV).
+// Published dimensions: length 12.01 m, span 11.94 m over the tip tanks, height 4.17 m
 const mu2Sponson = ({ shaded, D }) => {
   shaded([[3.5, 0.32 * D, "c"], [3.9, -0.12], [4.6, -0.24], [6.4, -0.26], [7.5, -0.2], [8.05, 0.0], [8.0, 0.25 * D, "c"]]);
 };
@@ -221,15 +191,7 @@ F.mu2 = {
 };
 
 // ---------- Rockwell / Gulfstream Turbo Commander 690 and Jetprop 840-1000 (695) ----------
-// Published dimensions: length 13.52 m (44 ft 4 in) for the 690 series; 13.10 m (42.98 ft), span
-// 15.89 m and height 4.56 m for the Jetprop 1000 (Twin Commander Aircraft). Fuselage, the upswept
-// tail cone, nose, windshield, the picture window, the nacelles hanging under the high wing and the
-// tall fin measured off the side-on Commons photo "Rockwell 690B Turbo Commander AN0534949.jpg"
-// (CS-ASA), scaled by the overall length, and checked against "Rockwell 690B Turbo Commander
-// AN1386614.jpg" (SE-LZX). The window row is the right side's, as photographed. The Jetprop's
-// longer wing with winglets and its row of square windows off "Gulfstream Commander 695A Jetprop
-// 1000 (N695JP, cn 96024) (4-13-2024).jpg" and "Rockwell Commander 695 Jetprop 980 (N9812S, cn
-// 95060) (4-12-2024).jpg".
+// Published dimensions: length 13.52 m (44 ft 4 in) for the 690 series; 13.10 m (42.98 ft)
 F.ac90 = {
   kind: "turboprop", L0: 13.25, over: 0.27, D: 1.55, W: 1.4, fwd: 0.5, fair: 0,
   nose: {

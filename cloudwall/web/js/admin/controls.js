@@ -1,17 +1,12 @@
-// The controls settings are changed with, each chosen for what its setting holds: a switch for on
-// and off, pictures for a map style, cards for a choice of behaviour, a stepper for a distance, a
-// slider for a share. Every one is drawn in the board's "yours to set" blue, saves itself the
-// moment it's changed, says in a sentence what the value now means, and has its full explanation
-// one tap away. A setting saved but not yet in use is marked until CloudWall restarts.
+// The controls settings are changed with (switch, pictures, cards, stepper, slider...). Each saves
+// itself the moment it's changed; a setting saved but not yet in use is marked until restart.
 import { $, el, esc, setting, save, num, on, toast } from "./core.js";
 import { icon } from "./icons.js";
 import { say } from "./words.js";
 
 let serial = 0;
 
-/** The frame every control sits in: its name, its explanation, its sentence, its state. A page with
- *  a control of its own (a calendar, a dial) puts it in one with `custom`: body.render() draws it
- *  from the setting, body.node.commit(value) saves. */
+/** A page's own control in the standard frame: body.render() draws it, body.node.commit(value) saves. */
 export function custom(section, key, opt, body) { return frame(section, key, opt, body); }
 function frame(section, key, opt, body) {
   const s = setting(section, key);
@@ -46,9 +41,7 @@ function frame(section, key, opt, body) {
     $(".set-says", node).hidden = !says;
     fillHelp(node, section, key, opt);
   };
-  /** Save a new value: the control shows it at once, and goes back if the server refuses it. A
-   *  change that cuts screens off (a port, a private link) is asked about first; any other is
-   *  saved at once, with an Undo for a few seconds. */
+  /** Save: shown at once, reverted if the server refuses. A change that cuts screens off is asked about first. */
   node.commit = async (v, { quiet } = {}) => {
     const err = $(".set-error", node), before = setting(section, key);
     err.hidden = true;
@@ -96,7 +89,7 @@ function fillHelp(node, section, key, opt) {
   if (d) d.onclick = () => node.commit(s.default);
 }
 
-/** A value said as a person would: 0.15 of a share is 15%, true is on, an empty value is "not set". */
+/** A value in words: 0.15 of a share is 15%, true is on, empty is "not set". */
 export function show(s, v) {
   if (v === "" || v === null || v === undefined) return "not set";
   if (typeof v === "boolean") return v ? "on" : "off";
@@ -106,9 +99,7 @@ export function show(s, v) {
   return String(v);
 }
 
-// -- the controls ---------------------------------------------------------------------------------
-
-/** On and off. `on`/`off`: what each means, said under it. */
+/** `on`/`off`: what each means, said under it. */
 export function toggle(section, key, opt = {}) {
   const b = el(`<button class="switch" type="button" role="switch"><span class="knob"></span></button>`);
   b.render = () => { const v = !!setting(section, key).value; b.setAttribute("aria-checked", String(v)); };
@@ -118,7 +109,7 @@ export function toggle(section, key, opt = {}) {
   return node;
 }
 
-/** A few short choices side by side. options: [[value, label]] */
+/** options: [[value, label]] */
 export function segmented(section, key, opt = {}) {
   const s = setting(section, key);
   const options = opt.options || (s?.choices || []).map((c) => [c, c[0].toUpperCase() + c.slice(1)]);
@@ -141,7 +132,7 @@ export function segmented(section, key, opt = {}) {
   return node;
 }
 
-/** A choice of behaviour, each option a card saying what it does. options: [{value, title, body, icon}] */
+/** options: [{value, title, body, icon}] */
 export function cards(section, key, opt = {}) {
   const wrap = el(`<div class="cards" role="radiogroup">${opt.options.map((o) =>
     `<button type="button" role="radio" class="card-opt" data-v="${esc(JSON.stringify(o.value))}">
@@ -163,8 +154,7 @@ export function cards(section, key, opt = {}) {
   return node;
 }
 
-/** A choice made by looking: map styles, the wall panel's layouts. options: [{value, label, art}] where
- *  art is HTML (an <img> of the house's own map in that style, or a drawing). */
+/** options: [{value, label, art}] where art is HTML (an <img> or a drawing). */
 export function pictures(section, key, opt = {}) {
   const wrap = el(`<div class="pics" role="radiogroup">${opt.options.map((o) =>
     `<button type="button" role="radio" class="pic" data-v="${esc(JSON.stringify(o.value))}">
@@ -187,7 +177,7 @@ export function pictures(section, key, opt = {}) {
   return node;
 }
 
-/** A share or strength, by sliding. `scale` turns the stored value into what's shown (0.45 → 45). */
+/** `scale` turns the stored value into what's shown (0.45 → 45). */
 export function slider(section, key, opt = {}) {
   const scale = opt.scale || 1, fmt = opt.format || ((v) => `${num(v, 2)}`);
   const wrap = el(`<div class="slide"><input type="range" min="${opt.min}" max="${opt.max}" step="${opt.step || 1}"><output></output></div>`);
@@ -201,7 +191,7 @@ export function slider(section, key, opt = {}) {
   return node;
 }
 
-/** A number with its unit, nudged up and down or typed. `presets`: values one tap away. */
+/** A number with its unit. `presets`: values one tap away. */
 export function stepper(section, key, opt = {}) {
   const s = setting(section, key);
   const unit = opt.unit ?? s?.unit ?? "", step = opt.step || 1;
@@ -218,7 +208,7 @@ export function stepper(section, key, opt = {}) {
   const later = (v) => { clearTimeout(timer); opt.preview?.(v); timer = setTimeout(() => wrap.node.commit(v), 650); };
   wrap.render = () => {
     const v = setting(section, key).value;
-    if (document.activeElement !== input) input.value = shown(v);
+    if (document.activeElement !== input) input.value = v == null ? "" : shown(v);
     input.size = Math.max(2, input.value.length);
     wrap.querySelectorAll("[data-p]").forEach((b) => b.classList.toggle("on", +b.dataset.p === +v));
   };
@@ -234,6 +224,8 @@ export function stepper(section, key, opt = {}) {
   input.oninput = () => { input.size = Math.max(2, input.value.length); };
   input.onchange = () => {
     const v = parseFloat(input.value);
+    // emptied: back to not set, for a setting that can be (one with no default of its own)
+    if (!input.value.trim() && setting(section, key).default == null && setting(section, key).value != null) { clearTimeout(timer); wrap.node.commit(null); return; }
     if (Number.isNaN(v)) { wrap.render(); return; }
     later(clamp(v));
   };
@@ -250,7 +242,6 @@ export function stepper(section, key, opt = {}) {
   return node;
 }
 
-/** Words or an address: shown as itself, in blue, edited in place. */
 export function text(section, key, opt = {}) {
   const wrap = el(`<div class="txt">
     <button type="button" class="txt-show"></button>
@@ -275,7 +266,7 @@ export function text(section, key, opt = {}) {
   return node;
 }
 
-/** A key or a private address: never shown back, only whether one is saved. */
+/** A key or private address: never shown back, only whether one is saved. */
 export function secret(section, key, opt = {}) {
   const wrap = el(`<div class="sec">
     <span class="sec-state"></span>
@@ -305,22 +296,24 @@ export function secret(section, key, opt = {}) {
   return node;
 }
 
-// how far one press of a stepper moves a number, by its unit
+// one stepper press, by unit
 const STEP = { nm: 0.5, ft: 500, s: 5, share: 0.05, MB: 250, credits: 1000, lookups: 100, "°": 0.001, credits_day: 10 };
 
-/** Whatever control suits a setting's kind, for the list of every setting. */
+// numbers with no range of their own that go below zero (the rest are counts and sizes)
+const MAY_BE_NEGATIVE = new Set(["home.elevation_ft"]);
+
+/** Whatever control suits a setting's kind. */
 export function any(section, key, opt = {}) {
   const s = setting(section, key);
   if (!s) return el(`<div></div>`);
   if (s.secret) return secret(section, key, opt);
   if (s.kind === "bool") return toggle(section, key, opt);
   if (s.kind === "choice") return s.choices.length <= 4 ? segmented(section, key, opt) : select(section, key, opt);
-  if (s.kind === "number") return stepper(section, key, { step: STEP[s.unit] || 1, min: s.range?.[0] ?? 0, max: s.range?.[1], ...opt });
+  if (s.kind === "number") return stepper(section, key, { step: STEP[s.unit] || 1, min: s.range?.[0] ?? (MAY_BE_NEGATIVE.has(`${section}.${key}`) ? -Infinity : 0), max: s.range?.[1], ...opt });
   if (s.kind === "list") return listText(section, key, opt);
   return text(section, key, opt);
 }
 
-/** Many choices, as a menu. */
 export function select(section, key, opt = {}) {
   const s = setting(section, key);
   const sel = el(`<select class="pick">${(opt.options || s.choices.map((c) => [c, c])).map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>`);
@@ -331,7 +324,6 @@ export function select(section, key, opt = {}) {
   return node;
 }
 
-/** A list, one to a line. */
 function listText(section, key, opt = {}) {
   const wrap = el(`<form class="lst"><textarea rows="3" spellcheck="false"></textarea><button class="btn small">Save</button></form>`);
   const ta = wrap.querySelector("textarea");
@@ -342,7 +334,7 @@ function listText(section, key, opt = {}) {
   return node;
 }
 
-/** The rarely-needed settings, behind a shade whose cover says how they stand, so it seldom needs opening. */
+/** A collapsed group whose cover (`summary`) says how its settings stand. */
 export function shade(title, summary, children, opt = {}) {
   const d = el(`<details class="shade ${opt.cls || ""}"><summary><span class="shade-title">${esc(title)}</span><span class="shade-sum"></span>${icon("down", "shade-chev")}</summary><div class="shade-body"></div></details>`);
   const sum = d.querySelector(".shade-sum");
@@ -353,8 +345,7 @@ export function shade(title, summary, children, opt = {}) {
   return d;
 }
 
-/** A group of related settings: a titled panel with a row for each. `about`: a few plain words in its
- *  header, if they're needed. `aside`: an element shown beside the rows (a live picture). */
+/** A titled panel of rows. `about`: words in its header. `aside`: an element beside the rows. */
 export function group(title, about, children, opt = {}) {
   const g = el(`<section class="group ${opt.aside ? "with-aside" : ""} ${opt.cls || ""}">${title ? `<header><h2>${esc(title)}</h2>${about ? `<p>${about}</p>` : ""}</header>` : ""}<div class="group-body"></div></section>`);
   const body = g.querySelector(".group-body");
@@ -366,7 +357,7 @@ export function group(title, about, children, opt = {}) {
   return g;
 }
 
-/** A row that isn't one setting: a name, then what it shows (HTML or an element) and any actions. */
+/** A row that isn't one setting. `content`: HTML or an element. */
 export function line(name, content, actions = []) {
   const r = el(`<div class="line"><span class="line-name">${esc(name)}</span><div class="line-body"></div></div>`);
   const body = r.querySelector(".line-body");
@@ -375,12 +366,9 @@ export function line(name, content, actions = []) {
   return r;
 }
 
-/** The rarely-needed settings of a group, under an Advanced row whose cover says how they stand. */
 export const advanced = (summary, children) => shade("Advanced", summary, children);
 
-// Whenever the settings are read again (a save, a restart), every control on the page and every
-// shade's cover shows them as they now are: two controls of one setting (the map's ring and the
-// stepper beside it) never disagree.
+// Re-render every control when settings are re-read, so two controls of one setting never disagree.
 on("settings", () => {
   document.querySelectorAll(".set").forEach((n) => { if (n.refresh && !n.classList.contains("saving")) { n.querySelector(".set-body > *")?.render?.(); n.refresh(); } });
   document.querySelectorAll(".shade").forEach((d) => d.refreshSummary?.());

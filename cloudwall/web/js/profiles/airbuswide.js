@@ -20,11 +20,7 @@ const fairing = (pts) => ({ sk, f, L }) => {
 };
 
 // ---------- A330 / A340-200/-300 ----------
-// Reference: Airbus A330 AC (Airplane Characteristics) rev. Dec 2025, 2-2-0 General Aircraft Dimensions,
-// FIGURE-2-2-0-991-001-A01 sheets 1-2 (A330-300 side and plan views), -002 (A330-200); 2-7-0 Door
-// Location FIGURE-2-7-0-991-006-B01 (right side, with the cargo doors) and the door clearance figures
-// for door stations and sizes. Side views were de-rotated by the drawn ground attitude (0.4 deg nose down).
-// Measured on the A330-300: L0 63.67 (nose to the APU cone tip), D 5.64.
+// Reference: Airbus A330 AC (Airplane Characteristics) rev. Dec 2025, 2-2-0 General Aircraft Dimensions
 const A330_NOSE = {
   tip: 0.447,
   top: [[0.05, 0.525], [0.1, 0.564], [0.15, 0.593], [0.2, 0.616], [0.25, 0.657], [0.3, 0.701], [0.35, 0.744], [0.4, 0.778],
@@ -81,9 +77,7 @@ F.a332 = {
   fin: { le: 11.4, cr: 8.61, ct: 2.9, h: 9.32, sweep: 44.3, fillet: [1.8, 1.65], rudder: 0.7 },
 };
 
-// A330neo: same fuselages; Trent 7000 (2.84 m fan, 3.78 m nacelle) in a short separate-flow
-// nacelle with the core and plug showing, and the new 64 m wing whose tip ends in a long, curved,
-// strongly canted sharklet. Measured on FIGURE-2-2-0-991-0xx (A330-900, pages 65-66).
+// A330neo: same fuselages; Trent 7000 and the new 64 m wing with a sharklet
 // The sharklet is drawn from the tip section: [ds from tip leading edge, dz from tip chord] in metres,
 // up the leading edge to the point and back down the trailing edge.
 const sharklet = (pts) => ({ sk, sec }) => {
@@ -99,12 +93,7 @@ const A330NEO = {
 F.a339 = { ...F.a333, ...A330NEO };
 F.a338 = { ...F.a332, ...A330NEO };
 
-// A340-200/-300: the A330-200/-300 airframe (the -300 fuselage, wing, winglet, fin and tail are
-// identical in the drawings) with four CFM56-5C in long-duct nacelles with a short exhaust nozzle.
-// Reference: Airbus A340-200/-300 AC, FIGURE-2-2-0-991-001 (A340-300) and -002 (A340-200), plan views for
-// the engine stations (inboard 9.2 m, outboard 19.5 m from the centreline), 2-7-0 door locations.
-// The A340-200 is the -300 less 2.13 m between door 2 and the wing and 2.14 m between doors 3 and 4;
-// unlike the A330-200 it keeps the -300's fin.
+// A340-200/-300: the A330-200/-300 airframe with four CFM56-5C in long-duct nacelles with a short exhaust nozzle
 const CFM56_5C = { kind: "fan", at: [0.245, 0.636], fwd: 4.34, drop: 1.85, len: 6.35, dia: 2.42, style: "long", fx: 0.893 };
 F.a343 = { ...F.a333, eng: CFM56_5C };
 F.a342 = {
@@ -117,15 +106,7 @@ F.a342 = {
 };
 
 // ---------- A340-500/-600 ----------
-// Reference: Airbus A340-500/-600 AC, FIGURE-2-2-0-991 (A340-600 side and plan views, pages 40-41;
-// A340-500 page 42), 2-7-0 door locations. The A330 nose and cross-section with a longer tail cone
-// whose top runs straight to the tip, a bigger wing (root chord 12.5 m, 33.7 deg leading edge, 63.45 m
-// span over the winglets), a 8.8 m fin with an 8.6 m root, a 21.5 m tailplane, and four Rolls-Royce
-// Trent 500 in 3.1 m nacelles whose fan cowl ends at two-thirds of the length, showing a long core
-// nozzle. The -600 has five door pairs (door 3 a Type I exit over the wing root, door 5 set 0.2 m
-// higher); the -500 is 5.30 m shorter ahead of the wing and 2.13 m behind it, with four.
-// Station note: the plan views put the wing 0.46 m further forward than the side views; the side
-// views are used.
+// Reference: Airbus A340-500/-600 AC, FIGURE-2-2-0-991, 2-7-0 door locations
 const A346_TAIL = {
   top: [[2.0, 1], [1.4, 0.99], [1.0, 0.98], [0.5, 0.97], [0, 0.958]],
   bot: [[3.6, 0], [3.2, 0.033], [2.8, 0.098], [2.4, 0.179], [2.0, 0.276], [1.8, 0.327], [1.6, 0.385], [1.4, 0.449],
@@ -156,17 +137,7 @@ F.a345 = {
 };
 
 // ---------- A350 ----------
-// Reference: Airbus A350 AC rev. Jul 2026, FIGURE-2-2-0-991-001 sheets 1-2 (A350-900 side and plan
-// views, raster figures measured at their native 337 ppi), -002 (A350-1000), 2-7-0 FIGURE-2-7-0-991-001
-// (door locations, both sides). D 6.07 measured (6.09 published). The drawn side view has no
-// visible attitude. L0 is the APU face (65.26 m); the fin tip trailing edge reaches 1.35 m further.
-// The droop-snoot nose has its tip at a quarter of the fuselage height and a radome joint 1.3 m back;
-// the black "raccoon mask" round the flight-deck windows is drawn as one dark shape (the renderer paints
-// it over the panes, which are black anyway). Wing: 13.3 m root chord, unswept inner trailing edge,
-// 35 deg leading edge; the tip curls up into a tall curved blended winglet, drawn from the tip section
-// (measured off the side view). Trent XWB: 4.0 m nacelle, separate flow with a small core and plug.
-// In flight the wing flexes up like the 787's: `bend` lifts the tip a moderate 1.2 m over the
-// ground-attitude drawing (real cruise deflection is larger; kept moderate so the tip device still reads).
+// Reference: Airbus A350 AC rev. Jul 2026, FIGURE-2-2-0-991-001 sheets 1-2, -002 (A350-1000), 2-7-0 FIGURE-2-7-0-991-001
 const A350_NOSE = {
   tip: 0.262,
   top: [[0.05, 0.35], [0.1, 0.402], [0.15, 0.446], [0.2, 0.489], [0.25, 0.527], [0.3, 0.568], [0.35, 0.612], [0.4, 0.66],
@@ -210,15 +181,7 @@ F.a35k = {
 };
 
 // ---------- A380 ----------
-// Reference: Airbus A380 AC rev. Dec 2025, FIGURE-2-2-0-991-001 sheets 1-2 (A380-800 side, front
-// and plan views, pages 34-35) and 2-7-0 FIGURE-2-7-0-991-002 (door locations). Full-length double
-// deck: an oval section 8.57 m tall in the drawing (the sheet labels 8.41 m, but the 14.59 m fin and
-// 24.1 m overall height check out at the drawn 8.57 m), the flight deck between the decks, main and
-// upper window rows, five main-deck and three upper-deck doors. L0 is the APU face (70.4 m); the fin
-// tip trailing edge is the aftmost point (72.73 m). Wing: 17 m root chord, 36.8 deg mean leading
-// edge (the inboard glove sweeps 39 deg), and the big wingtip fence above and below the tip, drawn
-// from the side view. Four Trent 900 (the commoner engine; GP7200 looks alike) in 3.8 m separate-
-// flow nacelles. The plan view stations run ~0.25 m forward of the side view's; side view used.
+// Reference: Airbus A380 AC rev. Dec 2025, FIGURE-2-2-0-991-001 sheets 1-2 and 2-7-0 FIGURE-2-7-0-991-002 (door locations)
 const A380_NOSE = {
   tip: 0.29,
   top: [[0.1, 0.463], [0.2, 0.537], [0.3, 0.625], [0.4, 0.711], [0.5, 0.777], [0.6, 0.829], [0.7, 0.868], [0.8, 0.898],
@@ -233,12 +196,7 @@ const A380_TAIL = {
 };
 const A380_WIN = { z: 0.456, pitch: 0.635, w: 0.25, h: 0.36 };
 const A380_UWIN = { z: 0.779, pitch: 0.64, w: 0.25, h: 0.34, upper: true };
-// Antennas and probes, from A380 AC fig. 2-11-0-991-001 (A380-800; its side views are drawn to the
-// door stations' scale): on the spine GPS 1 and 2, TCAS top 1 and 2, VHF 1, the SATCOM radome, the two
-// ADFs, VHF 3 and the ELT; on the belly VHF 2, the marker, the DME and TCAS bottom antennas and the
-// three pairs of radio-altimeter antennas; on this side the standby static, SSA, ISP and MFP probes
-// and the ice detector; the HF antenna in the fin's leading edge and the VOR antenna in the fin tip.
-// Format: aerials() in silhouette.js.
+// Antennas and probes, from A380 AC fig. 2-11-0-991-001: on the spine GPS 1 and 2, TCAS top 1 and 2, VHF 1
 const A380_AERIALS = [
   ["dome", 8.77, 9.02, 0.05, 1], ["dome", 9.06, 9.31, 0.05, 1], ["dome", 11.38, 11.71, 0.08, 1], ["dome", 13.29, 13.62, 0.08, 1],
   ["blade", 14.88, 15.5, 0.58, 1], ["flat", 17.06, 18.83, 0.25, 1], ["dome", 28.69, 28.98, 0.06, 1], ["dome", 30.1, 30.4, 0.06, 1],
@@ -276,15 +234,7 @@ F.a388 = {
 };
 
 // ---------- A300-600 ----------
-// Reference: Airbus A300-600 Airplane Characteristics, 2.2 Airplane Dimensions page 2 (a scanned,
-// rotated side view; overall 54.08 m to the fin tip, which overhangs the tail cone tip by ~0.1 m).
-// The scan is cluttered and slightly stretched (fuselage 5.70 m drawn for 5.64), so the A330's
-// measured nose, flight-deck glazing and tail cone (the A330/A340 front and rear fuselage derive
-// from the A300-600's) are reused; fin, tailplane, doors, windows and the nacelle are measured off
-// the scan. The wing planform is from published data (44.84 m span, ~30 deg leading edge) anchored
-// to the drawn wingtip and nacelle; it ends in small wingtip fences. Engines: GE CF6-80C2 (the most
-// common A300-600 engine; PW4158 nacelles look alike), short fan cowl and long core cowl, hung well
-// ahead of the wing on long pylons. Cargo doors are not drawn (no station data in this scan).
+// Reference: Airbus A300-600 Airplane Characteristics, 2.2 Airplane Dimensions page 2
 F.a306 = {
   ...A330, L0: 54.08, over: 0, fair: 0.06, fairAft: 1.4,
   // doors 1 and 2, the Type I exit behind the wing, the aft door

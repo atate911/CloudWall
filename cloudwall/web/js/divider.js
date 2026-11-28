@@ -1,11 +1,6 @@
-// The dividers on the desktop's Overhead view. One, between the radar and the traffic list on the
-// widest layouts (1200 px and up, Detailed), hides or shows the list with its arrow, and dragged,
-// gives the radar more or less room; the flight card keeps its width either way. The other, between
-// the flight card (Simple's side panel) and the radar, on every landscape layout, sets the card's
-// width; only the radar gives way, the list keeping its own. Each screen remembers both, the card's
-// for each layout apart: a width that suits the widest screen is wrong for a laptop's, and Simple's
-// side panel isn't the card. On a wide, short screen the radar's disc is only as wide as its panel
-// is tall, so its column is held to that, and the card and the list share what's left.
+// The dividers on the desktop's Overhead view: one between the radar and the traffic list (hides,
+// shows and sizes the list), one between the flight card and the radar (sets the card's width,
+// remembered per layout). The radar's column is held to its disc on a wide, short screen.
 import { $, clamp, store } from "./util.js";
 
 const PAIR = 1.85;            // the radar's and the list's columns together, in the grid's fr (the card has 1.3)
@@ -18,10 +13,8 @@ const ANIMATE_MS = 220;       // as the stylesheet's transition
 const CARD = 1.3;             // the card's column, in fr
 const RADAR_ASPECT = 1.04;    // the radar's drawing at its widest, for its height: the disc, and a little room either side
 
-// Which of the layouts in style.css the Overhead view has now, as far as the card's divider goes:
-// "wide" (Detailed, 1500 px and up), "laptop" (Detailed, 1200 to 1500), "narrow" (Detailed, below
-// that) or "simple"; null where there is no divider (a portrait window, the phone layout, the wall
-// panel, and Simple's three columns on a screen wide for its height, where the radar is sized by it)
+// Which of the stylesheets' layouts the Overhead view has: "wide", "laptop", "narrow" (all Detailed) or
+// "simple"; null where there is no card divider.
 const Q = {
   land: matchMedia("(min-aspect-ratio: 1/1)"), wide: matchMedia("(min-width: 1500px)"),
   laptop: matchMedia("(min-width: 1200px)"), simpleWide: matchMedia("(min-width: 1500px) and (min-aspect-ratio: 19/10)"),
@@ -38,8 +31,7 @@ export function paneDividers(shown) {
   let share = clamp(+store("nearbyShare") || DEFAULT, 0.1, PAIR - 0.1), open = store("nearby") !== "closed", hideTimer = null, drawn = false;
   let lay = null, left = null;      // the layout, and the card's width in it as a % of the row (null: as the stylesheet has it)
   const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  // the radar's narrowest: MIN_RADAR, or as wide as the row of buttons along its foot (range, style,
-  // tracks), which can't wrap, whichever is wider
+  // MIN_RADAR, or as wide as the row of buttons along its foot, which can't wrap
   function minRadar() {
     const tools = document.querySelector("#scope .scope-tools"), shown = tools ? [...tools.children].filter((c) => c.offsetWidth) : [];
     const gap = tools ? parseFloat(getComputedStyle(tools).columnGap) || 0 : 0;
@@ -66,9 +58,7 @@ export function paneDividers(shown) {
     if (open && !drawn) shown();            // fill it in now rather than at the next update
     drawn = open;
   }
-  // hold the radar's column to its disc: the drawing is as tall as the panel less its button rows
-  // above and below, and when the column would be wider than that (and a little), the card and the
-  // list grow in step until it isn't
+  // hold the radar's column to its disc: when it would be wider, the card and the list grow in step
   function fit(m) {
     const r = PAIR - m, scope = $("scope"), sc = getComputedStyle(scope);
     const want = (scope.clientHeight - parseFloat(sc.paddingTop) - parseFloat(sc.paddingBottom)) * RADAR_ASPECT + parseFloat(sc.paddingLeft) + parseFloat(sc.paddingRight);
@@ -101,7 +91,7 @@ export function paneDividers(shown) {
     store("nearby", open ? "open" : "closed");
     store("nearbyShare", share.toFixed(3));
   }
-  // the list `px` wide, kept between its narrowest and the radar's; well short of its narrowest, closed
+  // well short of its narrowest, closed
   function setList(px) {
     const r = rem(), room = pairPx();
     if (px < (MIN_LIST * r) / 2 || room <= 0) { open = false; return; }
@@ -110,7 +100,6 @@ export function paneDividers(shown) {
   }
 
   btn.addEventListener("click", () => { open = !open; apply(true); save(); });
-  // drag the divider; from closed, drag it left to open the list
   bar.addEventListener("pointerdown", (e) => {
     if (e.button !== 0 || e.target.closest("#ps-toggle")) return;
     e.preventDefault();
@@ -129,12 +118,10 @@ export function paneDividers(shown) {
     bar.addEventListener("pointerup", done);
     bar.addEventListener("pointercancel", done);
   });
-  // double-click: back to the usual width
   bar.addEventListener("dblclick", (e) => {
     if (e.target.closest("#ps-toggle")) return;
     open = true; share = DEFAULT; apply(true); save();
   });
-  // from the keyboard: arrows move the divider, Enter hides or shows the list
   bar.addEventListener("keydown", (e) => {
     if (e.target !== bar) return;
     if (e.key === "Enter" || e.key === " ") { open = !open; apply(true); }
@@ -165,7 +152,7 @@ export function paneDividers(shown) {
     cbar.setAttribute("aria-label", `Width of ${what}`);
     if (lay) cbar.setAttribute("aria-valuenow", String(Math.round((leftPx() / box().width) * 100)));
   }
-  // the layout changed (the window, or Simple and Detailed): the card's width as it was last left in this one
+  // on a layout change: the card's width as it was last left in this one
   function relayout() {
     const now = layout();
     if (now === lay) return;
@@ -174,8 +161,7 @@ export function paneDividers(shown) {
     left = saved > 0 && saved < 100 ? saved : null;
     showLeft();
   }
-  // a window narrowed under a card width dragged to: the card gives way before the radar goes
-  // narrower than its narrowest
+  // a window narrowed: the card gives way before the radar goes below its narrowest
   function keepRadar() {
     if (left == null || !lay) return;
     const short = minRadar() - $("scope").getBoundingClientRect().width;
@@ -184,8 +170,6 @@ export function paneDividers(shown) {
       showLeft();
     }
   }
-  // the card `px` wide, between its narrowest and as wide as leaves the radar its narrowest (max),
-  // with the list kept `list` wide
   function setLeft(px, max, list) {
     left = (clamp(px, minLeft(), Math.max(minLeft(), max)) / box().width) * 100;
     showLeft();
@@ -214,7 +198,6 @@ export function paneDividers(shown) {
     cbar.addEventListener("pointerup", done);
     cbar.addEventListener("pointercancel", done);
   });
-  // double-click: back to the usual width
   cbar.addEventListener("dblclick", () => {
     if (!lay) return;
     const list = listW();
@@ -224,7 +207,6 @@ export function paneDividers(shown) {
     if (list) setList(list);
     apply(true);
   });
-  // from the keyboard: the arrows move it
   cbar.addEventListener("keydown", (e) => {
     if (!lay || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
     e.preventDefault();

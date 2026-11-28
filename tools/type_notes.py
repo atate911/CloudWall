@@ -3,9 +3,6 @@
     python3 tools/type_notes.py               # every type, the ones seen most over the house first
     python3 tools/type_notes.py --todo 20     # just the next 20 to write
     python3 tools/type_notes.py --db PATH     # a logbook other than the usual one
-
-Types come from the logbook (counted by flyovers) and from cloudwall/data/types.csv (the types
-CloudWall draws, and the rare ones). Also says what is wrong with any file, as the tests would.
 """
 import argparse
 import csv

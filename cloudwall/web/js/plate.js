@@ -7,11 +7,9 @@ import { iconFor } from "./icons.js";
 
 export const feet = (m) => Math.round(m * 3.28084);
 
-// What a drawing needs of an aircraft, or of a type or flyover from the logbook: its type code,
-// its broad shape and length (the server sends these on each record, from its table of types) and
-// its model names, which pick a variant that shares a type code (RV-7 or RV-7A, F-15E or F-15EX).
-// A record without them, one the server hasn't looked up yet, gets a single-aisle stand-in; a kind
-// of aircraft no stand-in looks like (a glider, a balloon) gets no drawing rather than an airliner's.
+// What a drawing needs of a record: type code, broad shape, length, and model names (which pick a
+// variant sharing a type code). A record without them gets a single-aisle stand-in; a kind no
+// stand-in looks like (a glider, a balloon) gets no drawing.
 const NO_STANDIN = new Set(["glider", "balloon", "airship", "ultralight", "drone", "gyro"]);
 export function typeInfo(a) {
   const none = !a.known && NO_STANDIN.has(a.icon);
@@ -19,12 +17,8 @@ export function typeInfo(a) {
     name: [a.model, a.type_name || a.name].filter(Boolean).join(" ") };
 }
 
-// A side elevation over a dimension line giving the overall length. The figure sizes itself
-// inside its nearest size container (a .sil-box): `share` of its width, or as wide as its
-// height allows. A type without a drawing of its own is a faint stand-in for its broad shape,
-// without a length.
-// Options: share (default: the flight card's size-compressed scale), dim (show the length),
-// note (a short line under the length).
+// A side elevation over a dimension line. Sizes itself inside its nearest size container (a
+// .sil-box): `share` of its width, or as wide as its height allows. dim: show the length; note: a line under it.
 export function plate(info, { share = silhouetteScale(info.length), dim = true, note = "" } = {}) {
   if (!info.shape) return "";
   const d = drawing(info.type, info.shape, info.length, info.name);
@@ -36,11 +30,9 @@ export function plate(info, { share = silhouetteScale(info.length), dim = true, 
   return `<figure class="plate${known ? "" : " standin"}${showDim ? "" : " nodim"}" style="--w:${share.toFixed(3)};--ar:${(d.w / d.h).toFixed(4)}">${d.svg}${caption}</figure>`;
 }
 
-// Lay drawings out at one scale (pixels per metre) in rows, smallest first, filling a box of
-// W x H pixels. items: [{ w, h }] in metres. Each drawing takes at least minSlot pixels (room
-// for its label), rows are separated by rowGap plus the label height. The scale is capped so
-// that the longest drawing spans at most maxShare of the width: a lone airliner shouldn't fill
-// the screen. Returns { k, rows } with rows as arrays of indexes into items.
+// Lay drawings out at one scale (px per metre) in rows, smallest first, in a W x H px box.
+// items: [{ w, h }] in metres. The scale is capped so the longest spans at most maxShare of the
+// width. Returns { k, rows } with rows as arrays of indexes into items.
 export function lineup(items, W, H, { gap = 18, minSlot = 48, label = 30, rowGap = 10, maxShare = 0.5 } = {}) {
   if (!items.length || W <= 0 || H <= 0) return { k: 0, rows: [] };
   const longest = Math.max(...items.map((i) => i.w));
@@ -73,17 +65,14 @@ export function scaleBar(k, px = 110) {
   return { m, px: m * k };
 }
 
-// Whether a type gets its own drawing (rather than a stand-in) in plates and lineups.
 export const drawn = (info) => info.known !== false && hasProfile(info.type);
 
-// For a kind of aircraft with no side elevation (a glider, a balloon of a type not in the table):
-// its outline from the radar, large and faint on the sheet, nose to the right like the drawings.
+// For a kind with no side elevation: its outline from the radar, nose to the right like the drawings.
 export function kindPlate(kind) {
   const ic = iconFor(kind), r = ic.r * 1.08;
   return `<figure class="plate kindplate"><svg viewBox="${-r} ${-r} ${2 * r} ${2 * r}" aria-hidden="true"><path d="${ic.d}"${ic.upright ? "" : ' transform="rotate(90)"'}/></svg></figure>`;
 }
 
-// The fleet lineup: every type seen today, side by side at true relative size, on ground lines.
 // types: [{ info, n }] already filtered with drawn(). box: the element to fill.
 export function renderLineup(box, types) {
   const items = types.map((t) => ({ ...t, ...drawing(t.info.type, t.info.shape, t.info.length, t.info.name) }))

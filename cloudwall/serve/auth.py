@@ -1,24 +1,15 @@
-"""The owner: the one person who may change CloudWall. Everyone else who can reach it (the home
-network, a private link's holders) watches and sets up their own screen.
+"""The owner: the one person who may change CloudWall; everyone else watches.
 
-The owner's password is set at the machine (`sudo cloudwall owner`) and kept as a scrypt hash in
-`owner` beside the settings file, readable by the service only. Signing in on the control board
-gives the browser a session cookie (HttpOnly, SameSite=Strict, Secure behind HTTPS) that lasts 30
-days from its last use and survives restarts (sessions are kept, hashed, in the shared store).
-Five wrong passwords from one address in five minutes and that address waits.
-
-Until an owner password exists, CloudWall behaves as it always has: anyone who can reach it may
-add places, and the control board can be used to look but changes only from this machine itself
-(a browser on it, or through an SSH tunnel), so a CloudWall that was never given an owner is no
-more open than it was, and the board says how to set one.
-
-The control board also refuses a request naming a host CloudWall doesn't answer to (a DNS
-rebinding attack: a web page making the browser call CloudWall under another name).
+The password (`sudo cloudwall owner`) is a scrypt hash in `owner` beside the settings file. A
+session cookie lasts 30 days from last use and survives restarts (hashed, in the shared store) but
+not a change of password. Until an owner exists, only requests from this machine itself count as
+the owner's. The control board refuses hosts CloudWall doesn't answer to (DNS rebinding).
 """
 import hashlib
 import ipaddress
 import secrets
 import socket
+import threading
 import time
 
 from ..core.keys import owner_file, password_matches
@@ -29,13 +20,12 @@ TRIES, TRIES_S = 5, 300
 
 
 class Owner:
-    """Who a request comes from, for a server whose settings file is cfg["_path"]."""
-
     def __init__(self, cfg, store=None, clock=time.time):
         self.cfg, self.store, self.clock = cfg, store, clock
         self.file = owner_file(cfg.get("_path"))
         self.failures = {}          # address -> [times of wrong passwords]
-        self.sessions = {}          # hashed token -> last used (with the store, kept across restarts too)
+        self.trying = threading.Lock()
+        self.sessions = {}          # hashed token -> last used
 
     def exists(self):
         return self.file.exists()
@@ -46,25 +36,32 @@ class Owner:
         except OSError:
             return None
 
-    # -- sessions -----------------------------------------------------------------------
-    @staticmethod
-    def _hash(token):
-        return hashlib.sha256(token.encode()).hexdigest()
+    # -- sessions --
+    def _hash(self, token):
+        # the password's hash is mixed in, so a session dies when the password is changed or removed
+        return hashlib.sha256(f"{token}\0{(self._stored() or '').strip()}".encode()).hexdigest()
+
+    def carry_over(self, token):
+        """After the signed-in owner changes the password: keep their session under the new one."""
+        if token:
+            self._keep(self._hash(token), self.clock())
 
     def sign_in(self, password, address):
         """A session token, or raises ValueError with what to say."""
         now = self.clock()
-        recent = [t for t in self.failures.get(address, []) if now - t < TRIES_S]
-        if len(recent) >= TRIES:
-            raise ValueError(f"Too many wrong passwords: try again in {int(TRIES_S - (now - recent[0])) // 60 + 1} min")
         stored = self._stored()
-        if not stored:
-            raise ValueError("No owner password is set yet: set one at the machine with `sudo cloudwall owner`")
-        if not password_matches(password or "", stored):
-            self.failures = {a: t for a, t in self.failures.items() if t and now - t[-1] < TRIES_S}   # (forget the old)
+        with self.trying:        # counted before judged, so simultaneous tries can't slip past the limit
+            recent = [t for t in self.failures.get(address, []) if now - t < TRIES_S]
+            if len(recent) >= TRIES:
+                raise ValueError(f"Too many wrong passwords: try again in {int(TRIES_S - (now - recent[0])) // 60 + 1} min")
+            if not stored:
+                raise ValueError("No owner password is set yet: set one at the machine with `sudo cloudwall owner`")
+            self.failures = {a: t for a, t in self.failures.items() if t and now - t[-1] < TRIES_S}
             self.failures[address] = recent + [now]
+        if not password_matches(password or "", stored):
             raise ValueError("That isn't the owner's password")
-        self.failures.pop(address, None)
+        with self.trying:
+            self.failures.pop(address, None)
         token = secrets.token_urlsafe(32)
         self._keep(self._hash(token), now)
         return token
@@ -84,7 +81,7 @@ class Owner:
             last = last if found else None
         if last is None or now - last > SESSION_S:
             return False
-        if now - last > 3600:                      # in use: good for another 30 days (said at most hourly)
+        if now - last > 3600:                      # in use: extended, written at most hourly
             self._keep(h, now)
         return True
 
@@ -95,23 +92,19 @@ class Owner:
             if self.store is not None:
                 self.store.cache_put("owner-session", h, 0)
 
-    # -- who is asking --------------------------------------------------------------------
+    # -- who is asking --
     def role(self, cookies, address, proxied=False):
-        """"owner", or "viewer". With no owner password set, a request from this machine itself
-        counts as the owner's, and every other is a viewer. One through a proxy (Caddy, on this
-        machine too) is from wherever the proxy's visitor is, so never counts as local."""
+        """"owner" or "viewer". With no owner password set, a request from this machine itself is
+        the owner's; one through a proxy (Caddy, also on this machine) never counts as local."""
         if self.exists():
             return "owner" if self.valid(cookies.get(COOKIE)) else "viewer"
         return "owner" if is_local(address) and not proxied else "viewer"
 
     def host_ok(self, host, proxied=False):
-        """Is this a name CloudWall answers to? (Only for the control board: the screens are told
-        nothing that matters to an attacker.) The danger is DNS rebinding: a page elsewhere has the
-        browser call CloudWall under the attacker's own name, so the browser sends it no cookie, but
-        a request straight from this machine counts as the owner's while there is no owner. Through
-        a proxy (Caddy, which serves CloudWall at whatever name it was given) a request never counts
-        as local and must carry the owner's cookie, which the browser keeps for the real name only,
-        so any name will do there."""
+        """Is this a name CloudWall answers to? Guards the control board against DNS rebinding: a
+        page elsewhere calling CloudWall under the attacker's name sends no cookie, but a local
+        request counts as the owner's while there is no owner. Proxied requests never count as
+        local and need the cookie, which the browser keeps for the real name only: any name will do."""
         if proxied:
             return True
         name = (host or "").rsplit(":", 1)[0].strip("[]").lower()

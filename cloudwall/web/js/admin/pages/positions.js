@@ -1,7 +1,5 @@
-// Position feeds: where aircraft positions come from. The picture is the chain itself: the feeds in
-// the order they're tried, which one is answering now, your receiver joined to the public feed when
-// the two are combined, and what reaches the wall. Feeds are added from a short list of the free
-// ones (and your own receiver), not typed; how often they're asked waits under a shade.
+// Feeds page: where aircraft positions come from. The feeds in the order they're tried, which one
+// is answering now, and an editor that adds from a short list of free feeds (not typed).
 import { el, esc, S, house, ownFeed, value, save, ago, plural, num, toast, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { head, pageTroubles } from "../parts.js";
@@ -17,7 +15,7 @@ const hostOf = (u) => { try { return new URL(u.replace(/[{}]/g, "")).hostname; }
 const isOwn = (u) => /\/data\/aircraft\.json$/.test(u) || /^https?:\/\/(127\.|localhost|192\.168\.|10\.)/.test(u);
 const nameOf = (u) => PRESETS.find((p) => p.url === u)?.name.replace(/, through the tunnel$/, "") || (isOwn(u) ? "Your receiver" : hostOf(u));
 
-/** Each feed's state now, as far as CloudWall knows it: answering, standing by, or down. */
+/** A feed's state now: answering, standing by, or down. */
 function stateOf(u, i, merge) {
   const p = house() || {}, feeds = p.feeds || {}, rx = ownFeed(p);
   const pub = feeds["the public feed"] || feeds["the position feed"];
@@ -44,7 +42,6 @@ function chain(urls, merge) {
   </section>`);
 }
 
-/** The feeds as a list to put in order, take away from, and add to from the free ones. */
 function editor(page) {
   const box = el(`<div class="feeds-edit" data-setting="source.urls"></div>`);
   const paint = () => {

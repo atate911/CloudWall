@@ -21,7 +21,7 @@ WEB = Path(__file__).parent / "web"
 
 
 class TTLCache:
-    """Tiny thread-safe cache so repeated page loads don't re-run heavy SQL."""
+    """Thread-safe cache so repeated page loads don't re-run heavy SQL."""
 
     def __init__(self):
         self.d, self.lock = {}, threading.Lock()
@@ -51,20 +51,17 @@ def parse_time(v, default):
 
 
 class App:
-    """Everything the request handlers need."""
-
     def __init__(self, cfg, store, sampler, feeds, demo=False):
         self.cfg, self.store, self.sampler, self.feeds, self.demo = cfg, store, sampler, feeds, demo
         self.cache = TTLCache()
         self.started = time.time()
         extra = cfg.server["airports_csv"]
-        if not extra:                                 # picked up automatically if install.sh --airports fetched it
+        if not extra:                                 # the one install.sh --airports fetches
             guess = Path(cfg.storage["db_path"]).parent / "airports.csv"
             extra = str(guess) if guess.is_file() else ""
         self.airports = reference.load_airports(extra)
         self.peaks, self.places = reference.load_peaks(), reference.load_places()
 
-    # ---- helpers ------------------------------------------------------------------------------
     @property
     def station(self):
         return self.sampler.station
@@ -94,7 +91,7 @@ class App:
             raise ValueError("bands must be 500..15000 ft")
         return sector, band, cv["max_alt_ft"]
 
-    # ---- endpoints ----------------------------------------------------------------------------
+    # ---- endpoints ----
     def api_station(self, q):
         d = self.station.to_dict()
         d["horizon_note"] = "radio horizon = 1.23*(sqrt(h_antenna_ft)+sqrt(h_ft)) nm"
@@ -130,7 +127,6 @@ class App:
             bands.append({"index": b, "ground": b < 0, "lo_ft": lo, "hi_ft": hi,
                           "horizon_nm": round(geo.radio_horizon_nm(ant_ft, (lo + hi) / 2), 1),
                           "sectors": sectors})
-        # best / worst bearing over all bands (by the chosen statistic)
         per_sector = [0.0] * ns
         for bd in bands:
             for s in bd["sectors"]:
@@ -152,7 +148,7 @@ class App:
             raise ValueError("stat must be p95 or max")
         min_pts = int(q.get("min", [self.cfg.coverage["min_points_per_bin"]])[0])
         ttl = self.cfg.coverage["cache_s"]
-        # round the window so a sliding "last 1h" query still hits the cache within the TTL
+        # window rounded to the minute so a sliding "last 1h" query still hits the cache
         key = ("cov", t0 // 60, t1 // 60, tuple(srcs), sector, band, stat, min_pts)
         return self.cache.get(key, ttl, lambda: self.coverage(t0, t1, srcs, sector, band, stat, min_pts))
 
@@ -248,7 +244,7 @@ def make_handler(app: App):
         server_version = "Coverage3D/" + __version__
         protocol_version = "HTTP/1.1"
 
-        def log_message(self, fmt, *a):           # keep the journal quiet: errors only
+        def log_message(self, fmt, *a):           # keep the journal quiet
             log.debug("%s " + fmt, self.address_string(), *a)
 
         def _send(self, code, body: bytes, ctype, extra=None):

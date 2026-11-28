@@ -32,11 +32,7 @@ const crownAntenna = (s) => ({ sk, top }) => {
 };
 
 // ---------- Boeing 747 ----------
-// Reference: 747-400 ACAP D6-58326-1 Rev F, fig. 2.3.1 (747-400 side view) and fig. 2.2.1 (plan view
-// for the wing and tailplane). D is the main fuselage height aft of the upper deck; the hump is part of
-// the nose outline. The tail cone ends in a tall, blunt APU exhaust. Engines: PW4056 as drawn (inboard
-// inlet 23.7 m, outboard 32.4 m from the nose); the outboard pair is drawn by its own function because
-// it sits at a different distance ahead of the wing and height than the inboard pair.
+// Reference: 747-400 ACAP D6-58326-1 Rev F, fig. 2.3.1 (747-400 side view) and fig. 2.2.1
 function quadOutboard(spec) {
   return ({ sk, sec, fan, pylon }) => {
     const q = sec(spec.at), s0 = q.le - spec.fwd, zc = q.z - spec.drop, n = { ...spec.nac };
@@ -84,9 +80,7 @@ F.b744 = {
   stab: { le: 9.85, z: 0.78, span: 22.17, root: 2.0, cr: 8.3, ct: 2.5, sweep: 42.7, dih: 7.5 },
 };
 
-// 747-100/-200: the same fuselage, wing and tail but the short original upper deck (the -300/-400 hump is
-// 7.11 m longer; 747_123sp.pdf fig. 2.3.1 shows both), three upper-deck windows and no upper-deck door, no
-// winglets (span 59.64 m), JT9D-7 nacelles.
+// 747-100/-200: the same fuselage, wing and tail but the short original upper deck
 // the upper-deck hump of the 747-400 outline, its flat top shortened (d > 0) or lengthened (d < 0) by d (D)
 const hump = (top, d) => [...top.filter(([s]) => s <= 1.65), ...top.filter(([s]) => s >= 2.0).map(([s, z, fl]) => [s - d, z, fl]).filter(([s]) => s > 1.7)];
 const B742_NAC = { ...B744_NAC, len: 7.0, dia: 2.5, fx: 0.48, cx: 0.85 };
@@ -100,10 +94,7 @@ F.b742 = {
   eng: { ...B742_NAC, at: [0.32], fwd: 4.76, drop: 1.98 },
   overlays: [quadOutboard({ at: 0.67, fwd: 4.25, drop: 1.82, nac: B742_NAC })],
 };
-// 747-8 (Intercontinental): 747-8 ACAP D6-58326-2 Rev E fig. 2.3.2 (low-resolution line art, 6.7% short in
-// height, rescaled; it overlays the -400 outline well) for the stations:
-// 5.6 m longer (4.1 m ahead of the wing, between doors 1 and 2, and 1.5 m behind it), the upper deck 4.1 m
-// longer, a new wing with raked tips (span 68.4 m) and chevroned GEnx-2B nacelles.
+// 747-8 (Intercontinental): 747-8 ACAP D6-58326-2 Rev E fig. 2.3.2 for the stations: 5.6 m longer
 const B748_NAC = { kind: "fan", len: 7.4, dia: 3.05, fx: 0.6, cx: 0.86, chev: true, pyFront: 0.3, pyLead: 0.5, pyTe: 0.4, pyAft: 0.85 };
 F.b748 = {
   ...F.b744, over: 2.15, fwd: 0.728,
@@ -117,10 +108,7 @@ F.b748 = {
   overlays: [quadOutboard({ at: 0.613, fwd: 4.4, drop: 2.05, nac: B748_NAC })],
 };
 
-// 747 Dreamlifter (747-400 LCF): from published dimensions only (Wikipedia: length 71.68 m, height 21.54 m,
-// fuselage width 8.38 m; lower confidence). The 747-400 nose and flight deck, then the enlarged cargo
-// fuselage bulging up from just behind the cockpit and running flat to the swing tail, which carries the
-// 747 fin about 2.1 m higher; the lower fuselage, wing, engines and winglets are the -400's.
+// 747 Dreamlifter (747-400 LCF): from published dimensions only
 F.blcf = {
   ...F.b744, fwd: 0,
   nose: {
@@ -137,9 +125,7 @@ F.blcf = {
 };
 
 // ---------- Boeing 767 ----------
-// Reference: 767 ACAP D6-58328 Rev K, fig. 2.3.2 (767-300/-300ER ground clearances side view,
-// to scale) and fig. 2.2.2 (plan view, for the wing and tailplane planforms). The drawing is
-// about 3.7% taller than the published 5.41 m fuselage height, so heights were rescaled to it.
+// Reference: 767 ACAP D6-58328 Rev K, fig. 2.3.2 and fig. 2.2.2
 F.b763 = {
   kind: "wide", L0: 53.6, over: 1.34, D: 5.41, W: 5.03, fwd: 0.48, fair: 0,
   nose: {
@@ -170,10 +156,7 @@ F.b763 = {
   eng: { kind: "fan", at: [0.254], fwd: 3.88, drop: 1.76, len: 6.6, dia: 2.54, fx: 0.495, cx: 0.935, pyFront: 0.25, pyLead: 0.5, pyTe: 0.7, pyAft: 1.3 },
   fin: { le: 9.52, cr: 7.07, ct: 2.56, h: 8.43, sweep: 44.35, fillet: [1.78, 1.95], round: 0.6 },
   stab: { le: 7.5, z: 0.623, span: 18.62, root: 1.0, cr: 6.07, ct: 1.75, sweep: 37.8, dih: 7 },
-  // the radome joint 1.12 m aft of the nose (fig. 2.3.2), and the right-side sensors of fig. 2.7.2:
-  // pitot-static probes 2.74 m aft of the nose, 0.30 m above and 0.15 m below the entry door's sill
-  // (2.24 m above the keel), the angle-of-attack vane 2.51 m aft and 0.05 m below it, and the flush
-  // static port 9.45 m aft and 1.52 m below it
+  // the radome joint 1.12 m aft of the nose (fig. 2.3.2), and the right-side sensors of fig. 2.7.2
   extras: [radomeJoint(1.12), probes([["pitot", 2.74, 2.54], ["pitot", 2.74, 2.09], ["aoa", 2.51, 2.19], ["port", 9.45, 0.72]])],
 };
 
@@ -193,10 +176,7 @@ F.b764 = {
 // winglet, 3.4 m tall and canted out (about 3 m of it shows from the side); B763 is drawn with it.
 F.b763w = { ...F.b763, tip: { h: 2.9, sweep: 48, top: 0.6, base: 0.95, blend: 1.0 } };
 
-// KC-46A Pegasus (767-2C): 767-200 fuselage (fig. 2.3.1 outline), no cabin windows, no winglets (span
-// 48.1 m, Wikipedia); refuelling boom stowed under the tail cone and wing refuelling pods (WARPs). Its
-// 767-300F main-deck cargo door is on the left side, so it does not show in this starboard view.
-// Overall length 50.5 m (Wikipedia) includes the stowed boom, 3.3 m behind the tail cone.
+// KC-46A Pegasus (767-2C): 767-200 fuselage, no cabin windows, no winglets; overall 50.5 m includes the stowed boom
 function kc46Boom({ sk, L, D, top }) {
   const E = L;
   // boom pivot fairing under the aft fuselage, and the stowed boom with its ruddevators
@@ -222,8 +202,6 @@ F.k46 = {
 
 // ---------- Boeing 777 ----------
 // Reference: 777-200LR/-300ER/F ACAP D6-58329-2 Rev G, fig. 2.3.2 (777-300ER side view) and fig. 2.2.2
-// (plan view for the wing and tailplane planforms). Fuselage 6.20 m round; tail cone ends in the flat-ended
-// "blade" APU exhaust (tail-cone end 73.08 m from the nose in fig. 2.2.2). Raked tips; GE90-115B.
 F.b77w = {
   kind: "wide", L0: 72.89, over: 0.97, D: 6.2, W: 6.2, fwd: 0.5, fair: 0.06, fairAft: 1.3,
   nose: {
@@ -267,10 +245,7 @@ F.b772 = {
   eng: { ...F.b77w.eng, len: 7.5, dia: 3.55, drop: 2.58 },
 };
 
-// 777-9: 777X ACAP D6-86073 Rev G, fig. 2-2 (side view, levelled; drawn with the tips folded) and
-// fig. 2-1 (plan, tips extended: span 71.76 m); door stations from table 2-3. Same nose and blade tail
-// cone, 2.9 m longer, taller fin, bigger tailplane, the new composite wing (drawn with its folding tips
-// extended, as in flight) and the much larger GE9X.
+// 777-9: 777X ACAP D6-86073 Rev G, fig. 2-2 and fig. 2-1; door stations from table 2-3
 F.b779 = {
   ...F.b77w, L0: 75.0, over: 1.73,
   doors: [[6.76, 1.07], [11.81, 2.69, "C"], [23.47, 1.07], [-32.28, 1.07], [-24.94, 0.86], [-21.48, 1.78, "C"], [-16.4, 0.91, "C"], [-13.2, 1.07]],
@@ -283,12 +258,7 @@ F.b779 = {
 };
 
 // ---------- Boeing 787 ----------
-// Reference: 787 ACAP D6-58333 Rev Q, fig. 2.3.2 (787-9 side view; scanned line art, dimension lines
-// removed), fig. 2.2.2 (plan view: wing, raked tip, tailplane) and the door-location table 2.7.1, which
-// also places the -8 and -10 doors. Smooth nose with no eyebrow windows: a big windscreen pane and a
-// side window swept back at its rear; tall cabin windows; raked tips; chevroned GEnx/Trent 1000.
-// The ACAP shows the wing on the ground (tip about 5.5 m above the keel); in flight it bends up a lot
-// more, so "bend" adds a moderate 1.5 m of tip rise.
+// Reference: 787 ACAP D6-58333 Rev Q, fig. 2.3.2, fig. 2.2.2 and the door-location table 2.7.1
 F.b787 = {
   kind: "wide", L0: 61.88, over: 0.93, D: 5.945, W: 5.77, fwd: 0.5, fair: 0.03, fairAft: 1.2,
   nose: {
@@ -327,13 +297,7 @@ F.b787 = {
 F.b78x = { ...F.b787, fwd: 0.556, doors: [[6.3, 1.07], [11.0, 2.75, "C"], [-3.39, 1.07, "D", "w"], [13.68, 1.07, "D", "w"], [21.56, 2.75, "C", "w"], [-12.22, 1.07]] };
 
 // ---------- McDonnell Douglas MD-11, DC-10, KC-10 ----------
-// Reference: MD-11 ACAP (MD11.pdf, scanned) fig. 2.2 general dimensions, side view rotated and cleaned of
-// dimension lines; plan view for the wing (root LE 24.2 m, engine inlet 23.1 m) and tailplane (span 18.0 m).
-// The centre engine runs through the fin root: the fin stands on the engine nacelle (fin.base). MD-11:
-// winglets with a small lower blade, the small tailplane, longer fuselage and tail cone than the DC-10.
-// The centre engine's nozzle and exhaust cone reach behind the tail cone; the renderer fairs a tail
-// engine down to the fuselage over its whole length, so the nacelle stops at the tail-cone end and the
-// rest is drawn here.
+// Reference: MD-11 ACAP (MD11.pdf, scanned) fig. 2.2 general dimensions, side view rotated and cleaned of dimension lines
 function tailNozzle(noz, tip) {
   return ({ sk, f, L, D }) => {
     const e = f.tailEng, R = e.dia / 2, zc = D + e.z;
@@ -375,9 +339,7 @@ F.md11 = {
   fin: { le: 8.0, base: 3.23, cr: 6.6, ct: 3.3, h: 9.63, sweep: 44, round: 0.4 },
   stab: { le: 7.95, z: 0.63, span: 18.0, root: 1.0, cr: 5.5, ct: 1.7, sweep: 40.8, dih: 8 },
 };
-// DC-10-30 (DC10.pdf fig. 2.2 dimensions; drawn over a dense grid, so mostly from the MD-11 outline and the
-// published dimensions: lower confidence). Fuselage 51.97 m to the tail cone, 5.7 m shorter than the MD-11,
-// plain wingtips (span 50.39 m), the bigger tailplane (span 21.69 m), CF6-50 engines.
+// DC-10-30: mostly from the MD-11 outline and the published dimensions: lower confidence
 F.dc10 = {
   ...F.md11, L0: 51.97, over: 3.53,
   doors: [[5.24, 1.07], [10.6, 2.6, "C"], [12.2, 1.07], [4.29, 1.07, "D", "w"], [-14.4, 1.8, "C"], [-11.0, 1.07]],

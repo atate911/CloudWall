@@ -1,14 +1,12 @@
-// Pieces the pages are built from: the page's heading, a problem with what to do about it, a
-// reading (a value CloudWall measured, as against a setting you choose), and a few small things.
+// Pieces the pages are built from: heading, problem card, reading (a measured value), small helpers.
 import { el, esc, md, S, call, toast, button, runDoctor, waitFor, lasted, loadOverview, emit, problemsOf } from "./core.js";
 import { icon } from "./icons.js";
 
-/** The top of a page: its name, one sentence on what it's for, and anything that belongs beside them. */
 export function head(title, sentence, aside = "") {
   return el(`<header class="page-head"><div><h1>${esc(title)}</h1><p>${sentence}</p></div>${aside ? `<div class="page-aside">${aside}</div>` : ""}</header>`);
 }
 
-/** A problem: what's wrong, what it means, and what to do, with the doing itself where CloudWall can. */
+/** A problem card, with a fix button where CloudWall can fix it itself. */
 export function trouble(f, opt = {}) {
   const cat = S.catalogue?.troubles?.[f.code];
   const steps = f.steps?.length ? f.steps : f.fix ? [f.fix] : [];
@@ -57,7 +55,6 @@ function ask(f, a) {
   return form;
 }
 
-/** This page's own problems, at its top, or nothing. */
 export function pageTroubles(page) {
   const list = problemsOf(page);
   if (!list.length) return null;
@@ -66,15 +63,13 @@ export function pageTroubles(page) {
   return box;
 }
 
-/** A reading: something CloudWall measured, large, with what it is under it. */
 export function reading(value, label, opt = {}) {
   return `<div class="reading ${opt.cls || ""}" ${opt.title ? `title="${esc(opt.title)}"` : ""}><b>${value}</b>${opt.unit ? `<small>${esc(opt.unit)}</small>` : ""}<span>${label}</span></div>`;
 }
 
-/** A link out (to the receiver's own pages, FlightAware): opens in a new tab. */
+/** A link out, in a new tab. `label` is HTML. */
 export const out = (href, label, cls = "") => `<a class="out ${cls}" href="${esc(href)}" target="_blank" rel="noopener">${label}${icon("open")}</a>`;
 
-/** A copyable bit of text: a command to run, a link to share. */
 export function copyable(textValue, opt = {}) {
   const node = el(`<div class="copy ${opt.cls || ""}"><code>${esc(textValue)}</code><button type="button" class="icon-btn" title="Copy">${icon("copy")}<span class="sr">Copy</span></button></div>`);
   node.querySelector("button").onclick = async () => {

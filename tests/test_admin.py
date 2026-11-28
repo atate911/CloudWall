@@ -62,6 +62,7 @@ class Served(unittest.TestCase):
         srv.admin = Admin(cfg, places, store=self.store)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         self.addCleanup(srv.shutdown)
+        self.addCleanup(srv.server_close)
         self.base = f"http://127.0.0.1:{srv.server_address[1]}"
         self.cookie = None
         return srv
@@ -105,6 +106,25 @@ class AdminTest(Served):
         self.call("/api/admin/signout", {})
         self.cookie = None
         self.assertEqual(self.call("/api/admin/overview")[0], 401)
+
+    def test_a_session_ends_with_the_password_it_was_made_under(self):
+        self.serve(owner="correct horse battery")
+        self.call("/api/admin/signin", {"password": "correct horse battery"})
+        mine = self.cookie
+        # changed on the board: the one who changed it stays in
+        self.assertEqual(self.call("/api/admin/password", {"password": "another horse battery"})[0], 200)
+        self.assertEqual(self.call("/api/admin/overview")[0], 200)
+        # changed at the machine (`cloudwall owner`): every session is over
+        keys.set_password("a third horse battery", self.cfg_path)
+        self.cookie = mine
+        self.assertEqual(self.call("/api/admin/overview")[0], 401)
+
+    def test_wrong_passwords_through_a_proxy_are_the_visitors_own(self):
+        self.serve(owner="correct horse battery")
+        for _ in range(5):
+            self.call("/api/admin/signin", {"password": "nope nope nope"}, headers={"X-Forwarded-For": "203.0.113.9"})
+        self.assertEqual(self.call("/api/admin/signin", {"password": "correct horse battery"}, headers={"X-Forwarded-For": "203.0.113.9"})[0], 403)
+        self.assertEqual(self.call("/api/admin/signin", {"password": "correct horse battery"}, headers={"X-Forwarded-For": "198.51.100.7"})[0], 200)
 
     def test_too_many_wrong_passwords_wait(self):
         self.serve(owner="correct horse battery")
@@ -176,8 +196,7 @@ class AdminTest(Served):
         self.assertEqual(code, 403)
 
     def test_through_caddy_any_name_works_but_needs_the_owner(self):
-        """Caddy serves CloudWall at the name it was given ([server] address unset, as when Caddy was
-        set up by hand): the board answers there, and a request through it is never the machine's own."""
+        """[server] address unset, as when Caddy was set up by hand: a request through it is never the machine's own."""
         self.serve(owner="correct horse battery")
         via = {"Host": "sky.example.com", "X-Forwarded-For": "203.0.113.9", "X-Forwarded-Proto": "https"}
         code, who = self.call("/api/admin/whoami", headers=via)
@@ -208,28 +227,71 @@ class AdminTest(Served):
             self.assertIn(b"CloudWall", r.read())
 
     def test_a_slash_after_admin_or_kiosk_is_sent_to_the_address_without_it(self):
-        """With the slash the page's relative addresses would point into a folder that isn't there
-        and it would load unstyled: so it is redirected, under a private link as well."""
+        """With the slash the page's relative addresses would point into a missing folder: it would load unstyled."""
         with open(self.cfg_path, "a") as f:
             f.write('[server]\nkey = "tafo-kemi-luza-nobe"\n')
         self.serve()
         for page in ("admin", "kiosk"):
             with urllib.request.urlopen(f"{self.base}/k/tafo-kemi-luza-nobe/{page}/", timeout=5) as r:
-                self.assertEqual(r.url, f"{self.base}/k/tafo-kemi-luza-nobe/{page}")    # followed to here
+                self.assertEqual(r.url, f"{self.base}/k/tafo-kemi-luza-nobe/{page}")
                 self.assertIn(b"CloudWall", r.read())
 
 
-class BoardPagesTest(Served):
-    """What the board's pages are drawn from: the overview's figures, settings that need no restart,
-    the test alert."""
+class SavingTest(Served):
+    def test_a_setting_with_no_default_can_be_taken_back_out(self):
+        self.serve()
+        self.assertEqual(self.call("/api/admin/settings", {"section": "home", "key": "elevation_ft", "value": 120})[0], 200)
+        self.assertIn("elevation_ft", self.cfg_path.read_text())
+        code, got = self.call("/api/admin/settings", {"section": "home", "key": "elevation_ft", "value": None})
+        self.assertEqual((code, got.get("restart")), (200, True))
+        self.assertNotIn("elevation_ft", self.cfg_path.read_text())
 
+    def test_a_request_that_goes_wrong_is_still_answered(self):
+        self.serve()
+        code, got = self.call("/api/admin/fix", {"code": "clock.timezone", "value": "Mars/Phobos"})
+        self.assertEqual(code, 400)
+        self.assertIn("time zone", got["error"])
+        self.assertEqual(self.call("/" + "x" * 5000)[0], 404)             # a name too long to be a file
+
+    def test_the_pages_files_are_sent_small_and_not_sent_twice(self):
+        import gzip
+        import http.client
+        self.serve()
+
+        def get(headers):
+            c = http.client.HTTPConnection("127.0.0.1", int(self.base.rsplit(":", 1)[1]), timeout=10)
+            self.addCleanup(c.close)
+            c.request("GET", "/js/app.js", headers=headers)
+            r = c.getresponse()
+            return r, r.read()
+        plain, body = get({})
+        zipped, small = get({"Accept-Encoding": "gzip, br"})
+        self.assertEqual((zipped.headers["Content-Encoding"], gzip.decompress(small)), ("gzip", body))
+        self.assertLess(len(small), len(body) / 2)
+        again, nothing = get({"If-None-Match": plain.headers["ETag"]})
+        self.assertEqual((again.status, nothing), (304, b""))
+
+    def test_head_gets_the_headers_alone_and_the_connection_goes_on(self):
+        import http.client
+        self.serve()
+        c = http.client.HTTPConnection("127.0.0.1", int(self.base.rsplit(":", 1)[1]), timeout=10)
+        self.addCleanup(c.close)
+        c.request("HEAD", "/")
+        r = c.getresponse()
+        self.assertEqual((r.status, r.read()), (200, b""))
+        self.assertGreater(int(r.headers["Content-Length"]), 1000)
+        c.request("GET", "/api/admin/whoami")                             # the same connection, answered in full
+        self.assertIn(b"role", c.getresponse().read())
+
+
+class BoardPagesTest(Served):
     def test_the_overview_has_what_the_pages_draw(self):
         self.serve()
         o = self.call("/api/admin/overview")[1]
-        self.assertEqual((o["home"]["lat"], o["home"]["lon"]), (45.62, -122.66))     # the house's map
+        self.assertEqual((o["home"]["lat"], o["home"]["lon"]), (45.62, -122.66))
         self.assertEqual(o["tracking"]["radius_nm"], config.DEFAULTS["tracking"]["radius_nm"])
-        self.assertIn("cache", o["storage"])                                            # the disk's bar
-        self.assertIsNone(o["storage"]["last_backup"])                                  # never backed up
+        self.assertIn("cache", o["storage"])
+        self.assertIsNone(o["storage"]["last_backup"])
         self.assertFalse(o["alerts"])
 
     def test_the_receivers_settings_take_effect_as_saved(self):
@@ -266,8 +328,7 @@ class BoardPagesTest(Served):
 
 
 class StrayLinesTest(Served):
-    """Lines of the settings file that do nothing (a setting under the wrong heading, an old name),
-    found and put right from the board."""
+    """Settings-file lines that do nothing (wrong heading, old name), found and put right from the board."""
 
     def setUp(self):
         super().setUp()
@@ -300,7 +361,7 @@ class StrayLinesTest(Served):
         self.assertEqual(self.call("/api/admin/tidy", {"section": "source", "key": "name", "action": "move"})[0], 400)
         code, got = self.call("/api/admin/tidy", {"section": "source", "key": "name", "action": "remove"})
         self.assertEqual(code, 200)
-        self.assertNotIn("[source]", self.cfg_path.read_text())                          # nothing left under it
+        self.assertNotIn("[source]", self.cfg_path.read_text())
         self.assertEqual(oct(self.cfg_path.stat().st_mode & 0o777), "0o640")              # still the owner's only
 
     def test_only_a_stray_line_can_be_taken_out(self):
@@ -366,10 +427,25 @@ if __name__ == "__main__":
 
 class HelperUnitTest(unittest.TestCase):
     def test_the_path_unit_waits_for_a_request_not_for_anything_in_the_folder(self):
-        # done/ lives in the requests folder: a unit firing on "not empty" would fire for ever
         self.assertIn(f"PathExistsGlob={helper.REQUESTS}/*.json", helper.PATH_UNIT)
         self.assertNotIn("DirectoryNotEmpty", helper.PATH_UNIT)
-        self.assertEqual(helper.DONE.parent, helper.REQUESTS)
+
+    def test_root_works_where_the_service_cannot_put_anything_of_its_own(self):
+        from cloudwall.operate import install as inst
+        # results beside the requests, not among them, under a folder that isn't the service's
+        self.assertEqual(helper.DONE.parent, helper.REQUESTS.parent)
+        self.assertFalse(str(helper.REQUESTS).startswith(inst.VAR + "/"))
+        with tempfile.TemporaryDirectory() as d:
+            victim = Path(d) / "victim"
+            victim.write_text("root's own")
+            folder = Path(d) / "requests"
+            (folder / "done").mkdir(parents=True)
+            rid = helper.ask("enable-service", folder=folder)
+            (folder / "done" / f"{rid}.json").symlink_to(victim)          # a link planted where the result goes
+            (folder / "1-00000000.json").symlink_to(victim)               # and a request that is a link
+            helper.run_pending(folder, say=lambda *a: None)
+            self.assertEqual(victim.read_text(), "root's own")
+            self.assertEqual(list(folder.glob("*.json")), [])
         with tempfile.TemporaryDirectory() as d:
             rid = helper.ask("enable-service", folder=d)
             self.assertEqual([p.name for p in Path(d).glob("*.json")], [f"{rid}.json"])   # whole, and named so
@@ -377,8 +453,7 @@ class HelperUnitTest(unittest.TestCase):
 
 
 class ReceiverTest(AdminTest):
-    """The receiver on the control board: its health read from its own files, its map and Coverage3D
-    passed through for the owner, as they would come through the tunnel."""
+    """The receiver's health read from its own files; its map and Coverage3D passed through, as via the tunnel."""
 
     def fake_receiver(self):
         import gzip
@@ -414,6 +489,7 @@ class ReceiverTest(AdminTest):
         rx = ThreadingHTTPServer(("127.0.0.1", 0), Receiver)
         threading.Thread(target=rx.serve_forever, daemon=True).start()
         self.addCleanup(rx.shutdown)
+        self.addCleanup(rx.server_close)
         port = rx.server_address[1]
         with open(self.cfg_path, "a") as f:
             f.write(f'[receiver]\nurl = "http://127.0.0.1:{port}"\ncoverage_url = "http://127.0.0.1:{port}"\nhome_url = "http://192.168.3.3"\n')

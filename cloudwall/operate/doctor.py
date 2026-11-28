@@ -1,8 +1,5 @@
-"""`cloudwall doctor`: is everything working, and if not, what to do. Each check below looks at one
-part, from outside the running CloudWall (so it works when CloudWall itself doesn't start), and
-names what it finds wrong by its code in core/troubles.py, which says what it means and what to do.
-The running CloudWall's own findings (app/watch.py) and the survey of the machine (survey.py) are
-added, so one command sees everything. `--fix` hands the findings to guide.py.
+"""`cloudwall doctor`: checks each part from outside the running CloudWall (so it works when
+CloudWall won't start), naming problems by their code in core/troubles.py.
 
 Nothing here changes anything. Databases are opened read-only, so running doctor as root never
 leaves files the service can't write.
@@ -32,12 +29,12 @@ class Context:
     def __init__(self, config_path=None, offline=False, ask=None):
         self.config_path = config.find(config_path)
         self.offline = offline
-        self.ask = ask                      # run a read-only command: System.ask (None: don't)
+        self.ask = ask                      # System.ask (None: run no commands)
         self.error = None
         self.unreadable = False
         try:
             self.cfg = config.load(config_path)
-        except PermissionError:             # the installed settings are the service's: not ours to read
+        except PermissionError:             # the installed settings are the service's
             self.unreadable = True
             self.cfg = copy.deepcopy(config.DEFAULTS)
             self.cfg["_problems"] = []
@@ -127,7 +124,7 @@ def cache(ctx):
 
 
 def server(ctx):
-    if ctx.unreadable:                  # without the settings, the private link's key isn't known
+    if ctx.unreadable:                  # the private link's key isn't known
         yield off("server", "not checked: the settings aren't yours to read (run it with sudo)")
         return
     s = ctx.cfg["server"]
@@ -141,9 +138,7 @@ def server(ctx):
     try:
         url = f"http://127.0.0.1:{port}" + (f"/k/{key}" if key else "") + "/api/state"
         st = (get_json(url, timeout=10) or {}).get("status") or {}
-        # Asking counts as a screen looking: a CloudWall paused with no screen open (or only just
-        # started) wakes and fetches. Give it a moment to before judging, or it would always look
-        # offline to the first doctor after a quiet spell or a restart.
+        # asking wakes a paused CloudWall: give it a moment to fetch before judging it offline
         waited = 0
         while not st.get("ok") and waited < WAKE_S:
             time.sleep(2)
@@ -202,7 +197,7 @@ def feeds(ctx):
 
 
 def service(ctx):
-    """The system install's service (the survey looks for every other way CloudWall may be set up)."""
+    """The system install's service only (survey.py covers every other way of being set up)."""
     if not ctx.ask or not Path("/etc/systemd/system/cloudwall.service").exists():
         return
     got = ctx.ask(["systemctl", "is-active", "cloudwall"])
@@ -251,8 +246,7 @@ def python(ctx):
 
 
 def from_server(ctx):
-    """What the running CloudWall's own watcher has found (app/watch.py), when it is running: the
-    problems only it can see (a frozen feed, a deaf receiver, a logbook that stopped saving)."""
+    """What the running CloudWall's own watcher (app/watch.py) has found, if it is running."""
     if ctx.unreadable:
         return
     s = ctx.cfg["server"]
@@ -272,22 +266,21 @@ for _part, _check in (("system", python), ("settings", settings), ("service", se
 
 
 def doctor(config_path=None, offline=False, ask=None, machine=None):
-    """(findings, the worst state): every registered check of CloudWall's settings and parts, the
-    running CloudWall's own findings, and the survey of this machine (operate/survey.py)."""
+    """(findings, the worst state): every registered check, plus the survey of this machine."""
     from .survey import Machine, survey
     ctx = Context(config_path, offline, ask)
     found = health.run(ctx)
-    # what the running CloudWall says and doctor's own checks find the same problems: said once
+    # a problem both the running CloudWall and doctor's own checks found is said once
     own = {f.code for f in found if f.code and not f.part.startswith("running:")}
     found = [f for f in found if not (f.part.startswith("running:") and f.code in own)]
     mine = {(f.code, _file(f.summary)) for f in found if f.code}
-    # the survey looks at every install's files: one this check has already said is said once
+    # likewise the survey's findings about a file already reported
     found += [f for f in survey(machine or Machine(ask=ask)) if not (f.code and (f.code, _file(f.summary)) in mine)]
     return found, health.worst(found)
 
 
 def _file(text):
-    """The first file a finding names, as an absolute path (for telling two findings of it apart)."""
+    """The first file a finding names, as an absolute path, or None."""
     import re
     m = re.search(r"(/[\w./-]+|[\w.-]+\.toml)", text or "")
     return str(Path(m.group(1)).resolve()) if m else None

@@ -1,10 +1,7 @@
-"""The machine, as the installer sees it: files, folders, users and services, each change made
-only when it isn't so already, and said.
+"""The machine, as the installer sees it: each change made only when it isn't so already, and said.
 
-Everything goes through a System, which works on the real machine (root "/") or on a folder
-standing in for one (tests, and `cloudwall install --root <dir>` to see what would be written).
-Away from the real machine, users, ownership and services are only recorded: there is no one to
-make them for. With dry_run nothing is changed anywhere and every change is still said.
+A System works on the real machine (root "/") or on a folder standing in for one, where users,
+ownership and services are only recorded. With dry_run nothing is changed and every change is still said.
 """
 import grp
 import hashlib
@@ -25,7 +22,6 @@ class System:
         self.done = []              # what was changed (or would be), in words
         self.users = set()          # users made away from the real machine
 
-    # -- paths ------------------------------------------------------------------------
     def path(self, p):
         """Where an absolute path of the machine is under this root."""
         return self.root / str(p).lstrip("/")
@@ -43,7 +39,7 @@ class System:
         self.done.append(what)
         self.say(("would " if self.dry_run else "") + what)
 
-    # -- changes ----------------------------------------------------------------------
+    # -- changes --
     def mkdir(self, p, mode=0o755, owner=None, group=None):
         target = self.path(p)
         if not target.is_dir():
@@ -54,7 +50,7 @@ class System:
         self.chown(p, owner, group)
 
     def write(self, p, content, mode=0o644, owner=None, group=None):
-        """Write a file whole, put in place at once, only if it differs. True if it changed."""
+        """Write a file atomically, only if it differs. True if it changed."""
         target = self.path(p)
         data = content.encode() if isinstance(content, str) else content
         same = target.exists() and target.read_bytes() == data
@@ -84,8 +80,13 @@ class System:
         if not self.dry_run:
             shutil.copytree(source, self.path(p), ignore=shutil.ignore_patterns(*ignore), dirs_exist_ok=True)
 
+    def rename(self, p, to):
+        self._did(f"rename {p} to {to}")
+        if not self.dry_run:
+            self.path(p).rename(self.path(to))
+
     def symlink(self, target, p):
-        """Point the link at p to target, switching in one step (no moment with no link)."""
+        """Point the link at p to target, atomically. True if it changed."""
         link = self.path(p)
         if link.is_symlink() and os.readlink(link) == str(target):
             return False
@@ -123,9 +124,9 @@ class System:
             if not self.dry_run:
                 os.chown(target, uid, gid)
 
-    # -- users and services -----------------------------------------------------------
+    # -- users and services --
     def user_exists(self, name):
-        if not self.real:              # a folder standing in for a machine keeps its users in its own etc/passwd
+        if not self.real:              # a stand-in folder keeps its users in its own etc/passwd
             passwd = self.read("/etc/passwd") or ""
             return name in self.users or any(l.split(":")[0] == name for l in passwd.splitlines())
         try:
@@ -155,8 +156,7 @@ class System:
         return self.runner(cmd, check=check, capture_output=True, text=True)
 
     def ask(self, cmd):
-        """Run a command that only reads (`systemctl is-active`): its result, never said. None
-        where there is no machine to ask."""
+        """A read-only command's result, never said. None where there is no machine to ask."""
         if not self.real:
             return None
         try:
@@ -166,7 +166,7 @@ class System:
 
 
 def tree_hash(folder, ignore=("__pycache__",)):
-    """A fingerprint of a folder's files (names and contents), for telling releases apart."""
+    """A fingerprint of a folder's files (names and contents)."""
     h = hashlib.sha256()
     folder = Path(folder)
     for f in sorted(folder.rglob("*")):

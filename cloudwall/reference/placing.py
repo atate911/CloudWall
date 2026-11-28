@@ -1,10 +1,5 @@
-"""Each place to watch, worked out from the settings and CloudWall's tables.
-
-CloudWall can watch several places: [home] with [airport] is the first, and each [[places]]
-entry adds one. A place needs only a name, a position and its airport's ICAO code; the rest
-of the airport (name, city, position, elevation, runways, the small fields nearby) comes from
-the bundled tables unless the config gives it. (Reading and checking the settings themselves is
-config.py's.)
+"""Each place to watch as a full config: [home] with [airport] is the first, each [[places]]
+entry adds one. The airport's details come from the bundled tables unless the config gives them.
 """
 import copy
 import logging
@@ -14,17 +9,13 @@ from ..core import geo
 from . import airports
 
 log = logging.getLogger("cloudwall")
-# CloudWall can watch several places: [home] with [airport] is the first, and each [[places]]
-# entry adds one. A place needs only a name, a position and its airport's ICAO code; the rest
-# of the airport (name, city, position, elevation, runways, the small fields nearby) comes from
-# the bundled tables unless the config gives it.
 
 def _slug(name):
     return re.sub(r"[^a-z0-9]+", "-", str(name).lower()).strip("-") or "place"
 
 
 def _zip(z):
-    """A ZIP code as a string, whether the config wrote it as text or as a number (02134 -> 2134)."""
+    """A ZIP code as a string (TOML reads an unquoted 02134 as 2134)."""
     return str(z).strip().zfill(5) if isinstance(z, int) else str(z).strip()
 
 
@@ -45,13 +36,15 @@ def locate_home(h, what="[home]"):
 
 
 def complete_airport(ap, home, radius_nm):
-    """An airport filled in from its ICAO (or IATA) code, keeping whatever the config gives. With no
-    code, or "auto", it's the one airports.pick_airport chooses for home."""
+    """An airport filled in from its code, keeping whatever the config gives; with no code or
+    "auto", airports.pick_airport's choice."""
     ap = dict(ap)
     if str(ap.get("icao") or "auto").lower() == "auto" and not ap.get("iata"):
         ap["icao"] = airports.pick_airport(home["lat"], home["lon"])
         if not ap["icao"]:
             raise ValueError(f"no airport with airline service near {home['lat']:.3f}, {home['lon']:.3f}: give its ICAO code")
+    if str(ap.get("icao") or "").lower() == "auto":      # named by its IATA code alone
+        ap["icao"] = ""
     rec = airports.lookup(ap.get("icao")) or airports.lookup(ap.get("iata"))
     if rec and ap.get("lat") is not None and ap.get("lon") is not None:
         off = geo.haversine_nm(float(ap["lat"]), float(ap["lon"]), rec["lat"], rec["lon"])
@@ -66,26 +59,25 @@ def complete_airport(ap, home, radius_nm):
         raise ValueError(f"airport {ap.get('icao') or '(no code)'} isn't in CloudWall's table: "
                          "give its lat and lon (and iata and city) in the config")
     ap["icao"] = str(ap.get("icao") or "").upper()
-    if not ap.get("iata"):      # no IATA code (Pearson Field): its local code (VUO), else its ICAO code
+    if not ap.get("iata"):      # no IATA code: its local code (VUO), else its ICAO code
         ap["iata"] = (rec or {}).get("code") or ap["icao"]
     ap.setdefault("city", ap.get("name") or ap["iata"])
     if ap.get("elevation_ft") is None:
         ap["elevation_ft"] = airports.elevation_ft(ap["icao"]) or 0
-    if "others" not in ap:      # small fields nearby, whose light aircraft are theirs, not this airport's
+    if "others" not in ap:      # small fields nearby
         ap["others"] = airports.nearby(home["lat"], home["lon"], radius_nm, exclude=[ap["icao"], ap["iata"]])[:6]
     for f in ap["others"]:
         if f.get("elevation_ft") is None:
             f["elevation_ft"] = airports.elevation_ft(f.get("icao") or f.get("code")) or home.get("elevation_ft") or 0
-        if "runways" not in f:      # drawn inside the field's symbol on the radar
+        if "runways" not in f:
             f["runways"] = airports.runways((airports.lookup(f.get("icao") or f.get("code")) or {}).get("icao"))
     if "runways" not in ap:
         ap["runways"] = airports.runways(ap["icao"])
-    # the ATC radar's video map: Class B and C airspace (and the airport's own Class D) and VORs
     if "airspace" not in ap:
         ap["airspace"] = airports.airspace_near(home["lat"], home["lon"], own=ap["iata"])
     if "navaids" not in ap:
         ap["navaids"] = airports.navaids_near(home["lat"], home["lon"])
-    # hospital helipads: where medical helicopters are going, out past the radar's longest range
+    # helipads out past the radar's longest range: where medical helicopters are going
     if "helipads" not in ap:
         ap["helipads"] = airports.helipads_near(home["lat"], home["lon"], max(30, radius_nm + 15))
     return ap
@@ -96,15 +88,14 @@ def complete_place(cfg):
     c = dict(cfg)
     c["home"] = locate_home(cfg["home"])
     c["airport"] = complete_airport(cfg["airport"], c["home"], cfg["tracking"]["radius_nm"])
-    if c["home"].get("elevation_ft") is None:         # not given: near enough the airport's
+    if c["home"].get("elevation_ft") is None:
         c["home"]["elevation_ft"] = c["airport"]["elevation_ft"]
     return c
 
 
 def entry(p, what):
-    """A place as [[places]] (or the desktop's location setting) gives it: name, lat and lon or
-    zip, and optionally airport (an ICAO code, "auto" or a table), elevation_ft and others.
-    Returns its home and airport."""
+    """(home, airport) from a [[places]] entry: name, lat and lon or zip, and optionally airport
+    (an ICAO code, "auto" or a table), elevation_ft and others."""
     home = locate_home({"name": p.get("name"), "lat": p.get("lat"), "lon": p.get("lon"), "zip": p.get("zip"),
                         "elevation_ft": p.get("elevation_ft")}, what)
     if not home["name"]:
@@ -126,8 +117,7 @@ def place_config(cfg, pid, home, airport):
 
 
 def unique_id(name, taken, unusable=None):
-    """An id for a place from its name ("Cabin" -> "cabin"), numbered on ("cabin-2") past those
-    taken and any that unusable(id) rules out."""
+    """"Cabin" -> "cabin", or "cabin-2"... past those taken or ruled out by unusable(id)."""
     pid = base = _slug(name)
     n = 2
     while pid in taken or (unusable and unusable(pid)):
@@ -136,8 +126,7 @@ def unique_id(name, taken, unusable=None):
 
 
 def places(cfg):
-    """Every place to watch, first to last, each a full config of its own: the shared settings
-    with this place's [home] and [airport], and place = {id, name}."""
+    """Every place to watch, each a full config with its own home, airport and place = {id, name}."""
     entries = [(dict(cfg["home"], name=cfg["home"].get("name") or "Home"), cfg["airport"])]
     for i, p in enumerate(cfg.get("places") or []):
         entries.append(entry(p, f"[[places]] entry {i + 1} ({p.get('name') or 'no name'})"))

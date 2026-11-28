@@ -10,7 +10,6 @@ import { latest, refresh } from "./fresh.js";
 import { mappable, drawRouteMap, moveRouteMap, routeScale, routeHeight } from "./routemap.js";
 import { medIcon, hospitalLine, skyLook } from "./situation.js";
 
-// Play the entrance animation once for freshly inserted content.
 function enter(el) {
   el.classList.add("enter");
   clearTimeout(el._enterTimer);
@@ -48,21 +47,17 @@ const SKELETON = `
 
 const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
-// The flight is said once. Its radio callsign is shown under it only when it says something the
-// flight number doesn't: BAW21K under BA 285, but not DAL178 under DL 178, nor QXE2162 under AS 2162
-// (the same number, and its operator is named in words beside it).
+// The callsign is shown only when it says something the flight number doesn't: BAW21K under
+// BA 285, but not DAL178 under DL 178, nor QXE2162 under AS 2162 (the same number).
 const flightDigits = (s) => ((/(\d+[A-Z]*)$/.exec(String(s || "").replace(/\s/g, "")) || [])[1] || "").replace(/^0+/, "");
 const saysMore = (callsign, id) => !!callsign && callsign !== id && !(flightDigits(callsign) && flightDigits(callsign) === flightDigits(id));
 
-// The aircraft's type by name, the card's headline, as the way into the panel about it (about.js):
-// there whether the card has room for the drawing, with its own button, or not. Plain words on the
-// wall panel, read from across the room, and for an aircraft whose type has no code.
+// The type's name as the way into the panel about it (about.js). Plain words on the wall panel
+// and for an aircraft whose type has no code.
 const aboutLink = (a, words) => (a.type && !document.body.classList.contains("kiosk")
   ? `<button class="about-link" data-about="${esc(a.type)}" title="About this type">${esc(words)}<i aria-hidden="true"> ›</i></button>` : esc(words));
 
-// The two airports stand origin on the left, destination on the right, whichever way the flight is
-// going on the map, so the line between them always fills left to right: "From" and "To" over them and
-// an arrowhead on the line at the destination's end.
+// Origin on the left, destination on the right, whichever way the flight is going on the map.
 const aptHtml = (p, to, right, here) => `<div class="apt${right ? " r" : ""}${p.iata === here ? " local" : ""}"><small>${to ? "To" : "From"} ${esc(p.city || p.name || "")}</small>` +
   `<div class="flaps" id="${to ? "h-dest" : "h-orig"}"></div><div class="apt-when" id="${to ? "h-arr" : "h-dep"}"></div></div>`;
 
@@ -73,7 +68,6 @@ function routeHtml(a, state) {
     return `<div class="noroute pending">Looking up route…<small>Asking ${esc(prov)} where this flight is going</small></div>`;
   }
   if (a.medical && (!r || !r.plausible)) {
-    // a medical flight: the hospital it's going to, or has just left, when that's known
     return `<div class="noroute med">${medIcon(28)}<span>${esc(a.hospital ? hospitalLine(a.hospital, state) : `${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}, no flight plan filed`)}` +
       `${a.hospital ? `<small>${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}</small>` : ""}</span></div>`;
   }
@@ -100,12 +94,10 @@ function routeHtml(a, state) {
   const iata = state.airport.iata;
   const left = aptHtml(r.origin, false, false, iata), right = aptHtml(r.dest, true, true, iata);
   const cls = r.plausible ? "" : " unsure";
-  // the aircraft itself rides the line between them, in small: its own side elevation, facing the way
-  // it's going (an aircraft of no shape to draw, a balloon, keeps the dot)
+  // the aircraft's side elevation rides the line between them (one with no shape to draw keeps the dot)
   const info = typeInfo(a), dr = info.shape ? drawing(info.type, info.shape, info.length, info.name) : null;
   const rider = dr && dr.svg ? `<span class="rider" style="--ar:${(dr.w / dr.h).toFixed(3)}">${dr.svg}</span>` : "";
   if (worldLayer(state) && mappable(r)) {
-    // the route on a real map: the airports either side of the distance and flight time, the map below
     return `<div class="route mapped${cls}">
     ${left}
     <div class="prog${rider ? " ridden" : ""}" id="h-prog" aria-hidden="true"><i></i>${rider || "<b></b>"}</div>
@@ -114,7 +106,7 @@ function routeHtml(a, state) {
     <div class="rmap" id="h-map"></div>
   </div>`;
   }
-  // with no map: an arc from the origin on the left to the destination on the right
+  // with no map: an arc
   return `<div class="route${cls}">
     ${left}
     <div><svg class="arc" viewBox="0 0 200 40">
@@ -127,9 +119,8 @@ function routeHtml(a, state) {
   </div>`;
 }
 
-// When it left and when it gets in, under each airport, and the flight time between them. A paid
-// route provider gives the takeoff time (and FlightAware the arrival); otherwise the arrival is
-// CloudWall's own estimate from distance and speed, and says so. Shown for a believable route only.
+// A paid route provider gives the takeoff time (and FlightAware the arrival); otherwise the arrival
+// is CloudWall's own estimate, and says "about". Shown for a believable route only.
 const hm = (min) => (min >= 60 ? `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}m` : `${min} min`);
 function routeTimes(r) {
   if (!r) return { dep: "", arr: "", dur: "" };
@@ -143,7 +134,7 @@ function routeTimes(r) {
   };
 }
 
-// The server's whole-world map layer for the route, if it has one switched on ([map] route).
+// The server's whole-world map layer, if switched on ([map] route).
 const worldLayer = (state) => {
   const w = state.charts && state.charts.layers && state.charts.layers.world;
   return w && w.enabled ? w : null;
@@ -168,9 +159,7 @@ function showHero(el, a, state) {
   }
   const r = a.route;
   const id = ident(a), info = typeInfo(a);
-  // what it is, in the card's biggest letters, and a tap on it opens the panel about the type; the
-  // flight stands beside the airline's logo. An aircraft of no known type is headed by its flight.
-  // (a flight number is spaced as the departure boards space it; a registration or a callsign stands as it is)
+  // the headline is the type; an aircraft of no known type is headed by its flight
   const called = a.flight_no ? boardFlight(id) : id;
   const type = a.type_name || a.type || "", head = $("h-type"), headed = `${a.type || ""}|${type || called}`;
   if (head.dataset.is !== headed) {
@@ -180,7 +169,6 @@ function showHero(el, a, state) {
   $("h-flight").hidden = !type;
   flap($("h-flight"), type ? called : "");
   const ga = info.shape === "piston" || info.shape === "heli" || /^N\d/.test(a.callsign || "");
-  // the server's airline agrees with the logo and the flight number (a partner's flight under the airline you'd book)
   $("h-airline").textContent = a.airline || (r && r.airline) || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
   $("h-sub").innerHTML = [a.operated_by ? `Operated by ${a.operated_by}` : null, saysMore(a.callsign, id) ? a.callsign : null].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("");
   const bh = badges(a.medical ? ["MEDICAL", ...(a.badges || []).filter((b) => b !== "MEDICAL")] : a.badges);
@@ -189,8 +177,8 @@ function showHero(el, a, state) {
   // why this flight, as the Simple panel says it
   const t0 = since(state), coming = a.cpa_s > 0 && a.cpa_nm <= state.tracking.overhead_nm && a.cpa_s - t0 > 5;
   $("h-why").textContent = state.pinned ? "Selected" : coming ? "Over the house next" : a.dist < 1 ? "Overhead now" : a.cpa_s - t0 <= 5 ? "Just passed" : "Nearest now";
-  // a followed flight the feed has left out for a moment: its position is CloudWall's estimate
-  // (by the server's clock, plus the time since it answered: this screen's clock may not agree with it)
+  // a followed flight the feed has left out for a moment: its position is an estimate (aged by the
+  // server's clock plus the time since it answered: this screen's clock may not agree with it)
   const est = a.coasting ? Math.round((state.status.updated || state.now) - a.coasting + dataAge(state)) : null;
   $("h-est").hidden = est == null;
   if (est != null) $("h-est").textContent = `Position estimated: last report ${Math.max(1, est)} s ago`;
@@ -236,7 +224,7 @@ function showHero(el, a, state) {
   const v = a.vrate || 0;
   roll($("h-alt"), a.on_ground ? 0 : a.alt);
   $("h-arrow").innerHTML = v > 300 ? '<span class="up">▲</span>' : v < -300 ? '<span class="down">▼</span>' : "";
-  // where the autopilot is taking it: the selected altitude, when it differs from where it is now
+  // the autopilot's selected altitude, when it differs from where it is now
   const onApproach = (a.modes || []).includes("approach") || a.local === "arriving";
   const tgt = a.target_alt != null && a.alt != null && a.target_alt >= 1000 && !onApproach && Math.abs(a.target_alt - a.alt) > 300
     && (v > 300 ? a.target_alt > a.alt : v < -300 ? a.target_alt < a.alt : true) ? a.target_alt : null;
@@ -245,7 +233,6 @@ function showHero(el, a, state) {
   roll($("h-gs"), a.gs);
   $("h-mph").textContent = num((a.gs || 0) * 1.15078) + " mph";
   roll($("h-dist"), a.dist, (x) => x.toFixed(1));
-  // how high up to look, beside how far away
   const look = skyLook(a, state);
   $("h-dist2").textContent = `${(a.dist * 1.15078).toFixed(1)} mi ${a.compass}${look ? `, ${Math.round(look.el)}° up` : ""}`;
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
@@ -253,7 +240,6 @@ function showHero(el, a, state) {
     : a.track == null ? "" : `Toward the ${POINTS[Math.round(a.track / 22.5) % 16]}`;
 
   const sil = $("h-sil");
-  // the type plate: the side elevation with its length, under the photo once one arrives
   const isNew = (a.badges || []).includes("NEW TYPE");
   const silKey = `${info.type}|${info.shape}|${info.length}|${info.name}|${isNew}|${a.icon}`;
   if (sil && sil.dataset.shape !== silKey) {
@@ -261,9 +247,7 @@ function showHero(el, a, state) {
     sil.innerHTML = plate(info, { note: isNew ? "New to your collection" : "" }) || kindPlate(a.icon);
     // the type designator in the sheet's corner, for types drawn from their own measurements
     if (drawn(info)) sil.dataset.code = info.type; else delete sil.dataset.code;
-    // a button in the drawing's corner opens the panel about its type (about.js), for any aircraft whose
-    // type is known: a button, not the whole drawing, which fills the card when there's no route to show,
-    // and a tap on the card lets a followed flight go. Not on the wall panel, read from across the room.
+    // a button, not the whole drawing: a tap on the card lets a followed flight go. Not on the wall panel.
     if (a.type && !document.body.classList.contains("kiosk")) {
       sil.insertAdjacentHTML("beforeend", `<button class="about-btn" data-about="${esc(a.type)}" aria-label="About the ${esc(info.name || a.type)}">About this type ›</button>`);
     }
@@ -271,7 +255,6 @@ function showHero(el, a, state) {
   renderFacts(a, state, since(state));
 
   if (a.photo && a.photo_by && cur.photo !== a.photo) {
-    // a photo of this very airframe takes the top of the frame once it has loaded; the type plate stays below
     cur.photo = a.photo;
     const fig = document.createElement("figure");
     fig.className = "photo";
@@ -286,7 +269,6 @@ function showHero(el, a, state) {
       fig.prepend(img);
       m.prepend(fig);
       m.classList.add("has-photo");
-      // a switch in the frame's corner: the photo or the drawing, one at a time, as last set on this screen
       m.insertAdjacentHTML("beforeend", `<div class="seg media-seg" role="group" aria-label="Photo or drawing">` +
         `<button data-media="photo" title="The photo of this aircraft">Photo</button><button data-media="plate" title="The type's drawing, to scale">Drawing</button></div>`);
       showMedia(m);
@@ -301,8 +283,7 @@ function showHero(el, a, state) {
     drawRouteMap($("h-map"), r, worldLayer(state), state.airport.iata);
     moveRouteMap($("h-map"), r.progress ?? null);
   }
-  // fitted again when the card changes size, and when its words do within it (the page's fonts
-  // arriving, a line of the facts wrapping), which change the room left for the pictures
+  // fitted again when the card changes size, and when its words do (fonts arriving, a line wrapping)
   if (!el._fit) el._fit = new ResizeObserver(() => { if (el.classList.contains("hero-card")) fitCard(el); });
   if (fresh) {
     el._fit.disconnect();
@@ -310,19 +291,13 @@ function showHero(el, a, state) {
   }
 }
 
-// The desktop card is as tall as its row. One picture takes the room the words leave: the route map,
-// or, with no map, the aircraft's drawing (or photo) across the card. The map has three places, and
-// takes the one that shows the route biggest, keeping the drawing when that costs the route little:
-//   across: under the airports, the drawing beside the facts below it (a card with the height for it);
-//   wide:   under the airports, taking the drawing's room too, the facts in a row under it (a route
-//           running east and west on a card too short for a strip of map to show much);
-//   beside: beside the facts, in the drawing's place, the drawing over the facts (a route running
-//           north and south, which a wide strip would show as a short line in its middle).
-// When the row is too short for everything, things give way in turn, never running into each other:
-// the spacing tightens, then the map goes (the drawing takes the stage) or, beside the facts, the
-// drawing goes first; last, the facts stand alone in a row.
-// A card with room for only one of the two shows the map, and a switch in its corner (Route, Aircraft)
-// puts the drawing in the map's place: as it was last set on this screen, for every flight after.
+// The desktop card is as tall as its row. The map has three places, and takes the one that shows
+// the route biggest (the first within 85% of the best, in this order):
+//   across: under the airports, the drawing beside the facts below it;
+//   beside: beside the facts, in the drawing's place (a north-south route);
+//   wide:   under the airports, taking the drawing's room too (an east-west route on a short card).
+// When the row is too short, things give way in turn (STEPS): spacing, then the map or the drawing.
+// A card with room for only one shows the map, with a switch (Route, Aircraft) stored per screen.
 const FITS = ["fit-tight", "fit-nomap", "fit-noplate"];
 const STEPS = { across: FITS, wide: ["fit-tight", "fit-nomap"], beside: ["fit-tight", "fit-noplate", "fit-nomap"] };
 const picture = () => (store("card") === "plate" ? "plate" : "map");
@@ -333,8 +308,7 @@ function fitCard(el, again = false) {
   if (sw) sw.hidden = true;
   el.classList.remove("pic-plate");
   if (phone()) {
-    // a phone's card scrolls: its map as tall as the route needs, within reason, a north-south route
-    // in a taller map than an east-west one
+    // a phone's card scrolls: its map as tall as the route needs, within reason
     placeMap(el, map, "across");
     el.classList.remove(...FITS);
     if (map && map.clientWidth) map.style.height = `${Math.round(clamp(routeHeight(r, map.clientWidth), 176, Math.min(420, innerHeight * 0.55)))}px`;
@@ -353,9 +327,8 @@ function fitCard(el, again = false) {
     return map && !el.classList.contains("fit-nomap") ? routeScale(r, map.clientWidth, map.clientHeight) : 0;
   };
   if (!map) { fit("across"); return; }
-  // decided again only when the route, the card's size or the room its words take changes (a line
-  // more, a photo, the page's fonts arriving), so it doesn't flip back and forth from one update to
-  // the next or start the map's animation over
+  // decided again only when the route, the card's size or the room its words take changes, so it
+  // doesn't flip back and forth between updates or start the map's animation over
   const words = [".h-id", ".metrics"].map((q) => el.querySelector(q)?.offsetHeight).join(",");
   const key = `${cur.routeKey}|${el.clientWidth}x${el.clientHeight}|${words}|${$("h-facts").childElementCount}|${!!el.querySelector(".media.has-photo")}`;
   if (el._mapKey !== key) {
@@ -364,9 +337,8 @@ function fitCard(el, again = false) {
     el._mapAt = ["across", "beside", "wide"].find((how) => s[how] >= best * 0.85);
     el._mapBest = best;
   }
-  // The card's parts can go on settling after the place was chosen (the page's rows finding their
-  // heights, a line of the facts arriving) without any of the measures above changing: if the map
-  // has ended up much smaller than its place promised, choose again
+  // The card can go on settling after the place was chosen without the key changing: if the map
+  // has ended up much smaller than its place promised, choose again (once)
   if (fit(el._mapAt) < el._mapBest * 0.85 - 1e-6 && !again) { el._mapKey = null; fitCard(el, true); return; }
   // the map alone, the drawing left out for want of room: the switch, and the drawing if it's set to
   if (!sw || !el.classList.contains("fit-noplate") || el.classList.contains("fit-nomap") || document.body.classList.contains("kiosk")) return;
@@ -388,8 +360,7 @@ function fitCard(el, again = false) {
   }
 }
 
-// The page's fonts arrive after the card is first drawn and change the height of its lines, those
-// between the airports among them, which nothing else here measures: the card is fitted afresh.
+// The page's fonts arrive after the card is first drawn and change the height of its lines.
 if (document.fonts && document.fonts.addEventListener) {
   document.fonts.addEventListener("loadingdone", () => {
     const el = $("hero");
@@ -397,7 +368,6 @@ if (document.fonts && document.fonts.addEventListener) {
   });
 }
 
-// The switch in the photo's corner: the airframe's photo, or the type's drawing in its place.
 const mediaPick = () => (store("media") === "plate" ? "plate" : "photo");
 function showMedia(m) {
   const pick = mediaPick();
@@ -410,14 +380,13 @@ export function setMedia(which) {
   if (m) showMedia(m);
 }
 
-// The switch in the card's corner: the route map, or the aircraft's drawing in its place.
 export function setPicture(which) {
   store("card", which === "plate" ? "plate" : "map");
   const el = $("hero");
   if (el) fitCard(el);
 }
 
-// Put the route map in its place: at the foot of the route (across, wide) or beside the facts.
+// At the foot of the route (across, wide) or beside the facts.
 function placeMap(el, map, how) {
   const bottom = el.querySelector(".h-bottom"), route = el.querySelector(".route.mapped");
   el.classList.toggle("map-beside", !!map && how === "beside");
@@ -427,11 +396,10 @@ function placeMap(el, map, how) {
   if (map.parentElement !== home) home === bottom ? bottom.prepend(map) : route.append(map);
 }
 
-// A photo's credit: its photographer and a link to its page on planespotters.net, in the
-// photo's bottom right corner on its edge, as their terms ask
+// A photo's credit and link, as planespotters.net's terms ask
 const credit = (link, by) => `<a class="credit" href="${esc(link)}" target="_blank" rel="noopener noreferrer">© ${esc(by)} · planespotters.net</a>`;
 
-// "autopilot, approach" -> "On, flying the approach". Modes as the aircraft reports them.
+// "autopilot, approach" -> "On, flying the approach"
 function autopilotWords(modes) {
   if (!modes || !modes.length) return null;
   const m = new Set(modes), on = m.has("autopilot");
@@ -441,14 +409,12 @@ function autopilotWords(modes) {
   return `${on ? "On" : "Off"}${doing ? `, ${doing}` : ""}`;
 }
 
-// The short list beside the photo: times, aircraft, and when it passes the house.
 function renderFacts(a, state, elapsed = 0) {
-  // departure and arrival times sit under the airports; a light aircraft landing here with no
-  // route on file has no airports to put its landing time under, so it goes here
+  // a light aircraft landing here with no route has no airports to put its landing time under
   const r = a.route && a.route.plausible ? a.route : null, rows = [];
   if (!r && a.landing_est) rows.push(["Lands", `about ${clock(a.landing_est)}`]);
   const left = a.cpa_s - elapsed;
-  // a drifting balloon or a glider circling has no time worth counting down to (as the lists say)
+  // a drifting balloon or a circling glider has no time worth counting down to
   const slow = (a.gs || 0) <= 40 || left > 1800;
   rows.push(["Overhead", left > 5 ? (slow ? `not for a while; ${a.cpa_nm.toFixed(1)} nm away at the closest` : `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away`)
     : a.dist < 1.5 ? "now" : "passed, heading away"]);
@@ -465,14 +431,12 @@ function renderFacts(a, state, elapsed = 0) {
   if (dl && dl._html !== html) dl.innerHTML = dl._html = html;
 }
 
-// Called every second between data updates, to keep the overhead countdown moving.
 export function tickHero(elapsed) {
   if (cur.a && cur.state) renderFacts(cur.a, cur.state, elapsed);
 }
 
 
 // ---------- idle: rotate through a few quiet-sky displays ----------
-// ---- quiet sky: the next aircraft heading this way, or a calm summary ----
 const COVER_WORDS = { FEW: "A few clouds", SCT: "Scattered clouds", BKN: "Broken clouds", OVC: "Overcast", OVX: "Sky obscured", VV: "Sky obscured" };
 function weatherWords(w) {
   if (!w) return "";
@@ -493,7 +457,6 @@ function todayLine(state) {
   return bits.join('<span class="sep"></span>');
 }
 
-// Where the aircraft will be when it's closest to the house.
 function passText(state, n) {
   const t = Math.max(0, n.cpa_s), at = projected(n, t), alt = Math.max(0, (n.alt || 0) + ((n.vrate || 0) * t) / 60);
   const p = azEl(state.home, at, alt);
@@ -575,14 +538,11 @@ function lastSlide(s) {
 }
 
 // ---- today's traffic: every position since midnight, as a heatmap over the map around home ----
-// The colour ramp from a cell flown through once to the busiest corridor: transparent, then a cool
-// violet, magenta, amber and (by night) a pale gold at the hottest, so the eye goes straight to the
-// routes used again and again. Each stop is [t, colour, opacity]. By day the ramp darkens at the
-// top instead (to a deep red), as gold would fade into the pale chart.
+// The colour ramp from one flight to the busiest corridor. Each stop is [t, colour, opacity].
+// By day the ramp darkens at the top (deep red), as gold would fade into the pale chart.
 const HEAT_RAMP = {
   night: [[0, "#4b3aa8", 0], [0.06, "#5a46c0", 0.2], [0.25, "#7a3cb0", 0.5], [0.5, "#d0407e", 0.86], [0.78, "#f6853a", 0.97], [1, "#ffe7a3", 1]],
-  // by day, t is the flights on a log scale from one (see heatImage): a lone flight at the bottom, a
-  // greyed lavender barely over the map, deepening with each doubling to the corridors' deep red
+  // by day, t is the flights on a log scale from one (see heatImage)
   day: [[0, "#9a9cc4", 0.12], [0.18, "#8571c4", 0.24], [0.4, "#8a3fae", 0.5], [0.62, "#c0306a", 0.8], [0.82, "#d9461f", 0.94], [1, "#7c1416", 1]],
 };
 const hex3 = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -602,25 +562,18 @@ function heatLut(night) {
   }
   return (rampCache[k] = lut);
 }
-// the legend's bar, from the same ramp
 const heatLegend = (night) => `linear-gradient(90deg, ${HEAT_RAMP[night ? "night" : "day"].filter(([, , a]) => a > 0)
   .map(([t, c, a]) => `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transparent) ${Math.round(t * 100)}%`).join(", ")})`;
 
-// The traffic, drawn at the screen's own sharpness: every flight's line laid down on a buffer of
-// the canvas's device pixels, each pixel counting how many flights crossed it (a line covers a pixel
-// fully at its middle, partly at its anti-aliased edges, and counts once per flight where its
-// segments meet), then coloured: on a log scale, as a handful of busy corridors carry most of the
-// day, scaled so the busiest corridor (not its single busiest pixel) reaches the top of the ramp.
-//
-// Smoothed without blurring: where the lines are stays pixel-sharp, but the count each pixel is
-// coloured by is the average over the lines within a few pixels of it (`soft`, in device pixels),
-// weighted by how much of each pixel a line covers, so the empty map around doesn't thin it out. A
-// lone line keeps its colour exactly; where two cross there is no bright bead; and a corridor of
-// many lines shades evenly across its width instead of in streaks a flight apart.
+// The traffic: every flight's line laid down on a buffer of device pixels, each pixel counting the
+// flights that crossed it (once per flight where its segments meet), then coloured on a log scale
+// so the busiest corridor (not its single busiest pixel) reaches the top of the ramp.
+// Smoothed without blurring: the lines stay pixel-sharp, but each pixel is coloured by the count
+// averaged over the lines within `soft` device pixels, weighted by coverage, so the empty map
+// around doesn't thin it out and crossings make no bright bead.
 let heatDrawn = null;
 
-// Three passes of a box blur, near enough a Gaussian, along the rows and then the columns, each
-// pass in time proportional to the pixels whatever the radius.
+// Three passes of a box blur (near enough a Gaussian), in time proportional to the pixels whatever the radius.
 function smooth(a, size, r) {
   const tmp = new Float32Array(a.length), w = 2 * r + 1;
   const pass = (src, dst, stride, step) => {
@@ -665,15 +618,14 @@ function heatImage(heat, size, k, width, night, soft) {
     for (const j of touched) { buf[j] += mine[j]; mine[j] = 0; }
     touched.length = 0;
   }
-  // each lit pixel's count, smoothed over the lines near it (the line's own coverage is kept in buf,
-  // for the opacity of its edges): sum of counts over sum of coverage, both smoothed alike
+  // each lit pixel's smoothed count: sum of counts over sum of coverage, both smoothed alike
   const cover = new Float32Array(buf.length);
   for (let j = 0; j < buf.length; j++) cover[j] = buf[j] > 1 ? 1 : buf[j];
   const num = smooth(Float32Array.from(buf), size, soft), den = smooth(Float32Array.from(cover), size, soft);
   const lvl = new Float32Array(buf.length);
   for (let j = 0; j < buf.length; j++) if (buf[j] > 0 && den[j] > 1e-4) lvl[j] = Math.max(1, num[j] / den[j]);
-  // the busiest corridor's level: the 99.5th percentile of the lit pixels, from a histogram (sorting a
-  // million pixels is too slow for a Raspberry Pi)
+  // the busiest corridor's level: the 99.5th percentile of the lit pixels, from a histogram
+  // (sorting a million pixels is too slow for a Raspberry Pi)
   let max = 0, lit = 0;
   for (let j = 0; j < lvl.length; j++) if (lvl[j] > max) max = lvl[j];
   const bins = new Uint32Array(1024), lmax = Math.log1p(max) || 1;
@@ -681,8 +633,7 @@ function heatImage(heat, size, k, width, night, soft) {
   let level = lmax, above = lit * 0.005;
   for (let i = 1023; i >= 0 && above > 0; i--) { above -= bins[i]; if (above <= 0) level = ((i + 0.5) / 1024) * lmax; }
   const top = Math.max(Math.log1p(8), level), lut = heatLut(night);
-  // by day the scale starts at one flight: log(n) / log(busiest), so a lone track sits at the ramp's
-  // faint foot and each doubling climbs an even step (by night, as it was: lone tracks a little up it)
+  // by day the scale starts at one flight: log(n) / log(busiest), each doubling an even step
   const dayTop = Math.log(Math.max(8, Math.expm1(level)));
   const c = document.createElement("canvas");
   c.width = c.height = size;
@@ -701,9 +652,8 @@ function heatImage(heat, size, k, width, night, soft) {
   return { canvas: c, buf: lvl, cover, max, flights };
 }
 
-// The heatmap is square, as large as its half of the card allows: beside the caption on a wide
-// card, under it on a tall one (and on an upright phone). Sized here because CSS can't keep a
-// canvas square in a flex layout.
+// The heatmap is square, beside the caption on a wide card, under it on a tall one. Sized here
+// because CSS can't keep a canvas square in a flex layout.
 function heatSize(canvas) {
   const box = canvas.closest(".idle.heat"), fig = canvas.parentElement;
   box.classList.toggle("stack", phone() === "stack" || box.clientWidth < box.clientHeight * 1.2);
@@ -712,7 +662,7 @@ function heatSize(canvas) {
   return Math.max(120, Math.floor(Math.min(w, h)));
 }
 
-// Load the map tiles for the heatmap, then draw (and draw again once they arrive).
+// Draws at once, and again once the map tiles arrive.
 function drawHeat(canvas, state, heat) {
   const night = document.body.classList.contains("night");
   canvas._heat = null;          // drawn at the canvas's size, once it is known (paintHeat)
@@ -722,10 +672,8 @@ function drawHeat(canvas, state, heat) {
   const bm = state.basemap, names = state.charts && state.charts.layers && state.charts.layers.places;
   if (!bm || !bm.enabled) return paintHeat(canvas, state, heat, null);
   const R = heat.radius_nm, px = heatSize(canvas) * (window.devicePixelRatio || 1);
-  // (the names at the zoom for the screen's CSS pixels, not its device pixels, so their lettering
-  // comes out at its own size, not half of it on a sharp screen)
+  // (the names at the zoom for CSS pixels, not device pixels, so their lettering isn't halved on a sharp screen)
   const load = (layer, sharp = 1) => tileLayout(state.home, R, (sharp * px) / (2 * R), layer).tiles.map((t) => ({ ...t, img: new Image() }));
-  // the map, and the names of the towns and roads over the traffic, so the lines are somewhere
   const tiles = load(state.charts && state.charts.map), labels = names && names.enabled ? load(names, 1.15 / (window.devicePixelRatio || 1)) : [];
   let pending = tiles.length + labels.length;
   const done = () => { if (--pending === 0 && canvas.isConnected) paintHeat(canvas, state, heat, tiles, labels); };
@@ -749,7 +697,7 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   g.fillStyle = v("--disc"); g.fillRect(0, 0, size, size);
   const bm = state.basemap;
   if (bm && bm.enabled && tiles) {
-    // the map in greys only, quiet under the colour, so the corridors line up with real places
+    // the map in greys only, quiet under the colour
     const darkMap = ["dark", "carto-dark"].includes(bm.style);
     g.globalAlpha = night ? 0.7 : 0.6;
     g.filter = night ? (darkMap ? "grayscale(1) brightness(1.15) contrast(.95)" : "invert(1) grayscale(1) brightness(.55) contrast(1.1)")
@@ -761,14 +709,12 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
     g.strokeStyle = v("--water"); g.lineCap = g.lineJoin = "round";
     for (const w of map.water || []) { g.lineWidth = Math.max(2, w.width_nm * k); g.beginPath(); w.line.forEach(([la, lo], i) => { const [x, y] = XY(la, lo); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); }
   }
-  // the traffic, pixel for pixel (drawn again only when the canvas changes size); each flight's
-  // line about one and a half CSS pixels wide
-  // kept between the slide's turns: drawn again only for new data (a minute at most), a new size or the night chart
+  // the traffic, kept between the slide's turns: drawn again only for new data, a new size or the night chart
   if (!(heatDrawn && heatDrawn.heat === heat && heatDrawn.size === size && heatDrawn.night === night))
     heatDrawn = { heat, size, night, img: heatImage(heat, size, k, Math.max(1.2, 1.5 * u) * dpr, night, Math.max(1, Math.round(0.8 * u * dpr))) };
   canvas._heat = heatDrawn.img;
   g.drawImage(canvas._heat.canvas, 0, 0);
-  // the place names, over the traffic: light lettering by night, dark by day
+  // the place names, over the traffic
   if (labels.length) {
     const s = rad / R;
     g.globalAlpha = night ? 0.75 : 0.68;
@@ -776,13 +722,12 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
     for (const t of labels) if (t.img.complete && t.img.naturalWidth) g.drawImage(t.img, mid + t.x0 * s, mid - t.y0 * s, (t.x1 - t.x0) * s + 0.5, (t.y0 - t.y1) * s + 0.5);
     g.globalAlpha = 1; g.filter = "none";
   }
-  // a soft edge, the map falling away into the disc at the rim
   const fade = g.createRadialGradient(mid, mid, rad * 0.965, mid, mid, rad);     // a thin rim, not a fog
   const disc = /^#[0-9a-f]{6}$/i.test(v("--disc")) ? hex3(v("--disc")).join(",") : "128,128,128";    // faded from the disc's own colour, not from black
   fade.addColorStop(0, `rgba(${disc},0)`);
   fade.addColorStop(1, `rgba(${disc},1)`);
   g.fillStyle = fade; g.fillRect(0, 0, size, size);
-  // range rings, faint, with their distance at the upper right
+  // range rings
   const sans = getComputedStyle(canvas).fontFamily || "sans-serif";
   const step = R <= 20 ? 5 : 10, ink = v("--ink"), font = (px, w = 400) => `${w} ${Math.round(px * u * dpr)}px ${sans}`;
   g.strokeStyle = `color-mix(in srgb, ${ink} ${night ? 22 : 26}%, transparent)`;
@@ -794,7 +739,7 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
     g.fillText(`${r} nm`, mid + d + 3 * u * dpr, mid - d - 3 * u * dpr);
   }
   g.setLineDash([]);
-  // the airport's runways, and its code beside them
+  // the runways and the airport's code
   const rws = runwaysFor(state);
   g.strokeStyle = ink; g.lineCap = "round"; g.lineWidth = Math.max(1.5, 2.2 * u * dpr);
   for (const r of rws) {
@@ -812,7 +757,6 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   const U = u * dpr;
   busiest(g, canvas._heat, size, mid, rad, [{ x0: ax - 14 * U, x1: ax + 14 * U, y0: ay - 8 * U, y1: ay + 19 * U },
     { x0: mid - 8 * U, x1: mid + 40 * U, y0: mid - 9 * U, y1: mid + 8 * U }], U, lab, ink);
-  // home: a ring and a dot, named
   g.lineWidth = Math.max(1, 1.4 * u * dpr); g.strokeStyle = ink; g.fillStyle = ink;
   g.beginPath(); g.arc(mid, mid, 5 * u * dpr, 0, 7); g.stroke();
   g.beginPath(); g.arc(mid, mid, 1.8 * u * dpr, 0, 7); g.fill();
@@ -822,8 +766,8 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   lab("N", mid, 14 * u * dpr, "center", 700, 9);
 }
 
-// The busiest route, marked with how many flights passed: among the busiest pixels, the one whose
-// mark and count sit clearest of the other names, well inside the edge.
+// The busiest route, marked with its flight count: among the busiest pixels, the one whose mark
+// sits clearest of the other names.
 function busiest(g, heat, size, mid, rad, avoid, unit, lab, ink) {
   const flights = Math.round(heat.flights);
   if (flights < 5) return;
@@ -858,7 +802,7 @@ function showIdle(el, state) {
   const slides = ["quiet"];
   if ((state.heard || []).length) slides.unshift("military");
   if ((state.tfrs || []).some((t) => t.active && !t.drones_only)) slides.push("airspace");
-  if (W && W.now) slides.push("weather");
+  if (W && W.now && !W.stale) slides.push("weather");
   if (H && H.paths && H.paths.length >= 3) slides.push("heat");
   const fleet = fleetToday(L);
   if (fleet.length >= 2) slides.push("fleet");
@@ -910,7 +854,6 @@ function showIdle(el, state) {
   }
 }
 
-// Types seen today that have a drawing, most frequent first (at most 36), for the lineup.
 function fleetToday(L) {
   return ((L && L.types_today) || []).map((t) => ({ info: typeInfo(t), n: t.n }))
     .filter((t) => drawn(t.info)).slice(0, 36);
@@ -919,9 +862,8 @@ function fleetToday(L) {
 export function nextSlide() { slide++; slideAt = Date.now(); }
 // Something else drew in the card (the emergency takeover): rebuild from scratch next time.
 export function forgetHero() { cur = { hex: undefined }; }
-// The card changed size (a divider dragged, the window): the quiet-sky slide on it, drawn once to
-// its size (the heatmap, the fleet, the weather), is drawn again at the next render, in place. The
-// flight card fits itself (fitCard) and its route map redraws itself.
+// The card changed size: the quiet-sky slide, drawn once to its size, is drawn again at the next
+// render, in place. The flight card fits itself (fitCard).
 export function heroResized() { if (slideShown >= 0) { slideShown = -1; refit = true; } }
 
 function militaryHtml(heard, city) {

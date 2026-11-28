@@ -1,22 +1,12 @@
 """SQLite storage: raw points (compact integers), per-day aggregates, batched writes.
 
-Raw `points` row (all integers, ~40 bytes):
-    t        unix seconds of the position
-    hex      ICAO address (bit 24 set for '~' non-ICAO addresses)
-    src      0 = ADS-B 1090, 1 = MLAT, 2 = UAT 978
-    lat_e5, lon_e5   degrees * 1e5 (about 1 m)
-    alt_baro, alt_geom, alt   feet (alt = the one coverage uses)
-    ground   1 if on the ground
-    rssi_d   dBFS * 10 (NULL if unknown)
-    dist_c   distance from the station, nm * 100
-    brg_d    bearing from the station, degrees * 10 (0..3599)
-    elev_c   elevation angle, degrees * 100
-Callsigns live in the small `aircraft` table (hex -> latest callsign) instead of in every row.
+`points` units: t unix s; hex with bit 24 set for '~' addresses; src 0 ADS-B, 1 MLAT, 2 UAT;
+lat_e5/lon_e5 degrees * 1e5; alt* feet; rssi_d dBFS * 10; dist_c nm * 100; brg_d degrees * 10
+(0..3599); elev_c degrees * 100.
 
-Aggregates: for every completed UTC day, the same histogram rows `binning.build_bins` uses are
-stored in daily_dist / daily_rssi for the coverage resolution in force at the time. They are kept
-forever; raw points are deleted after `retention_days`. Queries use aggregates for whole days and
-raw rows for the partial days at the edges.
+Each completed UTC day's histogram rows (binning.py) are kept forever in daily_dist / daily_rssi
+at the resolution then in force; raw points are deleted after `retention_days`. Queries use
+aggregates for whole days and raw rows for the partial days at the edges.
 """
 from __future__ import annotations
 
@@ -94,7 +84,7 @@ class Store:
             c = self._local.c = self._open()
         return c
 
-    # ---- writes -------------------------------------------------------------------------------
+    # ---- writes ----
     def insert_points(self, points: list[Point]) -> int:
         if not points:
             return 0
@@ -117,7 +107,7 @@ class Store:
         return len(rows)
 
     def existing_times(self, t0: int, t1: int) -> set:
-        """(t, hex) pairs already stored in a window (used to de-duplicate imports)."""
+        """(t, hex) pairs already stored in a window."""
         return set(self.db().execute("SELECT t, hex FROM points WHERE t BETWEEN ? AND ?", (t0, t1)))
 
     def invalidate_days(self, t0: int, t1: int):
@@ -133,7 +123,7 @@ class Store:
         r = self.db().execute("SELECT v FROM meta WHERE k=?", (k,)).fetchone()
         return r[0] if r else default
 
-    # ---- aggregation / retention --------------------------------------------------------------
+    # ---- aggregation / retention ----
     @staticmethod
     def _group_sql(sector_deg, band_ft, max_alt_ft):
         nb = binning.n_bands(band_ft, max_alt_ft)
@@ -143,7 +133,7 @@ class Store:
         return sector, band, rb
 
     def raw_hist(self, t0, t1, srcs, sector_deg, band_ft, max_alt_ft):
-        """Histogram rows for raw points with t0 <= t < t1 (see binning.py)."""
+        """Histogram rows (binning.py) for raw points with t0 <= t < t1."""
         sector, band, rb = self._group_sql(sector_deg, band_ft, max_alt_ft)
         ph = ",".join("?" * len(srcs))
         a = (t0, t1, *srcs)
@@ -156,7 +146,7 @@ class Store:
         return d, r
 
     def aggregate_days(self, sector_deg, band_ft, max_alt_ft, now=None, limit_days=400) -> int:
-        """Write histogram aggregates for completed days that have raw points but no aggregate yet."""
+        """Aggregate completed days that have raw points but no aggregate yet. Returns days done."""
         now = now or time.time()
         res = res_key(sector_deg, band_ft, max_alt_ft)
         c = self.db()
@@ -191,7 +181,7 @@ class Store:
         return n
 
     def prune(self, retention_days: int, now=None) -> int:
-        """Delete raw points older than the retention window (aggregates are kept)."""
+        """Delete raw points older than the retention window; aggregates are kept."""
         cutoff = int((now or time.time()) - retention_days * DAY)
         c = self.db()
         cur = c.execute("DELETE FROM points WHERE t < ?", (cutoff,))
@@ -201,7 +191,7 @@ class Store:
             log.info("pruned %d raw points older than %d days", n, retention_days)
         return n
 
-    # ---- reads --------------------------------------------------------------------------------
+    # ---- reads ----
     def time_bounds(self):
         c = self.db()
         a = c.execute("SELECT min(t), max(t) FROM points").fetchone()
@@ -218,10 +208,21 @@ class Store:
         t0, t1 = max(t0, lo), min(t1, hi + 1)
         if t1 <= t0:
             return [], []
-        res = res_key(sector_deg, band_ft, max_alt_ft)
         c = self.db()
-        done = {r[0] for r in c.execute("SELECT day FROM daily_done WHERE res=? AND day BETWEEN ? AND ?",
-                                        (res, t0 // DAY, t1 // DAY))}
+        # aggregates exist at one resolution; a coarser one it divides evenly is folded from its rows
+        res, fold_s, fold_b, done = res_key(sector_deg, band_ft, max_alt_ft), 1, 1, set()
+        for have, in c.execute("SELECT DISTINCT res FROM daily_done WHERE day BETWEEN ? AND ?", (t0 // DAY, t1 // DAY)).fetchall():
+            try:
+                fs, fb, fmax = (int(x) for x in have.split("/"))
+            except ValueError:
+                continue
+            if fmax != max_alt_ft or sector_deg % fs or band_ft % fb:
+                continue
+            days = {r[0] for r in c.execute("SELECT day FROM daily_done WHERE res=? AND day BETWEEN ? AND ?",
+                                            (have, t0 // DAY, t1 // DAY))}
+            if len(days) > len(done) or (len(days) == len(done) and have == res_key(sector_deg, band_ft, max_alt_ft)):
+                res, fold_s, fold_b, done = have, sector_deg // fs, band_ft // fb, days
+        fold = lambda s, b: (s // fold_s, b if b < 0 else b // fold_b)
         d0 = -(-t0 // DAY)                 # first day that starts inside the range
         d1 = t1 // DAY                     # days d0..d1-1 are entirely inside
         agg_days = [d for d in range(d0, d1) if d in done]
@@ -246,16 +247,16 @@ class Store:
                     f"SELECT day, sector, band, bucket, n, dmax, rmin, tmin, tmax FROM daily_dist "
                     f"WHERE res=? AND day BETWEEN ? AND ? AND src IN ({ph})", base):
                 if row[0] in dayset:
-                    drows.append(row[1:])
+                    drows.append((*fold(row[1], row[2]), *row[3:]))
             for row in c.execute(
                     f"SELECT day, sector, band, bucket, n FROM daily_rssi "
                     f"WHERE res=? AND day BETWEEN ? AND ? AND src IN ({ph})", base):
                 if row[0] in dayset:
-                    rrows.append(row[1:])
+                    rrows.append((*fold(row[1], row[2]), *row[3:]))
         return drows, rrows
 
     def points(self, t0, t1, srcs, limit):
-        """Down-sampled raw points as columns (time-slice sampling keeps the query index-only)."""
+        """(total, stride k, rows): raw points down-sampled by keeping every k-th second."""
         ph = ",".join("?" * len(srcs))
         c = self.db()
         total = c.execute(f"SELECT count(*) FROM points WHERE t>=? AND t<? AND src IN ({ph})",

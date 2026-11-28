@@ -1,15 +1,6 @@
-"""SQLite files: opened so they survive what a machine running for months goes through, and
-changed only by numbered migrations.
-
-A Database is one file: a `cache` table of JSON values by kind and key, kept for as long as
-anyone asks for them, and whatever tables its subclass adds through MIGRATIONS (the logbook's
-are store.py's). The file's own `user_version` says which migrations it has had, so a file
-written by any earlier CloudWall is brought up to date as it is opened, and one from a later
-CloudWall is left alone.
-
-A file SQLite can't read (cut off by a full disk or a power cut) is moved aside, said so in the
-log, and a new one started: losing a logbook is bad, but a board that never starts again is
-worse, and the damaged file is still there to be recovered by hand.
+"""SQLite files: a `cache` table of JSON by kind and key, plus a subclass's tables, changed only
+through numbered MIGRATIONS tracked in `user_version`. A file SQLite can't read is moved aside
+and a new one started, so the board always starts.
 """
 import json
 import logging
@@ -26,8 +17,7 @@ SAME_PLACE_NM = 2      # a place set up again this close to where a logbook was 
 
 
 def logbook_home(path):
-    """Where the logbook in a database file was kept: {"lat", "lon"}, or None for a file that
-    doesn't say (one from before this was recorded, or not a logbook at all)."""
+    """Where the logbook in a database file was kept: {"lat", "lon"}, or None if it doesn't say."""
     try:
         db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         try:
@@ -41,10 +31,8 @@ def logbook_home(path):
 
 
 def another_places(path, home):
-    """Is the logbook in this file, if there is one, another place's? A place removed from a
-    screen leaves its logbook on disk, under a name made from its id. A new place that would get
-    the same id (another cabin, somewhere else) mustn't carry on in it; the same place set up
-    again does. A logbook from before its place was noted could be anyone's, and isn't refused."""
+    """Is the logbook in this file another place's? (A removed place leaves its file, and a new
+    place can get the same id.) A file that doesn't say where it was kept isn't refused."""
     if not Path(path).exists():
         return False
     was = logbook_home(path)
@@ -55,16 +43,20 @@ def _connect(path):
     db = sqlite3.connect(path, check_same_thread=False, timeout=5)
     db.row_factory = sqlite3.Row
     if path != ":memory:":
-        # WAL: a reader (a backup, `cloudwall doctor`) never blocks the writer, and a crash
-        # mid-write can't damage what was already written
-        db.execute("PRAGMA journal_mode=WAL")
-        db.execute("PRAGMA synchronous=NORMAL")
+        # WAL: readers never block the writer, and a crash mid-write can't damage what was written
+        try:
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("PRAGMA synchronous=NORMAL")
+        except sqlite3.Error:
+            db.close()
+            raise
     return db
 
 
 def open_or_set_aside(path):
-    """A connection to the file at path; a file SQLite can't read is renamed (with its -wal and
-    -shm) to <name>.damaged-<time> and a fresh one started in its place."""
+    """Connect; a file SQLite can't read is renamed <name>.damaged-<time> and a fresh one started.
+    A file only busy or out of reach is left alone and the error raised."""
+    db = None
     try:
         db = _connect(path)
         if path != ":memory:":
@@ -73,10 +65,10 @@ def open_or_set_aside(path):
                 raise sqlite3.DatabaseError(ok)
         return db
     except sqlite3.DatabaseError as e:
-        try:
+        if db is not None:
             db.close()
-        except Exception:
-            pass
+        if isinstance(e, sqlite3.OperationalError):    # locked, no room, no such folder: the file itself may be sound
+            raise
         stamp = time.strftime("%Y%m%d-%H%M%S")
         for suffix in ("", "-wal", "-shm"):
             if os.path.exists(path + suffix):
@@ -99,8 +91,7 @@ class Database:
         self._migrate()
 
     def reopen(self):
-        """Close the file and open it again (moving it aside if SQLite can't read it now): the
-        health watcher's repair when writing to it keeps failing."""
+        """Close and open again: the health watcher's repair when writes keep failing."""
         with self.lock:
             try:
                 self.db.close()
@@ -124,7 +115,6 @@ class Database:
         with self.lock:
             return self.db.execute("PRAGMA user_version").fetchone()[0]
 
-    # -- cache ---------------------------------------------------------------
     def cache_get(self, kind, key, max_age):
         if max_age > self.ages.get(kind, 0):
             self.ages[kind] = max_age
@@ -141,10 +131,8 @@ class Database:
                             (kind, key, json.dumps(value), time.time()))
 
     def prune(self):
-        """Clear cached values nobody will read again: those older than the longest anyone has
-        asked for of their kind (a route after a week, a day's heatmap after two days). Kinds not
-        read since the start are left alone. Without this the cache only grows: a heatmap a day,
-        a row for every aircraft and callsign ever seen. Returns how many rows went."""
+        """Delete cached values older than the longest max_age asked for of their kind; kinds not
+        read since the start are left alone. Returns the row count."""
         now, gone = time.time(), 0
         with self.lock, self.db:
             for kind, age in list(self.ages.items()):
@@ -153,8 +141,7 @@ class Database:
         return gone
 
     def forget(self, kinds):
-        """Clear every cached value of these kinds (e.g. the lookups each place's file held
-        before they were kept in one place for all)."""
+        """Clear every cached value of these kinds."""
         with self.lock, self.db:
             self.db.execute(f"DELETE FROM cache WHERE kind IN ({','.join('?' * len(kinds))})", tuple(kinds))
 
@@ -165,3 +152,9 @@ class Database:
     def close(self):
         with self.lock:
             self.db.close()
+
+    def __del__(self):
+        try:
+            self.db.close()
+        except Exception:
+            pass

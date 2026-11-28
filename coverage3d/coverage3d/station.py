@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import dataclass
 
 from . import geo
@@ -30,10 +29,8 @@ class Station:
 
 
 def read_adsb_im_env(path: str) -> dict:
-    """Read ONLY FEEDER_LAT / FEEDER_LONG / FEEDER_ALT_M from adsb.im's .env.
-
-    That file also holds feeder keys and other secrets: nothing else is parsed, kept or logged.
-    """
+    """Read ONLY the _WANTED keys from adsb.im's .env: the file also holds feeder keys and other
+    secrets, so nothing else is parsed, kept or logged."""
     out = {}
     try:
         with open(path, encoding="utf-8", errors="replace") as f:
@@ -51,7 +48,7 @@ def read_adsb_im_env(path: str) -> dict:
 
 
 def build_station(cfg, receiver: dict | None) -> Station:
-    """Station from config + receiver.json, logging clear warnings about disagreements."""
+    """Station from config + receiver.json, warning about disagreements."""
     sc = cfg.station
     lat, lon, src = sc["lat"], sc["lon"], "config"
     if receiver and "lat" in receiver and "lon" in receiver:

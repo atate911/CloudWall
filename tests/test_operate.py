@@ -3,16 +3,15 @@ standing in for a machine, so nothing here touches this one."""
 import os
 import shutil
 import socket
-import sqlite3
 import stat
 import tempfile
 import time
 import unittest
 from pathlib import Path
 
-from cloudwall.core import config, health, paths
+from cloudwall.core import config, health, paths, schema
 from cloudwall.memory.store import Store
-from cloudwall.operate import backup, cli, doctor, install as inst, legacy
+from cloudwall.operate import backup, cli, doctor, install as inst
 from cloudwall.operate.system import System
 
 
@@ -38,7 +37,7 @@ class InstallTest(MachineTest):
         s = inst.install(inst.Options("wall"), self.system())
         self.assertTrue(self.at("/opt/cloudwall/current/cloudwall/__init__.py").exists())
         self.assertTrue(os.readlink(self.at("/opt/cloudwall/current")).startswith("releases/"))
-        self.assertEqual(self.at(inst.CONFIG).read_text(), paths.EXAMPLE.read_text())
+        self.assertEqual(self.at(inst.CONFIG).read_text(), schema.starter())
         self.assertEqual(mode(self.at(inst.CONFIG)), 0o640)                  # it will hold keys
         self.assertEqual(mode(self.at(inst.VAR)), 0o750)
         unit = self.at(inst.UNIT).read_text()
@@ -183,31 +182,6 @@ class BackupTest(unittest.TestCase):
         self.assertEqual(len(list(folder.glob("cloudwall-*.tar.gz"))), backup.KEEP)
 
 
-class LegacyTest(MachineTest):
-    def test_an_old_make_service_setup_moves_in(self):
-        home = self.root / "home" / "pi"
-        old = home / ".local/share/cloudwall"
-        old.mkdir(parents=True)
-        (home / ".config/cloudwall").mkdir(parents=True)
-        (home / ".config/cloudwall/config.toml").write_text('[home]\nlat = 44.06\nlon = -121.31\n')
-        s = Store(str(old / "cloudwall.db"))
-        s.add_sighting(ts=1.0, day="2026-11-27", hex="a1", callsign="ASA1")
-        s.close()
-        (old / "tiles" / "x").mkdir(parents=True)
-        (home / ".config/systemd/user").mkdir(parents=True)
-        (home / ".config/systemd/user/cloudwall.service").write_text("[Service]\n")
-        inst.install(inst.Options("wall"), self.system())
-        system = self.system()
-        legacy.migrate(system, home, "pi", self.root / "checkout", say=self.said.append)
-        self.assertIn("44.06", self.at(inst.CONFIG).read_text())
-        con = sqlite3.connect(self.at(f"{inst.VAR}/cloudwall.db"))
-        self.assertEqual(con.execute("SELECT COUNT(*) FROM sightings").fetchone()[0], 1)
-        con.close()
-        self.assertTrue(self.at(f"{inst.CACHE}/tiles/x").is_dir())
-        self.assertTrue(any("disable --now cloudwall" in d and "--user" in d for d in system.done))
-        self.assertTrue((home / ".config/cloudwall/config.toml").exists())    # the old files are left
-
-
 class FindTest(unittest.TestCase):
     def test_on_an_installed_machine_the_installed_settings_are_read_from_anywhere(self):
         from unittest import mock
@@ -264,6 +238,7 @@ class DoctorTest(unittest.TestCase):
         srv = ThreadingHTTPServer(("127.0.0.1", 0), Wall)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         self.addCleanup(srv.shutdown)
+        self.addCleanup(srv.server_close)
         with tempfile.TemporaryDirectory() as d:
             p = Path(d, "config.toml")
             p.write_text(f"[server]\nport = {srv.server_address[1]}\n")
@@ -309,21 +284,16 @@ class SurveyTest(MachineTest):
         path.write_text(text)
         os.chmod(path, mode)
 
-    def todays_vps(self, linger=False):
-        """As the VPS was set up before `cloudwall install`: `make service` from a checkout in the
-        user's home, its settings in the checkout (readable by all, holding the key), and the
-        tunnel's server end with no keepalive."""
-        self.write("/etc/passwd", "root:x:0:0::/root:/bin/bash\nubuntu:x:1000:1000::/home/ubuntu:/bin/bash\n"
+    def a_server(self):
+        """A server with something wrong in each corner: settings holding the key and readable by
+        all, and the tunnel's server end with no keepalive."""
+        inst.install(inst.Options("wall"), self.system())
+        self.write(inst.CONFIG, '[server]\nkey = "tafo-kemi-luza-nobe"\n')
+        self.write("/etc/passwd", "root:x:0:0::/root:/bin/bash\n"
                                   "adsbtunnel:x:998:998::/var/lib/adsbtunnel:/usr/sbin/nologin\n")
-        self.write("/home/ubuntu/.config/systemd/user/cloudwall.service",
-                   "[Service]\nWorkingDirectory=/home/ubuntu/CloudWall\nExecStart=/home/ubuntu/CloudWall/.venv/bin/cloudwall\n")
-        self.write("/home/ubuntu/.config/systemd/user/default.target.wants/cloudwall.service", "")
-        self.write("/home/ubuntu/CloudWall/config.toml", '[server]\nkey = "tafo-kemi-luza-nobe"\n')
         self.write("/var/lib/adsbtunnel/.ssh/authorized_keys",
                    'restrict,port-forwarding,permitlisten="127.0.0.1:18080",permitopen="127.0.0.1:9" ssh-ed25519 AAAA pi\n')
         self.write("/etc/ssh/sshd_config", "PasswordAuthentication no\n")
-        if linger:
-            self.write("/var/lib/systemd/linger/ubuntu", "")
 
     def journal(self, cmd):
         import subprocess
@@ -337,38 +307,26 @@ class SurveyTest(MachineTest):
         found = survey(Machine(self.root, ask=ask or (lambda cmd: None)))
         return found, {f.code for f in found if f.code}
 
-    def test_todays_vps_is_seen_for_what_it_is(self):
-        self.todays_vps()
+    def test_a_server_is_seen_for_what_it_is(self):
+        self.a_server()
         found, codes = self.survey(self.journal)
-        for code in ("service.legacy", "service.no-linger", "settings.readable", "tunnel.no-keepalive", "access.key-in-log"):
+        for code in ("settings.readable", "tunnel.no-keepalive", "access.key-in-log"):
             self.assertIn(code, codes)
         self.assertNotIn("tunnel.unrestricted", codes)                   # its key kept its restrictions
-        [linger] = [f for f in found if f.code == "service.no-linger"]
-        self.assertIn("sudo loginctl enable-linger ubuntu", linger.steps[0])   # the steps name the user
 
-    def test_doctor_fix_repairs_what_is_safe_and_leaves_the_rest(self):
+    def test_doctor_fix_repairs_what_is_safe(self):
         from cloudwall.operate import repair
         from cloudwall.operate.survey import Machine
-        self.todays_vps()
+        self.a_server()
         found, _ = self.survey()
-        done = dict(repair.fix(found, self.system(), Machine(self.root, ask=lambda cmd: None), say=lambda *a: None))
-        self.assertEqual(mode(self.at("/home/ubuntu/CloudWall/config.toml")), 0o640)
+        repair.fix(found, self.system(), Machine(self.root, ask=lambda cmd: None), say=lambda *a: None)
+        self.assertEqual(mode(self.at(inst.CONFIG)), 0o640)
         self.assertIn("Match User adsbtunnel", self.at(repair.TUNNEL_KEEPALIVE).read_text())
-        self.assertIn("ubuntu", done["enable-linger"])
         _, codes = self.survey()
         self.assertFalse({"settings.readable", "tunnel.no-keepalive"} & codes)
-        self.assertIn("service.legacy", codes)                          # moving it is the owner's call
-
-    def test_two_cloudwalls_set_up_to_start(self):
-        self.todays_vps(linger=True)
-        inst.install(inst.Options("wall"), self.system())
-        _, codes = self.survey(lambda cmd: __import__("subprocess").CompletedProcess(cmd, 0, "enabled\n", "")
-                               if cmd[:2] == ["systemctl", "is-enabled"] else None)
-        self.assertIn("service.duplicate", codes)
-        self.assertNotIn("service.no-linger", codes)
 
     def test_a_tunnel_key_that_lost_its_restrictions(self):
-        self.todays_vps()
+        self.a_server()
         self.write("/var/lib/adsbtunnel/.ssh/authorized_keys", "ssh-ed25519 AAAA pi\n")
         _, codes = self.survey()
         self.assertIn("tunnel.unrestricted", codes)
@@ -380,9 +338,8 @@ class SurveyTest(MachineTest):
 
     def test_the_receivers_extras(self):
         self.write("/etc/systemd/system/coverage3d.service", "[Service]\n")
-        _, codes = self.survey(lambda cmd: __import__("subprocess").CompletedProcess(cmd, 0, "1234 python3 sharing_guide.py\n", "")
-                               if cmd[0] == "pgrep" else None)
-        self.assertTrue({"coverage3d.separate", "sharing.root-page"} <= codes)
+        _, codes = self.survey()
+        self.assertIn("coverage3d.separate", codes)
 
     def test_a_machine_with_nothing_set_up(self):
         found, codes = self.survey()
@@ -487,105 +444,26 @@ class GuideTest(unittest.TestCase):
 
 
 class UpgradeInPlaceTest(MachineTest):
-    """`cloudwall upgrade` from each starting point, and `cloudwall rollback`."""
-
-    def test_from_the_old_per_user_setup(self):
-        home = self.root / "home" / "pi"
-        (home / ".config/systemd/user/default.target.wants").mkdir(parents=True)
-        (home / ".config/systemd/user/cloudwall.service").write_text("[Service]\nWorkingDirectory=/home/pi/CloudWall\n")
-        (home / ".config/systemd/user/default.target.wants/cloudwall.service").write_text("")
-        (home / "CloudWall").mkdir()
-        (home / "CloudWall/config.toml").write_text('[home]\nlat = 44.06\nlon = -121.31\n')
-        old = home / ".local/share/cloudwall"
-        old.mkdir(parents=True)
-        s = Store(str(old / "cloudwall.db"))
+    def test_an_installed_server_is_backed_up_then_updated(self):
+        inst.install(inst.Options("wall"), self.system())
+        self.at(inst.CONFIG).write_text('[home]\nlat = 44.06\nlon = -121.31\n')
+        s = Store(str(self.at(f"{inst.VAR}/cloudwall.db")))
         s.add_sighting(ts=1.0, day="2026-11-27", hex="a1", callsign="ASA1")
         s.close()
-        self.at("/etc/passwd").parent.mkdir(parents=True, exist_ok=True)
-        self.at("/etc/passwd").write_text("pi:x:1000:1000::/home/pi:/bin/bash\n")
         from cloudwall.operate.upgrade import upgrade
         upgrade(self.system(), say=self.said.append)
         self.assertTrue(any("Backed up first" in s for s in self.said))
-        self.assertTrue(list((old / "backups").glob("cloudwall-*.tar.gz")))      # the old setup's, before anything changed
-        self.assertIn("44.06", self.at(inst.CONFIG).read_text())                    # its settings moved over
-        con = sqlite3.connect(self.at(f"{inst.VAR}/cloudwall.db"))
-        self.assertEqual(con.execute("SELECT COUNT(*) FROM sightings").fetchone()[0], 1)
-        con.close()
-
-    def test_a_fresh_empty_logbook_doesnt_block_the_real_one(self):
-        """The new service, started once before the move, makes an empty logbook of its own: the
-        old one must still come in over it. One with flyovers of its own is never overwritten."""
-        home = self.root / "home" / "pi"
-        old = home / ".local/share/cloudwall"
-        old.mkdir(parents=True)
-        (home / ".config/cloudwall").mkdir(parents=True)
-        (home / ".config/cloudwall/config.toml").write_text('[home]\nlat = 44.06\nlon = -121.31\n')
-        s = Store(str(old / "cloudwall.db"))
-        s.add_sighting(ts=1.0, day="2026-11-27", hex="a1", callsign="ASA1")
-        s.close()
-        inst.install(inst.Options("wall"), self.system())
-        Store(str(self.at(f"{inst.VAR}/cloudwall.db"))).close()              # what the new service made
-        legacy.migrate(self.system(), home, "pi", self.root / "checkout", say=self.said.append)
-        con = sqlite3.connect(self.at(f"{inst.VAR}/cloudwall.db"))
-        self.assertEqual(con.execute("SELECT COUNT(*) FROM sightings").fetchone()[0], 1)
-        con.close()
-        theirs = Store(str(self.at(f"{inst.VAR}/cloudwall.db")))
-        theirs.add_sighting(ts=2.0, day="2026-11-28", hex="b2", callsign="UAL2")
-        theirs.close()
-        legacy.migrate(self.system(), home, "pi", self.root / "checkout", say=self.said.append)
-        con = sqlite3.connect(self.at(f"{inst.VAR}/cloudwall.db"))
-        self.assertEqual(con.execute("SELECT COUNT(*) FROM sightings").fetchone()[0], 2)   # kept, not replaced
-        con.close()
-
-    def test_the_new_service_starts_only_after_the_move(self):
-        home = self.root / "home" / "pi"
-        (home / ".config/systemd/user/default.target.wants").mkdir(parents=True)
-        (home / ".config/systemd/user/cloudwall.service").write_text("[Service]\nWorkingDirectory=/home/pi/CloudWall\n")
-        (home / ".config/systemd/user/default.target.wants/cloudwall.service").write_text("")
-        (home / ".config/cloudwall").mkdir(parents=True)
-        (home / ".config/cloudwall/config.toml").write_text('[home]\nlat = 44.06\nlon = -121.31\n')
-        (home / ".local/share/cloudwall").mkdir(parents=True)
-        Store(str(home / ".local/share/cloudwall/cloudwall.db")).close()
-        self.at("/etc/passwd").parent.mkdir(parents=True, exist_ok=True)
-        self.at("/etc/passwd").write_text("pi:x:1000:1000::/home/pi:/bin/bash\n")
-        from cloudwall.operate.upgrade import upgrade
-        system = self.system()
-        upgrade(system, say=self.said.append)
-        done = system.done
-        stop = next(i for i, d in enumerate(done) if "disable --now cloudwall" in d)
-        copy = next(i for i, d in enumerate(done) if d.startswith("copy logbook"))
-        start = [i for i, d in enumerate(done) if d in ("run systemctl restart cloudwall", "run systemctl start cloudwall")]
-        self.assertEqual(len(start), 1)                                  # started once,
-        self.assertLess(stop, start[0])                                  # after the old one stopped
-        self.assertLess(copy, start[0])                                  # and the logbook came in
+        self.assertTrue(list(self.at(f"{inst.VAR}/backups").glob("cloudwall-*.tar.gz")))
 
     def test_settings_that_wouldnt_start_stop_the_upgrade_before_it_begins(self):
-        home = self.root / "home" / "pi"
-        (home / ".config/systemd/user/default.target.wants").mkdir(parents=True)
-        (home / ".config/systemd/user/cloudwall.service").write_text("[Service]\n")
-        (home / ".config/systemd/user/default.target.wants/cloudwall.service").write_text("")   # enabled, as `make service` left it
-        (home / ".config/cloudwall").mkdir(parents=True)
-        (home / ".config/cloudwall/config.toml").write_text('[tracking]\nradius_nm = "far"\n')
-        self.at("/etc/passwd").parent.mkdir(parents=True, exist_ok=True)
-        self.at("/etc/passwd").write_text("pi:x:1000:1000::/home/pi:/bin/bash\n")
+        inst.install(inst.Options("wall"), self.system())
+        self.at(inst.CONFIG).write_text('[tracking]\nradius_nm = "far"\n')
         from cloudwall.operate.upgrade import upgrade
         system = self.system()
         with self.assertRaises(SystemExit) as e:
             upgrade(system, say=self.said.append)
         self.assertIn("nothing was changed", str(e.exception))
         self.assertEqual(system.done, [])
-        self.assertFalse(self.at("/opt").exists())
-
-    def test_running_it_again_after_the_move_changes_nothing(self):
-        """Once moved, the old service is left disabled with its files kept: it isn't an old setup to
-        move again."""
-        self.test_the_new_service_starts_only_after_the_move()
-        # what `systemctl --user disable` did on the real machine (here the command is only recorded)
-        (self.root / "home/pi/.config/systemd/user/default.target.wants/cloudwall.service").unlink()
-        from cloudwall.operate.upgrade import upgrade
-        system = self.system()
-        upgrade(system, say=self.said.append)
-        self.assertFalse([d for d in system.done if "disable --now" in d or d.startswith("copy logbook")])
 
     def test_again_and_back(self):
         src = self.root / "src" / "cloudwall"

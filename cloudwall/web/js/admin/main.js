@@ -1,8 +1,6 @@
-// The control board (/admin). The rail names each part of CloudWall in plain words with how it is
-// doing right now under its name, so the rail alone answers "is everything all right?"; each page
-// opens with a picture of what it looks after and keeps its rare settings behind shades. Saved
-// settings wait for a restart, gathered in one dock at the bottom.
-import { $, el, esc, S, call, on, toast, waiting, restart, loadOverview, loadSettings, whenSignedOut, plural, pageState, save, TITLES } from "./core.js";
+// The control board (/admin): the rail with each part's state, page routing, sign-in, and the dock
+// of saved settings waiting for a restart.
+import { $, el, esc, S, call, on, leavePage, toast, waiting, restart, loadOverview, loadSettings, whenSignedOut, plural, pageState, save, TITLES } from "./core.js";
 import { say } from "./words.js";
 import { icon } from "./icons.js";
 import { finder, reveal } from "./finder.js";
@@ -18,7 +16,7 @@ import health from "./pages/health.js";
 import server from "./pages/server.js";
 import settings from "./pages/settings.js";
 
-// Home; then a page for each part of CloudWall; then the ones across all of it (null: a gap between)
+// null: a gap in the rail
 const RAIL = [home, null, receiver, positions, places, routes, look, access, safekeeping, null, health, settings, server];
 const PAGES = RAIL.filter(Boolean);
 // the old pages' addresses, for bookmarks
@@ -37,8 +35,7 @@ function rail() {
   $("#version").textContent = S.overview ? `CloudWall ${S.overview.version}` : "";
 }
 
-// Saved settings waiting for a restart: gathered here, each one's value now and after the restart
-// on a list the dock opens, with an Undo for each
+// Saved settings waiting for a restart, each with an Undo
 function dock() {
   const list = waiting();
   const d = $("#dock");
@@ -72,6 +69,7 @@ async function go() {
     if (!S.overview) await loadOverview();
     if (!S.settings) await loadSettings();
     const fresh = el(`<div class="page page-${page.id}"></div>`);
+    leavePage();
     await page.draw(fresh);
     main.replaceChildren(fresh);
     document.title = `${TITLES[page.id]}: CloudWall control board`;
@@ -85,7 +83,6 @@ async function go() {
   }
 }
 
-// -- signing in -----------------------------------------------------------------------------------
 function signIn(who) {
   current = null;
   $("#nav").innerHTML = ""; $("#signout").hidden = true; $("#dock").hidden = true;
@@ -133,7 +130,7 @@ $("#dock-text").onclick = () => {
   const l = $("#dock-list"), open = l.hidden;
   l.hidden = !open; $("#dock-text").setAttribute("aria-expanded", String(open));
 };
-// every setting's explanation shown under it, for reading the board through (remembered here)
+// show every setting's explanation under it (remembered in localStorage)
 const explain = (on) => { document.body.classList.toggle("explain", on); $("#explain").checked = on; try { localStorage.setItem("cloudwall.explain", on ? "1" : ""); } catch { /* fine */ } };
 $("#explain").onchange = (e) => explain(e.target.checked);
 try { explain(!!localStorage.getItem("cloudwall.explain")); } catch { /* fine */ }

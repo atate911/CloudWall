@@ -1,0 +1,276 @@
+/* ---------- flight card ---------- */
+.hero-card { display: flex; flex-direction: column; padding: 1.4rem 1.6rem 1.3rem; gap: .9rem; container-type: inline-size; }
+.h-top { display: flex; align-items: center; gap: 1.4rem; }
+.h-what { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: .5rem; }
+.h-type { font: 700 min(2.3rem, 7.4cqi)/1.08 var(--sans); letter-spacing: -.02em; color: var(--ink); text-wrap: balance; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; padding-bottom: .06em; }
+.h-type .about-link i { font-weight: 400; }
+.h-who { min-width: 0; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .85rem; row-gap: .3rem; font-size: .95rem; font-weight: 700; white-space: nowrap; }
+.h-who > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.h-who > [hidden], .h-top > [hidden], .h-who > small:empty { display: none; }      /* an empty note would still cost the tags a second gap */
+.h-who > .tags { margin: 0; align-self: center; }
+.h-who:not(:has(> .flaps:not([hidden]), > span:not([hidden]):not(:empty), > small:not(:empty), .badge)) { display: none; }      /* nothing to say of who flies it */
+.flight { font-size: 1.15rem; letter-spacing: 0; color: var(--ink); white-space: pre; flex: none; }
+.h-who small { display: flex; flex-wrap: wrap; column-gap: .9rem; row-gap: .1rem; max-width: 100%; font: 400 .8rem var(--sans); color: var(--slate); }
+.h-top > .logo-tile { flex: none; height: min(4.1rem, 13cqi); }
+.h-top > .logo-tile img { max-width: min(15rem, 40cqi); }
+.logo-tile { display: inline-flex; align-items: center; height: 2.3rem; flex: none; }
+.logo-tile[hidden] { display: none; }
+.logo-tile img { height: 100%; width: auto; max-width: 11rem; object-fit: contain; display: block; }
+.logo-tile.small { height: 1.8rem; }
+.logo-tile.tiny { height: 1.5rem; } .logo-tile.tiny img { max-width: 5.4rem; }
+/* most logos are drawn for white backgrounds; at night they sit on a pale card, dimmed */
+body.night .logo-tile { background: #dfe4e8; padding: .25rem .5rem; border-radius: .4rem; filter: brightness(.82); height: 2.6rem; }
+body.night .h-top > .logo-tile { height: min(4.3rem, 13.5cqi); padding: .35rem .7rem; }
+body.night .logo-tile.small { height: 2.1rem; } body.night .logo-tile.tiny { height: 1.7rem; padding: .15rem .35rem; }
+.countdown { position: relative; width: 4.4rem; height: 4.4rem; flex: none; }
+.countdown svg { width: 100%; height: 100%; }
+.c-track { fill: none; stroke: var(--rule); stroke-width: 1.6; }
+.c-fill { fill: none; stroke: var(--magenta); stroke-width: 2.2; stroke-linecap: round; transition: stroke-dasharray 1s linear; }
+.countdown b { position: absolute; inset: 0; display: grid; place-items: center; font: 700 1.05rem var(--sans); font-variant-numeric: tabular-nums; }
+.countdown.gone b { color: var(--slate); font: 400 .72rem var(--sans); }
+.h-id { display: flex; flex-direction: column; gap: .5rem; }
+.tags { display: flex; flex-wrap: wrap; gap: .45rem; align-items: center; margin-top: .1rem; }
+.tags:not(:has(.badge)) { display: none; }
+.badges { display: flex; flex-wrap: wrap; gap: .45rem; }
+.badges:empty { display: none; }
+.badge { font: 700 .74rem var(--sans); padding: .1rem .45rem .12rem; white-space: nowrap;
+  border-radius: var(--corner); border: 1px solid color-mix(in srgb, currentColor 38%, transparent); color: var(--ink-2); }
+.badge.new { color: var(--blue); } .badge.rare { color: var(--magenta); }
+.badge.hot { color: var(--sheet); background: var(--red); border-color: var(--red); font-weight: 700; }
+.badge.med { display: inline-flex; align-items: center; gap: .32em; color: #fff; background: var(--med); border-color: var(--med); }      /* the one solid tag: the cross and the word, white on the medical blue */
+.badge.med svg { width: .8em; height: .8em; fill: currentColor; flex: none; }
+.noroute.med small { color: var(--med-ink); font-weight: 700; }
+.noroute.med { flex-direction: row; align-items: flex-start; gap: .8rem; font-size: 1.4rem; line-height: 1.22; }
+.noroute.med > span { display: flex; flex-direction: column; gap: .4rem; }
+.noroute.med .ci.med { flex: none; margin-top: .2rem; }
+.k-note.k-med { display: flex; align-items: center; gap: 2.4vh; font-size: 5.6vh; line-height: 1.15; }
+.k-note.k-med > span { display: flex; flex-direction: column; gap: .8vh; min-width: 0; }
+.k-note.k-med small { font-size: 3vh; font-weight: 400; color: var(--ink-2); letter-spacing: 0; }
+.k-note.k-med .ci.med { flex: none; width: 6vh; height: 6vh; }
+.h-kicker { display: flex; align-items: baseline; gap: 1rem; }
+.h-kicker > :is(.pin-chip, .est-chip):not([hidden]) { margin-left: auto; }
+.h-kicker > .est-chip:not([hidden]) ~ .pin-chip, .h-kicker > .pin-chip:not([hidden]) ~ .est-chip { margin-left: 0; }
+.pin-chip { font-size: .7rem; color: var(--magenta); white-space: nowrap; }
+.pin-chip[hidden] { display: none; }
+
+/* the route takes only the room it needs, so the card doesn't open empty bands round a short line */
+.h-route { flex: none; display: flex; flex-direction: column; justify-content: flex-start; min-height: 0; padding: .3rem 0 .5rem; }
+.route { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: 1.2rem; }
+.apt { font-size: min(2.7rem, 8cqi); color: var(--ink); }
+.apt.unknown { font-size: .95rem; color: var(--slate); align-self: center; max-width: 8rem; line-height: 1.35; }
+.apt small { display: block; font: 400 .85rem var(--sans); color: var(--slate); margin-bottom: .3rem; max-width: 13.5rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.apt.r { text-align: right; } .apt.r small { margin-left: auto; }
+.apt.local { color: var(--blue); }
+.arc { display: block; width: 100%; height: auto; max-height: 4.6rem; overflow: visible; }
+.arc path:first-child { stroke: var(--rule); stroke-dasharray: 2 3; }
+#h-arc { stroke: var(--magenta); }
+#h-arc-dot { fill: var(--magenta); }
+.arc-head { fill: var(--slate); stroke: none; }
+.arc-note { text-align: center; font-size: .74rem; color: var(--slate); margin-top: .3rem; line-height: 1.5; }
+.arc-time { color: var(--ink-2); }
+.arc-time:empty { display: none; }
+.apt-when { display: flex; flex-direction: column; gap: .15rem; margin-top: .7rem; }
+.apt-when:empty { display: none; }
+.apt.r .apt-when { align-items: flex-end; }
+.apt-when b { font: 700 1.15rem var(--sans); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.apt-when b i { font-style: normal; font-weight: 400; font-size: .75em; color: var(--slate); }
+.route.unsure .apt, .route.unsure .arc { opacity: .35; }
+/* the route on a real map */
+
+.rmap { grid-column: 1 / -1; align-self: stretch; position: relative; min-height: 0; overflow: hidden;
+  border: 1px solid var(--rule); background: var(--disc); }
+.route.unsure .rmap { opacity: .4; }
+.rm { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.rm-tiles.satellite { filter: saturate(.8) brightness(.95); }
+.rm-tiles.dark { filter: brightness(1.15); }
+body.night .rm-tiles.satellite, body.night .rm-tiles.osm { filter: saturate(.65) brightness(.62); }
+body.night .rm-tiles.light { filter: invert(1) hue-rotate(180deg) brightness(.8); }
+.rm path { fill: none; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+.rm-halo { stroke: rgb(0 0 0 / .45); stroke-width: 5; }
+.rm-todo { stroke: #fff; stroke-width: 1.6; stroke-dasharray: 3 4; opacity: .9; }
+.rm-done { stroke: var(--magenta); stroke-width: 2.6; }
+.rm-state { stroke: rgb(255 255 255 / .38); stroke-width: .7; stroke-dasharray: 3 2.5; }
+.rm-border { stroke: rgb(255 240 200 / .7); stroke-width: 1.1; }
+.rm-city { fill: rgb(255 255 255 / .9); }
+.rm-place { font-family: var(--sans); fill: rgb(255 255 255 / .92); stroke: rgb(0 0 0 / .6); paint-order: stroke; }
+.rm-apt { fill: #fff; stroke: #0b1320; }
+.rm-apt.local { fill: var(--blue); }
+.rm-apt.from { fill: rgb(11 19 32 / .7); stroke: #fff; }
+.rm-apt.from.local { stroke: color-mix(in srgb, var(--blue) 55%, #fff); }
+.rm path.rm-arrow { fill: #fff; stroke: rgb(0 0 0 / .6); stroke-width: 1.4; paint-order: stroke; }
+.rm-region { font-family: var(--sans); font-weight: 700; fill: rgb(255 255 255 / .5); stroke: rgb(0 0 0 / .32); paint-order: stroke; }
+.rm-region.country { fill: rgb(255 255 255 / .62); }
+.rm-code { font-family: var(--mono); font-weight: 700; fill: #fff; stroke: rgb(0 0 0 / .65); paint-order: stroke; letter-spacing: .04em; }
+.rm-code.local { fill: color-mix(in srgb, var(--blue) 55%, #fff); }
+/* the aircraft: two fills, not a fill and its outline (an outline on a shape this small comes out far too thick) */
+.rm .rm-craft path { stroke: none; }
+.rm .rm-craft .edge { fill: #fff; }
+.rm .rm-craft .body { fill: var(--magenta); }
+.rm-ring { fill: none; stroke: var(--magenta); opacity: .8; transform-box: fill-box; transform-origin: center; animation: rm-ping 2.4s ease-out infinite; }
+@keyframes rm-ping { from { transform: scale(.5); opacity: .9; } to { transform: scale(1.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rm-ring { animation: none; } }
+.rm-scale { position: absolute; left: .5rem; bottom: .4rem; box-sizing: border-box; height: 1rem; border: solid rgb(255 255 255 / .9); border-width: 0 1.5px 1.5px;
+  font: 700 .58rem/.72rem var(--sans); color: rgb(255 255 255 / .95); text-align: center; white-space: nowrap; text-shadow: 0 0 2px #000, 0 0 3px #000; pointer-events: none;
+  filter: drop-shadow(0 0 1px rgb(0 0 0 / .7)); }
+.rm-scale i { position: absolute; left: 100%; bottom: -.12rem; padding-left: .45rem; font-style: normal; font-weight: 400; color: rgb(255 255 255 / .88); }
+.rm-credit { position: absolute; right: .3rem; bottom: .2rem; font-size: .5rem; color: rgb(255 255 255 / .75);
+  text-shadow: 0 0 3px #000; max-width: 70%; text-align: right; pointer-events: none; }
+
+.route.inferred .arc-note { color: var(--ink-2); }
+.route.inferred .arc-note .why { color: var(--slate); font-size: .68rem; }
+.noroute { font-size: 2rem; font-weight: 700; display: flex; flex-direction: column; gap: .4rem; letter-spacing: -.01em; }
+.noroute small { color: var(--slate); font-size: .9rem; font-weight: 400; letter-spacing: 0; }
+.noroute.quiet { font-size: 1.3rem; gap: .3rem; }      /* no flight plan: said, under the type that heads the card, without shouting */
+.noroute.pending { color: var(--slate); animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .5; } }
+
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+.metric { padding: .7rem 0 .75rem 1rem; }
+.metric + .metric { border-left: 1px solid var(--rule); }
+.metric:first-child { padding-left: 0; }
+.metric .label { margin-bottom: .2rem; }
+.metric .v { font: 700 min(2rem, 5.6cqi)/1.1 var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; letter-spacing: -.02em; }
+.metric .v small { font: 400 .76rem var(--sans); color: var(--slate); letter-spacing: 0; }
+.metric .s { font-size: .72rem; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .15rem; }
+
+.h-bottom { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 1.6rem; align-items: center; min-height: 0; }
+#h-facts > div { display: contents; }
+.sub { color: var(--slate); font-size: .86rem; }
+.media { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 3 / 2; max-height: 100%; overflow: hidden; }
+.media .photo { width: 100%; height: 100%; }
+.photo { position: relative; display: block; overflow: hidden; }
+.photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo .credit { position: absolute; right: 0; bottom: 0; max-width: 100%; padding: .1rem 0 0 .35rem;
+  background: var(--sheet); color: var(--slate); font: 400 .5rem/1.25 var(--sans);
+  text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.media .sil-box, .coll .sil-box {
+  background: linear-gradient(var(--grid-major) 1px, transparent 0) center / 2.5rem 2.5rem,
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 0) center / 2.5rem 2.5rem,
+    linear-gradient(var(--grid) 1px, transparent 0) center / .5rem .5rem,
+    linear-gradient(90deg, var(--grid) 1px, transparent 0) center / .5rem .5rem; }
+.sil-box[data-code]::before { content: attr(data-code); position: absolute; top: .5rem; right: .65rem;
+  font: 700 .66rem var(--mono); letter-spacing: .04em; color: var(--slate); }
+.facts { display: grid; grid-template-columns: auto 1fr; column-gap: 1.2rem; row-gap: .55rem; align-content: center; align-items: baseline; font-size: .92rem; margin: 0; }
+.facts dd { margin: 0; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+/* type plates: the box is a size container, so a plate is a share of its width, or as wide as its height allows */
+.sil-box { container-type: size; position: relative; display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; padding: 6% 7%; min-height: 0; }
+.sil-box[hidden] { display: none; }
+.plate.kindplate { width: auto; align-items: center; }
+.kindplate svg { width: min(60cqw, 70cqh); height: min(60cqw, 70cqh); }
+.kindplate path { fill: var(--slate); opacity: .35; }
+.plate { margin: 0; display: flex; flex-direction: column; gap: .3rem; flex: none;
+  width: min(calc(var(--w) * 100cqw), calc((100cqh - 1.3rem) * var(--ar))); }
+.plate.nodim { width: min(calc(var(--w) * 100cqw), calc(100cqh * var(--ar))); }
+.plate:has(.plate-note) { width: min(calc(var(--w) * 100cqw), calc((100cqh - 2.4rem) * var(--ar))); }
+.plate .sil { width: 100%; height: auto; max-height: none; }
+.plate.standin .sil { opacity: .45; }
+.plate figcaption { display: flex; flex-direction: column; align-items: center; gap: .2rem; }
+.dimline { align-self: stretch; margin: 0 1.46%; height: .7rem; border-left: 1px solid; border-right: 1px solid; color: var(--slate);
+  display: flex; align-items: center; justify-content: center; gap: .4rem; font-size: .66rem; white-space: nowrap; }
+.dimline::before, .dimline::after { content: ""; flex: 1; border-top: 1px solid; min-width: .4rem; }
+.dimline span { flex: none; font-variant-numeric: tabular-nums; } .dimline b { color: var(--ink-2); font-weight: 700; }
+.plate-note { font-size: .7rem; font-weight: 700; color: var(--blue); white-space: nowrap; }
+.media.has-photo { position: relative; flex-direction: column; align-items: stretch; }
+.media.has-photo .photo, .media.has-photo .sil-box { flex: 1 1 0; min-height: 0; height: auto; }
+.media.has-photo:not(.show-plate) .sil-box, .media.has-photo.show-plate .photo { display: none; }
+.media .media-seg { left: auto; right: .4rem; top: .4rem; background: color-mix(in srgb, var(--sheet) 82%, transparent); }
+.media .media-seg button { padding: .3rem .6rem; font-size: .7rem; }
+/* the type designator moves down out of the switch's way */
+.media.has-photo .sil-box[data-code]::before { top: 2.3rem; }
+.sil { display: block; overflow: visible;
+  --sil-line: color-mix(in srgb, var(--ink) 90%, transparent);
+  --sil-body: color-mix(in srgb, var(--ink) 3%, var(--sheet));
+  --sil-wing: color-mix(in srgb, var(--ink) 13%, var(--sheet));
+  --sil-nac: color-mix(in srgb, var(--ink) 7%, var(--sheet));
+  --sil-mid: color-mix(in srgb, var(--ink) 34%, var(--sheet));
+  --sil-dark: color-mix(in srgb, var(--ink) 82%, var(--sheet)); }
+.sil :is(path, rect, ellipse) { vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.sil :is(.hull, .fin, .stab, .wing, .wl, .nac, .pyl, .core, .plug, .ftf, .strut, .pant, .skid, .tire, .hub)
+  { stroke: var(--sil-line); stroke-width: 1.1px; }
+.sil :is(.hull, .fin) { fill: var(--sil-body); }
+.sil :is(.stab, .wing, .wl, .ftf) { fill: var(--sil-wing); }
+.sil :is(.nac, .pyl) { fill: var(--sil-nac); }
+.sil .core { fill: var(--sil-mid); } .sil .plug { fill: var(--sil-dark); }
+.sil .shade { stroke: none; }
+.sil .ftf { stroke: color-mix(in srgb, var(--ink) 45%, transparent); stroke-width: .75px; }
+.sil .g-hi { stop-color: var(--sheet); stop-opacity: .0; }
+.sil .g-mid { stop-color: var(--sheet); stop-opacity: 0; }
+.sil .g-lo { stop-color: var(--ink); stop-opacity: .13; }
+.sil :is(.glass, .inlet) { fill: var(--sil-dark); stroke: none; }
+.sil .win { fill: none; stroke: var(--sil-dark); opacity: .78; vector-effect: none; stroke-linecap: round; }
+.sil .door { fill: none; stroke: color-mix(in srgb, var(--ink) 50%, transparent); stroke-width: .8px; }
+.sil .door.cargo { stroke-dasharray: none; stroke: color-mix(in srgb, var(--ink) 32%, transparent); }
+.sil .hl { fill: none; stroke: color-mix(in srgb, var(--ink) 38%, transparent); stroke-width: .7px; }
+.sil .disc { fill: color-mix(in srgb, var(--ink) 8%, transparent); stroke: color-mix(in srgb, var(--ink) 30%, transparent); stroke-width: .6px; }
+.sil .blade, .sil .rotor { fill: var(--sil-dark); stroke: none; }
+.sil .tire { fill: var(--sil-dark); } .sil .hub { fill: var(--sil-mid); }
+.sil .strut, .sil .skid { fill: var(--sil-mid); }
+.sil .pant { fill: var(--sil-body); }
+.sil .fen { fill: var(--sil-mid); stroke: var(--sil-line); stroke-width: 1px; }
+
+/* ---------- quiet-sky slides ---------- */
+.idle-card { padding: 1.6rem 1.8rem; }
+.idle { display: flex; flex-direction: column; justify-content: center; height: 100%; gap: .9rem; position: relative; }
+.idle h1 { font-size: 2.6rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.idle .next { font-size: 1.25rem; line-height: 1.45; max-width: 34em; }
+.idle .raw { font: .66rem var(--mono); color: var(--slate); }
+.idle .rec { max-width: 40rem; }
+.idle.heat { flex-direction: row; align-items: stretch; gap: 2rem; }
+.heat-copy { flex: 1 1 0; min-width: 14rem; max-width: 26rem; display: flex; flex-direction: column; justify-content: center; gap: .85rem; }
+.heat-fig { flex: 1.6 1 0; position: relative; min-width: 0; min-height: 0; }
+.heat-fig canvas { position: absolute; inset: 0; margin: auto; }
+.idle.heat.stack { flex-direction: column; gap: 1.1rem; padding-bottom: 1.2rem; }
+.idle.heat.stack .heat-copy { flex: none; max-width: none; }
+.idle.heat.stack h1 { font-size: 2.1rem; }
+.idle.heat.stack .heat-fig { flex: 1 1 auto; }
+.heat-count { font-size: 1.15rem; color: var(--ink-2); margin-top: -.3rem; }
+.heat-count b { font-size: 1.9rem; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; margin-right: .2rem; }
+.heat-text { font-size: .98rem; line-height: 1.55; color: var(--ink-2); max-width: 30em; }
+.heat-legend { display: flex; align-items: center; gap: .6rem; font-size: .72rem; color: var(--slate); white-space: nowrap; }
+.heat-legend i { flex: 0 1 9rem; height: .5rem; border-radius: 99px; box-shadow: inset 0 0 0 1px var(--frame); }
+.idle.last { flex-direction: row; align-items: center; justify-content: flex-start; gap: 1.8rem; }
+.idle.last .photo { width: 45%; aspect-ratio: 3 / 2; flex: none; }
+.idle.last .last-plate { width: 45%; height: auto; aspect-ratio: 3 / 2; flex: none; border: 1px solid var(--frame); }
+/* today's fleet */
+.idle.fleet { justify-content: flex-start; gap: 1rem; padding-bottom: 1.4rem; }
+.fleet-head { display: flex; flex-direction: column; gap: .35rem; }
+.fleet-head h1 { font-size: 2.1rem; }
+.fleet-box { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.fleet-row { position: relative; display: flex; align-items: flex-end; justify-content: center; gap: 18px; }
+.fleet-row::after { content: ""; position: absolute; left: 0; right: 0; bottom: 30px; border-top: 1px solid var(--rule); }
+.fleet-item { margin: 0; display: flex; flex-direction: column; align-items: center; flex: none; position: relative; z-index: 1; }
+.fleet-draw { flex: none; display: flex; align-items: flex-end; }
+.fleet-draw .sil { width: 100%; height: 100%; }
+.fleet-item figcaption { align-self: center; height: 26px; margin-top: 4px; display: flex; justify-content: center; gap: .3rem; align-items: baseline; white-space: nowrap; font-size: .7rem; color: var(--slate); }
+.fleet-item code { font: 700 .72rem var(--mono); color: var(--ink); }
+.fleet-item b { color: var(--blue); font-weight: 700; font-variant-numeric: tabular-nums; }
+.fleet-scale { align-self: flex-end; display: flex; align-items: center; gap: .5rem; font-size: .68rem; color: var(--slate); margin-top: 2px; }
+.fleet-scale i { display: block; height: .45rem; border: 1px solid var(--slate); border-top: none; }
+.idle.last > div { display: flex; flex-direction: column; gap: .7rem; min-width: 0; }
+.dots { position: absolute; bottom: .9rem; left: 0; right: 0; display: flex; justify-content: center; gap: .45rem; }
+.dots i { width: .4rem; height: .4rem; border-radius: 99px; background: var(--rule); transition: width .3s, background-color .3s; }
+.dots i.on { background: var(--ink-2); width: 1.1rem; }
+
+/* next overhead */
+.next-up { gap: 1.2rem; }
+.nu-row { display: flex; align-items: center; gap: 1.6rem; }
+.nu-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .7rem; }
+.nu-flight { font-size: 3.6rem; letter-spacing: -.02em; }
+.nu-line { display: flex; align-items: center; gap: .9rem; min-width: 0; }
+.nu-sub { font-size: 1.15rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.countdown.big { width: 7.5rem; height: 7.5rem; }
+.countdown.big b { font-size: 1.8rem; }
+.countdown.big .c-fill { stroke-width: 1.3; } .countdown.big .c-track { stroke-width: 1; }
+.nu-route { font: 700 2rem var(--mono); }
+.nu-route:empty { display: none; }
+.nu-route .dim { font: 400 .9rem var(--sans); margin: 0 .3rem; }
+.nu-route small { display: block; font: 400 .85rem var(--sans); color: var(--slate); margin-top: .3rem; }
+.nu-look { font-size: 1.15rem; color: var(--ink-2); max-width: 34em; line-height: 1.45; }
+.nu-plate { height: 5rem; flex: none; padding: 0; justify-content: flex-start; }
+.nu-foot { margin-top: .6rem; padding-top: 1rem; border-top: 1px solid var(--rule); display: flex; flex-direction: column; gap: .45rem; }
+.nu-foot .today { font-size: .95rem; } .nu-foot .today b { font-variant-numeric: tabular-nums; }
+.nu-foot .sep { display: inline-block; width: 1.4rem; }
+.nu-foot .wx { color: var(--ink-2); font-size: .88rem; }
+.nu-foot .raw { font-size: .62rem; }

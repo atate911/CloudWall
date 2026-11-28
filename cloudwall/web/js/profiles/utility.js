@@ -87,39 +87,8 @@ function stretch(f, at, ds, more = {}) {
   };
 }
 
-// A copy of family f scaled uniformly by k (a drawing measured at one length, drawn at another).
-function scale(f, k, more = {}) {
-  const pt = (q) => [q[0] * k, q[1] * k, ...q.slice(2)];
-  const loop = (l) => l.map(pt);
-  const p = f.parts || {};
-  const sc = (o, keys) => o && Object.fromEntries(Object.entries(o).map(([key, v]) => [key, keys.includes(key) ? v * k : v]));
-  return {
-    ...f, L0: f.L0 * k, over: (f.over || 0) * k, W: f.W * k, body: loop(f.body), glass: (f.glass || []).map(loop),
-    wing: sc(f.wing, ["le", "root", "span", "cr", "ct", "z"]), stab: sc(f.stab, ["le", "z", "span", "root", "cr", "ct"]),
-    eng: f.eng && { ...f.eng, nose: sc(f.eng.nose, ["s", "z", "d"]) },
-    wingSide: f.wingSide && f.wingSide.map(([c, pts, cl]) => [c, loop(pts), cl]),
-    parts: {
-      ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
-      shapes: (p.shapes || []).map(([cls, pts, closed]) => [cls, loop(pts), closed]),
-      marks: (p.marks || []).map(([c, pts, cl]) => [c, loop(pts), cl]),
-      dots: (p.dots || []).map(([c, s, z, rx, ry = rx]) => [c, s * k, z * k, rx * k, ry * k]),
-      struts: (p.struts || []).map(([a, b, w0, w1]) => [pt(a), pt(b), w0, w1]),
-      gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(pt), at: g.at && pt(g.at), r: g.r * k, spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat,
-        shapes: g.shapes && g.shapes.map(([c, pts, cl]) => [c, loop(pts), cl]), lines: g.lines && g.lines.map(loop),
-        under: g.under && g.under.map(([c, pts, cl]) => [c, loop(pts), cl]) })),
-    },
-    ...more,
-  };
-}
-
 // ---------- Beechcraft Bonanza 33 (Debonair) ----------
-// Reference: Beechcraft E33 Bonanza 3-view (Wikimedia Commons,
-// File:Beechcraft_E33_Bonanza_3-view_line_drawing.png, Wikipedia article Beechcraft Bonanza), side
-// view scaled by its own 25 ft 6 in (7.77 m) overall length dimension (about 1.1 cm a pixel), drawn
-// at the attitude the 3-view gives it, as light.js draws the A36 from the same series. The Bonanza
-// with the straight swept fin and the short cabin: three side windows, the front door and the
-// baggage door on the right (drawn, as this view shows the right side), low wing with its pointed
-// root fillet, retractable gear (drawn retracted), two-blade propeller of 7 ft.
+// Reference: Beechcraft E33 Bonanza 3-view (Commons), side view scaled by its own 7.77 m overall length
 // a rounded-rectangle pane (glass corners are sharp unless flagged smooth)
 const pane = (...a) => rect(...a).map((p) => (p[2] ? p : [p[0], p[1], ""]));
 F.be33 = {
@@ -173,18 +142,7 @@ F.be33 = {
 };
 
 // ---------- Beechcraft Bonanza 35 (V-tail) ----------
-// Reference: Beechcraft V35B Bonanza 3-view (Wikimedia Commons,
-// File:Beechcraft_V35B_Bonanza_3-view_line_drawing.svg, Wikipedia article Beechcraft Bonanza), side
-// view scaled to types.csv's 8.05 m (26 ft 5 in, the V35B's length as Beech gives it), about 0.7 cm
-// a pixel at the size rendered, and drawn at the attitude the view gives it, as the 33 and the A36
-// are. The drawing carries no dimensions and its plan view's wing is short for the 33 ft 6 in span, so
-// only the side view is used; at that scale its fuselage depth (1.56 m keel to crown) agrees with
-// Beech's dimensioned E33 view (1.54 m) and its cabin is 0.25 m longer, as the 1964-on long cabin is.
-// The V-tail's two surfaces, 35 degrees up from the tail cone, project from the side as one tall
-// swept shape with the ruddervator hinge and trim tab: drawn as the tailplane's side view
-// (stabSide). Three side windows, the last tapered; the front door and baggage door on the right
-// (drawn, as this view shows the right side); the cowl's flat chin under the spinner; retractable
-// gear (drawn retracted).
+// Reference: Beechcraft V35B Bonanza 3-view (Commons), side view scaled to types.csv's 8.05 m
 F.be35 = {
   kind: "piston", L0: 8.05, over: 0, D: 1, W: 1.2,
   body: [
@@ -242,15 +200,7 @@ F.be35 = {
 };
 
 // ---------- Beechcraft T-34A / T-34B Mentor ----------
-// Reference: Beechcraft T-34 Mentor general arrangement (Wikimedia Commons,
-// File:Beechcraft_T-34_Mentor_3-view_line_drawing.png, Wikipedia article Beechcraft T-34 Mentor), a
-// dimensioned Beech drawing of the T-34A: side view scaled by its own 25 ft 11 3/16 in (7.91 m)
-// overall length (about 0.9 cm a pixel), drawn level on its thrust line as the drawing has it; its
-// 7 ft 4 in propeller, 32 ft 9 7/8 in span, 7 ft 0 in and 3 ft 6 in wing chords and 12 ft 2 1/8 in,
-// 3 ft 7 3/16 in and 2 ft 5 15/16 in tailplane span and chords are used as given. Two seats in tandem
-// under the long framed canopy (two sliding sections and a fixed one aft), the Bonanza-derived wing
-// with its root fillet, the tall straight fin on a long dorsal, the cowl's panel and outlet, the access
-// door aft; retractable gear (drawn retracted).
+// Reference: Beechcraft T-34 Mentor general arrangement (Commons), a dimensioned Beech drawing of the T-34A
 F.t34p = {
   kind: "piston", L0: 7.91, over: 0, D: 1, W: 0.95,
   body: [
@@ -294,15 +244,7 @@ F.t34p = {
 };
 
 // ---------- Beechcraft T-34C Turbo-Mentor ----------
-// The T-34A above with the PT6A nose: no dimensioned drawing of the C was reachable, so its airframe
-// is the A's, moved back behind a nose 0.68 m longer, as measured off the T-34C 3-view on Wikimedia
-// Commons (File:Beechcraft_T-34C_Mentor_3-view_line_drawing.png, Wikipedia article Beechcraft T-34
-// Mentor; a small drawing, about 2.8 cm a pixel, scaled to the published 28 ft 8 1/2 in, 8.75 m). It
-// puts the windscreen 0.68 m further back than on the A and the fin, wing root and canopy where the
-// A's move to; its tail cone runs on past the rudder to a point, with the ventral strakes under it.
-// The nose shape, the chin inlet under the spinner and the exhaust stack on the side behind the
-// propeller follow the drawing and the near side-on air-to-air photo File:T-34C_Turbo_Mentor.jpg.
-// Lower confidence than the A (a small drawing and a photo).
+// The T-34A above with the PT6A nose: no dimensioned drawing of the C was reachable, so its airframe is the A's
 F.t34t = stretch(F.t34p, 1.6, 0.68, {
   kind: "turboprop", L0: 8.75,
   body: [
@@ -332,16 +274,7 @@ F.t34t = stretch(F.t34p, 1.6, 0.68, {
 }
 
 // ---------- Rockwell Commander 112 / 114 ----------
-// Reference: Aero Commander 112 "Three view dimensions" (Wikimedia Commons,
-// File:Aero_Commander_112_3-view_line_drawing.png, Wikipedia article Rockwell Commander 112), a
-// manufacturer's drawing: its side view measured with its own 24 ft 10 in length dimension and drawn
-// at the published 24 ft 11 in (7.59 m, types.csv), about 0.85 cm a pixel; its 32 ft 9 in span,
-// 12 ft 6 in tailplane and 76 in propeller are used as given. The side view is drawn without the
-// propeller and with the gear down: the propeller is the renderer's two-blade one at that diameter
-// and the gear is drawn retracted. The long pointed spinner and raked cowl, the windscreen running
-// back in one curve to the roof, the door window behind the thick windscreen post and the tapered rear
-// window, the swept dorsal and fin with the tailplane set halfway up it (out of the propeller's wash),
-// and the rudder running down to the bottom of the tail cone.
+// Reference: Aero Commander 112 "Three view dimensions" (Commons), a manufacturer's drawing
 F.ac11 = {
   kind: "piston", L0: 7.59, over: 0, D: 1, W: 1.25,
   body: [
@@ -385,15 +318,7 @@ F.ac11 = {
 };
 
 // ---------- Aero Commander 500 series (560, 680, 500) ----------
-// Reference: U.S. Air Force L-26B (Aero Commander 560A) three-view (Wikimedia Commons,
-// File:Aero_Commander_L-26B_3-view_line_drawing.png, Wikipedia article Aero Commander 500 family),
-// dimensioned in inches: its side view scaled by its own 420.5 in (10.68 m) overall length, about
-// 1.1 cm a pixel, with the 528.7 in (13.43 m) span and 200.95 in (5.1 m) tailplane as given, and drawn
-// as the view has it, level on the ground. The round-nosed piston Commander (520 to 680 and the 500A
-// and 500B; the later Shrike's pointed nose and squared fin are not drawn): the cabin slung under the
-// high wing, the engines in long nacelles under the wing with three-blade propellers, the two cockpit
-// side windows, the swept fin on a curved dorsal with the tailplane on the tail cone in its fairing,
-// the fin-tip beacon; the gear (drawn down in the view) retracted.
+// Reference: U.S. Air Force L-26B (Aero Commander 560A) three-view (Commons), dimensioned in inches
 const AC6L_NACELLE = [[2.88, 1.47, "c"], [3.2, 1.49], [3.6, 1.45], [4.5, 1.38], [5.5, 1.31], [5.85, 1.26], [5.97, 1.12],
   [5.85, 0.97], [5.5, 0.87], [5.0, 0.79], [4.5, 0.75], [4.0, 0.77], [3.5, 0.82], [2.95, 0.97], [2.88, 1.03, "c"]];
 F.ac6l = {
@@ -440,15 +365,7 @@ F.ac6l = {
 };
 
 // ---------- Air Tractor AT-802 ----------
-// No three-view reachable: measured from the near side-on photo of a two-seat AT-802 landing
-// (Wikimedia Commons, File:Air_Tractor_AT-802.JPG, Wikipedia article Air Tractor AT-802; left side,
-// mirrored), scaled to the published 35 ft 11 in (10.95 m, types.csv), about 2.3 cm a pixel. Its thrust
-// line is level in the photo and the camera a little behind and below the wing, so the wheels and wing
-// tips spread in perspective: the main wheel is put midway between the two. Lower confidence (photo).
-// The long PT6A nose sloping up over the hopper to the high cockpit, with the exhaust stack and
-// five-blade propeller; the tandem cockpit's windscreen and side windows under the canopy roof; the
-// swept fin and rudder, the tailplane on the tail cone; fixed spring main gear and tailwheel. The
-// firefighting tank under the belly in the photo is left off.
+// No three-view reachable: measured from the near side-on photo of a two-seat AT-802 landing (Commons)
 F.at8t = {
   kind: "turboprop", L0: 10.95, over: 0, D: 1, W: 1.2,
   body: [
@@ -489,15 +406,7 @@ F.at8t = {
 };
 
 // ---------- Air Tractor AT-502 ----------
-// No three-view reachable: measured from the side-on photo of the AT-502B N50470 on the ground
-// (Wikimedia Commons, File:Air_Tractor_AT-502B.jpg, Wikipedia article Air Tractor; left side,
-// mirrored), turned 9.9 degrees nose-down so that its fuselage stripe slopes as the AT-802's does in
-// level flight, and scaled to the published 33 ft 6 in (10.21 m), about 1.2 cm a pixel. The near wing
-// hides the lower fuselage ahead of the tail and its tip and wheel spread in perspective: the belly
-// under the hopper, the wing root and the main wheel are placed as on the AT-802 above, scaled to the
-// AT-502B's 1.69 m chord. Lower confidence (photo). The PT6A nose with the exhaust stack behind the
-// propeller sloping up over the hopper lid to the single-seat cockpit, the swept fin with the rudder's
-// horn balance, the tailplane on the tail cone, fixed main gear and the tailwheel on its strut.
+// No three-view reachable: measured from the side-on photo of the AT-502B N50470 on the ground (Commons)
 F.at3t = {
   kind: "turboprop", L0: 10.21, over: 0, D: 1, W: 1.1,
   body: [

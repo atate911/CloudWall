@@ -1,8 +1,5 @@
-"""Temporary flight restrictions near home, from the FAA's public TFR service.
-
-Shapes come from the FAA's map service: one request for the whole country, which serves every
-place CloudWall watches. Each nearby restriction's details (name, times, altitudes, full
-notice) come from its XML record, fetched once and kept until the FAA changes it.
+"""Temporary flight restrictions from the FAA: shapes for the whole country in one request,
+each nearby restriction's details from its XML record, kept until the FAA changes it.
 """
 import logging
 import math
@@ -19,7 +16,7 @@ SHAPES = ("https://tfr.faa.gov/geoserver/TFR/ows?service=WFS&version=1.1.0&reque
           "&typeName=TFR:V_TFR_LOC&maxFeatures=500&outputFormat=application/json&srsname=EPSG:4326")
 DETAIL = "https://tfr.faa.gov/download/detail_{id}.xml"
 
-# The regulation a restriction is issued under says what kind it is.
+# by the regulation a restriction is issued under
 KINDS = {
     "91.137": "Disaster or hazard area (often a wildfire)",
     "91.138": "Disaster area",
@@ -29,7 +26,7 @@ KINDS = {
     "91.144": "Abnormally high air pressure",
     "91.145": "Air show or major sporting event",
     "99.7": "Security",
-    # 49 U.S.C. 44812 (2024): drones kept away from a large public gathering; other aircraft are not affected
+    # 49 U.S.C. 44812: other aircraft are not affected
     "44812": "Drones kept clear of a public event",
 }
 DRONES_ONLY = {"44812"}
@@ -64,19 +61,17 @@ def _rings(geom):
 
 
 def _rule(code):
-    """'91.137(a)(1)' -> '91.137': the regulation without its paragraph, which is what says the kind."""
+    """'91.137(a)(1)' -> '91.137'."""
     m = re.match(r"\d+(\.\d+)?", code or "")
     return m.group(0) if m else code
 
 
-# What the FAA puts before a restriction's name: its date ("261121 "), or a reference of the
-# office that asked for it ("2026-44812-CSA-0138 ", "26-#127-ESA-").
+# before a restriction's name: its date ("261121 ") or an office's reference ("2026-44812-CSA-0138 ", "26-#127-ESA-")
 NAME_PREFIX = re.compile(r"^(\d{6}(-\d{6})?\s+|\d{4}-\d{5}-[A-Z]{2,4}-\d{2,5}\s+|\d{2}-#\d+-[A-Z]{2,4}-)")
 
 
 def title_place(title):
-    """'Key West, FL, Tuesday, May 6, 2025 Local' -> 'Key West, FL': where a restriction is, from
-    its title in the FAA's list, for the many whose record gives no name."""
+    """'Key West, FL, Tuesday, May 6, 2025 Local' -> 'Key West, FL'."""
     return re.split(r",\s+(?:Mon|Tues|Wednes|Thurs|Fri|Satur|Sun)day\b", title or "")[0].strip()
 
 
@@ -114,7 +109,6 @@ def parse_detail(xml):
         if lo: lows.append(lo)
         if hi: highs.append(hi)
     name = t(".//NotUid/txtLocalName") or ""
-    # "261121 Grand Illumination Parade Norfolk, VA DHS - UAS Only" -> drop the date prefix
     name = NAME_PREFIX.sub("", name)
     code = t(".//TfrNot/codeType")
     return {
@@ -131,26 +125,22 @@ def parse_detail(xml):
 
 
 class TFRs:
-    """The FAA's restrictions. Its list is one for the whole country (fetch), from which each
-    place takes those near it (near). A restriction's details are read the first time any place
-    is near it and kept until the FAA changes it."""
+    """fetch() gets the whole country's list; near() picks a place's and reads their details."""
 
     def __init__(self, fetch_json=get_json, fetch_text=get_text):
         self.fetch_json, self.fetch_text = fetch_json, fetch_text
         self.details = {}          # NOTAM key -> (last modified, parsed detail)
 
     def fetch(self):
-        """Every restriction's outline, as the FAA's map service lists them. Details of those the
-        FAA no longer lists are forgotten, so they don't pile up over months."""
+        """Every restriction's outline (GeoJSON features); drops details of those no longer listed."""
         features = (self.fetch_json(SHAPES, timeout=30) or {}).get("features") or []
         listed = {((f.get("properties") or {}).get("NOTAM_KEY") or "").split("-")[0] for f in features}
         if features:
-            self.details = {nid: d for nid, d in self.details.items() if nid in listed}
+            self.details = {nid: d for nid, d in list(self.details.items()) if nid in listed}
         return features
 
     def near(self, features, home, radius_nm=30, now=None):
-        """The restrictions among fetch()'s within radius_nm of home, with their details: those
-        in force first, then nearest first."""
+        """fetch()'s restrictions within radius_nm of home, with details: in force first, then nearest."""
         now = now or time.time()
         found = {}
         for f in features:
@@ -189,7 +179,6 @@ class TFRs:
 
 
 def demo(home):
-    """A made-up restriction a few miles from home, for demo mode."""
     lat, lon, r = home["lat"] + 0.06, home["lon"] - 0.12, 3 / 60
     ring = [[round(lat + r * math.cos(a), 5), round(lon + r * math.sin(a) / math.cos(math.radians(lat)), 5)]
             for a in (i * math.pi / 18 for i in range(36))]

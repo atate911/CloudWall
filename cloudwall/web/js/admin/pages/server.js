@@ -1,6 +1,5 @@
-// This server: CloudWall itself. How long it has run and how (a service that starts itself again,
-// or started by hand), its version, the restart; then the log, live; then every setting as the file
-// has it, for when you know exactly what you're after; then what to type at the machine.
+// Server page: uptime and how it runs, version, restart, the live log, every setting as the file
+// has it, and what to type at the machine.
 import { el, esc, S, call, toast, restart, lasted, when, plural, button, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { head, pageTroubles, copyable } from "../parts.js";
@@ -34,14 +33,13 @@ export default {
     const t = pageTroubles("server");
     if (t) page.append(t);
 
-    const sys = o.installs.find((i) => i.kind === "system");
     const hero = el(`<section class="glass server-hero">
       <div class="srv-up">${icon("server", "big-ico")}<div><span class="fact-label">Running for</span><b class="fact-huge">${lasted(Date.now() / 1000 - o.started)}</b><span class="fact-sub">since ${when(o.started)}</span></div></div>
       <ul class="srv-facts">
         <li><b>Version</b><span>CloudWall ${esc(o.version)}</span></li>
         <li><b>How it runs</b><span>${o.under_systemd ? "As a service: it starts again by itself after a crash or a reboot" : "Started by hand: it won't come back by itself after a reboot"}</span></li>
         <li><b>Root helper</b><span>${o.helper ? "Installed: repairs that need root can be made from this board" : "Not installed: repairs that need root are done at the machine (sudo cloudwall install sets it up)"}</span></li>
-        <li><b>Set up here</b><span>${o.installs.map((i) => `${i.kind === "system" ? "the system service" : `${esc(i.user)}'s own service`}${i.active === false ? " (not running)" : ""}`).join("; ") || "not as a service"}${sys ? "" : ""}</span></li>
+        <li><b>Set up here</b><span>${o.installs.length ? `the system service${o.installs[0].active === false ? " (not running)" : ""}` : "not as a service"}</span></li>
         ${o.demo ? `<li><b>Traffic</b><span>Simulated, for a demonstration</span></li>` : ""}
       </ul>
       <div class="srv-act"></div>

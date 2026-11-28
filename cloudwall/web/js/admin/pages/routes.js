@@ -1,7 +1,5 @@
-// Route lookups: where each flight is going and coming from. With a paid provider, the page is its
-// allowance, drawn as a fuel gauge (used, left, the reserve held back, where this pace ends the
-// month) and each day's use against the day's even share; without one, the choice of provider.
-// The plan's figures sit under the picture; what's touched once a year waits under a shade.
+// Routes page: where each flight is going and coming from. With a paid provider, its allowance as
+// a fuel gauge and each day's use; without one, the choice of provider.
 import { el, esc, S, setting, value, num, plural, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { fuel, burn } from "../draw.js";
@@ -16,7 +14,6 @@ let shown = null;
 
 const active = () => value("flightradar24", "api_key")?.set ? "flightradar24" : value("flightaware", "api_key")?.set ? "flightaware" : null;
 
-/** The day the plan renews, picked from a month's days. */
 function billingDay(section) {
   const grid = el(`<div class="days" role="radiogroup">${Array.from({ length: 28 }, (_, i) => `<button type="button" role="radio" data-d="${i + 1}">${i + 1}</button>`).join("")}</div>`);
   grid.render = () => { const v = +setting(section, "billing_day").value; grid.querySelectorAll("button").forEach((b) => b.setAttribute("aria-checked", String(+b.dataset.d === v))); };
@@ -43,8 +40,7 @@ function gaugeHero(pr) {
   </section>`);
 }
 
-/** Without a paid provider: what routes come from now, and the two to choose from, each connected
- *  where it's described. */
+/** Shown without a paid provider: where routes come from now, and the two to choose from. */
 function chooseHero(page) {
   const hero = el(`<section class="glass choose-hero">
     <div class="choose-now">${icon("routes", "big-ico")}<div><b>Routes come from the free database</b><p>A database of flight numbers: usually right for airlines, sometimes a day or a season stale, and nothing for flights it doesn't know. A paid provider gives the exact route, live, for the airliners heading over the house; CloudWall spends it only while a screen is open.</p></div></div>
@@ -69,7 +65,6 @@ export default {
     if (!act) { page.append(chooseHero(page)); return; }
     page.append(pr ? gaugeHero(pr) : el(`<section class="glass choose-hero"><div class="choose-now">${icon("restart", "big-ico")}<div><b>${esc(PROVIDERS[act].label)} is connected</b><p>Its key is saved. Once CloudWall restarts and starts using it, its allowance shows here as a gauge.</p></div></div></section>`));
 
-    // the provider: one tab each, the one in use marked
     const tabs = el(`<div class="seg provider-tabs" role="tablist">${Object.entries(PROVIDERS).map(([n, p]) =>
       `<button type="button" role="tab" data-p="${n}" aria-selected="${n === shown}">${esc(p.label)}${value(n, "api_key")?.set ? ` <span class="dot ok" title="Connected"></span>` : ""}</button>`).join("")}</div>`);
     const keyRow = el(`<div class="provider-key"></div>`);

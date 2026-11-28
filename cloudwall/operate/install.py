@@ -1,35 +1,23 @@
-"""`sudo cloudwall install --role wall|panel`: one command that sets a machine up the same way
-every time, and changes only what isn't so already. Run it again after an update and it puts the
-new code in place and restarts; run it on a new machine and, with `cloudwall restore`, the old
-one is back.
+"""`sudo cloudwall install --role wall|panel`: idempotent set-up; changes only what isn't so already.
 
-Where everything goes, on every machine:
-
-    /opt/cloudwall/releases/<version>-<id>/   the code, one folder a release (the last three kept)
-    /opt/cloudwall/current                    -> the release in use, switched in one step
-    /etc/cloudwall/config.toml                the settings (the service may rewrite it: Setup)
-    /var/lib/cloudwall/                       logbooks, places.json, backups
-    /var/cache/cloudwall/                     downloaded map tiles and logos
-    /usr/local/bin/cloudwall                  the command, for doctor, backup and the rest
-    cloudwall.service                         the wall, as the system user `cloudwall`
-
-The roles (ROLES) are what a machine does: a wall serves the screens; a panel is a screen
-(a browser full-screen at a wall). The station, a receiver's own process, joins them later
-(see ROADMAP.md). Each role is a list of steps on a System (system.py), so a test can run any of
-them against a folder instead of a machine.
+Code goes in /opt/cloudwall/releases/<version>-<id>/, with /opt/cloudwall/current a symlink to the
+release in use. Each role (ROLES) is a list of steps on a System (system.py), so tests can run it
+against a folder instead of a machine.
 """
 import os
+import shutil
 import sys
 from pathlib import Path
 
 from .. import __version__
-from ..core import config, keys, paths
+from ..core import config, keys, paths, schema
 from .system import System, tree_hash
 
 OPT = "/opt/cloudwall"
 ETC = "/etc/cloudwall"
 VAR = "/var/lib/cloudwall"
 CACHE = "/var/cache/cloudwall"
+HELPER_VAR = "/var/lib/cloudwall-helper"    # root's own (operate/helper.py)
 CONFIG = f"{ETC}/config.toml"
 PANEL_CONF = f"{ETC}/panel.conf"
 BIN = "/usr/local/bin/cloudwall"
@@ -70,7 +58,7 @@ RestartSec=5
 UMask=0027
 # what it may touch: its own folders, and its settings (which Setup rewrites)
 ProtectSystem=strict
-ReadWritePaths={VAR} {CACHE} {ETC}
+ReadWritePaths={VAR} {CACHE} {ETC} -{HELPER_VAR}/requests
 ProtectHome=yes
 PrivateTmp=yes
 PrivateDevices=yes
@@ -116,14 +104,14 @@ def caddy_site(name, port):
 class Options:
     def __init__(self, role="wall", public=None, wall_url=None, desktop_user=None, source=None, start=True):
         self.role = role
-        self.public = public                # a name on the internet: Caddy in front (wall)
-        self.wall_url = wall_url            # the wall a panel shows
-        self.desktop_user = desktop_user    # the panel's desktop session's user
+        self.public = public                # (wall) a name on the internet: Caddy in front
+        self.wall_url = wall_url            # (panel) the wall it shows
+        self.desktop_user = desktop_user
         self.source = Path(source or paths.PACKAGE)
         self.start = start                  # start (or restart) the service when done
 
 
-# -- the wall -------------------------------------------------------------------------------
+# -- the wall --
 
 def check_python(system):
     """The service runs PYTHON: it must be 3.11 or later (tomllib)."""
@@ -139,13 +127,17 @@ def check_python(system):
 
 
 def put_release(system, source):
-    """The code in a release folder of its own, `current` switched to it; older ones beyond the
-    last KEEP_RELEASES removed. True if the code in use changed."""
+    """Copy the code to its release folder, switch `current` to it, prune old releases. True if
+    the code in use changed."""
     rid = f"{__version__}-{tree_hash(source)[:10]}"
     folder = f"{OPT}/releases/{rid}"
     if not system.exists(f"{folder}/cloudwall/__init__.py"):
-        system.copy_tree(source, f"{folder}/cloudwall")
-        system.run([PYTHON, "-m", "compileall", "-q", system.path(folder).as_posix()], check=False, quiet=True)
+        # copied as .part and renamed when whole: a copy cut short is never taken for a release
+        system.remove(f"{folder}.part")
+        system.copy_tree(source, f"{folder}.part/cloudwall")
+        system.run([PYTHON, "-m", "compileall", "-q", system.path(f"{folder}.part").as_posix()], check=False, quiet=True)
+        system.remove(folder)
+        system.rename(f"{folder}.part", folder)
     link = system.path(f"{OPT}/current")
     before = os.readlink(link) if link.is_symlink() else None
     changed = system.symlink(f"releases/{rid}", f"{OPT}/current")     # relative: right under any root
@@ -153,15 +145,16 @@ def put_release(system, source):
         system.write(f"{OPT}/previous", before + "\n")
     releases = sorted(system.path(f"{OPT}/releases").iterdir(), key=lambda p: p.stat().st_mtime) \
         if system.path(f"{OPT}/releases").is_dir() else []
-    keep = {rid, Path(before).name if before else None}
+    kept = system.path(f"{OPT}/previous")          # never pruned: rollback's way back
+    keep = {rid, Path(before).name if before else None,
+            Path(kept.read_text().strip()).name if kept.is_file() else None}
     for old in [r for r in releases if r.name not in keep][:-(KEEP_RELEASES - 2) or None]:
         system.remove(f"{OPT}/releases/{old.name}")
     return changed
 
 
 def rollback(system):
-    """Back to the release in use before the last update (its settings fall back on .good if they
-    no longer suit it). Returns the release now in use."""
+    """Back to the release in use before the last update. Returns the release now in use."""
     previous = (system.read(f"{OPT}/previous") or "").strip()
     if not previous or not system.exists(f"{OPT}/{previous}/cloudwall/__init__.py"):
         raise SystemExit("cloudwall rollback: there is no earlier release kept to go back to")
@@ -177,29 +170,19 @@ def rollback(system):
 def put_config(system):
     """The settings file: started from the example when there is none; never overwritten."""
     if not system.exists(CONFIG):
-        system.write(CONFIG, paths.EXAMPLE.read_text(), mode=0o640, owner=USER, group=USER)
+        system.write(CONFIG, schema.starter(), mode=0o640, owner=USER, group=USER)
     else:
         system.chown(CONFIG, USER, USER)
         system._mode(CONFIG, 0o640)
 
 
 def make_public(system, name, port):
-    """CloudWall on the internet at `name`, through Caddy: a site file of its own imported by the
-    Caddyfile (which is otherwise left as it is), CloudWall listening only for Caddy, and a
-    private link, since until the owner's sign-in exists the key is all that keeps it private."""
-    cfg_path = system.path(CONFIG)
-    cfg = config.load(cfg_path) if cfg_path.exists() else config.load(None)
-    if not cfg["server"]["key"]:
-        key = keys.new_key()
-        system._did("make a private link (CloudWall on the internet needs one)")
-        if not system.dry_run:
-            config.write_setting(cfg_path, "server", "key", key)
-    if cfg["server"]["host"] != "127.0.0.1":
-        system._did("have CloudWall listen only for Caddy ([server] host = \"127.0.0.1\")")
-        if not system.dry_run:
-            config.write_setting(cfg_path, "server", "host", "127.0.0.1")
-    if not system.dry_run:
-        config.write_setting(cfg_path, "server", "address", name)
+    """CloudWall on the internet at `name`, through Caddy: a site file imported by the Caddyfile,
+    CloudWall listening only for Caddy, and a private link."""
+    # Caddy first, settings after: a CloudWall listening only for a Caddy that isn't there is unreachable
+    if system.real and not shutil.which("caddy"):
+        raise SystemExit("cloudwall install: --public needs Caddy, and there is no `caddy` on this machine. "
+                         "Install it (https://caddyserver.com/docs/install), then run this again. Nothing was changed.")
     system.write(CADDY_SITE, caddy_site(name, port))
     line = f"import {CADDY_SITE}"
     current = system.read(CADDYFILE)
@@ -213,18 +196,32 @@ def make_public(system, name, port):
     if got is not None and got.returncode != 0:
         if current is not None and not system.dry_run:
             system.write(CADDYFILE, current)
+        elif current is None:
+            system.remove(CADDYFILE)
         system.remove(CADDY_SITE)
         raise SystemExit("cloudwall install: Caddy refused the new site, so the Caddyfile was put back as it was:\n"
                          + (got.stderr or got.stdout).strip()
                          + f"\n(If the Caddyfile already has a site for {name}, take that out first.)")
+    cfg_path = system.path(CONFIG)
+    cfg = config.load(cfg_path) if cfg_path.exists() else config.load(None)
+    if not cfg["server"]["key"]:
+        key = keys.new_key()
+        system._did("make a private link (CloudWall on the internet needs one)")
+        if not system.dry_run:
+            config.write_setting(cfg_path, "server", "key", key)
+    if cfg["server"]["host"] != "127.0.0.1":
+        system._did("have CloudWall listen only for Caddy ([server] host = \"127.0.0.1\")")
+        if not system.dry_run:
+            config.write_setting(cfg_path, "server", "host", "127.0.0.1")
+    if not system.dry_run:
+        config.write_setting(cfg_path, "server", "address", name)
     system.run(["systemctl", "reload-or-restart", "caddy"], check=False)
 
 
 def preflight(system, path=None, what=None):
-    """Before restarting into new code: would the settings start with it? If not, the running
-    CloudWall is left running (its new code waits in place) and what to change is said. Settings
-    it can start with, but with something left out, are said and the restart goes ahead.
-    path: a settings file other than the installed one (an old setup's, before it is moved in)."""
+    """Before restarting into new code: would the settings start with it? If not, exits saying
+    what to change, leaving the running CloudWall running. path: a settings file other than the
+    installed one."""
     from ..reference import placing
     path = Path(path) if path else system.path(CONFIG)
     if not path.exists():
@@ -243,8 +240,7 @@ def preflight(system, path=None, what=None):
 
 
 def start_service(system, restart=True):
-    """Start (or restart) the service and say plainly if it didn't come up: the reason from its log,
-    and the way back. True if it is running."""
+    """Start (or restart) the service; exits with the end of its log if it didn't come up."""
     got = system.run(["systemctl", "restart" if restart else "start", "cloudwall"], check=False)
     if got.returncode == 0:
         return True
@@ -260,18 +256,18 @@ def wall(system, opts):
     system.add_system_user(USER, VAR)
     system.mkdir(OPT, 0o755)
     system.mkdir(f"{OPT}/releases", 0o755)
-    # the service rewrites its settings (Setup), so the group may write here; others may pass through
-    # to a panel's own file but list nothing, and config.toml itself is the owner's and group's only
+    # 771: the service rewrites its settings, so the group may write; others may only pass through
+    # (to a panel's panel.conf) and list nothing
     system.mkdir(ETC, 0o771, "root", USER)
     system.mkdir(VAR, 0o750, USER, USER)
-    system.mkdir(f"{VAR}/backups", 0o750, USER, USER)      # the board's "Back up now" writes here
+    system.mkdir(f"{VAR}/backups", 0o750, USER, USER)
     system.mkdir(CACHE, 0o750, USER, USER)
     code = put_release(system, opts.source)
     put_config(system)
     system.write(BIN, COMMAND_TEXT, mode=0o755)
     unit = system.write(UNIT, UNIT_TEXT)
     from . import helper
-    helper.install_units(system)              # what the control board may ask root for
+    helper.install_units(system)
     if opts.public:
         port = config.load(system.path(CONFIG))["server"]["port"] if system.exists(CONFIG) else 5050
         make_public(system, opts.public, port)
@@ -280,11 +276,16 @@ def wall(system, opts):
     enabled = system.ask(["systemctl", "is-enabled", "cloudwall"])
     if unit or (enabled is not None and enabled.stdout.strip() != "enabled"):
         system.run(["systemctl", "enable", "cloudwall"], check=False)
-    if opts.start and (code or unit or opts.public):
+    # a restart is owed if something changed now, or on an earlier run that stopped before restarting
+    owed = f"{OPT}/restart-owed"
+    if code or unit or opts.public:
+        system.write(owed, "the service has yet to restart into what `cloudwall install` put in place\n")
+    if opts.start and system.exists(owed):
         preflight(system)
     if opts.start:
-        if code or unit or opts.public:
+        if system.exists(owed):
             start_service(system)
+            system.remove(owed)
         else:
             active = system.ask(["systemctl", "is-active", "cloudwall"])
             if active is not None and active.stdout.strip() != "active":
@@ -312,22 +313,27 @@ def unwall(system, purge=False):
             system.run(["userdel", USER], check=False)
 
 
-# -- a panel ----------------------------------------------------------------------------------
+# -- a panel --
 
 def panel(system, opts):
     user = opts.desktop_user or os.environ.get("SUDO_USER")
     if not user or user == "root":
         raise SystemExit("cloudwall install --role panel: say whose desktop shows it: --desktop-user <name>")
+    if system.real and system.ask(["id", "-u", user]).returncode != 0:
+        raise SystemExit(f"cloudwall install --role panel: there is no user {user!r} on this machine")
     url = (opts.wall_url or "").rstrip("/")
-    if not url:                                   # a wall on this machine: its own address, with its key
+    if not url:                                   # a wall on this machine, with its key
         cfg = config.load(system.path(CONFIG)) if system.exists(CONFIG) else config.load(None)
         url = f"http://localhost:{cfg['server']['port']}" + (f"/k/{cfg['server']['key']}" if cfg["server"]["key"] else "")
     system.mkdir(ETC, None if system.exists(ETC) else 0o771)
     # the address may carry the private link's key: readable by the desktop's user, not everyone
     system.write(PANEL_CONF, f"CLOUDWALL_URL='{url}'\n", mode=0o640, owner="root", group=user)
     system.write(KIOSK_BIN, KIOSK_TEXT, mode=0o755)
-    home = Path(system.ask(["getent", "passwd", user]).stdout.split(":")[5]) if system.real else Path(f"/home/{user}")
+    home = Path(os.path.expanduser(f"~{user}")) if system.real else Path(f"/home/{user}")
     autostart = f"{home}/.config/labwc/autostart"
+    for folder in (f"{home}/.config", f"{home}/.config/labwc"):      # the user's own, not root's
+        if not system.exists(folder):
+            system.mkdir(folder, 0o755, user, user)
     current = system.read(autostart) or ""
     if KIOSK_BIN not in current:
         system.write(autostart, current + ("" if current.endswith("\n") or not current else "\n") + f"{KIOSK_BIN} &\n",

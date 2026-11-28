@@ -1,8 +1,5 @@
-// The next few minutes on one line of time: who comes over the house, who lands and when, and a
-// medical helicopter reaching its hospital. Simple says the next three in words with a countdown
-// each ("0:25 AS 2162 over the house"); Detailed draws them along a ten-minute axis that moves
-// every second, each event a mark (its colour, its landing number, the medical cross) and a label.
-// The countdowns tick with the rest of the page (tickCounts); the axis moves with tickTimeline.
+// The next few minutes on one line of time: passes over the house, landings, medical helicopters.
+// Simple says the next three in words; Detailed draws a ten-minute axis (moved by tickTimeline).
 import { esc, since } from "./util.js";
 import { catIcon, medIcon, flightName, overheadSoon, picture } from "./situation.js";
 
@@ -24,9 +21,8 @@ export function events(state) {
 
 const mark = (e) => (e.kind === "land" ? `<span class="seq">${e.a.seq}</span>` : e.kind === "hosp" ? medIcon(15) : catIcon(e.a.activity || "pass", e.a, 15));
 
-// Simple: "Next  0:25 AS 2162 over the house · 1:40 AS 2162 lands at PDX · 4:10 LIFE3 at Portland Adventist"
-// skip: an aircraft whose own pass over the house is already said elsewhere (the wall panel's card);
-// short: each event in its fewest words ("AS 67 overhead", "AS 2162 lands"), for the wall panel
+// Simple: "Next  0:25 AS 2162 over the house · 1:40 AS 2162 lands at PDX"
+// skip: an aircraft whose pass is already said elsewhere; short: fewest words, for the wall panel
 export function lineHtml(state, max = 3, { skip = null, short = false } = {}) {
   const ev = events(state).filter((e) => !(skip && e.kind === "over" && e.a.hex === skip)).slice(0, max), t0 = since(state);
   if (!ev.length) return "";
@@ -34,10 +30,8 @@ export function lineHtml(state, max = 3, { skip = null, short = false } = {}) {
     `<span class="tl-e" data-hex="${esc(e.a.hex)}">${mark(e)}<b data-until="${e.t}">${until(e.t - t0)}</b> ${esc(short ? e.short || e.text : e.text)}</span>`).join("")}</div>`;
 }
 
-// Detailed: the ten-minute axis
 export function axisHtml(state) {
   const t0 = since(state), ev = events(state).filter((e) => e.t - t0 <= SPAN_S);
-  // nothing due: a quiet line, not an empty ruler across the screen
   if (!ev.length) return `<div class="tl quiet">Nothing due over the house or landing in the next ten minutes</div>`;
   const ticks = [0, 2, 4, 6, 8, 10].map((m) => `<span class="tl-tick${m ? (m === 10 ? " end" : "") : " start"}" style="left:${m * 10}%">${m ? (m === 10 ? "10 min" : m) : "now"}</span>`).join("");
   // each mark drawn where it stands, so a redraw doesn't slide it in from the start
@@ -49,9 +43,8 @@ export function axisHtml(state) {
 
 const until = (s) => (s < 12 ? "now" : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`);
 
-// Move the axis's marks to where they stand now, and lay out their labels in two rows so none
-// overlaps another: a label that would run off the end turns to sit left of its mark; one with no
-// room in either row is hidden, still measured (its mark keeps the title).
+// Moves the marks and lays their labels in two rows so none overlaps: one that would run off the
+// end sits left of its mark; one with no room in either row is hidden (its mark keeps the title).
 export function tickTimeline(root, state) {
   for (const track of root.querySelectorAll(".tl.axis .tl-track")) {
     const w = track.clientWidth, t0 = since(state), ends = [-1e9, -1e9];

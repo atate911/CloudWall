@@ -1,6 +1,5 @@
-"""The incident log: each problem the health watcher saw, when it started and ended, kept across
-restarts in its own file (health.db beside the logbooks), so "has the receiver been dropping out
-this week?" has an answer. Only the last KEEP_DAYS are kept."""
+"""The incident log: each problem the health watcher saw, with its start and end, in its own
+file (health.db beside the logbooks). Only the last KEEP_DAYS are kept."""
 import json
 
 from ..core.db import Database
@@ -34,7 +33,7 @@ class Incidents(Database):
             self.db.execute("DELETE FROM incidents WHERE started < ?", (now - KEEP_DAYS * 86400,))
 
     def close_all(self, now):
-        """At start: whatever was open when CloudWall last stopped ended then, as far as anyone knows."""
+        """At start: whatever was open when CloudWall last stopped is ended."""
         with self.lock, self.db:
             self.db.execute("UPDATE incidents SET ended=? WHERE ended IS NULL", (now,))
 
@@ -43,9 +42,3 @@ class Incidents(Database):
             rows = self.db.execute("SELECT key, code, part, state, major, summary, started, ended FROM incidents "
                                    "ORDER BY started DESC LIMIT ?", (limit,)).fetchall()
         return [dict(r) for r in rows]
-
-    def counts(self, since):
-        """How often each problem started since then: {key: n}."""
-        with self.lock:
-            rows = self.db.execute("SELECT key, COUNT(*) n FROM incidents WHERE started >= ? GROUP BY key", (since,)).fetchall()
-        return {r["key"]: r["n"] for r in rows}

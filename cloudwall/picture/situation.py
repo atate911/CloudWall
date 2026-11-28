@@ -1,11 +1,5 @@
-"""What every aircraft in the area is doing, so a screen can show the whole picture at a glance:
-arriving at the place's airport, departing from it, flying locally, or passing over on its way
-somewhere else. Arrivals are put in landing order, each with the runway it is lining up for, about
-when it lands and how far behind the one ahead it is. And anything worth a look (military, a rare
-type, a balloon, a medical flight) is marked as such, and a medical helicopter's hospital (medical.py).
-
-Every screen draws these the same way, in the same four colours: the radar, the lists, the Board,
-the wall panel and the phone.
+"""What every aircraft is doing (arriving, departing, local, passing), the arrivals' landing
+order with runway and time, and what is notable (military, rare, medical: medical.py).
 """
 import math
 
@@ -13,26 +7,21 @@ from ..core import geo
 from . import medical
 from ..reference import aircraft
 
-# Kinds of aircraft that, with no published route to say otherwise, are flying locally: sightseeing,
-# training, a medical or news helicopter, a balloon. (A turboprop with no route and no VFR code is
-# more likely passing through on a flight plan.)
+# kinds that, with no route, are flying locally (a turboprop with no route is more likely passing through)
 LOCAL_KINDS = {"heli", "tandem", "glider", "balloon", "light", "gyro", "ultralight", "twin",
                "seaplane", "airship", "drone"}
-# Worth pointing out to the household even when nothing about the flight is unusual.
 UNUSUAL_KINDS = {"balloon", "airship", "glider", "tandem", "tiltrotor", "gyro"}
-TAIL_S = 120                # how much of every aircraft's recent track a screen gets, in seconds
+TAIL_S = 120                # seconds of every aircraft's recent track a screen gets
 TAIL_POINTS = 16            # at most this many points of it
-FINAL_LATERAL_NM = 2.5      # this close to a runway's extended centreline, and pointing down it, is on final
+FINAL_LATERAL_NM = 2.5      # this close to the extended centreline, and pointing down it, is on final
 FINAL_JOIN_NM = 6           # an arrival not yet on final is reckoned to join it this far out
 
 
-def activity(a, iata):
-    """"arr", "dep", "loc" or "pass": what this aircraft is doing, from its route when it has a
-    believable one, else from how it is flying near the airport (details.infer_local), else from
-    its kind. Light aircraft into and out of the small fields nearby fly locally, as far as the
-    big airport is concerned."""
+def activity(a, iata, field_ft=0):
+    """"arr", "dep", "loc" or "pass": from a believable route, else how it flies near the airport
+    (details.infer_local), else its kind. Traffic of the small fields nearby is "loc"."""
     r = a.get("route") if (a.get("route") or {}).get("plausible") else None
-    v, alt = a.get("vrate") or 0, a.get("alt") or 0
+    v, alt = a.get("vrate") or 0, (a.get("alt") or 0) - field_ft        # height above the airport
     if a.get("local_field"):
         return "loc"
     if a.get("local") == "arriving" or (r and r["dest"].get("iata") == iata and v <= 300 and alt < 14000):
@@ -45,8 +34,7 @@ def activity(a, iata):
 
 
 def notable(a):
-    """Why this aircraft is worth a look, or None: an emergency, a medical flight, military, a rare
-    type, or a kind seldom seen (a balloon, a glider, a twin-rotor helicopter)."""
+    """Why this aircraft is worth a look, or None."""
     if a.get("emergency"):
         return "emergency"
     if a.get("medical"):
@@ -61,8 +49,8 @@ def notable(a):
 
 
 def landing_ways(airport, flow):
-    """The runways arrivals land on, each as (name, threshold lat/lon, landing direction in degrees):
-    those in use when the flow is known, else every runway end."""
+    """[(name, threshold lat, lon, landing direction in degrees)]: the runways in use when the
+    flow is known, else every runway end."""
     ways = []
     for w in airport.get("runways") or []:
         (lat1, lon1), (lat2, lon2) = w["ends"]
@@ -76,19 +64,17 @@ def landing_ways(airport, flow):
 
 
 def _xy(lat0, lon0, lat, lon):
-    """Where a point is from another, in nm east and north."""
+    """A point from another, as (nm east, nm north)."""
     return (lon - lon0) * 60 * math.cos(math.radians(lat0)), (lat - lat0) * 60
 
 
 def _to_runway(a, ways):
-    """The runway an arrival is lining up for and how far it has to fly to touch down, in nm.
-    On final (close to the extended centreline, ahead of the threshold, pointing down it) that is
-    the distance along it; otherwise the way to a point FINAL_JOIN_NM out on the runway's final
-    whose direction suits it best, and then down it."""
+    """(runway an arrival is lining up for, nm to fly to touchdown): on final, the distance along
+    it; otherwise via a point FINAL_JOIN_NM out on the best-suited runway's final."""
     off = lambda x, y: abs((x - y + 180) % 360 - 180)
     best = None
     for name, lat, lon, hdg in ways:
-        ux, uy = math.sin(math.radians(hdg)), math.cos(math.radians(hdg))      # the landing direction
+        ux, uy = math.sin(math.radians(hdg)), math.cos(math.radians(hdg))
         px, py = _xy(lat, lon, a["lat"], a["lon"])
         along = -(px * ux + py * uy)                                          # nm out from the threshold
         lateral = abs(px * uy - py * ux)
@@ -97,7 +83,7 @@ def _to_runway(a, ways):
         if along > 0 and lateral < FINAL_LATERAL_NM and aligned:
             cost, togo = lateral, along
         else:
-            jx, jy = -ux * FINAL_JOIN_NM, -uy * FINAL_JOIN_NM                # the join point
+            jx, jy = -ux * FINAL_JOIN_NM, -uy * FINAL_JOIN_NM
             to_join = math.hypot(px - jx, py - jy)
             cost, togo = 10 + to_join, to_join + FINAL_JOIN_NM
         if not best or cost < best[0]:
@@ -106,9 +92,8 @@ def _to_runway(a, ways):
 
 
 def sequence(arrivals, airport, flow):
-    """Put the arrivals in landing order: each gets its runway ("rwy"), seconds to touchdown
-    ("lands_s", slowing as it comes in), its place in the order ("seq", from 1) and the seconds
-    since the one ahead lands ("gap_s", None for the first)."""
+    """Sort the arrivals into landing order, setting "rwy", "lands_s" (seconds to touchdown),
+    "seq" (from 1) and "gap_s" (seconds behind the one ahead; None for the first)."""
     ways = landing_ways(airport, flow)
     if not ways:
         return
@@ -122,8 +107,7 @@ def sequence(arrivals, airport, flow):
 
 
 def tail(points, trail_s):
-    """The last TAIL_S seconds of an aircraft's reported positions, as [lat, lon] pairs oldest
-    first, thinned to TAIL_POINTS: enough for the radar to draw a short fading track behind it."""
+    """The last TAIL_S seconds of positions as [lat, lon] pairs, oldest first, thinned to TAIL_POINTS."""
     n = max(2, math.ceil(TAIL_S / max(trail_s or 5, 1)))
     pts = list(points)[-n:]
     step = max(1, math.ceil(len(pts) / TAIL_POINTS))
@@ -132,9 +116,8 @@ def tail(points, trail_s):
 
 
 def describe(aircraft_list, airport, flow, said=None):
-    """Mark every airborne aircraft with what it is doing, and the arrivals with their landing order.
-    said: the tracker's hospital claims so far (medical.mark). Anything an earlier update said of
-    an aircraft (a followed one carried on from its last report) is cleared and worked out again."""
+    """Set every airborne aircraft's activity and notable, and the arrivals' landing order,
+    clearing what an earlier update said. said: the tracker's hospital claims (medical.mark)."""
     iata = airport.get("iata")
     arrivals = []
     for a in aircraft_list:
@@ -144,7 +127,7 @@ def describe(aircraft_list, airport, flow, said=None):
     for a in aircraft_list:
         if a.get("on_ground"):
             continue
-        a["activity"] = activity(a, iata)
+        a["activity"] = activity(a, iata, airport.get("elevation_ft") or 0)
         why = notable(a)
         if why:
             a["notable"] = why

@@ -9,10 +9,7 @@
 #   sudo bash vps-tunnel.sh setup "ssh-ed25519 AAAA... adsb-tunnel@pi"   # 2. authorise the Pi's key
 #        [--remote-port 18080] [--coverage]               #    --coverage: Coverage3D too (18090)
 #   bash vps-tunnel.sh test        [--remote-port 18080]   # 4. is the Pi's data arriving?
-#   bash vps-tunnel.sh cloudwall   [--remote-port 18080] [--config PATH]
-#                                                         # 5. put the Pi first in CloudWall's feeds
-#                                                         #    (run as the user that runs CloudWall)
-#   bash vps-tunnel.sh cloudwall-remove [--remote-port 18080] [--config PATH]
+#                                                         # 5. the control board's Feeds page: add your receiver
 #   bash vps-tunnel.sh status      [--remote-port 18080]
 #   sudo bash vps-tunnel.sh remove                         # delete the account and its key
 
@@ -22,7 +19,6 @@ TUSER="${TUSER:-adsbtunnel}"
 THOME="${THOME:-/var/lib/$TUSER}"
 RPORT=18080
 COVER=""          # --coverage: the Pi may also open the port after RPORT (18090), for Coverage3D
-CONFIG=""
 
 say()  { printf '%s\n' "$*"; }
 ok()   { printf '  [OK]   %s\n' "$*"; }
@@ -38,7 +34,6 @@ parse_opts() {
     case "$1" in
       --remote-port) RPORT="$2"; shift 2;;
       --coverage) COVER=1; shift;;
-      --config) CONFIG="$2"; shift 2;;
       *) ARGS+=("$1"); shift;;
     esac
   done
@@ -55,7 +50,7 @@ public_address() {
   esac
 }
 
-ssh_port() { sshd -T 2>/dev/null | awk '$1=="port"{print $2; exit}'; }
+ssh_port() { sshd -T 2>/dev/null | awk '$1=="port"{print $2; exit}' || true; }
 
 cmd_setup() {
   need_root
@@ -180,98 +175,17 @@ if age > 30: print("  [WARN] the data is stale: the decoder on the Pi may have s
 ' <<<"$body"
   [ "${1:-}" = quiet ] && return
   say ""
-  say "NEXT: as the user that runs CloudWall (no sudo), from your CloudWall folder:"
-  say "  bash deploy/feed-tunnel/vps-tunnel.sh cloudwall"
-}
-
-SYSTEM_UNIT=/etc/systemd/system/cloudwall.service    # the system install (`cloudwall install`)
-
-find_config() {
-  [ -n "$CONFIG" ] && { echo "$CONFIG"; return; }
-  [ -n "${CLOUDWALL_CONFIG:-}" ] && { echo "$CLOUDWALL_CONFIG"; return; }
-  [ -e "$SYSTEM_UNIT" ] && [ -e /etc/cloudwall/config.toml ] && { echo /etc/cloudwall/config.toml; return; }
-  local unit="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/cloudwall.service" wd
-  if [ -e "$unit" ]; then
-    wd=$(sed -n 's/^WorkingDirectory=//p' "$unit" | head -1)
-    [ -n "$wd" ] && [ -e "$wd/config.toml" ] && { echo "$wd/config.toml"; return; }
-  fi
-  local u="${XDG_CONFIG_HOME:-$HOME/.config}/cloudwall/config.toml"
-  [ -e "$u" ] && { echo "$u"; return; }
-  return 1
-}
-
-edit_config() {   # add|remove
-  if [ -e "$SYSTEM_UNIT" ]; then
-    [ "$(id -u)" -eq 0 ] || die "CloudWall is installed as a system service: run this with sudo"
-  elif [ "$(id -u)" -eq 0 ] && [ -z "$CONFIG" ]; then
-    die "run this as the user that runs CloudWall (not with sudo), or pass --config PATH"
-  fi
-  local cfg; cfg=$(find_config) || die "couldn't find CloudWall's config.toml; pass --config PATH"
-  say "CloudWall config: $cfg"
-  python3 - "$cfg" "$(feed_url)" "$1" <<'PY'
-import re, shutil, sys, time, tomllib
-path, url, mode = sys.argv[1:4]
-DEFAULT = ["https://opendata.adsb.fi/api/v3/lat/{lat}/lon/{lon}/dist/{radius}",
-           "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"]
-text = open(path).read()
-src = tomllib.loads(text).get("source", {})
-urls = list(src.get("urls") or DEFAULT)
-if src.get("url"):
-    urls = [src["url"]] + [u for u in urls if u != src["url"]]
-new = [url] + [u for u in urls if u != url] if mode == "add" else ([u for u in urls if u != url] or DEFAULT)
-merge = mode == "add" and len(new) > 1        # your receiver alongside the public feeds, combined
-if new == urls and not src.get("url") and bool(src.get("merge")) == merge:
-    print("  [OK]   nothing to change:", "already first, merged" if mode == "add" else "not present"); sys.exit(0)
-
-block = ["urls = ["] + [f'  "{u}",' for u in new] + ["]"] + (["merge = true"] if merge else [])
-lines = text.splitlines()
-hdr = next((i for i, l in enumerate(lines) if re.match(r"\s*\[source\]\s*(#.*)?$", l)), None)
-if hdr is None:
-    out = lines + ["", "[source]               # position feeds, tried in order with automatic failover"] + block
-else:
-    end = next((i for i in range(hdr + 1, len(lines)) if re.match(r"\s*\[", lines[i])), len(lines))
-    body, i = [], hdr + 1
-    while i < end:
-        l = lines[i]
-        if re.match(r"\s*urls\s*=", l):            # drop the old list, however many lines it spans
-            depth = l.count("[") - l.count("]")
-            while depth > 0 and i + 1 < end:
-                i += 1; depth += lines[i].count("[") - lines[i].count("]")
-        elif not re.match(r"\s*(url|merge)\s*=", l):
-            body.append(l)
-        i += 1
-    out = lines[:hdr + 1] + block + body + lines[end:]
-result = "\n".join(out) + "\n"
-got = tomllib.loads(result).get("source", {})
-assert got.get("urls") == new and bool(got.get("merge")) == merge, f"rewrite check failed: {got}"
-bak = f"{path}.bak-{time.strftime('%Y%m%d-%H%M%S')}"
-shutil.copy2(path, bak)
-open(path, "w").write(result)            # (written in place: the file keeps its owner and mode)
-print(f"  [OK]   backed up to {bak}")
-print("  [OK]   [source] urls is now:"); [print("           " + u) for u in new]
-print(f"  [OK]   merge = {'true: your receiver and the public feeds combined' if merge else 'off: feeds tried in order'}")
-PY
-  if [ -e "$SYSTEM_UNIT" ]; then
-    systemctl restart cloudwall && ok "restarted CloudWall (systemctl restart cloudwall)"
-    sleep 8
-    journalctl -u cloudwall -n 30 --no-pager 2>/dev/null | grep -iE "feed|source|127\.0\.0\.1" | tail -5 | sed 's/^/    /' || true
-  elif systemctl --user is-active --quiet cloudwall 2>/dev/null; then
-    systemctl --user restart cloudwall && ok "restarted CloudWall (systemctl --user restart cloudwall)"
-    sleep 8
-    journalctl --user -u cloudwall -n 30 --no-pager 2>/dev/null | grep -iE "feed|source|127\.0\.0\.1" | tail -5 | sed 's/^/    /' || true
-  else
-    warn "CloudWall isn't running as a user service here; restart it yourself to pick up the change"
-  fi
+  say "NEXT: on CloudWall's control board (/admin), Feeds: add your receiver, $(feed_url)"
 }
 
 cmd_remove() {
   need_root
   id "$TUSER" >/dev/null 2>&1 || { ok "no '$TUSER' account: nothing to remove"; return; }
-  read -r -p "Delete account '$TUSER' and the Pi's key (the tunnel will stop working)? [y/N] " a </dev/tty
+  read -r -p "Delete account '$TUSER' and the Pi's key (the tunnel will stop working)? [y/N] " a </dev/tty || die "no terminal to ask at: run this from one"
   [[ "$a" =~ ^[Yy] ]] || die "cancelled"
   pkill -u "$TUSER" 2>/dev/null || true
   userdel -r "$TUSER" 2>/dev/null || userdel "$TUSER"
-  ok "deleted '$TUSER'. Also run 'bash vps-tunnel.sh cloudwall-remove' so CloudWall stops trying the tunnel first."
+  ok "deleted '$TUSER'. Take your receiver off the control board's Feeds page too, so CloudWall stops trying the tunnel first."
 }
 
 cmd="${1:-}"; shift || true
@@ -280,8 +194,6 @@ case "$cmd" in
   setup) cmd_setup;;
   test) cmd_test;;
   status) id "$TUSER" >/dev/null 2>&1 && ok "account '$TUSER' exists" || warn "no '$TUSER' account (run setup)"; cmd_test quiet;;
-  cloudwall) edit_config add;;
-  cloudwall-remove) edit_config remove;;
   remove) cmd_remove;;
-  *) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1;;
+  *) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 1;;
 esac

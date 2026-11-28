@@ -58,7 +58,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `trail_s` | always | Seconds between positions in a `trail`, as the feed is actually answering. |
 | `today` | always | Flyovers logged today. |
 | `seats_today` | always | The seats estimated to have been on them. |
-| `weather` | always | The airport's latest report in short, or null: `station`, `raw`, `category`, `temp_c`, `wind_dir`, `wind_kt`, `gust_kt`, `visibility`, `cover`, `clouds`. |
+| `weather` | always | The airport's latest report in short, or null: `station`, `raw`, `time` (when it was observed), `stale` (true when that is over 2.5 hours ago: it says how things were), `category`, `temp_c`, `wind_dir`, `wind_kt`, `gust_kt`, `visibility`, `cover`, `clouds`. |
 | `tfrs` | always | Flight restrictions nearby: [a restriction](#a-flight-restriction). |
 | `heard` | always | Military aircraft heard nearby that send no position: an aircraft's [feed keys](#from-the-feed) with `lat` and `lon` null, plus `rough_nm`, how far the receiver that heard it is. |
 | `contrails` | always | The contrail forecast in short, or null: `summary`, `persistent` and `short` (each `[from_ft, to_ft]` or null), `at`, `source`. |
@@ -67,6 +67,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `charts` | always | The chart layers the server can serve as tiles: `map`, `atc` (or null) and `layers` by name, among them `world`, the flight card's route map, served everywhere at zooms 0 to 6 (absent when `[map] route` is off). |
 | `logos` | always | Whether airline logos are served at `/logos/<IATA>`. |
 | `restart` | always | True when the server's code has changed on disk since it started: it wants restarting. |
+| `started` | always | When this server started (unix seconds). A page that sees it change loads itself again, to run the page that came with the new server. |
 | `health` | always | How CloudWall's own check of itself stands (`/api/health` has it in full): `worst` ("ok", "warn" or "fail"), `problems` (how many open), `checked` (when it last looked, or null before it has), `major` (the summary of a problem that stops CloudWall doing its job, or null: every screen says it), `major_title` (that problem in a few words) and `subtle` (the title of a problem the screens don't show, where what they show looks right but isn't, such as a frozen feed or a deaf receiver; or null). |
 
 ### An aircraft
@@ -236,7 +237,8 @@ again. Asking counts as a screen looking. Empty of weather until the first repor
 | `fetched` | once a report has arrived | When this was fetched. |
 | `now` | once a report has arrived | The latest [report](#a-weather-report). |
 | `history` | once a report has arrived | The last 24 hours of reports, oldest first. |
-| `taf` | once a report has arrived | The forecast, or null: `raw`, `issued`, `from`, `to` and `periods` (each `from`, `to`, `change`, `probability`, `wind`, `visibility`, `clouds`, `ceiling`, `category`, `weather`, `wind_shear`). |
+| `taf` | once a report has arrived | The forecast, or null: `raw`, `issued`, `from`, `to` and `periods` (each `from`, `to`, `change`, `becoming_by` (when a BECMG change is complete), `probability`, `wind`, `visibility`, `clouds`, `ceiling`, `category`, `weather`, `wind_shear`). |
+| `stale` | always | True when the latest report is over 2.5 hours old; null before the first. |
 | `contrails` | always | The forecast in full, or null: as `contrails` in the state, plus `levels` (each `hpa`, `ft`, `temp_c`, `rhi`, `threshold_c`, `state`). |
 | `tfrs` | always | As `tfrs` in the state. |
 
@@ -248,7 +250,7 @@ again. Asking counts as a screen looking. Empty of weather until the first repor
 | `time` | always | When it was observed. |
 | `raw` | always | The METAR as issued. |
 | `special` | always | True for a special report (SPECI). |
-| `category` | always | "VFR", "MVFR", "IFR" or "LIFR". |
+| `category` | always | "VFR", "MVFR", "IFR" or "LIFR"; null when the report has no visibility and its cloud alone doesn't decide. |
 | `wind` | always | `dir` (degrees, or null when variable or calm), `variable`, `speed` and `gust` in knots. |
 | `visibility` | always | Statute miles. |
 | `visibility_plus` | always | True when that is "more than". |
@@ -386,11 +388,17 @@ release.
 | Request | Answer |
 |---|---|
 | `GET whoami` | `role` ("owner" or "viewer"), `owner_set`, `local`, `version`, `demo`. |
-| `POST signin` / `signout` | `{"password"}`: sets (or clears) the session cookie. Five wrong in five minutes from one address and it waits. |
+| `POST signin` / `signout` | `{"password"}`: sets (or clears) the session cookie. A wrong password is 403; five wrong in five minutes from one address and it waits. A session ends when the password is changed. |
 | `GET overview` | Everything at a glance: the health report, recent incidents, each place's status and feeds' vitals, the paid provider, storage, how CloudWall is installed here. |
-| `GET settings`, `POST settings` | Every setting with its words, kind, allowed values, value (secrets as `{"set"}` only) and default, as in the file and as running; `{"section", "key", "value"}` saves one, checked as the file is. |
+| `GET settings`, `POST settings` | Every setting with its words, kind, allowed values, value (secrets as `{"set"}` only) and default, as in the file and as running; `{"section", "key", "value"}` saves one, checked as the file is (`"value": null` takes it out of the file). |
+| `POST tidy` | `{"action": "move" / "remove", ...}`: puts a setting written under the wrong heading where it belongs, or takes out one CloudWall doesn't know. |
+| `GET receiver`, `POST alert-test` | Your own receiver's health, read from its files; send a test message to `[health] notify_url`. |
 | `GET health`, `incidents`, `doctor`, `catalogue`, `log` | CloudWall's check of itself; the incident log; doctor's checks of the whole machine (`?fresh=1` runs them again); every known problem; the last lines of the log (`?level=warning`). |
 | `POST fix`, `POST repair` | `{"code", "name", "value"}` answers a problem's question (as `doctor --fix` asks it); `{"name"}` makes a repair. One that needs root is filed with the root helper and answers `request`, whose result is at `GET requests/<id>`. |
 | `GET backups`, `POST backups`, `GET backups/<name>` | The backups kept; make one; download one. |
 | `POST private-link`, `POST password`, `POST restart` | `{"action": "new" / "off" / "show"}`; the owner's new password; restart (under systemd). |
+
+An admin call without the owner's session answers 401, with `whoami`'s fields beside the `error`. The
+owner alone also gets `GET /receiver/...` and `GET /coverage/...`: the receiver's live map and
+Coverage3D, passed through from `[receiver] url` and `coverage_url`.
 

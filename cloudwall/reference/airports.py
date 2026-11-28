@@ -1,6 +1,5 @@
-"""Airport names, cities and positions from a bundled table (airportsdata, MIT licence),
-so CloudWall never has to pay a flight-data service for them, plus the small fields that table
-leaves out (fields.csv) and every airport's runways (runways.csv, from OurAirports)."""
+"""Bundled tables: airports (airportsdata, MIT), small fields (fields.csv), runways
+(OurAirports), ZIP codes (Census), airspace and navaids (FAA NASR), hospital helipads."""
 import csv
 import json
 import math
@@ -25,7 +24,7 @@ def _load():
                            "country": r["country"], "lat": float(r["lat"]), "lon": float(r["lon"]), "tz": r["tz"]}
                     table.setdefault(r["icao"], rec)
                     table.setdefault(r["iata"], rec)
-            # small fields by their own code (VUO, 1W1), which no airline airport's code displaces
+            # small fields by their own code (VUO, 1W1); setdefault: never displacing an airport's
             with open(_FIELDS, newline="", encoding="utf-8") as f:
                 for r in csv.DictReader(line for line in f if not line.startswith("#")):
                     rec = {"iata": "", "icao": r["icao"], "code": r["code"], "name": r["name"], "city": r["city"],
@@ -53,13 +52,13 @@ def describe(icao=None, iata=None):
     return {"iata": iata or icao, "icao": icao, "city": None, "name": None, "lat": None, "lon": None, "tz": None}
 
 
-# -- runways (OurAirports, public domain; see tools/build_data.py) ------------
+# -- runways (see tools/build_data.py)
 _RUNWAYS = paths.DATA / "runways.csv"
 _runways = None
 
 
 def _pad(ident):
-    """"3" -> "03", "3L" -> "03L": runway numbers as charts print them."""
+    """"3" -> "03", "3L" -> "03L"."""
     return "0" + ident if ident[:1].isdigit() and not ident[1:2].isdigit() else ident
 
 
@@ -84,12 +83,12 @@ def _load_runways():
 
 def runways(icao):
     """The airport's runways, longest first: name ("10R/28L"), ends [[lat, lon], [lat, lon]] in
-    the order the name gives them, and length. Empty for an airport not in the table."""
+    the name's order, length_ft. [] for an airport not in the table."""
     return [{k: w[k] for k in ("name", "ends", "length_ft")} for w in _load_runways().get(str(icao or "").upper(), [])]
 
 
 def elevation_ft(icao):
-    """The field's elevation, from its longest runway with one on record, else the field's own, or None."""
+    """From the longest runway with an elevation, else the field's own, or None."""
     code = str(icao or "").upper()
     rec = _load().get(code)
     return next((w["elev_ft"] for w in _load_runways().get(rec["icao"] if rec else code, []) if w["elev_ft"] is not None),
@@ -113,7 +112,7 @@ def nearby(lat, lon, radius_nm, exclude=()):
     return [f for _, f in sorted(out, key=lambda x: x[0])]
 
 
-# -- airline airports (OurAirports) and ZIP codes (Census) -----------------------
+# -- airline airports and ZIP codes
 _AIRLINE = paths.DATA / "airline_airports.csv"
 _ZIPS = paths.DATA / "zips.csv"
 _airline = None
@@ -135,8 +134,8 @@ def _load_airline():
 
 
 def airline_nearby(lat, lon, n=6):
-    """The airports with airline service nearest a point, nearest first: their record, size
-    ("large" or "medium") and distance in nm."""
+    """The n airports with airline service nearest a point: record plus size ("large" or
+    "medium") and dist_nm."""
     from ..core.geo import haversine_nm
     table = _load()
     out = []
@@ -148,16 +147,15 @@ def airline_nearby(lat, lon, n=6):
 
 
 def pick_airport(lat, lon):
-    """A place's airport when none is given: the nearest large airport within BIG_AIRPORT_NM,
-    else the nearest with airline service (Portland International for Vancouver, WA; Redmond
-    for Bend). Its ICAO code, or None far from any."""
+    """ICAO code of the nearest large airport within BIG_AIRPORT_NM, else the nearest with
+    airline service; None far from any."""
     near = airline_nearby(lat, lon, n=40)
     big = next((a for a in near if a["size"] == "large" and a["dist_nm"] <= BIG_AIRPORT_NM), None)
     return (big or (near[0] if near else {})).get("icao")
 
 
 def zip_point(zip_code):
-    """A US ZIP code's (lat, lon): the internal point of its Census area. None if unknown."""
+    """A US ZIP code's (lat, lon), or None."""
     global _zips
     with _lock:
         if _zips is None:
@@ -166,8 +164,8 @@ def zip_point(zip_code):
 
 
 def locate(text):
-    """A place typed as a US ZIP code ("98683", "98683-1234") or as coordinates ("45.63, -122.66"):
-    {"lat", "lon", "zip"}, or None when it's neither."""
+    """A US ZIP code ("98683", "98683-1234") or coordinates ("45.63, -122.66") as
+    {"lat", "lon", "zip"}, or None."""
     import re
     t = str(text or "").strip()
     m = re.fullmatch(r"(\d{5})(?:-\d{4})?", t)
@@ -182,7 +180,7 @@ def locate(text):
     return None
 
 
-# -- airspace and navaids (FAA NASR), for the ATC-style radar's video map ----------
+# -- airspace, navaids (the ATC-style radar's video map) and helipads
 _AIRSPACE = paths.DATA / "airspace.json"
 _NAVAIDS = paths.DATA / "navaids.csv"
 _HELIPADS = paths.DATA / "helipads.csv"
@@ -197,7 +195,7 @@ def _load_airspace():
     with _lock:
         if _airspace is None:
             areas = json.loads(_AIRSPACE.read_text(encoding="utf-8"))["areas"]
-            for a in areas:           # the box around each, to find those near a place quickly
+            for a in areas:           # bounding box (s, n, w, e)
                 pts = [p for r in a["rings"] for p in r]
                 a["box"] = (min(p[0] for p in pts), max(p[0] for p in pts), min(p[1] for p in pts), max(p[1] for p in pts))
             _airspace = areas
@@ -205,9 +203,8 @@ def _load_airspace():
 
 
 def airspace_near(lat, lon, reach_nm=VIDEO_MAP_NM, own=None):
-    """The Class B and C areas reaching within about reach_nm of a point, and the Class D areas of
-    `own` (the place's airport, by its three-letter code), as the ATC radar's video map draws
-    them: {id, class, floor, ceiling (ft; floor 0 is the surface), label: [lat, lon] inside it,
+    """Class B and C areas within about reach_nm, and the Class D of `own` (the airport's
+    three-letter code): {id, class, floor, ceiling (ft; floor 0 is the surface), label: [lat, lon],
     rings: [[[lat, lon], ...], ...]}."""
     dlat, dlon = reach_nm / 60, reach_nm / (60 * max(0.1, math.cos(math.radians(lat))))
     out = []
@@ -221,7 +218,7 @@ def airspace_near(lat, lon, reach_nm=VIDEO_MAP_NM, own=None):
 
 
 def navaids_near(lat, lon, reach_nm=VIDEO_MAP_NM):
-    """The VOR and TACAN stations within reach_nm of a point, nearest first: {ident, name, type, lat, lon}."""
+    """VOR and TACAN stations within reach_nm, nearest first: {ident, name, type, lat, lon}."""
     global _navaids
     from ..core.geo import haversine_nm
     with _lock:
@@ -232,8 +229,8 @@ def navaids_near(lat, lon, reach_nm=VIDEO_MAP_NM):
 
 
 def helipads_near(lat, lon, reach_nm):
-    """The hospital helipads (data/helipads.csv, the US only) within reach_nm of a point, nearest
-    first: {code, name, short, city, lat, lon, elevation_ft}."""
+    """Hospital helipads (US only) within reach_nm, nearest first: {code, name, short, city, lat,
+    lon, elevation_ft}."""
     global _helipads
     from ..core.geo import haversine_nm
     with _lock:

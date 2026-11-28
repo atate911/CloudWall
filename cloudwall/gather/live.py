@@ -1,7 +1,5 @@
-"""Shared plumbing for paid live-route providers: API key, credit budget, back-off.
-
-Budgets are in the provider's billing units: Flightradar24 credits (each request's cost
-is worked out from its published price list), or FlightAware queries."""
+"""Shared plumbing for paid live-route providers: API key, budget (in the provider's billing
+units: Flightradar24 credits or FlightAware queries), back-off."""
 import calendar
 import datetime as dt
 import logging
@@ -14,7 +12,7 @@ from ..core.http import get_json
 
 log = logging.getLogger("cloudwall.live")
 YEAR = 365 * 86400
-USAGE_KEEP = 70 * 86400      # per-day usage counts are kept long enough to cover a billing period
+USAGE_KEEP = 70 * 86400      # per-day usage counts: long enough to cover a billing period
 
 
 def billing_period(today, billing_day):
@@ -30,9 +28,8 @@ def billing_period(today, billing_day):
 
 
 class NotYet(Exception):
-    """The provider answered (and billed), but doesn't have the flight that's in the air yet: just
-    after takeoff the latest it knows by that callsign is the leg before. Worth asking again in a
-    few minutes; not something to remember as "no route" for as long as a route is."""
+    """The provider answered (and billed) but only knows the leg before: ask again in a few
+    minutes, don't cache as "no route"."""
 
 
 class LiveProvider:
@@ -46,8 +43,6 @@ class LiveProvider:
     def __init__(self, cfg, store):
         c = cfg.get(self.name, {})
         self.key = os.environ.get(self.env_key) or c.get("api_key") or ""
-        # A monthly allowance (with a safety margin held back) is spread over the days left
-        # in the billing period; daily_limit is an optional extra ceiling per day.
         self.monthly_limit = int(c.get("monthly_credits") or c.get("monthly_limit") or 0)
         self.margin = min(0.9, max(0.0, float(c.get("safety_margin", 0.15))))
         self.billing_day = min(28, max(1, int(c.get("billing_day", 1) or 1)))
@@ -60,12 +55,10 @@ class LiveProvider:
         self.blocked_until = 0
         self.problem = None
         self.reported = None          # the provider's own usage figures, where it offers them
-        self.activity = None          # is any screen open? (place.AnyActivity, given to start)
+        self.activity = None          # place.AnyActivity, given to start
 
     def start(self, activity=None):
-        """Begin whatever the provider does on its own in the background (nothing, unless a
-        subclass says so). Called once the places exist; building a provider starts nothing and
-        makes no requests."""
+        """Begin background work (a subclass's); building a provider starts nothing and makes no requests."""
         self.activity = activity
 
     def headers(self):
@@ -74,7 +67,6 @@ class LiveProvider:
     def route(self, callsign):
         raise NotImplementedError
 
-    # -- budget ---------------------------------------------------------------
     def _today(self):
         return dt.date.today()
 
@@ -88,9 +80,9 @@ class LiveProvider:
         return self._used(self._today())
 
     def budget(self):
-        """Where the money stands: today's allowance and the billing period's totals, and each
-        day's use so far this period (the last fortnight without a monthly figure), for the
-        control board's picture of how fast the allowance is going."""
+        """Today's allowance, the billing period's totals and each day's use this period (the last
+        fortnight without a monthly figure). The monthly allowance less the margin is spread
+        evenly over the days left."""
         today = self._today()
         start, end = billing_period(today, self.billing_day) if self.monthly_limit else (today - dt.timedelta(days=13), None)
         days = [[self._day(start + dt.timedelta(days=i)), self._used(start + dt.timedelta(days=i))]
@@ -102,7 +94,7 @@ class LiveProvider:
             before = sum(n for _, n in days[:-1])
             budget = int(self.monthly_limit * (1 - self.margin))
             days_left = (end - today).days                       # including today
-            share = max(0, budget - before) // max(1, days_left)  # today's even share of what's left
+            share = max(0, budget - before) // max(1, days_left)
             allowance = share if allowance is None else min(allowance, share)
             out.update(period_used=before + out["used_today"], period_budget=budget, resets=end.isoformat(),
                        starts=start.isoformat())
@@ -130,9 +122,9 @@ class LiveProvider:
         self.store.cache_put(f"{self.name}_usage", self._day(), max(0, self.used_today() + n))
 
     def _call(self, url, cost=None, actual_cost=None):
-        """One billed request. `cost` is set aside before calling (the most it can cost);
-        `actual_cost(data)` works out what the response really cost, and the difference is
-        given back. Returns None without calling when over budget or backing off."""
+        """One billed request. `cost` (the most it can cost) is set aside first; `actual_cost(data)`
+        gives the real cost and the difference is given back. None, uncalled, when over budget or
+        backing off."""
         cost = self.max_cost if cost is None else cost
         with self.lock:
             if not self.available(cost):
@@ -147,7 +139,7 @@ class LiveProvider:
             return data
         except urllib.error.HTTPError as e:
             if e.code in (401, 402, 403, 429):
-                # rejected before any work was done: not billed, and no point hammering
+                # rejected before any work was done: not billed
                 with self.lock:
                     self._count(-cost)
                 wait = 60 if e.code == 429 else 3600

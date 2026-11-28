@@ -1,6 +1,5 @@
 // Aviation weather: the Weather tab, and a compact version for the quiet-sky rotation.
-// Charts are drawn as SVG at the container's real pixel size, so text stays a fixed,
-// readable size from across a room.
+// Charts are SVG at the container's real pixel size, so text stays a fixed size.
 import { $, esc, num, offset, POINTS, degF } from "./util.js";
 import { runwaysFor } from "./map.js";
 import { skyToday, moonSvg } from "./astro.js";
@@ -8,6 +7,11 @@ import { skyToday, moonSvg } from "./astro.js";
 const CAT_NAME = { VFR: "Visual flight rules", MVFR: "Marginal visual flight rules", IFR: "Instrument flight rules", LIFR: "Low instrument flight rules" };
 const CAT_ORDER = ["VFR", "MVFR", "IFR", "LIFR"];
 const COVER = { FEW: "Few clouds", SCT: "Scattered", BKN: "Broken", OVC: "Overcast", OVX: "Obscured", VV: "Obscured" };
+const NO_CLOUD = ["SKC", "CLR", "NSC", "NCD", "CAVOK"];
+// A report may have no category; one no longer current (`old`) keeps its category, dimmed.
+export const catBadge = (n, old) =>
+  `<div class="cat-badge${old ? " old" : ""}"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category || "–")}</b></div>`;
+const hoursAgo = (min) => (min < 90 ? `${min} min ago` : `${Math.round(min / 60)} h ago`);
 const RAD = Math.PI / 180;
 const f = (c) => (c == null ? null : (c * 9) / 5 + 32);
 const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -16,7 +20,7 @@ const compass = (d) => POINTS[Math.round(d / 22.5) % 16];
 
 // ---------- words ----------
 
-// A raw report, its kind in bold. Reports usually start with their kind ("METAR KPDX ..."), so that word becomes the label.
+// Reports usually start with their kind ("METAR KPDX ..."), so that word becomes the label.
 function rawLine(kind, raw) {
   const m = /^(METAR|SPECI|TAF(?: AMD| COR)?)\s+/.exec(raw || "");
   return `<p><b>${m ? m[1] : kind}</b> ${esc(m ? raw.slice(m[0].length) : raw || "")}</p>`;
@@ -29,7 +33,9 @@ export function windWords(w) {
 }
 function visWords(n) {
   if (n.visibility == null) return null;
-  return `${n.visibility_plus || n.visibility >= 10 ? "10+" : num(n.visibility * 10) / 10} mile${n.visibility === 1 ? "" : "s"} visibility`;
+  // ("10+" from a US station, "6+" from one that reports in metres and tops out at 9999)
+  const far = n.visibility_plus || n.visibility >= 10;
+  return `${far ? `${Math.round(n.visibility)}+` : num(n.visibility * 10) / 10} mile${n.visibility === 1 ? "" : "s"} visibility`;
 }
 export function skyWords(n) {
   if (!n.clouds.length) return "Clear skies";
@@ -42,7 +48,6 @@ export function summary(n) {
     .filter(Boolean).join(", ");
 }
 
-// ---------- sunrise / sunset ----------
 // ---------- wind and runways ----------
 export function runwayHeadings(state) {
   const home = state.home;
@@ -54,7 +59,7 @@ export function runwayHeadings(state) {
   });
 }
 
-// Headwind and crosswind for each runway direction; the favoured direction has the most headwind.
+// Headwind and crosswind for each runway direction, most headwind first.
 function components(w, runways) {
   if (!w || !w.speed || w.variable || w.dir == null) return [];
   const byHeading = new Map();
@@ -104,22 +109,14 @@ export function windRose(size, w, runways) {
   return `<svg class="rose" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(windWords(w))}">${s}</svg>`;
 }
 
-// The windsock, seen from above, standing at the middle of the compass. Like a real one
-// it's fully out at 15 kt (each of its five bands is about 3 kt), so its length shows the
-// strength and it points the way the wind is going. Gusts make it swing; calm leaves only
-// the ring of the limp sock around its pole.
-// The windsock seen from above, on its mast at the middle of the rose, streaming downwind. As an
-// ICAO sock is made, it has five bands, orange at both ends, and stands straight out at 15 knots,
-// each band about 3 knots: lighter wind, a shorter sock. Drawn along +x and turned to the wind:
-// cloth that tapers from the hoop at its mouth, ripples a little and is open at its tail (its
-// inside shows there), seams that curve round it, matte shading for its roundness, the hoop on an
-// arm from the mast, and its shadow on the ground.
+// The windsock seen from above, at the middle of the rose, streaming downwind. Like an ICAO sock
+// it has five bands and is fully out at 15 kt (each band about 3 kt). Drawn along +x and turned to
+// the wind. Gusts make it swing; calm leaves only its hoop round the mast.
 let socks = 0;
 function planSock(cx, cy, R, w) {
   const speed = (w && w.speed) || 0;
   let s = "";
   if (!speed || w.variable || w.dir == null) {
-    // limp, hanging down the mast: from above, only its hoop shows round the mast's cap
     s += `<circle class="sock-hoop calm" cx="${cx}" cy="${cy}" r="7.5"/>`;
     s += `<text class="rose-calm" x="${cx}" y="${cy + 30}" text-anchor="middle">${speed ? `Variable, ${speed} kt` : "Calm"}</text>`;
   } else {
@@ -127,12 +124,11 @@ function planSock(cx, cy, R, w) {
     const deg = (w.dir + 90) % 360;                 // +x turned to point downwind (from w.dir, toward w.dir + 180)
     const m = 5, r0 = 8.6, r1 = r0 * (0.6 - 0.12 * e), tail = m + L;     // the hoop, the radii; fuller wind, slimmer tail
     const f = (v) => v.toFixed(2);
-    // the cloth's edge: the taper, a slight belly, and a ripple that runs down it, more in a light wind
+    // the cloth's edge: taper, a slight belly, and a ripple, more in a light wind
     const half = (t) => r0 + (r1 - r0) * t + 0.6 * Math.sin(Math.PI * t) + (0.25 + 0.35 * (1 - e)) * Math.sin(Math.PI * 5 * t) * t;
     const edge = (sgn) => Array.from({ length: 25 }, (_, k) => { const t = k / 24; return `${f(m + L * t)},${f(sgn * half(t))}`; });
     const out = `M${edge(-1).join(" L")} L${edge(1).reverse().join(" L")}Z`;
     const rt = half(1), ex = Math.max(1.2, rt * 0.32);                   // the open tail, seen a little from the side
-    // the bands, their seams bowed toward the tail as they run round the cloth
     let bands = "";
     for (let i = 0; i < 5; i++) {
       const a = m + (L / 5) * i, b = m + (L / 5) * (i + 1) + (i < 4 ? 0.2 : ex + 1), bow = i ? 1.4 : 0, bow2 = i < 4 ? 1.4 : 0;
@@ -211,9 +207,7 @@ function histCharts(width, hist) {
   const catLegend = `<span class="lg">${CAT_ORDER.map((k) => `<i class="sw cat-${k}"></i>${k}`).join(" ")}</span>`;
   charts.push(frame(26, strip, "Flight category", "", catLegend));
 
-  // temperature and dew point (°F)
-  // (a report can lack either, when a sensor is out: its point is left off the line, and the
-  // chart is left out when no report in the day has one)
+  // temperature and dew point (°F): a report can lack either (a sensor out); its point is left off
   const temps = hist.flatMap((o) => [f(o.temp_c), f(o.dew_c)]).filter((v) => v != null);
   const tLast = hist[hist.length - 1];
   if (temps.length) {
@@ -244,7 +238,7 @@ function histCharts(width, hist) {
   // visibility (mi)
   const h4 = 64, y4 = scale(0, 10, h4);
   const vBody = `<path class="ln vis step" d="${stepPath(hist.map((o) => [x(o.time), y4(Math.min(o.visibility ?? 10, 10))]))}"/>
-    <text class="dlabel" x="${width - padR + 8}" y="${y4(Math.min(tLast.visibility ?? 10, 10)) + 4}">${tLast.visibility >= 10 ? "10+" : tLast.visibility} mi</text>`;
+    <text class="dlabel" x="${width - padR + 8}" y="${y4(Math.min(tLast.visibility ?? 10, 10)) + 4}">${tLast.visibility == null ? "–" : tLast.visibility >= 10 ? "10+" : tLast.visibility} mi</text>`;
   charts.push(frame(h4, vBody, "Visibility, miles", ticks([0, 5, 10], y4, (v) => v), ""));
 
   // shared time axis
@@ -268,10 +262,17 @@ function tafStrip(width, taf, maxRows = 99) {
   for (let t = Math.ceil(t0 / 10800) * 10800; t <= t1; t += 10800) s += `<text class="tick" x="${x(t)}" y="12" text-anchor="middle">${hourLabel(t)}</text>`;
   const strip = `<svg class="taf-strip" width="${width}" height="56" viewBox="0 0 ${width} 56" role="img" aria-label="Forecast flight categories">${s}</svg>`;
   const rows = taf.periods.filter((p) => p.to > now).slice(0, maxRows).map((p) => {
-    const when = p.change === "TEMPO" ? `Temporarily ${clock(p.from)} to ${clock(p.to)}` : p.probability ? `${p.probability}% chance ${clock(p.from)} to ${clock(p.to)}` : `From ${clock(Math.max(p.from, now))}`;
-    const sky = p.clouds.length ? p.clouds.map((c) => `${COVER[c.cover] || c.cover} ${num(c.base)}`).join(", ") : "clear";
-    const bits = [windWords(p.wind), p.visibility != null ? `${p.visibility >= 6 ? "6+" : p.visibility} mi` : null, p.weather, sky, p.wind_shear ? "wind shear" : null].filter(Boolean);
-    return `<li><span class="when">${esc(when)}</span><span class="cat-tag"><i class="sw cat-${p.category}"></i>${p.category}</span><span>${esc(bits.join(", "))}</span></li>`;
+    const passing = p.change === "TEMPO" || p.change === "PROB" || p.probability, span = `${clock(p.from)} to ${clock(p.to)}`;
+    const when = p.probability ? `${p.probability}% chance${p.change === "TEMPO" ? " at times" : ""} ${span}`
+      : p.change === "TEMPO" ? `At times ${span}`
+      : p.change === "BECMG" && p.becoming_by > now ? `Becoming, ${clock(Math.max(p.from, now))} to ${clock(p.becoming_by)}`
+      : `From ${clock(Math.max(p.from, now))}`;
+    // (a passing group says only what differs: no cloud written is not a clear sky)
+    const layers = p.clouds.filter((c) => c.base != null).map((c) => `${COVER[c.cover] || c.cover} ${num(c.base)}`);
+    const sky = layers.length ? layers.join(", ") : p.clouds.some((c) => NO_CLOUD.includes(c.cover)) ? "no significant cloud" : passing ? null : "clear";
+    const vis = p.visibility == null ? null : `${p.visibility >= 6 ? "6+" : +p.visibility.toFixed(1)} mi`;
+    const bits = [p.wind && p.wind.speed != null ? windWords(p.wind) : null, vis, p.weather, sky, p.wind_shear ? "wind shear" : null].filter(Boolean);
+    return `<li><span class="when">${esc(when)}</span><span class="cat-tag"><i class="sw cat-${esc(p.category)}"></i>${esc(p.category || "–")}</span><span>${esc(bits.join(", "))}</span></li>`;
   }).join("");
   return `${strip}<ul class="taf-list">${rows}</ul>`;
 }
@@ -288,9 +289,9 @@ export function renderWeatherTab(el, W, state) {
   el.innerHTML = `<div class="wx-grid">
     <section class="wx-now">
       <div class="wx-head">
-        <div class="cat-badge"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category)}</b></div>
-        <div><h1>${esc(CAT_NAME[n.category] || n.category)}</h1><p class="sum">${esc(summary(n))}</p>
-          <p class="dim">${esc(W.station)} ${n.special ? "special report" : "report"} from ${clock(n.time)}, ${age < 1 ? "just now" : `${age} min ago`}</p></div>
+        ${catBadge(n, W.stale)}
+        <div><h1>${esc(CAT_NAME[n.category] || n.category || "No flight category")}</h1><p class="sum">${esc(summary(n))}</p>
+          <p class="dim${W.stale ? " old-note" : ""}">${esc(W.station)} ${n.special ? "special report" : "report"} from ${clock(n.time)}, ${age < 1 ? "just now" : hoursAgo(age)}${W.stale ? ": no newer report has come, so this is how it was, not how it is" : ""}</p></div>
       </div>
       <dl class="wx-read">
         <div><dt>Temperature</dt><dd>${degF(n.temp_c)}</dd><dd class="s">dew point ${degF(n.dew_c)}</dd></div>
@@ -314,7 +315,7 @@ export function renderWeatherTab(el, W, state) {
     <section class="wx-more">
       <div class="panel-sky">${sunMoonPanel(skyToday(home.lat, home.lon))}</div>
       <div class="panel-contrails">${contrailPanel(W.contrails)}</div>
-      <div class="panel-airspace">${airspacePanel(W.tfrs, state)}</div>
+      <div class="panel-airspace">${airspacePanel(W.tfrs)}</div>
     </section>
   </div>`;
   const rose = Math.min($("fig-wind").clientWidth, 260);
@@ -328,7 +329,7 @@ export function renderWeatherTab(el, W, state) {
 }
 
 // ---------- sun and moon, contrails, airspace ----------
-// "Sunset 4:38 PM, first quarter moon": the next sun event and tonight's moon, in a line.
+// "Sunset 4:38 PM, first quarter moon"
 export function sunMoonLine(home, short = false) {
   const now = Date.now(), k = skyToday(home.lat, home.lon, now);
   let sun;
@@ -344,7 +345,7 @@ const dayClock = (ms) => {
   return d.toLocaleString([], today ? { hour: "numeric", minute: "2-digit" } : { weekday: "short", hour: "numeric", minute: "2-digit" });
 };
 const dateOnly = (ms) => new Date(ms).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
-const hm = (ms) => `${Math.floor(ms / 3600000)} h ${Math.round((ms % 3600000) / 60000)} min`;
+const hm = (ms) => { const min = Math.round(ms / 60000); return `${Math.floor(min / 60)} h ${min % 60} min`; };
 
 export function sunMoonPanel(k) {
   const t = (ms) => (ms ? dayClock(ms) : "–");
@@ -385,10 +386,9 @@ export function tfrAlt(t) {
   if (!t.floor || !t.ceiling) return "";
   return `${t.floor.text === "the surface" ? "Surface" : t.floor.text} to ${t.ceiling.text}`;
 }
-export function airspacePanel(tfrs, state) {
-  const radius = 30;
+export function airspacePanel(tfrs) {
   if (!tfrs) return `<h2>Flight restrictions</h2><p class="dim">Checking the FAA's list.</p>`;
-  if (!tfrs.length) return `<h2>Flight restrictions</h2><p class="sum">None within ${radius} nm.</p><p class="dim">Temporary flight restrictions (TFRs) close airspace for things like presidential visits, wildfires and stadium events. Source: FAA.</p>`;
+  if (!tfrs.length) return `<h2>Flight restrictions</h2><p class="sum">None nearby.</p><p class="dim">Temporary flight restrictions (TFRs) close airspace for things like presidential visits, wildfires and stadium events. Source: FAA.</p>`;
   return `<h2>Flight restrictions</h2>` + tfrs.map((t) => `<article class="tfr-item${t.active ? " active" : ""}">
       <div class="tfr-top"><b>${esc(t.name || "Flight restriction")}</b>${t.drones_only ? `<span class="tag">Drones only</span>` : ""}${t.active ? `<span class="tag on">Active</span>` : ""}</div>
       <p>${esc(t.kind)}. ${esc(tfrAlt(t))}${t.dist_nm != null ? `, ${t.dist_nm < 0.5 ? "over the house" : `${t.dist_nm} nm away`}` : ""}.</p>
@@ -397,7 +397,7 @@ export function airspacePanel(tfrs, state) {
     </article>`).join("");
 }
 
-// Crosshair: one vertical line across all the history charts, with the report it lands on.
+// One vertical line across all the history charts, with the report it lands on.
 function hookCrosshair(hist) {
   const box = $("wx-hist");
   if (!box || !hover || !hover.x) return;
@@ -408,7 +408,7 @@ function hookCrosshair(hist) {
     const o = hist[best], xx = hover.x(o.time);
     box.querySelectorAll(".xh").forEach((l) => { l.setAttribute("x1", xx); l.setAttribute("x2", xx); l.removeAttribute("visibility"); });
     $("wx-readout").textContent = `${clock(o.time)}: ${o.category}, ${degF(o.temp_c)} with dew point ${degF(o.dew_c)}, ${lowerFirst(windWords(o.wind))}, ` +
-      `${o.ceiling == null ? "no ceiling" : `ceiling ${num(o.ceiling)} ft`}, ${o.visibility >= 10 ? "10+" : o.visibility} mi${o.weather ? `, ${o.weather}` : ""}`;
+      `${o.ceiling == null ? "no ceiling" : `ceiling ${num(o.ceiling)} ft`}, ${o.visibility == null ? "–" : o.visibility >= 10 ? "10+" : o.visibility} mi${o.weather ? `, ${o.weather}` : ""}`;
   };
   box.addEventListener("pointermove", move);
   box.addEventListener("pointerdown", move);
@@ -419,7 +419,7 @@ export function weatherSlide(el, W, state) {
   const n = W.now, runways = runwayHeadings(state);
   el.innerHTML = `<div class="idle wx-slide">
       <div class="wx-head">
-        <div class="cat-badge"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category)}</b></div>
+        ${catBadge(n, W.stale)}
         <div><h1>Weather at ${esc(state.airport.iata)}</h1><p class="sum">${esc(summary(n))}</p>
           <p class="dim">${degF(n.temp_c)}, dew point ${degF(n.dew_c)}, altimeter ${n.altimeter_inhg ?? "–"}. Report from ${clock(n.time)}.</p>
           <p class="dim">${esc(sunMoonLine(state.home))}.${W.contrails ? ` ${esc(W.contrails.summary)}.` : ""}</p></div>

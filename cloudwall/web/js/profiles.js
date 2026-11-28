@@ -45,6 +45,8 @@ const TYPES = Object.assign({}, ...GROUPS.map((g) => g.types));
 // the family drawn for a broad shape when the type has no profile of its own
 const DEFAULTS = { narrow: "b737ngw", wide: "b787", quad: "b744", regional: "crj9", bizjet: "cl60", turboprop: "dh8d", piston: "c172", heli: "ec35", fighter: "f15c" };
 
+export const variesByName = (type) => typeof TYPES[type] === "function";
+
 // name: the aircraft's model names, for types whose entry is a function choosing among variants
 export function profileFor(type, shape, length, name = "") {
   let t = TYPES[type];
@@ -57,6 +59,5 @@ export function profileFor(type, shape, length, name = "") {
   f.L = (t && F[fam] && length ? length - (f.over || 0) : base.L0);
   return f;
 }
-// Whether a type has a drawing of its own (otherwise it gets a stand-in for its broad shape).
 export const hasProfile = (type) => Object.prototype.hasOwnProperty.call(TYPES, type);
 export const knownTypes = () => Object.keys(TYPES);

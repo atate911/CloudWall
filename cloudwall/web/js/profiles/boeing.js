@@ -61,16 +61,7 @@ const probes = (list) => ({ sk }) => {
 };
 
 // ---------- Boeing 737 NG and MAX ----------
-// References: 737NG ACAP D6-58325-7 Rev C, fig. 2.2.5 (737-800) for the fuselage, nose, tail cone,
-// wing and CFM56-7 nacelle; fig. 2.2.6 (737-800W) and table 2.3.3 for the blended winglet;
-// 737 MAX ACAP D6-38A004 Rev K, figs. 2.2.1-2.2.4 (737-7/-8/-9/-10) for the fin and stabilizer,
-// and its door-location table 2.7.1 for all door and exit stations (the NG shares the MAX cabin).
-// The NG side view is not drawn to one scale: at the scale that fits its own dimensioned tail-cone
-// station (38.02 m) and wheelbase it puts the stabilizer tip 0.3 m short of the 39.47 m overall
-// length and the fin tip 7.8 m above the crown, where the NG's ground-clearance table (2.3.2:
-// fuselage top 5.56 m, fin 12.62 m) and the MAX drawing both give 7.0 m. NG and MAX share the
-// vertical tail, so both use the MAX drawing's fin and stabilizer at the same station. The NG tail
-// cone ends 1.45 m ahead of the stabilizer tip, the MAX's reshaped cone 0.55 m.
+// References: 737NG ACAP D6-58325-7 Rev C and 737 MAX ACAP D6-38A004 Rev K
 const B737_NOSE = {
   tip: 0.377,
   top: [[0.1, 0.506], [0.2, 0.561], [0.3, 0.606], [0.4, 0.666], [0.5, 0.753], [0.6, 0.803], [0.7, 0.845], [0.8, 0.87],
@@ -86,9 +77,7 @@ const B737_GLASS = [
 const B737_FIN = { cr: 5.45, ct: 1.56, h: 6.97, sweep: 40, fillet: [3.04, 1.3, "l"], cap: 0.1 };
 // stabilizer root leading edge 34.35 m from the nose (34.52 m at the side of the tail cone in plan)
 const B737_STAB = { z: 0.8, span: 14.35, root: 0.8, cr: 3.5, ct: 0.8, sweep: 34.5, dih: 7 };
-// starboard doors, from the MAX door-location table: service door 1 at 4.67 m, forward cargo
-// 8.53 m, overwing exits 1.81/2.78 m behind the wing root leading edge (16.71/17.68 m on the -800
-// and -8), aft cargo 3.91 m ahead of service door 2.
+// starboard doors, from the MAX door-location table
 const ngDoors = (exits, aft = -6.14, cargo = 8.53) => [[4.67, 0.86], [cargo, 1.24, "C"], ...exits.map((e) => [e, 0.51, "E", "w"]),
   [aft - 3.91, 1.24, "C"], [aft, 0.79]];
 F.b737ng = {
@@ -108,10 +97,7 @@ F.b737ng = {
   eng: { kind: "fan", at: [0.187], fwd: 3.07, drop: 0.44, len: 4.74, dia: 1.95, style: "flat", fx: 0.66, cx: 0.83, pylon: false },
   fin: { le: 38.02 - 31.64, ...B737_FIN },
   stab: { le: 38.02 - 34.35, ...B737_STAB },
-  // the radome joint 0.96 m aft of the nose (fig. 2.2.5), and the right-side probes of fig. 2.7.3 (the
-  // MAX ACAP's door-clearance figure gives the same): primary and alternate pitot-static probes and
-  // the angle-of-attack vane, all 1.57 m aft of the nose, 0.38 m above, 0.08 m above and 0.15 m below
-  // the entry door's sill (1.46 m above the keel)
+  // the radome joint 0.96 m aft of the nose (fig. 2.2.5), and the right-side probes of fig. 2.7.3
   extras: [radomeJoint(0.96), probes([["pitot", 1.57, 1.84], ["pitot", 1.57, 1.54], ["aoa", 1.57, 1.31]])],
 };
 // Blended winglet (737-700W/-800W/-900ERW), from fig. 2.2.6 and table 2.3.3: top 1.2 m above the
@@ -141,13 +127,7 @@ const midExitWin = (mid, from, to) => [{ z: 0.62, from, to: mid - 0.62, pitch: 0
   { z: 0.62, from: mid + 0.62, to, pitch: 0.508, w: 0.25, h: 0.34 }, { z: 0.62, from: mid, to: mid, w: 0.25, h: 0.34 }];
 
 // ---------- Boeing 737 Classic (-300/-400/-500) ----------
-// Reference: 737 ACAP D6-58325-6 Rev E, figs. 2.2.5 (737-400) and 2.2.6 (737-500); table 2.3.2.
-// Same nose and cross-section as the NG (the NG overlay fits the -400's fuselage), but a smaller
-// wing (28.88 m span, unswept inboard trailing edge), the CFM56-3 with its flattened bottom slung
-// well ahead of the wing, a fin 0.9 m shorter than the NG's (same leading/trailing-edge angles:
-// the NG's is an extension) on a fillet that starts further forward, a smaller stabilizer with
-// broad tips, and the two eyebrow windows above the side windows. Tail cone ends 1.17 m ahead of
-// the stabilizer tip (dimensioned 35.23 / 36.40 m on the -400).
+// Reference: 737 ACAP D6-58325-6 Rev E, figs. 2.2.5 (737-400) and 2.2.6 (737-500); table 2.3.2
 const clDoors = (exits, cargo = 8.6) => [[4.67, 0.86], [cargo, 1.24, "C"], ...exits.map((e) => [e, 0.51, "E", "w"]),
   [-10.12, 1.24, "C"], [-6.21, 0.79]];
 F.b737cl = {
@@ -176,14 +156,7 @@ const rootFairing = (pts) => ({ sk, f, L }) => {
 };
 
 // ---------- Boeing 757 ----------
-// Reference: 757 ACAP D6-58327 Rev H, figs. 2.2.1 (757-200, overwing-exit cabin) and 2.2.2 (757-300),
-// door-location table 2.7.1. The drooping nose with its short, deep windshield, the deep belly
-// fairing that runs 8 m behind the wing, the tall fin with a broad tip on a long curved fillet,
-// stabilizer roots low on the tail cone, and the big RB211-535 long-duct nacelles hung far ahead
-// of the wing (the PW2000 is similar in size). The side view's fuselage measures 4.17 m between
-// line centres against a quoted 4.01 m; D = 4.1 splits the difference. Fin tip TE = overall length.
-// Most 757-200s in service carry Aviation Partners blended winglets: the B752 drawing has them,
-// scaled from the 737NG winglet measured above (no Boeing figure shows the 757's; lower confidence).
+// Reference: 757 ACAP D6-58327 Rev H, figs. 2.2.1 (757-200, overwing-exit cabin) and 2.2.2 (757-300)
 const b757Doors = (exits) => [[4.78, 0.76], [10.95, 1.4, "C"], [13.99, 0.84], ...exits.map((e) => [e, 0.52, "E", "w"]),
   [-15.19, 1.4, "C"], [-8.74, 0.76]];
 F.b757 = {
@@ -224,10 +197,7 @@ F.b757w = {
 };
 
 // ---------- Boeing 717 (MD-95) ----------
-// Reference: 717 ACAP D6-58330 Rev B, fig. 2.2 (717-200), side and plan views. DC-9 nose with
-// the eyebrow window above the side windows, BR715s on stubs either side of the tail cone,
-// the broad-topped, steeply swept fin with the stabilizer and its bullet fairing on top.
-// Overall 37.8 m to the stabilizer tip; tail cone ends at 34.3 m (34.4 m in the drawing).
+// Reference: 717 ACAP D6-58330 Rev B, fig. 2.2 (717-200), side and plan views
 F.b712 = {
   kind: "narrow", L0: 34.4, over: 3.4, D: 3.58, W: 3.34, fwd: 0.5, fair: 0.02,
   nose: {
@@ -261,13 +231,7 @@ F.b712 = {
 };
 
 // ---------- McDonnell Douglas MD-80 series (MD-81/82/83/88) ----------
-// Reference: MD-80 ACAP (scanned), fig. 2.2 "General airplane dimensions, MD-81, -82, -83 and -88":
-// overall 45.02 m, tail cone 41.58 m, fuselage height 3.61 m, span 32.85 m, stabilizer 12.25 m.
-// The DC-9 nose and cross-section shared with the 717 (its nose and glazing fit the scan), a long
-// fuselage, long JT8D-200 nacelles with the reverser at the back, the very swept fin whose leading
-// and trailing edges run nearly parallel, the T-tail with its long bullet fairing, and a blunt tail
-// cone. Starboard doors: forward service door (0.68 x 1.22 m), two overwing exits, three cargo doors.
-// The MD-88's EFIS cockpit does not show outside, so the MD-88 uses the same drawing.
+// Reference: MD-80 ACAP (scanned), fig. 2.2 "General airplane dimensions, MD-81, -82, -83 and -88": overall 45.02 m
 F.md80 = {
   ...F.b712, L0: 41.58, over: 3.44, D: 3.6, fwd: 0.5, fair: 0.02,
   tail: {
@@ -286,11 +250,7 @@ F.md80 = {
 };
 
 // ---------- Boeing P-8 Poseidon ----------
-// Lower confidence: no Boeing figure. The 737-800 airframe above (the P-8 is a 737-800ERX), with
-// what Wikipedia ("Boeing P-8 Poseidon") gives as different: raked wingtips instead of winglets
-// (span 37.64 m against 34.32 m; the tip from 92% of the span sweeps back at about 55 degrees), and
-// almost no cabin windows (a few forward and the two observers' windows, one each side); the
-// weapons bay replaces the aft cargo door, and a low SATCOM fairing sits on the crown behind the wing.
+// Lower confidence: no Boeing figure
 const satcom = (s0, len, h) => ({ sk, top }) => {
   const z = (s) => top(s) - 0.02;
   sk.smooth("hull", [[s0, z(s0), "c"], [s0 + len * 0.25, z(s0 + len * 0.25) + h * 0.9], [s0 + len * 0.6, z(s0 + len * 0.6) + h],
@@ -306,9 +266,7 @@ F.p8 = {
 
 export const families = F;
 export const types = {
-  // fwd: share of each stretch ahead of the wing, from the ACAP engine-inlet stations
-  // -600/-700: one pair of overwing exits, 2.92 m behind the wing root (figs. 2.2.1, 2.2.3); the
-  // -600's forward cargo door is 1.4 m further forward
+  // fwd: share of each stretch ahead of the wing, from the ACAP engine-inlet stations -600/-700: one pair of overwing exits
   B734: "b737cl",
   B735: ["b737cl", { doors: clDoors([2.36], 7.58) }],
   B736: ["b737ng", { fwd: 0.547, fairAft: 1.0, doors: ngDoors([2.92], -6.14, 7.13) }],

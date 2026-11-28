@@ -13,7 +13,7 @@ export function bearingDeg(lat1, lon1, lat2, lon2) {
   const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
   return (deg(Math.atan2(y, x)) + 360) % 360;
 }
-/** Point at distance distNm along bearing brg from (lat, lon): a true geodesic (great-circle) step. */
+/** Great-circle step from (lat, lon); returns [lon, lat]. */
 export function destination(lat, lon, brg, distNm) {
   const d = (distNm * NM_M) / R_M, b = rad(brg), p1 = rad(lat), l1 = rad(lon);
   const p2 = Math.asin(Math.sin(p1) * Math.cos(d) + Math.cos(p1) * Math.sin(d) * Math.cos(b));
@@ -23,16 +23,16 @@ export function destination(lat, lon, brg, distNm) {
 /** Theoretical radio horizon (nm): 1.23 * (sqrt(h_antenna_ft) + sqrt(h_ft)). */
 export const radioHorizonNm = (antFt, altFt) => 1.23 * (Math.sqrt(Math.max(antFt, 0)) + Math.sqrt(Math.max(altFt, 0)));
 
-// ---- colours -------------------------------------------------------------------------------
+// ---- colours
 const lerp = (a, b, t) => a + (b - a) * t;
 function ramp(stops, t) {
   t = Math.min(1, Math.max(0, t));
   const n = stops.length - 1, i = Math.min(n - 1, Math.floor(t * n)), f = t * n - i;
   return stops[i].map((v, k) => Math.round(lerp(v, stops[i + 1][k], f)));
 }
-// Altitude: low = warm (orange-red) -> high = cool (blue)
+// low = warm -> high = cool
 export const ALT_STOPS = [[228, 87, 46], [243, 167, 18], [168, 194, 86], [41, 168, 171], [61, 90, 153]];
-// RSSI: weak = dark purple -> strong = yellow
+// weak = dark purple -> strong = yellow
 export const RSSI_STOPS = [[68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37]];
 export const GROUND_COLOR = [142, 68, 173];
 export const altColor = (ft, maxFt = 45000) => ramp(ALT_STOPS, ft / maxFt);
@@ -40,7 +40,7 @@ export const rssiColor = (r) => ramp(RSSI_STOPS, r == null ? 0 : (r + 33) / 30);
 export const rgbCss = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 export const rgbHex = (c) => "#" + c.map((v) => v.toString(16).padStart(2, "0")).join("");
 
-// ---- units ---------------------------------------------------------------------------------
+// ---- units
 export const UNIT_NM = { nm: 1, mi: 1.150779, km: 1.852 };
 export function fmtDist(nm, unit) {
   return `${Math.round(nm * UNIT_NM[unit])} ${unit}`;
@@ -55,6 +55,7 @@ export const fmtBrg = (b) => String(Math.round(b) % 360).padStart(3, "0") + "°"
 export function fmtTime(t) {
   return new Date(t * 1000).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
+export const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const $ = (id) => document.getElementById(id);
 export const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 

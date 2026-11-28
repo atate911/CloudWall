@@ -1,8 +1,5 @@
-"""--demo: synthetic traffic around the station so the page can be tried before real data exists.
-
-The synthetic receiver has a plausible coverage pattern: a radio-horizon-limited range, a blocked
-sector to the east (the Cascades), a weaker one to the south, and an antenna that "moved outside"
-after day 3 so before/after comparison has something to show.
+"""--demo: synthetic traffic around the station, with a plausible coverage pattern and an antenna
+that "moved outside" after day 3 so before/after comparison has something to show.
 """
 from __future__ import annotations
 
@@ -12,8 +9,6 @@ import time
 
 from . import geo
 from .filters import PointFilter
-
-HOURS = 24 * 7
 
 
 def range_model(brg, alt_ft, ant_ft, outside: bool):
@@ -28,7 +23,6 @@ def range_model(brg, alt_ft, ant_ft, outside: bool):
 
 
 def synthetic_snapshot_points(station, cfg, now, rng, days=7, n_flights=2600):
-    """Generate points for flights spread over the last `days` days."""
     flt = PointFilter(station.lat, station.lon, station.antenna_asl_m, station.ground_elevation_m,
                       {**cfg.sampler, "min_nac_p": 0, "max_seen_pos_s": 99, "record_mlat": True})
     pts = []
@@ -41,10 +35,10 @@ def synthetic_snapshot_points(station, cfg, now, rng, days=7, n_flights=2600):
         brg0 = rng.uniform(0, 360)
         if kind < 0.35:                      # local traffic: low and close
             alt0 = rng.uniform(800, 6000); r0 = rng.uniform(5, 45); cruise = alt0
-        else:                                 # airliners: cruise at altitude, crossing the region
-            cruise = rng.choice(range(7000, 43000, 1000))      # every level, so each tier of the cake fills
+        else:                                 # airliners crossing the region
+            cruise = rng.choice(range(7000, 43000, 1000))      # every level, so each band fills
             alt0 = cruise; r0 = rng.uniform(180, 260)
-        # straight line from start point through a point near the station
+        # straight line from the start point through a point near the station
         x0 = r0 * math.sin(math.radians(brg0)); y0 = r0 * math.cos(math.radians(brg0))
         aim = rng.uniform(0, 40)
         ax = aim * math.sin(math.radians(rng.uniform(0, 360))); ay = aim * math.cos(math.radians(rng.uniform(0, 360)))

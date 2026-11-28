@@ -1,13 +1,6 @@
-// The phone's compass, for the Sky view: which way the phone is facing, so the dome can turn with
-// it and the aircraft on screen sit where they are in the sky in front of you.
-//
-// Held flat (screen up), the phone faces the way its top points; held up in front of you, the way
-// its back points (where you are looking). iPhones give the heading directly once the page has
-// asked (a tap is needed: iOS asks the person); Android gives the phone's orientation against the
-// earth, from which the heading is worked out. Either way only over HTTPS: browsers keep the
-// compass from plain-HTTP pages, as they do the location.
-//
-// The heading is magnetic: a few degrees (up to 15 or 20 in parts of North America) from true north.
+// The phone's compass, for the Sky view: which way the phone is facing (magnetic, not true north).
+// iOS gives the heading directly once asked from a tap; Android gives orientation, from which it
+// is worked out. HTTPS only: browsers keep the compass from plain-HTTP pages.
 
 const RAD = Math.PI / 180;
 export const compass = { on: false, heading: null, at: 0, failed: "" };
@@ -16,10 +9,9 @@ let listening = false, sx = 0, sy = 0;
 const screenAngle = () => (screen.orientation && typeof screen.orientation.angle === "number" ? screen.orientation.angle
   : typeof window.orientation === "number" ? window.orientation : 0);
 
-// The heading from the phone's orientation against the earth (alpha, beta, gamma in degrees).
 export function headingFrom(alpha, beta, gamma) {
   if (Math.abs(beta) < 45 && Math.abs(gamma) < 45) {
-    // lying flat-ish: the way the top of the screen points, as the screen is turned
+    // lying flat-ish: the way the top of the screen points
     return (360 - alpha + screenAngle() + 720) % 360;
   }
   // held up: the way the back of the phone points (the W3C specification's compass heading)
@@ -29,8 +21,7 @@ export function headingFrom(alpha, beta, gamma) {
   return ((Math.atan2(rA, rB) / RAD) + 360) % 360;
 }
 
-// Each reading eased into the last, as a direction (so 359° and 1° average to 0°, not 180°):
-// a compass needle's steadiness, without lagging a turn by more than a moment.
+// Each reading eased into the last, as a direction (so 359° and 1° average to 0°, not 180°).
 function take(h) {
   const k = compass.heading == null ? 1 : 0.25;
   sx = sx * (1 - k) + Math.sin(h * RAD) * k;
@@ -50,8 +41,7 @@ function onRelative(e) {
   else if (!absolute && e.absolute && e.alpha != null) take(headingFrom(e.alpha, e.beta || 0, e.gamma || 0));   // a browser with no "absolute" event
 }
 
-// Turn the compass on: from a tap, as iOS asks the person then. Resolves false (with the reason in
-// compass.failed) where there is none to be had.
+// Must be called from a tap (iOS asks the person then). Resolves false, with the reason in compass.failed.
 export async function startCompass() {
   compass.failed = "";
   if (!window.isSecureContext) { compass.failed = "The compass needs CloudWall opened over HTTPS (the private link)"; return false; }
@@ -72,5 +62,5 @@ export async function startCompass() {
 
 export function stopCompass() { compass.on = false; compass.heading = null; }
 
-// The heading to draw by: null while off, or while nothing has been heard from the compass lately.
+// null while off, or while nothing has been heard from the compass lately.
 export const facing = () => (compass.on && compass.heading != null && Date.now() - compass.at < 5000 ? compass.heading : null);

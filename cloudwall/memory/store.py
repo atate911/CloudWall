@@ -1,13 +1,13 @@
 """The logbook's file: one row per flyover in `sightings`, and the questions the Logbook tab and
 the badges ask of it. Opening, the cache and migrations are db.py's."""
+import copy
 import json
 
 from ..core.db import Database
 
 
 def _sightings_v1(db):
-    """The logbook as every CloudWall before numbered migrations left it: the table, and each
-    column added since its first release (added here where an older file lacks it)."""
+    """The table as pre-migration CloudWalls left it, adding the columns an older file lacks."""
     db.executescript("""
     CREATE TABLE IF NOT EXISTS sightings(
         id INTEGER PRIMARY KEY, ts REAL, day TEXT, hex TEXT, callsign TEXT,
@@ -24,17 +24,28 @@ def _sightings_v1(db):
             db.execute(f"ALTER TABLE sightings ADD COLUMN {col}")
 
 
-class Store(Database):
-    MIGRATIONS = [(1, _sightings_v1)]
+def _sightings_v2(db):
+    """Indexes for what is asked by time, type and airline: the badges' counts are made under the
+    tracker's lock, and without these each read the whole table (6 ms apiece at a year's flyovers)."""
+    db.executescript("""
+    CREATE INDEX IF NOT EXISTS sightings_ts ON sightings(ts);
+    CREATE INDEX IF NOT EXISTS sightings_type ON sightings(type);
+    CREATE INDEX IF NOT EXISTS sightings_airline ON sightings(airline_icao);
+    """)
 
-    # -- logbook -------------------------------------------------------------
+
+class Store(Database):
+    MIGRATIONS = [(1, _sightings_v1), (2, _sightings_v2)]
+    edits = 0             # flyovers added or changed since the file was opened (what the logbook's answer is kept by)
+    _book = None          # (day, edits, the Logbook tab's answer as last worked out)
+
     def count(self, where, args=()):
         with self.lock:
             return self.db.execute(
                 f"SELECT COUNT(*) FROM sightings WHERE {where}", args).fetchone()[0]
 
     def seat_total(self, where, args=()):
-        """Estimated seats over the house: the sum, and how many flyovers it covers."""
+        """{"seats": sum, "known": flyovers with a seat count, "flights": all}."""
         with self.lock:
             r = self.db.execute(f"SELECT SUM(seats), COUNT(seats), COUNT(*) FROM sightings WHERE {where}",
                                 args).fetchone()
@@ -47,6 +58,7 @@ class Store(Database):
             cur = self.db.execute(
                 f"INSERT INTO sightings({cols}) VALUES({','.join('?' * len(f))})",
                 tuple(f.values()))
+            self.edits += 1
             return cur.lastrowid
 
     def update_sighting(self, sid, **f):
@@ -55,15 +67,15 @@ class Store(Database):
         sets = ",".join(f"{k}=?" for k in f)
         with self.lock, self.db:
             self.db.execute(f"UPDATE sightings SET {sets} WHERE id=?", (*f.values(), sid))
+            self.edits += 1
 
     def query(self, sql, args=()):
         with self.lock:
             return [dict(r) for r in self.db.execute(sql, args).fetchall()]
 
     def type_seen(self, type_code):
-        """A type in the logbook: how often it has come over (n, of all flyovers), when first and
-        last, how many different airframes, its rank among the types logged (1: the most often;
-        types with equal counts share a rank), and the airlines that fly it here most, at most 3."""
+        """A type in the logbook: n (of all flyovers), first, last, airframes, rank (1 = most often;
+        ties share a rank; None if never seen), types, and its top 3 airlines."""
         r = self.query("SELECT COUNT(*) AS n, MIN(ts) AS first, MAX(ts) AS last, COUNT(DISTINCT hex) AS airframes "
                        "FROM sightings WHERE type=?", (type_code,))[0]
         counts = [c["n"] for c in self.query("SELECT COUNT(*) AS n FROM sightings WHERE type IS NOT NULL GROUP BY type")]
@@ -74,16 +86,25 @@ class Store(Database):
                     types=len(counts), airlines=airlines)
 
     def airframe_seen(self, hexid):
-        """One airframe in the logbook: how many times it has come over, and when first."""
         return self.query("SELECT COUNT(*) AS n, MIN(ts) AS first FROM sightings WHERE hex=?", (hexid,))[0]
 
     def type_name(self, type_code):
-        """The name a type was last logged under ("Boeing 737 MAX 9"), or None."""
+        """The name a type was last logged under, or None."""
         rows = self.query("SELECT type_name FROM sightings WHERE type=? AND type_name IS NOT NULL ORDER BY ts DESC LIMIT 1",
                           (type_code,))
         return rows[0]["type_name"] if rows else None
 
     def logbook(self, day):
+        """The Logbook tab's answer. It reads the whole table a dozen times (120 ms at a year's
+        flyovers) and is asked for by every screen each minute, so it is kept until a flyover is
+        added or changed, or the day turns."""
+        kept = self._book
+        if not kept or kept[:2] != (day, self.edits):
+            edits = self.edits
+            kept = self._book = (day, edits, self._logbook(day))
+        return copy.deepcopy(kept[2])          # (the caller adds to its rows)
+
+    def _logbook(self, day):
         def rec(col, order, where="1"):
             rows = self.query(
                 f"SELECT callsign, flight, type, origin, dest, {col} AS value, ts FROM sightings "

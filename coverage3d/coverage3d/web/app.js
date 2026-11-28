@@ -1,5 +1,5 @@
 // Coverage3D page: UI state, data loading, wiring between the API, the map and the plots.
-import { $, getJSON, store, haversineNm, bearingDeg, fmtDist, fmtBrg, fmtAlt, fmtTime, altColor, rssiColor, rgbCss, rgbHex, GROUND_COLOR, ALT_STOPS, RSSI_STOPS, UNIT_NM, clamp } from "./util.js";
+import { $, esc, getJSON, store, haversineNm, bearingDeg, fmtDist, fmtBrg, fmtAlt, fmtTime, altColor, rgbCss, rgbHex, GROUND_COLOR, ALT_STOPS, RSSI_STOPS, UNIT_NM, clamp } from "./util.js";
 import { MapView, BASEMAPS } from "./mapview.js";
 import { drawVertical, drawPolar } from "./plots.js";
 
@@ -9,7 +9,7 @@ const today = new Date();
 const DEFAULTS = {
   basemap: "liberty", opacity: 0.6, exag: 5, style: "cake", smooth: true, units: "nm", range: "7d", cFrom: "", cTo: "", compare: false,
   aFrom: iso(new Date(today - 14 * 864e5)), aTo: iso(new Date(today - 7 * 864e5)), bFrom: iso(new Date(today - 7 * 864e5)), bTo: iso(today),
-  stat: "p95", srcAdsb: true, srcMlat: false, srcUat: false, sector: 0, bandFt: 5000,
+  stat: "p95", srcAdsb: true, srcMlat: false, srcUat: false, sector: 0, bandFt: 0,
   terrain: true, rings: true, minorRings: true, bearings: true, shadeBands: false, airports: true, peaks: true,
   fill: true, walls: false, outlines: true, footprint: false, horizon: false, readsbOutline: false,
   points: false, colorBy: "alt", live: true, liveLabels: true, bandLo: 0, bandHi: 99, hidden: [], polarBand: "all", panel: true, tab: "layers",
@@ -29,7 +29,7 @@ function isVisible(b) {
 const save = () => store(KEY, S.settings);
 const banner = (msg) => { const b = $("banner"); b.textContent = msg; b.hidden = !msg; if (msg) setTimeout(() => (b.hidden = true), 8000); };
 
-// ---- API ---------------------------------------------------------------------------------------
+// ---- API
 function rangeQuery(prefix = "") {
   const s = S.settings, q = new URLSearchParams();
   const day = (v, end) => Math.floor(new Date(v + (end ? "T23:59:59" : "T00:00:00")).getTime() / 1000);
@@ -95,7 +95,7 @@ async function loadOutline() {
 function setStatus(cls, title) { const e = $("status"); e.className = cls; e.title = title; }
 const refreshAll = () => { loadCoverage(); loadPoints(); loadVertical(); loadStats(); loadOutline(); };
 
-// ---- map glue ----------------------------------------------------------------------------------------
+// ---- map glue
 function pushMap(statics = false) {
   st.visKey = [S.settings.bandLo, S.settings.bandHi, S.settings.hidden.join(".")].join("|");
   st.settings = S.settings;
@@ -132,14 +132,14 @@ async function onClick(info) {
   } else if (info.kind === "point") {
     const P = st.points, i = info.object;
     let name = ""; try { name = (await getJSON("api/aircraft?hex=" + P.hex[i])).callsign || ""; } catch (e) { /* none */ }
-    showInfo(`<b class="t">${name || P.hex[i]}</b>${P.hex[i]}<br>${fmtTime(P.t[i])}<br>${fmtAlt(P.alt[i])} · ${fmtDist(P.dist[i], S.settings.units)}<br>RSSI ${P.rssi[i] ?? "–"} dBFS`, x, y);
+    showInfo(`<b class="t">${esc(name || P.hex[i])}</b>${esc(P.hex[i])}<br>${fmtTime(P.t[i])}<br>${fmtAlt(P.alt[i])} · ${fmtDist(P.dist[i], S.settings.units)}<br>RSSI ${P.rssi[i] ?? "–"} dBFS`, x, y);
   } else if (info.kind === "live") {
     const a = info.object;
-    showInfo(`<b class="t">${a.flight || a.hex}</b>${a.hex} ${a.t || ""}<br>${fmtAlt(a.alt_geom ?? a.alt_baro)} · ${a.gs ? Math.round(a.gs) + " kt" : ""}<br>${a.r_dst != null ? fmtDist(a.r_dst, S.settings.units) + " · " : ""}RSSI ${a.rssi ?? "–"} dBFS`, x, y);
+    showInfo(`<b class="t">${esc(a.flight || a.hex)}</b>${esc(a.hex)} ${esc(a.t || "")}<br>${fmtAlt(a.alt_geom ?? a.alt_baro)} · ${a.gs ? Math.round(a.gs) + " kt" : ""}<br>${a.r_dst != null ? fmtDist(a.r_dst, S.settings.units) + " · " : ""}RSSI ${a.rssi ?? "–"} dBFS`, x, y);
   }
 }
 
-// ---- panels ---------------------------------------------------------------------------------------------
+// ---- panels
 function renderLegend() {
   const s = S.settings, g = (stops) => `linear-gradient(90deg,${stops.map((c) => rgbCss(c)).join(",")})`;
   let h = `<b>Altitude</b><div class="bar" style="background:${g(ALT_STOPS)}"></div><div class="ticks"><span>0</span><span>15k</span><span>30k</span><span>45k ft</span></div>`;
@@ -151,6 +151,9 @@ function renderLegend() {
 function renderBands() {
   const cov = st.cov, nb = cov.n_bands, s = S.settings;
   for (const id of ["bandLo", "bandHi"]) $(id).max = nb - 1;
+  // shown tiers are stored as indexes: reset them when the tier height changes
+  if (s.bandsOf && s.bandsOf !== cov.band_ft) { s.bandLo = 0; s.bandHi = nb - 1; s.hidden = []; }
+  s.bandsOf = cov.band_ft;
   s.bandLo = clamp(s.bandLo, 0, nb - 1); s.bandHi = clamp(s.bandHi, 0, nb - 1);
   $("bandLo").value = s.bandLo; $("bandHi").value = s.bandHi;
   const bf = cov.band_ft;
@@ -176,7 +179,7 @@ function renderStats() {
     + `<dt>Worst bearing</dt><dd>${cov.summary.worst_sector == null ? "–" : `${fmtBrg(cov.summary.worst_sector + cov.sector_deg / 2)} (${f(cov.summary.worst_nm)})`}</dd></dl>`;
   const rx = d?.receiver;
   if (rx && !rx.error) h += `<dl><dt>Message rate</dt><dd>${rx.msg_per_s?.toFixed(0)} /s</dd><dt>Signal / noise</dt><dd>${rx.signal_dbfs?.toFixed?.(1)} / ${rx.noise_dbfs?.toFixed?.(1)} dBFS</dd><dt>Strong signals</dt><dd>${rx.strong_pct == null ? "–" : rx.strong_pct.toFixed(1) + " %"}</dd><dt>Gain</dt><dd>${rx.gain_db ?? "–"} dB</dd><dt>Decoder max (1 min)</dt><dd>${rx.max_distance_nm == null ? "–" : f(rx.max_distance_nm)}</dd></dl>`;
-  else if (rx) h += `<p class="hint">Receiver stats unavailable: ${rx.error}</p>`;
+  else if (rx) h += `<p class="hint">Receiver stats unavailable: ${esc(rx.error)}</p>`;
   h += `<table><tr><th>Band</th><th>${cov.stat === "max" ? "max" : "p95"}</th><th>max</th><th>n</th></tr>`;
   for (const b of [...cov.bands].reverse()) {
     const m = Math.max(...b.sectors.map((s) => s.dist_nm)), mx = Math.max(...b.sectors.map((s) => s.max_nm)), n = b.sectors.reduce((a, s) => a + s.count, 0);
@@ -193,7 +196,7 @@ function drawPlots() {
   drawPolar($("plot-polar"), st.cov, st.covB, bi, S.settings.units, bi === "all" ? [11, 100, 214] : bi === "-1" ? GROUND_COLOR : altColor(+bi * st.cov.band_ft + st.cov.band_ft / 2));
 }
 
-// ---- UI wiring ----------------------------------------------------------------------------------------
+// ---- UI wiring
 function bindCheck(id, after) {
   const el = $(id); el.checked = !!S.settings[id];
   el.onchange = () => { S.settings[id] = el.checked; save(); after ? after() : pushMap(true); };
@@ -252,7 +255,6 @@ async function init() {
     s.hidden = [...h]; save(); pushMap(true);
   };
 
-  // tabs, panel, view buttons
   const tab = (t) => { s.tab = t; save(); document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === t)); document.querySelectorAll("[data-pane]").forEach((p) => (p.hidden = p.dataset.pane !== t)); drawPlots(); };
   $("tabs").onclick = (e) => e.target.dataset.tab && tab(e.target.dataset.tab);
   tab(s.tab);

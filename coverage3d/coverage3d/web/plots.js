@@ -1,5 +1,5 @@
-// 2D companion plots drawn on <canvas> (no chart library needed).
-import { altColor, radioHorizonNm, UNIT_NM, GROUND_COLOR, rgbCss } from "./util.js";
+// 2D companion plots drawn on <canvas> (no chart library).
+import { radioHorizonNm, UNIT_NM, GROUND_COLOR, rgbCss } from "./util.js";
 
 function setup(canvas) {
   const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight || +canvas.getAttribute("height");
@@ -11,7 +11,7 @@ function setup(canvas) {
 }
 const nice = (v, step) => Math.ceil(v / step) * step;
 
-/** Distance (x) against altitude (y): density of every recorded point, with the theoretical horizon curve. */
+/** Distance (x) against altitude (y): point density, with the theoretical horizon curve. */
 export function drawVertical(canvas, data, unit) {
   const { g, w, h, fg, muted, line } = setup(canvas);
   g.clearRect(0, 0, w, h);
@@ -34,7 +34,6 @@ export function drawVertical(canvas, data, unit) {
     g.fillStyle = rgbCss(c, 0.25 + 0.75 * t);
     g.fillRect(X(db * dStep), ab < 0 ? Y(0) - ch : Y((ab + 1) * aStep), cw + 0.5, ch + 0.5);
   }
-  // theoretical radio-horizon: how far a line-of-sight signal could reach at each altitude
   const ant = data?.antenna_ft ?? 88;
   g.strokeStyle = fg; g.setLineDash([5, 4]); g.lineWidth = 1.5; g.beginPath();
   for (let ft = 0; ft <= maxA; ft += 250) { const d = radioHorizonNm(ant, ft); (ft ? g.lineTo : g.moveTo).call(g, X(Math.min(d, maxD)), Y(ft)); }
@@ -42,9 +41,9 @@ export function drawVertical(canvas, data, unit) {
   g.fillStyle = fg; g.textAlign = "left"; g.fillText("- - radio horizon", L + 6, T + 12);
 }
 
-/** Range by bearing for one altitude band (or the best over all bands). Optional compare series B (dashed). */
+/** Range by bearing for one band (or the best over all). Optional compare series B (dashed). */
 export function drawPolar(canvas, covA, covB, bandIndex, unit, color) {
-  const { g, w, h, fg, muted, line } = setup(canvas);
+  const { g, w, h, muted, line } = setup(canvas);
   g.clearRect(0, 0, w, h);
   const cx = w / 2, cy = h / 2, rad = Math.min(w, h) / 2 - 22;
   const series = (cov) => {

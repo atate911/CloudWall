@@ -1,17 +1,16 @@
-"""The `cloudwall <command>` commands that set CloudWall up and look after it. Plain `cloudwall`
-(with its flags: --demo, --private-link, ...) runs it, as it always has (app/main.py)."""
+"""The `cloudwall <command>` commands that set CloudWall up and look after it (plain `cloudwall`
+runs it: app/main.py)."""
 import argparse
 import json
 import os
 import re
 import sys
-from pathlib import Path
 
 from ..core import config, health
-from . import backup as backups, doctor as doc, install as inst, legacy
+from . import backup as backups, doctor as doc, install as inst
 from .system import System
 
-COMMANDS = ("upgrade", "rollback", "install", "uninstall", "doctor", "backup", "restore", "migrate-legacy", "report",
+COMMANDS = ("upgrade", "rollback", "install", "uninstall", "doctor", "backup", "restore", "report",
             "owner", "helper")
 
 
@@ -61,10 +60,6 @@ def parser():
     p.add_argument("archive")
     p.add_argument("--yes", action="store_true", help="really replace the files (without it, only says what)")
 
-    p = sub.add_parser("migrate-legacy", help="move a `make service` setup onto the system install (sudo)")
-    p.add_argument("--force", action="store_true", help="replace settings and logbooks already installed")
-    p.add_argument("--dry-run", action="store_true")
-
     sub.add_parser("report", help="a report to paste when asking for help (keys and positions masked)")
 
     p = sub.add_parser("owner", help="set the owner's password for the control board (/admin)")
@@ -76,12 +71,14 @@ def parser():
     return ap
 
 
-SECRET = re.compile(r"(?im)^(\s*(?:api_key|key|url|attribution)\s*=\s*)(\".*?\"|'.*?')")
+SECRET = re.compile(r"(?im)^(\s*(?:\w*key|\w*url|address|zip|attribution)\s*=\s*)(\".*?\"|'.*?')")
+LISTED = re.compile(r"(?ims)^(\s*\w*urls\s*=\s*)\[.*?\]")
 NUMBER = re.compile(r"(?im)^(\s*(?:lat|lon)\s*=\s*)(-?\d+\.\d{2})\d*")
 
 
 def mask(text):
     """A settings file fit to share: keys and URLs (which may carry keys) hidden, positions to ~1 km."""
+    text = LISTED.sub(lambda m: m.group(1) + '["…"]', text)
     text = SECRET.sub(lambda m: m.group(1) + ('"…"' if len(m.group(2)) > 2 else m.group(2)), text)
     return NUMBER.sub(lambda m: m.group(1) + m.group(2), text)
 
@@ -115,11 +112,11 @@ def main(argv=None):
             from .survey import Machine
             system, machine = System(), Machine()
             ctx = doc.Context(args.config, args.offline, System().ask)
-            if sys.stdin.isatty() and not args.yes:          # with the owner: explain, ask, walk through
+            if sys.stdin.isatty() and not args.yes:          # interactive: explain, ask, walk through
                 guide.walk(found, guide.Terminal(), ctx, system, machine,
                            recheck=lambda: doc.doctor(args.config, args.offline, ask=System().ask)[0])
                 return
-            done = repair.fix(found, system, machine)        # unattended: only the repairs, each said
+            done = repair.fix(found, system, machine)        # unattended: only the repairs
             if done:
                 print()
                 found, worst = doc.doctor(args.config, args.offline, ask=System().ask)
@@ -138,10 +135,6 @@ def main(argv=None):
         backups.backup(args.config, args.to)
     elif cmd == "restore":
         backups.restore(args.archive, args.config, args.yes, System())
-    elif cmd == "migrate-legacy":
-        user = legacy.legacy_user()
-        home = Path(os.path.expanduser(f"~{user}"))
-        legacy.migrate(System("/", args.dry_run), home, user, Path.cwd(), args.force)
     elif cmd == "owner":
         import getpass
         from ..core import keys as auth
@@ -158,7 +151,11 @@ def main(argv=None):
             where = auth.set_password(first, args.config)
         except (ValueError, OSError) as e:
             raise SystemExit(f"cloudwall owner: {e}")
-        print(f"Set ({where}). Sign in on the control board: http://<this machine>:5050/admin")
+        try:
+            port = config.load(args.config)["server"]["port"]
+        except Exception:
+            port = 5050
+        print(f"Set ({where}). Sign in on the control board: http://<this machine>:{port}/admin")
     elif cmd == "helper":
         from . import helper
         if os.geteuid() != 0:
