@@ -1,15 +1,6 @@
-"""Every setting, described once for people: what it is called, what it does, its unit, an example,
-and what changing it costs (a restart, paid lookups, a new link on every screen). The control
-board draws its forms and its help from here; config.py keeps the defaults and the checks (the
-kinds of value, the words and ranges allowed), and this file adds the words.
-
-The control board groups sections into its pages by `page` (a few settings live on another page
-than their section's: web/js/admin/finder.js lists them). `advanced` settings are behind the
-"more" of their section: they are for when something needs adjusting, not for setting up. `secret`
-settings are written from the board but never shown back.
-
-A test fails if a setting in config.DEFAULTS has no entry here, so a new setting can't arrive
-without its explanation.
+"""Every setting's words for people (label, help, unit, example, cost), for the control board's
+forms; config.py keeps the defaults and checks. `secret` settings are written from the board but
+never shown back. A test fails if a setting in config.DEFAULTS has no entry here.
 """
 from dataclasses import asdict, dataclass
 
@@ -126,7 +117,7 @@ SECTIONS = (
          example="https://ntfy.sh/your-topic", secret=True)),
 )
 
-# the control board's pages, as its rail names them (web/js/admin/main.js draws them)
+# the control board's pages (web/js/admin/main.js draws them)
 PAGES = (("home", "Overview"), ("receiver", "Receiver"), ("positions", "Feeds"), ("places", "Location"), ("routes", "Routes"),
          ("look", "Display"), ("access", "Access"), ("safekeeping", "Backups"), ("health", "Health"), ("settings", "All settings"),
          ("server", "System"))

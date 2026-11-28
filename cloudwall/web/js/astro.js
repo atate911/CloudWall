@@ -1,6 +1,5 @@
 // Sun and moon for the house: rise and set times, twilight, and the moon's phase.
-// Low-precision formulas (after Meeus, as popularised by SunCalc): good to a minute or two,
-// plenty for "when does it get dark".
+// Low-precision formulas (after Meeus, via SunCalc): good to a minute or two.
 import { sunPosition } from "./util.js";
 
 const RAD = Math.PI / 180, OBL = RAD * 23.4397;
@@ -47,7 +46,6 @@ export function phaseName(p) {
   return "Waning crescent";
 }
 
-// Times today (local midnight to midnight) when an altitude curve crosses a threshold.
 function crossings(alt, threshold, from, to, step = 5 * 60000) {
   const up = [], down = [];
   let t0 = from, a0 = alt(from) - threshold;
@@ -71,8 +69,7 @@ function nextPhase(from, target) {
 }
 
 export function skyToday(lat, lon, now = Date.now()) {
-  // the house's own day, from solar midnight to solar midnight, so sunrise always comes before
-  // sunset whatever timezone the screen's clock is set to
+  // solar midnight to solar midnight, so sunrise comes before sunset whatever the screen's timezone
   const DAY = 86400000, shift = (((-lon / 15) * 3600000) % DAY + DAY) % DAY;
   const from = Math.floor((now - shift) / DAY) * DAY + shift, to = from + DAY;
   const sunAlt = (t) => sunPosition(t, lat, lon).el, moonAlt = (t) => moonPosition(t, lat, lon).el;

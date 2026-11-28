@@ -43,43 +43,29 @@ DEFAULTS = {
     "flightaware": {"api_key": "", "monthly_limit": 0, "safety_margin": 0.15, "billing_day": 1,
                     "daily_limit": 0, "mode": "always",
                     "general_aviation": False},
-    # Map behind the radar: "dark", "light", "satellite", "osm" or "off" (or set url = a tile URL template)
-    # route: the map behind the flight's route on its card, one of the same styles (not a url), or "off"
-    # cache_mb: the most disk the downloaded map and chart tiles may take, all layers together
+    # url: a tile URL template instead of a style; route: the map on the flight card (a style, not a url);
+    # cache_mb: the most disk all tile layers together may take
     "map": {"style": "dark", "opacity": 0.45, "url": "", "attribution": "", "route": "satellite", "atc": "off", "cache_mb": 2000},
-    # Airline logos on the flight card, fetched by airline code and cached on disk
     "logos": {"enabled": True, "url": ""},
-    # Extra free data: military jets heard without a position, temporary flight
-    # restrictions (FAA), and the contrail forecast (Open-Meteo upper-air data).
     "extras": {"military": True, "military_radius_nm": 40, "military_url": "https://opendata.adsb.fi/api/v2/mil",
                "tfr": True, "tfr_radius_nm": 30, "contrails": True},
-    # The kiosk has no buttons: its place and radar are set here. place: a place's name (empty for
-    # the first); view: "card" (the aircraft overhead across the whole screen), or "radar", "map" or "sky"
-    # to put the radar, or the flights on an everyday map, beside it; radar: "chart" or
-    # "atc" (drawn like an air traffic control screen); tracks: the
-    # selected aircraft's track and one-minute lines; range_nm: 0 for the tracking radius, or 20 or 30 to see further;
-    # density: the radar's labels, "simple" (the aircraft that matter) or "detailed" (every one);
-    # quiet: hours when the panel shows only a dim clock and what's next ("23:00-06:30"; "" for none),
-    # waking for something coming over the house, something new worth a look, an emergency or a tap.
+    # place: a place's name (empty: the first); range_nm: 0 for the tracking radius;
+    # quiet: hours of dim clock only ("23:00-06:30"; "" for none)
     "kiosk": {"place": "", "view": "card", "radar": "chart", "tracks": True, "range_nm": 0, "density": "simple", "quiet": ""},
-    # key: with one set, CloudWall answers only under /k/<key>/ (access.py, keys.py): a private link for
-    # reaching it from outside the house. Empty: open to whoever can reach it, as on a home network.
-    # address: the name CloudWall has on the internet (behind Caddy), for the links it prints
+    # key: when set, CloudWall answers only under /k/<key>/ (access.py, keys.py);
+    # address: its name on the internet, for the links it prints
     "server": {"host": "0.0.0.0", "port": 5050, "key": "", "address": ""},
-    # db_path empty: <data dir>/cloudwall.db (config.data_dir); cache_dir empty: beside it
+    # db_path empty: <data dir>/cloudwall.db; cache_dir empty: beside it
     "storage": {"db_path": "", "cache_dir": ""},
-    # notify_url: a webhook told when a major problem starts and ends (e.g. an ntfy.sh topic's URL)
+    # notify_url: a webhook told when a major problem starts and ends
     "health": {"notify_url": ""},
-    # Your own receiver, as the control board shows it. url: where its web server answers from here
-    # (empty: worked out from [source] urls when merge is on); coverage_url: Coverage3D's (empty: the
-    # port after the receiver's: the tunnel's 18090 beside its 18080); home_url: its address on the
-    # home network, for adsb.im's own pages, which the board links to but never opens to the internet.
+    # url empty: worked out from [source] urls when merge is on; coverage_url empty: the port after
+    # the receiver's; home_url: its home-network address, linked to but never opened to the internet
     "receiver": {"url": "", "coverage_url": "", "home_url": ""},
 }
 
 
-# Settings that have no default, and what each may be. ([airport] takes an airport's own details,
-# as many as are needed, so it isn't checked name by name.)
+# settings with no default ([airport] isn't checked name by name)
 NUMBER = (int, float)
 OPTIONAL = {
     "home": {"zip": (str, int), "elevation_ft": NUMBER},
@@ -88,8 +74,6 @@ OPTIONAL = {
     "flightaware": {"monthly_credits": NUMBER},
     "map": {"atc": str},
 }
-# Settings that take one of a few words. (A word CloudWall doesn't know would otherwise quietly
-# act as one of the others, as an unknown provider mode acted as "fallback".)
 CHOICES = {
     ("kiosk", "view"): ("card", "radar", "map", "sky"),
     ("kiosk", "radar"): ("chart", "atc"),
@@ -106,7 +90,7 @@ BETWEEN = {("map", "opacity"): (0, 1), ("kiosk", "range_nm"): (0, 30), ("map", "
            ("flightradar24", "safety_margin"): (0, 0.9), ("flightaware", "safety_margin"): (0, 0.9),
            ("flightradar24", "billing_day"): (1, 28), ("flightaware", "billing_day"): (1, 28),
            ("home", "lat"): (-90, 90), ("home", "lon"): (-180, 180),
-           # (the free feeds ask for no more than about one request a second, and reach 250 nm)
+           # the free feeds allow about one request a second and reach 250 nm
            ("tracking", "poll_seconds"): (1, 3600), ("tracking", "radius_nm"): (1, 250),
            ("tracking", "idle_after_seconds"): (10, 86400),
            ("flightradar24", "monthly_credits"): (0, 10 ** 9), ("flightradar24", "monthly_limit"): (0, 10 ** 9),
@@ -122,8 +106,7 @@ _reading = [None]           # the file being read, so each of its warnings is sa
 
 
 def _warn(fmt, *args):
-    """A warning about the settings, said once for each file however often it is read (an upgrade
-    reads it several times)."""
+    """Warn once per file, however often it is read."""
     text = fmt % args if args else fmt
     key = (_reading[0], text)
     if _reading[0] is None or key not in _said:
@@ -132,22 +115,17 @@ def _warn(fmt, *args):
 
 
 def _fits(v, want):
-    """Is v the kind of value wanted? (true and false aren't numbers, though Python counts them so.)"""
+    """Is v the kind wanted? (bools aren't numbers here.)"""
     kinds = want if isinstance(want, tuple) else (want,)
     return isinstance(v, kinds) and (bool in kinds or not isinstance(v, bool))
 
 
 def check(section, values, problems=None):
-    """Refuse a setting CloudWall can't use, in words that name it: text where a number is wanted
-    would otherwise surface later as a thread that stops, with nothing on screen to say why. A
-    name CloudWall doesn't know (most often a typo) is only warned about. True if the section is
-    one to take in.
-
-    A word or a number CloudWall can't use is refused too, except when the file is read to run
-    (problems is a list): then it is left out, the default used in its place, and what happened
-    added to problems. A CloudWall that worked must go on working after an update that checks more
-    than the last did; the screens and `cloudwall doctor` say what was left out. Case doesn't
-    matter in a word ("Always" is "always")."""
+    """Raise ValueError for a wrongly typed setting; only warn about an unknown name. True if the
+    section is one to take in. A bad word or out-of-range number raises too, unless problems is a
+    list (the file is being read to run): then it is deleted from values, the default applies and
+    the reason is appended, so an update that checks more never stops a working CloudWall.
+    Lower-cases CHOICES words in place."""
     if section == "places":
         if not isinstance(values, list) or not all(isinstance(v, dict) for v in values):
             raise ValueError("places must be [[places]] sections, one for each place")
@@ -215,8 +193,7 @@ def user_config_path():
 
 
 def data_dir():
-    """Where the logbooks and places.json are kept: $CLOUDWALL_DATA (set by the system install to
-    /var/lib/cloudwall), else the user's data folder (~/.local/share/cloudwall)."""
+    """Logbooks and places.json: $CLOUDWALL_DATA (the system install sets it), else the user's data folder."""
     return Path(os.environ["CLOUDWALL_DATA"]) if os.environ.get("CLOUDWALL_DATA") else _xdg("XDG_DATA_HOME", ".local/share")
 
 
@@ -225,8 +202,7 @@ def default_db_path():
 
 
 def cache_dir(cfg, db):
-    """Where downloaded tiles and logos are kept: $CLOUDWALL_CACHE (the system install's
-    /var/cache/cloudwall), else [storage] cache_dir, else beside the logbook."""
+    """Tiles and logos: $CLOUDWALL_CACHE, else [storage] cache_dir, else beside the logbook."""
     if os.environ.get("CLOUDWALL_CACHE"):
         return Path(os.environ["CLOUDWALL_CACHE"])
     if cfg["storage"].get("cache_dir"):
@@ -239,10 +215,8 @@ INSTALLED_UNIT = Path("/etc/systemd/system/cloudwall.service")
 
 
 def find(path=None):
-    """Which config file applies: --config, $CLOUDWALL_CONFIG, the system install's (once
-    `cloudwall install` has set this machine up, whatever folder a command is run from: a checkout
-    keeps an old config.toml after a migration, and reading that would be reading the wrong
-    settings), ./config.toml, then the user one."""
+    """Which config file applies: --config, $CLOUDWALL_CONFIG, the system install's (ahead of
+    ./config.toml: a checkout keeps a stale one after a migration), ./config.toml, then the user one."""
     if path:
         return Path(path)
     if os.environ.get("CLOUDWALL_CONFIG"):
@@ -290,8 +264,7 @@ def load(path=None):
 
 
 def kind_of(section, key):
-    """What kind of value a setting takes: bool, number, list or text (str), from its default, or
-    from OPTIONAL for those without one."""
+    """"bool", "number", "list" or "text", from the setting's default or OPTIONAL."""
     default = DEFAULTS.get(section, {}).get(key)
     if isinstance(default, bool):
         return "bool"
@@ -322,8 +295,7 @@ def _toml_value(v):
 
 
 def _setting_end(lines, at, end):
-    """The last line of the setting that starts on line `at`: the same line, unless its value (a
-    list written over several lines) only closes further down, before line `end`."""
+    """Index of the last line of the setting starting on line `at` (a list may run over several)."""
     for stop in range(at, end):
         try:
             tomllib.loads("\n".join(lines[at:stop + 1]))
@@ -334,12 +306,9 @@ def _setting_end(lines, at, end):
 
 
 def write_setting(path, section, key, value):
-    """Set `[section] key` in the config file at `path`, leaving every other line as it was: the
-    setting's line replaced where there is one (its comment kept), added under [section] where
-    there isn't, and the section added where there's none. The new file must read as TOML, give
-    the value asked for and pass check(); otherwise nothing is written. Written whole and put in
-    place, so a crash halfway never leaves half a config, and readable by its owner and group
-    only, since the file may hold keys."""
+    """Set `[section] key` in the file, leaving every other line (and the setting's comment) as it
+    was. Nothing is written unless the result reads as TOML, gives the value and passes check().
+    Atomic, owner/group-only (the file may hold keys); the old file is kept as .before."""
     path = Path(path)
     text = path.read_text() if path.exists() else ""
     lines = text.splitlines()
@@ -353,12 +322,11 @@ def write_setting(path, section, key, value):
         end = next((i for i in range(head + 1, len(lines)) if is_section.match(lines[i])), len(lines))
         at = next((i for i in range(head + 1, end) if is_key.match(lines[i])), None)
         if at is not None:
-            # a comment after the old value stays after the new one
             stop = _setting_end(lines, at, end)
             m = re.match(r'^\s*[\w-]+\s*=\s*(?:"(?:[^"\\]|\\.)*"|[^#"]*?)(\s+#.*)?$', lines[at]) if stop == at else None
             lines[at:stop + 1] = [line + (m.group(1) or "" if m else "")]
         else:
-            # after the section's last setting, ahead of the comments and blank lines before the next one
+            # after the section's last setting, ahead of the next section's leading comments
             last = max((i for i in range(head, end) if lines[i].strip() and not lines[i].lstrip().startswith("#")), default=head)
             lines.insert(last + 1, line)
     new = "\n".join(lines) + "\n"
@@ -368,8 +336,7 @@ def write_setting(path, section, key, value):
         raise ValueError(f"{path} would no longer read as TOML: {e}") from None
     if got.get(section, {}).get(key) != value:
         raise ValueError(f"{path}: couldn't set [{section}] {key} (it reads {got.get(section, {}).get(key)!r})")
-    # the setting written is checked strictly; the rest of its section only as it is when read (a
-    # word CloudWall tolerates in another setting is no reason to refuse this one)
+    # only the setting written is checked strictly: a tolerated bad word elsewhere mustn't refuse this one
     check(section, {k: v for k, v in got[section].items() if k == key or (section, k) not in CHOICES and (section, k) not in BETWEEN})
     path.parent.mkdir(parents=True, exist_ok=True)
     st = path.stat() if path.exists() else None
@@ -381,26 +348,24 @@ def write_setting(path, section, key, value):
     os.chmod(tmp, mode)
     if st and os.geteuid() == 0:         # root rewriting the service's file: it stays the service's
         os.chown(tmp, st.st_uid, st.st_gid)
-    if path.exists():                    # the file as it was, to go back to if the new one won't start
+    if path.exists():
         shutil.copy2(path, path.with_name(path.name + ".before"))
     os.replace(tmp, path)
 
 
-# names too plain to say where a stray setting belongs ([source] name was a feed's name, not the house's)
+# names too plain to say where a stray setting belongs
 GENERIC = {"name", "enabled", "url", "urls", "key", "host", "port", "mode", "style", "path"}
 
 
 def known(section, key):
-    """Is `[section] key` a setting CloudWall uses?"""
     if section == "airport":
         return True
     return key in DEFAULTS.get(section, {}) or key in OPTIONAL.get(section, {})
 
 
 def strays(path):
-    """Lines in the settings file that do nothing: a setting under the wrong heading (most often),
-    a name CloudWall doesn't know, a heading it doesn't know. Each with the section it belongs in,
-    when its name is a setting of exactly one other section: [{"section", "key", "value", "belongs"}]."""
+    """Settings in the file that do nothing: [{"section", "key", "value", "belongs"}]; belongs is
+    the one other section the name is a setting of, else None."""
     path = Path(path) if path else None
     if not path or not path.exists():
         return []
@@ -417,16 +382,14 @@ def strays(path):
             if section in DEFAULTS and known(section, key):
                 continue
             homes = [sec for sec in DEFAULTS if sec not in ("airport", "places") and known(sec, key)]
-            # a name as plain as "name" or "url" means something different under each heading: never moved
             out.append({"section": section, "key": key, "value": v,
                         "belongs": homes[0] if len(homes) == 1 and key not in GENERIC else None})
     return out
 
 
 def remove_setting(path, section, key):
-    """Take `[section] key` out of the settings file (the setting's own lines; a heading left with
-    nothing under it goes too). Checked as write_setting is: if the file wouldn't read as TOML, or
-    the setting is still there, nothing is written."""
+    """Take `[section] key` out of the file (and a heading left empty); nothing is written if the
+    result wouldn't read as TOML or still has the setting."""
     path = Path(path)
     lines = path.read_text().splitlines()
     head = next((i for i, l in enumerate(lines) if re.match(rf"^\s*\[{re.escape(section)}\]\s*(#.*)?$", l)), None)
@@ -440,7 +403,7 @@ def remove_setting(path, section, key):
     del lines[at:stop + 1]
     end -= stop + 1 - at
     if not any(lines[i].strip() and not lines[i].lstrip().startswith("#") for i in range(head + 1, end)):
-        del lines[head:end]                        # the heading, now with nothing under it
+        del lines[head:end]
     new = "\n".join(lines).rstrip("\n") + "\n"
     try:
         got = tomllib.loads(new)

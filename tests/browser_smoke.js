@@ -1,15 +1,7 @@
 // The page in a real browser, driven by tests/test_browser.py against a demo server:
-//
 //     node tests/browser_smoke.js http://127.0.0.1:5050
-//
-// Opens each layout (desktop, wall panel, phone), walks the tabs and the controls, forces the
-// states that don't come up by themselves in a few seconds (a quiet sky, an emergency, the server
-// gone), and prints what it found as JSON: for each scenario some facts about what was drawn, and
-// `errors`, which should be empty: anything on the console, any request that failed, and any
-// request to somewhere other than the server (the page should talk to nothing else).
-//
-// Needs Playwright (`npm install --no-save playwright && npx playwright install chromium`). The
-// displays have no other tests, so this is what says a change to the page didn't break one.
+// Prints JSON: per scenario, facts about what was drawn, and `errors` (should be empty): anything on
+// the console, any request that failed, any request to somewhere other than the server.
 const { chromium, devices } = require("playwright");
 
 const BASE = process.argv[2];
@@ -525,9 +517,7 @@ const SCENARIOS = {
     return out;
   },
 
-  // the flight card's head, its airports and its switch: the type is the headline and opens the panel
-  // about it, the flight is said once, the airports stand west to east whichever way it's going, and
-  // a card with room for one picture is switched between its route map and the aircraft's drawing
+  // the flight card's head, its airports and its switch
   async cardHead(browser, errors) {
     const apt = (iata, lat, lon) => ({ iata, city: iata, lat, lon });
     const PDX = apt("PDX", 45.59, -122.6), JFK = apt("JFK", 40.64, -73.78);
@@ -593,10 +583,7 @@ const SCENARIOS = {
     return out;
   },
 
-  // the route map's shape follows the route's: one running north and south has its map upright beside
-  // the facts, the route reaching most of its height; one running east and west has it across the
-  // card; on a phone the map is as tall as its route needs. No place's name runs into another, or
-  // into an airport's code, or off the map.
+  // the route map's shape follows the route's; no place's name runs into another, an airport's code, or off the map
   async routeShape(browser, errors) {
     const apt = (iata, lat, lon) => ({ iata, city: iata, lat, lon });
     const SEA = apt("SEA", 47.45, -122.31), LAX = apt("LAX", 33.94, -118.41), PDX = apt("PDX", 45.59, -122.6), JFK = apt("JFK", 40.64, -73.78), DEN = apt("DEN", 39.86, -104.67);
@@ -631,8 +618,7 @@ const SCENARIOS = {
     return out;
   },
 
-  // the control board (/admin): the system at a glance, each page with its controls, a distance
-  // set by its ring on the house's map, and the finder taking you to a setting
+  // the control board (/admin)
   async admin(browser, errors) {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 } }), out = {};
     // the map pictures' tiles are answered here, not fetched (the tests use no network): the house's map

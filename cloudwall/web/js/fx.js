@@ -3,7 +3,6 @@ import { store } from "./util.js";
 
 const GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-// Render `text` as split-flap tiles inside `el`, flipping each tile to its new character.
 export function flap(el, text, animate = true) {
   text = String(text ?? "");
   if (el.dataset.text === text) return;
@@ -32,7 +31,6 @@ export function flap(el, text, animate = true) {
   });
 }
 
-// Count a number smoothly from what the element shows now to `value`.
 export function roll(el, value, format = (v) => Math.round(v).toLocaleString("en-US"), ms = 900) {
   if (value == null) { el.textContent = "–"; el._v = null; return; }
   const from = el._v ?? value, start = performance.now();

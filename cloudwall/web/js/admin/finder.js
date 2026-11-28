@@ -1,12 +1,10 @@
-// Finding the right place: one box at the top of the rail. Empty, it offers what people usually come
-// to do; typed into, it finds any setting by its name, what it does or its name in the file, and
-// any of those jobs; chosen, it opens the page, opens the shade the setting is under, and shows it.
+// The search box at the top of the rail: offers common tasks, finds any setting, and opens its page
+// (and shade) at it.
 import { el, esc, S, TITLES } from "./core.js";
 import { icon } from "./icons.js";
 import { APART } from "./words.js";
 
 // each section's settings are on its page (core/schema.py says which); a few live apart (words.js)
-// what people come to do, said the way they'd say it
 const TASKS = [
   ["Change what the wall panel shows", "look", "kiosk.view", "panel kiosk screen card radar layout"],
   ["Dim the wall panel at night", "look", "kiosk.quiet", "quiet hours sleep night dark clock"],
@@ -83,12 +81,12 @@ export function finder() {
   };
   list.onpointerdown = (e) => { const li = e.target.closest("[data-i]"); if (li) { e.preventDefault(); choose(hits[+li.dataset.i]); } };
   input.onblur = () => setTimeout(() => { list.hidden = true; input.setAttribute("aria-expanded", "false"); }, 120);
-  // "/" anywhere goes to the box, as in most places with a search
+  // "/" anywhere focuses the box
   addEventListener("keydown", (e) => { if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName)) { e.preventDefault(); input.focus(); } });
   return box;
 }
 
-/** After a page is drawn: show the setting the address names (#look/kiosk.quiet), opening its shade. */
+/** Show the setting the address names (#look/kiosk.quiet), opening its shade. */
 export function reveal(target) {
   if (!target) return;
   let node = document.querySelector(`[data-setting="${CSS.escape(target)}"]`);

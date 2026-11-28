@@ -1,20 +1,18 @@
-// What every page of the control board shares: the board's data (from /api/admin/, app/admin.py),
-// reading and saving settings, saying things (the toast), the restart that new settings wait for,
-// and the small helpers for writing pages. Nothing is decided here that the server decides.
+// Shared by every page of the control board: the board's data (from /api/admin/, app/admin.py),
+// reading and saving settings, the toast, the restart, and small helpers.
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 export const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const md = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
 
-/** One element from HTML. */
 export function el(html) {
   const t = document.createElement("template");
   t.innerHTML = html.trim();
   return t.content.firstElementChild;
 }
 
-// -- numbers and times, said the way people say them ----------------------------------------------
+// -- numbers and times
 export const num = (n, d = 0) => n == null || Number.isNaN(+n) ? "–" : (+n).toLocaleString(undefined, { maximumFractionDigits: d, minimumFractionDigits: 0 });
 export function ago(t) {
   if (!t) return "never";
@@ -28,12 +26,11 @@ export const when = (t) => new Date(t * 1000).toLocaleString([], { dateStyle: "m
 export const day = (t) => new Date(t * 1000).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
 export const plural = (n, one, many = /aircraft$/.test(one) ? one : one + "s") => `${num(n)} ${n === 1 ? one : many}`;
 
-// -- the board's data ------------------------------------------------------------------------------
+// -- the board's data
 export const S = { who: null, overview: null, settings: null, catalogue: null, doctor: null, sky: null, secretsSaved: new Set() };
 export const bus = new EventTarget();
 export const on = (name, fn) => bus.addEventListener(name, fn);
-// a page's own listeners: taken away when the next page (or the same one again) is drawn, so they
-// don't pile up, each holding a page no longer shown
+// a page's own listeners: removed when the next page is drawn, so they don't pile up
 const pageFns = [];
 export const onPage = (name, fn) => { pageFns.push([name, fn]); bus.addEventListener(name, fn); };
 export const leavePage = () => { for (const [name, fn] of pageFns.splice(0)) bus.removeEventListener(name, fn); };
@@ -54,7 +51,7 @@ export async function call(path, body, method) {
   return got;
 }
 
-/** The board's own picture of the sky (the same /api/state the screens use). */
+/** The same /api/state the screens use. */
 export async function sky() {
   try { S.sky = await (await fetch("api/state", { credentials: "same-origin" })).json(); } catch { /* the pages say so */ }
   return S.sky;
@@ -63,8 +60,8 @@ export async function sky() {
 export async function loadOverview() { S.overview = await call("overview"); emit("overview"); return S.overview; }
 export async function loadSettings() { S.settings = await call("settings"); emit("settings"); return S.settings; }
 
-// -- settings ------------------------------------------------------------------------------------------
-/** A setting as the board knows it: its description (core/schema.py), what's saved and what's running. */
+// -- settings
+/** A setting: its description (core/schema.py), what's saved and what's running. */
 export function setting(section, key) {
   const sec = S.settings?.sections.find((s) => s.name === section);
   const s = sec?.settings.find((x) => x.key === key);
@@ -93,8 +90,7 @@ export async function save(section, key, v) {
   return got;
 }
 
-// -- saying things --------------------------------------------------------------------------------------
-/** Say something for a few seconds; with `action` ({label, fn}), a button to act on it (Undo). */
+/** `action`: {label, fn}, a button on the toast (Undo). */
 export function toast(text, bad, action) {
   const t = $("#toast");
   t.textContent = text; t.className = "toast" + (bad ? " bad" : ""); t.hidden = false;
@@ -106,7 +102,7 @@ export function toast(text, bad, action) {
   clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, bad ? 9000 : action ? 8000 : 4500);
 }
 
-/** A button that runs `fn`, disabled while it does, saying what went wrong if it fails. */
+/** A button that runs `fn`, disabled while it does, toasting its error. */
 export function button(label, fn, cls = "") {
   const b = el(`<button class="btn ${cls}" type="button">${label}</button>`);
   b.onclick = async (e) => {
@@ -116,7 +112,6 @@ export function button(label, fn, cls = "") {
   return b;
 }
 
-// -- the restart new settings wait for -------------------------------------------------------------------
 export async function restart() {
   if (!S.overview?.under_systemd) return toast("CloudWall is running by hand here: stop it and start it again for the new settings.", true);
   if (!confirm("Restart CloudWall now? The screens reconnect by themselves in a few seconds.")) return;
@@ -136,7 +131,7 @@ export async function restart() {
   toast("CloudWall hasn't come back yet: sudo systemctl status cloudwall at the machine says why", true);
 }
 
-// -- the whole machine's check, and the root helper -------------------------------------------------------
+// -- the whole machine's check, and the root helper
 export async function runDoctor() {
   toast("Checking the whole machine: it asks each feed, so it takes a few seconds…");
   S.doctor = await call("doctor?fresh=1");
@@ -156,7 +151,7 @@ export async function waitFor(rid) {
   toast("The root helper hasn't answered: is cloudwall-helper.path running? (sudo systemctl status cloudwall-helper.path)", true);
 }
 
-/** Every open problem: the watcher's and the last whole-machine check's, once each. */
+/** Every open problem: the watcher's and the last doctor run's, deduplicated. */
 export function problems() {
   const h = S.overview?.health || {};
   const list = [...(h.open || []), ...(S.doctor?.findings || []).filter((f) => f.state === "warn" || f.state === "fail")];
@@ -165,18 +160,18 @@ export function problems() {
     .sort((a, b) => (b.major - a.major) || (a.state === "fail" ? -1 : b.state === "fail" ? 1 : 0));
 }
 
-/** The house's place (the first), and its feed from your own receiver, if there is one. */
+/** The house is the first place. */
 export const house = () => S.overview?.places?.[0];
 export function ownFeed(p = house()) {
   const feeds = Object.entries(p?.feeds || {});
   return feeds.find(([label]) => /receiver/i.test(label))?.[1] || null;
 }
 
-// each page's name: the rail, the page's own title, the finder and All settings all say it this way
+// each page's name, wherever it's shown
 export const TITLES = { home: "Overview", receiver: "Receiver", positions: "Feeds", places: "Location", routes: "Routes", look: "Display",
                         access: "Access", safekeeping: "Backups", health: "Health", settings: "All settings", server: "System" };
 
-// which of the checks' parts each page looks after, for the rail's marks and each page's problems
+// which of the checks' parts each page looks after
 export const PARTS = {
   receiver: ["receiver", "tunnel"], positions: ["feeds"], places: ["home"], routes: ["routes"],
   look: ["display", "weather"], access: ["access", "caddy"], safekeeping: ["storage", "cache", "backup"],

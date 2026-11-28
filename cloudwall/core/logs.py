@@ -1,5 +1,4 @@
-"""The last few hundred lines of CloudWall's log, kept in memory for the control board's Log page
-(the full log is the journal's: `journalctl -u cloudwall`)."""
+"""The last few hundred log lines, kept in memory for the control board's Log page."""
 import collections
 import logging
 import threading
@@ -40,6 +39,3 @@ def attach():
     if RECENT not in root.handlers:
         root.addHandler(RECENT)
     return RECENT
-
-
-

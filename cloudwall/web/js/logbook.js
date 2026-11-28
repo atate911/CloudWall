@@ -19,7 +19,6 @@ function budgetLine(fa) {
   return parts.join(". ") + ".";
 }
 
-// Fetch the logbook afresh and draw the tab.
 export async function loadLog(state) {
   const L = await refresh("api/logbook", 0);
   if (!L) return;
@@ -50,8 +49,7 @@ export async function loadLog(state) {
   $("log-coll").replaceWith(collection(L.types));
 }
 
-// The type collection: a drawing of every type logged, with how often and since when. Its
-// drawings are kept between the logbook's refreshes and rebuilt only when the list changes.
+// The type collection: its drawings are kept between refreshes and rebuilt only when the list changes.
 let coll = { key: null, el: null };
 function collection(types) {
   const key = types.map((t) => `${t.type}:${t.n}:${t.model || ""}`).join(",");
@@ -73,7 +71,6 @@ function collection(types) {
   return el;
 }
 
-// a type in the collection: its panel (about.js)
 function aboutFrom(e) {
   const f = e.target.closest("figure.coll[data-about]");
   if (f) openAbout(f.dataset.about, { name: f.dataset.name || null, model: f.dataset.model || null });

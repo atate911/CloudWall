@@ -155,7 +155,6 @@ class Admin:
         return None
 
     def alert_test(self):
-        """Send a test alert to [health] notify_url, so the owner sees it arrive on their phone."""
         from ..core.http import post_json
         url = (self.saved().get("health") or {}).get("notify_url")      # as saved: test it before restarting
         if not url:
@@ -168,10 +167,9 @@ class Admin:
             raise ValueError(f"The alert address didn't take it: {e}") from None
         return {"ok": True, "said": "Test alert sent: it should reach you within a few seconds"}
 
-    # -- your receiver ---------------------------------------------------------------------------
+    # -- your receiver --
     def saved(self):
-        """The settings as saved (not as running): for the settings only the board uses, which
-        take effect as soon as they're saved. Read again at most every few seconds."""
+        """The settings as saved (not as running), for the LIVE sections; re-read at most every 3 s."""
         at, cfg = getattr(self, "_saved", (0, None))
         path = self.cfg.get("_path")
         if not path:
@@ -196,15 +194,13 @@ class Admin:
         cov = (r.get("coverage_url") or "").rstrip("/")
         if not cov and url:
             m = re.match(r"^(https?://[^/:]+):(\d+)$", url)
-            # through the tunnel the receiver is 127.0.0.1:18080 and Coverage3D the port after the
-            # receiver's own (18090); at home, the receiver's address on Coverage3D's own port, 8090
+            # through the tunnel the receiver is :18080 and Coverage3D :18090; at home Coverage3D is :8090
             cov = f"{m.group(1)}:{int(m.group(2)) + 10}" if m and m.group(2) == "18080" else \
                 (f"{m.group(1)}:8090" if m else "")
         return url or None, cov or None
 
     def receiver(self):
-        """How the receiver is doing, from its own files (receiver.json, stats.json, outline.json),
-        with the board's own reading of them."""
+        """How the receiver is doing, from its own receiver.json, stats.json and outline.json."""
         from ..core.http import get_json
         url, cov = self.receiver_urls()
         out = {"url": url, "coverage_url": cov, "home_url": (self.saved().get("receiver") or {}).get("home_url") or None,
@@ -249,11 +245,10 @@ class Admin:
         return out
 
     def relay(self, h, path):
-        """/receiver/... and /coverage/...: the receiver's live map and Coverage3D, as pages of the
-        board, for the owner. Only GET; only below the address set; nothing of the board's own
-        (its cookie) passed on."""
+        """/receiver/... and /coverage/..., relayed for the owner. Only GET; only below the address
+        set; nothing of the board's own (its cookie) passed on."""
         from ..core.http import relay
-        if not self.owner.host_ok(h.headers.get("Host"), self.proxied(h)):      # (as handle: no page under another name)
+        if not self.owner.host_ok(h.headers.get("Host"), self.proxied(h)):
             return h._send(403, {"error": "The control board answers only to this machine's own names and addresses"})
         if self.role(h) != "owner":
             return h._send(401, b"<!doctype html><meta charset=utf-8><p style='font:1rem sans-serif;margin:2rem'>"
@@ -277,7 +272,7 @@ class Admin:
         h.end_headers()
         h.wfile.write(data)
 
-    # -- what the board shows ------------------------------------------------------------------
+    # -- what the board shows --
     def whoami(self, h):
         return {"role": self.role(h), "owner_set": self.owner.exists(), "local": auth.is_local(h.client_address[0]),
                 "version": __version__, "demo": self.demo}
@@ -322,7 +317,7 @@ class Admin:
                 "address": self.cfg["server"].get("address") or None}
 
     def cache_size(self):
-        """The map tiles' and logos' size on disk (counted at most every ten minutes: it walks a folder)."""
+        """The map tiles' and logos' size on disk (cached ten minutes: it walks a folder)."""
         at, size = getattr(self, "_cache_size", (0, None))
         if time.time() - at > 600:
             folder = config.cache_dir(self.cfg, str(self.cfg["storage"]["db_path"] or config.default_db_path()))
@@ -359,8 +354,7 @@ class Admin:
                 "left_out": on_disk.get("_problems", [])}
 
     def tidy(self, body):
-        """A line of the settings file that does nothing: moved under the heading it belongs to (only
-        when the setting isn't already set there), or taken out."""
+        """Move a stray settings line under the heading it belongs to (unless set there), or remove it."""
         path = self.cfg.get("_path")
         section, key, action = str(body.get("section") or ""), str(body.get("key") or ""), body.get("action")
         stray = next((x for x in config.strays(path) if x["section"] == section and x["key"] == key), None) if path else None
@@ -389,8 +383,7 @@ class Admin:
         raise ValueError("action must be move or remove")
 
     def _settings_file(self):
-        """The settings file changes go to: the one CloudWall started from, or, started without
-        one, the user's own, begun now and from here on the one the board reads."""
+        """The settings file changes go to: the one started from, else the user's own, begun now."""
         if not self.cfg.get("_path"):
             path = str(config.user_config_path())
             config.init(path)
@@ -404,7 +397,7 @@ class Admin:
             raise ValueError(f"[{section}] {key} isn't a setting")
         path = self._settings_file()
         value = body.get("value")
-        if value is None:                  # back to not set at all (undoing a setting that had no value)
+        if value is None:                  # back to not set at all
             config.remove_setting(path, section, key)
             self._saved = (0, None)
             return {"ok": True, "said": f"{st.label} is no longer set"} if section in LIVE else \
@@ -446,7 +439,7 @@ class Admin:
             from ..core.health import trouble
             finding = trouble(code, str(body["summary"]))
         if code == "clock.timezone":                 # needs root: through the helper
-            zone = helper._zone({"zone": value})     # (raises ValueError, said to the owner, if it isn't one)
+            zone = helper._zone({"zone": value})     # raises ValueError if it isn't one
             if not helper.available():
                 raise ValueError(f"Set it at the machine: sudo timedatectl set-timezone {zone}")
             return {"ok": True, "request": helper.ask("set-timezone", {"zone": zone}), "said": "asked the root helper"}

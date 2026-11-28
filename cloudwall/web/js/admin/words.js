@@ -1,13 +1,11 @@
-// Settings in words: each value said as a person would say it ("Keep the logbook", not "log"; 15%,
-// not 0.15), and the whole setup said in a paragraph, each part of it a link to the setting it
-// comes from. The paragraph is how an admin checks the setup at a glance: if a sentence reads
-// wrong, the words to click are the ones to change.
+// Settings in words: each value as a person would say it ("Keep the logbook", not "log"), and the
+// whole setup as a paragraph whose parts link to their settings.
 import { esc, num, value, setting, S } from "./core.js";
 
 // the few settings shown on another page than their section's
 export const APART = { "tracking.poll_seconds": "positions", "tracking.idle_after_seconds": "positions", "tracking.when_idle": "positions", "map.cache_mb": "safekeeping" };
 
-// what each word a setting takes means, said plainly
+// each enum value in plain words
 export const CHOICE = {
   "tracking.when_idle": { log: "Keep the logbook", pause: "Pause" },
   "kiosk.view": { card: "The flight card", radar: "Radar beside the card", map: "Map beside the card", sky: "Sky beside the card" },
@@ -21,7 +19,6 @@ const STYLE = { dark: "Dark streets", light: "Light streets", satellite: "Satell
                 terminal: "VFR terminal", "ifr-low": "IFR low", "ifr-high": "IFR high", off: "No map" };
 for (const k of ["map.style", "map.route", "map.atc"]) CHOICE[k] = STYLE;
 
-/** A setting's value in words. */
 export function say(st, v = st.value) {
   const id = `${st.section}.${st.key}`;
   if (st.secret) return v?.set ? "Saved" : "Not set";
@@ -41,8 +38,8 @@ export function say(st, v = st.value) {
 
 export const hostOf = (u) => { try { return /\/data\/aircraft\.json$/.test(u) ? "your receiver" : new URL(String(u).replace(/[{}]/g, "")).hostname; } catch { return String(u); } };
 
-// -- the setup, said in a paragraph ----------------------------------------------------------------------
-/** A link to a setting, in the board's blue: its page, opened at it. */
+// -- the setup, said in a paragraph
+/** A link to a setting: its page, opened at it. */
 function to(section, key, text) {
   const st = setting(section, key);
   return `<a class="said" href="#${APART[`${section}.${key}`] || st?.page || "settings"}/${section}.${key}">${esc(text)}</a>`;

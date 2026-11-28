@@ -1,5 +1,4 @@
-// The board's icons: one line weight, drawn for what each part is (an antenna for the receiver, a
-// fuel gauge's arc for the paid allowance), not taken from a general set.
+// The board's icons, as SVG paths.
 const P = {
   home: '<path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v8.5h11V10"/><path d="M10.5 18.5v-4.5h3v4.5"/>',
   receiver: '<path d="M12 21V10"/><path d="m8.5 21 3.5-11 3.5 11"/><path d="M9.6 17.5h4.8"/><circle cx="12" cy="8" r="1.6"/><path d="M8.6 4.6a4.8 4.8 0 0 0 0 6.8M15.4 4.6a4.8 4.8 0 0 1 0 6.8"/><path d="M6.2 2.4a8 8 0 0 0 0 11.2M17.8 2.4a8 8 0 0 1 0 11.2"/>',

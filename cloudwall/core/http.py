@@ -1,7 +1,5 @@
-"""Every request CloudWall makes to another service goes through fetch: one User-Agent, a
-timeout, a cap on how much it will read (a service that sends without end can't fill memory),
-and, where asked, one more try after a moment for trouble that passes (a dropped connection, a
-busy server). get_json and get_text are fetch for the two kinds of answer most services give."""
+"""Every outbound request goes through fetch: one User-Agent, a timeout, a cap on bytes read
+and optional retries."""
 import json
 import time
 import urllib.error
@@ -9,11 +7,10 @@ import urllib.request
 
 from .. import __version__
 
-# How CloudWall names itself to the services it asks: with a way to reach its makers, which some ask
-# for and planespotters.net requires (without one, every photo lookup is refused with a 403)
+# must carry a contact URL: planespotters.net answers 403 without one
 UA = f"CloudWall/{__version__} (+https://github.com/atate911/CloudWall)"
-MAX_BYTES = 32 * 1024 * 1024        # the largest answer read (the FAA's restrictions are a few MB)
-PASSING = (502, 503, 504)           # a server's trouble worth one more try
+MAX_BYTES = 32 * 1024 * 1024        # the FAA's restrictions are a few MB
+PASSING = (502, 503, 504)           # worth one more try
 
 
 class TooBig(ValueError):
@@ -22,8 +19,8 @@ class TooBig(ValueError):
 
 def fetch(url, timeout=12, headers=None, max_bytes=MAX_BYTES, retries=0):
     """GET url: (bytes, content type). Raises urllib.error.HTTPError for an HTTP error (a 404 too),
-    OSError for the network, TooBig past max_bytes. retries: how many more tries, a second
-    apart, after a network error or a 502/503/504."""
+    OSError for the network, TooBig past max_bytes. retries: more tries, a second apart, after a
+    network error or a 502/503/504."""
     req = urllib.request.Request(url, headers={"User-Agent": UA, **(headers or {})})
     for attempt in range(retries + 1):
         try:
@@ -58,7 +55,7 @@ def get_text(url, timeout=12):
 
 
 def post_json(url, body, timeout=12):
-    """POST a JSON document (an alert to a webhook). Returns the answer's bytes; raises on errors."""
+    """POST a JSON document. Returns the answer's bytes; raises on errors."""
     data = json.dumps(body).encode()
     req = urllib.request.Request(url, data=data, method="POST",
                                  headers={"User-Agent": UA, "Content-Type": "application/json"})
@@ -72,10 +69,8 @@ PASSED_BACK = ("Content-Type", "Content-Encoding", "Cache-Control", "ETag", "Las
 
 
 def relay(url, request_headers, timeout=20, max_bytes=64 * 1024 * 1024):
-    """GET url on behalf of a browser, for a page CloudWall shows from another machine (the
-    receiver's live map, Coverage3D): only the request headers that shape the answer are passed on
-    (never cookies), and only those that describe it are passed back. Returns (status, headers,
-    body); an HTTP error is an answer like any other (a 304, a 404)."""
+    """GET url on behalf of a browser, passing only PASSED_ON headers (never cookies) and
+    PASSED_BACK ones. Returns (status, headers, body); an HTTP error is an answer, not raised."""
     headers = {k: request_headers[k] for k in PASSED_ON if request_headers.get(k)}
     req = urllib.request.Request(url, headers={"User-Agent": UA, **headers})
     try:

@@ -444,8 +444,6 @@ class GuideTest(unittest.TestCase):
 
 
 class UpgradeInPlaceTest(MachineTest):
-    """`cloudwall upgrade` from each starting point, and `cloudwall rollback`."""
-
     def test_an_installed_server_is_backed_up_then_updated(self):
         inst.install(inst.Options("wall"), self.system())
         self.at(inst.CONFIG).write_text('[home]\nlat = 44.06\nlon = -121.31\n')

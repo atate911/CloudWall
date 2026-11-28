@@ -1,7 +1,4 @@
-// About a type: the panel a tap on an aircraft's drawing (on the flight card) or on a type in the
-// Logbook's collection opens. Its write-up and facts come from the server (/api/type, from the
-// files in cloudwall/data/types/), and so does what the logbook knows of the type and of the
-// airframe tapped; this file lays them out and words what is worked out from them.
+// About a type: the panel a tap on an aircraft's drawing or on a Logbook type opens (data from /api/type).
 import { $, esc, num, seatWords, api } from "./util.js";
 import { plate, kindPlate, drawn, typeInfo } from "./plate.js";
 
@@ -21,14 +18,7 @@ function day(ts) {
 
 const times = (n) => (n === 1 ? "once" : n === 2 ? "twice" : `${count(n)} times`);
 
-// What the panel says from the logbook is said of two things, each under its own heading so that one
-// isn't read as the other: this one aircraft (when the panel was opened from a flight), then every
-// aircraft of its type. "It has come over once before" beside "logged 187 times" is no contradiction
-// once the first is plainly the airframe's and the second the type's.
-
-// Where this airframe's build year falls in its type's deliveries: "It was built in 2004, in the last
-// year the type was made". A year outside the run by more than one (the feed's year is sometimes
-// wrong, or the type code covers another model) says only the year.
+// A year outside the production run by more than one (the feed's year is sometimes wrong) says only the year.
 export function builtLine(year, production) {
   if (!year) return "";
   const who = `It was built in ${year}`;
@@ -40,7 +30,7 @@ export function builtLine(year, production) {
   return `${who}, ${count(into)} year${into === 1 ? "" : "s"} into the type's production run, which ${last ? `ended in ${last}` : "is still going"}.`;
 }
 
-// This airframe over the house, from the logbook (the pass it is on now may not be logged yet)
+// the pass it is on now may not be logged yet
 const firstTime = (af, now) => !af.n || (af.n === 1 && now - af.first < 3600);
 export function airframeLine(af, now = Date.now() / 1000) {
   if (!af) return "";
@@ -48,15 +38,13 @@ export function airframeLine(af, now = Date.now() / 1000) {
   return af.n === 1 ? `It has come over the house once before, on ${day(af.first)}.` : `It has been logged over the house ${times(af.n)}, first on ${day(af.first)}.`;
 }
 
-// The type over the house, every aircraft of it together: how often and by how many different
-// aircraft, how it ranks, who flies it here
 export function typeLines(seen) {
   if (!seen || !seen.n) return ["None has been logged over the house before."];
   if (seen.n === 1) return [`One has been logged over the house, on ${day(seen.first)}.`];
   const frames = seen.airframes > 1 ? `, by ${count(seen.airframes)} different aircraft` : seen.airframes === 1 ? ", the same aircraft each time" : "";
   const rank = seen.rank === 1 ? ": the most common type here" : seen.rank <= 10 ? `: the ${ordinal(seen.rank)} most common type here` : "";
   const out = [`Logged over the house ${times(seen.n)} since ${day(seen.first)}${frames}${rank}.`];
-  // who flies it here, once there are enough to say: a share of the times logged, not of the aircraft
+  // a share of the times logged, not of the aircraft
   const top = (seen.airlines || [])[0], share = top ? top.n / seen.n : 0, name = (a) => a.name || a.icao;
   const who = seen.n < 5 ? "" : share === 1 ? `${name(top)} flew every one of those flights.` : share >= 0.5 ? `${name(top)} flew ${Math.round(share * 100)}% of those flights.`
     : seen.airlines.length > 1 ? `${seen.airlines.slice(0, 2).map(name).join(" and ")} flew the most of those flights.` : "";
@@ -64,8 +52,6 @@ export function typeLines(seen) {
   return out;
 }
 
-// What the logbook says, as headed groups of lines: of this aircraft (when the panel was opened for
-// one), with its build year, then of its type as a whole
 export function hereGroups(d, ctx = {}, now = Date.now() / 1000) {
   const af = d.airframe, seen = d.seen || {};
   const one = `This aircraft${ctx.reg ? `, ${ctx.reg}` : ""}`, built = builtLine(ctx.year, d.production);
@@ -79,8 +65,6 @@ export function hereGroups(d, ctx = {}, now = Date.now() / 1000) {
 
 const possessive = (name) => (/s$/i.test(name) ? `${name}'` : `${name}'s`);
 
-// The facts strip: the entry's own, then seats (this airline's layout when the airframe is known,
-// else the type's usual) and the wake category
 function factRows(d, ctx) {
   const rows = d.facts.slice(), s = ctx.seats && ctx.seats.basis !== "cargo" ? ctx.seats : d.seats;
   if (ctx.seats && ctx.seats.basis === "cargo") rows.push(["Seats", "Cargo, no passengers"]);
@@ -110,8 +94,7 @@ function body(d, ctx) {
 }
 
 let asked = 0;
-// Open the panel for a type. ctx, what the opener knows of the aircraft tapped: hex, reg, year,
-// seats, airline, name, model (all optional: a type in the logbook has only its name).
+// ctx: what the opener knows of the aircraft tapped (hex, reg, year, seats, airline, name, model; all optional).
 export async function openAbout(type, ctx = {}) {
   const dlg = $("about"), n = ++asked;
   if (!dlg || !type) return;
@@ -131,7 +114,6 @@ export async function openAbout(type, ctx = {}) {
   dlg.querySelector(".ab-in").scrollTop = 0;
 }
 
-// What the flight card's aircraft record says of the airframe, for the panel
 export const aboutContext = (a) => ({ hex: a.hex, reg: a.reg, year: a.year, seats: a.seats, airline: a.airline,
   name: a.type_name, model: a.model });
 

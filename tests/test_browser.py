@@ -1,19 +1,7 @@
 """The page, in a real browser: every layout and tab draws, the controls work, and nothing goes
-to the console or leaves the machine.
-
-The displays (the flight card, the radar, the board, the Weather and Logbook tabs, the wall panel,
-the phone layout) have no tests of their own: they are drawing code, and what matters is that a
-browser can run all of it. So this starts CloudWall on its simulated traffic, with the map and the
-logos off so that nothing is fetched from anywhere, and has tests/browser_smoke.js walk the page
-in headless Chromium.
-
-It needs Node and Playwright, which CloudWall itself does not:
-
-    npm install --no-save playwright && npx playwright install chromium
-
-Without them the tests are skipped, except where CLOUDWALL_BROWSER_TESTS=1 says they must run
-(the workflow that runs the tests on every pull request sets it).
-"""
+to the console or leaves the machine. Starts the demo and has tests/browser_smoke.js walk it.
+Needs Node and Playwright (`npm install --no-save playwright && npx playwright install chromium`);
+skipped without them unless CLOUDWALL_BROWSER_TESTS=1 (set by the pull-request workflow)."""
 import json
 import os
 import shutil
@@ -127,7 +115,7 @@ class BrowserTest(unittest.TestCase):
     def test_following_a_flight_and_letting_it_go(self):
         f = self.scenario("follow")
         self.assertEqual((f["view"], f["followed"], f["released"]), ("now", f["picked"], True))
-        self.assertGreaterEqual(f["track"], 1)                               # the selected aircraft's track is drawn
+        self.assertGreaterEqual(f["track"], 1)
         ab = f["about"]                                                      # its drawing opens the panel about its type
         self.assertTrue(ab["type"] and ab["name"] and ab["pinned"])
         self.assertGreaterEqual(ab["lines"], 1)                              # with what the logbook knows of it
@@ -178,9 +166,9 @@ class BrowserTest(unittest.TestCase):
         self.assertGreaterEqual(d["height"], 100)
         self.assertGreater(d["done"], 10)                                    # most of the way flown
         self.assertGreater(d["todo"], d["done"])
-        self.assertTrue(d["craftInside"])                                    # the aircraft is on the map
+        self.assertTrue(d["craftInside"])
         self.assertEqual((d["codes"], d["credit"]), (["HND", "PDX"], "Test imagery"))
-        self.assertGreater(d["borders"], 5)                                  # country lines in view
+        self.assertGreater(d["borders"], 5)
         self.assertGreaterEqual(len(d["cities"]), 2)                         # a few places to find your way by
         self.assertNotIn("Tokyo", d["cities"])                               # not one the airport code already names
         self.assertTrue(set(d["regions"]) & {"JAPAN", "CANADA", "UNITED STATES"}, d["regions"])     # the countries it crosses, by name

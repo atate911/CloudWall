@@ -1,18 +1,6 @@
-"""How CloudWall says whether each part of it is working, in words its owner can act on.
-
-A check is a function returning Findings. Each Finding says what was looked at, how it is (ok,
-warn, fail or off), what that means, and what to do. A Finding for a known problem names it by
-its code in troubles.CATALOGUE, and takes its explanation, its likely causes, its steps, whether
-it is major and how it is repaired from there: trouble("feeds.all-down", "no feed answered").
-
-The same findings are printed by `cloudwall doctor`, watched by the running server (app/watch.py)
-and shown on the screens, so the advice is written once. Checks are registered by the part they
-belong to (register("feeds", check)), so a new part (a second radio, a decoder) brings its own
-checks and they appear everywhere without anything else changing.
-
-The Monitor turns findings, checked again and again, into incidents: a problem starts, goes on
-(counted), and ends. Each start and end is said once in the log, not at every check; a major one
-at ERROR, with what to do.
+"""Health checks: registered functions returning Findings (a known problem's words come from
+troubles.CATALOGUE via trouble()), shared by `cloudwall doctor`, the server's watcher and the
+screens. Monitor turns repeated findings into incidents, each start and end logged once.
 """
 import logging
 import textwrap
@@ -29,17 +17,17 @@ log = logging.getLogger("cloudwall.health")
 
 @dataclass
 class Finding:
-    part: str           # which part of CloudWall: "settings", "storage", "feeds", "receiver", ...
+    part: str           # "settings", "storage", "feeds", "receiver", ...
     state: str          # OK, WARN, FAIL or OFF (not set up: nothing wrong)
-    summary: str        # one line: what was found, with its particulars
-    detail: str = ""    # what that means, for someone who doesn't know the parts' names
-    fix: str = ""       # what to do about it, when it isn't ok
-    code: str = None    # the known problem it is (troubles.CATALOGUE)
-    major: bool = False # stops CloudWall doing its main job: said loudly
-    steps: list = field(default_factory=list)      # troubleshooting, in order
-    causes: list = field(default_factory=list)     # why it usually happens
-    repair: str = None  # a repair that fixes it (operate/repair.py)
-    auto: bool = False  # made without asking
+    summary: str
+    detail: str = ""
+    fix: str = ""
+    code: str = None    # key in troubles.CATALOGUE
+    major: bool = False
+    steps: list = field(default_factory=list)
+    causes: list = field(default_factory=list)
+    repair: str = None  # a repair's name (operate/repair.py)
+    auto: bool = False  # the repair is made without asking
     subtle: bool = False    # looks right on the screens, but isn't
 
     @property
@@ -76,13 +64,12 @@ def register(part, check):
 
 
 def run(context, checks=None):
-    """Every check's findings, in the order the parts were registered. A check that fails in itself
-    is a finding too, not a crash: the checks must work when things are broken."""
+    """Every check's findings, in registration order; a check that raises becomes a finding, not a crash."""
     out = []
     for part, check in checks if checks is not None else CHECKS:
         try:
             out += list(check(context))
-        except PermissionError as e:        # not this user's to look at: no fault, but said
+        except PermissionError as e:
             out.append(Finding(part, OFF, f"not checked: {e.filename or 'a file'} isn't yours to read (run it with sudo)"))
         except Exception as e:
             out.append(Finding(part, FAIL, f"the check itself failed: {type(e).__name__}: {e}",
@@ -96,8 +83,7 @@ def worst(findings):
 
 
 def render(findings, width=100, steps=True):
-    """Findings as text for a terminal: one line each, and for any not ok, what it means, its likely
-    causes and what to do."""
+    """Findings as text for a terminal."""
     lines = []
 
     def para(text, indent="       ", first=None):
@@ -124,15 +110,14 @@ def render(findings, width=100, steps=True):
 
 
 class Monitor:
-    """Findings checked again and again, as incidents with a start and an end. observe() returns
-    what changed: [("started" | "ended", finding)]. `store` (memory/incidents.py) keeps them
-    across restarts, when given."""
+    """observe() returns what changed: [("started" | "ended", finding)]. `store`
+    (memory/incidents.py), when given, keeps incidents across restarts."""
 
     def __init__(self, store=None, clock=time.time):
         self.store = store
         self.clock = clock
         self.open = {}              # key -> (finding, since, times seen)
-        self.last = []              # the latest findings, all of them
+        self.last = []
         self.checked = None
 
     def observe(self, findings):
@@ -162,13 +147,12 @@ class Monitor:
         return changes
 
     def majors(self):
-        # (lists of self.open throughout: the health thread changes it while screens ask)
+        # list(self.open...) throughout: the health thread changes it while screens ask
         return [f for f, _, _ in list(self.open.values()) if f.major and f.state == FAIL]
 
     def summary(self):
-        """For every screen: how things stand, in a few words."""
         majors = self.majors()
-        # (simulated traffic is the demo's whole point: it isn't what this warning is for)
+        # display.demo left out: simulated traffic is the demo's whole point
         subtle = [f for f, _, _ in list(self.open.values()) if f.subtle and f.code != "display.demo"]
         return {"worst": worst(self.last), "problems": len(self.open), "checked": self.checked,
                 "major": majors[0].summary if majors else None,
@@ -176,7 +160,6 @@ class Monitor:
                 "subtle": CATALOGUE[subtle[0].code].title if subtle else None}
 
     def report(self):
-        """In full, for /api/health and the control board."""
         return {**self.summary(),
                 "open": [dict(f.to_dict(), since=since, seen=n) for f, since, n in list(self.open.values())],
                 "findings": [f.to_dict() for f in self.last]}

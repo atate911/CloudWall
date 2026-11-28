@@ -1,5 +1,5 @@
-"""Start-up: reads the settings, builds the stores, the shared services, a place for each place
-watched and the HTTP server, and joins them together (`cloudwall`, `python3 -m cloudwall`)."""
+"""Start-up (`cloudwall`): reads the settings, builds the stores, shared services, places and the
+HTTP server, and joins them together."""
 import argparse
 import logging
 import os
@@ -31,21 +31,19 @@ log = logging.getLogger("cloudwall")
 
 
 def load_settings(path):
-    """The settings to run on: the file, or, when it can't be used (a mistake made while editing it,
-    or a setting an update no longer takes), the last copy of it that started, said loudly in the
-    log and by `cloudwall doctor`. Without a copy that worked, CloudWall stops with the mistake named.
-    (cfg, True if the copy is what is used)."""
+    """(cfg, from_good): the file's settings, or, when it can't be used, the last copy that started
+    (<file>.good), said loudly. Without such a copy, exits naming the mistake."""
     try:
         cfg = config.load(path)
-        placing.places(cfg)                    # (a place it can't work out is a mistake in the file too)
+        placing.places(cfg)                    # a place it can't work out is a mistake in the file too
         return cfg, False
-    except (ValueError, OSError) as e:         # a mistake in the file (TOML's own errors are ValueErrors too)
+    except (ValueError, OSError) as e:         # TOML's own errors are ValueErrors too
         file = config.find(path)
         good = Path(f"{file}.good") if file else None
         if not good or not good.exists():
             raise SystemExit(f"cloudwall: {file}: {e}")
         cfg = config.load(good)
-        cfg["_path"] = str(file)               # the file to mend is the one that can't be used, not the copy
+        cfg["_path"] = str(file)               # the file to mend, not the copy
         cfg["_problems"].insert(0, f"{file} can't be used ({e}): running on the last settings that started, {good}")
         log.error("config: %s", cfg["_problems"][0])
         return cfg, True
@@ -89,7 +87,7 @@ def main():
     ap.add_argument("--version", action="version", version=f"cloudwall {__version__}")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
-    logs.attach()                          # the last few hundred lines, for the control board's Log page
+    logs.attach()                          # for the control board's Log page
 
     if args.new_key:
         key = keys.new_key()
@@ -107,8 +105,7 @@ def main():
         return
 
     cfg, from_good = load_settings(args.config)
-    # what the command line says wins over the file; the control board is told, so it doesn't take
-    # the difference for a saved setting waiting for a restart
+    # the command line wins over the file; _cli tells the control board it isn't a saved setting awaiting restart
     if args.host:
         cfg["server"]["host"] = args.host
         cfg.setdefault("_cli", []).append("server.host")
@@ -123,7 +120,7 @@ def main():
     if db != ":memory:":
         Path(db).expanduser().parent.mkdir(parents=True, exist_ok=True)
         db = str(Path(db).expanduser())
-    if args.db and db != ":memory:":           # the control board's storage and backups are of these logbooks
+    if args.db and db != ":memory:":           # so the control board's storage and backups are of these logbooks
         cfg["storage"]["db_path"] = db
         cfg.setdefault("_cli", []).append("storage.db_path")
 
@@ -138,33 +135,31 @@ def main():
 
     store0 = Store(db_for(first_id))
     tiles_dir = config.cache_dir(cfg, db) / "tiles"
-    charts = Charts(cfg, tiles_dir)   # the radar's map and the FAA charts
+    charts = Charts(cfg, tiles_dir)
     keep_tidy(tiles_dir, cfg["map"]["cache_mb"])
     logos = Logos(cfg, tiles_dir.parent / "logos")
-    # What every place shares, kept in the first place's file: one paid provider with one budget,
-    # and one lookup of each route, airframe and photo, whichever places see the flight.
+    # shared by every place, kept in the first place's file: one paid provider and budget, one lookup cache
     providers = [Flightradar24(cfg, store0), FlightAware(cfg, store0)]
     fa = next((p for p in providers if p.enabled), None)    # first one with a key wins
     shared = Shared(Enricher(store0, demo=demo.Demo() if args.demo else None, live=fa))
-    named = len(place_cfgs) > 1 or not args.demo   # place names in the log, once there may be several
+    named = len(place_cfgs) > 1 or not args.demo   # place names in the log
 
     def make_place(pc):
         pid = pc["place"]["id"]
         store = store0 if pid == first_id else Store(db_for(pid))
-        store.claim(pc["home"])            # this logbook is this place's
+        store.claim(pc["home"])
         if store is not store0:
             store.forget(KINDS)            # lookups from when each place kept its own
         src = cfg["source"]
         if args.demo:
             source = demo.Demo()
-        elif src.get("merge") and len(src["urls"]) > 1:     # your receiver and the public feeds together
+        elif src.get("merge") and len(src["urls"]) > 1:
             source = feeds.Merged(src["urls"])
         else:
             source = feeds.Feeds(src["urls"])
         return Place(pc, store, source, shared, demo=args.demo, named=named)
 
-    # places set up from a screen are kept beside the logbook (not in demo mode); a new one never
-    # gets an id whose logbook file, left by a removed place, is somewhere else's
+    # screen-added places are saved beside the logbook; a new one never gets an id whose leftover logbook is another place's
     places = Places(cfg, make_place, None if db == ":memory:" else Path(db).with_name("places.json"),
                     elsewhere=lambda pid, home: db != ":memory:" and another_places(db_for(pid), home))
     for pc in place_cfgs:
@@ -176,13 +171,13 @@ def main():
     map_around_every_place()
     places.on_change = map_around_every_place
     for place in places:
-        if not place.added:            # (saved ones started as they were added)
+        if not place.added:            # saved ones started as they were added
             place.start()
     if fa:
-        fa.start(AnyActivity(places))      # e.g. Flightradar24's hourly usage check, which waits for a screen
+        fa.start(AnyActivity(places))
     server = make_server(cfg, places, charts, logos)
     if not from_good and not args.demo:
-        keep_good(cfg["_path"])            # these settings started: the ones to fall back on next time
+        keep_good(cfg["_path"])
     log.info("CloudWall %s on http://%s:%s (source: %s)", __version__, cfg["server"]["host"], cfg["server"]["port"],
              places.first.source.name)
     for place in places:
@@ -202,7 +197,6 @@ def main():
     if cfg["server"]["key"]:
         # the key itself is not logged: logs are read by more people and kept longer than the config
         log.info("private link: answering only under /k/<key>/ (cloudwall --private-link show prints the links)")
-    # CloudWall checking itself while it runs (app/watch.py), its incidents kept beside the logbooks
     incidents = Incidents(":memory:" if db == ":memory:" else str(Path(db).with_name("health.db")))
     incidents.close_all(time.time())
     watch = Watch(cfg, places, fa, demo=args.demo, code_changed=server.code_changed, incidents=incidents,
@@ -210,7 +204,7 @@ def main():
     server.watch = watch
     server.admin = Admin(cfg, places, watch, store0, incidents, fa, demo=args.demo)
     watch.start()
-    sd_notify("READY=1")                   # (systemd's Type=notify: answering now)
+    sd_notify("READY=1")                   # systemd Type=notify
     try:
         server.serve_forever()
     except KeyboardInterrupt:

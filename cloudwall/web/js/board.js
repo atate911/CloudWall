@@ -1,6 +1,5 @@
 // The Board: everything airborne in range as a departure board, grouped by what each aircraft is
-// doing (arriving in landing order, departing, passing over, flying locally) with what happens
-// next for each; a two-line version of it for a phone; and the grouped traffic list beside the radar.
+// doing; a two-line version for a phone; and the grouped traffic list beside the radar.
 import { $, esc, num, mmss, ident, altText, phone, since, hasLogo } from "./util.js";
 import { boardFlight, shortType, heardGroups } from "./parts.js";
 import { picture, stripHtml, listHtml, catIcon, kind, where, dir8, until, flightName, overheadSoon, keepFocus, medIcon, hospitalShort } from "./situation.js";
@@ -9,7 +8,6 @@ import { profileHtml, profileFrom } from "./profile.js";
 const plausible = (a) => (a.route && a.route.plausible ? a.route : null);
 const city = (p) => (p && (p.city || p.name || p.iata)) || "";
 const arrowOf = (a) => ((a.vrate || 0) > 300 ? ' <span class="up">▲</span>' : (a.vrate || 0) < -300 ? ' <span class="down">▼</span>' : "");
-// What happens next for an aircraft: its landing (and who it follows), its climb out, its pass over the house.
 function nextHtml(a, state, arr) {
   const t = since(state), soon = overheadSoon(a, state);
   const overIn = `<b data-oh="${a.cpa_s}">${mmss(Math.max(0, a.cpa_s - t))}</b>`;
@@ -52,7 +50,7 @@ export function boardHtml(state) {
       <td class="b-st">${nextHtml(a, state, g.arr)}</td></tr>`;
   const sec = (k, title, note) => (g[k].length ? `<tbody class="g-${k}"><tr class="gsec"><th colspan="8"><span class="gl">${catIcon(k, null, 18)}${title}<b>${g[k].length}</b></span><span class="gn">${esc(note)}</span></th></tr>${g[k].map(row).join("")}</tbody>` : "");
   const rw = p.rwys.length ? `landing on ${p.rwys.join(" and ")}` : "landing";
-  // military aircraft heard with no position: their altitude and speed, under one heading
+  // military aircraft heard with no position
   const hd = state.heard || [], groups = heardGroups(hd);
   const heard = hd.length ? `<tbody class="heard"><tr class="gsec heard"><th colspan="8"><span class="gl">Heard, no position<b>${hd.length}</b></span>` +
     `<span class="gn">${esc(groups.map((h) => h.name).join(", "))}; ${hd.length > 1 ? "their transponders send" : "its transponder sends"} altitude only</span></th></tr>` +
@@ -68,7 +66,7 @@ export function boardHtml(state) {
     <div class="board-foot">Tap a flight to show it on the radar and the flight card.</div>`;
 }
 
-// On a phone each group's flights are two lines each, everything the table says in a thumb's width:
+// On a phone each flight is two lines:
 //   (3) AS 512   SFO to PDX              1:58      (landing in, overhead in, or how far away)
 //   [Alaska logo] B739      12,300 ft ▼ 280 kt
 function phoneBoardHtml(state) {
@@ -99,8 +97,7 @@ function phoneBoardHtml(state) {
     <div class="board-foot">Tap a flight to show it on the flight card.</div>`;
 }
 
-// Beside the radar, in Detailed: every aircraft grouped by what it is doing, and under the list the
-// side view along the runways. A phone shows the list alone, under the radar.
+// Beside the radar, in Detailed: the grouped list, with the runway side view under it (not on a phone).
 export function renderMiniBoard(state) {
   const box = $("mini-board");
   if (!box || getComputedStyle(box).display === "none") return;

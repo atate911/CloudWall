@@ -1,6 +1,5 @@
 """CloudWall checking itself (core/health.py, core/troubles.py, app/watch.py): each problem found,
-said once, repaired where that is safe, and the subtle ones, where the screens look right but
-aren't, found from what the data should look like."""
+said once, repaired where safe; the subtle ones found from what the data should look like."""
 import ast
 import os
 import socket

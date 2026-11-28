@@ -18,8 +18,7 @@ SFO = (37.619, -122.375)
 AUS = (30.1975, -97.662)
 
 # The tests stay on this machine. A lookup no test stubbed finds nothing, as a 404 would, and any
-# other attempt to reach a service is stopped and fails the run: nothing here should depend on the
-# network being up, or send a public service (or a paid one) a request each time the tests run.
+# other attempt to reach a service is stopped and fails the run.
 _net = {}
 
 
@@ -431,8 +430,7 @@ class TrackerTest(unittest.TestCase):
         self.assertEqual(s["aircraft"][0]["emergency"], "EMERGENCY 7700")
 
     def test_traffic_picture(self):
-        """Every aircraft is marked arriving, departing, flying locally or passing over, and the
-        arrivals are put in landing order on the runways in use, with the gap to the one ahead."""
+        """Each aircraft marked arriving, departing, local or passing over; arrivals in landing order, with the gap ahead."""
         ap = self.t.cfg["airport"]                                       # PDX, landing west on 28L / 28R
         def east_of_pdx(p, nm, north=0.0):
             p["lat"], p["lon"] = ap["lat"] + north / 60, ap["lon"] + nm / (60 * math.cos(math.radians(ap["lat"])))
@@ -784,7 +782,7 @@ class PlacesTest(unittest.TestCase):
         ap = placing.places(cfg)[0]["airport"]
         self.assertEqual((ap["icao"], ap["iata"], ap["city"]), ("KSFO", "SFO", "San Francisco"))
         self.assertAlmostEqual(ap["lat"], 37.619, places=2)              # not PDX's position
-        self.assertIn("OAK", [f["code"] for f in ap["others"]])          # small fields found nearby
+        self.assertIn("OAK", [f["code"] for f in ap["others"]])
         self.assertNotIn("VUO", [f["code"] for f in ap["others"]])
         self.assertEqual(len(ap["runways"]), 4)
 
@@ -1015,7 +1013,7 @@ class ChartsTest(unittest.TestCase):
             self.assertEqual([k for k, *_ in calls], ["terminal", "sectional"])   # neither asked twice
             self.assertEqual(c.get("terminal", 9, 81, 182)[0], b"SEC")  # below the terminal's zooms: the sectional's
             self.assertIsNone(c.get("terminal", 7, 20, 45))             # below both
-            self.assertIsNone(c.get("nonsense", *tile))                 # no such layer
+            self.assertIsNone(c.get("nonsense", *tile))
 
     def test_every_layer_is_served_around_every_place(self):
         import tempfile
@@ -1074,8 +1072,7 @@ class AboutTest(unittest.TestCase):
         self.assertGreater(len(about.covered()), 0)
 
     def test_every_type_cloudwall_knows_is_written_up(self):
-        """Every type CloudWall draws or counts the seats of (data/types.csv, data/seats.csv) opens a
-        written page, not just its drawing: a type added to either needs its write-up too."""
+        """A type added to data/types.csv or data/seats.csv needs its write-up too."""
         import csv
         from cloudwall.core import paths
         from cloudwall.reference import about
@@ -1098,8 +1095,7 @@ class AboutTest(unittest.TestCase):
         self.assertIsNone(about.entry(None))
 
     def test_the_737s_and_a320s_each_have_their_own_write_up(self):
-        """The models over the house every day don't share their family's page: each has a write-up
-        of its own, no paragraph of it its sister's, with its own first flight and delivery years."""
+        """No paragraph of one is its sister's, and each has its own first flight and delivery years."""
         from cloudwall.reference import about
         families = {"Boeing 737 Next Generation": ("B736", "B737", "B738", "B739"), "Boeing 737 MAX": ("B37M", "B38M", "B39M", "B3XM"),
                     "Airbus A320 family": ("A318", "A319", "A320", "A321"), "Airbus A320neo family": ("A19N", "A20N", "A21N")}
@@ -1609,9 +1605,8 @@ class ServerTest(unittest.TestCase):
             self.assertEqual(self.get(base + path), home)
 
     def test_a_private_link(self):
-        """With [server] key set, CloudWall answers only under /k/<key>/, and there as it always
-        does: the page, the wall panel, the API. A request without the key is told nothing, whatever
-        it asks for or tries to change. The key is the same typed without its hyphens or in capitals."""
+        """With [server] key set, only /k/<key>/ answers; without the key a request is told nothing.
+        The key is the same typed without its hyphens or in capitals."""
         import urllib.error
         import urllib.request
         cfg = config.load()
@@ -1742,7 +1737,7 @@ class ServerTest(unittest.TestCase):
             self.assertTrue(watch())
         finally:
             S.code_stamp = real
-        self.assertEqual(S.code_stamp(), S.code_stamp())            # the same code, the same stamp
+        self.assertEqual(S.code_stamp(), S.code_stamp())
 
     def test_each_screen_shows_its_own_place(self):
         cfg = config.load()
@@ -2024,7 +2019,7 @@ class TFRTest(unittest.TestCase):
         self.assertEqual([x["id"] for x in out], ["6/1111"])
         self.assertEqual(out[0]["dist_nm"], 0.0)                     # home is inside it
         t.near(t.fetch(), home, 30, now=1e9)
-        self.assertEqual(len(texts), 1)                                # details fetched once
+        self.assertEqual(len(texts), 1)
         # the one list serves every place: another, by Washington, takes its own share of it
         self.assertEqual([x["id"] for x in t.near(shapes["features"], {"lat": 38.9, "lon": -77.0}, 30, now=1e9)], ["6/2222"])
         self.assertEqual(len(lists), 2)
@@ -2164,8 +2159,7 @@ class PaidLookupTroubleTest(unittest.TestCase):
 
 class PackagingTest(unittest.TestCase):
     def test_every_bundled_file_is_packaged(self):
-        """An installed copy (pip install ., not the editable one) carries every file the display and
-        the tables need: a new folder under web/ or data/ has to be listed in pyproject.toml."""
+        """For `pip install .` (not editable): a new folder under web/ or data/ has to be listed in pyproject.toml."""
         import glob
         import tomllib
         root = Path(__file__).resolve().parent.parent
@@ -2539,8 +2533,7 @@ class MedicalTest(unittest.TestCase):
         self.assertTrue(life["medical"])
 
     def test_the_logbook_gets_the_medical_badge(self):
-        """An air ambulance overhead is logged MEDICAL, and one known to be medical only after its
-        entry was started has the badge added."""
+        """Also when it is known to be medical only after its entry was started."""
         store = Store(":memory:")
         t = Tracker(config.load(), store, Enricher(store, demo=demo.Demo()))
         home = config.DEFAULTS["home"]
@@ -2585,7 +2578,6 @@ class MedicalTest(unittest.TestCase):
         self.assertTrue(bd.HOSPITAL.search("BAPTIST HLTH LEXINGTON") and bd.HOSPITAL.search("UPMC EAST"))
 
     def test_demo_air_ambulance(self):
-        """The demo's air ambulance flies to a hospital's helipad, and the tracker says so."""
         sim = demo.Demo()
         store = Store(":memory:")
         t = Tracker(config.load(), store, Enricher(store, demo=sim))
@@ -2628,7 +2620,7 @@ class FaultToleranceTest(unittest.TestCase):
         with self.assertLogs("cloudwall", "ERROR") as logs:
             t.update([plane("a1", "ASA512", 1.0)], "test")
         s = t.snapshot()
-        self.assertTrue(s["status"]["ok"])                              # the board is up
+        self.assertTrue(s["status"]["ok"])
         self.assertEqual(s["hero"]["hex"], "a1")
         self.assertIn("No space left", s["status"]["storage"])          # and says what it couldn't keep
         self.assertIn("carries on", logs.output[0])

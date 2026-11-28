@@ -1,25 +1,8 @@
-"""The health watcher: CloudWall checking itself while it runs, every WATCH_S seconds.
+"""The health watcher: CloudWall checking itself every WATCH_S seconds (is it working? is it true?).
 
-It looks at the live parts (each place's feed, tracker and logbook, the paid provider, the
-settings file, the disk, the code) and asks two kinds of question:
-
-  is it working?   a feed failing, the logbook not saving, a thread that keeps tripping, the
-                   settings file changed under it (and whether the change would start), the disk
-                   filling up;
-  is it true?      the subtle failures, where the screens look right but aren't: a feed giving
-                   the same answer every time, a receiver that answers but hears nothing, clocks
-                   or a time zone that are off, sample data taken for real, an old weather report,
-                   a house no aircraft ever comes near.
-
-Findings become incidents (health.Monitor): each start and end is said once in the log (a major
-one at ERROR), kept in the incident log (memory/incidents.py), shown on every screen
-(/api/state's "health", in full at /api/health), and, for a major one, sent to [health]
-notify_url if one is set. A safe repair is made at once (`auto` in the catalogue): the tile cache
-trimmed when the disk is filling, a logbook file reopened when writing to it keeps failing.
-
-It also keeps systemd informed: READY when CloudWall starts answering, its status line, and a
-watchdog ping on every check while the place threads are alive, so a CloudWall that hangs is
-restarted by systemd rather than left showing a frozen board.
+Findings become incidents (health.Monitor); major ones go to [health] notify_url; repairs marked
+`auto` in the catalogue are made at once. Also feeds systemd its status line and a watchdog ping
+while the place threads are alive, so a hung CloudWall is restarted.
 """
 import logging
 import os
@@ -49,7 +32,7 @@ SUSPECT_NM = 8
 
 
 def sd_notify(message):
-    """Tell systemd something (READY=1, WATCHDOG=1, STATUS=...), if it is listening."""
+    """Tell systemd something (READY=1, WATCHDOG=1, STATUS=...); False if it isn't listening."""
     addr = os.environ.get("NOTIFY_SOCKET")
     if not addr:
         return False
@@ -90,7 +73,7 @@ class Watch:
         except (AttributeError, OSError):
             return None
 
-    # -- the checks ------------------------------------------------------------------------
+    # -- the checks --
     def checks(self):
         out = []
         for part, fn in (("settings", self.settings), ("storage", self.storage), ("service", self.service),
@@ -162,7 +145,6 @@ class Watch:
             yield health.trouble("clock.timezone", f"this machine's clock is UTC{here:+.0f}, the house is near UTC{expected:+.0f}")
 
     def feeds(self, place):
-        """One place: are positions arriving, and is each feed's answer believable?"""
         now = self.clock()
         watched = not place.activity.idle() or place.when_idle == "log"
         if not watched:
@@ -170,8 +152,7 @@ class Watch:
         else:
             self.watched_since.setdefault(place.id, now)
         st = place.tracker.status
-        # judged only once it has been fetching for a while: positions from before an idle pause are
-        # hours old in the seconds before the first answer after it, and that is no fault
+        # judged only after fetching a while: just after an idle pause the last positions are hours old, no fault
         fetching = now - max(self.watched_since.get(place.id, now), self.started)
         since = max(st.get("updated") or 0, self.watched_since.get(place.id, now), self.started)
         if watched and not self.demo and fetching > NO_POSITIONS_S and now - since > NO_POSITIONS_S:
@@ -213,7 +194,6 @@ class Watch:
         if isinstance(t, (int, float)) and not self.demo and now - t > WEATHER_STALE_S:
             yield health.trouble("weather.stale", f"{place.name}: the latest report is {(now - t) / 3600:.0f} h old")
 
-    # -- repairs made at once ----------------------------------------------------------------
     def repair(self, finding):
         """The safe repairs, made without asking. Returns what was done, in words, or None."""
         if finding.code in ("storage.full", "storage.low", "cache.over") and self.cache_dir:
@@ -229,7 +209,7 @@ class Watch:
                     return f"{place.name}: reopened its logbook file"
         return None
 
-    # -- the loop ---------------------------------------------------------------------------
+    # -- the loop --
     def check_once(self):
         findings = self.checks()
         changes = self.monitor.observe(findings)
@@ -251,9 +231,8 @@ class Watch:
         return changes
 
     def alive(self):
-        """Is the core of CloudWall going: every place's positions thread running, and its loop
-        still turning (one stuck for good inside a request is as gone as one that ended)? (systemd's
-        watchdog restarts CloudWall when this stops being said; a fault in a check is no reason to.)"""
+        """Is every place's positions thread running and its loop still turning? Gates the systemd
+        watchdog ping (a fault in a check is no reason to be restarted)."""
         now = time.monotonic()
         for p in list(self.places):
             if not all(t.is_alive() for t in p.threads[:1]):

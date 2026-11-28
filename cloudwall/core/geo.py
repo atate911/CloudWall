@@ -33,10 +33,8 @@ def elevation_deg(dist_nm, alt_ft, home_elev_ft=0):
 
 
 def cpa(home_lat, home_lon, lat, lon, track, gs):
-    """Closest point of approach if the aircraft holds track and speed.
-
-    Returns (seconds_until, distance_nm). seconds is 0 if already receding.
-    """
+    """Closest point of approach on the current track and speed: (seconds_until, distance_nm);
+    seconds is 0 if already receding."""
     x = (lon - home_lon) * 60 * math.cos(math.radians(home_lat))
     y = (lat - home_lat) * 60
     if not gs or gs < 1 or track is None:
@@ -50,11 +48,7 @@ def cpa(home_lat, home_lon, lat, lon, track, gs):
 
 
 def route_plausible(o_lat, o_lon, d_lat, d_lon, lat, lon):
-    """Is the aircraft roughly between origin and destination?
-
-    Callsign->route databases are sometimes stale; a flight 'from SFO to AUS'
-    seen over Portland is not on that route.
-    """
+    """Is the aircraft roughly between origin and destination? (Callsign->route databases go stale.)"""
     direct = haversine_nm(o_lat, o_lon, d_lat, d_lon)
     via = haversine_nm(o_lat, o_lon, lat, lon) + haversine_nm(lat, lon, d_lat, d_lon)
     return via <= direct * 1.25 + 120

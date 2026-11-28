@@ -1,15 +1,5 @@
-"""What the server answers, held to what API.md says it answers.
-
-API.md lists every key of every answer in tables. These tests read those tables and compare them
-with what the code really sends, both ways: a key the code sends that the tables don't have fails,
-and so does a key in the tables that nothing here could make the code send. So a key can't be
-added, dropped or renamed without the reference being changed with it, and the reference can't
-describe something that is no longer so.
-
-The answers are made as a screen would get them: aircraft through a Tracker whose lookups all
-have something to say, routes through both paid providers' own parsing of a canned answer, and
-the state, weather and logbook over HTTP from a server.
-"""
+"""What the server answers, held to API.md's tables of keys, both ways: a key the code sends that
+the tables don't have fails, and so does a key in the tables that nothing here made the code send."""
 import json
 import re
 import threading
@@ -140,7 +130,7 @@ class ShapeTest(unittest.TestCase):
             self.assertEqual({k for k, must in doc.items() if must} - set(r), set(), f"{name}: API.md says always, but missing")
         self.assertEqual(set(doc) - seen, set(), f"{name}: in API.md, but nothing sent it")
 
-    # -- an aircraft, and its route ------------------------------------------------------------
+    # -- an aircraft, and its route
     @classmethod
     def setUpClass(cls):
         cfg = placing.places(config.load())[0]
@@ -224,7 +214,7 @@ class ShapeTest(unittest.TestCase):
         text = DOC.read_text(encoding="utf-8")
         return re.search(rf"^\| `{key}` \|.*$", text[text.index(f"<!-- shape: {table} -->"):], re.M).group(0)
 
-    # -- over HTTP, as a screen gets them ---------------------------------------------------------
+    # -- over HTTP, as a screen gets them
     def serve(self):
         cfg = config.load()
         cfg["server"]["host"], cfg["server"]["port"] = "127.0.0.1", 0

@@ -1,6 +1,5 @@
 """The chart-style radar's aircraft icons: which kind each aircraft gets (the server's choice, sent
-on each record), and that the icons are sound drawings. The drawings are checked by running the
-browser's module under Node, so those tests are skipped where Node isn't installed."""
+on each record), and that the icons are sound drawings (checked under Node; skipped without it)."""
 import json
 import shutil
 import subprocess

@@ -1,6 +1,5 @@
-// An aircraft squawking 7700, 7600 or 7500 takes over the screen: red background, big code,
-// who it is, where it is. On the desktop it can be hidden for that flight; the kiosk shows it
-// until the code is cleared.
+// An aircraft squawking 7700, 7600 or 7500 takes over the screen. The desktop can hide it for
+// that flight; the kiosk shows it until the code is cleared.
 import { esc, num, mmss, ident } from "./util.js";
 import { boardFlight, localWords } from "./parts.js";
 
