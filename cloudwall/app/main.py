@@ -123,6 +123,9 @@ def main():
     if db != ":memory:":
         Path(db).expanduser().parent.mkdir(parents=True, exist_ok=True)
         db = str(Path(db).expanduser())
+    if args.db and db != ":memory:":           # the control board's storage and backups are of these logbooks
+        cfg["storage"]["db_path"] = db
+        cfg.setdefault("_cli", []).append("storage.db_path")
 
     first_id = place_cfgs[0]["place"]["id"]
 

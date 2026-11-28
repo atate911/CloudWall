@@ -2,7 +2,7 @@
 // Profiles (profiles.js) are in metres: stations s run aft from the nose tip and heights z
 // run up from the keel. Fuselage outlines are given in fuselage heights (D) so that a
 // family's stretches share one nose and tail. The drawing faces right.
-import { profileFor } from "./profiles.js";
+import { profileFor, variesByName } from "./profiles.js";
 
 const tan = (deg) => Math.tan((deg * Math.PI) / 180);
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -492,7 +492,9 @@ let copies = 0;
 // Returns { svg, w, h }: the markup and its drawn size in metres (margins included), so
 // drawings can be laid side by side at one scale.
 export function drawing(type, shape, length, name = "") {
-  const key = `${type}|${shape}|${length}|${name}`;
+  // (the model names are part of the key only where they choose the drawing: every registry's own
+  // spelling of "737-8H4" would otherwise keep a copy of the same picture, for weeks)
+  const key = `${type}|${shape}|${length}|${variesByName(type) ? name : ""}`;
   if (!cache.has(key)) {
     const f = profileFor(type, shape, length, name);
     if (!f) cache.set(key, { svg: "", w: 0, h: 0 });

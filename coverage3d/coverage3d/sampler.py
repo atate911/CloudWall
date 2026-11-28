@@ -18,7 +18,14 @@ class Sampler(threading.Thread):
         self.cfg, self.store, self.feeds = cfg, store, feeds
         self.stop_event = threading.Event()
         self.lock = threading.Lock()
-        self.station = build_station(cfg, self._safe(feeds[0].receiver) if feeds else None)
+        rec = self._safe(feeds[0].receiver) if feeds else None
+        self.station = build_station(cfg, rec)
+        # Told to take the station's position from the receiver, nothing is sampled until the
+        # receiver has said it (it may still be starting): distances from the config's stand-in
+        # position would be kept for good.
+        self.placed = not feeds or cfg.station.get("position_source", "receiver") != "receiver" or self._has_position(rec)
+        if not self.placed:
+            log.warning("receiver.json isn't there yet: sampling waits until the receiver gives the station's position")
         self.filters = [self._new_filter(f) for f in feeds]
         self.last_now = [None] * len(feeds)
         self.up = [None] * len(feeds)                  # None = unknown, True/False = last state
@@ -36,6 +43,10 @@ class Sampler(threading.Thread):
                            self.cfg.sampler, feed.band)
 
     @staticmethod
+    def _has_position(rec):
+        return bool(rec) and "lat" in rec and "lon" in rec
+
+    @staticmethod
     def _safe(fn):
         try:
             return fn()
@@ -45,6 +56,10 @@ class Sampler(threading.Thread):
     # ------------------------------------------------------------------------------------------
     def poll_once(self):
         """One poll of every feed. Public so tests can drive it."""
+        if not self.placed:
+            self.refresh_station()
+            if not self.placed:
+                return
         fresh = False
         for i, feed in enumerate(self.feeds):
             try:
@@ -126,6 +141,12 @@ class Sampler(threading.Thread):
 
     def refresh_station(self):
         rec = self._safe(self.feeds[0].receiver) if self.feeds else None
+        if self.cfg.station.get("position_source", "receiver") == "receiver" and self.feeds:
+            if not self._has_position(rec):
+                return                     # not answering just now: the station stays where it was
+            if not self.placed:
+                log.info("the receiver has given the station's position: sampling starts")
+            self.placed = True
         st = build_station(self.cfg, rec)
         if (st.lat, st.lon, st.antenna_asl_m) != (self.station.lat, self.station.lon, self.station.antenna_asl_m):
             log.warning("station position/height changed: now %.6f, %.6f, antenna %.1f m ASL",

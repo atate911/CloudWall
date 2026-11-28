@@ -3,7 +3,7 @@
 set -u
 K=tafo-kemi-luza-nobe; B=http://localhost:5050/k/$K
 say() { printf '\n===== %s\n' "$*"; }
-say "A. the old setup: make service from main, settings in the checkout"
+say "A. the old setup: make service as it was before the system install, settings in the checkout"
 cd /home/ubuntu/CloudWall
 mkdir -p /home/ubuntu/.config/systemd/user
 sed "s|@DIR@|/home/ubuntu/CloudWall|g; s|ExecStart=.*|ExecStart=/usr/bin/python3 -m cloudwall|" deploy/cloudwall.service > /home/ubuntu/.config/systemd/user/cloudwall.service

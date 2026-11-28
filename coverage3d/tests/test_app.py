@@ -61,6 +61,22 @@ class AppTests(unittest.TestCase):
         s.flush()
         self.assertEqual(store.total_points(), 2)
 
+    def test_nothing_is_sampled_until_the_receiver_says_where_it_is(self):
+        cfg = config.load(None)
+        feed = FakeFeed()
+        there = feed.receiver
+        feed.receiver = lambda: (_ for _ in ()).throw(OSError("not up yet"))
+        s = Sampler(cfg, Store(":memory:"), [feed])
+        s.poll_once()
+        self.assertEqual((len(s.buffer), s.live), (0, []))
+        feed.receiver = there
+        s.poll_once()
+        self.assertEqual(len(s.buffer), 1)
+        self.assertAlmostEqual(s.station.lat, 45.59)
+        feed.receiver = lambda: None                       # and one that stops answering moves nothing
+        s.refresh_station()
+        self.assertAlmostEqual(s.station.lat, 45.59)
+
     def test_demo_api(self):
         cfg = config.load(None)
         store = Store(":memory:")

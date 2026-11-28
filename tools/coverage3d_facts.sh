@@ -15,7 +15,7 @@ BASE="http://127.0.0.1:8080/data"
 RUNDIR="/run/adsb-feeder-ultrafeeder/readsb"
 CT="ultrafeeder"
 have() { command -v "$1" >/dev/null 2>&1; }
-D=""; have docker && D="docker"; [ "$(id -u)" -ne 0 ] && D="sudo docker"
+D=""; if have docker; then D="docker"; [ "$(id -u)" -ne 0 ] && D="sudo docker"; fi
 
 section() { printf '\n===== %s =====\n' "$*"; }
 run() { printf '$ %s\n' "$*"; bash -c "$*" 2>&1; }

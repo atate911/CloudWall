@@ -1,7 +1,7 @@
 // The Board: everything airborne in range as a departure board, grouped by what each aircraft is
 // doing (arriving in landing order, departing, passing over, flying locally) with what happens
 // next for each; a two-line version of it for a phone; and the grouped traffic list beside the radar.
-import { $, esc, num, mmss, ident, altText, phone, since } from "./util.js";
+import { $, esc, num, mmss, ident, altText, phone, since, hasLogo } from "./util.js";
 import { boardFlight, shortType, heardGroups } from "./parts.js";
 import { picture, stripHtml, listHtml, catIcon, kind, where, dir8, until, flightName, overheadSoon, keepFocus, medIcon, hospitalShort } from "./situation.js";
 import { profileHtml, profileFrom } from "./profile.js";
@@ -43,7 +43,7 @@ export function boardHtml(state) {
   const p = picture(state), g = p.groups, heroHex = state.hero && state.hero.hex, here = esc(state.airport.iata);
   const row = (a) => `<tr data-hex="${esc(a.hex)}" class="${a.hex === heroHex ? "sel" : ""}">
       <td class="b-k">${catIcon(a.activity || "pass", a, 22)}</td>
-      <td class="lg">${state.logos && a.airline_iata ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(a.airline || "")}"></span>` : ""}</td>
+      <td class="lg">${state.logos && hasLogo(a.airline_iata) ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(a.airline || "")}"></span>` : ""}</td>
       <td class="fl">${esc(flightName(a))}<small>${esc(a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || a.owner || "")}</small></td>
       <td class="rt">${routeHtml(a, state)}</td>
       <td class="ty">${esc(a.type || "")}<small>${esc(shortType(a.type_name))}</small></td>
@@ -76,7 +76,7 @@ function phoneBoardHtml(state) {
   const row = (a) => {
     const r = plausible(a), soon = overheadSoon(a, state);
     const name = a.airline || (a.reg && a.reg !== ident(a) ? a.reg : "") || shortType(a.type_name) || "";
-    const logo = state.logos && a.airline_iata && name ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(name)}"></span>` : "";
+    const logo = state.logos && hasLogo(a.airline_iata) && name ? `<span class="logo-tile tiny"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(name)}"></span>` : "";
     const when = a.activity === "arr" && a.seq ? `<b data-until="${a.lands_s}">${until(a.lands_s - t)}</b><small> lands</small>`
       : soon ? `<b data-oh="${a.cpa_s}">${mmss(Math.max(0, a.cpa_s - t))}</b><small> over</small>` : `${a.dist.toFixed(1)}<small> nm<span class="pb-cmp"> ${esc(a.compass)}</span></small>`;
     return `<button class="pb-row${a.hex === heroHex ? " hero" : ""}" data-hex="${esc(a.hex)}">

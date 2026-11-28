@@ -83,10 +83,11 @@ def _write(out, manifest, files, say):
             say(f"  {what}: {p}")
 
 
-def backup(config_path=None, to=None, say=print):
-    """Write a backup; returns its path."""
+def backup(config_path=None, to=None, say=print, cfg=None):
+    """Write a backup; returns its path. cfg: the settings in use, where they are more than the
+    file's (a running CloudWall started with --db keeps its logbooks somewhere the file doesn't say)."""
     path = config.find(config_path)
-    cfg = config.load(config_path)
+    cfg = cfg or config.load(config_path)
     data, files = _files(cfg, path)
     to_file = bool(to) and str(to).endswith(".tar.gz")          # a file named, or else a folder to put it in
     folder = Path(to).parent if to_file else Path(to or default_folder(cfg))
@@ -148,12 +149,19 @@ def restore(archive, config_path=None, yes=False, system=None, say=print):
             target.parent.mkdir(parents=True, exist_ok=True)
             for suffix in ("-wal", "-shm"):                 # a logbook's journal belongs to the file replaced
                 Path(str(target) + suffix).unlink(missing_ok=True)
+            # a file replaced stays whose it was, and as readable (the panel's address is its
+            # desktop user's to read, not the service's); a new one is the service's
+            was = target.stat() if target.exists() else None
             tmp = target.with_name(target.name + ".restoring")
             fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o640)
             with os.fdopen(fd, "wb") as f:
                 f.write(data)
+            if was:
+                os.chmod(tmp, was.st_mode & 0o777)
+                if os.geteuid() == 0:
+                    os.chown(tmp, was.st_uid, was.st_gid)
             os.replace(tmp, target)
-            if installed:
+            if installed and not was:
                 system.chown(str(target), "cloudwall", "cloudwall")
             written.append(target)
     if installed:

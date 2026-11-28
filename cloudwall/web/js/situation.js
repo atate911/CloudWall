@@ -6,7 +6,7 @@
 // Two densities share it. Simple shows what someone in the house wants to know right now; Detailed
 // adds what an enthusiast reads the situation from. Both use the same four colours and the same
 // numbered landing order, so switching between them adds detail without anything to relearn.
-import { esc, num, mmss, since, runwayList, offset, ident, azEl, projected, clamp } from "./util.js";
+import { esc, num, mmss, since, runwayList, offset, ident, azEl, projected, clamp, hasLogo } from "./util.js";
 import { iconFor } from "./icons.js";
 import { map } from "./map.js";
 import { boardFlight, shortType, heardGroups } from "./parts.js";
@@ -289,7 +289,7 @@ function overHtml(state, { compact = false } = {}) {
     : `<div><b>${a.dist.toFixed(1)}<small> nm</small></b><span>${a.dist < 0.3 ? "right overhead" : `to the ${dir8(a.brg)}`}</span></div>`;
   const look = skyLook(a, state);
   return `<section class="ss-over${compact ? " compact" : ""}"><div class="so-head"><span class="label">${label}</span>${state.pinned ? '<button class="so-let" data-let>Back to overhead</button>' : ""}</div>
-    <div class="so-id"><div class="flaps so-flight" data-hex="${esc(a.hex)}" data-flight="${esc(flightName(a))}"></div>${state.logos && a.airline_iata ? `<span class="logo-tile"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(a.airline || "")}"></span>` : ""}</div>
+    <div class="so-id"><div class="flaps so-flight" data-hex="${esc(a.hex)}" data-flight="${esc(flightName(a))}"></div>${state.logos && hasLogo(a.airline_iata) ? `<span class="logo-tile"><img class="logo" src="logos/${esc(a.airline_iata)}" alt="${esc(a.airline || "")}"></span>` : ""}</div>
     <p class="so-what">${a.medical ? medIcon(18) : ""}${esc(doing(a, state))}</p>
     <div class="so-row">${compact || !a.known ? "" : `<div class="so-plate sil-box">${plate(typeInfo(a), { share: 0.98, dim: false })}</div>`}
       <div class="so-nums">${first}<div><b>${a.alt == null ? "–" : num(a.alt)}<small> ft</small></b><span>${trend(a)}</span></div>${look ? `<div class="so-look">${look.svg}<span class="sl-w">${esc(look.words)}</span><span class="sl-b">${esc(look.brief)}</span></div>` : ""}</div></div></section>`;

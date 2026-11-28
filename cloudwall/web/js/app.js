@@ -1,5 +1,5 @@
 "use strict";
-import { $, esc, store, phone, api, runwayList, degF, since, dataAge, COUNT_STOP_S } from "./util.js";
+import { $, esc, store, phone, api, runwayList, degF, since, dataAge, COUNT_STOP_S, logoFailed } from "./util.js";
 import { updateSky } from "./sky.js";
 import { drawScope, mapReach, flashCraft } from "./scope.js";
 import { compass, startCompass, stopCompass, facing } from "./compass.js";
@@ -485,7 +485,10 @@ async function poll() {
 // A logo that doesn't exist (404) leaves the colour swatch showing in its place.
 document.addEventListener("error", (e) => {
   const t = e.target;
-  if (t instanceof HTMLImageElement && t.classList.contains("logo") && !t.id) t.closest(".logo-tile").remove();
+  if (t instanceof HTMLImageElement && t.classList.contains("logo") && !t.id) {
+    logoFailed(decodeURIComponent((t.getAttribute("src") || "").split("/").pop().split("?")[0]));
+    t.closest(".logo-tile").remove();
+  }
 }, true);
 // a flight in a list, the landing queue or "worth a look": follow it on this screen
 // a tap on the hushed wall panel wakes it, and does nothing else

@@ -218,10 +218,22 @@ class Store:
         t0, t1 = max(t0, lo), min(t1, hi + 1)
         if t1 <= t0:
             return [], []
-        res = res_key(sector_deg, band_ft, max_alt_ft)
         c = self.db()
-        done = {r[0] for r in c.execute("SELECT day FROM daily_done WHERE res=? AND day BETWEEN ? AND ?",
-                                        (res, t0 // DAY, t1 // DAY))}
+        # The days kept as aggregates are kept at one resolution (the configured one). Asked for a
+        # coarser one it divides evenly (5,000 ft tiers from 2,500 ft ones), its rows are put together.
+        res, fold_s, fold_b, done = res_key(sector_deg, band_ft, max_alt_ft), 1, 1, set()
+        for have, in c.execute("SELECT DISTINCT res FROM daily_done WHERE day BETWEEN ? AND ?", (t0 // DAY, t1 // DAY)).fetchall():
+            try:
+                fs, fb, fmax = (int(x) for x in have.split("/"))
+            except ValueError:
+                continue
+            if fmax != max_alt_ft or sector_deg % fs or band_ft % fb:
+                continue
+            days = {r[0] for r in c.execute("SELECT day FROM daily_done WHERE res=? AND day BETWEEN ? AND ?",
+                                            (have, t0 // DAY, t1 // DAY))}
+            if len(days) > len(done) or (len(days) == len(done) and have == res_key(sector_deg, band_ft, max_alt_ft)):
+                res, fold_s, fold_b, done = have, sector_deg // fs, band_ft // fb, days
+        fold = lambda s, b: (s // fold_s, b if b < 0 else b // fold_b)
         d0 = -(-t0 // DAY)                 # first day that starts inside the range
         d1 = t1 // DAY                     # days d0..d1-1 are entirely inside
         agg_days = [d for d in range(d0, d1) if d in done]
@@ -246,16 +258,16 @@ class Store:
                     f"SELECT day, sector, band, bucket, n, dmax, rmin, tmin, tmax FROM daily_dist "
                     f"WHERE res=? AND day BETWEEN ? AND ? AND src IN ({ph})", base):
                 if row[0] in dayset:
-                    drows.append(row[1:])
+                    drows.append((*fold(row[1], row[2]), *row[3:]))
             for row in c.execute(
                     f"SELECT day, sector, band, bucket, n FROM daily_rssi "
                     f"WHERE res=? AND day BETWEEN ? AND ? AND src IN ({ph})", base):
                 if row[0] in dayset:
-                    rrows.append(row[1:])
+                    rrows.append((*fold(row[1], row[2]), *row[3:]))
         return drows, rrows
 
     def points(self, t0, t1, srcs, limit):
-        """Down-sampled raw points as columns (time-slice sampling keeps the query index-only)."""
+        """Down-sampled raw points as columns, sampled by slices of time."""
         ph = ",".join("?" * len(srcs))
         c = self.db()
         total = c.execute(f"SELECT count(*) FROM points WHERE t>=? AND t<? AND src IN ({ph})",

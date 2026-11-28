@@ -87,6 +87,12 @@ export function api(path, opts) {
   return fetch(q ? `${path}${path.includes("?") ? "&" : "?"}${q}` : path, wait ? { ...opts, ...wait } : opts);
 }
 
+// Airlines whose logo the server couldn't give: left out of what is drawn for a while, since the lists
+// are drawn afresh every couple of seconds and each would ask again (and flash an empty tile).
+const noLogo = new Map(), NO_LOGO_MS = 10 * 60 * 1000;
+export const logoFailed = (code) => { noLogo.set(String(code), Date.now()); };
+export const hasLogo = (code) => !!code && !(Date.now() - (noLogo.get(String(code)) || -Infinity) < NO_LOGO_MS);
+
 // "AERO MAINTENANCE INC" -> "Aero Maintenance Inc"; leaves mixed-case names alone.
 const KEEP_UPPER = new Set(["LLC", "LLP", "LP", "USA", "US", "FAA", "II", "III", "IV", "PDX", "CO.", "DBA"]);
 export function tidyName(name) {

@@ -1,7 +1,7 @@
 # Rehearsing a server's move, on real systemd
 
 `bash tools/rehearse/run.sh` builds a container like the server (Ubuntu 24.04, systemd as PID 1), sets
-it up the old way (`make service` from `origin/main`: a per-user service from a checkout, the settings
+it up the old way (`make service` as it was before the system install, from commit `3620533`: a per-user service from a checkout, the settings
 in the checkout, a flyover in the logbook), pulls this working tree into the checkout and then, as the
 owner would:
 

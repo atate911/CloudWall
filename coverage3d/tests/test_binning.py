@@ -112,8 +112,15 @@ class StoreTests(unittest.TestCase):
     def test_daily_aggregates_equal_raw_and_survive_pruning(self):
         now = self.base + 6 * DAY
         before = binning.build_bins(*self.s.coverage_hist(self.base, self.base + 4 * DAY, [0], 5, 2500, 45000))
+        coarse = binning.build_bins(*self.s.coverage_hist(self.base, self.base + 4 * DAY, [0], 10, 5000, 45000))
         self.assertEqual(self.s.aggregate_days(5, 2500, 45000, now=now), 4)
         self.assertEqual(self.s.aggregate_days(5, 2500, 45000, now=now), 0)      # idempotent
+        # wider sectors and taller tiers are put together from the aggregates kept
+        folded = binning.build_bins(*self.s.coverage_hist(self.base, self.base + 4 * DAY, [0], 10, 5000, 45000))
+        self.assertEqual(set(coarse), set(folded))
+        for k in coarse:
+            self.assertEqual(coarse[k]["count"], folded[k]["count"])
+            self.assertAlmostEqual(coarse[k]["max_nm"], folded[k]["max_nm"], places=6)
         after = binning.build_bins(*self.s.coverage_hist(self.base, self.base + 4 * DAY, [0], 5, 2500, 45000))
         for k in before:
             self.assertEqual(before[k]["count"], after[k]["count"])
@@ -122,6 +129,8 @@ class StoreTests(unittest.TestCase):
         deleted = self.s.prune(1, now=now)
         self.assertGreater(deleted, 0)
         self.assertEqual(self.s.total_points(), 0)
+        still = binning.build_bins(*self.s.coverage_hist(self.base, self.base + 4 * DAY, [0], 10, 5000, 45000))
+        self.assertEqual({k: v["count"] for k, v in still.items()}, {k: v["count"] for k, v in coarse.items()})
         kept = binning.build_bins(*self.s.coverage_hist(self.base, self.base + 4 * DAY, [0], 5, 2500, 45000))
         self.assertEqual({k: v["count"] for k, v in kept.items()}, {k: v["count"] for k, v in before.items()})
 

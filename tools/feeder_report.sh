@@ -55,7 +55,7 @@ def mask(text):
     # coordinates: any number with 4+ decimals that could be a latitude or longitude
     def coord(m):
         v = float(m.group(0))
-        return f"{v:.2f}~" if 1 <= abs(v) <= 180 else m.group(0)
+        return f"{v:.2f}~" if abs(v) <= 180 else m.group(0)
     return re.sub(r"-?\b\d{1,3}\.\d{4,}\b", coord, text)
 
 def setting(name, value):

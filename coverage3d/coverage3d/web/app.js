@@ -9,7 +9,7 @@ const today = new Date();
 const DEFAULTS = {
   basemap: "liberty", opacity: 0.6, exag: 5, style: "cake", smooth: true, units: "nm", range: "7d", cFrom: "", cTo: "", compare: false,
   aFrom: iso(new Date(today - 14 * 864e5)), aTo: iso(new Date(today - 7 * 864e5)), bFrom: iso(new Date(today - 7 * 864e5)), bTo: iso(today),
-  stat: "p95", srcAdsb: true, srcMlat: false, srcUat: false, sector: 0, bandFt: 5000,
+  stat: "p95", srcAdsb: true, srcMlat: false, srcUat: false, sector: 0, bandFt: 0,
   terrain: true, rings: true, minorRings: true, bearings: true, shadeBands: false, airports: true, peaks: true,
   fill: true, walls: false, outlines: true, footprint: false, horizon: false, readsbOutline: false,
   points: false, colorBy: "alt", live: true, liveLabels: true, bandLo: 0, bandHi: 99, hidden: [], polarBand: "all", panel: true, tab: "layers",
@@ -151,6 +151,9 @@ function renderLegend() {
 function renderBands() {
   const cov = st.cov, nb = cov.n_bands, s = S.settings;
   for (const id of ["bandLo", "bandHi"]) $(id).max = nb - 1;
+  // the tiers shown are counted in tiers: with tiers of another height, all of them again
+  if (s.bandsOf && s.bandsOf !== cov.band_ft) { s.bandLo = 0; s.bandHi = nb - 1; s.hidden = []; }
+  s.bandsOf = cov.band_ft;
   s.bandLo = clamp(s.bandLo, 0, nb - 1); s.bandHi = clamp(s.bandHi, 0, nb - 1);
   $("bandLo").value = s.bandLo; $("bandHi").value = s.bandHi;
   const bf = cov.band_ft;

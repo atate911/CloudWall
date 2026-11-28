@@ -19,6 +19,7 @@ from ..core.http import fetch
 
 log = logging.getLogger("cloudwall.tiles")
 MAX_AGE = 30 * 86400
+RETRY_S = 300
 OSM = "© OpenStreetMap contributors"
 ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/{service}/MapServer/tile/{{z}}/{{y}}/{{x}}"
 STYLES = {
@@ -136,6 +137,7 @@ class Tiles:
         self.reach_nm = max(45, cfg["tracking"]["radius_nm"] * 3)
         self.dir = Path(cache_dir) / hashlib.sha1(self.url.encode()).hexdigest()[:10]
         self.lock = threading.Lock()
+        self.failed = {}          # (z, x, y) -> when its download last failed
 
     def look(self):
         """Which dimming the browser applies: maps differ in how dark they start out."""
@@ -183,7 +185,9 @@ class Tiles:
         if missing.exists() and time.time() - missing.stat().st_mtime < MAX_AGE:
             return None
         fresh = path.exists() and time.time() - path.stat().st_mtime < MAX_AGE
-        if not fresh:
+        # (one that failed isn't asked for again for a few minutes: with the map service out of
+        # reach, every screen's every tile would otherwise wait out a timeout each time)
+        if not fresh and time.time() - self.failed.get((z, x, y), 0) >= RETRY_S:
             try:
                 data, ctype = self._download(z, x, y)
                 with self.lock:
@@ -191,7 +195,11 @@ class Tiles:
                     tmp = path.with_suffix(".tmp")
                     tmp.write_bytes(ctype.encode()[:40].ljust(40) + data)
                     tmp.replace(path)
+                self.failed.pop((z, x, y), None)
             except Exception as e:
+                if len(self.failed) > 5000:
+                    self.failed.clear()
+                self.failed[(z, x, y)] = time.time()
                 if isinstance(e, urllib.error.HTTPError) and e.code == 404 and not path.exists():
                     with self.lock:
                         missing.parent.mkdir(parents=True, exist_ok=True)
@@ -201,5 +209,7 @@ class Tiles:
                     log.warning("tile %s/%s/%s unavailable: %s", z, x, y, e)
                     return None
                 log.info("tile %s/%s/%s refresh failed, serving cached copy: %s", z, x, y, e)
+        if not path.exists():
+            return None
         raw = path.read_bytes()
         return raw[40:], raw[:40].decode().strip() or "image/png"

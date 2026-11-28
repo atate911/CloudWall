@@ -146,7 +146,7 @@ class Admin:
         if get and name == "backups":
             return self.list_backups()
         if method == "POST" and name == "backups":
-            out = backups.backup(self.cfg.get("_path"), say=lambda *a: None)
+            out = backups.backup(self.cfg.get("_path"), say=lambda *a: None, cfg=self.cfg)
             return {"ok": True, "said": f"backup written: {out.name}", "name": out.name}
         if get and name.startswith("backups/"):
             return self.download_backup(name.split("/", 1)[1])
