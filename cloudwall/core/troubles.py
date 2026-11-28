@@ -145,7 +145,7 @@ CATALOGUE = {
         "CloudWall carries on with the public feeds, a few seconds behind and without what only your receiver hears.",
         ["the receiver is off or its decoder has stopped", "the tunnel from the receiver is down",
          "the receiver's address changed"],
-        ["On the receiver: `sudo bash tools/adsb_check.sh`.",
+        ["On the receiver: its own page (adsb.im's, at its address) says whether its decoder is running.",
          "The tunnel: `systemctl status adsb-tunnel` on the receiver, `bash deploy/feed-tunnel/vps-tunnel.sh status` here.",
          "Then `cloudwall doctor` here."]),
     "feeds.public-down": _t(
@@ -157,7 +157,7 @@ CATALOGUE = {
         "a feed answers with old data",
         "Its web server is up but its decoder has stopped, so its aircraft are frozen or missing.",
         ["the receiver's decoder (readsb) stopped or lost its SDR"],
-        ["On the receiver: `sudo bash tools/adsb_check.sh`; it names a stopped container.",
+        ["On the receiver: its own page (adsb.im's) names a stopped container.",
          "Restarting the receiver usually brings it back."]),
 
     # -- routes --------------------------------------------------------------------------------
@@ -198,25 +198,6 @@ CATALOGUE = {
         "After a reboot or a power cut the board stays dark until someone starts it.",
         ["it was disabled by hand"],
         ["`sudo systemctl enable cloudwall`."], repair="enable-service"),
-    "service.duplicate": _t(
-        "two CloudWalls are set up on this machine",
-        "They fight over the port: one fails, and which one runs can change at each boot.",
-        ["the old per-user service (`make service`) was left on after the system install"],
-        ["`sudo python3 -m cloudwall upgrade` (from the checkout) moves the old one's logbooks in and turns it off."], major=True,
-        asks=[Ask("migrate", "Move the old per-user CloudWall's logbooks into the system install and turn it off?", "yes")]),
-    "service.legacy": _t(
-        "CloudWall runs as the old per-user service",
-        "It works, but lives in a home folder: a rebuild or a new machine means setting it up by hand again.",
-        ["it was set up with `make service`, before `cloudwall install` existed"],
-        ["From the checkout: `sudo python3 -m cloudwall upgrade --dry-run` to see what it would do, then "
-         "`sudo python3 -m cloudwall upgrade` (MIGRATION.md walks through it)."],
-        asks=[Ask("migrate", "Move it to the system install now? (logbooks and settings come too)", "yes")]),
-    "service.no-linger": _t(
-        "the per-user service won't start after a reboot",
-        "It runs only while its user is logged in: after a reboot or power cut the board stays dark.",
-        ["`loginctl enable-linger` failed when it was set up (the old Makefile ignored that)"],
-        ["`sudo loginctl enable-linger <user>` (or move to the system install: `sudo python3 -m cloudwall upgrade`)."],
-        repair="enable-linger"),
     "service.restart-needed": _t(
         "CloudWall's code was updated but the old version is still running",
         "Screens load the new pages from the old server, so anything new doesn't work yet.",
@@ -230,7 +211,7 @@ CATALOGUE = {
     "server.port-taken": _t(
         "another program has CloudWall's port",
         "CloudWall can't answer the screens.",
-        ["a second CloudWall (an old per-user one), or another program on the same port"],
+        ["another program on the same port"],
         ["See which: `sudo ss -ltnp | grep :5050`.", "Stop it, or move CloudWall to another [server] port."],
         major=True,
         asks=[Ask("port", "A port for CloudWall instead (screens and bookmarks will need it too)", "port", "5051")]),
@@ -291,25 +272,20 @@ CATALOGUE = {
         "It works, but is set up and updated apart from CloudWall.",
         ["it was installed from its own branch before it was folded in"],
         ["Leave it for now: it is folded into CloudWall in a later stage (ROADMAP.md)."]),
-    "sharing.root-page": _t(
-        "the sharing page is running as root on the network",
-        "Anyone on the home network can change the receiver's data sharing through it.",
-        ["it was started by hand and left running"],
-        ["Stop it (Ctrl-C where it was started, or `sudo pkill -f sharing_guide.py`) when you're done with it."]),
 
     # -- subtle: the screens look right, but aren't -------------------------------------------------
     "feeds.frozen": _t(
         "a feed keeps giving the same answer",
         "Its aircraft look fine but have stopped moving or updating: what the screens show is old.",
         ["the receiver's decoder hung while its web server goes on", "a proxy or cache in between serving a stored copy"],
-        ["On the receiver: `sudo bash tools/adsb_check.sh`.", "Restart the receiver's decoder (or the receiver)."],
+        ["Restart the receiver's decoder (or the receiver)."],
         subtle=True),
     "receiver.deaf": _t(
         "your receiver answers but hears almost nothing",
         "It is up and answering, so nothing looks wrong, but the aircraft on the screens come from the public feeds alone.",
         ["the antenna or its cable is disconnected or damaged", "the SDR failed or its gain is set far too low",
          "the receiver is set to a frequency other than 1090 MHz"],
-        ["On the receiver: `sudo bash tools/adsb_check.sh` (it shows the message rate and signal).",
+        ["The control board's Receiver page shows its message rate and signal.",
          "Check the antenna's cable at both ends.", "Unplug the SDR and plug it back in, then restart the receiver."],
         subtle=True),
     "receiver.lagging": _t(

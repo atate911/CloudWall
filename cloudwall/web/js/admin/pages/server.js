@@ -40,7 +40,7 @@ export default {
         <li><b>Version</b><span>CloudWall ${esc(o.version)}</span></li>
         <li><b>How it runs</b><span>${o.under_systemd ? "As a service: it starts again by itself after a crash or a reboot" : "Started by hand: it won't come back by itself after a reboot"}</span></li>
         <li><b>Root helper</b><span>${o.helper ? "Installed: repairs that need root can be made from this board" : "Not installed: repairs that need root are done at the machine (sudo cloudwall install sets it up)"}</span></li>
-        <li><b>Set up here</b><span>${o.installs.map((i) => `${i.kind === "system" ? "the system service" : `${esc(i.user)}'s own service`}${i.active === false ? " (not running)" : ""}`).join("; ") || "not as a service"}</span></li>
+        <li><b>Set up here</b><span>${o.installs.length ? `the system service${o.installs[0].active === false ? " (not running)" : ""}` : "not as a service"}</span></li>
         ${o.demo ? `<li><b>Traffic</b><span>Simulated, for a demonstration</span></li>` : ""}
       </ul>
       <div class="srv-act"></div>

@@ -101,17 +101,6 @@ def answer(code, name, value, ctx, system=None, machine=None, finding=None):
         key = keys.new_key()
         config.write_setting(path, "server", "key", key)
         return f"a new private link: .../k/{key}/  (open it on each screen; restart CloudWall to use it)"
-    if code in ("service.legacy", "service.duplicate"):
-        if not _yes(value):
-            return None
-        from . import legacy
-        from .survey import installs
-        old = next((i for i in installs(machine) if i["kind"] == "user"), None) if machine else None
-        if not old or system is None:
-            raise Answered("Run: sudo python3 -m cloudwall install, then sudo cloudwall migrate-legacy")
-        home = Path(old["data"]).parents[2]
-        legacy.migrate(system, home, old["user"], old.get("checkout") or home)
-        return "moved onto the system install"
     if code == "backup.none":
         if not _yes(value):
             return None

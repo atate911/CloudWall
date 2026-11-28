@@ -190,11 +190,6 @@ find_config() {
   [ -n "$CONFIG" ] && { echo "$CONFIG"; return; }
   [ -n "${CLOUDWALL_CONFIG:-}" ] && { echo "$CLOUDWALL_CONFIG"; return; }
   [ -e "$SYSTEM_UNIT" ] && [ -e /etc/cloudwall/config.toml ] && { echo /etc/cloudwall/config.toml; return; }
-  local unit="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user/cloudwall.service" wd
-  if [ -e "$unit" ]; then
-    wd=$(sed -n 's/^WorkingDirectory=//p' "$unit" | head -1)
-    [ -n "$wd" ] && [ -e "$wd/config.toml" ] && { echo "$wd/config.toml"; return; }
-  fi
   [ -e ./config.toml ] && { echo "$PWD/config.toml"; return; }     # (as CloudWall itself looks, run from here)
   local u="${XDG_CONFIG_HOME:-$HOME/.config}/cloudwall/config.toml"
   [ -e "$u" ] && { echo "$u"; return; }
@@ -256,12 +251,8 @@ PY
     systemctl restart cloudwall && ok "restarted CloudWall (systemctl restart cloudwall)"
     sleep 8
     journalctl -u cloudwall -n 30 --no-pager 2>/dev/null | grep -iE "feed|source|127\.0\.0\.1" | tail -5 | sed 's/^/    /' || true
-  elif systemctl --user is-active --quiet cloudwall 2>/dev/null; then
-    systemctl --user restart cloudwall && ok "restarted CloudWall (systemctl --user restart cloudwall)"
-    sleep 8
-    journalctl --user -u cloudwall -n 30 --no-pager 2>/dev/null | grep -iE "feed|source|127\.0\.0\.1" | tail -5 | sed 's/^/    /' || true
   else
-    warn "CloudWall isn't running as a user service here; restart it yourself to pick up the change"
+    warn "CloudWall isn't installed as a service here; restart it yourself to pick up the change"
   fi
 }
 

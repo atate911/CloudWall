@@ -37,17 +37,12 @@ def links(key, host, port):
 def restart_service():
     """Restart CloudWall's service, if it runs as one, so a new key takes effect. True when
     restarted, False when it isn't running as a service (or this user may not restart it), None
-    when systemd isn't there to ask. The system install's service (`cloudwall install`) first; the
-    older per-user one (`make service`) after."""
+    when systemd isn't there to ask."""
     quiet = {"stdout": subprocess.DEVNULL, "stderr": subprocess.DEVNULL}
     try:
-        if os.path.exists("/etc/systemd/system/cloudwall.service"):
-            if os.geteuid() != 0:
-                return False
-            return subprocess.run(["systemctl", "restart", "cloudwall"], timeout=30, **quiet).returncode == 0
-        if subprocess.run(["systemctl", "--user", "is-active", "--quiet", "cloudwall"], timeout=10, **quiet).returncode != 0:
+        if not os.path.exists("/etc/systemd/system/cloudwall.service") or os.geteuid() != 0:
             return False
-        return subprocess.run(["systemctl", "--user", "restart", "cloudwall"], timeout=30).returncode == 0
+        return subprocess.run(["systemctl", "restart", "cloudwall"], timeout=30, **quiet).returncode == 0
     except (OSError, subprocess.SubprocessError):
         return None
 

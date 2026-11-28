@@ -73,13 +73,6 @@ def enable_service(system, machine):
     return "cloudwall.service now starts at boot"
 
 
-def enable_linger(system, machine):
-    users = [i["user"] for i in installs(machine) if i["kind"] == "user" and i["enabled"] and not i["linger"]]
-    for user in users:
-        system.run(["loginctl", "enable-linger", user])
-    return f"{', '.join(users)}'s services now start at boot" if users else None
-
-
 def tunnel_keepalive(system, machine):
     if system.write(TUNNEL_KEEPALIVE, TUNNEL_KEEPALIVE_TEXT, mode=0o644):
         got = system.ask(["sshd", "-t"])
@@ -102,7 +95,6 @@ REPAIRS = {
     "trim-cache": ("trim the map tile cache", False, trim_cache),
     "restart-service": ("restart the CloudWall service", True, restart_service),
     "enable-service": ("start the CloudWall service at boot", True, enable_service),
-    "enable-linger": ("let the per-user service start at boot (loginctl enable-linger)", True, enable_linger),
     "tunnel-keepalive": ("add a keepalive for the receiver's tunnel to this server's SSH", True, tunnel_keepalive),
     "reopen-store": ("reopen a logbook file that can't be written", False, reopen_store),
 }

@@ -5,13 +5,12 @@ import json
 import os
 import re
 import sys
-from pathlib import Path
 
 from ..core import config, health
-from . import backup as backups, doctor as doc, install as inst, legacy
+from . import backup as backups, doctor as doc, install as inst
 from .system import System
 
-COMMANDS = ("upgrade", "rollback", "install", "uninstall", "doctor", "backup", "restore", "migrate-legacy", "report",
+COMMANDS = ("upgrade", "rollback", "install", "uninstall", "doctor", "backup", "restore", "report",
             "owner", "helper")
 
 
@@ -60,10 +59,6 @@ def parser():
     p = sub.add_parser("restore", help="put a backup's files back")
     p.add_argument("archive")
     p.add_argument("--yes", action="store_true", help="really replace the files (without it, only says what)")
-
-    p = sub.add_parser("migrate-legacy", help="move a `make service` setup onto the system install (sudo)")
-    p.add_argument("--force", action="store_true", help="replace settings and logbooks already installed")
-    p.add_argument("--dry-run", action="store_true")
 
     sub.add_parser("report", help="a report to paste when asking for help (keys and positions masked)")
 
@@ -140,10 +135,6 @@ def main(argv=None):
         backups.backup(args.config, args.to)
     elif cmd == "restore":
         backups.restore(args.archive, args.config, args.yes, System())
-    elif cmd == "migrate-legacy":
-        user = legacy.legacy_user()
-        home = Path(os.path.expanduser(f"~{user}"))
-        legacy.migrate(System("/", args.dry_run), home, user, Path.cwd(), args.force)
     elif cmd == "owner":
         import getpass
         from ..core import keys as auth

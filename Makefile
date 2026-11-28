@@ -4,10 +4,7 @@
 VENV := .venv
 BIN  := $(VENV)/bin
 
-.PHONY: help install run demo test config private-link system update doctor backup logs restart migrate service clean
-
-# whichever way CloudWall runs here: the system install, or an older per-user service (`make service`)
-SYSTEM := $(wildcard /etc/systemd/system/cloudwall.service)
+.PHONY: help install run demo test config private-link system update doctor backup logs restart clean
 
 help:
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed -E 's/:.*## /\t/' | expand -t 18
@@ -46,25 +43,10 @@ backup: ## Back up the settings and logbooks
 	sudo cloudwall backup
 
 logs: ## Follow the service's log
-ifneq ($(SYSTEM),)
 	journalctl -u cloudwall -f
-else
-	journalctl --user -u cloudwall -f
-endif
 
-restart: ## Restart the service (after `git pull`, on an older per-user setup)
-ifneq ($(SYSTEM),)
+restart: ## Restart the service
 	sudo systemctl restart cloudwall
-else
-	systemctl --user restart cloudwall
-endif
-
-service: ## (old) Now `make system`: says so, and how to move an existing per-user service
-	@echo "CloudWall now installs as a system service: make system   (sudo cloudwall install)"
-	@echo "Already running it with the old 'make service'? make migrate   moves it, logbooks and all."
-
-migrate: ## Move an old `make service` setup onto the system install (MIGRATION.md)
-	sudo python3 -m cloudwall upgrade
 
 clean: ## Remove the virtualenv and build leftovers
 	rm -rf $(VENV) build dist *.egg-info

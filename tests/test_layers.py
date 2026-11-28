@@ -15,8 +15,8 @@ PACKAGE = Path(__file__).resolve().parent.parent / "cloudwall"
 RANK = {"core": 0, "reference": 1, "sense": 2, "gather": 2, "memory": 2, "picture": 3,
         "serve": 4, "operate": 4, "share": 4, "app": 5}
 
-# modules outside a layer's folder: the package's own, and the radio until it is joined to the app
-FLAT = {"__init__": "core", "__main__": "app", "radio": "picture"}
+# modules outside a layer's folder: the package's own
+FLAT = {"__init__": "core", "__main__": "app"}
 
 
 def module_name(path):

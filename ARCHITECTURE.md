@@ -47,7 +47,7 @@ code to this; [ROADMAP.md](ROADMAP.md) says where it is going).
  app/        start-up (main), each watched place and its threads (place), the health watcher (watch)
  serve/      the HTTP server (server) and who it answers (access)    operate/  install, doctor, survey,
                                                                                repair, guide, backup,
-                                                                               legacy, the private link
+                                                                               the private link
  picture/    positions into the board (tracker), what each aircraft is (details), what it is
              doing (situation), medical flights (medical)
  gather/     feeds, demo, enrich, live/flightradar24/flightaware,   memory/   the logbook's table
@@ -60,14 +60,12 @@ code to this; [ROADMAP.md](ROADMAP.md) says where it is going).
              health (findings and incidents) and troubles (every known problem, written once)
 ```
 
-The airband radio (`radio/`) is a package of its own, not yet joined to the app.
-
 | Module | What it owns |
 |---|---|
 | `core/health.py`, `core/troubles.py`, `app/watch.py`, `memory/incidents.py` | CloudWall checking itself. `troubles` is the catalogue of every problem it knows: what it means, its usual causes, the steps to fix it, whether it is major (stops the main job: said loudly) or subtle (the screens look right but aren't), its repair and what the owner is asked to fix it. `health` turns checks into Findings and, through the Monitor, findings into incidents that start and end once each. `watch` runs in the server every 30 s: is each part working, and is what it shows true (a frozen feed, a deaf receiver, clocks and time zone, sample data, an old weather report, a house nothing comes near); it makes the safe repairs, keeps systemd's status and watchdog, and sends major problems to `[health] notify_url`. `incidents` keeps the history in `health.db`. |
 | `operate/install.py`, `operate/system.py` | `cloudwall install --role wall|panel` and `uninstall`: the machine set up the same way every time, each change made only when it isn't so already, through a System that works on the real machine or a folder standing in for one (tests, `--root`, `--dry-run`). Releases side by side under `/opt/cloudwall`, a hardened `Type=notify` unit with a watchdog, a preflight that won't restart into settings that wouldn't start, Caddy through an imported site file. |
 | `operate/doctor.py`, `operate/survey.py`, `operate/repair.py`, `operate/guide.py` | `cloudwall doctor`: CloudWall's parts checked from outside, the running server's own findings, and a survey of the machine however it was set up (system or per-user services, linger, two CloudWalls at once, keys readable by all, the tunnel's two ends, Caddy, Coverage3D, the sharing page, backups). `--fix` makes the repairs (`repair`) or, at a terminal, goes through each problem with the owner (`guide`): repairs offered, what only the owner knows asked for and checked (`guide.answer`, which the control board will use too), steps walked through and checked again. |
-| `operate/backup.py`, `operate/legacy.py`, `operate/cli.py` | Backups (settings and logbooks, SQLite's own backup) and restores; moving a `make service` setup onto the system install; and the `cloudwall <command>` line. |
+| `operate/backup.py`, `operate/cli.py` | Backups (settings and logbooks, SQLite's own backup) and restores; and the `cloudwall <command>` line. |
 | `app/main.py` | Start-up: reads the config (falling back on the copy that last started, `config.toml.good`, if it can't be used), builds the stores, the charts and logos, the paid provider, the `Shared` services, a `Place` for each place, and the HTTP server. |
 | `serve/server.py` | `ThreadingHTTPServer`: the JSON API, the tile and logo proxies, and the static page. All it asks of a place is `state()`, `weather_report()`, `heatmap()` and `logbook()`; it adds what is the same for every place (the map, the chart layers, logos). |
 | `app/place.py` | `Place`: one watched place. Its three threads (positions, weather, extras), restarted if one trips on an error nobody foresaw; what they fetch (weather, restrictions, military heard, contrail forecast); and the four things a screen asks for. `Places`: the set of them, including those added from a screen (`places.json`). `AnyActivity`: "is any screen open at all". |

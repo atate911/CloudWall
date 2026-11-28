@@ -149,13 +149,13 @@ Expect something like `[OK] 27 aircraft, 26 with positions, data 0s old`.
 
 **Step 5, on the VPS: point CloudWall at it**
 
-With CloudWall installed as a system service (`sudo cloudwall install`), run it with sudo; with the
-older per-user service (`make service`), as the user that runs CloudWall, without sudo:
+With CloudWall installed (`sudo cloudwall install`), run it with sudo (or set the feeds on the
+control board's Feeds page instead):
 ```bash
 sudo bash deploy/feed-tunnel/vps-tunnel.sh cloudwall
 ```
 It finds CloudWall's `config.toml` (`$CLOUDWALL_CONFIG`, then `/etc/cloudwall/config.toml` for the
-system install, then the per-user service's working directory, then `~/.config/cloudwall/config.toml`;
+system install, then `./config.toml`, then `~/.config/cloudwall/config.toml`;
 or pass `--config PATH`), backs it up, puts the tunnel first in `[source] urls` keeping the existing
 feeds after it, turns on `merge = true`, checks the result parses, and restarts CloudWall.
 `cloudwall doctor` then checks the receiver answers through the tunnel, and while CloudWall runs it
@@ -263,7 +263,6 @@ These all happened during the first setup; the scripts now catch each one.
 | **A step-3 line run on the VPS** (copied from the VPS's own output) | `pi-tunnel.sh: No such file or directory`, or keygen/install stops: not a receiver | Run it on the Pi. Every script's "NEXT:" line names the machine. |
 | **Provider firewall blocks SSH** (set in the provider's web panel, separate from the server, e.g. IONOS Cloud Panel → Network → Firewall Policies) | install: "no SSH answer from …" | Allow TCP 22 (or your SSH port) from your home IP in the panel |
 | **Bad line in the Pi's `/etc/ssh/ssh_config`** (some adsb.im images ship `IPQoS 0x00`) | `Bad IPQoS value: 0x00` … `terminating, 1 bad configuration options` (older `pi-tunnel.sh` only) | Download `pi-tunnel.sh` again: the tunnel now ignores that file. `tools/adsb_check.sh` warns about the line, since it still breaks other ssh commands run from the Pi; to fix it: `sudo sed -i.bak 's/^\(\s*IPQoS\s.*\)/# \1/' /etc/ssh/ssh_config` |
-| **`deploy/feed-tunnel/vps-tunnel.sh cloudwall` run with sudo** | "run this as the user that runs CloudWall" | Run it without sudo, as that user |
 
 ## 10. Troubleshooting
 
