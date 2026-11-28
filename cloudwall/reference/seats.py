@@ -22,7 +22,7 @@ def _table():
 def seats(operator, type_code):
     """{'n', 'lo', 'hi', 'basis'} or None. basis is 'airline' (this airline's layout),
     'type' (typical for the type), or 'cargo' (n is 0)."""
-    if airlines.cargo(operator):      # freight only: no passenger seats to count
+    if airlines.cargo(operator):
         return {"n": 0, "lo": 0, "hi": 0, "basis": "cargo"}
     if not type_code:
         return None

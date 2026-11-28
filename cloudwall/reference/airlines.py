@@ -1,9 +1,5 @@
-"""What CloudWall knows of each airline, from one table (data/airlines.csv): the code its
-flights are sold under, its name, whether it flies freight only, and its livery's colours.
-
-Airlines are known by the three-letter ICAO code their callsigns start with (ASA512 is Alaska).
-Everything that needs a fact about an airline asks here, so the table is the one place to add
-one. The airline's logo is fetched by logos.py, under the code this gives it.
+"""Airlines by the three-letter ICAO code their callsigns start with, from data/airlines.csv
+(IATA code, name, cargo-only, livery colours): the one place to add a fact about an airline.
 """
 import csv
 import re
@@ -19,9 +15,8 @@ CALLSIGN = re.compile(r"^([A-Z]{3})\d")                    # an airline's: its c
 SCHEDULED = re.compile(r"^[A-Z]{3}\d[0-9A-Z]{0,4}$")       # and nothing but: one a route can be looked up for
 NUMBER = re.compile(r"^([A-Z]{3})0*(\d{1,4}[A-Z]?)$")
 IATA = re.compile(r"^[A-Z0-9]{2}$")
-SAME_AS = {"QX": "AS"}      # brands that fly under another airline's name and have no logo of their own
-# airlines that only ever fly as another, by ICAO code: their flights are sold, numbered and
-# painted as that airline's (a regional partner flying for several, like SkyWest, isn't one)
+SAME_AS = {"QX": "AS"}      # IATA: brands with no logo of their own
+# ICAO: airlines that only ever fly as another (not a partner flying for several, like SkyWest)
 FLIES_AS = {"QXE": "ASA"}
 
 
@@ -35,8 +30,7 @@ def _table():
 
 
 def code(callsign):
-    """'ASA512' -> 'ASA': the airline's ICAO code, if the callsign is an airline's; else None
-    (a tail number, a military callsign)."""
+    """'ASA512' -> 'ASA'; None if the callsign isn't an airline's."""
     m = CALLSIGN.match(callsign or "")
     return m.group(1) if m else None
 
@@ -47,7 +41,7 @@ def scheduled(callsign):
 
 
 def name(icao):
-    """'ASA' -> 'Alaska Airlines', or None for an airline the table has no name for."""
+    """'ASA' -> 'Alaska Airlines', or None."""
     return (_table().get(icao) or {}).get("name") or None
 
 
@@ -57,12 +51,12 @@ def flies_as(icao):
 
 
 def cargo(icao):
-    """Does this airline fly freight only?"""
+    """Freight only?"""
     return bool((_table().get(icao) or {}).get("cargo"))
 
 
 def colors(callsign):
-    """[main, accent] of the airline's livery, for a callsign of one the table has colours for; else None."""
+    """[main, accent] of the airline's livery, or None."""
     a = _table().get(code(callsign))
     return [a["color"], a["accent"]] if a and a["color"] else None
 

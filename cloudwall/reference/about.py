@@ -1,11 +1,6 @@
-"""What's worth knowing about an aircraft type: a short write-up, a few facts chosen for that type,
-and the years it was delivered, for the panel a tap on a type opens.
-
-Written by hand, one TOML file per family in data/types/ (a 737 MAX file covers the -7, -8, -9
-and -10), with a variant's own name, lines and facts where they differ, or a whole write-up of its
-own where each model is seen often enough to be told apart. data/types/README.md
-sets out the format and how the entries are written; tests/test_cloudwall.py holds every file to
-it. A file that can't be read is left out with a warning, rather than stopping CloudWall.
+"""Aircraft type write-ups (text, facts, production years): hand-written, one TOML file per
+family in data/types/, with per-variant overrides. data/types/README.md sets out the format and
+tests hold every file to it; a bad file is left out with a warning.
 """
 import logging
 import re
@@ -19,7 +14,7 @@ CODE = re.compile(r"^[A-Z][A-Z0-9]{1,3}$")          # an ICAO type designator: B
 MONTH = re.compile(r"^\d{4}-\d{2}$")
 KEYS = {"name", "types", "text", "facts", "production", "variants", "sources", "checked"}
 VARIANT_KEYS = {"name", "text", "more", "facts", "production"}
-MAX_PARAGRAPHS = 3          # a write-up is a couple of paragraphs; more, and it wants editing
+MAX_PARAGRAPHS = 3
 MAX_PARAGRAPH = 900         # characters
 log = logging.getLogger("cloudwall")
 
@@ -28,7 +23,7 @@ _lock = threading.Lock()
 
 
 def paragraphs(text):
-    """A write-up as its paragraphs: split at blank lines, each paragraph's wrapped lines joined."""
+    """Split at blank lines, each paragraph's wrapped lines joined."""
     return [" ".join(p.split()) for p in re.split(r"\n\s*\n", text or "") if p.strip()]
 
 
@@ -72,7 +67,7 @@ def _file_problems(name, d):
             if k in v and (not isinstance(v[k], str) or not v[k].strip()):
                 say(f"variant {code}: {k} must be text")
         out += [f"{name}: variant {code}: {m}" for m in _part_problems(v)]
-    for code in ([] if out else types):          # (a file with a mistake in it can't be put together)
+    for code in ([] if out else types):          # a file with a mistake can't be merged
         e = _merge(d, code)
         if len(e["text"]) > MAX_PARAGRAPHS:
             say(f"{code}'s write-up has {len(e['text'])} paragraphs; keep it to {MAX_PARAGRAPHS}")
@@ -83,14 +78,14 @@ def _file_problems(name, d):
 
 
 def _own_text(d, code):
-    """Whether a type has a whole write-up of its own, so that its family need not have one."""
+    """Does a type have a whole write-up of its own?"""
     variants = d.get("variants")
     v = variants.get(code) if isinstance(variants, dict) else None
     return isinstance(v, dict) and isinstance(v.get("text"), str) and bool(paragraphs(v["text"]))
 
 
 def _part_problems(d):
-    """The facts and production years, of a family or of a variant."""
+    """Problems with the facts and production years of a family or a variant."""
     out = []
     facts = d.get("facts", {})
     if not isinstance(facts, dict) or not all(isinstance(k, str) and isinstance(v, str) and k and v for k, v in facts.items()):
@@ -106,9 +101,8 @@ def _part_problems(d):
 
 
 def _merge(d, code):
-    """One type's entry from its family's file: the variant's name, text and production where it
-    has its own, its facts over the family's, and its `more` after the family's text (a family
-    whose types all have their own text may have none)."""
+    """One type's entry: the variant's name, text and production where it has its own, its facts
+    over the family's, its `more` after the family's text."""
     v = (d.get("variants") or {}).get(code) or {}
     text = paragraphs(v["text"]) if "text" in v else paragraphs(d.get("text")) + paragraphs(v.get("more"))
     facts = dict(d.get("facts") or {})
@@ -120,7 +114,7 @@ def _merge(d, code):
 
 
 def _load():
-    """{type code: entry} from every readable, sound file; and the problems found, by file."""
+    """({type code: entry} from every sound file, [problems])."""
     entries, problems = {}, []
     for f in sorted(FOLDER.glob("*.toml")):
         try:
@@ -152,8 +146,7 @@ def _table():
 
 def entry(type_code):
     """{"name", "family", "text" (paragraphs), "facts" ([label, value] in order), "production"
-    ([first, last], last None while still built; or None)} for a type, or None for a type with
-    no write-up yet."""
+    ([first, last], last None while still built; or None)}, or None for a type with no write-up."""
     e = _table().get(str(type_code or "").upper())
     return {k: v for k, v in e.items() if k != "file"} if e else None
 
@@ -164,5 +157,5 @@ def covered():
 
 
 def problems():
-    """Everything wrong with the files, as lines naming each file: empty when all is well."""
+    """Everything wrong with the files, as lines naming each file."""
     return _load()[1]

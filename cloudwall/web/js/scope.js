@@ -1,14 +1,7 @@
-// The right-hand panel: a top-down radar scope (drawn as a chart or as an air traffic control
-// screen), the Map view: the same flights on an everyday satellite or street map, labelled in
-// words for anyone ("Delta 178, to Denver, 12,000 ft"), or the Sky view: a dome of the sky above
-// home (centre straight up, the edge the horizon), with the sun, the moon and where the aircraft
-// overhead goes across it.
-//
-// Drawn in two layers. The static layer (map, rings, place names) is rebuilt only when the data
-// or mode changes. The aircraft layer is a set of
-// persistent elements, one per aircraft, moved every animation frame: positions are
-// dead-reckoned from the last report and eased toward each new one, so aircraft glide
-// instead of hopping between updates.
+// The right-hand panel: the radar scope (chart or ATC style), the Map view, or the Sky view (a
+// dome: centre straight up, the edge the horizon).
+// Two layers: the static layer is rebuilt only when the data or mode changes; the aircraft layer is
+// persistent elements moved every frame, dead-reckoned from the last report and eased to each new one.
 import { esc, num, ident, projected, offset, azEl, clamp, POINTS } from "./util.js";
 import { sky } from "./sky.js";
 import { moonPosition, moonPhase, moonGlyph } from "./astro.js";
@@ -17,20 +10,16 @@ import { iconFor } from "./icons.js";
 import { plainName, boardFlight } from "./parts.js";
 import { kind, MED_CROSS, hospitalShort } from "./situation.js";
 
-// Drawing options from the page: atc draws the radar like an air traffic control screen;
-// tracks shows the selected aircraft's past track (all of it; its history dots in the ATC style),
-// the others' last two minutes and the one-minute lines; range is how far out the radar shows, in nm
-// (the tracking radius, or longer); simple draws only what someone in the house wants to know: the
-// landing order as numbers, the selected aircraft and anything worth a look by name, no other labels.
+// Drawing options from the page. tracks: past tracks and the one-minute lines; range: nm;
+// simple: only the landing order, the selected aircraft and anything worth a look are labelled.
 let opt = { atc: false, map: false, sky: false, heading: null, tracks: true, range: 15, mapStyle: "sat", simple: false, wall: false };
 const RAD = Math.PI / 180;
 
 // ---- the ATC style: a STARS display, the FAA's terminal radar, drawn to its conventions ----
 // The display is a square, and its range is from the centre to the edge, as STARS sets it.
 const SQ = 108;
-// The Map view fills its panel: a rectangle of half-width MX and half-height MY drawing units, the
-// range from the centre to its nearer edges, so it reaches further toward the others. UI is where
-// the panel's buttons sit over it, in drawing units, so labels stay out from under them.
+// The Map view fills its panel: half-width MX and half-height MY drawing units, the range from
+// the centre to its nearer edges. UI: where the panel's buttons sit, so labels stay out from under them.
 let MX = SQ, MY = SQ, UI = [];
 const square = () => opt.atc || opt.map;
 const K = () => (square() ? SQ : 100) / opt.range;          // drawing units per nm
@@ -59,24 +48,20 @@ const clockPhase = (ms) => { const t = (ms / 1000) % 6; return t < 2 ? 1 : t < 3
 const NS = "http://www.w3.org/2000/svg";
 const CHAR_W = 3.35;                          // estimated label width per character, until a label can be measured
 // Icons are drawn at least as large on screen as on a 1920-wide desktop's radar (2.5 CSS px to the
-// unit): on a smaller radar (the 7.5" kiosk, a phone) up to half as large again, so a light
-// aircraft is still more than a speck. Labels and lines make room for them.
+// unit): on a smaller radar up to half as large again.
 const ICON_UNIT_PX = 2.5, ICON_BOOST_MAX = 1.5;
 let placeBoxes = [];        // where the place names sit, so aircraft labels can avoid them
 const MOVE_ON_S = 30;       // how long aircraft are moved on from their last reports
-// The chart style's fixed names (range rings, the airport, airfields, towns, flight restrictions,
-// the approach course, a hospital) give way to traffic: while an aircraft or its label is over one, it fades
-// out. Measured as drawn.
+// The chart style's fixed names give way to traffic: while an aircraft or its label is over one, it fades out.
 const YIELDING = ".ring-label, .apt-label, .field-label, .place, .tfr-label, .final-label, .helipad-label, .helipad:not(.dest)";
 let yielders = [];
 
-// The selected aircraft's whole track is drawn in its colour, strongest near the ground and fading
-// with height: these are the bands' lower edges in feet (0-2, 2-5, 5-10, 10-18, 18-28, 28+ thousand).
+// The selected aircraft's track fades with height: the bands' lower edges in feet.
 const BANDS = [2000, 5000, 10000, 18000, 28000];
 const band = (ft) => { let i = 0; while (i < BANDS.length && ft >= BANDS[i]) i++; return i; };
 
-// The path since it came in range, as runs of one band each: a segment takes the band of the
-// point it ends at. Points are [lat, lon, altitude in hundreds of ft].
+// Runs of one band each: a segment takes the band of the point it ends at.
+// Points are [lat, lon, altitude in hundreds of ft].
 function pathRuns(home, path, k) {
   const p = path.map(([lat, lon, h]) => { const o = offset(home, { lat, lon }); return [(o.x * k).toFixed(1), (-o.y * k).toFixed(1), band(h * 100)]; });
   let s = "", run = [], cur = -1;
@@ -92,8 +77,7 @@ function pathRuns(home, path, k) {
   return s;
 }
 
-// The key to the paths' shades, under the radar's legend; laid out once drawn (layoutPathKey),
-// when its text can be measured.
+// The key to the paths' shades; laid out once drawn (layoutPathKey), when its text can be measured.
 const pathKey = (x, y) => `<g class="legend path-key" data-x="${x}"><text x="${x}" y="${y}">Track 0</text><g class="pk-sw">` +
   [...Array(BANDS.length + 1)].map((_, i) => `<line class="b${i}" x1="${i * 3.2}" y1="${y - 1.4}" x2="${i * 3.2 + 2.7}" y2="${y - 1.4}"/>`).join("") +
   `</g><text class="pk-end" y="${y}">28,000 ft</text></g>`;
@@ -108,8 +92,7 @@ function layoutPathKey(svg) {
   k.querySelector(".pk-end").setAttribute("x", (x + sw + 1.1).toFixed(2));
 }
 
-// The key's lines run out toward the compass bezel in the lower left: a bearing number they would
-// touch is left off (the bezel reads without it; the key wouldn't).
+// A bearing number the key's lines would touch (lower left) is left off.
 function clearKey(svg) {
   const lines = [...svg.querySelectorAll("#s-static .legend tspan, #s-static .path-key")].map((e) => {
     try { return e.getBBox(); } catch (err) { return null; }
@@ -130,8 +113,7 @@ const CHART_STYLES = new Set(["sectional", "terminal", "ifr-low", "ifr-high"]);
 function mapLayer(home, k, hasBasemap, charted = false) {
   if (!map) return "";
   let s = "";
-  // the hand-drawn rivers are only a stand-in for when there's no real map underneath; the ATC
-  // style draws them as thin lines, as a controller's video map shows coastlines and rivers
+  // the hand-drawn rivers are a stand-in for when there's no real map; the ATC style draws them as thin lines
   if (opt.atc) for (const w of map.water || []) s += `<polyline class="vmap" points="${pts(home, w.line, k)}"/>`;
   else if (!hasBasemap) for (const w of map.water || []) s += `<polyline class="water" stroke-width="${Math.max(1.2, w.width_nm * k)}" points="${pts(home, w.line, k)}"/>`;
   if (opt.atc || charted) return s;             // a controller's map has no town names; a chart has its own
@@ -145,12 +127,9 @@ function mapLayer(home, k, hasBasemap, charted = false) {
   return s;
 }
 
-// Runways, and extended centrelines 12 nm out for the main direction (the longest runway and
-// its parallels), so a crosswind runway doesn't draw approach lines across the scope. The chart
-// style draws them on the approach side only, for the runways in use, when it knows which way the
-// airport is landing (finalCourses): a line off the departure end would promise arrivals from a
-// side they aren't coming from. With the direction unknown, and in the ATC style, whose video map
-// shows both finals whichever is in use, they run out from both ends.
+// Runways, and extended centrelines 12 nm out for the main direction only (the longest runway and
+// its parallels). The chart style draws them on the approach side only when it knows which way the
+// airport is landing (finalCourses); otherwise, and in the ATC style, they run out from both ends.
 function runwayLayer(state, k) {
   const home = state.home, rws = runwaysFor(state).map((r) => {
     const [a, b] = r.ends.map(([lat, lon]) => offset(home, { lat, lon }));
@@ -161,8 +140,7 @@ function runwayLayer(state, k) {
   const main = rws.reduce((m, r) => (r.len > m.len ? r : m)), far = 12;
   const finals = opt.atc ? "" : finalCourses(state, k);
   let s = "", ticks = "";
-  // the ATC style's video map marks each final approach course every mile (every 5 when that's
-  // too close together to read), as terminal video maps do
+  // the ATC style marks each final every mile (every 5 when that's too close to read)
   const every = k >= 4 ? 1 : 5;
   for (const r of rws) {
     if (finals || Math.abs(r.ux * main.ux + r.uy * main.uy) <= 0.985) continue;   // not within about 10° of the main direction
@@ -181,9 +159,8 @@ function runwayLayer(state, k) {
   return s;
 }
 
-// The chart style's final approach courses for the runways in use: ticked every mile out to the
-// edge (longer every five), as a controller's video map marks them, and named once at the far end
-// ("28L/R"). Simple keeps the line and the name and leaves out the ticks.
+// The chart style's final approach courses for the runways in use: ticked every mile, named once
+// at the far end ("28L/R").
 function finalCourses(state, k) {
   const names = String((state.flow && state.flow.runways) || "").split("/").map((n) => n.trim()).filter(Boolean);
   const home = state.home, ends = [];
@@ -205,7 +182,7 @@ function finalCourses(state, k) {
       const h = m % 5 ? 1 : 2, cx = x0 + ux * m * k, cy = y0 + uy * m * k;
       d += `M${(cx - uy * h).toFixed(2)},${(cy + ux * h).toFixed(2)}L${(cx + uy * h).toFixed(2)},${(cy - ux * h).toFixed(2)}`;
     }
-    // the name sits just inside the edge, beside the course: on its upper side, clear of the bezel
+    // the name sits just inside the edge, on the course's upper side
     const flip = -ux > 0 ? -1 : 1, nx = uy * flip, ny = -ux * flip;          // the normal pointing up the screen
     far = { x: x0 + ux * (L - 8) + nx * 4.5, y: y0 + uy * (L - 8) + ny * 4.5 };
   }
@@ -220,8 +197,7 @@ function ringLabel(r, text) {
   const d = r * Math.SQRT1_2;
   return `<text class="ring-label" x="${d + 1.5}" y="${-d - 1.5}">${text}</text>`;
 }
-// A bezel of degree marks just outside the edge, as on a compass card: every 5°, longer every
-// 10° and 30°, with the bearing beside each 30° mark. The cardinal points are left to their letters.
+// A bezel of degree marks just outside the edge, the bearing beside each 30° mark.
 const BEARING_BOXES = [];   // where the bearing numbers sit, so aircraft labels can avoid them
 const BEZEL = (() => {
   const minor = [], major = [];
@@ -236,7 +212,7 @@ const BEZEL = (() => {
   }
   return `<path class="bezel" d="${minor.join("")}"/><path class="bezel major" d="${major.join("")}"/>${nums}`;
 })();
-// Faint bearing lines every 30° between the innermost ring and the edge: with the rings, a polar grid.
+// Bearing lines every 30° between the innermost ring and the edge.
 const SPOKES = (r0) => {
   let d = "";
   for (let a = 0; a < 360; a += 30) {
@@ -247,8 +223,7 @@ const SPOKES = (r0) => {
 };
 // Home: a reticle, open in the middle so an aircraft right overhead stays visible.
 const HOME = `<g class="home-mark"><circle r="1.9"/><path d="M0,-2.9V-5M0,2.9V5M-2.9,0H-5M2.9,0H5"/></g>`;
-// A note in a lower corner of the drawing, clear of the disc: lines of text, the last line's
-// baseline at y. Line spacing is in ems, so a larger font (the kiosk's) still ends at y.
+// Lines of text, the last line's baseline at y. Spacing in ems, so a larger font (the kiosk's) still ends at y.
 const note = (cls, x, y, anchor, lines) => `<text class="${cls}" x="${x}" y="${y}" text-anchor="${anchor}">` +
   lines.map((l, i) => `<tspan x="${x}" dy="${i ? 1.25 : -1.25 * (lines.length - 1)}em">${esc(l)}</tspan>`).join("") + `</text>`;
 const COMPASS = `${BEZEL}<text class="compass" x="0" y="-104" text-anchor="middle">N</text><text class="compass" x="106" y="2" text-anchor="middle">E</text>
@@ -267,7 +242,7 @@ function place(state, a, t) {
   const k = K(), o = offset(state.home, projected(a, t));
   if (!inView(o.x * k, -o.y * k)) return null;
   if (opt.map) return { x: o.x * k, y: -o.y * k, rot: a.track || 0, scale: 1.15, sub: plainLine(a, state) };
-  // the altitude in hundreds of feet, as a controller's scope shows it, with an arrow when climbing or descending
+  // the altitude in hundreds of feet, with an arrow when climbing or descending
   const v = a.vrate || 0, trend = v > 300 ? "↑" : v < -300 ? "↓" : "";
   return { x: o.x * k, y: -o.y * k, rot: a.track || 0, scale: 1, sub: a.alt == null ? "" : String(Math.max(0, Math.round(a.alt / 100))).padStart(3, "0") + trend };
 }
@@ -278,8 +253,7 @@ const domeXY = (p) => {
   const r = ((90 - clamp(p.el, 0, 90)) / 90) * 100, az = (p.az - (opt.heading || 0)) * RAD;
   return [r * Math.sin(az), -r * Math.cos(az)];
 };
-// The compass round the dome: fixed with north up, or turned with the phone, its letters kept upright
-// and north picked out, and a mark at the top for the way the phone faces.
+// The compass round the dome: north up, or turned with the phone (letters kept upright).
 function skyCompass() {
   const h = opt.heading;
   if (h == null) return COMPASS;
@@ -316,7 +290,7 @@ function domeStatic(state, dt) {
   }
   const h = state.hero;
   if (h && !h.on_ground && h.alt != null) {
-    // where the aircraft overhead has been and is going across the sky, and how high it gets
+    // the selected aircraft's path across the sky, and its highest point
     const past = [], future = [];
     let best = null;
     for (let t = -180; t <= 360; t += 5) {
@@ -338,7 +312,7 @@ function domeStatic(state, dt) {
   return s + heardNote(state);
 }
 
-// ---- the Map view's words: who it is, where it's going and how high, for anyone ----
+// ---- the Map view's words ----
 const city = (p) => (p && (p.city || p.name || p.iata)) || "";
 function plainLine(a, state) {
   const r = a.route && a.route.plausible ? a.route : null, here = state.airport.iata;
@@ -351,8 +325,8 @@ function plainLine(a, state) {
   return [where, alt].filter(Boolean).join(" · ");
 }
 
-// Simple's labels: the selected aircraft by its flight and height, an arrival by its place in the landing
-// order (drawn in a ring), anything worth a look by what it is; everything else has none.
+// Simple's labels: the selected aircraft by flight and height, an arrival by its landing number,
+// anything worth a look by what it is; everything else has none.
 function simpleLabel(a, isHero) {
   const v = a.vrate || 0, trend = v > 300 ? " ↑" : v < -300 ? " ↓" : "";
   if (isHero || a.notable === "emergency") return { text: boardFlight(ident(a)), sub: a.alt == null ? "" : `${num(a.alt)} ft${trend}` };
@@ -360,7 +334,7 @@ function simpleLabel(a, isHero) {
   if (a.notable) { const k = kind(a); return { text: k[0].toUpperCase() + k.slice(1), sub: a.hospital ? hospitalShort(a.hospital) : "" }; }
   return { text: "", sub: "" };
 }
-// A short track as segments, fading with age: the oldest faint, the newest strongest.
+// A short track as segments, fading with age.
 function tailSegs(home, pts, k) {
   const xy = pts.map(([lat, lon]) => { const o = offset(home, { lat, lon }); return [(o.x * k).toFixed(1), (-o.y * k).toFixed(1)]; });
   let s = "";
@@ -372,8 +346,7 @@ function tailSegs(home, pts, k) {
 }
 
 // ---- the ATC style's fixed parts ----
-// The compass along the display's edge: a tick every 5° where that bearing from the centre meets
-// the edge, and the bearing every 10°.
+// The compass along the square's edge: a tick every 5°, the bearing every 10°.
 const STARS_COMPASS = (() => {
   let d = "", nums = "";
   for (let a = 5; a <= 360; a += 5) {
@@ -393,35 +366,28 @@ let ssaAltimeter = "";
 // The status area's clock: UTC hours and minutes, then seconds, then the altimeter setting.
 const ssaClock = (d = new Date()) => `${pad2(d.getUTCHours())}${pad2(d.getUTCMinutes())}/${pad2(d.getUTCSeconds())}${ssaAltimeter ? " " + ssaAltimeter : ""}`;
 
-// The System Status Area, top left: the status indicator (a red triangle in a green box), the
-// clock, the system status, the range and predicted track line length, the airport's altimeter
-// (A: from the weather report), active special purpose codes in red, and general information:
-// the runways in use and the wind.
+// The System Status Area, top left: indicator, clock, status, range and PTL length, altimeter,
+// active special purpose codes, then the runways in use and the wind.
 function ssa(state) {
   const w = state.weather, f = state.flow, m = w && /\bA(\d\d)(\d\d)\b/.exec(w.raw || "");
   ssaAltimeter = m ? `${m[1]}.${m[2]}` : "";
   const wind = w && w.wind_kt != null ? `${w.wind_kt ? String(w.wind_dir ?? 0).padStart(3, "0") : "000"}/${pad2(w.wind_kt)}${w.gust_kt ? "G" + w.gust_kt : ""}` : "";
   const spc = [...new Set([...state.aircraft, ...(state.beyond || [])].map(spcOf).filter(Boolean))];
-  // general information, a line each so the area stays narrow: the runways in use, the wind
   const gi = [f && "RWY " + f.runways.replace(/\s*\/\s*/g, " "), wind && "WIND " + wind].filter(Boolean);
   const rows = [[ssaClock(), "", "ssa-time"], ["OK/OK/NA"], [`${opt.range}NM PTL: ${opt.tracks ? "1.0" : "0.0"}`],
     ssaAltimeter && [`${state.airport.iata || state.airport.icao} ${ssaAltimeter}A`], spc.length && [spc.join(" "), "alert"], ...gi.map((t) => [t])].filter(Boolean);
   const x = -SQ + 13.5, y = -SQ + 20;
-  // the indicator: a green box with a red triangle inside it, point down
   let s = `<g class="ssa-mark" transform="translate(${x + 2.2},${y - 8.5})"><path class="tri" d="M-1.7,-1.2H1.7L0,1.75Z"/><rect x="-2.2" y="-2.2" width="4.4" height="4.4"/></g>`;
   s += `<text class="ssa" x="${x}" y="${y}">` + rows.map(([t, cls, id], i) =>
     `<tspan x="${x}"${i ? ' dy="1.3em"' : ""}${cls ? ` class="${cls}"` : ""}${id ? ` id="${id}"` : ""}>${esc(t)}</tspan>`).join("") + `</text>`;
-  // aircraft data blocks and the map's labels keep clear of it: monospaced at 4 px (the kiosk's
-  // 5.4, a phone's 4.8), 0.6 em a character, 1.3 em a line
+  // labels keep clear of it: monospaced at 4 px (the kiosk's 5.4, a phone's 4.8), 0.6 em a character, 1.3 em a line
   const cl = document.documentElement.classList, fs = cl.contains("kiosk") ? 5.4 : cl.contains("phone") ? 4.8 : 4;
   placeBoxes.push({ x0: x - 1, x1: x + 1 + Math.max(...rows.map((r) => r[0].length)) * fs * 0.6,
     y0: y - 12, y1: y + (rows.length - 1) * fs * 1.3 + fs * 0.4 });
   return s;
 }
 
-// The video map's airspace: Class B and C (and the airport's own Class D) outlines, each area
-// labelled with its ceiling over its floor in hundreds of feet ("40/17"; SFC from the surface),
-// as charts and video maps mark them.
+// Class B, C and D outlines, each labelled with its ceiling over its floor in hundreds of feet ("40/17"; SFC).
 function airspaceLayer(state, k) {
   let s = "";
   for (const a of state.airport.airspace || []) {
@@ -436,8 +402,7 @@ function airspaceLayer(state, k) {
   return s;
 }
 
-// VOR and TACAN stations: a small hexagon and the station's identifier, beside it on whichever
-// side is clear of the status area and other labels (or left off when none is).
+// VOR and TACAN stations: a hexagon and the identifier, on whichever side is clear (or left off).
 const HEXAGON = "M" + [...Array(6)].map((_, i) => `${(1.7 * Math.cos(i * 60 * RAD)).toFixed(2)},${(1.7 * Math.sin(i * 60 * RAD)).toFixed(2)}`).join("L") + "Z";
 function navaidLayer(state, k) {
   let s = "";
@@ -487,7 +452,6 @@ function radarStatic(state) {
     placeBoxes.push({ x0: d + 1, x1: d + 13, y0: -d - 5.5, y1: -d - 0.5, soft: true });          // aircraft labels steer around it
   }
   s += `<circle class="ring oh" r="${state.tracking.overhead_nm * k}"/>${COMPASS}`;
-  // the key, in the drawing's lower left corner, with the selected aircraft's track shades along its foot
   const keyed = opt.tracks && !opt.simple && state.hero && state.hero.path && state.hero.path.length > 1;
   s += note("legend", -111, keyed ? 105.25 : 110.5, "start", opt.simple ? [`${R} nm around home`]
     : [`${R} nm around home`, "035↑ 3,500 ft, climbing", opt.tracks ? "Line: 1 minute ahead" : ""].filter(Boolean));
@@ -506,8 +470,7 @@ function radarStatic(state) {
   return s + HOME + heardNote(state);
 }
 
-// The Map view's own marks: home, the airport, and a note of what's shown. The map itself (with
-// its place names) is the base layer under it.
+// The Map view's own marks: home, the airport, and a note of what's shown.
 function mapStatic(state) {
   const k = K(), home = state.home, miles = Math.round(opt.range * 1.15078);
   placeBoxes = [{ x0: -4, x1: 22, y0: -4, y1: 4 }];
@@ -558,9 +521,8 @@ function tfrLayer(state, k) {
   return s;
 }
 
-// The small airfields nearby (Pearson Field, Grove Field, Troutdale around Vancouver), as a
-// sectional chart shows them: a circle with the runways drawn inside at their true headings, not
-// to scale, and the field's code. A field without runway data is the circle alone.
+// The small airfields nearby, as a sectional shows them: a circle with the runways inside at
+// their true headings (not to scale), and the field's code.
 function fieldsLayer(state, k) {
   let s = "";
   for (const f of state.airport.others || []) {
@@ -573,15 +535,13 @@ function fieldsLayer(state, k) {
       s += `<line class="field-rwy" x1="${(x - ux).toFixed(2)}" y1="${(y + uy).toFixed(2)}" x2="${(x + ux).toFixed(2)}" y2="${(y - uy).toFixed(2)}"/>`;
     }
     s += `</g><text class="field-label" x="${x.toFixed(1)}" y="${(y + 7.9).toFixed(1)}" text-anchor="middle">${esc(f.code)}</text>`;
-    // aircraft labels steer around the airfield and its code, as they do around place names
     placeBoxes.push({ x0: o.x * k - 5, x1: o.x * k + 5, y0: -o.y * k - 2.5, y1: -o.y * k + 8.5, soft: true });
   }
   return s;
 }
 
-// The hospital helipads nearby, as charts mark heliports: an H in a circle (Detailed). One a medical
-// helicopter is heading for, landing at or has just left is drawn in the medical blue with its name,
-// in Simple too, so you can see where it's going.
+// Hospital helipads: an H in a circle (Detailed). One a medical helicopter is using is drawn in
+// the medical blue with its name, in Simple too.
 function hospitalsInUse(state) {
   const out = new Map();
   for (const a of state.aircraft) if (a.hospital && !a.on_ground) out.set(a.hospital.code, a.hospital);
@@ -620,9 +580,8 @@ function heardNote(state) {
 const live = new Map();     // hex -> { g, icon, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, x, y, rot, slot, ... }
 let lastFrame = 0, layerMode = null, staticKey = null, baseKey = null, lastSecond = -1;
 
-// The map under the radar: the chart-style radar's map, or the ATC style's chart (the FAA's
-// IFR Enroute Low unless [map] atc says otherwise), from the server's chart layers. Rebuilt only
-// when the zoom or view changes, so it never flickers.
+// The map under the radar, from the server's chart layers. Rebuilt only when the zoom or view
+// changes, so it never flickers.
 function drawBase(svg, state, mode) {
   const g = svg.querySelector("#s-base"), charts = state.charts || { map: state.basemap };
   const layers = charts.layers || {}, bm = opt.sky ? null : opt.map ? layers[opt.mapStyle] : opt.atc ? charts.atc : charts.map;
@@ -655,8 +614,7 @@ function el(name, attrs, parent) {
   return e;
 }
 
-// A filter mapping a map tile's greys onto three colours: the darkest (water) to `water`, the middle
-// greys (land) to `land`, the lightest (roads, labels) to `road`.
+// A filter mapping a tile's greys onto three colours: darkest to `water`, middle to `land`, lightest to `road`.
 function chartTint(id, water, land, road) {
   const ch = (i) => [water[i], water[i], (water[i] + land[i]) / 2, land[i], (land[i] + road[i]) / 2, ...Array(6).fill(road[i])].map((v) => (v / 255).toFixed(3)).join(" ");
   return `<filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0"/><feComponentTransfer>` +
@@ -668,15 +626,11 @@ function ensureLayers(svg) {
   svg.innerHTML = "";
   const defs = el("defs", { id: "s-defs" }, svg);
   el("clipPath", { id: "scope-clip" }, defs);
-  // diagonal hatching for active flight restrictions
   const hatch = el("pattern", { id: "tfr-hatch", width: 3, height: 3, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
   el("line", { x1: 0, y1: 0, x2: 0, y2: 3, class: "tfr-hatch-line" }, hatch);
-  // The chart style's dark grey street map, recoloured as a chart: its dark water blue, its land
-  // pale, its roads paler still (by day); by night the water near black, the land slate and the
-  // roads a shade lighter, as far apart as the day's so that the map doesn't sink into the dark.
+  // The chart style's dark grey street map, recoloured as a chart, by day and by night.
   defs.insertAdjacentHTML("beforeend", chartTint("chart-tint", [182, 204, 220], [237, 240, 230], [252, 252, 248]) +
     chartTint("chart-tint-night", [7, 18, 34], [28, 45, 63], [58, 77, 98]));
-  // the Sky view's dome: deeper overhead, paler toward the haze at the horizon
   defs.insertAdjacentHTML("beforeend", `<radialGradient id="sky-grad"><stop class="sky-z" offset=".05"/><stop class="sky-h" offset="1"/></radialGradient>`);
   el("g", { id: "s-bg" }, svg);
   el("g", { id: "s-base", "clip-path": "url(#scope-clip)" }, svg);
@@ -699,10 +653,9 @@ function craftFor(svg, hex) {
   const ring = el("circle", { class: "sel-ring", style: "display:none" }, g);      // chart style: the selected aircraft
   const vec = el("line", { class: "vec" }, g);                         // where it will be in a minute
   const leader = el("line", { class: "leader" }, g);                   // ATC style: target to data block
-  // the chart style's icon is set for its kind of aircraft as it's placed; a change of style rebuilds every craft
   const glow = el("circle", { class: "glow" }, g);                     // a soft ring, once, for something new
   const icon = el("path", { class: "blip", d: opt.atc ? OCTAGON : "" }, g);
-  // a medical flight's mark: a white cross on a blue square, upright at the icon's upper left (chart style and Map view)
+  // a medical flight's mark (chart style and Map view)
   const med = el("g", { class: "med", style: "display:none" }, g);
   el("rect", { x: -2.6, y: -2.6, width: 5.2, height: 5.2, rx: 1.1 }, med);
   el("path", { d: MED_CROSS }, med);
@@ -714,10 +667,10 @@ function craftFor(svg, hex) {
   const l0 = el("text", { class: "tag-top" }, g), seqring = el("circle", { class: "seqring", style: "display:none" }, g);
   // the label stays hidden until it's first placed, on the next update
   const tag = el("text", { class: "tag", style: "display:none" }, g), sub = el("text", { class: "tag-sub", style: "display:none" }, g);
-  // the chart style's short track behind every other aircraft: its last two minutes, fading with age
+  // the chart style's short track behind every other aircraft: its last two minutes
   const tl = el("g", { class: "tl" }, svg.querySelector("#s-trails")), tlSegs = el("g", {}, tl), tlEnd = el("line", {}, tl);
-  // the chart style's track, while it is the selected aircraft: runs of one altitude band,
-  // rebuilt on each update, and the stretch from its last point to the aircraft, moved every frame
+  // the selected aircraft's track: runs rebuilt on each update, and the stretch from its last
+  // point to the aircraft, moved every frame
   const trk = el("g", { class: "trk" }, svg.querySelector("#s-trails")), segs = el("g", {}, trk), tail = el("line", {}, trk);
   c = { g, glow, icon, med, pos, sym, vec, leader, hist, l0, tag, sub, trk, segs, tail, ring, seqring, tl, tlSegs, tlEnd, x: null, y: null, rot: 0, slot: 0, text: "", symbol: null, vx: 0, vy: 0, subs: [""], act: null, pri: 9, hide: false };
   live.set(hex, c);
@@ -725,8 +678,7 @@ function craftFor(svg, hex) {
   return c;
 }
 
-// Something new: a ring round the aircraft swells and fades twice, then it's still (the page's own glow
-// for its rows runs alongside).
+// Something new: a ring round the aircraft swells and fades twice.
 export function flashCraft(hex) {
   const c = live.get(hex);
   if (!c) return;
@@ -747,9 +699,8 @@ function dropCraft(hex) {
   live.delete(hex);
 }
 
-// Where a label can go. Chart style: a corner beside the aircraft (right-above, right-below,
-// left-above, left-below). ATC style: the end of a leader line in any of the eight directions,
-// as a controller sets them, the text 4 px from the line's end.
+// Where a label can go. Chart style: a corner beside the aircraft. ATC style: the end of a leader
+// line in any of the eight directions.
 const CHART_CORNERS = [[7, -2.5, "start"], [7, 7.5, "start"], [-7, -2.5, "end"], [-7, 7.5, "end"], [7, 2.5, "start"], [-7, 2.5, "end"]];
 const slotCount = () => (opt.atc ? DIRS.length : CHART_CORNERS.length);
 function slot(c, i) {
@@ -763,14 +714,13 @@ function slot(c, i) {
   return { d, ex, ey, tx: ex + (d.right ? -c.gap : c.gap), ty: ey, anchor: d.right ? "end" : "start" };
 }
 
-// The size of a label, measured: the kiosk sets labels larger. A label hidden last time (or not yet
-// placed) is shown for the measuring, as hidden text measures nothing; applyLabel sets it after.
+// A label hidden last time (or not yet placed) is shown for the measuring, as hidden text
+// measures nothing; applyLabel sets it after.
 function measure(c) {
   if (c.tag.style.display === "none") c.tag.style.display = c.sub.style.display = "";
   const fs = (e, d) => parseFloat(getComputedStyle(e).fontSize) || d;
   if (opt.atc) {
-    // monospaced, so a block is as wide as its longest line; a leader is about one and a half
-    // characters tall, as STARS draws its shortest
+    // monospaced, so a block is as wide as its longest line
     const f = fs(c.tag, 4.6);
     let cw = 0;
     try { cw = c.tag.getComputedTextLength() / (c.tag.textContent.length || 1); } catch (e) { /* not laid out yet */ }
@@ -803,9 +753,8 @@ function labelBox(c, i) {
 }
 const overlap = (a, b) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
 
-// Choose a place for each aircraft's label that avoids other labels, aircraft, the compass and
-// the edge. Re-run on each data update, not every frame, and keep the current place unless it
-// is clearly worse, so labels don't flicker. The ATC style prefers its leaders pointing north.
+// Place each label clear of other labels, aircraft, the compass and the edge. Run on each data
+// update, not every frame, keeping the current place unless clearly worse, so labels don't flicker.
 function placeLabels(heroHex) {
   const placed = opt.atc || opt.map ? [...placeBoxes] : opt.heading != null ? [...placeBoxes, { x0: -6, x1: 6, y0: -98, y1: -91 }] : [...placeBoxes, ...BEARING_BOXES,
     { x0: -5, x1: 5, y0: -112, y1: -100 }, { x0: 101, x1: 112, y0: -6, y1: 6 }, { x0: -5, x1: 5, y0: 102, y1: 114 }, { x0: -112, x1: -101, y0: -6, y1: 6 }];
@@ -819,13 +768,12 @@ function placeLabels(heroHex) {
   const labelled = all.filter((c) => c.text);
   for (const c of labelled) if (c.fallback) { c.fallback = false; showFull(c); }
   labelled.forEach(measure);
-  // the selected aircraft first, then the arrivals in landing order, departures, overflights and the rest by distance
   labelled.sort((a, b) => (b.hex === heroHex) - (a.hex === heroHex) || a.pri - b.pri);
   const edge = opt.atc ? SQ - 9.5 : opt.map ? MX - 1.5 : 112;          // the ATC style keeps data blocks inside the compass
   const edgeY = opt.map ? MY - 1.5 : edge;
   const pick = (c) => {
-    // the chart style never leaves off the selected aircraft's label, so running off the edge, where
-    // it would be cut in half, costs it far more than sitting over a neighbour
+    // the chart style never leaves off the selected aircraft's label, so running off the edge
+    // costs it far more than sitting over a neighbour
     const offCost = !opt.atc && !opt.map && c.hex === heroHex ? 400 : 20;
     const score = (i) => {
       const b = labelBox(c, i);
@@ -841,10 +789,8 @@ function placeLabels(heroHex) {
   };
   for (const c of labelled) {
     // the chart style leaves off a label that would touch another label or the compass, cover an
-    // aircraft by more than a quarter of itself, or run off the edge: the aircraft still shows in its
-    // colour, and a tap names it. Labels go in order of importance, so the ones left off matter least.
-    // A fixed name (a town, a range ring, the airport) only steers a label: if there's no better
-    // place, the name fades while the label is over it (giveWay).
+    // aircraft by more than a quarter of itself, or run off the edge. A fixed name (soft) only
+    // steers a label: if there's no better place, the name fades under it (giveWay).
     let b = pick(c);
     const area = (b.x1 - b.x0) * (b.y1 - b.y0);
     const textHit = placed.reduce((n, p) => n + (p.soft ? 0 : overlap(b, p)), 0), iconHit = blips.reduce((n, p) => n + (p.c === c ? 0 : overlap(b, p)), 0);
@@ -852,8 +798,7 @@ function placeLabels(heroHex) {
     const key = c.act === "arr" || c.act === "dep";          // arrivals and departures may sit over an icon
     // (the Map view labels everything, except on the wall panel, whose large lettering can't)
     c.hide = !opt.atc && (!opt.map || opt.wall) && c.hex !== heroHex && !c.seqtag && (textHit > 0.03 * area || (!key && iconHit > 0.25 * area) || off > 1.5);
-    // an arrival keeps its landing number, in its ring as Simple draws it, so the landing queue and
-    // the list still find it on the radar (until the next update puts its whole label back)
+    // an arrival keeps its landing number in its ring (until the next update tries its whole label again)
     if (c.hide && c.seqNum && c.full) {
       c.fallback = c.seqtag = true; c.tag.classList.add("seqtag");
       c.text = c.tag.textContent = String(c.seqNum); c.subs = [""]; c.sub.textContent = "";
@@ -861,8 +806,7 @@ function placeLabels(heroHex) {
       b = pick(c);
       c.hide = false;
     }
-    // with a margin round it that only steers the labels after it, so two labels side by side
-    // don't read as one block (the chart style)
+    // with a soft margin round it, so two labels side by side don't read as one block (the chart style)
     if (!c.hide) placed.push(b, ...(opt.atc || opt.map ? [] : [{ x0: b.x0 - 1.5, x1: b.x1 + 1.5, y0: b.y0 - 1.5, y1: b.y1 + 1.5, soft: true }]));
   }
 }
@@ -887,21 +831,18 @@ function applyLabel(c) {
     return;
   }
   if (!opt.atc) { const k = c.k || 1; put(c.tag, s.ty - 3.2 * k); put(c.sub, s.ty + 3.3 * k); return; }
-  // the leader ends level with the block's first line (an LDB's altitude), and lines step down
-  // a character height at a time; it starts at the target's edge
+  // the leader starts at the target's edge and ends level with the block's first line
   const f = c.fs, base = s.ty + f * 0.36;
   put(c.l0, base - f); put(c.tag, base); put(c.sub, base + f);
   c.leader.setAttribute("x1", (s.d.ux * 2.9).toFixed(2)); c.leader.setAttribute("y1", (s.d.uy * 2.9).toFixed(2));
   c.leader.setAttribute("x2", s.ex.toFixed(2)); c.leader.setAttribute("y2", s.ey.toFixed(2));
 }
 
-// What STARS shows for an aircraft. A track with a flight plan (a callsign on a code other than
-// VFR's 1200) gets a full data block: the callsign; then the altitude in hundreds of feet and the
-// ground speed in tens of knots, the flight rules (V for VFR) and the wake category, taking turns
-// with the aircraft type. Its position symbol is the letter of the position that owns it: here A
-// for arrivals, D for departures and C (the en route centre) for the rest. The aircraft overhead
-// is the one this screen tracks, white, always with a full block. A track without a flight plan
-// shows * with a limited block, its altitude, or + with none when it reports no altitude.
+// What STARS shows. A track with a flight plan (a callsign on a code other than 1200) gets a full
+// data block: callsign; altitude in hundreds of feet, ground speed in tens of knots, V for VFR
+// and the wake category, taking turns with the type. Its symbol: A arrivals, D departures, C the
+// rest. The selected aircraft always has a full block. A track without a flight plan shows * with
+// its altitude, or + when it reports none.
 function starsBlock(a, owned) {
   const spc = spcOf(a), cs = (a.callsign || "").trim();
   const alt = a.alt == null ? "" : a.alt < 0 ? "N" + pad2(Math.round(-a.alt / 100)) : String(Math.round(a.alt / 100)).padStart(3, "0");
@@ -916,8 +857,8 @@ function starsBlock(a, owned) {
     subs: a.type ? [p1, `${f34}${a.type}`] : [p1] };
 }
 
-// ATC style: history dots behind the selected aircraft, at its reported positions (`trail`)
-// 4.5 s apart (as near as the feed's update rate allows), newest first, each a dimmer blue.
+// ATC style: history dots at the selected aircraft's reported positions (`trail`), 4.5 s apart
+// (as near as the feed's update rate allows), newest first.
 function historyDots(c, trail, k, home, trailS) {
   const dots = c.hist.children, t = trail || [], step = Math.max(1, Math.round(HISTORY_S / (trailS || HISTORY_S)));
   let n = 0;
@@ -928,8 +869,7 @@ function historyDots(c, trail, k, home, trailS) {
   for (; n < HISTORY; n++) dots[n].style.display = "none";
 }
 
-// The note's box, fitted to its text as drawn (a phone or the kiosk sets it larger), and kept
-// clear of the labels.
+// The note's box, fitted to its text as drawn, and kept clear of the labels.
 function fitMapNote(svg) {
   const t = svg.querySelector(".map-note text"), r = svg.querySelector(".map-note rect");
   let w = 0;
@@ -940,8 +880,8 @@ function fitMapNote(svg) {
   placeBoxes.push({ x0: x0 - 1, x1: x0 + w + 8, y0: y0 - 1, y1: y0 + 9 });
 }
 
-// The Map view's rectangle, from the panel's shape: the drawing's viewBox is widened (or made
-// taller) to match it, with the shorter side the radar's usual 224 units. The radar keeps its square.
+// The Map view's viewBox is widened (or made taller) to the panel's shape, the shorter side the
+// radar's usual 224 units.
 const SQUARE_BOX = "-112 -112 224 224";
 function mapShape(svg) {
   const r = svg.getBoundingClientRect(), panel = svg.parentElement.getBoundingClientRect();
@@ -949,7 +889,6 @@ function mapShape(svg) {
   const u = 224 / Math.min(r.width, r.height);           // drawing units per CSS px
   const vx = (r.width * u) / 2, vy = (r.height * u) / 2;
   MX = vx - 1; MY = vy - 1;
-  // the buttons over the map (the panel's own controls), as boxes in drawing units
   UI = [...svg.parentElement.querySelectorAll(":scope > .seg, :scope > .scope-tools > .seg, :scope > .attrib")]
     .map((e) => e.getBoundingClientRect()).filter((b) => b.width && b.height)
     .map((b) => ({ x0: (b.left - r.left) * u - vx - 2, x1: (b.right - r.left) * u - vx + 2, y0: (b.top - r.top) * u - vy - 2, y1: (b.bottom - r.top) * u - vy + 2 }));
@@ -961,8 +900,7 @@ function mapShape(svg) {
 // ---- entry point: called every animation frame ----
 export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   ensureLayers(svg);
-  // aircraft glide on from their last reports, but not for ever: past half a minute with nothing new
-  // they stop where they are (and fade: the page marks the data old) rather than fly on confidently
+  // aircraft glide on from their last reports, but past MOVE_ON_S with nothing new they stop where they are
   const dt = Math.min(MOVE_ON_S, (now - stateAt) / 1000), frameDt = lastFrame ? Math.min(1, (now - lastFrame) / 1000) : 1;
   lastFrame = now;
   const turned = mode === "sky" && options.heading != null ? Math.round(options.heading) % 360 : null;
@@ -1003,8 +941,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   const nextHex = !heroHex && state.next ? state.next.hex : null;
   const box = svg.getBoundingClientRect(), unitPx = Math.min(box.width, box.height) / 224;
   const boost = unitPx ? clamp(ICON_UNIT_PX / unitPx, 1, ICON_BOOST_MAX) : 1;
-  // past the tracking radius, aircraft are fetched only for a radar set to a longer range
-  // (the sky view only those near enough to look up at, with a height to place them by)
+  // `beyond`: past the tracking radius, for a radar set to a longer range (not the sky view)
   const aircraft = opt.sky ? state.aircraft : [...state.aircraft, ...(state.beyond || [])];
   for (const a of aircraft) {
     if (a.on_ground || (opt.sky && a.alt == null)) continue;
@@ -1021,15 +958,12 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       c.rot += (((p.rot - c.rot + 540) % 360) - 180) * ease;
     }
     c.g.setAttribute("transform", `translate(${c.x.toFixed(2)},${c.y.toFixed(2)})`);
-    // the chart style's icon: its kind of aircraft (a light aircraft or twin, a turboprop, a business
-    // or regional jet, an airliner, a heavy, a fighter, a helicopter, a balloon, ...), at about its size; the selected
-    // one a little larger, but not so much that an airliner passes for a heavy
+    // the selected one a little larger, but not so much that an airliner passes for a heavy
     const size = (isHero ? 1.25 : 1) * p.scale * boost;
     if (!opt.atc) {
       const kind = a.icon || null;                 // its kind of traffic, as the server made it out
       if (kind !== c.kind || !c.ic) { c.kind = kind; c.ic = iconFor(kind); c.icon.setAttribute("d", c.ic.d); }
       c.reach = c.ic.r * size;
-      // a balloon stays upright whichever way it drifts
       c.icon.setAttribute("transform", `rotate(${c.ic.upright ? 0 : c.rot.toFixed(1)}) scale(${size})`);
     }
     const medOn = !opt.atc && !!a.medical;
@@ -1039,8 +973,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
       c.medX = -d; c.medY = -d; c.medR = 2.6 * s;
       c.med.setAttribute("transform", `translate(${(-d).toFixed(2)},${(-d).toFixed(2)}) scale(${s.toFixed(2)})`);
     }
-    // the lead line: one minute ahead at its ground speed, from the nose (the ATC style's
-    // predicted track line, from the target), on the radar only
+    // the lead line: one minute ahead at its ground speed, from the nose, on the radar only
     const lead = opt.tracks && !opt.map && !opt.sky && a.gs && a.track != null ? (a.gs / 60) * k : 0;
     const sin = Math.sin(c.rot * RAD), cos = -Math.cos(c.rot * RAD), nose = opt.atc ? 2.3 : c.ic.nose * size;
     c.vx = sin * lead; c.vy = cos * lead;
@@ -1053,7 +986,6 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     c.g.classList.toggle("coasting", !!a.coasting);      // a followed flight the feed left out: where it should be, faded
     c.trk.classList.toggle("hero", isHero);
     c.hist.classList.toggle("hero", isHero);
-    // what it is doing, which colours it, and how much its label matters when room is short
     const act = a.activity || "pass";
     if (act !== c.act) {
       if (c.act) c.g.classList.remove("c-" + c.act);
@@ -1081,15 +1013,13 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     } else if (opt.map) {
       text = plainName(a); c.subs = [p.sub];               // the Map view's label, in words
     } else if (opt.sky) {
-      // low down near the horizon, only the aircraft overhead is named: the rest crowd the edge
+      // near the horizon only the selected aircraft is named: the rest crowd the edge
       const named = isHero || a.notable || p.el > 6;
       text = named ? ident(a) : ""; c.subs = [named ? p.sub : ""];
     } else if (opt.simple) {
       ({ text, sub: c.subs[0], seq: seqtag } = simpleLabel(a, isHero || a.hex === nextHex)); c.subs.length = 1;
       if (opt.wall && isHero) c.subs[0] = "";              // the wall panel's card gives its altitude, large
     } else {
-      // the chart style's label: the flight, then the altitude and its trend, and an arrival's
-      // runway or a departure's destination
       const r = a.route && a.route.plausible ? a.route : null;
       text = ident(a);
       c.subs = [p.sub + (a.activity === "arr" && a.rwy ? ` ${a.rwy}${a.seq ? ` #${a.seq}` : ""}` : a.activity === "dep" && r && r.dest.iata ? ` ${r.dest.iata}`
@@ -1106,8 +1036,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     const line2 = c.subs[phase === 1 || c.subs.length < 2 ? 0 : 1];
     if (c.sub.textContent !== line2) c.sub.textContent = line2;
     c.leader.style.display = opt.atc && text ? "" : "none";
-    // only the selected aircraft (overhead, or tapped) shows where it has been: the ATC style's
-    // history dots, or the chart style's whole track since it came in range or took off
+    // only the selected aircraft shows where it has been: history dots (ATC) or its whole track (chart)
     const dots = opt.atc && opt.tracks && isHero;
     if (dots && (fresh || arrived)) historyDots(c, state.hero.trail, k, state.home, state.trail_s);
     c.hist.style.display = dots ? "" : "none";
@@ -1121,8 +1050,7 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
     } else if (!path && c.drawn) { c.segs.innerHTML = ""; c.drawn = false; }
     c.trk.style.display = path ? "" : "none";
     if (path) { c.tail.setAttribute("x2", c.x.toFixed(1)); c.tail.setAttribute("y2", c.y.toFixed(1)); }
-    // the chart style's short track behind each other aircraft, in Detailed with tracks on; Simple
-    // draws it for the selected aircraft alone, in place of its whole path
+    // the short track behind each other aircraft; Simple draws it for the selected aircraft alone
     const tl = !opt.atc && !opt.map && !opt.sky && opt.tracks && (!opt.simple || isHero) && !path && a.tail && a.tail.length > 1 ? a.tail : null;
     if (tl && (fresh || !c.tlDrawn)) {
       c.tlSegs.innerHTML = tailSegs(state.home, tl, k);
@@ -1138,10 +1066,8 @@ export function drawScope(svg, state, now, stateAt, mode, options = {}) {
   if (!opt.atc && !opt.map) giveWay();
 }
 
-// Each fixed name's box as drawn (the kiosk and a phone draw them larger than the estimates the
-// labels steer by), added to the boxes aircraft labels keep clear of.
-// The layer is rebuilt on each update: a name that had faded starts out faded, before it is first
-// laid out, so it doesn't flash back.
+// Each fixed name's box as drawn, added to the boxes aircraft labels keep clear of. The layer is
+// rebuilt on each update: a name that had faded starts out faded, so it doesn't flash back.
 function measureYielders(svg) {
   const was = new Set(yielders.filter((y) => y.off).map((y) => y.key)), els = [...svg.querySelectorAll(`#s-static :is(${YIELDING})`)];
   yielders = [];
@@ -1161,8 +1087,7 @@ function measureYielders(svg) {
   yielders = yielders.filter((y) => y.box);
 }
 
-// Fade out a fixed name while an aircraft, or a label shown, covers it; back once it's clear by
-// a margin, so a name at an icon's edge doesn't flicker.
+// Fade out a fixed name while an aircraft or label covers it; back once clear by a margin, so it doesn't flicker.
 function giveWay() {
   if (!yielders.length) return;
   const over = [];

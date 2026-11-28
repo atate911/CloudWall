@@ -562,25 +562,18 @@ function heatLut(night) {
   }
   return (rampCache[k] = lut);
 }
-// the legend's bar, from the same ramp
 const heatLegend = (night) => `linear-gradient(90deg, ${HEAT_RAMP[night ? "night" : "day"].filter(([, , a]) => a > 0)
   .map(([t, c, a]) => `color-mix(in srgb, ${c} ${Math.round(a * 100)}%, transparent) ${Math.round(t * 100)}%`).join(", ")})`;
 
-// The traffic, drawn at the screen's own sharpness: every flight's line laid down on a buffer of
-// the canvas's device pixels, each pixel counting how many flights crossed it (a line covers a pixel
-// fully at its middle, partly at its anti-aliased edges, and counts once per flight where its
-// segments meet), then coloured: on a log scale, as a handful of busy corridors carry most of the
-// day, scaled so the busiest corridor (not its single busiest pixel) reaches the top of the ramp.
-//
-// Smoothed without blurring: where the lines are stays pixel-sharp, but the count each pixel is
-// coloured by is the average over the lines within a few pixels of it (`soft`, in device pixels),
-// weighted by how much of each pixel a line covers, so the empty map around doesn't thin it out. A
-// lone line keeps its colour exactly; where two cross there is no bright bead; and a corridor of
-// many lines shades evenly across its width instead of in streaks a flight apart.
+// The traffic: every flight's line laid down on a buffer of device pixels, each pixel counting the
+// flights that crossed it (once per flight where its segments meet), then coloured on a log scale
+// so the busiest corridor (not its single busiest pixel) reaches the top of the ramp.
+// Smoothed without blurring: the lines stay pixel-sharp, but each pixel is coloured by the count
+// averaged over the lines within `soft` device pixels, weighted by coverage, so the empty map
+// around doesn't thin it out and crossings make no bright bead.
 let heatDrawn = null;
 
-// Three passes of a box blur, near enough a Gaussian, along the rows and then the columns, each
-// pass in time proportional to the pixels whatever the radius.
+// Three passes of a box blur (near enough a Gaussian), in time proportional to the pixels whatever the radius.
 function smooth(a, size, r) {
   const tmp = new Float32Array(a.length), w = 2 * r + 1;
   const pass = (src, dst, stride, step) => {
@@ -625,15 +618,14 @@ function heatImage(heat, size, k, width, night, soft) {
     for (const j of touched) { buf[j] += mine[j]; mine[j] = 0; }
     touched.length = 0;
   }
-  // each lit pixel's count, smoothed over the lines near it (the line's own coverage is kept in buf,
-  // for the opacity of its edges): sum of counts over sum of coverage, both smoothed alike
+  // each lit pixel's smoothed count: sum of counts over sum of coverage, both smoothed alike
   const cover = new Float32Array(buf.length);
   for (let j = 0; j < buf.length; j++) cover[j] = buf[j] > 1 ? 1 : buf[j];
   const num = smooth(Float32Array.from(buf), size, soft), den = smooth(Float32Array.from(cover), size, soft);
   const lvl = new Float32Array(buf.length);
   for (let j = 0; j < buf.length; j++) if (buf[j] > 0 && den[j] > 1e-4) lvl[j] = Math.max(1, num[j] / den[j]);
-  // the busiest corridor's level: the 99.5th percentile of the lit pixels, from a histogram (sorting a
-  // million pixels is too slow for a Raspberry Pi)
+  // the busiest corridor's level: the 99.5th percentile of the lit pixels, from a histogram
+  // (sorting a million pixels is too slow for a Raspberry Pi)
   let max = 0, lit = 0;
   for (let j = 0; j < lvl.length; j++) if (lvl[j] > max) max = lvl[j];
   const bins = new Uint32Array(1024), lmax = Math.log1p(max) || 1;
@@ -641,8 +633,7 @@ function heatImage(heat, size, k, width, night, soft) {
   let level = lmax, above = lit * 0.005;
   for (let i = 1023; i >= 0 && above > 0; i--) { above -= bins[i]; if (above <= 0) level = ((i + 0.5) / 1024) * lmax; }
   const top = Math.max(Math.log1p(8), level), lut = heatLut(night);
-  // by day the scale starts at one flight: log(n) / log(busiest), so a lone track sits at the ramp's
-  // faint foot and each doubling climbs an even step (by night, as it was: lone tracks a little up it)
+  // by day the scale starts at one flight: log(n) / log(busiest), each doubling an even step
   const dayTop = Math.log(Math.max(8, Math.expm1(level)));
   const c = document.createElement("canvas");
   c.width = c.height = size;
@@ -661,9 +652,8 @@ function heatImage(heat, size, k, width, night, soft) {
   return { canvas: c, buf: lvl, cover, max, flights };
 }
 
-// The heatmap is square, as large as its half of the card allows: beside the caption on a wide
-// card, under it on a tall one (and on an upright phone). Sized here because CSS can't keep a
-// canvas square in a flex layout.
+// The heatmap is square, beside the caption on a wide card, under it on a tall one. Sized here
+// because CSS can't keep a canvas square in a flex layout.
 function heatSize(canvas) {
   const box = canvas.closest(".idle.heat"), fig = canvas.parentElement;
   box.classList.toggle("stack", phone() === "stack" || box.clientWidth < box.clientHeight * 1.2);
@@ -672,7 +662,7 @@ function heatSize(canvas) {
   return Math.max(120, Math.floor(Math.min(w, h)));
 }
 
-// Load the map tiles for the heatmap, then draw (and draw again once they arrive).
+// Draws at once, and again once the map tiles arrive.
 function drawHeat(canvas, state, heat) {
   const night = document.body.classList.contains("night");
   canvas._heat = null;          // drawn at the canvas's size, once it is known (paintHeat)
@@ -682,10 +672,8 @@ function drawHeat(canvas, state, heat) {
   const bm = state.basemap, names = state.charts && state.charts.layers && state.charts.layers.places;
   if (!bm || !bm.enabled) return paintHeat(canvas, state, heat, null);
   const R = heat.radius_nm, px = heatSize(canvas) * (window.devicePixelRatio || 1);
-  // (the names at the zoom for the screen's CSS pixels, not its device pixels, so their lettering
-  // comes out at its own size, not half of it on a sharp screen)
+  // (the names at the zoom for CSS pixels, not device pixels, so their lettering isn't halved on a sharp screen)
   const load = (layer, sharp = 1) => tileLayout(state.home, R, (sharp * px) / (2 * R), layer).tiles.map((t) => ({ ...t, img: new Image() }));
-  // the map, and the names of the towns and roads over the traffic, so the lines are somewhere
   const tiles = load(state.charts && state.charts.map), labels = names && names.enabled ? load(names, 1.15 / (window.devicePixelRatio || 1)) : [];
   let pending = tiles.length + labels.length;
   const done = () => { if (--pending === 0 && canvas.isConnected) paintHeat(canvas, state, heat, tiles, labels); };
@@ -709,7 +697,7 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   g.fillStyle = v("--disc"); g.fillRect(0, 0, size, size);
   const bm = state.basemap;
   if (bm && bm.enabled && tiles) {
-    // the map in greys only, quiet under the colour, so the corridors line up with real places
+    // the map in greys only, quiet under the colour
     const darkMap = ["dark", "carto-dark"].includes(bm.style);
     g.globalAlpha = night ? 0.7 : 0.6;
     g.filter = night ? (darkMap ? "grayscale(1) brightness(1.15) contrast(.95)" : "invert(1) grayscale(1) brightness(.55) contrast(1.1)")
@@ -721,14 +709,12 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
     g.strokeStyle = v("--water"); g.lineCap = g.lineJoin = "round";
     for (const w of map.water || []) { g.lineWidth = Math.max(2, w.width_nm * k); g.beginPath(); w.line.forEach(([la, lo], i) => { const [x, y] = XY(la, lo); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); }
   }
-  // the traffic, pixel for pixel (drawn again only when the canvas changes size); each flight's
-  // line about one and a half CSS pixels wide
-  // kept between the slide's turns: drawn again only for new data (a minute at most), a new size or the night chart
+  // the traffic, kept between the slide's turns: drawn again only for new data, a new size or the night chart
   if (!(heatDrawn && heatDrawn.heat === heat && heatDrawn.size === size && heatDrawn.night === night))
     heatDrawn = { heat, size, night, img: heatImage(heat, size, k, Math.max(1.2, 1.5 * u) * dpr, night, Math.max(1, Math.round(0.8 * u * dpr))) };
   canvas._heat = heatDrawn.img;
   g.drawImage(canvas._heat.canvas, 0, 0);
-  // the place names, over the traffic: light lettering by night, dark by day
+  // the place names, over the traffic
   if (labels.length) {
     const s = rad / R;
     g.globalAlpha = night ? 0.75 : 0.68;
@@ -736,13 +722,12 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
     for (const t of labels) if (t.img.complete && t.img.naturalWidth) g.drawImage(t.img, mid + t.x0 * s, mid - t.y0 * s, (t.x1 - t.x0) * s + 0.5, (t.y0 - t.y1) * s + 0.5);
     g.globalAlpha = 1; g.filter = "none";
   }
-  // a soft edge, the map falling away into the disc at the rim
   const fade = g.createRadialGradient(mid, mid, rad * 0.965, mid, mid, rad);     // a thin rim, not a fog
   const disc = /^#[0-9a-f]{6}$/i.test(v("--disc")) ? hex3(v("--disc")).join(",") : "128,128,128";    // faded from the disc's own colour, not from black
   fade.addColorStop(0, `rgba(${disc},0)`);
   fade.addColorStop(1, `rgba(${disc},1)`);
   g.fillStyle = fade; g.fillRect(0, 0, size, size);
-  // range rings, faint, with their distance at the upper right
+  // range rings
   const sans = getComputedStyle(canvas).fontFamily || "sans-serif";
   const step = R <= 20 ? 5 : 10, ink = v("--ink"), font = (px, w = 400) => `${w} ${Math.round(px * u * dpr)}px ${sans}`;
   g.strokeStyle = `color-mix(in srgb, ${ink} ${night ? 22 : 26}%, transparent)`;
@@ -754,7 +739,7 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
     g.fillText(`${r} nm`, mid + d + 3 * u * dpr, mid - d - 3 * u * dpr);
   }
   g.setLineDash([]);
-  // the airport's runways, and its code beside them
+  // the runways and the airport's code
   const rws = runwaysFor(state);
   g.strokeStyle = ink; g.lineCap = "round"; g.lineWidth = Math.max(1.5, 2.2 * u * dpr);
   for (const r of rws) {
@@ -772,7 +757,6 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   const U = u * dpr;
   busiest(g, canvas._heat, size, mid, rad, [{ x0: ax - 14 * U, x1: ax + 14 * U, y0: ay - 8 * U, y1: ay + 19 * U },
     { x0: mid - 8 * U, x1: mid + 40 * U, y0: mid - 9 * U, y1: mid + 8 * U }], U, lab, ink);
-  // home: a ring and a dot, named
   g.lineWidth = Math.max(1, 1.4 * u * dpr); g.strokeStyle = ink; g.fillStyle = ink;
   g.beginPath(); g.arc(mid, mid, 5 * u * dpr, 0, 7); g.stroke();
   g.beginPath(); g.arc(mid, mid, 1.8 * u * dpr, 0, 7); g.fill();
@@ -782,8 +766,8 @@ function paintHeat(canvas, state, heat, tiles, labels = []) {
   lab("N", mid, 14 * u * dpr, "center", 700, 9);
 }
 
-// The busiest route, marked with how many flights passed: among the busiest pixels, the one whose
-// mark and count sit clearest of the other names, well inside the edge.
+// The busiest route, marked with its flight count: among the busiest pixels, the one whose mark
+// sits clearest of the other names.
 function busiest(g, heat, size, mid, rad, avoid, unit, lab, ink) {
   const flights = Math.round(heat.flights);
   if (flights < 5) return;
@@ -870,7 +854,6 @@ function showIdle(el, state) {
   }
 }
 
-// Types seen today that have a drawing, most frequent first (at most 36), for the lineup.
 function fleetToday(L) {
   return ((L && L.types_today) || []).map((t) => ({ info: typeInfo(t), n: t.n }))
     .filter((t) => drawn(t.info)).slice(0, 36);
@@ -879,9 +862,8 @@ function fleetToday(L) {
 export function nextSlide() { slide++; slideAt = Date.now(); }
 // Something else drew in the card (the emergency takeover): rebuild from scratch next time.
 export function forgetHero() { cur = { hex: undefined }; }
-// The card changed size (a divider dragged, the window): the quiet-sky slide on it, drawn once to
-// its size (the heatmap, the fleet, the weather), is drawn again at the next render, in place. The
-// flight card fits itself (fitCard) and its route map redraws itself.
+// The card changed size: the quiet-sky slide, drawn once to its size, is drawn again at the next
+// render, in place. The flight card fits itself (fitCard).
 export function heroResized() { if (slideShown >= 0) { slideShown = -1; refit = true; } }
 
 function militaryHtml(heard, city) {
