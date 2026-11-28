@@ -16,33 +16,27 @@ EXAMPLE = paths.EXAMPLE
 
 DEFAULTS = {
     "home": {
-        # Placeholder: east Vancouver, WA, under PDX's 28L/28R final. Set your own, by lat and lon
-        # or by zip (a US ZIP code). elevation_ft: the airport's when not given.
+        # placeholder (east Vancouver, WA); or zip = a US ZIP code. elevation_ft None: the airport's
         "name": "Home",
         "lat": 45.5900,
         "lon": -122.4740,
         "elevation_ft": None,
     },
-    # The smaller fields nearby (Pearson Field, Grove Field, Troutdale and so on around Vancouver)
-    # come from the bundled tables; their traffic is labelled as theirs, not PDX's.
-    # "auto": the nearest large airport within 30 nm, else the nearest with airline service (PDX for
-    # Vancouver, WA). Or give its ICAO code.
+    # "auto": the nearest large airport within 30 nm, else the nearest with airline service
     "airport": {"icao": "auto"},
     "tracking": {
-        "radius_nm": 15,        # how far out the board, flight card and logbook look (the radar can look further)
+        "radius_nm": 15,        # board, flight card and logbook (the radar can look further)
         "overhead_nm": 3.5,     # inside this, an aircraft counts as "overhead" and is logged
         "max_overhead_alt_ft": 45000,
         "poll_seconds": 5,
         "when_idle": "pause",          # no screen open: "pause" all requests, or "log" slowly
         "idle_after_seconds": 90,
     },
-    # Position feeds, tried in order; CloudWall fails over to the next when one stops answering.
-    # merge: the first is your own receiver, asked alongside the others and combined with them.
+    # feeds tried in order, failing over; merge: the first is your own receiver, combined with the others
     "source": {"urls": ["https://opendata.adsb.fi/api/v3/lat/{lat}/lon/{lon}/dist/{radius}",
                         "https://api.adsb.lol/v2/point/{lat}/{lon}/{radius}"],
                "merge": False},
-    # The monthly allowance: Flightradar24 counts credits (monthly_credits), FlightAware lookups
-    # (monthly_limit); either name is taken for either provider.
+    # monthly_credits (FR24) and monthly_limit (FlightAware): either name is taken for either provider
     "flightradar24": {"api_key": "", "monthly_credits": 0, "safety_margin": 0.15, "billing_day": 1,
                       "daily_limit": 0, "mode": "always",
                       "general_aviation": False, "sandbox": False},

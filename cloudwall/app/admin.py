@@ -1,10 +1,4 @@
-"""The control board's API (/api/admin/...): everything the owner can see and do from the web page,
-from how things stand to changing a setting, fixing a problem, backing up and restarting.
-
-It joins the layers below it: the settings (core/schema.py, config.write_setting), CloudWall's
-check of itself (app/watch.py and the incident log), doctor and its guided fixes (operate/doctor,
-guide, repair), backups, the private link, and the root helper for what needs root. The server
-hands every /api/admin/ request here (srv.admin), so the server itself knows nothing of it.
+"""The control board's API (/api/admin/...); the server hands every such request here (srv.admin).
 
 Everything but whoami and sign-in is the owner's alone (serve/auth.py). A request naming a host
 CloudWall doesn't answer to is refused, and so is one a browser says comes from another site.
@@ -40,16 +34,15 @@ class Admin:
         self.doctor_cache = (0, None)
         self.lock = threading.Lock()
 
-    # -- who may ----------------------------------------------------------------------------
+    # -- who may --
     @staticmethod
     def proxied(h):
         return any(h.headers.get(k) for k in ("X-Forwarded-For", "X-Real-IP", "Forwarded"))
 
     @staticmethod
     def _visitor(h):
-        """Whose wrong passwords these are counted as: the address asking, or, when that is a
-        proxy on this machine (Caddy), the visitor it says it is asking for. (Otherwise everyone
-        behind the proxy would be one address, and a stranger's guesses would lock the owner out.)"""
+        """Whose wrong passwords these count as: behind a local proxy (Caddy), the visitor it names,
+        else everyone would be one address and a stranger's guesses would lock the owner out."""
         address = h.client_address[0]
         said = (h.headers.get("X-Forwarded-For") or "").split(",")[-1].strip()
         return said if said and auth.is_local(address) else address
@@ -58,13 +51,13 @@ class Admin:
         return self.owner.role(auth.cookies_of(h.headers.get("Cookie")), h.client_address[0], self.proxied(h))
 
     def may_change(self, h):
-        """For the screens' own changes (places): anyone, until there is an owner; then the owner."""
+        """For the screens' own changes (places): anyone until there is an owner, then the owner."""
         return not self.owner.exists() or self.role(h) == "owner"
 
     def _secure(self, h):
         return h.headers.get("X-Forwarded-Proto") == "https"
 
-    # -- the API ----------------------------------------------------------------------------
+    # -- the API --
     def handle(self, h, method, path):
         q = parse_qs(urlsplit(h.path).query)
         name = path[len("/api/admin/"):].strip("/")
@@ -96,10 +89,10 @@ class Admin:
             got = self.route(method, name, q, body or {})
         except (guide.Answered, ValueError, PermissionError) as e:
             return h._send(400, {"error": str(e)})
-        except Exception as e:                 # anything else is still answered, not a dropped connection
+        except Exception as e:                 # still answered, not a dropped connection
             log.exception("admin: %s %s failed", method, name)
             return h._send(400 if isinstance(e, (KeyError, TypeError)) else 500, {"error": f"That didn't work ({type(e).__name__}: {e})"})
-        if method == "POST" and name == "password":      # every session was the old password's: this one carries over
+        if method == "POST" and name == "password":      # sessions were the old password's: keep this one
             self.owner.carry_over(auth.cookies_of(h.headers.get("Cookie")).get(auth.COOKIE))
         if isinstance(got, tuple) and got[0] == "file":
             _, data, ctype, filename = got
