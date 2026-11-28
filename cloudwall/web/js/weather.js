@@ -244,7 +244,7 @@ function histCharts(width, hist) {
   // visibility (mi)
   const h4 = 64, y4 = scale(0, 10, h4);
   const vBody = `<path class="ln vis step" d="${stepPath(hist.map((o) => [x(o.time), y4(Math.min(o.visibility ?? 10, 10))]))}"/>
-    <text class="dlabel" x="${width - padR + 8}" y="${y4(Math.min(tLast.visibility ?? 10, 10)) + 4}">${tLast.visibility >= 10 ? "10+" : tLast.visibility} mi</text>`;
+    <text class="dlabel" x="${width - padR + 8}" y="${y4(Math.min(tLast.visibility ?? 10, 10)) + 4}">${tLast.visibility == null ? "–" : tLast.visibility >= 10 ? "10+" : tLast.visibility} mi</text>`;
   charts.push(frame(h4, vBody, "Visibility, miles", ticks([0, 5, 10], y4, (v) => v), ""));
 
   // shared time axis
@@ -344,7 +344,7 @@ const dayClock = (ms) => {
   return d.toLocaleString([], today ? { hour: "numeric", minute: "2-digit" } : { weekday: "short", hour: "numeric", minute: "2-digit" });
 };
 const dateOnly = (ms) => new Date(ms).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
-const hm = (ms) => `${Math.floor(ms / 3600000)} h ${Math.round((ms % 3600000) / 60000)} min`;
+const hm = (ms) => { const min = Math.round(ms / 60000); return `${Math.floor(min / 60)} h ${min % 60} min`; };
 
 export function sunMoonPanel(k) {
   const t = (ms) => (ms ? dayClock(ms) : "–");
@@ -408,7 +408,7 @@ function hookCrosshair(hist) {
     const o = hist[best], xx = hover.x(o.time);
     box.querySelectorAll(".xh").forEach((l) => { l.setAttribute("x1", xx); l.setAttribute("x2", xx); l.removeAttribute("visibility"); });
     $("wx-readout").textContent = `${clock(o.time)}: ${o.category}, ${degF(o.temp_c)} with dew point ${degF(o.dew_c)}, ${lowerFirst(windWords(o.wind))}, ` +
-      `${o.ceiling == null ? "no ceiling" : `ceiling ${num(o.ceiling)} ft`}, ${o.visibility >= 10 ? "10+" : o.visibility} mi${o.weather ? `, ${o.weather}` : ""}`;
+      `${o.ceiling == null ? "no ceiling" : `ceiling ${num(o.ceiling)} ft`}, ${o.visibility == null ? "–" : o.visibility >= 10 ? "10+" : o.visibility} mi${o.weather ? `, ${o.weather}` : ""}`;
   };
   box.addEventListener("pointermove", move);
   box.addEventListener("pointerdown", move);

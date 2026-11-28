@@ -78,9 +78,13 @@ const PAGE = typeof location === "undefined" ? { search: "", pathname: "" } : lo
 const PARAMS = new URLSearchParams(PAGE.search);
 const KIOSK_PAGE = /\/kiosk\/?$/.test(PAGE.pathname) || PARAMS.get("mode") === "kiosk";
 export const placeChoice = PARAMS.get("place") || (KIOSK_PAGE ? "" : store("place") || "");
+// A request left unanswered is given up after a while: a server that takes the connection and then
+// says nothing (a frozen one, or a proxy with nothing behind it) would otherwise hold every poll open.
+const API_WAIT_MS = 15000;
 export function api(path, opts) {
   const q = placeChoice ? `place=${encodeURIComponent(placeChoice)}` : KIOSK_PAGE ? "kiosk=1" : "";
-  return fetch(q ? `${path}${path.includes("?") ? "&" : "?"}${q}` : path, opts);
+  const wait = !opts?.signal && typeof AbortSignal !== "undefined" && AbortSignal.timeout ? { signal: AbortSignal.timeout(API_WAIT_MS) } : null;
+  return fetch(q ? `${path}${path.includes("?") ? "&" : "?"}${q}` : path, wait ? { ...opts, ...wait } : opts);
 }
 
 // "AERO MAINTENANCE INC" -> "Aero Maintenance Inc"; leaves mixed-case names alone.

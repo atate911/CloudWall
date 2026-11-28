@@ -258,8 +258,8 @@ function showIdle(el, state) {
   if (log && log.today > 0) slides.push("today");
   if (Date.now() - slideAt > SLIDE_SECONDS * 1000) { slide++; slideAt = Date.now(); }
   slide %= slides.length;
-  const kind = slides[slide], words = kind === "radar" ? radarSlideHtml(state) : "";
-  const key = kind + (kind === "next" ? state.next.hex : words);         // the radar's words redrawn as they change
+  const kind = slides[slide], words = kind === "radar" ? radarSlideHtml(state) : kind === "quiet" ? quietHtml(state) : "";
+  const key = kind + (kind === "next" ? state.next.hex : words);         // the radar's and the quiet sky's words redrawn as they change
   onRadar(kind === "radar");
   if (key === shownKey) {
     if (kind === "next" && $("k-next")) $("k-next").textContent = mmss(Math.max(0, state.next.cpa_s - since(state)));
@@ -270,7 +270,7 @@ function showIdle(el, state) {
   shownKey = key;
   if (kind === "radar") { el.innerHTML = words; if (again) return; }
   else if (kind === "next") el.innerHTML = nextSlideHtml(state.next, state);
-  else if (kind === "quiet") el.innerHTML = quietHtml(state);
+  else if (kind === "quiet") el.innerHTML = words;
   else if (kind === "today") el.innerHTML = todaySlideHtml(log, state);
   else if (kind === "military") el.innerHTML = militaryHtml(state);
   else if (kind === "airspace") el.innerHTML = airspaceHtml(state);

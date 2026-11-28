@@ -13,7 +13,6 @@ import { boardFlight, shortType, heardGroups } from "./parts.js";
 import { plate, typeInfo } from "./plate.js";
 import { flap } from "./fx.js";
 
-export const GROUPS = [["arr", "Arriving"], ["dep", "Departing"], ["loc", "Flying locally"], ["pass", "Passing over"]];
 const RAD = Math.PI / 180;
 const DIR8 = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
 export const dir8 = (deg) => DIR8[Math.round((((deg || 0) % 360) + 360) % 360 / 45) % 8];
@@ -120,7 +119,6 @@ export function where(a, state, { town = false } = {}) {
   return town ? "" : `${a.dist.toFixed(a.dist < 10 ? 1 : 0)} nm ${dir8(a.brg)} of home`;
 }
 const trend = (a) => ((a.vrate || 0) > 300 ? "climbing" : (a.vrate || 0) < -300 ? "descending" : "level");
-const arrow = (a) => ((a.vrate || 0) > 300 ? "↑" : (a.vrate || 0) < -300 ? "↓" : "");
 
 // ---- where to look: how far up from the horizon, drawn from the side ----
 // The house on the ground, the sky a quarter circle from the horizon to straight up, and a line of

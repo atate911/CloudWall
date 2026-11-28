@@ -175,12 +175,13 @@ $("btn-compass").addEventListener("click", async () => {
 });
 // left on last time: back on by itself where the browser allows it without a tap (Android); an
 // iPhone asks the person again, so there it waits for a tap on the switch
-if (phone() && store("skyCompass") === "on") startCompass().then((ok) => { if (!ok) compass.failed = ""; });
+// (asked once the page knows whether it is on a phone: see applyPhone() at the end)
+const resumeCompass = () => { if (phone() && store("skyCompass") === "on") startCompass().then((ok) => { if (!ok) compass.failed = ""; }); };
 
 // Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi. On a phone
 // the radar can be scrolled out of sight under the card, and then it rests.
 let lastDraw = 0, scopeSeen = true;
-new IntersectionObserver(([e]) => { scopeSeen = e.isIntersecting; }).observe($("scope"));
+new IntersectionObserver((es) => { scopeSeen = es[es.length - 1].isIntersecting; }).observe($("scope"));
 function frame(now) {
   requestAnimationFrame(frame);
   if (document.hidden || !scopeSeen || now - lastDraw < 48) return;
@@ -386,6 +387,7 @@ let seenNotable = null, lastNext = null;
 function noticeNew() {
   const now = Date.now(), next = (state.hero || state.next || {}).hex || null;
   const notable = new Set(picture(state).air.filter((a) => a.notable && a.notable !== "emergency").map((a) => a.hex));
+  for (const [hex, at] of flashedAt) if (now - at >= REFLASH_MS) flashedAt.delete(hex);     // (or it grows for weeks)
   if (seenNotable) {
     const flash = (hex) => {
       if (now - (flashedAt.get(hex) || 0) < REFLASH_MS) return;
@@ -436,6 +438,7 @@ function dropStale() {
   if (!state.status.ok && !state.aircraft.length && !state.hero) return;      // already cleared
   state = { ...state, aircraft: [], beyond: [], hero: null, next: null, pinned: null, overhead: null, emergency: [],
     status: { ...state.status, ok: false, source: state.status.source || "CloudWall" } };
+  stateAtPerf += 0.001;         // a new picture, as far as the radar's drawn-once layer goes
   render();
 }
 
@@ -564,13 +567,14 @@ setInterval(() => {
   else if (state.hero) tickHero(elapsed); else keepPlace(() => renderHero($("hero"), state));
 }, 1000);
 setInterval(() => { if (state && view === "board" && !document.hidden) tickCounts($("board"), state); }, 1000);
-setInterval(() => { if (view === "log") loadLog(state).catch(() => {}); }, 30000);
+setInterval(() => { if (view === "log" && !document.hidden) loadLog(state).catch(() => {}); }, 30000);
 // Local time, with coordinated universal time beside it as aviation writes it ("0324Z").
 setInterval(() => {
   const d = new Date(), z = String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0") + "Z";
   $("clock").innerHTML = `${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}<small>${z}</small>`;
 }, 1000);
 applyPhone();
+resumeCompass();
 poll().then(() => loadWeather(false));
 $("em-chip").addEventListener("click", () => { hidden.clear(); emShown = ""; setView("now"); render(); });
 $("tfr-chip").addEventListener("click", () => setView("wx"));
