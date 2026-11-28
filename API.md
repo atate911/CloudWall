@@ -67,6 +67,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `charts` | always | The chart layers the server can serve as tiles: `map`, `atc` (or null) and `layers` by name, among them `world`, the flight card's route map, served everywhere at zooms 0 to 6 (absent when `[map] route` is off). |
 | `logos` | always | Whether airline logos are served at `/logos/<IATA>`. |
 | `restart` | always | True when the server's code has changed on disk since it started: it wants restarting. |
+| `started` | always | When this server started (unix seconds). A page that sees it change loads itself again, to run the page that came with the new server. |
 | `health` | always | How CloudWall's own check of itself stands (`/api/health` has it in full): `worst` ("ok", "warn" or "fail"), `problems` (how many open), `checked` (when it last looked, or null before it has), `major` (the summary of a problem that stops CloudWall doing its job, or null: every screen says it), `major_title` (that problem in a few words) and `subtle` (the title of a problem the screens don't show, where what they show looks right but isn't, such as a frozen feed or a deaf receiver; or null). |
 
 ### An aircraft

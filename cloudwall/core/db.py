@@ -171,3 +171,9 @@ class Database:
     def close(self):
         with self.lock:
             self.db.close()
+
+    def __del__(self):                 # let go of the file when the last user of it has
+        try:
+            self.db.close()
+        except Exception:
+            pass

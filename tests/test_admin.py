@@ -255,6 +255,18 @@ class SavingTest(Served):
         self.assertIn("time zone", got["error"])
         self.assertEqual(self.call("/" + "x" * 5000)[0], 404)             # a name too long to be a file
 
+    def test_head_gets_the_headers_alone_and_the_connection_goes_on(self):
+        import http.client
+        self.serve()
+        c = http.client.HTTPConnection("127.0.0.1", int(self.base.rsplit(":", 1)[1]), timeout=10)
+        self.addCleanup(c.close)
+        c.request("HEAD", "/")
+        r = c.getresponse()
+        self.assertEqual((r.status, r.read()), (200, b""))
+        self.assertGreater(int(r.headers["Content-Length"]), 1000)
+        c.request("GET", "/api/admin/whoami")                             # the same connection, answered in full
+        self.assertIn(b"role", c.getresponse().read())
+
 
 class BoardPagesTest(Served):
     """What the board's pages are drawn from: the overview's figures, settings that need no restart,

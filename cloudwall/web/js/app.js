@@ -458,7 +458,7 @@ function dropStale() {
   render();
 }
 
-let pollSeq = 0, shownSeq = 0;
+let pollSeq = 0, shownSeq = 0, serverStarted = null;
 async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
   const seq = ++pollSeq, asked = myPin;
@@ -473,6 +473,10 @@ async function poll() {
       (asked ? `&pin=${encodeURIComponent(asked)}` : ""))).json();
     // answers can cross: keep the newest, and drop one asked for a flight no longer followed
     if (seq < shownSeq || asked !== myPin) return;
+    // a server started since this page was loaded may have come with a newer page: load it, on a wall
+    // panel at once, elsewhere once nobody has touched the page for a while
+    if (serverStarted == null) serverStarted = s.started;
+    else if (s.started && s.started !== serverStarted && (KIOSK || Date.now() - lastTouch > 120000)) { location.reload(); return; }
     shownSeq = seq;
     state = s;
     lastAnswer = Date.now();

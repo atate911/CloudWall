@@ -58,6 +58,15 @@ class CodeWatch:
         return self.changed
 
 
+class _Nowhere:
+    """Where the body of an answer to HEAD is written."""
+    def write(self, data):
+        return len(data)
+
+    def flush(self):
+        pass
+
+
 def make_server(cfg, places, charts=None, logos=None):
     """places: a place.Places; all the server asks of a place is its state, weather report,
     heatmap and logbook. Each screen says which place it shows with ?place=; without one,
@@ -66,6 +75,7 @@ def make_server(cfg, places, charts=None, logos=None):
     [server] key set, all of it is answered only under /k/<key>/ (access.py)."""
 
     code_changed = CodeWatch()
+    started = int(time.time())
     key = keys.tidy(cfg["server"].get("key"))          # a private link: nothing is answered outside /k/<key>/
     # what the displays may draw with, the same for every place: the radar's map, the chart layers, logos
     display = {"basemap": charts.map.info() if charts else None, "charts": charts.info() if charts else None,
@@ -185,7 +195,7 @@ def make_server(cfg, places, charts=None, logos=None):
                     reach = 1.0
                 reach = reach if reach == reach else 1.0                 # not NaN
                 return self._send(200, dict(place.state(pin, nm, q.get("square") == ["1"], reach), **display, api=API,
-                                            places=places.summaries(), restart=code_changed(),
+                                            places=places.summaries(), restart=code_changed(), started=started,
                                             health=srv.watch.monitor.summary() if srv.watch else QUIET))
             if path == "/api/health":
                 return self._send(200, srv.watch.report() if srv.watch else dict(QUIET, open=[], findings=[]))
@@ -258,6 +268,18 @@ def make_server(cfg, places, charts=None, logos=None):
             self.send_header("Cache-Control", "public, max-age=604800")
             self.end_headers()
             self.wfile.write(data)
+
+        def end_headers(self):
+            super().end_headers()
+            if self.command == "HEAD":                # the headers alone: what would follow goes nowhere
+                self.wfile = _Nowhere()
+
+        def do_HEAD(self):
+            real = self.wfile
+            try:
+                self.do_GET()
+            finally:
+                self.wfile = real
 
         def do_POST(self):
             if not self._admitted() or self._admin("POST"):

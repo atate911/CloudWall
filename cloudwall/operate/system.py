@@ -84,6 +84,11 @@ class System:
         if not self.dry_run:
             shutil.copytree(source, self.path(p), ignore=shutil.ignore_patterns(*ignore), dirs_exist_ok=True)
 
+    def rename(self, p, to):
+        self._did(f"rename {p} to {to}")
+        if not self.dry_run:
+            self.path(p).rename(self.path(to))
+
     def symlink(self, target, p):
         """Point the link at p to target, switching in one step (no moment with no link)."""
         link = self.path(p)

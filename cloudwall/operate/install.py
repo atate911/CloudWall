@@ -146,8 +146,12 @@ def put_release(system, source):
     rid = f"{__version__}-{tree_hash(source)[:10]}"
     folder = f"{OPT}/releases/{rid}"
     if not system.exists(f"{folder}/cloudwall/__init__.py"):
-        system.copy_tree(source, f"{folder}/cloudwall")
-        system.run([PYTHON, "-m", "compileall", "-q", system.path(folder).as_posix()], check=False, quiet=True)
+        # copied under another name and renamed when whole: a copy cut short is never taken for a release
+        system.remove(f"{folder}.part")
+        system.copy_tree(source, f"{folder}.part/cloudwall")
+        system.run([PYTHON, "-m", "compileall", "-q", system.path(f"{folder}.part").as_posix()], check=False, quiet=True)
+        system.remove(folder)
+        system.rename(f"{folder}.part", folder)
     link = system.path(f"{OPT}/current")
     before = os.readlink(link) if link.is_symlink() else None
     changed = system.symlink(f"releases/{rid}", f"{OPT}/current")     # relative: right under any root

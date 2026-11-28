@@ -782,9 +782,15 @@ class Handler(BaseHTTPRequestHandler):
         # a CORS preflight, which this server never grants
         if self.path.split("?")[0] != "/api/action" or self.headers.get("X-Sharing-Guide") != "1":
             return self._send(403, "forbidden", "text/plain")
+        # (and only under an address, not a name: a page elsewhere can point a name of its own at this machine)
+        host = (self.headers.get("Host") or "").rsplit(":", 1)[0].strip("[]")
+        if not re.fullmatch(r"[0-9a-fA-F:.]+|localhost|[\w-]+(\.local|\.lan|\.home\.arpa)?", host):
+            return self._send(403, "forbidden: open this page by the Pi's address", "text/plain")
         try:
-            n = min(int(self.headers.get("Content-Length") or 0), 10000)
+            n = max(0, min(int(self.headers.get("Content-Length") or 0), 10000))
             a = json.loads(self.rfile.read(n) or b"{}")
+            if not isinstance(a, dict):
+                raise ValueError("not an object")
         except ValueError:
             return self._send(400, "bad request", "text/plain")
         return self._send(200, json.dumps(act(str(a.get("action", "")), a)), "application/json")
