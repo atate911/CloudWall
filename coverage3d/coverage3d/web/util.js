@@ -55,6 +55,7 @@ export const fmtBrg = (b) => String(Math.round(b) % 360).padStart(3, "0") + "°"
 export function fmtTime(t) {
   return new Date(t * 1000).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
+export const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const $ = (id) => document.getElementById(id);
 export const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 

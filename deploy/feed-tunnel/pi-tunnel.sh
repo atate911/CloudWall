@@ -154,7 +154,7 @@ cmd_install() {
     ok "matches the fingerprint you gave"
   else
     say "  Compare with the fingerprints 'vps-tunnel.sh setup' printed on the VPS."
-    read -r -p "  Do they match? [y/N] " a </dev/tty
+    read -r -p "  Do they match? [y/N] " a </dev/tty || { rm -f "$scan"; die "no terminal to ask at: give the fingerprint with --fingerprint"; }
     [[ "$a" =~ ^[Yy] ]] || { rm -f "$scan"; die "stopped: fingerprints not confirmed"; }
   fi
   install -m 644 -o root -g "$LUSER" "$scan" "$KNOWN"; rm -f "$scan"

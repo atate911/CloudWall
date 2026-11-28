@@ -270,7 +270,7 @@ function tafStrip(width, taf, maxRows = 99) {
   const rows = taf.periods.filter((p) => p.to > now).slice(0, maxRows).map((p) => {
     const when = p.change === "TEMPO" ? `Temporarily ${clock(p.from)} to ${clock(p.to)}` : p.probability ? `${p.probability}% chance ${clock(p.from)} to ${clock(p.to)}` : `From ${clock(Math.max(p.from, now))}`;
     const sky = p.clouds.length ? p.clouds.map((c) => `${COVER[c.cover] || c.cover} ${num(c.base)}`).join(", ") : "clear";
-    const bits = [windWords(p.wind), p.visibility != null ? `${p.visibility >= 6 ? "6+" : p.visibility} mi` : null, p.weather, sky, p.wind_shear ? "wind shear" : null].filter(Boolean);
+    const bits = [p.wind && p.wind.speed != null ? windWords(p.wind) : null, p.visibility != null ? `${p.visibility >= 6 ? "6+" : p.visibility} mi` : null, p.weather, sky, p.wind_shear ? "wind shear" : null].filter(Boolean);
     return `<li><span class="when">${esc(when)}</span><span class="cat-tag"><i class="sw cat-${p.category}"></i>${p.category}</span><span>${esc(bits.join(", "))}</span></li>`;
   }).join("");
   return `${strip}<ul class="taf-list">${rows}</ul>`;
@@ -314,7 +314,7 @@ export function renderWeatherTab(el, W, state) {
     <section class="wx-more">
       <div class="panel-sky">${sunMoonPanel(skyToday(home.lat, home.lon))}</div>
       <div class="panel-contrails">${contrailPanel(W.contrails)}</div>
-      <div class="panel-airspace">${airspacePanel(W.tfrs, state)}</div>
+      <div class="panel-airspace">${airspacePanel(W.tfrs)}</div>
     </section>
   </div>`;
   const rose = Math.min($("fig-wind").clientWidth, 260);
@@ -385,10 +385,9 @@ export function tfrAlt(t) {
   if (!t.floor || !t.ceiling) return "";
   return `${t.floor.text === "the surface" ? "Surface" : t.floor.text} to ${t.ceiling.text}`;
 }
-export function airspacePanel(tfrs, state) {
-  const radius = 30;
+export function airspacePanel(tfrs) {
   if (!tfrs) return `<h2>Flight restrictions</h2><p class="dim">Checking the FAA's list.</p>`;
-  if (!tfrs.length) return `<h2>Flight restrictions</h2><p class="sum">None within ${radius} nm.</p><p class="dim">Temporary flight restrictions (TFRs) close airspace for things like presidential visits, wildfires and stadium events. Source: FAA.</p>`;
+  if (!tfrs.length) return `<h2>Flight restrictions</h2><p class="sum">None nearby.</p><p class="dim">Temporary flight restrictions (TFRs) close airspace for things like presidential visits, wildfires and stadium events. Source: FAA.</p>`;
   return `<h2>Flight restrictions</h2>` + tfrs.map((t) => `<article class="tfr-item${t.active ? " active" : ""}">
       <div class="tfr-top"><b>${esc(t.name || "Flight restriction")}</b>${t.drones_only ? `<span class="tag">Drones only</span>` : ""}${t.active ? `<span class="tag on">Active</span>` : ""}</div>
       <p>${esc(t.kind)}. ${esc(tfrAlt(t))}${t.dist_nm != null ? `, ${t.dist_nm < 0.5 ? "over the house" : `${t.dist_nm} nm away`}` : ""}.</p>

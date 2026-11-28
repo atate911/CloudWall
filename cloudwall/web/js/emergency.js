@@ -12,7 +12,8 @@ export function renderEmergency(el, state, list, canHide) {
   const where = r ? `${r.origin.iata} to ${r.dest.iata}` : a.local ? localWords(a, state) : "";
   const others = list.slice(1).map((o) => `${ident(o)} (${o.emergency_code})`).join(", ");
   el.className = "panel em-card";
-  el.innerHTML = `
+  // drawn again only when it reads differently: a press on its button must find the button still there
+  const html = `
     <div class="em-top"><span class="em-code">Squawk <b>${esc(a.emergency_code)}</b></span><span class="em-since">for ${mmss(since)}</span></div>
     <h1 class="em-title">${esc(a.emergency_title)}</h1>
     <p class="em-meaning">${esc(a.emergency_meaning)}</p>
@@ -25,4 +26,7 @@ export function renderEmergency(el, state, list, canHide) {
     </div>
     ${others ? `<p class="em-more">Also squawking: ${esc(others)}</p>` : ""}
     ${canHide ? `<button class="em-hide" id="em-hide">Hide for this flight</button>` : ""}`;
+  const key = html.replace(/<span class="em-since">[^<]*<\/span>/, ""), clock = el.querySelector(".em-since");
+  if (el._emKey === key && clock) clock.textContent = `for ${mmss(since)}`;
+  else { el.innerHTML = html; el._emKey = key; }
 }

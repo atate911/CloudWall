@@ -1,7 +1,7 @@
 // Home: CloudWall as one picture. The sky on the left, the ways positions reach the server in the
 // middle, what the server feeds on the right, each part lit by how it is doing and each a door to
 // its page. Under it, only what needs doing; nothing to set here.
-import { el, esc, S, sky, problems, house, ownFeed, ago, lasted, num, plural, button, runDoctor, call, toast, loadOverview, value, on, TITLES } from "../core.js";
+import { el, esc, S, sky, problems, house, ownFeed, ago, lasted, num, plural, button, runDoctor, call, toast, loadOverview, value, onPage, TITLES } from "../core.js";
 import { setup } from "../words.js";
 import { icon } from "../icons.js";
 import { scope, timeline } from "../draw.js";
@@ -134,7 +134,7 @@ export default {
     // the setup in words: a sentence that reads wrong is the thing to click
     const said = el(`<section class="setup-said"><header><h2>Setup</h2><a href="#settings">All settings</a></header>${setup()}</section>`);
     page.append(said);
-    on("settings", () => { if (said.isConnected) said.innerHTML = `<header><h2>Setup</h2><a href="#settings">All settings</a></header>${setup()}`; });
+    onPage("settings", () => { if (said.isConnected) said.innerHTML = `<header><h2>Setup</h2><a href="#settings">All settings</a></header>${setup()}`; });
 
     const lower = el(`<section class="home-lower">
       <div class="panel week"><h2>Last 7 days</h2><div class="week-chart"></div><p class="dim small">Each bar is a problem, from when it started to when it ended. <a href="#health">Health</a></p></div>

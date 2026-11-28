@@ -79,7 +79,7 @@ def main():
     ap.add_argument("--db", help="override the logbook database path")
     ap.add_argument("--new-key", action="store_true",
                     help="print a fresh key for a private link and exit (--private-link sets one up for you)")
-    ap.add_argument("--private-link", nargs="?", const="", choices=["", "new", "show", "off", "url"], metavar="new|show|off",
+    ap.add_argument("--private-link", nargs="?", const="", choices=["", "new", "show", "off", "url"], metavar="new|show|off|url",
                     help="set up a private link, to reach CloudWall from outside the house: makes a key and writes it "
                          "into the config file, restarts the service if it runs as one, and prints the links to open "
                          "(with no word: shows the link if there is one, makes one if not). new: a fresh key, ending "
@@ -208,7 +208,7 @@ def main():
     watch = Watch(cfg, places, fa, demo=args.demo, code_changed=server.code_changed, incidents=incidents,
                   data_dir=None if db == ":memory:" else Path(db).parent, cache_dir=tiles_dir.parent)
     server.watch = watch
-    server.admin = Admin(cfg, places, watch, store0, incidents, fa, charts, demo=args.demo)
+    server.admin = Admin(cfg, places, watch, store0, incidents, fa, demo=args.demo)
     watch.start()
     sd_notify("READY=1")                   # (systemd's Type=notify: answering now)
     try:

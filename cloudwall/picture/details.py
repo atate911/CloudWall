@@ -75,7 +75,7 @@ class Details:
             # no believable route, but it's on approach here: estimate the landing from the runway distance
             ap = a.get("local_field") and next(f for f in self.cfg["airport"]["others"]
                                                if f["code"] == a["local_field"]["code"]) or self.cfg["airport"]
-            a["landing_est"] = self._eta_estimate(a, geo.haversine_nm(a["lat"], a["lon"], ap["lat"], ap["lon"]), ap)
+            a["landing_est"] = self._eta_estimate(a, geo.haversine_nm(a["lat"], a["lon"], ap["lat"], ap["lon"]))
         r = a.get("route")
         a["flight_no"] = (r["flight"] if r and r.get("plausible") and r.get("source") else None) \
             or airlines.flight_number(a.get("callsign")) or (r["flight"] if r and r.get("plausible") else None)
@@ -146,7 +146,7 @@ class Details:
             pct = route.get("progress_percent")
             left = (geo.haversine_nm(a["lat"], a["lon"], d["lat"], d["lon"]) if d.get("lat") is not None else None)
             return dict(route, flown_nm=None, left_nm=left, plausible=True,
-                        progress=pct / 100 if pct is not None else None, eta_est=self._eta_estimate(a, left, d))
+                        progress=pct / 100 if pct is not None else None, eta_est=self._eta_estimate(a, left))
         flown = geo.haversine_nm(o["lat"], o["lon"], a["lat"], a["lon"])
         left = geo.haversine_nm(a["lat"], a["lon"], d["lat"], d["lon"])
         plausible = geo.route_plausible(o["lat"], o["lon"], d["lat"], d["lon"], a["lat"], a["lon"])
@@ -156,9 +156,9 @@ class Details:
                 and geo.haversine_nm(ap["lat"], ap["lon"], a["lat"], a["lon"]) < 20):
             plausible = False
         return dict(route, flown_nm=flown, left_nm=left, progress=flown / max(flown + left, 1),
-                    plausible=plausible, eta_est=self._eta_estimate(a, left, d))
+                    plausible=plausible, eta_est=self._eta_estimate(a, left))
 
-    def _eta_estimate(self, a, left_nm, dest):
+    def _eta_estimate(self, a, left_nm):
         """Rough landing time from distance and ground speed, when the provider gives none.
         Aircraft slow down for the approach, so add a few minutes near the end."""
         gs = a.get("gs") or 0

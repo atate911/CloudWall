@@ -1,5 +1,5 @@
 // Coverage3D page: UI state, data loading, wiring between the API, the map and the plots.
-import { $, getJSON, store, haversineNm, bearingDeg, fmtDist, fmtBrg, fmtAlt, fmtTime, altColor, rgbCss, rgbHex, GROUND_COLOR, ALT_STOPS, RSSI_STOPS, UNIT_NM, clamp } from "./util.js";
+import { $, esc, getJSON, store, haversineNm, bearingDeg, fmtDist, fmtBrg, fmtAlt, fmtTime, altColor, rgbCss, rgbHex, GROUND_COLOR, ALT_STOPS, RSSI_STOPS, UNIT_NM, clamp } from "./util.js";
 import { MapView, BASEMAPS } from "./mapview.js";
 import { drawVertical, drawPolar } from "./plots.js";
 
@@ -132,10 +132,10 @@ async function onClick(info) {
   } else if (info.kind === "point") {
     const P = st.points, i = info.object;
     let name = ""; try { name = (await getJSON("api/aircraft?hex=" + P.hex[i])).callsign || ""; } catch (e) { /* none */ }
-    showInfo(`<b class="t">${name || P.hex[i]}</b>${P.hex[i]}<br>${fmtTime(P.t[i])}<br>${fmtAlt(P.alt[i])} · ${fmtDist(P.dist[i], S.settings.units)}<br>RSSI ${P.rssi[i] ?? "–"} dBFS`, x, y);
+    showInfo(`<b class="t">${esc(name || P.hex[i])}</b>${esc(P.hex[i])}<br>${fmtTime(P.t[i])}<br>${fmtAlt(P.alt[i])} · ${fmtDist(P.dist[i], S.settings.units)}<br>RSSI ${P.rssi[i] ?? "–"} dBFS`, x, y);
   } else if (info.kind === "live") {
     const a = info.object;
-    showInfo(`<b class="t">${a.flight || a.hex}</b>${a.hex} ${a.t || ""}<br>${fmtAlt(a.alt_geom ?? a.alt_baro)} · ${a.gs ? Math.round(a.gs) + " kt" : ""}<br>${a.r_dst != null ? fmtDist(a.r_dst, S.settings.units) + " · " : ""}RSSI ${a.rssi ?? "–"} dBFS`, x, y);
+    showInfo(`<b class="t">${esc(a.flight || a.hex)}</b>${esc(a.hex)} ${esc(a.t || "")}<br>${fmtAlt(a.alt_geom ?? a.alt_baro)} · ${a.gs ? Math.round(a.gs) + " kt" : ""}<br>${a.r_dst != null ? fmtDist(a.r_dst, S.settings.units) + " · " : ""}RSSI ${a.rssi ?? "–"} dBFS`, x, y);
   }
 }
 
@@ -179,7 +179,7 @@ function renderStats() {
     + `<dt>Worst bearing</dt><dd>${cov.summary.worst_sector == null ? "–" : `${fmtBrg(cov.summary.worst_sector + cov.sector_deg / 2)} (${f(cov.summary.worst_nm)})`}</dd></dl>`;
   const rx = d?.receiver;
   if (rx && !rx.error) h += `<dl><dt>Message rate</dt><dd>${rx.msg_per_s?.toFixed(0)} /s</dd><dt>Signal / noise</dt><dd>${rx.signal_dbfs?.toFixed?.(1)} / ${rx.noise_dbfs?.toFixed?.(1)} dBFS</dd><dt>Strong signals</dt><dd>${rx.strong_pct == null ? "–" : rx.strong_pct.toFixed(1) + " %"}</dd><dt>Gain</dt><dd>${rx.gain_db ?? "–"} dB</dd><dt>Decoder max (1 min)</dt><dd>${rx.max_distance_nm == null ? "–" : f(rx.max_distance_nm)}</dd></dl>`;
-  else if (rx) h += `<p class="hint">Receiver stats unavailable: ${rx.error}</p>`;
+  else if (rx) h += `<p class="hint">Receiver stats unavailable: ${esc(rx.error)}</p>`;
   h += `<table><tr><th>Band</th><th>${cov.stat === "max" ? "max" : "p95"}</th><th>max</th><th>n</th></tr>`;
   for (const b of [...cov.bands].reverse()) {
     const m = Math.max(...b.sectors.map((s) => s.dist_nm)), mx = Math.max(...b.sectors.map((s) => s.max_nm)), n = b.sectors.reduce((a, s) => a + s.count, 0);

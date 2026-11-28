@@ -41,7 +41,7 @@ function hearing(r) {
         <figure>${signalMeter({ signal: m.signal, noise: m.noise, peak: m.peak })}<figcaption>Signal against noise, dBFS</figcaption></figure>
         <div class="rx-planes">
           <b>${num(total)}</b><span>aircraft heard</span>
-          <div class="split" role="img" aria-label="${num(r.with_pos)} with a position, ${num(r.without_pos)} without"><i style="flex-grow:${r.with_pos || 0}"></i><i style="flex-grow:${r.without_pos || 0}"></i></div>
+          <div class="split" role="img" aria-label="${num(r.with_pos)} with a position, ${num(r.without_pos)} without"><i style="flex-grow:${+r.with_pos || 0}"></i><i style="flex-grow:${+r.without_pos || 0}"></i></div>
           <span class="dim small">${num(r.with_pos)} with a position, ${num(r.without_pos)} without</span>
           ${types.length ? `<ul class="chips">${types.map(([k, v]) => `<li>${esc(typeName[k] || k)} <b>${num(v)}</b></li>`).join("")}</ul>` : ""}
         </div>
@@ -98,11 +98,15 @@ function copies(root) {
   root.querySelectorAll("[data-copy]").forEach((d) => d.replaceWith(copyable(d.dataset.copy)));
 }
 
+// the same machine at another port, whatever port or path its address already has
+function onPort(address, port) {
+  try { const u = new URL(address); u.port = port; u.pathname = "/"; return u.href; } catch { return `${address.replace(/\/$/, "")}:${port}`; }
+}
 function shares(r) {
   const home = r.home_url;
   return group("Links", "", [el(`<div class="links">
       ${home ? out(home, "Setup page <small>adsb.im, on your home network</small>") : `<span class="link-off">Setup page <small>set its address at home, above</small></span>`}
-      ${home ? out(`${home.replace(/\/$/, "")}:8080`, "SkyAware / tar1090 <small>on your home network</small>") : ""}
+      ${home ? out(onPort(home, 8080), "SkyAware / tar1090 <small>on your home network</small>") : ""}
       ${out("https://flightaware.com/adsb/stats/user/", "FlightAware statistics")}
       ${out("https://flightaware.com/adsb/piaware/claim", "Claim on FlightAware <small>if it feeds as a guest</small>")}
       ${out("https://www.flightradar24.com/account/data-sharing", "Flightradar24 data sharing")}

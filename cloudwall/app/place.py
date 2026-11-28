@@ -157,6 +157,7 @@ class Place:
         home, trk, activity, tracker = self.cfg["home"], self.cfg["tracking"], self.activity, self.tracker
         paused = False
         while not self.stopped.is_set():
+            self.beat = time.monotonic()        # (the watcher's sign that this loop still turns)
             idle = activity.idle()
             if idle and self.when_idle == "pause":
                 if not paused:

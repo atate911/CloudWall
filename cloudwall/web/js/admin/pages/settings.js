@@ -4,7 +4,7 @@
 // A line opens to change the setting there, with its explanation; "see it on its page" goes to the
 // picture it's part of. Filters narrow it to what you've set, what waits, and the lines in the
 // settings file that do nothing (with a fix for each).
-import { el, esc, S, setting, call, toast, loadSettings, plural, on, sky, TITLES } from "../core.js";
+import { el, esc, S, setting, call, toast, loadSettings, plural, onPage, sky, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { head } from "../parts.js";
 import { any } from "../controls.js";
@@ -155,7 +155,7 @@ export default {
       const said = page.querySelector(".setup-said");
       if (said) said.innerHTML = `<h2>Setup</h2>${setup()}<p class="dim small">Underlined values open their setting.</p>`;
     };
-    on("settings", repaint);
+    onPage("settings", repaint);
 
     // #settings/<section>.<key> (from a "set it again" link): that line, open
     const target = (location.hash.split("/")[1] || "");

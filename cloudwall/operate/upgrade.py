@@ -72,4 +72,4 @@ def upgrade(system, source=None, say=print):
         bad = [f for f in found if f.state in (health.WARN, health.FAIL)]
         say("")
         say(health.render(bad) if bad else "Checked: all well.")
-    say("\nUpdated. To go back to the release before: sudo cloudwall rollback")
+    say("\nNothing was changed (--dry-run)." if system.dry_run else "\nUpdated. To go back to the release before: sudo cloudwall rollback")

@@ -14,10 +14,6 @@ from ..core import geo
 from . import airports
 
 log = logging.getLogger("cloudwall")
-# CloudWall can watch several places: [home] with [airport] is the first, and each [[places]]
-# entry adds one. A place needs only a name, a position and its airport's ICAO code; the rest
-# of the airport (name, city, position, elevation, runways, the small fields nearby) comes from
-# the bundled tables unless the config gives it.
 
 def _slug(name):
     return re.sub(r"[^a-z0-9]+", "-", str(name).lower()).strip("-") or "place"

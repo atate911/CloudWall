@@ -2,7 +2,7 @@
 // a ring), its position by clicking where it is (or taking the receiver's), and the airport is read
 // out by name. The values set once and seldom touched again (the ground's height, the ceiling for
 // "overhead", a ZIP code instead of coordinates) wait under a shade. Other places watched follow.
-import { el, esc, S, sky, value, save, call, toast, num, plural, house, loadOverview, TITLES } from "../core.js";
+import { el, esc, S, sky, value, save, call, toast, num, plural, loadOverview, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { houseMap } from "../map.js";
 import { distBrg } from "../draw.js";
@@ -121,8 +121,8 @@ export default {
     page.append(group("House", "", [
       text("home", "name", { label: "Name" }),
       pos,
-      advanced(() => [value("home", "zip") ? `ZIP code ${value("home", "zip")}` : "", value("home", "elevation_ft") ? `ground at ${num(value("home", "elevation_ft"))} ft` : "ground height from the airport"].filter(Boolean).join("; "), [
-        stepper("home", "elevation_ft", { label: "Ground elevation", step: 10, min: -1500, max: 15000, says: (v) => v ? `Heights above the house are worked out from ${num(v)} ft.` : "Not set: the airport's elevation is used." }),
+      advanced(() => [value("home", "zip") ? `ZIP code ${value("home", "zip")}` : "", value("home", "elevation_ft") != null ? `ground at ${num(value("home", "elevation_ft"))} ft` : "ground height from the airport"].filter(Boolean).join("; "), [
+        stepper("home", "elevation_ft", { label: "Ground elevation", step: 10, min: -1500, max: 15000, says: (v) => v != null ? `Heights above the house are worked out from ${num(v)} ft. Empty the box to use the airport's.` : "Not set: the airport's elevation is used." }),
         text("home", "zip", { label: "ZIP code", help: "Only used when latitude and longitude are left out: the centre of the ZIP code's area." }),
       ]),
     ]));

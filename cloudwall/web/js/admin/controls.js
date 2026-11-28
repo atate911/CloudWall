@@ -218,7 +218,7 @@ export function stepper(section, key, opt = {}) {
   const later = (v) => { clearTimeout(timer); opt.preview?.(v); timer = setTimeout(() => wrap.node.commit(v), 650); };
   wrap.render = () => {
     const v = setting(section, key).value;
-    if (document.activeElement !== input) input.value = shown(v);
+    if (document.activeElement !== input) input.value = v == null ? "" : shown(v);
     input.size = Math.max(2, input.value.length);
     wrap.querySelectorAll("[data-p]").forEach((b) => b.classList.toggle("on", +b.dataset.p === +v));
   };
@@ -234,6 +234,8 @@ export function stepper(section, key, opt = {}) {
   input.oninput = () => { input.size = Math.max(2, input.value.length); };
   input.onchange = () => {
     const v = parseFloat(input.value);
+    // emptied: back to not set, for a setting that can be (one with no default of its own)
+    if (!input.value.trim() && setting(section, key).default == null && setting(section, key).value != null) { clearTimeout(timer); wrap.node.commit(null); return; }
     if (Number.isNaN(v)) { wrap.render(); return; }
     later(clamp(v));
   };

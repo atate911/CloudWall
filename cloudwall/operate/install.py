@@ -335,6 +335,8 @@ def panel(system, opts):
     user = opts.desktop_user or os.environ.get("SUDO_USER")
     if not user or user == "root":
         raise SystemExit("cloudwall install --role panel: say whose desktop shows it: --desktop-user <name>")
+    if system.real and system.ask(["id", "-u", user]).returncode != 0:
+        raise SystemExit(f"cloudwall install --role panel: there is no user {user!r} on this machine")
     url = (opts.wall_url or "").rstrip("/")
     if not url:                                   # a wall on this machine: its own address, with its key
         cfg = config.load(system.path(CONFIG)) if system.exists(CONFIG) else config.load(None)
@@ -343,8 +345,11 @@ def panel(system, opts):
     # the address may carry the private link's key: readable by the desktop's user, not everyone
     system.write(PANEL_CONF, f"CLOUDWALL_URL='{url}'\n", mode=0o640, owner="root", group=user)
     system.write(KIOSK_BIN, KIOSK_TEXT, mode=0o755)
-    home = Path(system.ask(["getent", "passwd", user]).stdout.split(":")[5]) if system.real else Path(f"/home/{user}")
+    home = Path(os.path.expanduser(f"~{user}")) if system.real else Path(f"/home/{user}")
     autostart = f"{home}/.config/labwc/autostart"
+    for folder in (f"{home}/.config", f"{home}/.config/labwc"):      # the user's own, not root's
+        if not system.exists(folder):
+            system.mkdir(folder, 0o755, user, user)
     current = system.read(autostart) or ""
     if KIOSK_BIN not in current:
         system.write(autostart, current + ("" if current.endswith("\n") or not current else "\n") + f"{KIOSK_BIN} &\n",

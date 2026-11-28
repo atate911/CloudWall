@@ -93,6 +93,8 @@ def main(argv=None):
     from .listen import listen
     stop = threading.Event()
     ports = airband.ports(p, args.port)
+    if not ports:
+        raise SystemExit("cloudwall.radio: no receiver is left to listen with (--scan takes the last one named)")
     print(f"Listening on UDP {min(ports)}-{max(ports)} for {len(ports)} channels; Ctrl-C to stop")
     try:
         listen(ports, on_call, stop)

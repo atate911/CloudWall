@@ -251,9 +251,17 @@ class Watch:
         return changes
 
     def alive(self):
-        """Is the core of CloudWall going: every place's positions thread running? (systemd's
+        """Is the core of CloudWall going: every place's positions thread running, and its loop
+        still turning (one stuck for good inside a request is as gone as one that ended)? (systemd's
         watchdog restarts CloudWall when this stops being said; a fault in a check is no reason to.)"""
-        return all(t.is_alive() for p in list(self.places) for t in p.threads[:1])
+        now = time.monotonic()
+        for p in list(self.places):
+            if not all(t.is_alive() for t in p.threads[:1]):
+                return False
+            beat = getattr(p, "beat", None)       # None: not started yet
+            if p.threads and beat is not None and now - beat > 3 * p.cfg["tracking"]["poll_seconds"] + 300:
+                return False
+        return True
 
     def _notify(self, what, f):
         body = {"cloudwall": __version__, "host": socket.gethostname(), "event": what, "major": f.major,

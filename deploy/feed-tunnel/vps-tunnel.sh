@@ -55,7 +55,7 @@ public_address() {
   esac
 }
 
-ssh_port() { sshd -T 2>/dev/null | awk '$1=="port"{print $2; exit}'; }
+ssh_port() { sshd -T 2>/dev/null | awk '$1=="port"{print $2; exit}' || true; }
 
 cmd_setup() {
   need_root
@@ -195,6 +195,7 @@ find_config() {
     wd=$(sed -n 's/^WorkingDirectory=//p' "$unit" | head -1)
     [ -n "$wd" ] && [ -e "$wd/config.toml" ] && { echo "$wd/config.toml"; return; }
   fi
+  [ -e ./config.toml ] && { echo "$PWD/config.toml"; return; }     # (as CloudWall itself looks, run from here)
   local u="${XDG_CONFIG_HOME:-$HOME/.config}/cloudwall/config.toml"
   [ -e "$u" ] && { echo "$u"; return; }
   return 1
@@ -267,7 +268,7 @@ PY
 cmd_remove() {
   need_root
   id "$TUSER" >/dev/null 2>&1 || { ok "no '$TUSER' account: nothing to remove"; return; }
-  read -r -p "Delete account '$TUSER' and the Pi's key (the tunnel will stop working)? [y/N] " a </dev/tty
+  read -r -p "Delete account '$TUSER' and the Pi's key (the tunnel will stop working)? [y/N] " a </dev/tty || die "no terminal to ask at: run this from one"
   [[ "$a" =~ ^[Yy] ]] || die "cancelled"
   pkill -u "$TUSER" 2>/dev/null || true
   userdel -r "$TUSER" 2>/dev/null || userdel "$TUSER"

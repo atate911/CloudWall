@@ -32,9 +32,9 @@ UNDER_SYSTEMD = bool(os.environ.get("INVOCATION_ID"))
 
 
 class Admin:
-    def __init__(self, cfg, places, watch=None, store=None, incidents=None, provider=None, charts=None, demo=False):
+    def __init__(self, cfg, places, watch=None, store=None, incidents=None, provider=None, demo=False):
         self.cfg, self.places, self.watch, self.incidents = cfg, places, watch, incidents
-        self.provider, self.charts, self.demo = provider, charts, demo
+        self.provider, self.demo = provider, demo
         self.owner = auth.Owner(cfg, store)
         self.started = time.time()
         self.doctor_cache = (0, None)
@@ -89,7 +89,7 @@ class Admin:
             return h._send(200, {"ok": True}, headers={"Set-Cookie": auth.cookie_header("", self._secure(h), clear=True)})
         if self.role(h) != "owner":
             return h._send(401, {"error": "Sign in as the owner first", **self.whoami(h)})
-        body = h._body() if method in ("POST", "PUT", "DELETE") else {}
+        body = h._body() if method in ("POST", "DELETE") else {}
         if body is None:
             return h._send(400, {"error": "bad json"})
         try:
@@ -245,7 +245,8 @@ class Admin:
                          "strong_pct": round(100 * (local.get("strong_signals") or 0) / accepted, 1) if accepted else None,
                          "max_nm": round((p.get("max_distance") or 0) / 1852, 1) if p.get("max_distance") else None}
         pts = (((outline.get("actualRange") or {}).get("last24h") or {}).get("points")) or outline.get("points") or []
-        out["outline"] = [[round(p[0], 4), round(p[1], 4)] for p in pts if isinstance(p, list) and len(p) >= 2][:720]
+        out["outline"] = [[round(p[0], 4), round(p[1], 4)] for p in pts
+                          if isinstance(p, list) and len(p) >= 2 and all(isinstance(x, (int, float)) for x in p[:2])][:720]
         if cov:
             try:
                 got = get_json(f"{cov}/healthz", timeout=4)
@@ -259,6 +260,8 @@ class Admin:
         board, for the owner. Only GET; only below the address set; nothing of the board's own
         (its cookie) passed on."""
         from ..core.http import relay
+        if not self.owner.host_ok(h.headers.get("Host"), self.proxied(h)):      # (as handle: no page under another name)
+            return h._send(403, {"error": "The control board answers only to this machine's own names and addresses"})
         if self.role(h) != "owner":
             return h._send(401, b"<!doctype html><meta charset=utf-8><p style='font:1rem sans-serif;margin:2rem'>"
                                 b"Sign in on the control board first.</p>", "text/html; charset=utf-8")
@@ -279,8 +282,7 @@ class Admin:
             h.send_header(k, v)
         h.send_header("Content-Length", str(len(data)))
         h.end_headers()
-        if h.command != "HEAD":
-            h.wfile.write(data)
+        h.wfile.write(data)
 
     # -- what the board shows ------------------------------------------------------------------
     def whoami(self, h):

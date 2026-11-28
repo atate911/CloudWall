@@ -310,7 +310,7 @@ class Merged:
                 if other.get("military"):
                     filled["military"] = True
             self.last[hexid] = (at, filled)
-            out.append(project(filled, now - at))
+            out.append(dict(project(filled, now - at)))      # (a copy: what is done to it downstream stays out of `last`)
         self.last = {h: v for h, v in self.last.items() if now - v[0] <= MERGE_MAX_AGE_S}
         return out
 

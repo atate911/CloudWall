@@ -88,7 +88,9 @@ def density_altitude(elev_ft, temp_c, altim_hpa):
 
 def _wind(m):
     d = m.get("wdir")
-    return {"dir": None if d in (None, "VRB") else d, "variable": d == "VRB", "speed": m.get("wspd") or 0,
+    # (no wind given at all, as in a forecast's change that is only about the cloud: speed None, not calm)
+    return {"dir": None if d in (None, "VRB") else d, "variable": d == "VRB",
+            "speed": None if d is None and m.get("wspd") is None else m.get("wspd") or 0,
             "gust": m.get("wgst")}
 
 

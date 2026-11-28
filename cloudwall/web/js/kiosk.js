@@ -288,6 +288,7 @@ function showIdle(el, state) {
 function body(el) {
   let b = el.querySelector(":scope > .k-body");
   if (!b) {
+    el.className = "panel";
     el.innerHTML = `<div class="k-body"></div>`;
     b = el.firstElementChild;
     forgetKiosk();

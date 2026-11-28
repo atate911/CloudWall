@@ -1,9 +1,12 @@
 // Who can see it: two doors. The wall's, open to anyone who can reach it or only to those with its
 // private link (shown here, ready to copy); and this board's, locked by the owner's password. How
 // CloudWall is reached (its name, what it listens on) is set once, under a shade.
-import { el, S, call, toast, value, button, TITLES } from "../core.js";
+import { el, S, call, toast, value, button, loadSettings, emit, TITLES } from "../core.js";
 import { head, pageTroubles, copyable } from "../parts.js";
 import { text, cards, stepper, group, line, advanced } from "../controls.js";
+
+// the key is a secret the board never reads back: saved, it waits for a restart like any other change
+const changed = async () => { S.secretsSaved.add("server.key"); await loadSettings(); };
 
 /** The wall's address with a private link's key in it, wherever this board is being reached. */
 const viewerLink = (key) => `${location.origin}${location.pathname.replace(/\/admin\/?$/, "").replace(/\/k\/[^/]+$/, "")}/k/${key}/`;
@@ -20,11 +23,14 @@ function privateLink() {
     if (on && !confirm("Every screen will need the new link: the old one stops working after the restart. Make it?")) return;
     const got = await call("private-link", { action: "new" });
     toast(got.said);
+    await changed();
     if (got.key) show.replaceChildren(copyable(viewerLink(got.key), { said: "The new link is copied: give it to each screen after the restart", cls: "ticket" }));
   }, on ? "small quiet" : "small"));
   if (on) acts.push(button("Turn it off", async () => {
     if (!confirm("Anyone who can reach this server will see the wall. Turn the private link off?")) return;
     toast((await call("private-link", { action: "off" })).said);
+    await changed();
+    emit("page");
   }, "small quiet danger"));
   const r = line("Private link", `<span class="line-val"><span class="dot ${on ? "ok" : ""}"></span> ${on ? "On: screens open the wall at its private link" : "Off: anyone who can reach this server sees the wall"}</span>`, acts);
   r.querySelector(".line-body").append(show);
@@ -63,10 +69,9 @@ export default {
     page.append(group("Wall", "Who can open the screens", [privateLink()]));
     page.append(group("Control board", "Who can change CloudWall", [password()]));
 
-    const host = value("server", "host"), port = value("server", "port");
     page.append(group("Network", "", [
       text("server", "address", { label: "Domain name", empty: "None: reached by its address", help: "The name Caddy serves it at (cloudwall.example.com). Only used for the links CloudWall prints." }),
-      advanced(() => `${host === "127.0.0.1" ? "this machine only" : "every network"}, port ${port}`, [
+      advanced(() => `${value("server", "host") === "127.0.0.1" ? "this machine only" : "every network"}, port ${value("server", "port")}`, [
         cards("server", "host", { label: "Listen on", options: [
           { value: "127.0.0.1", title: "This machine only", body: "Behind Caddy or a tunnel. The safe choice for a server on the internet.", icon: "lock" },
           { value: "0.0.0.0", title: "Every network", body: "Any device that can reach this machine on its port. For a server at home.", icon: "screens" },

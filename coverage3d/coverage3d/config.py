@@ -14,8 +14,6 @@ from pathlib import Path
 
 log = logging.getLogger("coverage3d.config")
 
-FT_PER_M = 3.280839895
-NM_M = 1852.0
 
 DEFAULTS: dict = {
     "station": {
@@ -128,6 +126,9 @@ def load(path: str | None = None) -> Config:
     if sources:
         srcs = [SourceCfg(**{k: v for k, v in s.items() if k in SourceCfg.__dataclass_fields__})
                 for s in sources]
+        for s, given in zip(srcs, sources):        # (the file to fall back on is the default source's own, no other's)
+            if "files" not in given and ("urls" in given or s.band != "1090"):
+                s.files = []
     else:
         srcs = [SourceCfg()]
     cfg = Config(sources=srcs, **data)

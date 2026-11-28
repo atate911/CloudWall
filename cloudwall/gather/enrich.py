@@ -136,7 +136,7 @@ class Enricher:
                 return "pending", None
         return "skipped", None
 
-    def _get(self, kind, key, max_age, fetch=True):
+    def _get(self, kind, key, max_age):
         k = (kind, key)
         with self.lock:
             if k in self.mem and time.time() - self.mem[k][1] < max_age:
@@ -145,7 +145,7 @@ class Enricher:
             if hit:
                 self._keep(k, value)
                 return value
-            if fetch and k not in self.pending:
+            if k not in self.pending:
                 self.pending.add(k)
                 (self.photo_q if kind == "photo" else self.q).put(k)
         return None

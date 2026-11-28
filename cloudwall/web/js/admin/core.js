@@ -32,6 +32,11 @@ export const plural = (n, one, many = /aircraft$/.test(one) ? one : one + "s") =
 export const S = { who: null, overview: null, settings: null, catalogue: null, doctor: null, sky: null, secretsSaved: new Set() };
 export const bus = new EventTarget();
 export const on = (name, fn) => bus.addEventListener(name, fn);
+// a page's own listeners: taken away when the next page (or the same one again) is drawn, so they
+// don't pile up, each holding a page no longer shown
+const pageFns = [];
+export const onPage = (name, fn) => { pageFns.push([name, fn]); bus.addEventListener(name, fn); };
+export const leavePage = () => { for (const [name, fn] of pageFns.splice(0)) bus.removeEventListener(name, fn); };
 export const emit = (name) => bus.dispatchEvent(new Event(name));
 
 let signedOut = () => {};

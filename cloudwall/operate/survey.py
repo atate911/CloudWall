@@ -13,6 +13,7 @@ Everything goes through a Machine (a root folder and a way to run read-only comm
 tests build a pretend machine in a folder.
 """
 import os
+import pwd
 import re
 import subprocess
 import time
@@ -148,11 +149,18 @@ def check_files(m):
                                      + (f" and {len(wrong) - 3} more" if len(wrong) > 3 else ""))
 
 
+def _uid(user):
+    try:
+        return pwd.getpwnam(user).pw_uid
+    except KeyError:
+        return user
+
+
 def check_key_in_log(m):
     """Older CloudWall wrote the private link's key at every start: is it still in the journal?"""
     for i in installs(m):
         cmd = (["journalctl", "-u", "cloudwall", "--no-pager", "-o", "cat", "-n", "20000"] if i["kind"] == "system" else
-               ["journalctl", f"_UID={i['user']}", "--user-unit", "cloudwall", "--no-pager", "-o", "cat", "-n", "20000"])
+               ["journalctl", f"_UID={_uid(i['user'])}", "--user-unit", "cloudwall", "--no-pager", "-o", "cat", "-n", "20000"])
         got = m.ask(cmd)
         if got is not None and re.search(r"answering only under /k/[a-z0-9-]{12,}/", got.stdout or ""):
             yield health.trouble("access.key-in-log", f"the {i['kind']} service's log has the private link's key in it")
@@ -213,7 +221,11 @@ def check_receiver_side(m):
 
 
 def check_backups(m):
-    for i in installs(m):
+    found = installs(m)
+    for i in found:
+        # an old per-user setup turned off after moving to the system install keeps its files, on purpose
+        if i["kind"] == "user" and len(found) > 1 and not i.get("enabled") and not i.get("active"):
+            continue
         folder = m.path(i["data"]) / "backups"
         newest = max((p.stat().st_mtime for p in folder.glob("cloudwall-*.tar.gz")), default=None) if folder.is_dir() else None
         if newest is None or time.time() - newest > 30 * 86400:

@@ -128,7 +128,12 @@ class Sampler(threading.Thread):
     def reject_stats(self) -> dict:
         tot = Counter()
         for f in self.filters:
-            tot.update(f.stats)
+            for _ in range(3):             # (the sampler adds to these as it goes: read again if it did meanwhile)
+                try:
+                    tot.update(dict(f.stats))
+                    break
+                except RuntimeError:
+                    continue
         return dict(tot)
 
     def maintenance(self):

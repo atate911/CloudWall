@@ -1267,12 +1267,10 @@ function pane(body, s0, s1, lower) {
   return [...top, ...lower];
 }
 // fixed gear: a leg from top to bottom, a wheel of radius r at the axle, and its pant
-const PANT = { f: 0.29, a: 0.54, t: 0.19, b: 0.11 }, NOSEPANT = { f: 0.27, a: 0.42, t: 0.16, b: 0.1 };
+const PANT = { f: 0.29, a: 0.54, t: 0.19, b: 0.11 };
 const wheelLeg = (top, bot, at, r, w = [0.09, 0.07], spat = PANT) => ({ leg: [top, bot], w, at, r, spat });
 // a small tailwheel at the end of its spring
 const tailwheel = (top, at, r = 0.065) => ({ leg: [top, [at[0] - 0.02, at[1] + 0.02]], w: [0.05, 0.035], at, r });
-// rudder hinge line with the counterbalance horn: up the hinge at s from z0 to z1, forward to s2, up to z2
-const hinge = (s, z0, z1, s2, z2) => [[s, z0], [s, z1], [s2, z1], [s2, z2]];
 const rv = (o) => ({ kind: "piston", over: 0, D: 1, frame: 0.03, extras: EXTRAS, overlays: OVERLAYS, ...o });
 const withGear = (f, gear) => ({ ...f, parts: { ...f.parts, gear } });
 

@@ -439,7 +439,7 @@ function draw(f) {
   const defs = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop class="g-hi" offset="0"/><stop class="g-mid" offset=".38"/><stop class="g-lo" offset="1"/></linearGradient></defs>`;
   return { inner: defs + sk.out.join(""), box: sk.box, L };
 }
-export { draw as _draw, profileFor as _profile };
+export { profileFor as _profile };
 
 function svg(d) {
   const [x0, y0, x1, y1] = d.box, m = (x1 - x0) * 0.015;

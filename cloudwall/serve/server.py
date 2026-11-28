@@ -96,8 +96,9 @@ def make_server(cfg, places, charts=None, logos=None):
             self.wfile.write(body)
 
         def _redirect(self, to):
+            query = urlsplit(self.path).query          # (?place=..., ?mode=...: what was asked for goes along)
             self.send_response(308)
-            self.send_header("Location", to)
+            self.send_header("Location", to + (f"?{query}" if query else ""))
             self.send_header("Content-Length", "0")
             self.end_headers()
 
@@ -141,7 +142,7 @@ def make_server(cfg, places, charts=None, logos=None):
                 if not 0 <= n <= MAX_BODY:
                     return None
                 body = json.loads(self.rfile.read(n) or b"{}")
-                return body if isinstance(body, dict) else {}
+                return body if isinstance(body, dict) else None
             except ValueError:
                 return None
 
@@ -216,11 +217,7 @@ def make_server(cfg, places, charts=None, logos=None):
                 # with the slash, the page's relative addresses (its style, its script, its data)
                 # would point inside a folder that isn't there: sent to the address without it,
                 # relatively, so it works under a private link's /k/<key>/ and behind a proxy too
-                self.send_response(308)
-                self.send_header("Location", "../" + path.strip("/"))
-                self.send_header("Content-Length", "0")
-                self.end_headers()
-                return None
+                return self._redirect("../" + path.strip("/"))
             if path.rstrip("/") == "/kiosk":
                 path = "/index.html"                  # same page; the script switches to kiosk mode
             elif path.rstrip("/") == "/admin":

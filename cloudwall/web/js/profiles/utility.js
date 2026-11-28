@@ -87,31 +87,6 @@ function stretch(f, at, ds, more = {}) {
   };
 }
 
-// A copy of family f scaled uniformly by k (a drawing measured at one length, drawn at another).
-function scale(f, k, more = {}) {
-  const pt = (q) => [q[0] * k, q[1] * k, ...q.slice(2)];
-  const loop = (l) => l.map(pt);
-  const p = f.parts || {};
-  const sc = (o, keys) => o && Object.fromEntries(Object.entries(o).map(([key, v]) => [key, keys.includes(key) ? v * k : v]));
-  return {
-    ...f, L0: f.L0 * k, over: (f.over || 0) * k, W: f.W * k, body: loop(f.body), glass: (f.glass || []).map(loop),
-    wing: sc(f.wing, ["le", "root", "span", "cr", "ct", "z"]), stab: sc(f.stab, ["le", "z", "span", "root", "cr", "ct"]),
-    eng: f.eng && { ...f.eng, nose: sc(f.eng.nose, ["s", "z", "d"]) },
-    wingSide: f.wingSide && f.wingSide.map(([c, pts, cl]) => [c, loop(pts), cl]),
-    parts: {
-      ...p, doors: (p.doors || []).map(loop), lines: (p.lines || []).map(loop),
-      shapes: (p.shapes || []).map(([cls, pts, closed]) => [cls, loop(pts), closed]),
-      marks: (p.marks || []).map(([c, pts, cl]) => [c, loop(pts), cl]),
-      dots: (p.dots || []).map(([c, s, z, rx, ry = rx]) => [c, s * k, z * k, rx * k, ry * k]),
-      struts: (p.struts || []).map(([a, b, w0, w1]) => [pt(a), pt(b), w0, w1]),
-      gear: (p.gear || []).map((g) => ({ ...g, leg: g.leg && g.leg.map(pt), at: g.at && pt(g.at), r: g.r * k, spat: g.spat && g.spat.pts ? { pts: loop(g.spat.pts) } : g.spat,
-        shapes: g.shapes && g.shapes.map(([c, pts, cl]) => [c, loop(pts), cl]), lines: g.lines && g.lines.map(loop),
-        under: g.under && g.under.map(([c, pts, cl]) => [c, loop(pts), cl]) })),
-    },
-    ...more,
-  };
-}
-
 // ---------- Beechcraft Bonanza 33 (Debonair) ----------
 // Reference: Beechcraft E33 Bonanza 3-view (Wikimedia Commons,
 // File:Beechcraft_E33_Bonanza_3-view_line_drawing.png, Wikipedia article Beechcraft Bonanza), side

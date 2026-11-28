@@ -5,7 +5,6 @@ const GLYPHS = "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf";
 const TERRARIUM = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
 const ESRI = (svc) => `https://server.arcgisonline.com/ArcGIS/rest/services/${svc}/MapServer/tile/{z}/{y}/{x}`;
 const ESRI_ATTR = "Tiles © Esri — Source: Esri, HERE, Garmin, USGS, NGA, OpenStreetMap contributors and the GIS User Community";
-const OFM_ATTR = '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>';
 
 export const BASEMAPS = {
   liberty: { label: "Street – OpenFreeMap Liberty (default)", style: "https://tiles.openfreemap.org/styles/liberty", dark: false },
@@ -108,7 +107,7 @@ export class MapView {
     map.addSource("dem-hs", { type: "raster-dem", tiles: [TERRARIUM], encoding: "terrarium", tileSize: 256, maxzoom: 15 });
     map.addLayer({ id: "hillshade", type: "hillshade", source: "dem-hs",
       paint: { "hillshade-exaggeration": this.basemap.dark ? 0.25 : 0.4, "hillshade-shadow-color": "#3a3a3a", "hillshade-highlight-color": "#ffffff", "hillshade-accent-color": "#555" } }, before);
-    for (const id of ["bands", "rings", "bearings", "footprints", "footprints-b", "ringlabels", "bearlabels", "station", "airports", "peaks", "outline-ref"]) map.addSource(id, { type: "geojson", data: EMPTY });
+    for (const id of ["bands", "rings", "bearings", "footprints", "footprints-b", "ringlabels", "bearlabels", "station", "airports", "peaks"]) map.addSource(id, { type: "geojson", data: EMPTY });
 
     // distance-band shading between rings (very light, alternating)
     map.addLayer({ id: "bands-fill", type: "fill", source: "bands", paint: { "fill-color": "#ffffff", "fill-opacity": 0.07 } }, before);
@@ -118,7 +117,6 @@ export class MapView {
     map.addLayer({ id: "bearings-line", type: "line", source: "bearings", paint: { "line-color": "#ffc83d", "line-opacity": 0.5, "line-width": 0.8, "line-dasharray": [3, 3] } }, before);
     map.addLayer({ id: "footprints-line", type: "line", source: "footprints", paint: { "line-color": ["get", "color"], "line-width": 2, "line-opacity": 0.95 } }, before);
     map.addLayer({ id: "footprints-b-line", type: "line", source: "footprints-b", paint: { "line-color": ["get", "color"], "line-width": 2, "line-dasharray": [2, 2], "line-opacity": 0.95 } }, before);
-    map.addLayer({ id: "outline-ref-line", type: "line", source: "outline-ref", paint: { "line-color": "#ffffff", "line-width": 1.2, "line-opacity": 0.8, "line-dasharray": [1, 2] } }, before);
 
     // labels: drawn last (above the basemap's own labels) and kept upright with viewport alignment
     const text = (extra = {}, paint = {}) => ({
@@ -168,7 +166,6 @@ export class MapView {
     vis("footprints-line", s.footprint); vis("footprints-b-line", s.footprint && state.covB);
     vis("airports-dot", s.airports); vis("airports-sym", s.airports); vis("airports-other", s.airports);
     vis("peaks-dot", s.peaks); vis("peaks-sym", s.peaks);
-    vis("outline-ref-line", false);      // the readsb outline is drawn in 3D by deck instead
     this.updateDeck(state);
   }
 
@@ -303,7 +300,7 @@ export class MapView {
       });
       layers.push(new deck.PathLayer({ id: "horizon", data, ...common, getPath: (d) => d.path, getColor: [255, 255, 255, 70], widthUnits: "pixels", getWidth: 1, updateTriggers: { getPath: [ex] } }));
     }
-    if (st.outline && s.readsbOutline) {
+    if (st.outline?.length && s.readsbOutline) {
       const pts = st.outline;
       const path = pts.map((p) => [p[1], p[0], p[2] * FT_M * ex]);
       path.push(path[0]);

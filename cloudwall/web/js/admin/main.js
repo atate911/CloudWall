@@ -2,7 +2,7 @@
 // doing right now under its name, so the rail alone answers "is everything all right?"; each page
 // opens with a picture of what it looks after and keeps its rare settings behind shades. Saved
 // settings wait for a restart, gathered in one dock at the bottom.
-import { $, el, esc, S, call, on, toast, waiting, restart, loadOverview, loadSettings, whenSignedOut, plural, pageState, save, TITLES } from "./core.js";
+import { $, el, esc, S, call, on, leavePage, toast, waiting, restart, loadOverview, loadSettings, whenSignedOut, plural, pageState, save, TITLES } from "./core.js";
 import { say } from "./words.js";
 import { icon } from "./icons.js";
 import { finder, reveal } from "./finder.js";
@@ -72,6 +72,7 @@ async function go() {
     if (!S.overview) await loadOverview();
     if (!S.settings) await loadSettings();
     const fresh = el(`<div class="page page-${page.id}"></div>`);
+    leavePage();
     await page.draw(fresh);
     main.replaceChildren(fresh);
     document.title = `${TITLES[page.id]}: CloudWall control board`;

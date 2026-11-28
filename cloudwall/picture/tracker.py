@@ -174,7 +174,6 @@ class Tracker:
             self.flow = {"dir": word, "label": f"{word.capitalize()} flow", "runways": " / ".join(in_use)}
             self.flow_at = now
 
-    # -- main entry points ------------------------------------------------------
     # -- radar range -------------------------------------------------------------
     # A screen can set its radar to a longer range than the tracking radius. The feed is then
     # asked for the longer range, but only aircraft within the tracking radius count for the
@@ -336,7 +335,7 @@ class Tracker:
             situation.describe(raw, self.cfg["airport"], self.flow, self.said)
             iata = self.cfg["airport"].get("iata")
             for a in beyond:
-                a["activity"] = situation.activity(a, iata)
+                a["activity"] = situation.activity(a, iata, self.cfg["airport"].get("elevation_ft") or 0)
         except Exception as e:
             self._left_out("the traffic picture", {"hex": "-"}, e)
         for a in raw + beyond:

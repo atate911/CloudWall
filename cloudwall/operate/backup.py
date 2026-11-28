@@ -99,6 +99,9 @@ def backup(config_path=None, to=None, say=print, cfg=None):
     part = out.with_name(out.name + ".part")       # under its own name only once it is whole
     try:
         _write(part, manifest, files, say)
+        if os.geteuid() == 0:              # made with sudo into the service's folder: the service's to read and thin out
+            st = folder.stat()
+            os.chown(part, st.st_uid, st.st_gid)
         os.replace(part, out)
     finally:
         part.unlink(missing_ok=True)
@@ -140,6 +143,8 @@ def restore(archive, config_path=None, yes=False, system=None, say=print):
         say("Nothing changed. Run again with --yes to restore these.")
         return []
     installed = system is not None and system.real and Path("/etc/systemd/system/cloudwall.service").exists()
+    if installed and os.geteuid() != 0:
+        raise SystemExit("cloudwall restore puts the installed service's files back: run it with sudo")
     if installed:
         system.run(["systemctl", "stop", "cloudwall"], check=False)
     written = []

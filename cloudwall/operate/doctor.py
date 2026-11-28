@@ -4,7 +4,8 @@ names what it finds wrong by its code in core/troubles.py, which says what it me
 The running CloudWall's own findings (app/watch.py) and the survey of the machine (survey.py) are
 added, so one command sees everything. `--fix` hands the findings to guide.py.
 
-Nothing here changes anything. Databases are opened read-only, so running doctor as root never
+Nothing here changes anything (asking a paused CloudWall how it is does wake it, as any screen
+would). Databases are opened read-only, so running doctor as root never
 leaves files the service can't write.
 """
 import copy

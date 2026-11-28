@@ -26,13 +26,13 @@ FINAL_LATERAL_NM = 2.5      # this close to a runway's extended centreline, and 
 FINAL_JOIN_NM = 6           # an arrival not yet on final is reckoned to join it this far out
 
 
-def activity(a, iata):
+def activity(a, iata, field_ft=0):
     """"arr", "dep", "loc" or "pass": what this aircraft is doing, from its route when it has a
     believable one, else from how it is flying near the airport (details.infer_local), else from
     its kind. Light aircraft into and out of the small fields nearby fly locally, as far as the
     big airport is concerned."""
     r = a.get("route") if (a.get("route") or {}).get("plausible") else None
-    v, alt = a.get("vrate") or 0, a.get("alt") or 0
+    v, alt = a.get("vrate") or 0, (a.get("alt") or 0) - field_ft        # (height above the airport)
     if a.get("local_field"):
         return "loc"
     if a.get("local") == "arriving" or (r and r["dest"].get("iata") == iata and v <= 300 and alt < 14000):
@@ -144,7 +144,7 @@ def describe(aircraft_list, airport, flow, said=None):
     for a in aircraft_list:
         if a.get("on_ground"):
             continue
-        a["activity"] = activity(a, iata)
+        a["activity"] = activity(a, iata, airport.get("elevation_ft") or 0)
         why = notable(a)
         if why:
             a["notable"] = why

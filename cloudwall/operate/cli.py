@@ -160,7 +160,11 @@ def main(argv=None):
             where = auth.set_password(first, args.config)
         except (ValueError, OSError) as e:
             raise SystemExit(f"cloudwall owner: {e}")
-        print(f"Set ({where}). Sign in on the control board: http://<this machine>:5050/admin")
+        try:
+            port = config.load(args.config)["server"]["port"]
+        except Exception:
+            port = 5050
+        print(f"Set ({where}). Sign in on the control board: http://<this machine>:{port}/admin")
     elif cmd == "helper":
         from . import helper
         if os.geteuid() != 0:

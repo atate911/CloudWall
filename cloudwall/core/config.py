@@ -111,7 +111,15 @@ CHOICES = {
 BETWEEN = {("map", "opacity"): (0, 1), ("kiosk", "range_nm"): (0, 30), ("map", "cache_mb"): (0, 10 ** 6),
            ("flightradar24", "safety_margin"): (0, 0.9), ("flightaware", "safety_margin"): (0, 0.9),
            ("flightradar24", "billing_day"): (1, 28), ("flightaware", "billing_day"): (1, 28),
-           ("home", "lat"): (-90, 90), ("home", "lon"): (-180, 180)}
+           ("home", "lat"): (-90, 90), ("home", "lon"): (-180, 180),
+           # (the free feeds ask for no more than about one request a second, and reach 250 nm)
+           ("tracking", "poll_seconds"): (1, 3600), ("tracking", "radius_nm"): (1, 250),
+           ("tracking", "idle_after_seconds"): (10, 86400),
+           ("flightradar24", "monthly_credits"): (0, 10 ** 9), ("flightradar24", "monthly_limit"): (0, 10 ** 9),
+           ("flightradar24", "daily_limit"): (0, 10 ** 9), ("flightaware", "monthly_limit"): (0, 10 ** 9),
+           ("flightaware", "monthly_credits"): (0, 10 ** 9), ("flightaware", "daily_limit"): (0, 10 ** 9),
+           ("extras", "military_radius_nm"): (0, 250), ("extras", "tfr_radius_nm"): (0, 250)}
+WHOLE = {("flightradar24", "billing_day"), ("flightaware", "billing_day")}
 MORE_THAN_ZERO = {"tracking": ("radius_nm", "overhead_nm", "max_overhead_alt_ft", "poll_seconds", "idle_after_seconds")}
 
 
@@ -186,6 +194,8 @@ def check(section, values, problems=None):
         span = BETWEEN.get((section, key))
         if span and isinstance(v, NUMBER) and not span[0] <= v <= span[1]:
             wrong = f"[{section}] {key} must be from {span[0]} to {span[1]}, not {v!r}"
+        if (section, key) in WHOLE and isinstance(v, float) and v != int(v):
+            wrong = f"[{section}] {key} must be a whole number, not {v!r}"
         if wrong and problems is None:
             raise ValueError(wrong)
         if wrong:
