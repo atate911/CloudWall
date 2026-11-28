@@ -494,7 +494,7 @@ document.addEventListener("error", (e) => {
 // a tap on the hushed wall panel wakes it, and does nothing else
 document.addEventListener("click", (e) => { if (document.body.classList.contains("hush")) { e.stopImmediatePropagation(); e.preventDefault(); wake(); } }, true);
 document.addEventListener("click", (e) => {
-  const b = e.target.closest(".mb-row, .tr[data-hex], .q-row[data-hex], .n-row[data-hex], .pf-craft[data-hex]");
+  const b = e.target.closest(".tr[data-hex], .q-row[data-hex], .n-row[data-hex], .pf-craft[data-hex]");
   if (b && !b.closest("#board")) { pin(b.dataset.hex); return; }
   const d = e.target.closest("button[data-dens]");
   if (d) {      // Simple or Detailed, for this screen; a button wins over the address

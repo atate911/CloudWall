@@ -96,7 +96,7 @@ view = "card"          # "card": the aircraft overhead across the whole screen; 
                        # of the sky above home with the aircraft overhead crossing it
 radar = "chart"        # "chart", or "atc" to draw the radar like an air traffic control screen
 tracks = true          # the selected aircraft's track and lines to where aircraft will be in a minute
-range_nm = 0           # 0 for the tracking radius above, or 20 or 30 to see further
+range_nm = 0           # 0 for the tracking radius above, or up to 30 to see further
 density = "simple"     # the radar's labels: "simple" names the aircraft that matter, "detailed" every one
 quiet = ""             # quiet hours, e.g. "23:00-06:30": only a dim clock and what's next, waking for
                        # something coming over the house, something new worth a look, an emergency
@@ -104,11 +104,11 @@ quiet = ""             # quiet hours, e.g. "23:00-06:30": only a dim clock and w
 
 [map]                  # the maps under the radar, cached on disk by CloudWall
 style = "dark"         # the Chart-style radar's map: "dark" or "light" grey street map, "satellite",
-                       # "osm" (OpenStreetMap), an FAA chart ("sectional", "terminal", "ifr-low",
-                       # "ifr-high"), or "off"
+                       # "streets", "osm" (OpenStreetMap), an FAA chart ("sectional", "terminal",
+                       # "ifr-low", "ifr-high"), "custom" (the tile service in url below), or "off"
 opacity = 0.45         # 0 to 1: how strongly the map shows under the radar
 route = "satellite"    # the map behind the flight's route on its card: "satellite", "light" or "dark"
-                       # grey, "osm", or "off" for the plain arc
+                       # grey, "streets", "osm", or "off" for the plain arc
 atc = "off"            # a chart under the ATC-style radar: "off" (a controller's screen has only
                        # its video map), or "ifr-low" (IFR Enroute Low), "ifr-high", "sectional", "terminal"
 cache_mb = 2000        # the most disk the downloaded map and chart tiles may take, all together;
@@ -130,6 +130,13 @@ military_radius_nm = 40
 tfr = true             # temporary flight restrictions from the FAA, on the radar and Weather tab
 tfr_radius_nm = 30
 contrails = true       # contrail forecast from upper-air temperature and humidity (Open-Meteo)
+# military_url = "https://opendata.adsb.fi/api/v2/mil"   # where the military aircraft come from
+
+[receiver]             # your own ADS-B receiver, as the control board shows it (its health, live map, Coverage3D)
+url = ""               # where its web server (tar1090) answers from this machine; empty: worked out from
+                       # the first feed when merge is on (the tunnel's http://127.0.0.1:18080)
+coverage_url = ""      # where Coverage3D answers from this machine; empty: beside the receiver's
+home_url = ""          # its address on your home network (e.g. "http://192.168.3.3"), for the board's links
 
 [server]
 host = "0.0.0.0"

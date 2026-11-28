@@ -526,11 +526,7 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .map-legend { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; font-size: .84rem; color: var(--ink-2); }
 .lg::before { content: ""; display: inline-block; width: 1.4rem; margin-right: .45rem; vertical-align: .25em; border-top: 2px dashed var(--mine); }
 .lg.over::before { border-top: 2px solid var(--overhead); }
-.house-side { display: flex; flex-direction: column; gap: 1.4rem; }
-.fact-block .fact-big { margin-top: .1rem; }
-.fact-acts { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
 .pick-ask { margin: .7rem 0 0; padding: .7rem .9rem; background: var(--mine-wash); border-radius: var(--r2); font-size: .9rem; }
-.rings-set { display: flex; flex-direction: column; gap: 1.3rem; padding-top: 1.2rem; border-top: 1px solid var(--hair); }
 .ring-track .set-label::before, .ring-over .set-label::before { content: ""; width: 1.1rem; border-top: 2px dashed var(--mine); }
 .ring-over .set-label::before { border-top: 2px solid var(--overhead); }
 .ring-over .step-val input { color: var(--overhead); }
@@ -570,9 +566,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .provider-tabs .dot { width: .5rem; height: .5rem; box-shadow: none; }
 
 /* ---------- the wall ---------- */
-.panel-hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(18rem, 1fr); gap: 2rem 2.4rem; align-items: start; }
-.panel-left { display: flex; flex-direction: column; gap: 1.6rem; }
-.panel-right { display: flex; flex-direction: column; gap: 1.35rem; }
 .panel-preview { margin: 0; display: flex; flex-direction: column; gap: .6rem; }
 .bezel { padding: .85rem; border-radius: var(--r4); background: linear-gradient(160deg, #232f3c, #0b1118); box-shadow: 0 18px 40px rgba(9, 20, 34, .28), inset 0 0 0 1px rgba(255, 255, 255, .06); }
 .screen { position: relative; overflow: hidden; border-radius: 8px; background: #000; }
@@ -597,8 +590,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .d-now { stroke: var(--overhead); stroke-width: 2; stroke-linecap: round; } .d-hub { fill: var(--overhead); }
 .dial-say { display: flex; flex-direction: column; gap: .15rem; align-items: flex-start; }
 .dial-say b { font-size: 1.4rem; font-weight: 400; color: var(--mine); } .dial-say span { color: var(--muted); font-size: .88rem; } .dial-say .link { margin-top: .5rem; font-size: .88rem; }
-.switch-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15.5rem), 1fr)); gap: 1.2rem 2rem; }
-.switch-row .set-label .ico { width: 1.25rem; height: 1.25rem; color: var(--mine); }
 
 /* ---------- who can see it ---------- */
 .doors { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1.2rem; }
@@ -669,11 +660,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .file-line .copy { max-width: 42rem; }
 .file-go { margin: .9rem 0 0; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; } .file-go .ico { color: var(--mine); }
 .warn-link { color: var(--look); }
-.left-out { list-style: none; margin: .8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .4rem; }
-.left-out li { display: flex; gap: .6rem; color: var(--look); font-size: .92rem; } .left-out li span { color: var(--ink-2); }
-.every-list { display: flex; flex-direction: column; gap: 1.6rem; }
-.every-sec h3 { font-size: 1rem; } .every-sec h3 code { font-size: .76rem; color: var(--muted); }
-.every-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 1.2rem 2.2rem; margin-top: .8rem; }
 .cmds { margin: 0; display: grid; grid-template-columns: minmax(12rem, 1fr) minmax(0, 1.4fr); gap: .7rem 1.4rem; align-items: center; }
 .cmds dt { color: var(--ink-2); font-size: .92rem; } .cmds dd { margin: 0; }
 
@@ -707,7 +693,7 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 /* ---------- smaller screens ---------- */
 @media (max-width: 1180px) {
   .system { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "sky receiver screens" "sky feeds logbook" "sky routes alerts" "core core core"; gap: 1rem 2.4rem; }
-  .rx-hero, .house-hero, .panel-hero, .safe-hero { grid-template-columns: 1fr; }
+  .rx-hero, .safe-hero { grid-template-columns: 1fr; }
   .server-hero { grid-template-columns: 1fr; } .srv-act { align-items: flex-start; }
 }
 @media (max-width: 900px) {

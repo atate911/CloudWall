@@ -709,8 +709,6 @@ td.num, th.num { text-align: right; }
 .board td.lg { width: 6.4rem; padding-right: .2rem; }
 .board td.lg .sw { display: block; width: .3rem; height: 1.6rem; border-radius: 99px; opacity: .8; }
 .board td.lg .logo-tile + .sw { display: none; }
-.board .vs { display: inline-block; width: 1.1em; text-align: center; }
-.board .cmp { display: inline-block; width: 2.4em; text-align: left; margin-left: .4em; color: var(--slate); font-size: .8em; }
 .board td.soon { color: var(--magenta); font-weight: 700; }
 .board td.empty { text-align: center; color: var(--slate); padding: 2.5rem; font-family: var(--sans); }
 .board-foot { text-align: center; font-size: .72rem; color: var(--slate); margin-top: 1.2rem; }
@@ -917,15 +915,6 @@ html.desk { font-size: clamp(12px, calc(0.42vw + 0.55vh + 4px), 18px); }
 .nearby-closed .ps-toggle svg { transform: scaleX(-1); }
 .pane-split:focus-visible .ps-toggle { outline: 2px solid var(--blue); outline-offset: 2px; }
 #mini-board h2 { margin: 0 0 .5rem; }
-.mb-row { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "id when" "rt alt"; width: 100%; text-align: left;
-  padding: .5rem .3rem; border-top: 1px solid var(--rule); row-gap: .1rem; }
-.mb-row:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
-.mb-row.hero { background: color-mix(in srgb, var(--magenta) 8%, transparent); }
-.mb-id { grid-area: id; font: 700 .95rem var(--mono); } .mb-row.hero .mb-id { color: var(--magenta); }
-.mb-rt { grid-area: rt; font-size: .74rem; color: var(--slate); }
-.mb-alt { grid-area: alt; font-size: .74rem; color: var(--slate); text-align: right; font-variant-numeric: tabular-nums; }
-.mb-when { grid-area: when; font-size: .85rem; text-align: right; font-variant-numeric: tabular-nums; }
-.mb-when.soon { color: var(--magenta); font-weight: 700; }
 
 /* ===================== the wall panel (kiosk) ===================== */
 /* A 7.5" or 13.3" screen in a room, read from the sofa three or four metres away, and made to sit
@@ -1569,7 +1558,6 @@ body.night { --c-arr: #3987e5; --c-dep: #199e70; --c-loc: #d95926; --c-pass: #9a
 .tr .det:has(.ci.med), td.rt:has(.ci.med), .pb-rt:has(.ci.med) .dim, .so-what:has(.ci.med) { color: var(--med-ink); font-weight: 700; }
 td.rt:has(.ci.med) small { color: var(--med-ink); }
 #radar:not(.atc) .craft.medc:not(.hero) .tag, #radar:not(.atc) .craft.medc .tag-sub { fill: var(--med-ink); font-weight: 700; }
-.to-h { color: var(--ink-2); margin-left: .25em; }
 #radar .med rect { fill: var(--med); stroke: var(--disc); stroke-width: .7; }
 #radar .med path { fill: #fff; }
 #scope.map #radar .med rect { stroke: #fff; stroke-width: .5; }
@@ -1696,7 +1684,6 @@ html.phone .so-nums { gap: 1rem; } html.phone .so-nums > div + div { padding-lef
 .tr .when small { font-size: .68rem; color: var(--slate); }
 .tr.sel { background: color-mix(in srgb, var(--magenta) 8%, transparent); box-shadow: inset 2px 0 0 var(--magenta); }
 .t-empty { color: var(--slate); padding: 1rem 0; }
-.sheet-title { font: 700 max(11px, .8rem) var(--sans); color: var(--slate); }
 /* the side view takes the room the list leaves, between its shortest and a height that still reads as one chart */
 .mb-prof { flex: 1 1 auto; display: flex; flex-direction: column; gap: .2rem; min-height: 11rem; max-height: 26rem; margin-top: .9rem; padding-top: .6rem; border-top: 1px solid var(--rule); }
 .prof-box { flex: 1; min-height: 0; }

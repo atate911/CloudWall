@@ -386,11 +386,17 @@ release.
 | Request | Answer |
 |---|---|
 | `GET whoami` | `role` ("owner" or "viewer"), `owner_set`, `local`, `version`, `demo`. |
-| `POST signin` / `signout` | `{"password"}`: sets (or clears) the session cookie. Five wrong in five minutes from one address and it waits. |
+| `POST signin` / `signout` | `{"password"}`: sets (or clears) the session cookie. A wrong password is 403; five wrong in five minutes from one address and it waits. A session ends when the password is changed. |
 | `GET overview` | Everything at a glance: the health report, recent incidents, each place's status and feeds' vitals, the paid provider, storage, how CloudWall is installed here. |
-| `GET settings`, `POST settings` | Every setting with its words, kind, allowed values, value (secrets as `{"set"}` only) and default, as in the file and as running; `{"section", "key", "value"}` saves one, checked as the file is. |
+| `GET settings`, `POST settings` | Every setting with its words, kind, allowed values, value (secrets as `{"set"}` only) and default, as in the file and as running; `{"section", "key", "value"}` saves one, checked as the file is (`"value": null` takes it out of the file). |
+| `POST tidy` | `{"action": "move" / "remove", ...}`: puts a setting written under the wrong heading where it belongs, or takes out one CloudWall doesn't know. |
+| `GET receiver`, `POST alert-test` | Your own receiver's health, read from its files; send a test message to `[health] notify_url`. |
 | `GET health`, `incidents`, `doctor`, `catalogue`, `log` | CloudWall's check of itself; the incident log; doctor's checks of the whole machine (`?fresh=1` runs them again); every known problem; the last lines of the log (`?level=warning`). |
 | `POST fix`, `POST repair` | `{"code", "name", "value"}` answers a problem's question (as `doctor --fix` asks it); `{"name"}` makes a repair. One that needs root is filed with the root helper and answers `request`, whose result is at `GET requests/<id>`. |
 | `GET backups`, `POST backups`, `GET backups/<name>` | The backups kept; make one; download one. |
 | `POST private-link`, `POST password`, `POST restart` | `{"action": "new" / "off" / "show"}`; the owner's new password; restart (under systemd). |
+
+An admin call without the owner's session answers 401, with `whoami`'s fields beside the `error`. The
+owner alone also gets `GET /receiver/...` and `GET /coverage/...`: the receiver's live map and
+Coverage3D, passed through from `[receiver] url` and `coverage_url`.
 

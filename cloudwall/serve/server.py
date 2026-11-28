@@ -146,7 +146,7 @@ def make_server(cfg, places, charts=None, logos=None):
                 return None
 
         def _foreign(self):
-            """Was this request made by a page from somewhere else? CloudWall has no logins, so
+            """Was this request made by a page from somewhere else? The screens need no login, so
             without this any web page open in a browser on the home network could add or remove
             places here. A browser names the page's site in Origin on such requests; a page of
             CloudWall's own names this server, and a script or curl names none."""

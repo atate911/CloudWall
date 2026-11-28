@@ -2,9 +2,10 @@
 network, a private link's holders) watches and sets up their own screen.
 
 The owner's password is set at the machine (`sudo cloudwall owner`) and kept as a scrypt hash in
-`owner` beside the settings file, readable by the service only. Signing in on the control board
+`owner` beside the settings file, readable as the settings file is (its owner and group). Signing in on the control board
 gives the browser a session cookie (HttpOnly, SameSite=Strict, Secure behind HTTPS) that lasts 30
-days from its last use and survives restarts (sessions are kept, hashed, in the shared store).
+days from its last use and survives restarts (sessions are kept, hashed, in the shared store),
+but not a change of password: a session is the password's it was made under.
 Five wrong passwords from one address in five minutes and that address waits.
 
 Until an owner password exists, CloudWall behaves as it always has: anyone who can reach it may

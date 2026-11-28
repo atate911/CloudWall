@@ -1,6 +1,7 @@
 """A private link: CloudWall reached from outside the house without a login to type.
 
-CloudWall has no accounts. On the home network that is as it should be; put on the internet (to
+Those who watch CloudWall have no accounts (only its owner signs in, to change it: auth.py). On
+the home network that is as it should be; put on the internet (to
 watch from a car, say) it would show anyone the house's position, let them add and remove places
 and spend the paid route lookups. With `[server] key` set, CloudWall answers only under
 /k/<key>/: the key is part of the address, so a bookmark or a favourite carries it and nothing
