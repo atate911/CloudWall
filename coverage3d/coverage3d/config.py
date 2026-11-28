@@ -1,9 +1,4 @@
-"""Configuration: defaults, TOML loading and validation.
-
-Every setting lives in /etc/coverage3d/config.toml (see config.example.toml for
-the documented list). Anything missing falls back to the defaults below, so a
-partial file is fine.
-"""
+"""Configuration: defaults, TOML loading and validation (settings documented in config.example.toml)."""
 from __future__ import annotations
 
 import copy
@@ -17,12 +12,12 @@ log = logging.getLogger("coverage3d.config")
 
 DEFAULTS: dict = {
     "station": {
-        # Truth values (WGS84). The live position comes from receiver.json; these
-        # are the defaults and the reference for the "wrong position" warning.
+        # WGS84. The live position comes from receiver.json; these are the fallback and the
+        # reference for the "wrong position" warning.
         "lat": 45.590000,
         "lon": -122.474000,
-        "ground_elevation_m": 23.0,      # ground elevation above mean sea level
-        "antenna_height_m": 4.0,         # antenna above ground (update after moving it outside)
+        "ground_elevation_m": 23.0,      # above mean sea level
+        "antenna_height_m": 4.0,         # above ground
         "position_warn_m": 100.0,        # warn if receiver.json differs from lat/lon by more
         "adsb_im_env": "/opt/adsb/config/.env",   # read ONLY FEEDER_LAT/LONG/ALT_M from it
         "position_source": "receiver",   # "receiver" = use receiver.json (matches readsb); "config" = lat/lon above
@@ -87,7 +82,6 @@ class Config:
 
     @property
     def antenna_asl_m(self) -> float:
-        """Antenna height above sea level = ground elevation + height above ground."""
         return self.station["ground_elevation_m"] + self.station["antenna_height_m"]
 
 
@@ -126,7 +120,7 @@ def load(path: str | None = None) -> Config:
     if sources:
         srcs = [SourceCfg(**{k: v for k, v in s.items() if k in SourceCfg.__dataclass_fields__})
                 for s in sources]
-        for s, given in zip(srcs, sources):        # (the file to fall back on is the default source's own, no other's)
+        for s, given in zip(srcs, sources):        # the default fallback file is the default source's only
             if "files" not in given and ("urls" in given or s.band != "1090"):
                 s.files = []
     else:

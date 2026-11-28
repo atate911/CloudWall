@@ -1,9 +1,5 @@
-"""What is set up on this machine: the checks `cloudwall doctor` runs on the machine itself (the
-service, its files, the tunnel's two ends, Caddy, Coverage3D), not on CloudWall's own settings.
-Each names the problem (troubles.CATALOGUE) when what it finds is wrong.
-
-Everything goes through a Machine (a root folder and a way to run read-only commands), so the
-tests build a pretend machine in a folder.
+"""The checks `cloudwall doctor` runs on the machine itself (service, files, tunnel, Caddy,
+Coverage3D). Everything goes through a Machine, so tests build a pretend machine in a folder.
 """
 import re
 import subprocess
@@ -46,7 +42,7 @@ def _unit_value(text, key):
 
 
 def installs(m):
-    """CloudWall as set up to run here: [] or [{"kind": "system", "user", "unit", "config", "data", "active", "enabled"}]."""
+    """[] or [{"kind": "system", "user", "unit", "config", "data", "active", "enabled"}] (the last two None if unknown)."""
     unit = m.read("/etc/systemd/system/cloudwall.service")
     if unit is None:
         return []
@@ -72,7 +68,6 @@ def check_installs(m):
 
 
 def check_files(m):
-    """Settings readable by everyone while holding keys, and files not the service's to write."""
     for i in installs(m):
         cfg = i.get("config")
         text = m.read(cfg) if cfg else None
@@ -104,8 +99,7 @@ def check_key_in_log(m):
 
 
 def check_tunnel(m):
-    """Either end of the reverse tunnel (deploy/feed-tunnel): the server's restricted account, or
-    the receiver's service."""
+    """Either end of the reverse tunnel (deploy/feed-tunnel)."""
     keys = m.read("/var/lib/adsbtunnel/.ssh/authorized_keys")
     if keys is not None:
         lines = [l for l in keys.splitlines() if l.strip() and not l.startswith("#")]
@@ -147,7 +141,6 @@ def check_caddy(m):
 
 
 def check_receiver_side(m):
-    """What was set up around a receiver: Coverage3D on its own."""
     if m.read("/etc/systemd/system/coverage3d.service") is not None:
         yield health.trouble("coverage3d.separate")
     if m.path("/opt/adsb").is_dir():

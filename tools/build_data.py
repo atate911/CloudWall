@@ -9,37 +9,11 @@
     python3 tools/build_data.py borders [folder]           # borders and cities (Natural Earth, public domain)
     python3 tools/build_data.py helipads [package.tgz]     # US hospital helipads (FAA NASR, public domain)
 
-Without a file each downloads its source. Every output is limited to what CloudWall uses:
-
-- runways: the open runways of the airports in cloudwall/data/airports.csv and fields.csv with
-  both ends surveyed, leaving out helipads and water lanes, positions to about a metre, and the
-  elevation of the first end (CloudWall takes it as the field's).
-- airline: the airports in airports.csv with scheduled airline service, and whether each is a
-  large one; CloudWall picks a place's airport from these when it isn't given.
-- cwt: each aircraft type's FAA Consolidated Wake Turbulence category (A-I, JO 7110.126), as
-  STARS data blocks show it, from openScope's aircraft file (MIT licence; it has no download URL,
-  so give the file: resources/openscope-aircraft.json in openScope or the vice simulator).
-- zips: each ZIP code area's internal point (its centre, or the nearest point inside it), to
-  four decimal places. Takes the Gazetteer file (tab-separated: GEOID ... INTPTLAT INTPTLONG,
-  plain or zipped) or a zip,lat,lng CSV of it.
-- airspace: every Class B and C area, and the Class D areas of the airports in
-  airline_airports.csv, from the FAA's NASR airspace data as packaged (GeoJSON) by the
-  @squawk/airspace-data npm package (MIT). Outlines simplified to about 100 m, with the floor and
-  ceiling of each area and a point inside it for its label. Drawn on the ATC-style radar.
-- navaids: the VOR, VOR/DME, VORTAC and TACAN stations in the FAA's NASR data, from the
-  @squawk/navaid-data npm package (MIT); not NDBs, DMEs or VOR test facilities.
-- helipads: the open heliports in the FAA's NASR data whose names say they serve a hospital (a
-  hospital, medical centre, health system, clinic or ER), from the @squawk/airport-data npm
-  package (MIT). Names are tidied from the FAA's capitals and abbreviations ("ST VINCENT MED CTR"
-  -> "St. Vincent Medical Center"), with a short form for the radar ("OHSU"). The US only.
-- borders: for the flight card's route map (cloudwall/web/maps/world.json), Natural Earth's 1:50m
-  country borders on land and state and province lines (the US, Canada, Australia, Brazil and a
-  few more), simplified to about 2 km, and its 1:10m populated places down to the regional towns
-  (those Natural Earth would label by map zoom 6.7), each with that zoom: its rank, which keeps a
-  map's labels to places of like importance for its scale. With them, the names of the countries
-  and of those states and provinces, each with a few points well inside it where a map of part of
-  it can set its name. Takes a folder holding the five GeoJSON files, else downloads them from
-  Natural Earth's repository.
+Without a file each downloads its source, except cwt (no download URL: give
+resources/openscope-aircraft.json from openScope or the vice simulator). The NASR ones take the
+@squawk npm package's tarball or its data file. zips takes the Gazetteer file (plain or zipped) or
+a zip,lat,lng CSV. borders takes a folder holding the five Natural Earth GeoJSON files and writes
+cloudwall/web/maps/world.json; the rest write to cloudwall/data/.
 """
 import csv
 import gzip
@@ -68,8 +42,8 @@ def source(arg, url):
 
 
 def npm_data(arg, package, version, member):
-    """A data file inside an npm package: the package's tarball (given, else downloaded from the
-    registry), or the data file itself, gzipped or not."""
+    """A data file inside an npm package: arg is the tarball (else downloaded) or the data file
+    itself, gzipped or not."""
     raw = Path(arg).read_bytes() if arg else urllib.request.urlopen(
         f"https://registry.npmjs.org/@squawk/{package}/-/{package}-{version}.tgz", timeout=120).read()
     if raw[:2] == b"\x1f\x8b":
@@ -110,8 +84,8 @@ def inside(lat, lon, ring):
 
 
 def label_point(ring):
-    """A point well inside an outline (a shelf of a Class C wraps around the surface area, so its
-    centre of mass can lie outside it): of a grid across it, the point farthest from its edge."""
+    """A point well inside an outline (the centroid can lie outside a Class C shelf): of a grid
+    across it, the point farthest from its edge."""
     lats, lons = [p[0] for p in ring], [p[1] for p in ring]
     best, far = (sum(lats) / len(lats), sum(lons) / len(lons)), -1.0
     k = math.cos(math.radians(best[0]))
@@ -168,10 +142,10 @@ def navaids(arg):
            "Rebuild with: python3 tools/build_data.py navaids"], out)
 
 
-# A hospital's heliport, by its name. The FAA abbreviates freely: "MED CTR", "RGNL", "HOSP", "HLTH".
+# a hospital's heliport, by its name
 HOSPITAL = re.compile(r"\b(HOSP|HOSPITALS?|MEDICAL|MED|MEDCTR|HEALTH|HEALTHCARE|HLTH|CLINIC|TRAUMA|CHILDREN'?S|"
                       r"INFIRMARY|EMERG|EMERGENCY|ER|SANITARIUM|CANCER|REHAB|MERCY|UPMC|AVERA|KAISER|SINAI|MAYO)\b")
-# the FAA's abbreviations, spelled out; and words that are the heliport's, not the hospital's name
+# SPELL: the FAA's abbreviations; DROP: words that are the heliport's, not the hospital's name
 SPELL = {"HOSP": "Hospital", "MED": "Medical", "CTR": "Center", "CNTR": "Center", "MEDCTR": "Medical Center",
          "MEML": "Memorial", "MEM": "Memorial", "RGNL": "Regional", "REGL": "Regional", "REG": "Regional",
          "HLTH": "Health", "UNIV": "University", "CNTY": "County", "CO": "County", "ST": "St.", "MT": "Mount",
@@ -212,7 +186,7 @@ def short_name(name):
             s = s[: -len(t) - 1]
             break
     words = s.split()
-    if len(words) >= 3 and words[-1] == "University":     # a university's hospital goes by its initials, as OHSU does
+    if len(words) >= 3 and words[-1] == "University":     # a university's hospital goes by its initials
         return "".join(w[0] for w in words if w not in ("of", "and", "the", "&") and w[0].isalnum()).upper()
     return s
 
@@ -321,10 +295,9 @@ SHORT_NAMES = {"United States of America": "United States"}
 
 
 def name_points(rings, first):
-    """Where a map showing part of a region can set its name: Natural Earth's own label point, then
-    the points of a grid across the region that are well inside it (a third of the grid's step from
-    its edge, so a name stays clear of the border), on the finest grid that gives no more than
-    REGION_POINTS of them. rings: the region's outlines, each [[lat, lon], ...]."""
+    """Where a map can set a region's name: Natural Earth's label point (first), then grid points
+    well inside it (a third of a step from the edge), on the finest grid giving at most
+    REGION_POINTS. rings: [[lat, lon], ...] each. Returns a flat [lat, lon, ...]."""
     rings = [simplify(r, 0.05) for r in rings]
     rings = [r for r in rings if len(r) >= 4]
     boxes = [(min(p[0] for p in r), max(p[0] for p in r), min(p[1] for p in r), max(p[1] for p in r)) for r in rings]
@@ -353,7 +326,7 @@ def name_points(rings, first):
         if abs(lat - first[0]) > 0.3 or abs(lon - first[1]) > 0.3:
             out += [round(lat, 2), round(lon, 2)]
     return out
-CITY_ZOOM = 6.7         # the places Natural Earth labels by this zoom: down to towns like Corvallis or Grants Pass
+CITY_ZOOM = 6.7         # keep the places Natural Earth labels by this zoom (regional towns)
 
 
 def borders(arg):

@@ -1,15 +1,8 @@
-"""Back-fill the database from history files that already exist on the Pi.
+"""Back-fill the database from history files on the Pi: aircraft.json-style snapshots
+(``{"now": ..., "aircraft": [{...}]}``), plain or gzipped, e.g. tar1090's ``history_<ms>.json``.
 
-Only formats that are known for certain are supported:
-
-* ``history_<ms>.json`` (tar1090/readsb snapshots, same layout as aircraft.json), plain or gzipped;
-* any ``.json`` / ``.gz`` file whose top level is an aircraft.json-style object
-  (``{"now": ..., "aircraft": [ {...}, ... ]}``), e.g. ``current_large.gz`` when it has that layout.
-
-tar1090's compact ``chunk_*.gz`` files store aircraft as positional arrays. Their column order has
-not been verified on this receiver, so they are skipped with a message rather than guessed at.
-Inspect one with  ``zcat chunk_*.gz | head -c 2000``  and extend `_snapshots_from` if you want them.
-globe_history/ (readsb traces/heatmaps) has not been inspected either, so no importer exists for it.
+tar1090's ``chunk_*.gz`` positional-array layout is unverified, so it is skipped with a message
+rather than guessed at; extend `_snapshots_from` to support it.
 """
 from __future__ import annotations
 
@@ -31,7 +24,6 @@ def _load(path: str):
 
 
 def _snapshots_from(doc, path):
-    """Yield aircraft.json-style snapshots found in a loaded document."""
     if isinstance(doc, dict) and isinstance(doc.get("aircraft"), list):
         if all(isinstance(a, dict) for a in doc["aircraft"][:20]) and "now" in doc:
             yield doc
@@ -91,7 +83,7 @@ def import_files(cfg, store, station, paths, band="1090") -> dict:
     have = store.existing_times(t0 - 2, t1 + 2)
     fresh = [p for p in points if (p.t, p.hex) not in have]
     store.insert_points(fresh)
-    store.invalidate_days(t0, t1)          # whole-day aggregates for touched days must be rebuilt
+    store.invalidate_days(t0, t1)          # touched days' aggregates must be rebuilt
     res = {"files": len(files), "snapshots": len(snaps), "imported": len(fresh),
            "duplicates": len(points) - len(fresh)}
     log.info("import: %s", res)
@@ -99,7 +91,7 @@ def import_files(cfg, store, station, paths, band="1090") -> dict:
 
 
 def backfill_on_first_start(cfg, store, station) -> dict | None:
-    """If the database is empty, import tar1090's in-memory history so the map isn't empty."""
+    """If the database is empty, import tar1090's history, once. None if nothing was done."""
     if not cfg.sampler["backfill_on_start"] or store.total_points() or store.get_meta("backfilled"):
         return None
     d = cfg.sampler["backfill_dir"]

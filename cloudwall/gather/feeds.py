@@ -147,11 +147,8 @@ class Vitals:
         self.ok_at, self.down_since, self.error, self.host = received, None, None, host
         self.count = len(placed)
         self.moving = sum(1 for a, _ in placed if (a.get("gs") or 0) > 50)
-        # Frozen is the whole answer not being made afresh: readsb and the community feeds stamp each
-        # answer with when it was made ("now"), so the same stamp again is the same answer again (a
-        # decoder that hung while its web server goes on, or a cache in between). One aircraft at
-        # the same position several times is no sign: a decoder lists an aircraft that has gone out of
-        # range at its last position for up to a minute while it ages. Only a feed with no stamp is
+        # Frozen = the same "now" stamp again. An unchanged position is no sign (a decoder lists a
+        # lost aircraft at its last position for up to a minute), so only a feed with no stamp is
         # judged by its positions, and then only with several aircraft moving.
         now = (data or {}).get("now")
         if isinstance(now, (int, float)) and not isinstance(now, bool):
@@ -174,9 +171,8 @@ class Vitals:
 
 
 def feed_time(data, received):
-    """When a feed's answer was made, in unix seconds. readsb's aircraft.json gives seconds and the
-    community APIs milliseconds; an answer with no time, or one far from our own clock, counts as
-    made when it arrived."""
+    """When a feed's answer was made, unix seconds (readsb gives seconds, the community APIs
+    milliseconds); `received` if it gives no time or one over 5 min from our clock."""
     now = (data or {}).get("now")
     if isinstance(now, (int, float)) and not isinstance(now, bool):
         now = now / 1000 if now > 1e11 else now
@@ -186,8 +182,8 @@ def feed_time(data, received):
 
 
 def placed_with_times(data, received):
-    """The aircraft with a position in a feed's answer, each with the time its position was
-    reported: the answer's time less the record's seen_pos (how old the position was then)."""
+    """[(aircraft, time its position was reported)] for those with a position: the answer's time
+    less seen_pos."""
     made, out = feed_time(data, received), []
     for a in (data or {}).get("ac") or (data or {}).get("aircraft") or []:
         n = normalise(a)
@@ -197,14 +193,13 @@ def placed_with_times(data, received):
     return out
 
 
-MERGE_MAX_AGE_S = 60        # a position older than this is left out, as readsb itself drops it
-MERGE_WAIT_S = 25           # the longest an update waits for either side: one that hangs is skipped
+MERGE_MAX_AGE_S = 60        # older positions are left out, as readsb itself drops them
+MERGE_WAIT_S = 25           # the longest an update waits for either side
 MERGE_PROJECT_MAX_S = 15    # carry a position along its track for at most this long
 
 
 def project(a, seconds):
-    """The aircraft moved on along its track at its ground speed for the given seconds (capped).
-    Distances here are a few miles at most, so the flat-earth step is exact enough."""
+    """The aircraft moved on along its track at its ground speed for `seconds` (capped; flat-earth)."""
     seconds = min(seconds, MERGE_PROJECT_MAX_S)
     if seconds <= 0.05 or a["on_ground"] or not a.get("gs") or a.get("track") is None:
         return a
@@ -214,19 +209,10 @@ def project(a, seconds):
 
 
 class Merged:
-    """Your own receiver and the public feeds together: every aircraft either can see.
-
-    urls[0] is your receiver; the rest are the public feeds, tried in order as Feeds does. Each
-    update asks both at once. An aircraft only one of them has comes from that one. One both have
-    takes the more recent position, which is usually your receiver's: it hears the aircraft
-    directly, while a public feed is a few seconds behind. Any detail the chosen record lacks
-    (type, registration, owner) is filled in from the other.
-
-    Because the two run at different delays, every position is moved on along the aircraft's
-    track to the moment of the update, so a lagging report and a fresh one agree on where the
-    aircraft is now. And an aircraft never goes back: if the newest report this time is older than
-    the one used last time (the receiver lost it and the public feed is behind), the last one is
-    carried on instead.
+    """urls[0] (your receiver) and the public feeds asked at once. An aircraft both have takes the
+    more recent position, with missing details filled from the other. Every position is projected
+    along its track to the moment of the update (the two run at different delays), and an aircraft
+    never goes back: a report older than the one used last time loses to it.
     """
 
     def __init__(self, urls, clock=time.time):
@@ -237,13 +223,11 @@ class Merged:
         self.clock = clock
         self.name = " + ".join(f.name for f in (self.receiver, self.public) if f)
         self.last = {}               # hex -> (time of the position used last, that record)
-        self.down = set()            # feeds known to be failing, so each is complained of once
-        # four, not two: a feed that hangs past MERGE_WAIT_S still holds its worker until its own
-        # timeout, and the next update mustn't queue behind it
+        self.down = set()            # feeds known to be failing, so each is logged once
+        # four, not two: a feed that hangs past MERGE_WAIT_S still holds its worker
         self.pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix="feed")
 
     def close(self):
-        """The place is gone: let the workers go."""
         self.pool.shutdown(wait=False, cancel_futures=True)
 
     def _answer(self, future, label, feed):
@@ -301,19 +285,15 @@ class Merged:
                 if other.get("military"):
                     filled["military"] = True
             self.last[hexid] = (at, filled)
-            out.append(dict(project(filled, now - at)))      # (a copy: what is done to it downstream stays out of `last`)
+            out.append(dict(project(filled, now - at)))      # a copy: downstream changes stay out of `last`
         self.last = {h: v for h, v in self.last.items() if now - v[0] <= MERGE_MAX_AGE_S}
         return out
 
 
 def military_unplaced(url="https://opendata.adsb.fi/api/v2/mil"):
-    """Military aircraft that receivers can hear but nobody can place, anywhere: the feed's own
-    records. One request serves every place (shared.py); heard_near picks out a place's.
-
-    Many military jets carry a Mode S transponder that sends altitude but no position. The
-    network still reports them, with the rough location of the receiver that heard them
-    (rr_lat/rr_lon), so we can say "an F-16 is up nearby" even with no dot for the map.
-    Aircraft with a position arrive through the normal feed instead."""
+    """Raw records of military aircraft heard without a position, worldwide: they send altitude
+    only, and the feed gives the rough location of the receiver that heard them (rr_lat/rr_lon).
+    One request serves every place (shared.py)."""
     data = get_json(url, timeout=10)
     return [a for a in (data or {}).get("ac") or []
             if a.get("lat") is None and a.get("rr_lat") is not None and a.get("rr_lon") is not None

@@ -1,12 +1,5 @@
-"""Which flyovers go in the logbook, and what is noted of each.
-
-An aircraft that comes overhead gets one entry for the pass, however many updates it is
-overhead for, with its closest point: how near, how high and fast, where it was and which way it
-was flying. (What isn't written down as it happens can't be recovered later, so the entry holds
-enough to map a pass or count them by direction, whether or not anything shows that yet.) Lookups
-that arrive a few seconds later (its name, its route, its photo) are filled in as they come. Its badges (a new type, a rare one, a repeat
-visitor) are worked out as the entry starts, from what the logbook already holds. The rows
-themselves, and the Logbook tab's totals, are store.py's.
+"""Which flyovers go in the logbook: one entry per pass, holding its closest point, back-filled
+as lookups arrive; badges are worked out as the entry starts. The rows and totals are store.py's.
 """
 import json
 import time
@@ -22,7 +15,7 @@ def ordinal(n):
 
 
 def closest(a):
-    """An aircraft's place and motion, for its entry when this is the nearest it has been."""
+    """The entry's columns for an aircraft's closest point."""
     return {"min_dist_nm": round(a["dist"], 2), "alt_ft": a["alt"], "gs": a.get("gs"), "lat": round(a["lat"], 5),
             "lon": round(a["lon"], 5), "track": a.get("track"), "vrate": a.get("vrate")}
 
@@ -31,16 +24,15 @@ class Logbook:
     def __init__(self, store):
         self.store = store
         self.active = {}          # hex -> the flyover in progress: {"id", "min", "ts", "badges", ...}
-        self.tidied = 0.0         # when finished flyovers were last cleared out of active
+        self.tidied = 0.0
 
     def today(self):
-        """Flyovers logged today, and the seats estimated to have been on them."""
+        """(flyovers logged today, estimated seats on them)."""
         day = time.strftime("%Y-%m-%d")
         return self.store.count("day=?", (day,)), self.store.seat_total("day=?", (day,))["seats"]
 
     def tidy(self, now):
-        """Forget flyovers that ended over half an hour ago (seen again, they'd be new entries
-        anyway), so this doesn't grow with every aircraft that ever came overhead."""
+        """Forget flyovers that ended over RESIGHT_SECONDS ago."""
         if now - self.tidied > 60:
             self.tidied = now
             self.active = {h: s for h, s in self.active.items() if now - s["ts"] <= RESIGHT_SECONDS}
@@ -69,8 +61,7 @@ class Logbook:
         return b
 
     def record(self, a, now):
-        """An aircraft is overhead: start its entry, or carry on with the one it has, filling in
-        what has been learned since. Sets the aircraft's badges."""
+        """An aircraft is overhead: start or carry on its entry. Sets a["badges"]."""
         airline_icao = airlines.code(a.get("callsign"))
         s = self.active.get(a["hex"])
         if not s:
@@ -88,8 +79,7 @@ class Logbook:
         if a["dist"] < s["min"]:
             s["min"] = a["dist"]
             upd.update(closest(a))
-        # Lookups arrive a few seconds after first sight (and the paid provider may later
-        # correct the free route), so back-fill the entry whenever they change.
+        # lookups arrive after first sight, and the paid provider may later correct the free route
         r = a.get("route")
         if a.get("photo") and not s.get("photo"):
             s["photo"] = True
@@ -110,8 +100,7 @@ class Logbook:
                 s["route"] = key
                 upd.update(flight=r["flight"], airline=r.get("airline"), origin=key[1], dest=key[2],
                            origin_nm=round(r["flown_nm"]) if r.get("flown_nm") is not None else None)
-        # a helicopter is known to be medical only once it's seen landing at a hospital, which can
-        # be after its entry was started
+        # a helicopter is known to be medical only once seen landing at a hospital: maybe after its entry started
         if a.get("medical") and "MEDICAL" not in s["badges"]:
             first = sum(1 for b in s["badges"] if b == "MILITARY" or b == a.get("emergency"))
             s["badges"] = s["badges"][:first] + ["MEDICAL"] + s["badges"][first:]
@@ -121,8 +110,7 @@ class Logbook:
         a["badges"] = s["badges"]
 
     def _resume(self, hexid, now):
-        """After a restart, carry on with a flyover already logged in the last half hour
-        instead of counting the same pass twice."""
+        """After a restart, carry on with a flyover logged in the last half hour, not count it twice."""
         rows = self.store.query("SELECT id, ts, min_dist_nm, badges, origin, dest, flight, type_name "
                                 "FROM sightings WHERE hex=? AND ts>? ORDER BY ts DESC LIMIT 1",
                                 (hexid, now - RESIGHT_SECONDS))

@@ -1,4 +1,5 @@
 """HTTP server: JSON API plus the static touchscreen UI."""
+import gzip
 import hashlib
 import json
 import logging
@@ -53,6 +54,17 @@ class CodeWatch:
                 self.changed = True
                 log.warning("CloudWall's code has changed since it started: restart it to run the new version")
         return self.changed
+
+
+_files = {}       # (path, gzipped) -> (etag, bytes): the page's files as last read, until they change on disk
+
+
+def _static(f, tag, zipped):
+    kept = _files.get((f, zipped))
+    if not kept or kept[0] != tag:
+        data = f.read_bytes()
+        kept = _files[(f, zipped)] = (tag, gzip.compress(data, 6) if zipped else data)
+    return kept[1]
 
 
 class _Nowhere:
@@ -228,8 +240,29 @@ def make_server(cfg, places, charts=None, logos=None):
                 found = False
             if not found:
                 return self._send(404, {"error": "not found"})
-            self._send(200, f.read_bytes(),
-                       mimetypes.guess_type(f.name)[0] or "application/octet-stream")
+            # The page's own files: kept by the browser but asked about each time (no-cache), so a
+            # reload costs a 304 per file, not the file; text is sent gzipped (a third the size).
+            st = f.stat()
+            tag = f'"{st.st_mtime_ns:x}-{st.st_size:x}"'
+            ctype = mimetypes.guess_type(f.name)[0] or "application/octet-stream"
+            small = ctype.startswith("text/") or ctype.split(";")[0] in ("application/json", "image/svg+xml", "application/javascript")
+            zipped = small and "gzip" in (self.headers.get("Accept-Encoding") or "")
+            self.send_response(304 if self.headers.get("If-None-Match") == tag else 200)
+            self.send_header("ETag", tag)
+            self.send_header("Cache-Control", "no-cache")
+            if small:
+                self.send_header("Vary", "Accept-Encoding")
+            if self.headers.get("If-None-Match") == tag:
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return None
+            body = _static(f, tag, zipped)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(body)))
+            if zipped:
+                self.send_header("Content-Encoding", "gzip")
+            self.end_headers()
+            self.wfile.write(body)
 
         def _locate(self, text):
             """Where a typed ZIP code or pair of coordinates is, and the airline airports near it."""

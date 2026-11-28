@@ -1,9 +1,5 @@
-"""Background map tiles for the radar, fetched once and cached on disk.
-
-The browser asks CloudWall for /tiles/z/x/y and CloudWall serves it from its own
-cache, downloading from the map provider only when a tile is missing or a month
-old. That keeps load on the free tile services tiny, lets the board survive short
-internet outages, and means the display only ever talks to your own server.
+"""Map tiles served from CloudWall's own disk cache, downloaded from the provider only when
+missing or a month old; the display only ever talks to this server.
 """
 import hashlib
 import logging
@@ -23,24 +19,21 @@ RETRY_S = 300
 OSM = "© OpenStreetMap contributors"
 ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/{service}/MapServer/tile/{{z}}/{{y}}/{{x}}"
 STYLES = {
-    # Esri's public basemaps: no key needed, attribution required. (CARTO's free
-    # basemaps now return "API key required" placeholder tiles, so they're not offered.)
+    # Esri: no key, attribution required (CARTO's free basemaps now return "API key required" tiles)
     "dark": (ESRI.format(service="Canvas/World_Dark_Gray_Base"), f"Tiles © Esri — Esri, HERE, Garmin, {OSM}"),
     "light": (ESRI.format(service="Canvas/World_Light_Gray_Base"), f"Tiles © Esri — Esri, HERE, Garmin, {OSM}"),
     "satellite": (ESRI.format(service="World_Imagery"), "Imagery © Esri, Maxar, Earthstar Geographics"),
-    # for the Map view: a street map, and the labels and roads that go over the satellite imagery
+    # the Map view's; places and roads are transparent overlays for the satellite imagery
     "streets": (ESRI.format(service="World_Street_Map"), f"Map © Esri — Esri, HERE, Garmin, USGS, {OSM}"),
     "places": (ESRI.format(service="Reference/World_Boundaries_and_Places"), "Labels © Esri, HERE, Garmin"),
     "roads": (ESRI.format(service="Reference/World_Transportation"), "Roads © Esri, HERE, Garmin"),
-    # OpenStreetMap's own tiles: fine for light personal use like this, with the cache
     "osm": ("https://tile.openstreetmap.org/{z}/{x}/{y}.png", OSM),
 }
 
 
 def sweep(root, max_bytes, now=None):
-    """Keep the tile cache within bounds: tiles past twice their age (they would be fetched again
-    anyway) and leftovers from interrupted writes go, then the oldest until the whole cache is
-    under max_bytes. Returns (files removed, bytes kept)."""
+    """Remove tiles past twice MAX_AGE and .tmp leftovers, then the oldest until under max_bytes.
+    Returns (files removed, bytes kept)."""
     now = now or time.time()
     files, removed = [], 0
     for dirpath, _, names in os.walk(root):
@@ -79,7 +72,7 @@ def sweep(root, max_bytes, now=None):
 
 
 def keep_tidy(root, max_mb, every_s=86400):
-    """Sweep the cache a minute after starting and then once a day, on a thread of its own."""
+    """Sweep the cache a minute after starting and then daily, on its own thread."""
     def loop():
         time.sleep(60)
         while True:
@@ -95,23 +88,21 @@ def keep_tidy(root, max_mb, every_s=86400):
 
 
 def tile_corner(z, x, y):
-    """The north-west corner of a tile (x, y may be fractional: x + 0.5, y + 0.5 is its centre)."""
+    """(lat, lon) of a tile's north-west corner; x, y may be fractional."""
     n = 2 ** z
     return math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * y / n)))), x / n * 360 - 180
 
 
 def tile_nearest(z, x, y, lat, lon):
-    """The point of a tile nearest a place (near enough at these sizes: the place clamped into
-    the tile's span of latitude and longitude)."""
+    """The point of a tile nearest a place (the place clamped into the tile's lat/lon span)."""
     north, west = tile_corner(z, x, y)
     south, east = tile_corner(z, x + 1, y + 1)
     return min(max(lat, south), north), min(max(lon, west), east)
 
 
 class Tiles:
-    """One tiled map, cached on disk: the radar's street map from [map] by default, or a layer
-    given as layer={id, url, attribution, zooms, opacity} (see charts.py). fallback is another
-    Tiles to serve from where this one has no tile."""
+    """One tiled map, cached on disk: [map]'s by default, or layer={id, url, attribution, zooms,
+    opacity, anywhere} (charts.py). fallback: another Tiles served where this one has no tile."""
 
     def __init__(self, cfg, cache_dir, layer=None):
         m = cfg.get("map", {})
@@ -126,29 +117,27 @@ class Tiles:
             self.opacity = float(m.get("opacity", 0.45))
         self.zooms = tuple((layer or {}).get("zooms", (6, 17)))
         self.is_layer = bool(layer)
-        # a layer for the whole world (the flight card's route map) is served anywhere, but only at
-        # its low zooms: zoom 6 and out is at most 5,461 tiles for the entire planet
+        # served anywhere, but only at its low zooms (zoom 6 and out is 5,461 tiles for the planet)
         self.anywhere = bool((layer or {}).get("anywhere"))
         self.fallback = None
         self.enabled = self.style != "off" and bool(self.url)
-        self.homes = [cfg["home"]]      # every place watched (set by the caller when there are several)
-        # only serve the area around home, so the proxy can't be used to scrape a whole map: out
-        # to the corners of the ATC radar's square at 30 nm (42 nm), or three tracking radii
+        self.homes = [cfg["home"]]      # every place watched (set by the caller)
+        # only the area around home is served, so the proxy can't be used to scrape a whole map:
+        # the corners of the ATC radar's square at 30 nm (42 nm), or three tracking radii
         self.reach_nm = max(45, cfg["tracking"]["radius_nm"] * 3)
         self.dir = Path(cache_dir) / hashlib.sha1(self.url.encode()).hexdigest()[:10]
         self.lock = threading.Lock()
         self.failed = {}          # (z, x, y) -> when its download last failed
 
     def look(self):
-        """Which dimming the browser applies: maps differ in how dark they start out."""
+        """Which dimming the browser applies."""
         u = self.url.lower()
         if "cartocdn" in u:
             return "carto-light" if ("light" in u or "positron" in u or "voyager" in u) else "carto-dark"
         return self.style if self.style in STYLES or self.is_layer else "custom"
 
     def info(self):
-        # reach_nm: how far from home tiles are served (none for a layer served anywhere), so a
-        # display doesn't ask for the ones it would be refused
+        # reach_nm: how far from home tiles are served; None for a layer served anywhere
         return {"enabled": self.enabled, "style": self.look(), "attribution": self.attribution, "opacity": self.opacity,
                 "zooms": list(self.zooms), "reach_nm": None if self.anywhere else self.reach_nm}
 
@@ -157,21 +146,18 @@ class Tiles:
             return False
         if self.anywhere:
             return True
-        # any tile with part of it in reach: a square display's corners at the longest range
-        # take tiles whose centres are well beyond it
+        # any tile with part of it in reach, not just its centre
         return any(haversine_nm(h["lat"], h["lon"], *tile_nearest(z, x, y, h["lat"], h["lon"])) <= self.reach_nm
                    for h in self.homes)
 
     def _download(self, z, x, y):
-        # Templates copied from map providers often carry {s} (server letter) and {r}
-        # (retina suffix) as well as {z}/{x}/{y}; fill those in too.
+        # providers' templates often carry {s} (server letter) and {r} (retina suffix) too
         url = self.url.format_map({"z": z, "x": x, "y": y, "s": "a", "r": "", "-y": 2 ** z - 1 - y})
         data, ctype = fetch(url, timeout=10, max_bytes=4 * 1024 * 1024, retries=1)
         return data, ctype or "image/png"
 
     def get(self, z, x, y):
-        """(bytes, content type) for a tile, or None if it is outside the area or unavailable.
-        Where this map has no tile, the fallback's is served."""
+        """(bytes, content type) for a tile (the fallback's where this map has none), or None."""
         got = self._get(z, x, y)
         if got is None and self.fallback is not None:
             return self.fallback.get(z, x, y)
@@ -185,8 +171,7 @@ class Tiles:
         if missing.exists() and time.time() - missing.stat().st_mtime < MAX_AGE:
             return None
         fresh = path.exists() and time.time() - path.stat().st_mtime < MAX_AGE
-        # (one that failed isn't asked for again for a few minutes: with the map service out of
-        # reach, every screen's every tile would otherwise wait out a timeout each time)
+        # a failed tile waits RETRY_S: else, with the service down, every tile waits out a timeout
         if not fresh and time.time() - self.failed.get((z, x, y), 0) >= RETRY_S:
             try:
                 data, ctype = self._download(z, x, y)

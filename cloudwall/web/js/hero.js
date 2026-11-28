@@ -10,7 +10,6 @@ import { latest, refresh } from "./fresh.js";
 import { mappable, drawRouteMap, moveRouteMap, routeScale, routeHeight } from "./routemap.js";
 import { medIcon, hospitalLine, skyLook } from "./situation.js";
 
-// Play the entrance animation once for freshly inserted content.
 function enter(el) {
   el.classList.add("enter");
   clearTimeout(el._enterTimer);
@@ -48,21 +47,17 @@ const SKELETON = `
 
 const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
-// The flight is said once. Its radio callsign is shown under it only when it says something the
-// flight number doesn't: BAW21K under BA 285, but not DAL178 under DL 178, nor QXE2162 under AS 2162
-// (the same number, and its operator is named in words beside it).
+// The callsign is shown only when it says something the flight number doesn't: BAW21K under
+// BA 285, but not DAL178 under DL 178, nor QXE2162 under AS 2162 (the same number).
 const flightDigits = (s) => ((/(\d+[A-Z]*)$/.exec(String(s || "").replace(/\s/g, "")) || [])[1] || "").replace(/^0+/, "");
 const saysMore = (callsign, id) => !!callsign && callsign !== id && !(flightDigits(callsign) && flightDigits(callsign) === flightDigits(id));
 
-// The aircraft's type by name, the card's headline, as the way into the panel about it (about.js):
-// there whether the card has room for the drawing, with its own button, or not. Plain words on the
-// wall panel, read from across the room, and for an aircraft whose type has no code.
+// The type's name as the way into the panel about it (about.js). Plain words on the wall panel
+// and for an aircraft whose type has no code.
 const aboutLink = (a, words) => (a.type && !document.body.classList.contains("kiosk")
   ? `<button class="about-link" data-about="${esc(a.type)}" title="About this type">${esc(words)}<i aria-hidden="true"> ›</i></button>` : esc(words));
 
-// The two airports stand origin on the left, destination on the right, whichever way the flight is
-// going on the map, so the line between them always fills left to right: "From" and "To" over them and
-// an arrowhead on the line at the destination's end.
+// Origin on the left, destination on the right, whichever way the flight is going on the map.
 const aptHtml = (p, to, right, here) => `<div class="apt${right ? " r" : ""}${p.iata === here ? " local" : ""}"><small>${to ? "To" : "From"} ${esc(p.city || p.name || "")}</small>` +
   `<div class="flaps" id="${to ? "h-dest" : "h-orig"}"></div><div class="apt-when" id="${to ? "h-arr" : "h-dep"}"></div></div>`;
 
@@ -73,7 +68,6 @@ function routeHtml(a, state) {
     return `<div class="noroute pending">Looking up route…<small>Asking ${esc(prov)} where this flight is going</small></div>`;
   }
   if (a.medical && (!r || !r.plausible)) {
-    // a medical flight: the hospital it's going to, or has just left, when that's known
     return `<div class="noroute med">${medIcon(28)}<span>${esc(a.hospital ? hospitalLine(a.hospital, state) : `${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}, no flight plan filed`)}` +
       `${a.hospital ? `<small>${a.icon === "heli" || a.icon === "tandem" ? "Medical helicopter" : "Air ambulance"}</small>` : ""}</span></div>`;
   }
@@ -100,12 +94,10 @@ function routeHtml(a, state) {
   const iata = state.airport.iata;
   const left = aptHtml(r.origin, false, false, iata), right = aptHtml(r.dest, true, true, iata);
   const cls = r.plausible ? "" : " unsure";
-  // the aircraft itself rides the line between them, in small: its own side elevation, facing the way
-  // it's going (an aircraft of no shape to draw, a balloon, keeps the dot)
+  // the aircraft's side elevation rides the line between them (one with no shape to draw keeps the dot)
   const info = typeInfo(a), dr = info.shape ? drawing(info.type, info.shape, info.length, info.name) : null;
   const rider = dr && dr.svg ? `<span class="rider" style="--ar:${(dr.w / dr.h).toFixed(3)}">${dr.svg}</span>` : "";
   if (worldLayer(state) && mappable(r)) {
-    // the route on a real map: the airports either side of the distance and flight time, the map below
     return `<div class="route mapped${cls}">
     ${left}
     <div class="prog${rider ? " ridden" : ""}" id="h-prog" aria-hidden="true"><i></i>${rider || "<b></b>"}</div>
@@ -114,7 +106,7 @@ function routeHtml(a, state) {
     <div class="rmap" id="h-map"></div>
   </div>`;
   }
-  // with no map: an arc from the origin on the left to the destination on the right
+  // with no map: an arc
   return `<div class="route${cls}">
     ${left}
     <div><svg class="arc" viewBox="0 0 200 40">
@@ -127,9 +119,8 @@ function routeHtml(a, state) {
   </div>`;
 }
 
-// When it left and when it gets in, under each airport, and the flight time between them. A paid
-// route provider gives the takeoff time (and FlightAware the arrival); otherwise the arrival is
-// CloudWall's own estimate from distance and speed, and says so. Shown for a believable route only.
+// A paid route provider gives the takeoff time (and FlightAware the arrival); otherwise the arrival
+// is CloudWall's own estimate, and says "about". Shown for a believable route only.
 const hm = (min) => (min >= 60 ? `${Math.floor(min / 60)}h ${String(min % 60).padStart(2, "0")}m` : `${min} min`);
 function routeTimes(r) {
   if (!r) return { dep: "", arr: "", dur: "" };
@@ -143,7 +134,7 @@ function routeTimes(r) {
   };
 }
 
-// The server's whole-world map layer for the route, if it has one switched on ([map] route).
+// The server's whole-world map layer, if switched on ([map] route).
 const worldLayer = (state) => {
   const w = state.charts && state.charts.layers && state.charts.layers.world;
   return w && w.enabled ? w : null;
@@ -168,9 +159,7 @@ function showHero(el, a, state) {
   }
   const r = a.route;
   const id = ident(a), info = typeInfo(a);
-  // what it is, in the card's biggest letters, and a tap on it opens the panel about the type; the
-  // flight stands beside the airline's logo. An aircraft of no known type is headed by its flight.
-  // (a flight number is spaced as the departure boards space it; a registration or a callsign stands as it is)
+  // the headline is the type; an aircraft of no known type is headed by its flight
   const called = a.flight_no ? boardFlight(id) : id;
   const type = a.type_name || a.type || "", head = $("h-type"), headed = `${a.type || ""}|${type || called}`;
   if (head.dataset.is !== headed) {
@@ -180,7 +169,6 @@ function showHero(el, a, state) {
   $("h-flight").hidden = !type;
   flap($("h-flight"), type ? called : "");
   const ga = info.shape === "piston" || info.shape === "heli" || /^N\d/.test(a.callsign || "");
-  // the server's airline agrees with the logo and the flight number (a partner's flight under the airline you'd book)
   $("h-airline").textContent = a.airline || (r && r.airline) || (a.owner && a.owner !== "Private" ? tidyName(a.owner) : ga ? "General aviation" : "");
   $("h-sub").innerHTML = [a.operated_by ? `Operated by ${a.operated_by}` : null, saysMore(a.callsign, id) ? a.callsign : null].filter(Boolean).map((t) => `<span>${esc(t)}</span>`).join("");
   const bh = badges(a.medical ? ["MEDICAL", ...(a.badges || []).filter((b) => b !== "MEDICAL")] : a.badges);
@@ -189,8 +177,8 @@ function showHero(el, a, state) {
   // why this flight, as the Simple panel says it
   const t0 = since(state), coming = a.cpa_s > 0 && a.cpa_nm <= state.tracking.overhead_nm && a.cpa_s - t0 > 5;
   $("h-why").textContent = state.pinned ? "Selected" : coming ? "Over the house next" : a.dist < 1 ? "Overhead now" : a.cpa_s - t0 <= 5 ? "Just passed" : "Nearest now";
-  // a followed flight the feed has left out for a moment: its position is CloudWall's estimate
-  // (by the server's clock, plus the time since it answered: this screen's clock may not agree with it)
+  // a followed flight the feed has left out for a moment: its position is an estimate (aged by the
+  // server's clock plus the time since it answered: this screen's clock may not agree with it)
   const est = a.coasting ? Math.round((state.status.updated || state.now) - a.coasting + dataAge(state)) : null;
   $("h-est").hidden = est == null;
   if (est != null) $("h-est").textContent = `Position estimated: last report ${Math.max(1, est)} s ago`;
@@ -236,7 +224,7 @@ function showHero(el, a, state) {
   const v = a.vrate || 0;
   roll($("h-alt"), a.on_ground ? 0 : a.alt);
   $("h-arrow").innerHTML = v > 300 ? '<span class="up">▲</span>' : v < -300 ? '<span class="down">▼</span>' : "";
-  // where the autopilot is taking it: the selected altitude, when it differs from where it is now
+  // the autopilot's selected altitude, when it differs from where it is now
   const onApproach = (a.modes || []).includes("approach") || a.local === "arriving";
   const tgt = a.target_alt != null && a.alt != null && a.target_alt >= 1000 && !onApproach && Math.abs(a.target_alt - a.alt) > 300
     && (v > 300 ? a.target_alt > a.alt : v < -300 ? a.target_alt < a.alt : true) ? a.target_alt : null;
@@ -245,7 +233,6 @@ function showHero(el, a, state) {
   roll($("h-gs"), a.gs);
   $("h-mph").textContent = num((a.gs || 0) * 1.15078) + " mph";
   roll($("h-dist"), a.dist, (x) => x.toFixed(1));
-  // how high up to look, beside how far away
   const look = skyLook(a, state);
   $("h-dist2").textContent = `${(a.dist * 1.15078).toFixed(1)} mi ${a.compass}${look ? `, ${Math.round(look.el)}° up` : ""}`;
   $("h-hdg").textContent = a.track == null ? "–" : String(Math.round(a.track)).padStart(3, "0") + "°";
@@ -253,7 +240,6 @@ function showHero(el, a, state) {
     : a.track == null ? "" : `Toward the ${POINTS[Math.round(a.track / 22.5) % 16]}`;
 
   const sil = $("h-sil");
-  // the type plate: the side elevation with its length, under the photo once one arrives
   const isNew = (a.badges || []).includes("NEW TYPE");
   const silKey = `${info.type}|${info.shape}|${info.length}|${info.name}|${isNew}|${a.icon}`;
   if (sil && sil.dataset.shape !== silKey) {
@@ -261,9 +247,7 @@ function showHero(el, a, state) {
     sil.innerHTML = plate(info, { note: isNew ? "New to your collection" : "" }) || kindPlate(a.icon);
     // the type designator in the sheet's corner, for types drawn from their own measurements
     if (drawn(info)) sil.dataset.code = info.type; else delete sil.dataset.code;
-    // a button in the drawing's corner opens the panel about its type (about.js), for any aircraft whose
-    // type is known: a button, not the whole drawing, which fills the card when there's no route to show,
-    // and a tap on the card lets a followed flight go. Not on the wall panel, read from across the room.
+    // a button, not the whole drawing: a tap on the card lets a followed flight go. Not on the wall panel.
     if (a.type && !document.body.classList.contains("kiosk")) {
       sil.insertAdjacentHTML("beforeend", `<button class="about-btn" data-about="${esc(a.type)}" aria-label="About the ${esc(info.name || a.type)}">About this type ›</button>`);
     }
@@ -271,7 +255,6 @@ function showHero(el, a, state) {
   renderFacts(a, state, since(state));
 
   if (a.photo && a.photo_by && cur.photo !== a.photo) {
-    // a photo of this very airframe takes the top of the frame once it has loaded; the type plate stays below
     cur.photo = a.photo;
     const fig = document.createElement("figure");
     fig.className = "photo";
@@ -286,7 +269,6 @@ function showHero(el, a, state) {
       fig.prepend(img);
       m.prepend(fig);
       m.classList.add("has-photo");
-      // a switch in the frame's corner: the photo or the drawing, one at a time, as last set on this screen
       m.insertAdjacentHTML("beforeend", `<div class="seg media-seg" role="group" aria-label="Photo or drawing">` +
         `<button data-media="photo" title="The photo of this aircraft">Photo</button><button data-media="plate" title="The type's drawing, to scale">Drawing</button></div>`);
       showMedia(m);
@@ -301,8 +283,7 @@ function showHero(el, a, state) {
     drawRouteMap($("h-map"), r, worldLayer(state), state.airport.iata);
     moveRouteMap($("h-map"), r.progress ?? null);
   }
-  // fitted again when the card changes size, and when its words do within it (the page's fonts
-  // arriving, a line of the facts wrapping), which change the room left for the pictures
+  // fitted again when the card changes size, and when its words do (fonts arriving, a line wrapping)
   if (!el._fit) el._fit = new ResizeObserver(() => { if (el.classList.contains("hero-card")) fitCard(el); });
   if (fresh) {
     el._fit.disconnect();
@@ -310,19 +291,13 @@ function showHero(el, a, state) {
   }
 }
 
-// The desktop card is as tall as its row. One picture takes the room the words leave: the route map,
-// or, with no map, the aircraft's drawing (or photo) across the card. The map has three places, and
-// takes the one that shows the route biggest, keeping the drawing when that costs the route little:
-//   across: under the airports, the drawing beside the facts below it (a card with the height for it);
-//   wide:   under the airports, taking the drawing's room too, the facts in a row under it (a route
-//           running east and west on a card too short for a strip of map to show much);
-//   beside: beside the facts, in the drawing's place, the drawing over the facts (a route running
-//           north and south, which a wide strip would show as a short line in its middle).
-// When the row is too short for everything, things give way in turn, never running into each other:
-// the spacing tightens, then the map goes (the drawing takes the stage) or, beside the facts, the
-// drawing goes first; last, the facts stand alone in a row.
-// A card with room for only one of the two shows the map, and a switch in its corner (Route, Aircraft)
-// puts the drawing in the map's place: as it was last set on this screen, for every flight after.
+// The desktop card is as tall as its row. The map has three places, and takes the one that shows
+// the route biggest (the first within 85% of the best, in this order):
+//   across: under the airports, the drawing beside the facts below it;
+//   beside: beside the facts, in the drawing's place (a north-south route);
+//   wide:   under the airports, taking the drawing's room too (an east-west route on a short card).
+// When the row is too short, things give way in turn (STEPS): spacing, then the map or the drawing.
+// A card with room for only one shows the map, with a switch (Route, Aircraft) stored per screen.
 const FITS = ["fit-tight", "fit-nomap", "fit-noplate"];
 const STEPS = { across: FITS, wide: ["fit-tight", "fit-nomap"], beside: ["fit-tight", "fit-noplate", "fit-nomap"] };
 const picture = () => (store("card") === "plate" ? "plate" : "map");

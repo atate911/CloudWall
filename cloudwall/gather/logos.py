@@ -1,9 +1,5 @@
-"""Airline logos for the flight card, fetched on demand and cached on disk.
-
-Logos are trademarks of their airlines, so none are shipped with CloudWall: each
-is downloaded the first time that airline appears, by its two-letter IATA code
-(airlines.py says which code an aircraft's logo goes by), and kept for a few months.
-"""
+"""Airline logos by IATA code, fetched on demand and cached on disk; none are shipped
+(they are trademarks)."""
 import logging
 import re
 import threading
@@ -16,7 +12,7 @@ from ..core.http import fetch
 log = logging.getLogger("cloudwall.logos")
 MAX_AGE = 90 * 86400
 MISSING_AGE = 7 * 86400
-RETRY_S = 300              # after a fetch that failed (the logo service out of reach): not asked again before this
+RETRY_S = 300              # a failed fetch isn't tried again before this
 CODE = re.compile(r"^[A-Z0-9]{2}$")
 
 class Logos:
@@ -59,4 +55,3 @@ class Logos:
                 self.failed[code] = now
                 log.warning("logo %s unavailable: %s", code, e)
         return path.read_bytes() if path.exists() else None
-

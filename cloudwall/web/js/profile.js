@@ -110,16 +110,15 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
   }
   const hx = xs(0);
   s += `<line class="el-over" x1="${hx}" x2="${hx}" y1="${padT}" y2="${f1(g0 - 11 * fs)}"/><path class="el-home" d="M${hx - 5 * fs},${g0} v${-6 * fs} l${5 * fs},${-5 * fs} l${5 * fs},${5 * fs} v${6 * fs} z"/><text class="el-home-l" x="${hx}" y="${f1(g0 + 16 * fs)}" text-anchor="middle">Home</text>`;
-  // the aircraft, about their size, facing the way they fly along the runway
+  // the aircraft
   const boxes = [{ x0: W - padR + 4, x1: W, y0: 0, y1: H }];
   let crafts = "", labels = "";
   const placed = picture(state).air.filter((a) => a.alt != null && Math.abs(ax.along(a)) <= range).map((a) => {
     const x = xs(ax.along(a)), y = ys(a.alt), w = fs * (14 + 24 * Math.sqrt(Math.min(1, (a.length || 10) / 70)));
     const fwd = Math.sin((a.track || 0) * RAD) * ax.ux + Math.cos((a.track || 0) * RAD) * ax.uy >= 0;
     const sv = sideOf(a, w), sel = a.hex === heroHex, off = !sel && ax.lateral(a) > OFF_LINE_NM;
-    // the selected aircraft stands on a line to the ground under it
     if (sel) crafts += `<line class="pf-stem" x1="${f1(x)}" x2="${f1(x)}" y1="${f1(y + w * 0.62)}" y2="${g0}"/><circle class="pf-sel" cx="${f1(x)}" cy="${f1(y - sv.up * 0.2)}" r="${f1(w * 0.62)}"/>`;
-    // tipped the way it is going: its real climb or descent angle, doubled so a 3° approach shows, up to 14°
+    // tipped by its real climb or descent angle, doubled so a 3° approach shows, up to 14°
     const fixed = a.icon !== "heli" && a.icon !== "tandem" && a.icon !== "balloon" && (a.gs || 0) > 40;
     const tip = fixed ? clamp((Math.atan2(a.vrate || 0, a.gs * 101.27) / RAD) * 2, -14, 14) : 0;
     // the drawings face right, out along the approach: an arrival is turned round to face the runway
@@ -127,7 +126,7 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
     boxes.push({ x0: x - w / 2, x1: x + w / 2, y0: y - sv.up, y1: y + sv.h * 0.4 });
     return { a, x, y, w, sv, sel, off };
   });
-  // the approach's name along it, under the line, where no aircraft is and clear of the names on the ground
+  // the approach's name along it, where no aircraft is
   boxes.push({ x0: padL, x1: W - padR, y0: g0 - 3, y1: H });
   if (approach) {
     const text = "3° approach", len = text.length * 5.2 * fs;
@@ -140,10 +139,8 @@ export function profileHtml(state, W, H, { range = state.tracking.radius_nm, fs 
       break;
     }
   }
-  // labels, as the radar names them, so an aircraft here can be found there: the selected aircraft
-  // by its flight, then the arrivals by their place in the queue (the number the radar and the list
-  // give them), then departures, then everyone else along the runways' line, by their flight, where
-  // there is room. The faint ones off the line are named when pointed at (the label is there, hidden).
+  // labels, in order of claim on the room: selected, arrivals by queue number, departures, the rest.
+  // The faint ones off the line are named when pointed at (the label is there, hidden).
   const rank = (p) => (p.sel ? 0 : p.a.seq ? p.a.seq : p.off ? 200 : p.a.activity === "dep" ? 50 : 99);
   for (const p of placed.slice().sort((q, r) => rank(q) - rank(r))) {
     const { a, x, y, w, sv } = p, id = p.sel || !a.seq ? boardFlight(ident(a)) : "", seqW = a.seq ? 14 * fs : 0;

@@ -6,8 +6,7 @@ from ..core.db import Database
 
 
 def _sightings_v1(db):
-    """The logbook as every CloudWall before numbered migrations left it: the table, and each
-    column added since its first release (added here where an older file lacks it)."""
+    """The table as pre-migration CloudWalls left it, adding the columns an older file lacks."""
     db.executescript("""
     CREATE TABLE IF NOT EXISTS sightings(
         id INTEGER PRIMARY KEY, ts REAL, day TEXT, hex TEXT, callsign TEXT,
@@ -27,14 +26,13 @@ def _sightings_v1(db):
 class Store(Database):
     MIGRATIONS = [(1, _sightings_v1)]
 
-    # -- logbook -------------------------------------------------------------
     def count(self, where, args=()):
         with self.lock:
             return self.db.execute(
                 f"SELECT COUNT(*) FROM sightings WHERE {where}", args).fetchone()[0]
 
     def seat_total(self, where, args=()):
-        """Estimated seats over the house: the sum, and how many flyovers it covers."""
+        """{"seats": sum, "known": flyovers with a seat count, "flights": all}."""
         with self.lock:
             r = self.db.execute(f"SELECT SUM(seats), COUNT(seats), COUNT(*) FROM sightings WHERE {where}",
                                 args).fetchone()
@@ -61,9 +59,8 @@ class Store(Database):
             return [dict(r) for r in self.db.execute(sql, args).fetchall()]
 
     def type_seen(self, type_code):
-        """A type in the logbook: how often it has come over (n, of all flyovers), when first and
-        last, how many different airframes, its rank among the types logged (1: the most often;
-        types with equal counts share a rank), and the airlines that fly it here most, at most 3."""
+        """A type in the logbook: n (of all flyovers), first, last, airframes, rank (1 = most often;
+        ties share a rank; None if never seen), types, and its top 3 airlines."""
         r = self.query("SELECT COUNT(*) AS n, MIN(ts) AS first, MAX(ts) AS last, COUNT(DISTINCT hex) AS airframes "
                        "FROM sightings WHERE type=?", (type_code,))[0]
         counts = [c["n"] for c in self.query("SELECT COUNT(*) AS n FROM sightings WHERE type IS NOT NULL GROUP BY type")]
@@ -74,11 +71,10 @@ class Store(Database):
                     types=len(counts), airlines=airlines)
 
     def airframe_seen(self, hexid):
-        """One airframe in the logbook: how many times it has come over, and when first."""
         return self.query("SELECT COUNT(*) AS n, MIN(ts) AS first FROM sightings WHERE hex=?", (hexid,))[0]
 
     def type_name(self, type_code):
-        """The name a type was last logged under ("Boeing 737 MAX 9"), or None."""
+        """The name a type was last logged under, or None."""
         rows = self.query("SELECT type_name FROM sightings WHERE type=? AND type_name IS NOT NULL ORDER BY ts DESC LIMIT 1",
                           (type_code,))
         return rows[0]["type_name"] if rows else None

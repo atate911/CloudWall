@@ -256,18 +256,18 @@ def wall(system, opts):
     system.add_system_user(USER, VAR)
     system.mkdir(OPT, 0o755)
     system.mkdir(f"{OPT}/releases", 0o755)
-    # the service rewrites its settings (Setup), so the group may write here; others may pass through
-    # to a panel's own file but list nothing, and config.toml itself is the owner's and group's only
+    # 771: the service rewrites its settings, so the group may write; others may only pass through
+    # (to a panel's panel.conf) and list nothing
     system.mkdir(ETC, 0o771, "root", USER)
     system.mkdir(VAR, 0o750, USER, USER)
-    system.mkdir(f"{VAR}/backups", 0o750, USER, USER)      # the board's "Back up now" writes here
+    system.mkdir(f"{VAR}/backups", 0o750, USER, USER)
     system.mkdir(CACHE, 0o750, USER, USER)
     code = put_release(system, opts.source)
     put_config(system)
     system.write(BIN, COMMAND_TEXT, mode=0o755)
     unit = system.write(UNIT, UNIT_TEXT)
     from . import helper
-    helper.install_units(system)              # what the control board may ask root for
+    helper.install_units(system)
     if opts.public:
         port = config.load(system.path(CONFIG))["server"]["port"] if system.exists(CONFIG) else 5050
         make_public(system, opts.public, port)
@@ -276,8 +276,7 @@ def wall(system, opts):
     enabled = system.ask(["systemctl", "is-enabled", "cloudwall"])
     if unit or (enabled is not None and enabled.stdout.strip() != "enabled"):
         system.run(["systemctl", "enable", "cloudwall"], check=False)
-    # owed a restart: something changed now, or on an earlier run that stopped before the service
-    # took it up (a setting the preflight refused, a start that failed)
+    # a restart is owed if something changed now, or on an earlier run that stopped before restarting
     owed = f"{OPT}/restart-owed"
     if code or unit or opts.public:
         system.write(owed, "the service has yet to restart into what `cloudwall install` put in place\n")
@@ -314,7 +313,7 @@ def unwall(system, purge=False):
             system.run(["userdel", USER], check=False)
 
 
-# -- a panel ----------------------------------------------------------------------------------
+# -- a panel --
 
 def panel(system, opts):
     user = opts.desktop_user or os.environ.get("SUDO_USER")
@@ -323,7 +322,7 @@ def panel(system, opts):
     if system.real and system.ask(["id", "-u", user]).returncode != 0:
         raise SystemExit(f"cloudwall install --role panel: there is no user {user!r} on this machine")
     url = (opts.wall_url or "").rstrip("/")
-    if not url:                                   # a wall on this machine: its own address, with its key
+    if not url:                                   # a wall on this machine, with its key
         cfg = config.load(system.path(CONFIG)) if system.exists(CONFIG) else config.load(None)
         url = f"http://localhost:{cfg['server']['port']}" + (f"/k/{cfg['server']['key']}" if cfg["server"]["key"] else "")
     system.mkdir(ETC, None if system.exists(ETC) else 0o771)

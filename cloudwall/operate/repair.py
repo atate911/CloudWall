@@ -1,12 +1,7 @@
-"""The repairs CloudWall knows, by name (troubles.CATALOGUE names them). `cloudwall doctor --fix`
-makes those its checks call for, saying each before it is made; the running server makes the
-`auto` ones itself (app/watch.py), so here they are for when CloudWall isn't running.
+"""The repairs CloudWall knows, by name (troubles.CATALOGUE names them), for `cloudwall doctor --fix`.
 
-A repair only puts things back as CloudWall would have set them up: permissions, ownership,
-a service enabled or started, a keepalive for the tunnel's account, the cache trimmed. Nothing is
-deleted that can't be downloaded again, and anything that would change what someone else relies on
-(a new private link breaks every bookmark; turning one of two CloudWalls off) is left to the owner,
-with the steps to do it.
+A repair only puts things back as CloudWall would have set them up. Nothing is deleted that can't
+be downloaded again; anything that would change what someone else relies on is left to the owner.
 """
 import os
 from pathlib import Path
@@ -51,7 +46,7 @@ def trim_cache(system, machine):
     from ..gather import tiles
     try:
         cfg = config.load(None)
-    except Exception:                  # a broken settings file is no reason not to trim the cache
+    except Exception:                  # a broken settings file: trim anyway
         import copy
         cfg = copy.deepcopy(config.DEFAULTS)
     done = []
@@ -85,10 +80,10 @@ def tunnel_keepalive(system, machine):
 
 
 def reopen_store(system, machine):
-    return None                     # a running CloudWall's own repair (app/watch.py); a restart does it otherwise
+    return None                     # the running CloudWall's own repair (app/watch.py)
 
 
-# name -> (what it does, in words, needs root, function(system, machine) -> what was done or None)
+# name -> (what it does, needs root, function(system, machine) -> what was done or None)
 REPAIRS = {
     "chmod-config": ("make the settings unreadable by other accounts", False, chmod_config),
     "fix-ownership": ("give CloudWall's files back to its service's user", True, fix_ownership),

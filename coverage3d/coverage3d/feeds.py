@@ -9,7 +9,7 @@ log = logging.getLogger("coverage3d.feeds")
 
 
 def _sibling(location: str, name: str) -> str:
-    """aircraft.json -> receiver.json / stats.json / outline.json next to it (URL or path)."""
+    """The file `name` next to aircraft.json (URL or path)."""
     return location.rsplit("/", 1)[0] + "/" + name
 
 
@@ -30,7 +30,6 @@ class ReadsbFeed:
             return json.loads(f.read())
 
     def _get(self, filename: str):
-        """Fetch `filename` from the first location that works (preferring the last good one)."""
         order = ([self.working] if self.working else []) + [x for x in self.locations if x != self.working]
         err = None
         for loc in order:
@@ -42,7 +41,7 @@ class ReadsbFeed:
                         log.info("[%s] reading %s", self.name, loc)
                     self.working = loc
                 return data
-            except Exception as e:                 # network, permissions, bad JSON: try the next one
+            except Exception as e:                 # try the next one
                 err = e
         raise OSError(f"no live source answered for {filename} ({err})")
 

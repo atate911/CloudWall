@@ -1,11 +1,5 @@
-"""What every aircraft in the area is doing, so a screen can show the whole picture at a glance:
-arriving at the place's airport, departing from it, flying locally, or passing over on its way
-somewhere else. Arrivals are put in landing order, each with the runway it is lining up for, about
-when it lands and how far behind the one ahead it is. And anything worth a look (military, a rare
-type, a balloon, a medical flight) is marked as such, and a medical helicopter's hospital (medical.py).
-
-Every screen draws these the same way, in the same four colours: the radar, the lists, the Board,
-the wall panel and the phone.
+"""What every aircraft is doing (arriving, departing, local, passing), the arrivals' landing
+order with runway and time, and what is notable (military, rare, medical: medical.py).
 """
 import math
 
@@ -13,26 +7,21 @@ from ..core import geo
 from . import medical
 from ..reference import aircraft
 
-# Kinds of aircraft that, with no published route to say otherwise, are flying locally: sightseeing,
-# training, a medical or news helicopter, a balloon. (A turboprop with no route and no VFR code is
-# more likely passing through on a flight plan.)
+# kinds that, with no route, are flying locally (a turboprop with no route is more likely passing through)
 LOCAL_KINDS = {"heli", "tandem", "glider", "balloon", "light", "gyro", "ultralight", "twin",
                "seaplane", "airship", "drone"}
-# Worth pointing out to the household even when nothing about the flight is unusual.
 UNUSUAL_KINDS = {"balloon", "airship", "glider", "tandem", "tiltrotor", "gyro"}
-TAIL_S = 120                # how much of every aircraft's recent track a screen gets, in seconds
+TAIL_S = 120                # seconds of every aircraft's recent track a screen gets
 TAIL_POINTS = 16            # at most this many points of it
-FINAL_LATERAL_NM = 2.5      # this close to a runway's extended centreline, and pointing down it, is on final
+FINAL_LATERAL_NM = 2.5      # this close to the extended centreline, and pointing down it, is on final
 FINAL_JOIN_NM = 6           # an arrival not yet on final is reckoned to join it this far out
 
 
 def activity(a, iata, field_ft=0):
-    """"arr", "dep", "loc" or "pass": what this aircraft is doing, from its route when it has a
-    believable one, else from how it is flying near the airport (details.infer_local), else from
-    its kind. Light aircraft into and out of the small fields nearby fly locally, as far as the
-    big airport is concerned."""
+    """"arr", "dep", "loc" or "pass": from a believable route, else how it flies near the airport
+    (details.infer_local), else its kind. Traffic of the small fields nearby is "loc"."""
     r = a.get("route") if (a.get("route") or {}).get("plausible") else None
-    v, alt = a.get("vrate") or 0, (a.get("alt") or 0) - field_ft        # (height above the airport)
+    v, alt = a.get("vrate") or 0, (a.get("alt") or 0) - field_ft        # height above the airport
     if a.get("local_field"):
         return "loc"
     if a.get("local") == "arriving" or (r and r["dest"].get("iata") == iata and v <= 300 and alt < 14000):
@@ -45,8 +34,7 @@ def activity(a, iata, field_ft=0):
 
 
 def notable(a):
-    """Why this aircraft is worth a look, or None: an emergency, a medical flight, military, a rare
-    type, or a kind seldom seen (a balloon, a glider, a twin-rotor helicopter)."""
+    """Why this aircraft is worth a look, or None."""
     if a.get("emergency"):
         return "emergency"
     if a.get("medical"):

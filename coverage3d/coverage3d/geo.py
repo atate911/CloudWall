@@ -1,7 +1,6 @@
 """Geometry: distance, bearing, elevation angle and radio horizon.
 
-Units: distances in nautical miles (nm) unless a name says otherwise,
-bearings in degrees true (0 = north, clockwise), altitudes in feet (ft) or metres (m).
+Units: distances in nm unless a name says otherwise, bearings in degrees true, altitudes in ft or m.
 """
 from __future__ import annotations
 
@@ -15,7 +14,6 @@ R_EFF_M = K_REFRACTION * 6371000.0
 
 
 def haversine_nm(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Great-circle distance in nm."""
     p1, p2 = math.radians(lat1), math.radians(lat2)
     dphi = p2 - p1
     dlmb = math.radians(lon2 - lon1)
@@ -24,7 +22,7 @@ def haversine_nm(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def bearing_deg(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Initial great-circle bearing from point 1 to point 2, 0..360 true."""
+    """Initial great-circle bearing from point 1 to point 2, 0..360."""
     p1, p2 = math.radians(lat1), math.radians(lat2)
     dl = math.radians(lon2 - lon1)
     y = math.sin(dl) * math.cos(p2)
@@ -33,7 +31,6 @@ def bearing_deg(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def destination(lat: float, lon: float, brg: float, dist_nm: float) -> tuple[float, float]:
-    """Point reached from (lat, lon) travelling dist_nm along the initial bearing brg."""
     d = dist_nm * NM_M / EARTH_R_M
     b = math.radians(brg)
     p1, l1 = math.radians(lat), math.radians(lon)
@@ -44,15 +41,11 @@ def destination(lat: float, lon: float, brg: float, dist_nm: float) -> tuple[flo
 
 
 def elevation_angle_deg(h_aircraft_m: float, h_antenna_m: float, dist_nm: float) -> float:
-    """Angle above the antenna's horizontal plane at which the aircraft appears.
-
-    angle = atan((h_ac - h_ant) / d - d / (2 * R_eff)), with R_eff = 4/3 earth radius.
-    The second term is earth curvature (reduced by radio refraction): far-away targets
-    at the same height as the antenna sit *below* the horizontal plane.
-    """
+    """Angle above the antenna's horizontal plane: atan((h_ac - h_ant) / d - d / (2 * R_eff)).
+    The second term is earth curvature with 4/3 radio refraction."""
     d = dist_nm * NM_M
     dh = h_aircraft_m - h_antenna_m
-    if d < 1.0:                                   # directly overhead / underfoot
+    if d < 1.0:                                   # directly overhead
         return 90.0 if dh > 0 else (-90.0 if dh < 0 else 0.0)
     return math.degrees(math.atan(dh / d - d / (2.0 * R_EFF_M)))
 

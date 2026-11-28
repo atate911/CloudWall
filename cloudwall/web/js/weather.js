@@ -1,6 +1,5 @@
 // Aviation weather: the Weather tab, and a compact version for the quiet-sky rotation.
-// Charts are drawn as SVG at the container's real pixel size, so text stays a fixed,
-// readable size from across a room.
+// Charts are SVG at the container's real pixel size, so text stays a fixed size.
 import { $, esc, num, offset, POINTS, degF } from "./util.js";
 import { runwaysFor } from "./map.js";
 import { skyToday, moonSvg } from "./astro.js";
@@ -9,8 +8,7 @@ const CAT_NAME = { VFR: "Visual flight rules", MVFR: "Marginal visual flight rul
 const CAT_ORDER = ["VFR", "MVFR", "IFR", "LIFR"];
 const COVER = { FEW: "Few clouds", SCT: "Scattered", BKN: "Broken", OVC: "Overcast", OVX: "Obscured", VV: "Obscured" };
 const NO_CLOUD = ["SKC", "CLR", "NSC", "NCD", "CAVOK"];
-// The flight category as a badge. A report with no visibility in it may have none to give; one no
-// longer current (`old`) keeps its category, dimmed, since it says what was and not what is.
+// A report may have no category; one no longer current (`old`) keeps its category, dimmed.
 export const catBadge = (n, old) =>
   `<div class="cat-badge${old ? " old" : ""}"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category || "–")}</b></div>`;
 const hoursAgo = (min) => (min < 90 ? `${min} min ago` : `${Math.round(min / 60)} h ago`);
@@ -22,7 +20,7 @@ const compass = (d) => POINTS[Math.round(d / 22.5) % 16];
 
 // ---------- words ----------
 
-// A raw report, its kind in bold. Reports usually start with their kind ("METAR KPDX ..."), so that word becomes the label.
+// Reports usually start with their kind ("METAR KPDX ..."), so that word becomes the label.
 function rawLine(kind, raw) {
   const m = /^(METAR|SPECI|TAF(?: AMD| COR)?)\s+/.exec(raw || "");
   return `<p><b>${m ? m[1] : kind}</b> ${esc(m ? raw.slice(m[0].length) : raw || "")}</p>`;
@@ -50,7 +48,6 @@ export function summary(n) {
     .filter(Boolean).join(", ");
 }
 
-// ---------- sunrise / sunset ----------
 // ---------- wind and runways ----------
 export function runwayHeadings(state) {
   const home = state.home;
@@ -62,7 +59,7 @@ export function runwayHeadings(state) {
   });
 }
 
-// Headwind and crosswind for each runway direction; the favoured direction has the most headwind.
+// Headwind and crosswind for each runway direction, most headwind first.
 function components(w, runways) {
   if (!w || !w.speed || w.variable || w.dir == null) return [];
   const byHeading = new Map();
@@ -112,22 +109,14 @@ export function windRose(size, w, runways) {
   return `<svg class="rose" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(windWords(w))}">${s}</svg>`;
 }
 
-// The windsock, seen from above, standing at the middle of the compass. Like a real one
-// it's fully out at 15 kt (each of its five bands is about 3 kt), so its length shows the
-// strength and it points the way the wind is going. Gusts make it swing; calm leaves only
-// the ring of the limp sock around its pole.
-// The windsock seen from above, on its mast at the middle of the rose, streaming downwind. As an
-// ICAO sock is made, it has five bands, orange at both ends, and stands straight out at 15 knots,
-// each band about 3 knots: lighter wind, a shorter sock. Drawn along +x and turned to the wind:
-// cloth that tapers from the hoop at its mouth, ripples a little and is open at its tail (its
-// inside shows there), seams that curve round it, matte shading for its roundness, the hoop on an
-// arm from the mast, and its shadow on the ground.
+// The windsock seen from above, at the middle of the rose, streaming downwind. Like an ICAO sock
+// it has five bands and is fully out at 15 kt (each band about 3 kt). Drawn along +x and turned to
+// the wind. Gusts make it swing; calm leaves only its hoop round the mast.
 let socks = 0;
 function planSock(cx, cy, R, w) {
   const speed = (w && w.speed) || 0;
   let s = "";
   if (!speed || w.variable || w.dir == null) {
-    // limp, hanging down the mast: from above, only its hoop shows round the mast's cap
     s += `<circle class="sock-hoop calm" cx="${cx}" cy="${cy}" r="7.5"/>`;
     s += `<text class="rose-calm" x="${cx}" y="${cy + 30}" text-anchor="middle">${speed ? `Variable, ${speed} kt` : "Calm"}</text>`;
   } else {
@@ -135,12 +124,11 @@ function planSock(cx, cy, R, w) {
     const deg = (w.dir + 90) % 360;                 // +x turned to point downwind (from w.dir, toward w.dir + 180)
     const m = 5, r0 = 8.6, r1 = r0 * (0.6 - 0.12 * e), tail = m + L;     // the hoop, the radii; fuller wind, slimmer tail
     const f = (v) => v.toFixed(2);
-    // the cloth's edge: the taper, a slight belly, and a ripple that runs down it, more in a light wind
+    // the cloth's edge: taper, a slight belly, and a ripple, more in a light wind
     const half = (t) => r0 + (r1 - r0) * t + 0.6 * Math.sin(Math.PI * t) + (0.25 + 0.35 * (1 - e)) * Math.sin(Math.PI * 5 * t) * t;
     const edge = (sgn) => Array.from({ length: 25 }, (_, k) => { const t = k / 24; return `${f(m + L * t)},${f(sgn * half(t))}`; });
     const out = `M${edge(-1).join(" L")} L${edge(1).reverse().join(" L")}Z`;
     const rt = half(1), ex = Math.max(1.2, rt * 0.32);                   // the open tail, seen a little from the side
-    // the bands, their seams bowed toward the tail as they run round the cloth
     let bands = "";
     for (let i = 0; i < 5; i++) {
       const a = m + (L / 5) * i, b = m + (L / 5) * (i + 1) + (i < 4 ? 0.2 : ex + 1), bow = i ? 1.4 : 0, bow2 = i < 4 ? 1.4 : 0;
@@ -219,9 +207,7 @@ function histCharts(width, hist) {
   const catLegend = `<span class="lg">${CAT_ORDER.map((k) => `<i class="sw cat-${k}"></i>${k}`).join(" ")}</span>`;
   charts.push(frame(26, strip, "Flight category", "", catLegend));
 
-  // temperature and dew point (°F)
-  // (a report can lack either, when a sensor is out: its point is left off the line, and the
-  // chart is left out when no report in the day has one)
+  // temperature and dew point (°F): a report can lack either (a sensor out); its point is left off
   const temps = hist.flatMap((o) => [f(o.temp_c), f(o.dew_c)]).filter((v) => v != null);
   const tLast = hist[hist.length - 1];
   if (temps.length) {
@@ -343,7 +329,7 @@ export function renderWeatherTab(el, W, state) {
 }
 
 // ---------- sun and moon, contrails, airspace ----------
-// "Sunset 4:38 PM, first quarter moon": the next sun event and tonight's moon, in a line.
+// "Sunset 4:38 PM, first quarter moon"
 export function sunMoonLine(home, short = false) {
   const now = Date.now(), k = skyToday(home.lat, home.lon, now);
   let sun;
@@ -411,7 +397,7 @@ export function airspacePanel(tfrs) {
     </article>`).join("");
 }
 
-// Crosshair: one vertical line across all the history charts, with the report it lands on.
+// One vertical line across all the history charts, with the report it lands on.
 function hookCrosshair(hist) {
   const box = $("wx-hist");
   if (!box || !hover || !hover.x) return;

@@ -20,9 +20,8 @@ class Sampler(threading.Thread):
         self.lock = threading.Lock()
         rec = self._safe(feeds[0].receiver) if feeds else None
         self.station = build_station(cfg, rec)
-        # Told to take the station's position from the receiver, nothing is sampled until the
-        # receiver has said it (it may still be starting): distances from the config's stand-in
-        # position would be kept for good.
+        # with position_source "receiver", sample nothing until the receiver has given its position:
+        # distances from the config's stand-in position would be kept for good
         self.placed = not feeds or cfg.station.get("position_source", "receiver") != "receiver" or self._has_position(rec)
         if not self.placed:
             log.warning("receiver.json isn't there yet: sampling waits until the receiver gives the station's position")
@@ -30,10 +29,10 @@ class Sampler(threading.Thread):
         self.last_now = [None] * len(feeds)
         self.up = [None] * len(feeds)                  # None = unknown, True/False = last state
         self.buffer = []
-        self.live = []                                 # latest compact aircraft list (for /api/live)
+        self.live = []                                 # for /api/live
         self.live_by_feed = [[] for _ in feeds]
         self.live_time = 0.0
-        self.counters = Counter()                      # lifetime counters for /api/stats
+        self.counters = Counter()                      # for /api/stats
         self.last_flush = time.time()
         self.last_hourly = time.time()
 
@@ -53,7 +52,6 @@ class Sampler(threading.Thread):
         except Exception:
             return None
 
-    # ------------------------------------------------------------------------------------------
     def poll_once(self):
         """One poll of every feed. Public so tests can drive it."""
         if not self.placed:
@@ -94,7 +92,7 @@ class Sampler(threading.Thread):
             self.live_by_feed[i] = live
             if len(flt.last) > 5000 or int(now) % 300 == 0:
                 flt.prune(now)
-        # (a poll that finds only the snapshot it already had leaves the list, and its time, as they were)
+        # live_time moves only when a poll found a new snapshot
         live = [entry for per_feed in self.live_by_feed for entry in per_feed]
         with self.lock:
             self.live = live
@@ -128,7 +126,7 @@ class Sampler(threading.Thread):
     def reject_stats(self) -> dict:
         tot = Counter()
         for f in self.filters:
-            for _ in range(3):             # (the sampler adds to these as it goes: read again if it did meanwhile)
+            for _ in range(3):             # the sampler thread mutates these: retry if it did meanwhile
                 try:
                     tot.update(dict(f.stats))
                     break
@@ -148,7 +146,7 @@ class Sampler(threading.Thread):
         rec = self._safe(self.feeds[0].receiver) if self.feeds else None
         if self.cfg.station.get("position_source", "receiver") == "receiver" and self.feeds:
             if not self._has_position(rec):
-                return                     # not answering just now: the station stays where it was
+                return                     # not answering: the station stays where it was
             if not self.placed:
                 log.info("the receiver has given the station's position: sampling starts")
             self.placed = True

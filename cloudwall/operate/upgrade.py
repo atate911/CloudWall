@@ -1,7 +1,5 @@
-"""`sudo python3 -m cloudwall upgrade`: from whatever this machine runs now to this code, in place,
-in one command, as often as wanted: the settings checked against the new code, a backup made, the
-code installed beside the old and the service restarted into it (install.py), the result checked
-(doctor), and how to go back said (`cloudwall rollback`).
+"""`sudo python3 -m cloudwall upgrade`: in order, the settings checked against the new code, a
+backup made, the code installed and the service restarted (install.py), the result checked (doctor).
 """
 import os
 from pathlib import Path
@@ -18,7 +16,7 @@ def upgrade(system, source=None, say=print):
     say("Found: " + ("the system service" if found else "nothing set up yet"))
     if found:
         inst.preflight(system, None, "the settings wouldn't start with this code, so nothing was changed")
-    if found and not system.dry_run:               # a backup first: settings and every logbook
+    if found and not system.dry_run:               # a backup first
         saved = os.environ.get("CLOUDWALL_DATA")
         os.environ["CLOUDWALL_DATA"] = str(system.path(inst.VAR))
         try:

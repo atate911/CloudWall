@@ -253,6 +253,24 @@ class SavingTest(Served):
         self.assertIn("time zone", got["error"])
         self.assertEqual(self.call("/" + "x" * 5000)[0], 404)             # a name too long to be a file
 
+    def test_the_pages_files_are_sent_small_and_not_sent_twice(self):
+        import gzip
+        import http.client
+        self.serve()
+
+        def get(headers):
+            c = http.client.HTTPConnection("127.0.0.1", int(self.base.rsplit(":", 1)[1]), timeout=10)
+            self.addCleanup(c.close)
+            c.request("GET", "/js/app.js", headers=headers)
+            r = c.getresponse()
+            return r, r.read()
+        plain, body = get({})
+        zipped, small = get({"Accept-Encoding": "gzip, br"})
+        self.assertEqual((zipped.headers["Content-Encoding"], gzip.decompress(small)), ("gzip", body))
+        self.assertLess(len(small), len(body) / 2)
+        again, nothing = get({"If-None-Match": plain.headers["ETag"]})
+        self.assertEqual((again.status, nothing), (304, b""))
+
     def test_head_gets_the_headers_alone_and_the_connection_goes_on(self):
         import http.client
         self.serve()

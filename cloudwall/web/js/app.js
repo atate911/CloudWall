@@ -25,12 +25,10 @@ document.body.classList.add(KIOSK ? "kiosk" : "desk");
 
 let state = null, stateAt = 0, stateAtPerf = 0, lastTouch = 0, lastOverhead = null, view = "now", mapFor = null;
 
-// The flight this screen follows, picked by a tap on the board or the radar. It's this screen's alone:
-// a phone following one flight leaves the wall panel showing what's overhead. Kept through a reload of
-// the tab; released by tapping the card, or when the flight leaves the area. The wall panel, which
-// nobody stays beside, lets go by itself after a minute and a half untouched.
+// The flight this screen follows (this screen's alone, kept through a reload). The wall panel,
+// which nobody stays beside, lets go by itself after KIOSK_PIN_S untouched.
 const KIOSK_PIN_S = 90;
-// a desktop wide for its height: Simple puts what's worth a look in a third column, past the radar
+// a desktop wide for its height: Simple puts what's worth a look in a third column
 const WIDE = matchMedia("(min-width: 1500px) and (min-aspect-ratio: 19/10)");
 let myPin = null;
 try { myPin = sessionStorage.getItem("cloudwall.pin"); } catch (e) { /* no storage: just this visit */ }
@@ -40,8 +38,7 @@ function pin(hex) {
   return poll();
 }
 
-// Phone layout: the desktop page rearranged for a phone in the hand, taken on by any screen that
-// small, and changing with it as the phone turns. ?mode=phone forces it; ?mode=desktop keeps it off.
+// Phone layout, taken on by any screen that small. ?mode=phone forces it; ?mode=desktop keeps it off.
 const MODE = new URLSearchParams(location.search).get("mode");
 const phoneQ = matchMedia("(max-width: 700px), (max-height: 500px) and (orientation: landscape)");
 const landQ = matchMedia("(orientation: landscape)");
@@ -59,9 +56,8 @@ function applyPhone() {
 phoneQ.addEventListener("change", applyPhone);
 landQ.addEventListener("change", applyPhone);
 
-// Upright on a phone the radar sits under the card, so a card that changes height (the next slide, a
-// new flight) would move the radar under the reader's eyes. Browsers that anchor the scroll keep it
-// still themselves; elsewhere, when the card is mostly scrolled past, scroll by what it grew.
+// Upright on a phone the radar sits under the card, so a card that changes height would move the
+// radar. Browsers without scroll anchoring (Safari): when the card is mostly scrolled past, scroll by what it grew.
 const anchors = CSS.supports("overflow-anchor", "auto");
 function keepPlace(draw) {
   if (anchors || phone() !== "stack") return draw();
@@ -71,7 +67,7 @@ function keepPlace(draw) {
   if (d && above) scrollBy(0, d);
 }
 
-// The browser's own bars take the chart's paper colour, by day, by night and in an emergency.
+// The browser's own bars take the chart's paper colour.
 const themeMeta = document.querySelector('meta[name="theme-color"]');
 function paintTheme() {
   const c = getComputedStyle(document.body).getPropertyValue("--paper").trim();
@@ -89,11 +85,9 @@ function emergencies() {
 if (!KIOSK) paneDividers(() => { if (state && view === "now") renderMiniBoard(state); });
 placeMenu(() => state);
 
-// ---------- scope: the radar, the Map view (the flights on a plain satellite or street map), or the
-// Sky view (a dome of the sky above home, looking up) ----------
-// The desktop's buttons choose for each screen; the kiosk takes [kiosk] view (or ?view= in its
-// address), where "card" leaves the scope off and gives the card the whole screen. An emergency
-// always shows on the radar, where the controllers' codes and the restrictions are.
+// ---------- scope: the radar, the Map view or the Sky view ----------
+// The desktop's buttons choose; the kiosk takes [kiosk] view (or ?view=), where "card" leaves the
+// scope off. An emergency always shows on the radar.
 const kioskView = () => { const v = qs.get("view") || (state && state.kiosk && state.kiosk.view); return ["radar", "map", "sky"].includes(v) ? v : "card"; };
 const cardOnly = () => KIOSK && kioskView() === "card";
 function scopePref() {
@@ -101,11 +95,9 @@ function scopePref() {
   return v === "map" || v === "sky" ? v : "radar";
 }
 const scopeMode = () => (emergencies().length ? "radar" : scopePref());
-// the Map view's map: satellite imagery with roads and names over it, or a street map
 const mapStyle = () => (store("mapStyle") === "streets" ? "streets" : "sat");
-// Radar options: drawn as a chart or as an air traffic control screen, track lines on or off, and
-// the range. The desktop's buttons set them for each screen; the kiosk, which has no buttons, takes
-// them from the [kiosk] settings. The address overrides either (?radar=atc&tracks=off&range=30).
+// Radar options: the desktop's buttons set them; the kiosk takes them from the [kiosk] settings.
+// The address overrides either (?radar=atc&tracks=off&range=30).
 const qs = new URLSearchParams(location.search);
 function radarPrefs() {
   const k = (KIOSK && state && state.kiosk) || {}, ranges = (state && state.ranges) || [15, 20, 30];
@@ -115,18 +107,15 @@ function radarPrefs() {
   const range = +(pick("range", KIOSK ? k.range_nm : store("range"), (v) => v != null && ranges.includes(+v)) || ranges[0]);
   return { style, tracks, range };
 }
-// How much a screen draws: "simple" (what's happening now: the next aircraft over the house, the
-// landing queue, what's worth a look) or "detailed" (every aircraft labelled and grouped, the flight
-// card, the side view). The desktop starts detailed, a phone and the wall panel simple; the switch
-// sets it for each screen, a phone apart from a desktop. The kiosk takes [kiosk] density.
+// "simple" or "detailed". The desktop starts detailed, a phone and the wall panel simple; stored
+// per screen, a phone apart from a desktop. The kiosk takes [kiosk] density.
 const densKey = () => (phone() ? "densityPhone" : "density");
 function density() {
   const ok = (v) => v === "simple" || v === "detailed", k = (KIOSK && state && state.kiosk) || {};
   return [qs.get("density"), KIOSK ? k.density : store(densKey())].find(ok) || (KIOSK || phone() ? "simple" : "detailed");
 }
 const simple = () => density() === "simple";
-// Simple shows the flight card's quiet-sky slides (the weather, the day so far) when there is nothing
-// to say about the traffic: nothing overhead or on its way, nothing landing.
+// Simple shows the flight card's quiet-sky slides when there is nothing to say about the traffic.
 const quietSky = () => !!state && !state.hero && !state.next && !picture(state).groups.arr.length && !notables(state).some((n) => n.a);
 const cardShown = () => KIOSK || !simple() || quietSky();     // the wall panel always shows its card
 let scopeLabel = "";
@@ -154,13 +143,11 @@ function drawScopeNow(now = performance.now()) {
     $("scope").classList.toggle("sky", mode === "sky");     // the sky view has none: it is always the sky overhead
     $("scope-attrib").textContent = credit;
   }
-  // on a phone, the Sky view can turn with the phone's compass
   const heading = mode === "sky" && phone() ? facing() : null;
   drawScope($("radar"), state, now, stateAtPerf, mode, { atc, tracks, range, mapStyle: ms, simple: dens === "simple", wall: KIOSK, heading });
   compassStatus(mode);
 }
 
-// The Sky view's compass switch, and a word while it waits for the compass (or finds there's none).
 function compassStatus(mode) {
   const btn = $("btn-compass"), on = compass.on && mode === "sky";
   if (btn.getAttribute("aria-pressed") !== String(on)) btn.setAttribute("aria-pressed", String(on));
@@ -173,13 +160,12 @@ $("btn-compass").addEventListener("click", async () => {
   if (await startCompass()) store("skyCompass", "on");
   else setTimeout(() => { compass.failed = ""; }, 6000);      // say why, for a moment
 });
-// left on last time: back on by itself where the browser allows it without a tap (Android); an
-// iPhone asks the person again, so there it waits for a tap on the switch
-// (asked once the page knows whether it is on a phone: see applyPhone() at the end)
+// left on last time: back on by itself where the browser allows it without a tap (Android); iOS
+// needs a tap. Called after applyPhone() at the end, once the page knows whether it is on a phone.
 const resumeCompass = () => { if (phone() && store("skyCompass") === "on") startCompass().then((ok) => { if (!ok) compass.failed = ""; }); };
 
-// Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi. On a phone
-// the radar can be scrolled out of sight under the card, and then it rests.
+// Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi. It rests
+// while scrolled out of sight.
 let lastDraw = 0, scopeSeen = true;
 new IntersectionObserver((es) => { scopeSeen = es[es.length - 1].isIntersecting; }).observe($("scope"));
 function frame(now) {
@@ -195,8 +181,8 @@ async function loadWeather(draw, now = false) {
   const wx = await refresh("api/weather", now ? 0 : undefined);     // at most once a minute, shared with the weather slides
   if (draw && view === "wx" && state) renderWeatherTab($("wx-tab"), wx, state);
 }
-// Every label of the weather says the same report: the header's comes with each answer, the tab's and
-// the slides' is fetched apart, so a new report in the one fetches the other again at once.
+// The header's weather comes with each answer, the tab's and slides' is fetched apart: a new
+// report in the one fetches the other again at once, so they agree.
 let wxSeen = null;
 function followWeather(w) {
   const raw = (w && w.raw) || null;
@@ -207,11 +193,8 @@ function followWeather(w) {
 }
 let resizeTimer = null;
 addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (view === "wx") loadWeather(true); }, 250); });
-// The Overhead view's panels changed size (a divider dragged, the window, the strip above gaining a
-// line): what is drawn to their size (the radar and its labels, the side view under the list, the
-// card's quiet-sky slides) is drawn again once it settles, rather than at the next update. On the
-// desktop only, where the grid sets the panels' sizes: on a phone they take their contents' height,
-// and drawing them again would change it.
+// The Overhead view's panels changed size: what is drawn to their size is drawn again once it
+// settles. Desktop only: on a phone the panels take their contents' height, and redrawing would change it.
 const panelSizes = new Map();
 let panelTimer = null, cardMoved = false;
 const panelsResized = new ResizeObserver((entries) => {
@@ -245,10 +228,8 @@ function setView(v) {
   if (phone() === "stack") scrollTo(0, 0);        // each tab starts at its top
   render();
 }
-// CloudWall's check of itself (/api/health): a problem that stops it doing its job is said on every
-// screen, the wall panel too, in a banner nobody can miss; one the screens can't show, where what they
-// show looks right but isn't (a frozen feed, a deaf receiver), in a chip. What to do is in
-// `cloudwall doctor` on the server, which the words point to.
+// /api/health: a major problem is a banner on every screen; a subtle one (what's shown looks right
+// but isn't: a frozen feed, a deaf receiver) is a chip.
 function showHealth(h) {
   const t = $("trouble"), off = $("looks-off");
   t.hidden = !h.major;
@@ -261,7 +242,6 @@ function showHealth(h) {
   }
 }
 
-// Sound and night mode live in one small menu behind the settings button in the header.
 function renderToggles() {
   const on = soundOn(), night = store("night") || "auto";
   for (const b of $("settings-menu").querySelectorAll("button")) {
@@ -274,16 +254,13 @@ function showSettings(open) {
   $("settings-menu").hidden = !open;
   $("btn-settings").setAttribute("aria-expanded", String(open));
 }
-// The traffic picture around the radar: the strip across the top, and in Simple the side panel
-// (the next aircraft over the house, the landing queue, what's worth a look) in place of the card.
-// A phone splits the side around the radar and keeps the full list behind a button.
+// The strip across the top, and in Simple the side panel in place of the card. A phone splits the
+// side around the radar and keeps the full list behind a button.
 let allOpen = false;
 function renderPicture(dens) {
   const easy = dens === "simple", ph = phone();
-  // the next few minutes beside the headline: in words in Simple, along a ten-minute axis in Detailed
   if (KIOSK) {
-    // the wall panel: what's next after the aircraft on its card across the header, and over the
-    // radar how many aircraft are about; the card is the rest
+    // the wall panel: what's next after the aircraft on its card, and the caption over the radar
     renderInto($("next-line"), lineHtml(state, 2, { skip: state.hero && state.hero.hex, short: true }));
     renderInto($("k-cap"), kioskCaption(state));
     return;
@@ -358,8 +335,7 @@ function render() {
   if (KIOSK) hush();
 }
 
-// Positions more than 20 s old (the feed has stopped, or CloudWall isn't answering): aircraft fade,
-// countdowns stop, and a note says how old they are, until fresh data comes or the screen clears at a minute.
+// Positions more than 20 s old: aircraft fade, countdowns stop, and a note says how old they are.
 function markStale() {
   const age = dataAge(state), old = age > COUNT_STOP_S && (state.aircraft.length > 0 || !!state.hero);
   const words = `Not updating: positions ${Math.round(age)} s old`;
@@ -373,8 +349,8 @@ function markStale() {
 }
 
 // The wall panel's quiet hours ([kiosk] quiet, "23:00-06:30"): only a dim clock and what's next.
-// It wakes while something is overhead or due over the house within a minute, for an emergency,
-// and for two minutes when something new is worth a look or the panel is tapped.
+// It wakes while something is overhead or due within a minute, for an emergency, and for WAKE_S
+// when something new is worth a look or the panel is tapped.
 const WAKE_S = 120;
 let wokeAt = 0;
 function quietNow(d = new Date()) {
@@ -393,10 +369,9 @@ function hush() {
 }
 function wake() { wokeAt = Date.now(); hush(); }
 
-// Something new worth a look, or a new aircraft next over the house: its radar icon and its rows
-// glow softly once, for about three seconds, then go still; no sound. The rows are redrawn every
-// update, so each redraw picks the glow up where it had got to. An aircraft glows at most once in
-// ten minutes, and nothing glows for what was already there when the page opened.
+// Something new worth a look, or a new aircraft next over the house: its radar icon and rows glow
+// once. The rows are redrawn every update, so each redraw picks the glow up where it had got to.
+// At most once in ten minutes per aircraft; nothing glows for what was there when the page opened.
 const FRESH_MS = 3000, REFLASH_MS = 10 * 60 * 1000;
 const fresh = new Map(), flashedAt = new Map();
 let seenNotable = null, lastNext = null;
@@ -414,9 +389,8 @@ function noticeNew() {
   }
   seenNotable = notable; lastNext = next;
 }
-// The same aircraft, wherever it is drawn: pointing at one on the radar, in the list, on the side
-// view or on the timeline rings it on the others too, so each view can be read against the rest.
-// The lists and the side view are redrawn with every answer, so the mark is put back after each.
+// Pointing at an aircraft in one view rings it in the others. The lists and the side view are
+// redrawn with every answer, so the mark is put back after each.
 let pointed = null;
 function applyPointed() {
   for (const e of document.querySelectorAll(":is(main, header) .pointed")) if (e.dataset.hex !== pointed) e.classList.remove("pointed");
@@ -443,9 +417,8 @@ function applyFresh() {
     }
   }
 }
-// When CloudWall itself stops answering (the server is down, the network gone), the last positions
-// are shown for a minute, as the server does with a silent feed, and then cleared: a flight card
-// and radar that can't be trusted are worse than an empty sky marked offline.
+// When CloudWall itself stops answering, the last positions are shown for a minute (as the server
+// does with a silent feed) and then cleared.
 const STALE_S = 60;
 let lastAnswer = Date.now();
 let pollFailed = false;       // the last request for the state got no answer
@@ -463,34 +436,32 @@ async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
   const seq = ++pollSeq, asked = myPin;
   try {
-    // while the radar or the map is on screen, the server fetches out to its range, and the
-    // flight this screen follows, if any
-    // (the ATC style's square and the Map view's rectangle reach further, into their corners)
+    // while the radar or the map is on screen, the server fetches out to its range (the ATC style's
+    // square and the Map view's rectangle reach further, into their corners)
     const shown = state && view === "now" ? scopeMode() : null, prefs = radarPrefs();
     const far = shown === "radar" && prefs.style === "atc" ? "&square=1" : shown === "map" ? `&reach=${mapReach().toFixed(2)}` : "";
-    // (the sky view looks up at the aircraft within the tracking radius: it asks for no more)
+    // (the sky view asks for no more than the tracking radius)
     const s = await (await api(`api/state?range=${shown && shown !== "sky" ? prefs.range : 0}${far}` +
       (asked ? `&pin=${encodeURIComponent(asked)}` : ""))).json();
     // answers can cross: keep the newest, and drop one asked for a flight no longer followed
     if (seq < shownSeq || asked !== myPin) return;
-    // a server started since this page was loaded may have come with a newer page: load it, on a wall
-    // panel at once, elsewhere once nobody has touched the page for a while
+    // a server restarted since this page loaded may have a newer page: reload, on a wall panel at
+    // once, elsewhere once nobody has touched the page for a while
     if (serverStarted == null) serverStarted = s.started;
     else if (s.started && s.started !== serverStarted && (KIOSK || Date.now() - lastTouch > 120000)) { location.reload(); return; }
     shownSeq = seq;
     state = s;
     lastAnswer = Date.now();
     pollFailed = false;
-    // Positions are as old as the server's last update from the feed, not as new as this answer
-    // (the feed is read every 5 s, this is asked every 2). Time is counted from when they were
-    // reported, so aircraft glide on from where they are instead of stepping back each time the
-    // same update is fetched again, and the countdowns don't jump.
+    // Positions are as old as the server's last feed update, not as new as this answer (the feed is
+    // read every 5 s, this is asked every 2): time is counted from when they were reported, so
+    // aircraft don't step back each time the same update is fetched again.
     const age = state.status && state.status.updated ? Math.min(STALE_S, Math.max(0, state.now - state.status.updated)) * 1000 : 0;
     stateAt = state._at = Date.now() - age;
     stateAtPerf = performance.now() - age;
     if (asked && state.pinned !== asked) pin(null);   // it left the area: back to what's overhead
     if (mapFor !== state.airport.icao) { mapFor = state.airport.icao; loadMap(mapFor).then(() => { scopeLabel = ""; }); }
-    // the chime is for an aircraft coming overhead, whichever flight this screen follows, and not for a tap
+    // the chime is for an aircraft coming overhead, whichever flight this screen follows
     const over = state.overhead;
     if (over && over !== lastOverhead) {
       const a = state.aircraft.find((x) => x.hex === over);
@@ -510,8 +481,7 @@ document.addEventListener("error", (e) => {
     t.closest(".logo-tile").remove();
   }
 }, true);
-// a flight in a list, the landing queue or "worth a look": follow it on this screen
-// a tap on the hushed wall panel wakes it, and does nothing else
+// a tap on the hushed wall panel wakes it, and does nothing else (capture, before the handlers below)
 document.addEventListener("click", (e) => { if (document.body.classList.contains("hush")) { e.stopImmediatePropagation(); e.preventDefault(); wake(); } }, true);
 document.addEventListener("click", (e) => {
   const b = e.target.closest(".tr[data-hex], .q-row[data-hex], .n-row[data-hex], .pf-craft[data-hex]");
@@ -523,7 +493,6 @@ document.addEventListener("click", (e) => {
     render();
   }
 });
-// the next aircraft over the house, in Simple: a tap on the one this screen follows lets it go
 $("side").addEventListener("click", (e) => { if (state && state.pinned && e.target.closest("[data-let]")) pin(null); });
 $("show-all").addEventListener("click", () => { allOpen = !allOpen; render(); });
 
@@ -542,13 +511,10 @@ $("radar").addEventListener("click", (e) => {
 $("hero").addEventListener("click", (e) => {
   // an aircraft in the wall panel's side view: a tap selects it (the click handler above)
   if (!state || e.target.closest(".q-row, .pf-craft")) return;
-  // the switch in the card's corner: the route map, or the aircraft's drawing in its place
   const pic = e.target.closest("[data-pic]");
   if (pic) { setPicture(pic.dataset.pic); return; }
-  // the switch in the photo's corner: the photo, or the drawing in its place
   const med = e.target.closest("[data-media]");
   if (med) { setMedia(med.dataset.media); return; }
-  // the button on the card's drawing, and the type's name among the facts: about the aircraft's type
   const ab = !KIOSK && state.hero && e.target.closest("[data-about]");
   if (ab) { openAbout(ab.dataset.about, aboutContext(state.hero)); return; }
   if (e.target.closest("#em-hide")) { emergencies().forEach((a) => hidden.add(emKey(a))); render(); return; }
@@ -591,7 +557,7 @@ setInterval(() => {
 }, 1000);
 setInterval(() => { if (state && view === "board" && !document.hidden) tickCounts($("board"), state); }, 1000);
 setInterval(() => { if (view === "log" && !document.hidden) loadLog(state).catch(() => {}); }, 30000);
-// Local time, with coordinated universal time beside it as aviation writes it ("0324Z").
+// Local time, with UTC beside it ("0324Z").
 setInterval(() => {
   const d = new Date(), z = String(d.getUTCHours()).padStart(2, "0") + String(d.getUTCMinutes()).padStart(2, "0") + "Z";
   $("clock").innerHTML = `${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}<small>${z}</small>`;

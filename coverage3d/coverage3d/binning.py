@@ -1,15 +1,12 @@
 """Coverage bins: bearing sectors x altitude bands.
 
-Raw points are summarised as *histogram rows* (SQL GROUP BY in the database, or
-`hist_rows` here for tests/import). Rows from several time ranges or days can simply be
-added together, which is what makes day-level aggregates and compare mode cheap.
+Raw points are summarised as histogram rows (SQL GROUP BY in the store, or `hist_rows` here);
+rows from several ranges or days can simply be added together.
 
   dist row : (sector, band, dist_bucket, n, dmax_nm, rssi_min, t_min, t_max)
   rssi row : (sector, band, rssi_bucket, n)
 
-dist_bucket = floor(distance in nm) (1 nm wide); rssi_bucket = floor(RSSI dBFS) (1 dB wide).
-Percentiles are read off these histograms (accurate to about 1 nm / 1 dB).
-Band -1 is the special "ground" band.
+dist_bucket = floor(nm); rssi_bucket = floor(dBFS). Band -1 is the "ground" band.
 """
 from __future__ import annotations
 
@@ -28,13 +25,12 @@ def n_bands(band_ft: int, max_alt_ft: int) -> int:
 
 
 def sector_index(brg_deg: float, sector_deg: int) -> int:
-    """Sector i spans [i*sector_deg, (i+1)*sector_deg) degrees true, so sector 0 starts at north
-    and its centre is (i + 0.5) * sector_deg."""
+    """Sector i spans [i*sector_deg, (i+1)*sector_deg) degrees true: sector 0 starts at north."""
     return int((brg_deg % 360.0) // sector_deg) % n_sectors(sector_deg)
 
 
 def band_index(alt_ft: float, band_ft: int, max_alt_ft: int, ground: bool = False) -> int:
-    """Altitude band; below 0 -> band 0; above the configured maximum -> top band."""
+    """Below 0 -> band 0; above the maximum -> top band; ground -> GROUND."""
     if ground:
         return GROUND
     i = int(math.floor(alt_ft / band_ft)) if alt_ft > 0 else 0
@@ -94,11 +90,7 @@ def _hist_percentile(buckets: list[tuple[int, int]], total: int, p: float, vmax:
 
 
 def build_bins(dist_rows, rssi_rows, min_points: int = 1) -> dict:
-    """Combine histogram rows into {(sector, band): bin dict}.
-
-    Each bin: count, max_nm, p95_nm, rssi_med, rssi_min, first, last.
-    Bins with fewer than min_points points are dropped.
-    """
+    """Combine histogram rows into {(sector, band): bin}; bins under min_points are dropped."""
     acc: dict = {}
     for s, b, bucket, n, dmax, rmin, tmin, tmax in dist_rows:
         a = acc.setdefault((s, b), {"n": 0, "dmax": 0.0, "rmin": None, "t0": tmax, "t1": tmin, "h": defaultdict(int)})

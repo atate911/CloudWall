@@ -1,10 +1,6 @@
-/* The control board's look. One idea carries it: the colours of a glass cockpit, where each colour
-   means one thing. Blue is yours to set: every value you can change is blue, and changes where it
-   is. Green is working; amber is worth a look; red has stopped; magenta is the aircraft overhead,
-   as on the wall. Live pictures (the system, the receiver's reach, the allowance's gauge) are drawn
-   on dark instrument glass; settings sit on the board's chart paper, in groups set apart by space
-   rather than boxes; the seldom-needed wait under shades whose covers say how they stand.
-   B612, the typeface Airbus drew for its cockpits, throughout. */
+/* The control board's look. Each colour means one thing: blue is yours to set, green is working,
+   amber is worth a look, red has stopped, magenta is the aircraft overhead. Live pictures sit on
+   dark "glass"; settings on chart paper. Typeface: B612. */
 @font-face { font-family: "B612"; src: url("fonts/b612.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "B612"; src: url("fonts/b612-bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
 @font-face { font-family: "B612 Mono"; src: url("fonts/b612-mono.woff2") format("woff2"); font-weight: 400; font-display: swap; }
@@ -22,7 +18,7 @@
   --r1: 7px; --r2: 11px; --r3: 16px; --r4: 22px;
   --pop: 0 14px 44px rgba(9, 20, 34, .2), 0 2px 6px rgba(9, 20, 34, .08);
   --sans: "B612", "DejaVu Sans", "Segoe UI", system-ui, sans-serif;
-  /* (B612's own mono spaces its punctuation for a cockpit display: addresses and paths read better in the system's) */
+  /* B612 Mono spaces its punctuation too widely: addresses and paths read better in the system mono */
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
   --rail: 17rem;
 }
@@ -92,7 +88,6 @@ h1, h2, h3 { margin: 0; line-height: 1.2; letter-spacing: -.005em; }
 .quiet-btn:hover { color: var(--g-ink); }
 body.signed-out .rail > :not(.brand) { visibility: hidden; }
 
-/* the finder */
 .finder { position: relative; }
 .finder-box { display: flex; align-items: center; gap: .5rem; padding: 0 .7rem; background: var(--glass-2); border-radius: var(--r2); box-shadow: inset 0 0 0 1px var(--glass-line); color: var(--g-muted); }
 .finder-box:focus-within { box-shadow: inset 0 0 0 1.5px var(--g-mine); color: var(--g-mine); }
@@ -128,7 +123,6 @@ main, main:focus, main:focus-visible { min-width: 0; outline: none; }
 .glass a { color: var(--g-mine); }
 .glass code { background: rgba(255, 255, 255, .07); }
 
-/* readings: a measured value, large, its meaning under it */
 .reading { display: flex; flex-direction: column; min-width: 0; }
 .reading b { font-size: 1.7rem; font-weight: 400; line-height: 1.1; letter-spacing: -.01em; }
 .reading b small { font-size: .55em; color: var(--g-muted); margin-left: .1em; }
@@ -140,10 +134,7 @@ main, main:focus, main:focus-visible { min-width: 0; outline: none; }
 .fact-huge { display: block; font-size: 2.4rem; font-weight: 400; line-height: 1.1; letter-spacing: -.015em; }
 .fact-sub { display: block; color: var(--muted); font-size: .9rem; }
 
-/* ---------- groups: each page's settings, in titled panels of rows ----------
-   A group is a panel: its title, then one row for each setting (its name on the left, its control on
-   the right), the rarely-needed under an Advanced row at the bottom. A group with an aside (the wall
-   panel's live picture) puts it beside the rows. */
+/* ---------- groups: each page's settings, in titled panels of rows ---------- */
 .group { border-radius: var(--r3); background: var(--sheet); box-shadow: inset 0 0 0 1px var(--hair-2); }
 .group > header { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: .95rem 1.3rem .85rem; border-bottom: 1px solid var(--hair-2); }
 .group > header h2 { font-size: 1.02rem; }
@@ -167,7 +158,7 @@ main, main:focus, main:focus-visible { min-width: 0; outline: none; }
 .group.with-aside .group-rows > .set > .set-head { margin-bottom: .5rem; }
 .prov-about { margin: 0; color: var(--ink-2); font-size: .92rem; }
 
-/* a row that isn't one setting: a fact with its actions (the house's position, the private link) */
+/* a row that isn't one setting */
 .line { display: grid; grid-template-columns: minmax(10rem, 15rem) minmax(0, 1fr); column-gap: 2rem; align-items: start; }
 .line-name { color: var(--ink); font-size: .95rem; padding-top: .3rem; }
 .line-body { min-width: 0; display: flex; flex-direction: column; gap: .55rem; align-items: flex-start; }
@@ -186,7 +177,7 @@ main, main:focus, main:focus-visible { min-width: 0; outline: none; }
 .group-body > .shade[open] > summary { border-bottom: 1px solid var(--hair-2); }
 .shade-body > * { padding: 1rem 1.3rem; border-bottom: 1px solid var(--hair-2); }
 .shade-body > :last-child { border-bottom: 0; }
-/* a shade standing alone on a page (a reference list) is a panel of its own */
+/* a shade standing alone on a page is a panel of its own */
 .page > .shade { border-radius: var(--r3); background: var(--sheet); box-shadow: inset 0 0 0 1px var(--hair-2); }
 .page > .shade > summary { padding: .95rem 1.3rem; border-radius: var(--r3); }
 .page > .shade > summary:hover { background: var(--hair-2); }
@@ -219,7 +210,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 @keyframes found { 0%, 35% { box-shadow: 0 0 0 8px var(--mine-wash), 0 0 0 9px var(--mine); background: var(--mine-wash); } to { box-shadow: 0 0 0 8px transparent; } }
 .glass .set-label { color: var(--g-muted); } .glass .set-says { color: var(--g-muted); }
 
-/* on and off */
 .is-toggle { display: grid; grid-template-columns: 1fr auto; column-gap: 1rem; align-items: start; }
 .is-toggle .set-head { margin: 0; min-height: 1.9rem; } .is-toggle .set-label { color: var(--ink); font-size: .97rem; }
 .is-toggle .set-body { grid-column: 2; grid-row: 1; }
@@ -229,7 +219,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .switch[aria-checked="true"] { background: var(--mine); box-shadow: none; }
 .switch[aria-checked="true"] .knob { transform: translateX(1.2rem); }
 
-/* a few short choices */
 .seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; background: var(--well); border-radius: var(--r2); box-shadow: inset 0 0 0 1px var(--hair-2); max-width: 100%; }
 .seg button { border: 0; background: none; padding: .45rem .95rem; border-radius: 8px; color: var(--ink-2); font-size: .92rem; white-space: nowrap; transition: background .15s, color .15s; }
 .seg button:hover { color: var(--ink); background: var(--hair-2); }
@@ -237,7 +226,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .seg.small button { padding: .3rem .7rem; font-size: .84rem; }
 .seg.big button { padding: .6rem 1.2rem; font-size: .97rem; display: inline-flex; gap: .45rem; align-items: center; }
 
-/* a choice of behaviour */
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .8rem; }
 .card-opt { display: grid; grid-template-columns: auto 1fr; column-gap: .8rem; row-gap: .2rem; text-align: left; padding: 1rem 1.1rem; border: 0; border-radius: var(--r3);
             background: var(--sheet); box-shadow: inset 0 0 0 1px var(--hair); transition: box-shadow .15s, background .15s; }
@@ -247,7 +235,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .card-opt[aria-checked="true"] { background: var(--mine-wash); box-shadow: inset 0 0 0 2px var(--mine); }
 .card-opt[aria-checked="true"] .ico, .card-opt[aria-checked="true"] b { color: var(--mine); }
 
-/* a choice made by looking */
 .pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.6rem, 1fr)); gap: .8rem; }
 .pic { border: 0; padding: 0; background: none; text-align: left; border-radius: var(--r2); }
 .pic-art { position: relative; display: block; aspect-ratio: 4 / 3; border-radius: var(--r2); overflow: hidden; background: var(--well); box-shadow: inset 0 0 0 1px var(--hair); }
@@ -266,7 +253,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
   background: var(--mine) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 12.5 4 4L18 8'/%3E%3C/svg%3E") center / 70% no-repeat; }
 .styles.small .pics { grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); }
 
-/* a share, by sliding */
 .slide { display: flex; align-items: center; gap: 1rem; --at: 50%; }
 .slide input { flex: 1; appearance: none; height: 1.6rem; background: transparent; margin: 0; }
 .slide input::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--mine) var(--at), var(--well) var(--at)); }
@@ -275,7 +261,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .slide input::-moz-range-thumb { width: 1.2rem; height: 1.2rem; border: 0; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--mine), 0 2px 5px rgba(0, 0, 0, .2); }
 .slide output { min-width: 3.2rem; text-align: right; color: var(--mine); font-size: 1.15rem; }
 
-/* a number with its unit */
 .step { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .5rem; }
 .step-btn { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border: 0; border-radius: 50%; background: var(--well); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--hair-2); }
 .step-btn:hover { background: var(--mine-wash); color: var(--mine); }
@@ -289,7 +274,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .chip:hover { color: var(--mine); box-shadow: inset 0 0 0 1px var(--mine); }
 .chip.on { background: var(--mine); color: var(--mine-ink); box-shadow: none; }
 
-/* words, addresses and keys */
 .txt-show { display: inline-block; max-width: 100%; border: 0; background: none; padding: .2rem .45rem; margin-left: -.45rem; border-radius: var(--r1); color: var(--mine); font-size: 1.08rem; text-align: left; overflow-wrap: anywhere; }
 .txt.mono .txt-show { font-family: var(--mono); font-size: .9rem; }
 .txt-show:hover { background: var(--mine-wash); }
@@ -310,7 +294,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .dot { display: inline-block; width: .6rem; height: .6rem; border-radius: 50%; background: var(--muted); opacity: .6; flex: none; }
 .dot.ok { background: var(--ok); opacity: 1; box-shadow: 0 0 0 3px var(--ok-wash); } .dot.warn { background: var(--look); opacity: 1; } .dot.fail { background: var(--stop); opacity: 1; } .dot.idle { opacity: .4; }
 
-/* buttons */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: .45rem; border: 0; padding: .62rem 1.15rem; border-radius: var(--r2); background: var(--mine); color: var(--mine-ink);
        font-weight: 700; font-size: .93rem; text-decoration: none; white-space: nowrap; transition: filter .15s, transform .08s; }
 .btn:hover { filter: brightness(1.08); } .btn:active { transform: translateY(1px); } .btn:disabled { opacity: .55; cursor: progress; }
@@ -332,13 +315,11 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .chips li { font-size: .78rem; padding: .15rem .6rem; border-radius: 99px; background: rgba(255, 255, 255, .06); color: var(--g-muted); }
 .chips li b { color: var(--g-ink); font-weight: 400; margin-left: .2rem; }
 
-/* tabs */
 .tabs { display: flex; gap: .3rem; border-bottom: 1px solid var(--hair); margin-bottom: -1.2rem; overflow-x: auto; scrollbar-width: none; }
 .tabs button { display: inline-flex; align-items: center; gap: .5rem; border: 0; background: none; padding: .7rem 1rem; color: var(--muted); border-bottom: 2.5px solid transparent; margin-bottom: -1px; white-space: nowrap; }
 .tabs button:hover { color: var(--ink); }
 .tabs button[aria-selected="true"] { color: var(--mine); border-bottom-color: var(--mine); font-weight: 700; }
 
-/* steps: things done in order */
 .steps { margin: .5rem 0 0; padding-left: 1.3rem; } .steps li { margin: .3rem 0; padding-left: .2rem; }
 .steps.big { list-style: none; counter-reset: s; padding: 0; display: flex; flex-direction: column; gap: 1.1rem; }
 .steps.big > li { counter-increment: s; position: relative; padding-left: 2.8rem; margin: 0; }
@@ -411,7 +392,6 @@ body.explain .set-info { opacity: 1; color: var(--mine); }
 .doing b { display: block; font-weight: 400; } .doing span { display: block; color: var(--muted); font-size: .84rem; }
 .week-chart svg { width: 100%; height: auto; display: block; }
 
-/* the charts' marks */
 .timeline .t-grid { stroke: var(--hair); } .timeline .t-lab, .timeline .t-part { font-size: 14px; fill: var(--muted); }
 .timeline .t-bar { fill: var(--look); opacity: .75; } .timeline .t-bar.fail { fill: var(--stop); } .timeline .t-bar.open { opacity: 1; }
 .timeline .t-now { stroke: var(--mine); stroke-width: 1.5; stroke-dasharray: 2 3; } .timeline .t-none { font-size: 15px; fill: var(--muted); }

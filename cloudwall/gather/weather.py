@@ -1,6 +1,5 @@
-"""Aviation weather for the airport: the latest METAR, the last 24 hours of them, and the TAF.
-
-Everything is decoded here into plain values (and plain words) so the display only draws."""
+"""Aviation weather for the airport (latest METAR, 24 h of them, the TAF), decoded here into
+plain values and words so the display only draws."""
 import math
 import re
 import time
@@ -12,8 +11,8 @@ CEILING_COVERS = ("BKN", "OVC", "OVX", "VV")
 CATEGORIES = ("VFR", "MVFR", "IFR", "LIFR")
 OKTAS = {"FEW": 2, "SCT": 4, "BKN": 6, "OVC": 8, "OVX": 8, "VV": 8}
 
-STALE_S = 2.5 * 3600      # a station reports at least hourly: a latest report older than this is no longer "now"
-# what a weather group's two-letter codes say about the ones beside them, and where the word goes
+STALE_S = 2.5 * 3600      # a station reports at least hourly
+# qualifier codes, worded before the phenomenon
 WX_BEFORE = {"VC": "nearby", "MI": "shallow", "BC": "patches of", "PR": "partial", "DR": "drifting", "BL": "blowing",
              "FZ": "freezing"}
 WX_WORDS = {"RA": "rain", "DZ": "drizzle", "SN": "snow", "SG": "snow grains", "PL": "ice pellets", "GR": "hail",
@@ -23,8 +22,7 @@ WX_WORDS = {"RA": "rain", "DZ": "drizzle", "SN": "snow", "SG": "snow grains", "P
 
 
 def parse_vis(v):
-    """'10+' -> 10, '1 1/2' -> 1.5, '1/4' -> 0.25, 'M1/4' (less than) -> 0.25; statute miles.
-    None for anything that isn't a visibility: one odd report mustn't cost the whole day's."""
+    """'10+' -> 10, '1 1/2' -> 1.5, 'M1/4' (less than) -> 0.25; statute miles. None if unparseable."""
     if v is None or isinstance(v, bool):
         return None
     if isinstance(v, (int, float)):
@@ -49,9 +47,8 @@ def ceiling(clouds):
 
 
 def category(ceil, vis):
-    """FAA flight category from ceiling (ft) and visibility (mi). The worse of the two decides;
-    with no visibility reported (a sensor out), anything short of "VFR" still holds, but VFR
-    can't be said: None."""
+    """FAA flight category from ceiling (ft) and visibility (mi), the worse deciding; with no
+    visibility, None where it would be VFR."""
     if (ceil is not None and ceil < 500) or (vis is not None and vis < 1):
         return "LIFR"
     if (ceil is not None and ceil < 1000) or (vis is not None and vis < 3):
@@ -65,7 +62,7 @@ def wx_words(wx):
     """'-RA BR' -> 'light rain, mist'; '-RADZ' -> 'light rain and drizzle'; 'VCSH' -> 'nearby showers'."""
     out = []
     for tok in (wx or "").split():
-        if tok.strip("+-") == "NSW":                       # "no significant weather": nothing to say
+        if tok.strip("+-") == "NSW":                       # "no significant weather"
             continue
         if tok == "+FC":
             out.append("tornado")
@@ -99,7 +96,7 @@ def density_altitude(elev_ft, temp_c, altim_hpa):
 
 def _wind(m):
     d = m.get("wdir")
-    # (no wind given at all, as in a forecast's change that is only about the cloud: speed None, not calm)
+    # no wind given at all (a forecast change only about cloud): speed None, not calm
     return {"dir": None if d in (None, "VRB") else d, "variable": d == "VRB",
             "speed": None if d is None and m.get("wspd") is None else m.get("wspd") or 0,
             "gust": m.get("wgst")}
@@ -110,9 +107,9 @@ def decode_metar(m, elev_ft):
               for c in m.get("clouds") or []]
     vis = parse_vis(m.get("visib"))
     ceil = ceiling(clouds)
-    if m.get("vertVis") is not None:                     # the sky hidden: how far up can be seen is the ceiling
+    if m.get("vertVis") is not None:                     # sky obscured: vertical visibility is the ceiling
         ceil = min(ceil, m["vertVis"]) if ceil is not None else m["vertVis"]
-    cat = m.get("fltCat") if m.get("fltCat") in CATEGORIES else category(ceil, vis)     # the service's, if it is one
+    cat = m.get("fltCat") if m.get("fltCat") in CATEGORIES else category(ceil, vis)
     t, td = m.get("temp"), m.get("dewp")
     altim = m.get("altim")
     return {
@@ -127,10 +124,8 @@ def decode_metar(m, elev_ft):
 
 
 def decode_taf(t):
-    """The forecast's periods. A change group (FM, BECMG) comes whole from the service; a TEMPO or
-    PROB gives only what differs for a while, so its flight category is worked out with the rest
-    (the visibility, or the cloud) taken from the period it interrupts. What it shows as its own
-    stays only what the forecast wrote."""
+    """The forecast's periods. A TEMPO or PROB gives only what differs, so its category takes the
+    missing visibility or cloud from the period it interrupts; its own fields stay as written."""
     periods, prevailing = [], []
     for f in t.get("fcsts") or []:
         change = f.get("fcstChange")
@@ -165,7 +160,8 @@ def is_stale(obs_time, now=None):
 
 
 def fetch_all(icao):
-    """Latest METAR (short form for the header), 24 h of decoded history, and the TAF."""
+    """(short, full): the latest METAR for the header; 24 h of decoded history and the TAF.
+    (None, None) with no reports."""
     metars = get_json(f"{BASE}/metar?ids={icao}&format=json&hours=24") or []
     metars = sorted(metars, key=lambda m: m.get("obsTime") or 0)
     if not metars:
@@ -180,7 +176,7 @@ def fetch_all(icao):
     taf = None
     try:
         tafs = get_json(f"{BASE}/taf?ids={icao}&format=json") or []
-        if tafs:                      # (the newest, should the service hand over more than one)
+        if tafs:
             taf = decode_taf(max(tafs, key=lambda x: str(x.get("issueTime") or "")))
     except Exception:
         pass                          # the forecast is a bonus; observations still show
@@ -191,8 +187,7 @@ def fetch_all(icao):
 
 
 def demo(icao="KPDX", name="Portland Intl, OR, US"):
-    """Plausible Portland weather for demo mode: a day of showers clearing, with a TAF. Another
-    place's demo gets the same weather under its own airport's code and name."""
+    """Demo weather (showers clearing, with a TAF) under the given airport's code and name."""
     now = int(time.time()) // 3600 * 3600
     metars = []
     for h in range(24, -1, -1):

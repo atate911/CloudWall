@@ -1,14 +1,8 @@
 """Which aircraft.json entries count as "my antenna heard this aircraft".
 
-readsb's ``type`` says where a position came from. Only signals received
-*directly from the aircraft* by our antenna belong in the coverage map:
-
-    adsb_icao, adsb_icao_nt, adsb_other   ADS-B received directly      -> source ADSB
-    mlat                                  heard, position by MLAT net  -> source MLAT (optional layer)
-    uat                                   978 MHz UAT received directly -> source UAT
-    mode_s                                no position                  -> counted, not stored
-    adsr_*, tisb_*                        rebroadcast by a ground stn  -> rejected (signal didn't come from the aircraft)
-    anything else ("unknown", ...)                                     -> rejected
+Only signals received directly from the aircraft belong in the coverage map, judged by readsb's
+``type``: adsb_* -> ADSB, mlat -> MLAT (optional layer), uat -> UAT; adsr_*/tisb_* (rebroadcast by
+a ground station) and anything else are rejected.
 """
 from __future__ import annotations
 
@@ -65,11 +59,8 @@ class Point:
 
 
 class PointFilter:
-    """Turns aircraft.json entries into validated Points.
-
-    Keeps per-aircraft state for de-duplication and the speed-jump check.
-    ``stats`` counts every rejection reason (useful in /api/stats and the log).
-    """
+    """Turns aircraft.json entries into validated Points; keeps per-aircraft state for
+    de-duplication and the speed-jump check. ``stats`` counts every rejection reason."""
 
     def __init__(self, station_lat, station_lon, antenna_asl_m, ground_elev_m, sampler_cfg,
                  source_band: str = "1090"):
@@ -87,7 +78,6 @@ class PointFilter:
         self.ground_ft = int(round(ground_elev_m * geo.FT_PER_M))
 
     def prune(self, now: float, keep_s: float = 600.0):
-        """Forget aircraft not seen for a while (bounded memory)."""
         for h in [h for h, v in self.last.items() if now - v[0] > keep_s]:
             del self.last[h]
             self.bad_run.pop(h, None)
@@ -118,15 +108,13 @@ class PointFilter:
         if not hexs:
             return None
 
-        # Duplicate: the same position update seen again in the next poll has the same
-        # "position time" (now - seen_pos), or simply identical coordinates.
+        # duplicate: the same update seen again has the same position time, or identical coordinates
         pos_t = now - seen_pos
         prev = self.last.get(hexs)
         if prev and (abs(pos_t - prev[0]) < 0.25 or (prev[1] == lat and prev[2] == lon)):
             st["reject_duplicate"] += 1
             return None
 
-        # Altitude. "ground" -> altitude = ground elevation, flagged on_ground.
         ab = ac.get("alt_baro")
         ag = ac.get("alt_geom")
         ground = ab == "ground"
@@ -150,8 +138,7 @@ class PointFilter:
             st["reject_distance"] += 1
             return None
 
-        # Jump check against this aircraft's previous accepted position. If an aircraft is
-        # rejected 3 times in a row we assume the *previous* point was the bad one and reset.
+        # jump check; rejected 3 times running, assume the previous point was the bad one and reset
         if prev and pos_t > prev[0]:
             dt = pos_t - prev[0]
             if dt < 120:
