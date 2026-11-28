@@ -27,15 +27,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: A browser, for the page's smoke test
+      - name: A browser, for the page's smoke test, and the linter
         run: |
-          npm install --no-save playwright@1
+          npm install --no-save playwright@1 eslint@9      # (together: a second install would take the first away)
           npx playwright install --with-deps chromium
       - name: Lint (undefined and unused names, Python and JavaScript)
         run: |
           pip install --quiet pyflakes
           python -m pyflakes cloudwall tests tools coverage3d
-          npm install --no-save eslint@9
           npx eslint cloudwall/web/js coverage3d/coverage3d/web
       - name: Tests
         run: python -m unittest discover -s tests
