@@ -2772,10 +2772,10 @@ class DatabaseTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             path = str(Path(d, "logbook.db"))
             s = Store(path)
-            self.assertEqual(s.version, 1)
+            self.assertEqual(s.version, 2)
             s.close()
             s = Store(path)                                             # opened again: nothing re-run
-            self.assertEqual(s.version, 1)
+            self.assertEqual(s.version, 2)
             s.close()
 
     def test_a_damaged_file_is_set_aside_not_fatal(self):
@@ -2816,6 +2816,23 @@ class DatabaseTest(unittest.TestCase):
             finally:
                 db._connect = real
             self.assertEqual(list(Path(d).glob("logbook.db.damaged-*")), [])
+
+
+class LogbookKeptTest(unittest.TestCase):
+    def test_the_logbooks_answer_is_kept_until_a_flyover_changes_it(self):
+        s = Store(":memory:")
+        self.addCleanup(s.close)
+        sid = s.add_sighting(ts=1.0, day="2026-11-27", hex="a1", callsign="ASA1", type="B738")
+        first = s.logbook("2026-11-27")
+        first["recent"][0]["callsign"] = "scribbled on"            # a caller's own copy
+        asked = []
+        real, s._logbook = s._logbook, lambda day: asked.append(day) or real(day)
+        self.assertEqual(s.logbook("2026-11-27")["recent"][0]["callsign"], "ASA1")
+        self.assertEqual(asked, [])                                  # not worked out again
+        s.update_sighting(sid, alt_ft=3000)
+        s.add_sighting(ts=2.0, day="2026-11-27", hex="b2", callsign="UAL2", type="A320")
+        self.assertEqual((s.logbook("2026-11-27")["today"], s.logbook("2026-11-28")["today"]), (2, 0))
+        self.assertEqual(asked, ["2026-11-27", "2026-11-28"])
 
 
 class SettingsFileTest(unittest.TestCase):

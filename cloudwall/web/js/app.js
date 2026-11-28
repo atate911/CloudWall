@@ -164,13 +164,18 @@ $("btn-compass").addEventListener("click", async () => {
 // needs a tap. Called after applyPhone() at the end, once the page knows whether it is on a phone.
 const resumeCompass = () => { if (phone() && store("skyCompass") === "on") startCompass().then((ok) => { if (!ok) compass.failed = ""; }); };
 
-// Animate the scope at up to ~20 fps: plenty for gliding blips, light on a Raspberry Pi. It rests
-// while scrolled out of sight.
-let lastDraw = 0, scopeSeen = true;
+// The scope is drawn at ~20 fps for two seconds after anything changes (a new report easing in, a
+// touch, the phone turning the sky) and at 5 fps otherwise: a blip gliding between reports moves
+// under 2 px a second, and every draw has the whole radar rastered again (half a core, measured).
+// It rests while scrolled out of sight.
+let lastDraw = 0, scopeSeen = true, livelyUntil = 0;
+const lively = () => { livelyUntil = performance.now() + 2000; };
 new IntersectionObserver((es) => { scopeSeen = es[es.length - 1].isIntersecting; }).observe($("scope"));
+for (const what of ["pointerdown", "pointermove", "wheel"]) $("scope").addEventListener(what, lively, { passive: true });
 function frame(now) {
   requestAnimationFrame(frame);
-  if (document.hidden || !scopeSeen || now - lastDraw < 48) return;
+  const turning = compass.on && scopeMode() === "sky";
+  if (document.hidden || !scopeSeen || now - lastDraw < (turning || now < livelyUntil ? 48 : 200)) return;
   lastDraw = now;
   drawScopeNow(now);
 }
@@ -279,6 +284,7 @@ const densSeg = (dens) => `<div class="seg dens mini" role="group" aria-label="H
   `<button data-dens="${d}" class="${d === dens ? "on" : ""}" aria-pressed="${d === dens}">${d === "simple" ? "Simple" : "Detailed"}</button>`).join("")}</div>`;
 function render() {
   if (!state) return;
+  lively();
   updateSky(state);
   renderToggles();
   const dens = density();
@@ -428,10 +434,11 @@ function dropStale() {
   state = { ...state, aircraft: [], beyond: [], hero: null, next: null, pinned: null, overhead: null, emergency: [],
     status: { ...state.status, ok: false, source: state.status.source || "CloudWall" } };
   stateAtPerf += 0.001;         // a new picture, as far as the radar's drawn-once layer goes
+  lastSaid = null;
   render();
 }
 
-let pollSeq = 0, shownSeq = 0, serverStarted = null;
+let pollSeq = 0, shownSeq = 0, serverStarted = null, lastSaid = null;
 async function poll() {
   if (document.hidden) return;          // a hidden tab doesn't count as a screen being open
   const seq = ++pollSeq, asked = myPin;
@@ -441,10 +448,16 @@ async function poll() {
     const shown = state && view === "now" ? scopeMode() : null, prefs = radarPrefs();
     const far = shown === "radar" && prefs.style === "atc" ? "&square=1" : shown === "map" ? `&reach=${mapReach().toFixed(2)}` : "";
     // (the sky view asks for no more than the tracking radius)
-    const s = await (await api(`api/state?range=${shown && shown !== "sky" ? prefs.range : 0}${far}` +
-      (asked ? `&pin=${encodeURIComponent(asked)}` : ""))).json();
+    const text = await (await api(`api/state?range=${shown && shown !== "sky" ? prefs.range : 0}${far}` +
+      (asked ? `&pin=${encodeURIComponent(asked)}` : ""))).text();
     // answers can cross: keep the newest, and drop one asked for a flight no longer followed
     if (seq < shownSeq || asked !== myPin) return;
+    // The feed is read every 5 s and this is asked every 2: most answers say what the last one said
+    // (but for the time). Then nothing is drawn again: only that the server answered is noted.
+    const said = text.replace(/"now": ?[\d.]+/, "");
+    if (said === lastSaid && state && !pollFailed && !document.body.classList.contains("stale")) { shownSeq = seq; lastAnswer = Date.now(); return; }
+    const s = JSON.parse(text);
+    lastSaid = said;
     // a server restarted since this page loaded may have a newer page: reload, on a wall panel at
     // once, elsewhere once nobody has touched the page for a while
     if (serverStarted == null) serverStarted = s.started;

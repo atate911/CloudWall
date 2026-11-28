@@ -16,6 +16,7 @@ HEAT_JOIN_NM = 3           # if it is this near; otherwise a new line starts
 HEAT_STEP_NM = 0.05        # a line keeps a point each time the aircraft has moved this far,
 HEAT_TOLERANCE_NM = 0.02   # and, once finished, is simplified to stay this close to its path
 HEAT_UNIT = 100            # lines are sent in hundredths of a nm east and north of home
+HEAT_SAVE_S = 300          # the day's whole heatmap is written each time: every minute was 100 MB a day to an SD card
 PRUNE_EVERY_S = 6 * 3600
 
 
@@ -63,7 +64,7 @@ class Tracks:
         flying = {a["hex"] for a in airborne}         # one coasting keeps its line open
         for hexid in [h for h in self.heat_live if h not in flying]:
             self._finish(hexid)
-        if now - self.heat_saved > 60:
+        if now - self.heat_saved > HEAT_SAVE_S:
             self.heat_saved = now
             self.store.cache_put("heat-paths", self.heat_day, {"seen": sorted(self.heat_seen), "paths": self.heat})
         if now - self.pruned > PRUNE_EVERY_S:

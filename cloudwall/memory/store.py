@@ -1,5 +1,6 @@
 """The logbook's file: one row per flyover in `sightings`, and the questions the Logbook tab and
 the badges ask of it. Opening, the cache and migrations are db.py's."""
+import copy
 import json
 
 from ..core.db import Database
@@ -23,8 +24,20 @@ def _sightings_v1(db):
             db.execute(f"ALTER TABLE sightings ADD COLUMN {col}")
 
 
+def _sightings_v2(db):
+    """Indexes for what is asked by time, type and airline: the badges' counts are made under the
+    tracker's lock, and without these each read the whole table (6 ms apiece at a year's flyovers)."""
+    db.executescript("""
+    CREATE INDEX IF NOT EXISTS sightings_ts ON sightings(ts);
+    CREATE INDEX IF NOT EXISTS sightings_type ON sightings(type);
+    CREATE INDEX IF NOT EXISTS sightings_airline ON sightings(airline_icao);
+    """)
+
+
 class Store(Database):
-    MIGRATIONS = [(1, _sightings_v1)]
+    MIGRATIONS = [(1, _sightings_v1), (2, _sightings_v2)]
+    edits = 0             # flyovers added or changed since the file was opened (what the logbook's answer is kept by)
+    _book = None          # (day, edits, the Logbook tab's answer as last worked out)
 
     def count(self, where, args=()):
         with self.lock:
@@ -45,6 +58,7 @@ class Store(Database):
             cur = self.db.execute(
                 f"INSERT INTO sightings({cols}) VALUES({','.join('?' * len(f))})",
                 tuple(f.values()))
+            self.edits += 1
             return cur.lastrowid
 
     def update_sighting(self, sid, **f):
@@ -53,6 +67,7 @@ class Store(Database):
         sets = ",".join(f"{k}=?" for k in f)
         with self.lock, self.db:
             self.db.execute(f"UPDATE sightings SET {sets} WHERE id=?", (*f.values(), sid))
+            self.edits += 1
 
     def query(self, sql, args=()):
         with self.lock:
@@ -80,6 +95,16 @@ class Store(Database):
         return rows[0]["type_name"] if rows else None
 
     def logbook(self, day):
+        """The Logbook tab's answer. It reads the whole table a dozen times (120 ms at a year's
+        flyovers) and is asked for by every screen each minute, so it is kept until a flyover is
+        added or changed, or the day turns."""
+        kept = self._book
+        if not kept or kept[:2] != (day, self.edits):
+            edits = self.edits
+            kept = self._book = (day, edits, self._logbook(day))
+        return copy.deepcopy(kept[2])          # (the caller adds to its rows)
+
+    def _logbook(self, day):
         def rec(col, order, where="1"):
             rows = self.query(
                 f"SELECT callsign, flight, type, origin, dest, {col} AS value, ts FROM sightings "
