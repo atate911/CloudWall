@@ -279,5 +279,5 @@ case "${1:-}" in
   status) cmd_status;;
   restart) need_root; systemctl restart "$SVC"; sleep 3; cmd_status;;
   uninstall) shift; cmd_uninstall "$@";;
-  *) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 1;;
+  *) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 1;;
 esac

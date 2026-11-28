@@ -1,5 +1,5 @@
 // The 3D map: MapLibre basemap + terrain + native label/ring layers, and deck.gl data layers on top.
-import { destination, bearingDeg, haversineNm, altColor, rssiColor, GROUND_COLOR, ringLabel, FT_M, radioHorizonNm, fmtAlt } from "./util.js";
+import { destination, altColor, rssiColor, GROUND_COLOR, ringLabel, FT_M } from "./util.js";
 
 const GLYPHS = "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf";
 const TERRARIUM = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";

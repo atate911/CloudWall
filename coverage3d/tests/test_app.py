@@ -18,12 +18,12 @@ class FakeFeed:
 
     def __init__(self):
         self.n = 0
-        self.fail = False
+        self.fail = self.hold = False
 
     def aircraft(self):
         if self.fail:
             raise OSError("down")
-        self.n += 1
+        self.n += 0 if self.hold else 1
         return {"now": 1000.0 + self.n * 2, "aircraft": [
             {"hex": "a00001", "type": "adsb_icao", "flight": "AAL1 ", "alt_baro": 30000, "lat": 45.9 + self.n * 0.001,
              "lon": -122.6, "seen_pos": 0.3, "nac_p": 9, "rssi": -15.0},
@@ -49,6 +49,12 @@ class AppTests(unittest.TestCase):
         s.poll_once(); s.poll_once()
         self.assertEqual(len(s.buffer), 2)                 # only the direct ADS-B aircraft, twice
         self.assertEqual(s.counters["mode_s_seen"], 2)
+        seen, at = len(s.live), s.live_time
+        self.assertGreater(seen, 0)
+        feed.hold = True
+        s.poll_once()                                      # the same snapshot again: the live list stays
+        self.assertEqual((len(s.live), s.live_time), (seen, at))
+        feed.hold = False
         feed.fail = True
         s.poll_once()                                      # feed down: no exception, state recorded
         self.assertFalse(s.up[0])

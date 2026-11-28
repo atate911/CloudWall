@@ -12,7 +12,6 @@ readsb's ``type`` says where a position came from. Only signals received
 """
 from __future__ import annotations
 
-import math
 from collections import Counter
 from dataclasses import dataclass
 

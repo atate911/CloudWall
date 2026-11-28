@@ -76,12 +76,14 @@ def parser():
     return ap
 
 
-SECRET = re.compile(r"(?im)^(\s*(?:api_key|key|url|attribution)\s*=\s*)(\".*?\"|'.*?')")
+SECRET = re.compile(r"(?im)^(\s*(?:\w*key|\w*url|address|zip|attribution)\s*=\s*)(\".*?\"|'.*?')")
+LISTED = re.compile(r"(?ims)^(\s*\w*urls\s*=\s*)\[.*?\]")          # a list of addresses, on one line or several
 NUMBER = re.compile(r"(?im)^(\s*(?:lat|lon)\s*=\s*)(-?\d+\.\d{2})\d*")
 
 
 def mask(text):
     """A settings file fit to share: keys and URLs (which may carry keys) hidden, positions to ~1 km."""
+    text = LISTED.sub(lambda m: m.group(1) + '["…"]', text)
     text = SECRET.sub(lambda m: m.group(1) + ('"…"' if len(m.group(2)) > 2 else m.group(2)), text)
     return NUMBER.sub(lambda m: m.group(1) + m.group(2), text)
 

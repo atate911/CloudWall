@@ -45,7 +45,6 @@ class Tracks:
         that is tapped shows all of it at once. Aircraft beyond the tracking radius (shown only on a
         radar set to a longer range) get trails and paths but stay off the heatmap."""
         seen = set()
-        r = self.radius_nm
         day = time.strftime("%Y-%m-%d", time.localtime(now))
         if day != self.heat_day:
             self.heat, self.heat_seen, self.heat_live, self.heat_day = [], set(), {}, day

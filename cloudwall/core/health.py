@@ -162,13 +162,14 @@ class Monitor:
         return changes
 
     def majors(self):
-        return [f for f, _, _ in self.open.values() if f.major and f.state == FAIL]
+        # (lists of self.open throughout: the health thread changes it while screens ask)
+        return [f for f, _, _ in list(self.open.values()) if f.major and f.state == FAIL]
 
     def summary(self):
         """For every screen: how things stand, in a few words."""
         majors = self.majors()
         # (simulated traffic is the demo's whole point: it isn't what this warning is for)
-        subtle = [f for f, _, _ in self.open.values() if f.subtle and f.code != "display.demo"]
+        subtle = [f for f, _, _ in list(self.open.values()) if f.subtle and f.code != "display.demo"]
         return {"worst": worst(self.last), "problems": len(self.open), "checked": self.checked,
                 "major": majors[0].summary if majors else None,
                 "major_title": CATALOGUE[majors[0].code].title if majors and majors[0].code in CATALOGUE else None,
@@ -177,7 +178,7 @@ class Monitor:
     def report(self):
         """In full, for /api/health and the control board."""
         return {**self.summary(),
-                "open": [dict(f.to_dict(), since=since, seen=n) for f, since, n in self.open.values()],
+                "open": [dict(f.to_dict(), since=since, seen=n) for f, since, n in list(self.open.values())],
                 "findings": [f.to_dict() for f in self.last]}
 
 

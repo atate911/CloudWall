@@ -1,5 +1,5 @@
 // Coverage3D page: UI state, data loading, wiring between the API, the map and the plots.
-import { $, getJSON, store, haversineNm, bearingDeg, fmtDist, fmtBrg, fmtAlt, fmtTime, altColor, rssiColor, rgbCss, rgbHex, GROUND_COLOR, ALT_STOPS, RSSI_STOPS, UNIT_NM, clamp } from "./util.js";
+import { $, getJSON, store, haversineNm, bearingDeg, fmtDist, fmtBrg, fmtAlt, fmtTime, altColor, rgbCss, rgbHex, GROUND_COLOR, ALT_STOPS, RSSI_STOPS, UNIT_NM, clamp } from "./util.js";
 import { MapView, BASEMAPS } from "./mapview.js";
 import { drawVertical, drawPolar } from "./plots.js";
 

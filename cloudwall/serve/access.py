@@ -15,8 +15,6 @@ import re
 
 from ..core.keys import tidy
 
-PREFIX = "/k/"
-
 
 def admit(path, key):
     """What a request for `path` comes to on a server whose key is `key` (tidied):

@@ -302,7 +302,6 @@ def zips(arg):
 
 
 def cwt(arg):
-    import json
     if not arg:
         raise SystemExit("cwt needs the aircraft file: python3 tools/build_data.py cwt openscope-aircraft.json")
     data = json.loads(Path(arg).read_text(encoding="utf-8"))

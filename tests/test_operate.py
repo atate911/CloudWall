@@ -264,6 +264,7 @@ class DoctorTest(unittest.TestCase):
         srv = ThreadingHTTPServer(("127.0.0.1", 0), Wall)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         self.addCleanup(srv.shutdown)
+        self.addCleanup(srv.server_close)
         with tempfile.TemporaryDirectory() as d:
             p = Path(d, "config.toml")
             p.write_text(f"[server]\nport = {srv.server_address[1]}\n")

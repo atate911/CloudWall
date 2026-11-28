@@ -9,7 +9,7 @@ import unittest
 import wave
 
 from cloudwall.radio import airband, channels, plan, predict
-from cloudwall.radio.channels import Channel, parse_mhz
+from cloudwall.radio.channels import parse_mhz
 from cloudwall.radio.listen import listen
 from cloudwall.radio.segment import Segmenter, decode
 

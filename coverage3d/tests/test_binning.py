@@ -1,7 +1,7 @@
 import random
 import unittest
 
-from coverage3d import binning, config
+from coverage3d import binning
 from coverage3d.filters import Point
 from coverage3d.store import Store, DAY
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import urllib.request
 
 log = logging.getLogger("coverage3d.feeds")

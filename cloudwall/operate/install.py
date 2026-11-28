@@ -153,7 +153,9 @@ def put_release(system, source):
         system.write(f"{OPT}/previous", before + "\n")
     releases = sorted(system.path(f"{OPT}/releases").iterdir(), key=lambda p: p.stat().st_mtime) \
         if system.path(f"{OPT}/releases").is_dir() else []
-    keep = {rid, Path(before).name if before else None}
+    kept = system.path(f"{OPT}/previous")          # (kept whichever run named it: rollback's way back)
+    keep = {rid, Path(before).name if before else None,
+            Path(kept.read_text().strip()).name if kept.is_file() else None}
     for old in [r for r in releases if r.name not in keep][:-(KEEP_RELEASES - 2) or None]:
         system.remove(f"{OPT}/releases/{old.name}")
     return changed

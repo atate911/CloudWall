@@ -45,6 +45,7 @@ def load_settings(path):
         if not good or not good.exists():
             raise SystemExit(f"cloudwall: {file}: {e}")
         cfg = config.load(good)
+        cfg["_path"] = str(file)               # the file to mend is the one that can't be used, not the copy
         cfg["_problems"].insert(0, f"{file} can't be used ({e}): running on the last settings that started, {good}")
         log.error("config: %s", cfg["_problems"][0])
         return cfg, True

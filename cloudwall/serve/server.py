@@ -225,8 +225,12 @@ def make_server(cfg, places, charts=None, logos=None):
                 path = "/index.html"                  # same page; the script switches to kiosk mode
             elif path.rstrip("/") == "/admin":
                 path = "/admin.html"                  # the control board
-            f = (WEB / (path.lstrip("/") or "index.html")).resolve()
-            if WEB not in f.parents or not f.is_file():
+            try:
+                f = (WEB / (path.lstrip("/") or "index.html")).resolve()
+                found = WEB in f.parents and f.is_file()
+            except (OSError, ValueError):             # a name too long, or with a NUL in it
+                found = False
+            if not found:
                 return self._send(404, {"error": "not found"})
             self._send(200, f.read_bytes(),
                        mimetypes.guess_type(f.name)[0] or "application/octet-stream")

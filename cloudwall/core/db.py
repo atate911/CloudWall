@@ -57,14 +57,20 @@ def _connect(path):
     if path != ":memory:":
         # WAL: a reader (a backup, `cloudwall doctor`) never blocks the writer, and a crash
         # mid-write can't damage what was already written
-        db.execute("PRAGMA journal_mode=WAL")
-        db.execute("PRAGMA synchronous=NORMAL")
+        try:
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("PRAGMA synchronous=NORMAL")
+        except sqlite3.Error:
+            db.close()
+            raise
     return db
 
 
 def open_or_set_aside(path):
     """A connection to the file at path; a file SQLite can't read is renamed (with its -wal and
-    -shm) to <name>.damaged-<time> and a fresh one started in its place."""
+    -shm) to <name>.damaged-<time> and a fresh one started in its place. A file that is only busy
+    or out of reach (locked, the disk full, its folder gone) is left alone and the error raised."""
+    db = None
     try:
         db = _connect(path)
         if path != ":memory:":
@@ -73,10 +79,10 @@ def open_or_set_aside(path):
                 raise sqlite3.DatabaseError(ok)
         return db
     except sqlite3.DatabaseError as e:
-        try:
+        if db is not None:
             db.close()
-        except Exception:
-            pass
+        if isinstance(e, sqlite3.OperationalError):    # locked, no room, no such folder: the file itself may be sound
+            raise
         stamp = time.strftime("%Y%m%d-%H%M%S")
         for suffix in ("", "-wal", "-shm"):
             if os.path.exists(path + suffix):

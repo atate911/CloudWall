@@ -9,6 +9,7 @@ hands every /api/admin/ request here (srv.admin), so the server itself knows not
 Everything but whoami and sign-in is the owner's alone (serve/auth.py). A request naming a host
 CloudWall doesn't answer to is refused, and so is one a browser says comes from another site.
 """
+import logging
 import os
 import re
 import threading
@@ -26,6 +27,7 @@ from ..serve import auth
 # Sections only the control board uses: read from the file as saved, so they need no restart.
 LIVE = {"receiver"}
 
+log = logging.getLogger("cloudwall")
 UNDER_SYSTEMD = bool(os.environ.get("INVOCATION_ID"))
 
 
@@ -83,10 +85,11 @@ class Admin:
             return h._send(400, {"error": "bad json"})
         try:
             got = self.route(method, name, q, body or {})
-        except guide.Answered as e:
+        except (guide.Answered, ValueError, PermissionError) as e:
             return h._send(400, {"error": str(e)})
-        except (ValueError, PermissionError) as e:
-            return h._send(400, {"error": str(e)})
+        except Exception as e:                 # anything else is still answered, not a dropped connection
+            log.exception("admin: %s %s failed", method, name)
+            return h._send(400 if isinstance(e, (KeyError, TypeError)) else 500, {"error": f"That didn't work ({type(e).__name__}: {e})"})
         if isinstance(got, tuple) and got[0] == "file":
             _, data, ctype, filename = got
             return h._send(200, data, ctype, headers={"Content-Disposition": f'attachment; filename="{filename}"'})
@@ -379,16 +382,27 @@ class Admin:
             return {"ok": True, "said": f"[{section}] {key} taken out of the settings file (it did nothing)"}
         raise ValueError("action must be move or remove")
 
+    def _settings_file(self):
+        """The settings file changes go to: the one CloudWall started from, or, started without
+        one, the user's own, begun now and from here on the one the board reads."""
+        if not self.cfg.get("_path"):
+            path = str(config.user_config_path())
+            config.init(path)
+            self.cfg["_path"] = path
+        return self.cfg["_path"]
+
     def set_setting(self, body):
         section, key = str(body.get("section") or ""), str(body.get("key") or "")
         st = schema.find(section, key)
         if not st:
             raise ValueError(f"[{section}] {key} isn't a setting")
-        path = self.cfg.get("_path")
-        if not path:
-            path = str(config.user_config_path())
-            config.init(path)
+        path = self._settings_file()
         value = body.get("value")
+        if value is None:                  # back to not set at all (undoing a setting that had no value)
+            config.remove_setting(path, section, key)
+            self._saved = (0, None)
+            return {"ok": True, "said": f"{st.label} is no longer set"} if section in LIVE else \
+                {"ok": True, "said": f"{st.label} is no longer set. Restart CloudWall for it to take effect.", "restart": True}
         kind = config.kind_of(section, key)
         if kind == "bool":
             value = value in (True, "true", "on", "1", 1)
@@ -471,14 +485,13 @@ class Admin:
 
     def private_link(self, body):
         action = body.get("action")
-        path = self.cfg.get("_path")
         if action == "new":
             key = keys.new_key()
-            config.write_setting(path, "server", "key", key)
+            config.write_setting(self._settings_file(), "server", "key", key)
             return {"ok": True, "key": key, "said": "A new private link is saved. Restart CloudWall, then open the new link on each screen.",
                     "restart": True}
         if action == "off":
-            config.write_setting(path, "server", "key", "")
+            config.write_setting(self._settings_file(), "server", "key", "")
             return {"ok": True, "said": "The private link is taken away (after a restart CloudWall is open to whoever can reach it).",
                     "restart": True}
         if action == "show":

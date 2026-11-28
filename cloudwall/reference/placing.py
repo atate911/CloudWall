@@ -52,6 +52,8 @@ def complete_airport(ap, home, radius_nm):
         ap["icao"] = airports.pick_airport(home["lat"], home["lon"])
         if not ap["icao"]:
             raise ValueError(f"no airport with airline service near {home['lat']:.3f}, {home['lon']:.3f}: give its ICAO code")
+    if str(ap.get("icao") or "").lower() == "auto":      # named by its IATA code alone
+        ap["icao"] = ""
     rec = airports.lookup(ap.get("icao")) or airports.lookup(ap.get("iata"))
     if rec and ap.get("lat") is not None and ap.get("lon") is not None:
         off = geo.haversine_nm(float(ap["lat"]), float(ap["lon"]), rec["lat"], rec["lon"])

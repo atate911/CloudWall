@@ -103,6 +103,20 @@ class FeedsTest(unittest.TestCase):
         finally:
             feeds.get_json = real
 
+    def test_an_answer_that_is_no_feed_fails_over(self):
+        # a 404 (get_json gives None) or JSON of some other shape is no answer: the next feed is asked
+        for junk in (None, ["maintenance"]):
+            def fake(url, timeout=0, junk=junk):
+                return junk if "bad" in url else {"ac": [{"hex": "abc123", "lat": 45.0, "lon": -122.0, "flight": "ASA1 "}]}
+            real, feeds.get_json = feeds.get_json, fake
+            try:
+                f = feeds.Feeds(["https://bad.example/{lat}", "https://good.example/{lat}"], quiet=True)
+                self.assertEqual(f.fetch(45, -122, 15)[0]["callsign"], "ASA1")
+                self.assertEqual(f.name, "good.example")
+                self.assertRaises(ValueError, feeds.Feeds(["https://bad.example/{lat}"], quiet=True).fetch, 45, -122, 15)
+            finally:
+                feeds.get_json = real
+
     def test_legacy_single_url_config(self):
         import tempfile
         with tempfile.NamedTemporaryFile("w", suffix=".toml") as t:
@@ -1530,6 +1544,7 @@ class ServerTest(unittest.TestCase):
         srv = make_server(cfg, places, charts)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         self.addCleanup(srv.shutdown)
+        self.addCleanup(srv.server_close)
         return f"http://127.0.0.1:{srv.server_address[1]}", places
 
     def get(self, url):
@@ -2740,3 +2755,80 @@ class DatabaseTest(unittest.TestCase):
             self.assertEqual(s.count("1"), 0)                           # a fresh logbook, working
             self.assertEqual(len(list(Path(d).glob("logbook.db.damaged-*"))), 1)
             self.assertIn("moved aside", logs.output[0])
+
+    def test_a_logbook_that_is_only_busy_is_left_alone(self):
+        import sqlite3
+        import tempfile
+        from cloudwall.core import db
+        with tempfile.TemporaryDirectory() as d:
+            path = str(Path(d) / "logbook.db")
+            other = sqlite3.connect(path)
+            self.addCleanup(other.close)
+            other.execute("CREATE TABLE t (x)")
+            other.execute("BEGIN EXCLUSIVE")
+            real = db._connect
+
+            def impatient(p):                  # (as _connect, without the five seconds' wait)
+                c = sqlite3.connect(p, check_same_thread=False, timeout=0)
+                try:
+                    c.execute("PRAGMA journal_mode=WAL")
+                except sqlite3.Error:
+                    c.close()
+                    raise
+                return c
+            db._connect = impatient
+            try:
+                self.assertRaises(sqlite3.OperationalError, db.open_or_set_aside, path)
+            finally:
+                db._connect = real
+            self.assertEqual(list(Path(d).glob("logbook.db.damaged-*")), [])
+
+
+class SettingsFileTest(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        self.path = Path(d.name) / "config.toml"
+
+    def test_a_list_over_several_lines_is_replaced_whole(self):
+        import tomllib
+        self.path.write_text((Path(config.__file__).parent.parent / "config.example.toml").read_text())
+        config.write_setting(self.path, "source", "urls", ["http://pi:8080/data/aircraft.json"])
+        got = tomllib.loads(self.path.read_text())
+        self.assertEqual(got["source"]["urls"], ["http://pi:8080/data/aircraft.json"])
+        self.assertIs(got["source"]["merge"], False)              # the line after the list is still there
+        config.remove_setting(self.path, "source", "urls")
+        self.assertNotIn("urls", tomllib.loads(self.path.read_text())["source"])
+
+    def test_a_list_over_several_lines_is_taken_out_whole(self):
+        import tomllib
+        self.path.write_text('[source]\nurls = [\n  "https://a.example/{lat}",\n  "https://b.example/{lat}",\n]\nmerge = true\n')
+        config.remove_setting(self.path, "source", "urls")
+        self.assertEqual(tomllib.loads(self.path.read_text()), {"source": {"merge": True}})
+
+    def test_numbers_that_cannot_be_used_are_refused(self):
+        self.path.write_text("[home]\nlat = 45.6\nlon = -122.6\n")
+        for section, key, value in (("tracking", "poll_seconds", float("inf")), ("tracking", "radius_nm", float("nan")),
+                                    ("home", "lat", 999), ("home", "lon", -181)):
+            with self.assertRaises(ValueError, msg=(section, key, value)):
+                config.write_setting(self.path, section, key, value)
+        config.write_setting(self.path, "home", "lon", -122.474)
+        self.assertEqual(config.load(self.path)["home"]["lon"], -122.474)
+
+
+class SmallFixesTest(unittest.TestCase):
+    def test_an_airport_named_by_its_iata_code_alone(self):
+        ap = placing.complete_airport({"icao": "auto", "iata": "PDX"}, {"lat": 45.6, "lon": -122.6}, 15)
+        self.assertEqual((ap["icao"], ap["iata"]), ("KPDX", "PDX"))
+
+    def test_a_report_hides_every_address_and_key(self):
+        from cloudwall.operate.cli import mask
+        text = ('[home]\nzip = "98683"\nlat = 45.61234\n[source]\nurls = [\n  "http://user:pw@10.0.0.5:8080/data/aircraft.json",\n]\n'
+                '[alerts]\nnotify_url = "https://ntfy.sh/my-secret-topic"\n[receiver]\nhome_url = "http://10.0.0.5"\n'
+                '[server]\nkey = "abcdefghijklmnop"\naddress = "wall.example.org"\nport = 5050\n')
+        out = mask(text)
+        for secret in ("98683", "10.0.0.5", "user:pw", "my-secret-topic", "abcdefghijklmnop", "wall.example.org", "45.61234"):
+            self.assertNotIn(secret, out)
+        self.assertIn("lat = 45.61", out)
+        self.assertIn("port = 5050", out)

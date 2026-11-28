@@ -10,9 +10,6 @@ from ..core.http import get_json
 BASE = "https://aviationweather.gov/api/data"
 CEILING_COVERS = ("BKN", "OVC", "OVX", "VV")
 CATEGORIES = ("VFR", "MVFR", "IFR", "LIFR")
-COVER_WORDS = {"SKC": "Clear", "CLR": "Clear", "CAVOK": "Clear", "NCD": "Clear", "NSC": "No significant cloud",
-               "FEW": "Few clouds", "SCT": "Scattered clouds", "BKN": "Broken clouds", "OVC": "Overcast",
-               "OVX": "Sky obscured", "VV": "Sky obscured"}
 OKTAS = {"FEW": 2, "SCT": 4, "BKN": 6, "OVC": 8, "OVX": 8, "VV": 8}
 
 WX_WORDS = {"RA": "rain", "DZ": "drizzle", "SN": "snow", "SG": "snow grains", "PL": "ice pellets", "GR": "hail",

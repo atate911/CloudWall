@@ -145,7 +145,7 @@ class TFRs:
         features = (self.fetch_json(SHAPES, timeout=30) or {}).get("features") or []
         listed = {((f.get("properties") or {}).get("NOTAM_KEY") or "").split("-")[0] for f in features}
         if features:
-            self.details = {nid: d for nid, d in self.details.items() if nid in listed}
+            self.details = {nid: d for nid, d in list(self.details.items()) if nid in listed}
         return features
 
     def near(self, features, home, radius_nm=30, now=None):

@@ -24,9 +24,9 @@ class Sampler(threading.Thread):
         self.up = [None] * len(feeds)                  # None = unknown, True/False = last state
         self.buffer = []
         self.live = []                                 # latest compact aircraft list (for /api/live)
+        self.live_by_feed = [[] for _ in feeds]
         self.live_time = 0.0
         self.counters = Counter()                      # lifetime counters for /api/stats
-        self.recent_mode_s = 0
         self.last_flush = time.time()
         self.last_hourly = time.time()
 
@@ -45,7 +45,7 @@ class Sampler(threading.Thread):
     # ------------------------------------------------------------------------------------------
     def poll_once(self):
         """One poll of every feed. Public so tests can drive it."""
-        live = []
+        fresh = False
         for i, feed in enumerate(self.feeds):
             try:
                 snap = feed.aircraft()
@@ -53,6 +53,7 @@ class Sampler(threading.Thread):
                 if self.up[i] is not False:
                     log.warning("[%s] live feed unavailable (%s); will keep retrying", feed.name, e)
                 self.up[i] = False
+                self.live_by_feed[i] = []
                 continue
             if self.up[i] is False:
                 log.info("[%s] live feed is back", feed.name)
@@ -62,7 +63,7 @@ class Sampler(threading.Thread):
                 continue                                # same snapshot as last poll
             self.last_now[i] = now
             flt = self.filters[i]
-            new = []
+            new, live, fresh = [], [], True
             for ac in snap.get("aircraft", ()):
                 if ac.get("type") == "mode_s":
                     self.counters["mode_s_seen"] += 1
@@ -75,11 +76,15 @@ class Sampler(threading.Thread):
                 with self.lock:
                     self.buffer.extend(new)
                 self.counters["points_sampled"] += len(new)
+            self.live_by_feed[i] = live
             if len(flt.last) > 5000 or int(now) % 300 == 0:
                 flt.prune(now)
-        if live or any(u for u in self.up):
-            with self.lock:
-                self.live, self.live_time = live, time.time()
+        # (a poll that finds only the snapshot it already had leaves the list, and its time, as they were)
+        live = [entry for per_feed in self.live_by_feed for entry in per_feed]
+        with self.lock:
+            self.live = live
+            if fresh:
+                self.live_time = time.time()
 
     @staticmethod
     def _live_entry(ac, feed):

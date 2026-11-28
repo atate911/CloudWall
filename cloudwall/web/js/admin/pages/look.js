@@ -2,7 +2,7 @@
 // settings do (before the restart that makes them its own); quiet hours are an arc on a day's dial;
 // map styles are chosen by looking at the house's own map in each. The layers drawn on the radar
 // are switches with what each shows; the maps seldom changed and the downloads wait under shades.
-import { el, esc, S, sky, setting, value, num, TITLES } from "../core.js";
+import { el, S, sky, setting, value, num, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { tileAt } from "../map.js";
 import { head, pageTroubles } from "../parts.js";
@@ -141,7 +141,7 @@ export default {
     ]));
 
     page.append(group("Other maps", "", [
-      pictures("map", "route", { label: "Route map", cls: "styles small", options: STYLES.filter(([v]) => ["satellite", "light", "dark", "streets", "osm", "off"].includes(v)).map(([v, label, layer]) => ({ value: v, label, art: art(layer, 5, home) })),
+      pictures("map", "route", { label: "Route map", cls: "styles small", options: STYLES.filter(([v]) => ["satellite", "light", "dark", "streets", "osm", "off"].includes(v)).map(([v, label, layer]) => ({ value: v, label, art: art(layer, 6, home) })),
         says: () => "Behind the route on the flight card." }),
       pictures("map", "atc", { label: "ATC radar chart", cls: "styles small", options: STYLES.filter(([v]) => ["off", "ifr-low", "ifr-high", "sectional", "terminal"].includes(v)).map(([v, label, layer, z]) => ({ value: v, label: v === "off" ? "None" : label, art: art(layer, z, home) })),
         says: () => "Under the ATC-style radar; none is how a controller's screen looks." }),

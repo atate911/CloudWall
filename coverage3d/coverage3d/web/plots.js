@@ -1,5 +1,5 @@
 // 2D companion plots drawn on <canvas> (no chart library needed).
-import { altColor, radioHorizonNm, UNIT_NM, GROUND_COLOR, rgbCss } from "./util.js";
+import { radioHorizonNm, UNIT_NM, GROUND_COLOR, rgbCss } from "./util.js";
 
 function setup(canvas) {
   const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight || +canvas.getAttribute("height");

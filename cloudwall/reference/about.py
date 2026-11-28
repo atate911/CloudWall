@@ -72,7 +72,7 @@ def _file_problems(name, d):
             if k in v and (not isinstance(v[k], str) or not v[k].strip()):
                 say(f"variant {code}: {k} must be text")
         out += [f"{name}: variant {code}: {m}" for m in _part_problems(v)]
-    for code in types:
+    for code in ([] if out else types):          # (a file with a mistake in it can't be put together)
         e = _merge(d, code)
         if len(e["text"]) > MAX_PARAGRAPHS:
             say(f"{code}'s write-up has {len(e['text'])} paragraphs; keep it to {MAX_PARAGRAPHS}")

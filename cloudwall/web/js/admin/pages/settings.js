@@ -80,7 +80,6 @@ export default {
     page.redraw = async () => { const fresh = el(`<div class="page page-settings"></div>`); await this.draw(fresh); page.replaceWith(fresh); };
     const groups = byPage(), all = groups.flatMap(([, l]) => l);
     const mine = all.filter((st) => st.changed && !st.secret && st.default !== null && st.default !== undefined), wait = all.filter((st) => st.waiting);
-    const odd = (S.settings.strays || []).length + (S.settings.left_out || []).length;
     page.append(head(TITLES.settings, `Every setting with its value, its default where you've changed it, and what's waiting for a restart. ${S.settings.file ? `File: <code>${esc(S.settings.file)}</code>` : "Nothing saved yet: these are the defaults."}`));
 
     page.append(el(`<section class="setup-said"><h2>Setup</h2>${setup()}<p class="dim small">Underlined values open their setting.</p></section>`));

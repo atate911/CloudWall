@@ -59,18 +59,7 @@ def default_folder(cfg):
     return db.parent / "backups"
 
 
-def backup(config_path=None, to=None, say=print):
-    """Write a backup; returns its path."""
-    path = config.find(config_path)
-    cfg = config.load(config_path)
-    data, files = _files(cfg, path)
-    to_file = bool(to) and str(to).endswith(".tar.gz")          # a file named, or else a folder to put it in
-    folder = Path(to).parent if to_file else Path(to or default_folder(cfg))
-    folder.mkdir(parents=True, exist_ok=True)
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    out = Path(to) if to_file else folder / f"cloudwall-{socket.gethostname()}-{stamp}.tar.gz"
-    manifest = {"cloudwall": __version__, "made": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "host": socket.gethostname(),
-                "files": [{"what": what, "name": name, "from": str(p)} for what, p, name in files]}
+def _write(out, manifest, files, say):
     fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)      # it holds keys: the owner's alone
     with os.fdopen(fd, "wb") as raw, tarfile.open(fileobj=raw, mode="w:gz") as tar:
         body = json.dumps(manifest, indent=1).encode()
@@ -92,6 +81,26 @@ def backup(config_path=None, to=None, say=print):
             else:
                 tar.add(p, name)
             say(f"  {what}: {p}")
+
+
+def backup(config_path=None, to=None, say=print):
+    """Write a backup; returns its path."""
+    path = config.find(config_path)
+    cfg = config.load(config_path)
+    data, files = _files(cfg, path)
+    to_file = bool(to) and str(to).endswith(".tar.gz")          # a file named, or else a folder to put it in
+    folder = Path(to).parent if to_file else Path(to or default_folder(cfg))
+    folder.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    out = Path(to) if to_file else folder / f"cloudwall-{socket.gethostname()}-{stamp}.tar.gz"
+    manifest = {"cloudwall": __version__, "made": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "host": socket.gethostname(),
+                "files": [{"what": what, "name": name, "from": str(p)} for what, p, name in files]}
+    part = out.with_name(out.name + ".part")       # under its own name only once it is whole
+    try:
+        _write(part, manifest, files, say)
+        os.replace(part, out)
+    finally:
+        part.unlink(missing_ok=True)
     if not to_file:                    # a folder of them keeps the last few
         for old in sorted(folder.glob("cloudwall-*.tar.gz"))[:-KEEP]:
             old.unlink()

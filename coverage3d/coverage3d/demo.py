@@ -13,8 +13,6 @@ import time
 from . import geo
 from .filters import PointFilter
 
-HOURS = 24 * 7
-
 
 def range_model(brg, alt_ft, ant_ft, outside: bool):
     """Maximum distance (nm) this fake antenna hears at a bearing and altitude."""

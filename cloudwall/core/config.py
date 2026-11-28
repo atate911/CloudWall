@@ -1,6 +1,7 @@
 """Configuration: defaults overlaid with an optional TOML file."""
 import copy
 import logging
+import math
 import os
 import re
 import shutil
@@ -109,7 +110,8 @@ CHOICES = {
 }
 BETWEEN = {("map", "opacity"): (0, 1), ("kiosk", "range_nm"): (0, 30), ("map", "cache_mb"): (0, 10 ** 6),
            ("flightradar24", "safety_margin"): (0, 0.9), ("flightaware", "safety_margin"): (0, 0.9),
-           ("flightradar24", "billing_day"): (1, 28), ("flightaware", "billing_day"): (1, 28)}
+           ("flightradar24", "billing_day"): (1, 28), ("flightaware", "billing_day"): (1, 28),
+           ("home", "lat"): (-90, 90), ("home", "lon"): (-180, 180)}
 MORE_THAN_ZERO = {"tracking": ("radius_nm", "overhead_nm", "max_overhead_alt_ft", "poll_seconds", "idle_after_seconds")}
 
 
@@ -169,6 +171,8 @@ def check(section, values, problems=None):
         if not _fits(v, want):
             words = {bool: "true or false", str: "text in quotes", list: "a list", NUMBER: "a number"}.get(want, "text or a number")
             raise ValueError(f"[{section}] {key} must be {words}, not {v!r}")
+        if isinstance(v, float) and not math.isfinite(v):
+            raise ValueError(f"[{section}] {key} must be a number, not {v!r}")
         if key in MORE_THAN_ZERO.get(section, ()) and v <= 0:
             raise ValueError(f"[{section}] {key} must be more than 0, not {v!r}")
     for key, v in list(values.items()):
@@ -313,6 +317,18 @@ def _toml_value(v):
     raise ValueError(f"can't write {v!r} into the config")
 
 
+def _setting_end(lines, at, end):
+    """The last line of the setting that starts on line `at`: the same line, unless its value (a
+    list written over several lines) only closes further down, before line `end`."""
+    for stop in range(at, end):
+        try:
+            tomllib.loads("\n".join(lines[at:stop + 1]))
+            return stop
+        except tomllib.TOMLDecodeError:
+            pass
+    return at
+
+
 def write_setting(path, section, key, value):
     """Set `[section] key` in the config file at `path`, leaving every other line as it was: the
     setting's line replaced where there is one (its comment kept), added under [section] where
@@ -334,8 +350,9 @@ def write_setting(path, section, key, value):
         at = next((i for i in range(head + 1, end) if is_key.match(lines[i])), None)
         if at is not None:
             # a comment after the old value stays after the new one
-            m = re.match(r'^\s*[\w-]+\s*=\s*(?:"(?:[^"\\]|\\.)*"|[^#"]*?)(\s+#.*)?$', lines[at])
-            lines[at] = line + (m.group(1) or "" if m else "")
+            stop = _setting_end(lines, at, end)
+            m = re.match(r'^\s*[\w-]+\s*=\s*(?:"(?:[^"\\]|\\.)*"|[^#"]*?)(\s+#.*)?$', lines[at]) if stop == at else None
+            lines[at:stop + 1] = [line + (m.group(1) or "" if m else "")]
         else:
             # after the section's last setting, ahead of the comments and blank lines before the next one
             last = max((i for i in range(head, end) if lines[i].strip() and not lines[i].lstrip().startswith("#")), default=head)
@@ -403,9 +420,9 @@ def strays(path):
 
 
 def remove_setting(path, section, key):
-    """Take `[section] key` out of the settings file (the setting's own line; a heading left with
+    """Take `[section] key` out of the settings file (the setting's own lines; a heading left with
     nothing under it goes too). Checked as write_setting is: if the file wouldn't read as TOML, or
-    the setting is still there (a value over several lines), nothing is written."""
+    the setting is still there, nothing is written."""
     path = Path(path)
     lines = path.read_text().splitlines()
     head = next((i for i, l in enumerate(lines) if re.match(rf"^\s*\[{re.escape(section)}\]\s*(#.*)?$", l)), None)
@@ -415,8 +432,9 @@ def remove_setting(path, section, key):
     at = next((i for i in range(head + 1, end) if re.match(rf"^\s*{re.escape(key)}\s*=", lines[i])), None)
     if at is None:
         raise ValueError(f"[{section}] {key} isn't in {path}")
-    del lines[at]
-    end -= 1
+    stop = _setting_end(lines, at, end)
+    del lines[at:stop + 1]
+    end -= stop + 1 - at
     if not any(lines[i].strip() and not lines[i].lstrip().startswith("#") for i in range(head + 1, end)):
         del lines[head:end]                        # the heading, now with nothing under it
     new = "\n".join(lines).rstrip("\n") + "\n"

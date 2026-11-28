@@ -2,7 +2,7 @@
 // the house, the message rate, signal against noise), with the board's reading of those numbers in
 // words ("the gain looks right"); then its own live map and Coverage3D, as pages of this board; then
 // how it reaches this server. Without a receiver, the page is the way to connect one.
-import { el, esc, S, call, num, plural, ago, house, ownFeed, value, TITLES } from "../core.js";
+import { el, esc, S, call, num, ago, house, ownFeed, value, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { gauge, signalMeter, polar } from "../draw.js";
 import { head, pageTroubles, out, copyable } from "../parts.js";

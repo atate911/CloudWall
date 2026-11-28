@@ -1,8 +1,7 @@
 // Who can see it: two doors. The wall's, open to anyone who can reach it or only to those with its
 // private link (shown here, ready to copy); and this board's, locked by the owner's password. How
 // CloudWall is reached (its name, what it listens on) is set once, under a shade.
-import { el, esc, S, call, toast, value, button, TITLES } from "../core.js";
-import { icon } from "../icons.js";
+import { el, S, call, toast, value, button, TITLES } from "../core.js";
 import { head, pageTroubles, copyable } from "../parts.js";
 import { text, cards, stepper, group, line, advanced } from "../controls.js";
 

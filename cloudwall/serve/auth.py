@@ -19,6 +19,7 @@ import hashlib
 import ipaddress
 import secrets
 import socket
+import threading
 import time
 
 from ..core.keys import owner_file, password_matches
@@ -35,6 +36,7 @@ class Owner:
         self.cfg, self.store, self.clock = cfg, store, clock
         self.file = owner_file(cfg.get("_path"))
         self.failures = {}          # address -> [times of wrong passwords]
+        self.trying = threading.Lock()
         self.sessions = {}          # hashed token -> last used (with the store, kept across restarts too)
 
     def exists(self):
@@ -54,17 +56,19 @@ class Owner:
     def sign_in(self, password, address):
         """A session token, or raises ValueError with what to say."""
         now = self.clock()
-        recent = [t for t in self.failures.get(address, []) if now - t < TRIES_S]
-        if len(recent) >= TRIES:
-            raise ValueError(f"Too many wrong passwords: try again in {int(TRIES_S - (now - recent[0])) // 60 + 1} min")
         stored = self._stored()
-        if not stored:
-            raise ValueError("No owner password is set yet: set one at the machine with `sudo cloudwall owner`")
-        if not password_matches(password or "", stored):
+        with self.trying:        # each try counted before it is judged, so tries made at once can't slip past the limit
+            recent = [t for t in self.failures.get(address, []) if now - t < TRIES_S]
+            if len(recent) >= TRIES:
+                raise ValueError(f"Too many wrong passwords: try again in {int(TRIES_S - (now - recent[0])) // 60 + 1} min")
+            if not stored:
+                raise ValueError("No owner password is set yet: set one at the machine with `sudo cloudwall owner`")
             self.failures = {a: t for a, t in self.failures.items() if t and now - t[-1] < TRIES_S}   # (forget the old)
             self.failures[address] = recent + [now]
+        if not password_matches(password or "", stored):
             raise ValueError("That isn't the owner's password")
-        self.failures.pop(address, None)
+        with self.trying:
+            self.failures.pop(address, None)
         token = secrets.token_urlsafe(32)
         self._keep(self._hash(token), now)
         return token

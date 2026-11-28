@@ -44,8 +44,3 @@ class Incidents(Database):
                                    "ORDER BY started DESC LIMIT ?", (limit,)).fetchall()
         return [dict(r) for r in rows]
 
-    def counts(self, since):
-        """How often each problem started since then: {key: n}."""
-        with self.lock:
-            rows = self.db.execute("SELECT key, COUNT(*) n FROM incidents WHERE started >= ? GROUP BY key", (since,)).fetchall()
-        return {r["key"]: r["n"] for r in rows}

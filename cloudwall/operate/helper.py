@@ -32,7 +32,10 @@ def _zone(args):
     zone = str(args.get("zone") or "")
     if not re.fullmatch(r"[A-Za-z_]+(/[A-Za-z0-9_+-]+){0,2}", zone):
         raise ValueError("not a time zone name")
-    zoneinfo.ZoneInfo(zone)
+    try:
+        zoneinfo.ZoneInfo(zone)
+    except (KeyError, OSError):            # (ZoneInfoNotFoundError is a KeyError)
+        raise ValueError(f"{zone} isn't a time zone this machine knows") from None
     return zone
 
 

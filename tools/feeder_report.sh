@@ -343,4 +343,4 @@ print("\n(end of report)")
 PY
 echo
 echo "Saved to $OUT ($(wc -l <"$OUT") lines). Read it over, then paste it into the conversation."
-[ "$MODE" = full ] && echo "Too long to paste? sudo bash $0 --short gives the essentials only." 
+if [ "$MODE" = full ]; then echo "Too long to paste? sudo bash $0 --short gives the essentials only."; fi

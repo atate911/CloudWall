@@ -62,6 +62,7 @@ class Served(unittest.TestCase):
         srv.admin = Admin(cfg, places, store=self.store)
         threading.Thread(target=srv.serve_forever, daemon=True).start()
         self.addCleanup(srv.shutdown)
+        self.addCleanup(srv.server_close)
         self.base = f"http://127.0.0.1:{srv.server_address[1]}"
         self.cookie = None
         return srv
@@ -217,6 +218,23 @@ class AdminTest(Served):
             with urllib.request.urlopen(f"{self.base}/k/tafo-kemi-luza-nobe/{page}/", timeout=5) as r:
                 self.assertEqual(r.url, f"{self.base}/k/tafo-kemi-luza-nobe/{page}")    # followed to here
                 self.assertIn(b"CloudWall", r.read())
+
+
+class SavingTest(Served):
+    def test_a_setting_with_no_default_can_be_taken_back_out(self):
+        self.serve()
+        self.assertEqual(self.call("/api/admin/settings", {"section": "home", "key": "elevation_ft", "value": 120})[0], 200)
+        self.assertIn("elevation_ft", self.cfg_path.read_text())
+        code, got = self.call("/api/admin/settings", {"section": "home", "key": "elevation_ft", "value": None})
+        self.assertEqual((code, got.get("restart")), (200, True))
+        self.assertNotIn("elevation_ft", self.cfg_path.read_text())
+
+    def test_a_request_that_goes_wrong_is_still_answered(self):
+        self.serve()
+        code, got = self.call("/api/admin/fix", {"code": "clock.timezone", "value": "Mars/Phobos"})
+        self.assertEqual(code, 400)
+        self.assertIn("time zone", got["error"])
+        self.assertEqual(self.call("/" + "x" * 5000)[0], 404)             # a name too long to be a file
 
 
 class BoardPagesTest(Served):
@@ -414,6 +432,7 @@ class ReceiverTest(AdminTest):
         rx = ThreadingHTTPServer(("127.0.0.1", 0), Receiver)
         threading.Thread(target=rx.serve_forever, daemon=True).start()
         self.addCleanup(rx.shutdown)
+        self.addCleanup(rx.server_close)
         port = rx.server_address[1]
         with open(self.cfg_path, "a") as f:
             f.write(f'[receiver]\nurl = "http://127.0.0.1:{port}"\ncoverage_url = "http://127.0.0.1:{port}"\nhome_url = "http://192.168.3.3"\n')

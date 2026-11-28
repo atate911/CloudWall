@@ -283,5 +283,5 @@ case "$cmd" in
   cloudwall) edit_config add;;
   cloudwall-remove) edit_config remove;;
   remove) cmd_remove;;
-  *) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 1;;
+  *) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 1;;
 esac

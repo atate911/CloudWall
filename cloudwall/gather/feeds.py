@@ -114,6 +114,8 @@ class Feeds:
             url = self.urls[i].format(lat=f"{lat:.4f}", lon=f"{lon:.4f}", radius=int(radius_nm))
             try:
                 data = get_json(url, timeout=8)
+                if not isinstance(data, dict):     # a 404, or JSON that isn't a feed's: no answer at all
+                    raise ValueError("no aircraft list in its answer")
             except Exception as e:
                 if not self.quiet:
                     log.warning("feed %s failed: %s", self._host(url), e)

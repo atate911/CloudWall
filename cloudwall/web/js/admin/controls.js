@@ -308,6 +308,9 @@ export function secret(section, key, opt = {}) {
 // how far one press of a stepper moves a number, by its unit
 const STEP = { nm: 0.5, ft: 500, s: 5, share: 0.05, MB: 250, credits: 1000, lookups: 100, "°": 0.001, credits_day: 10 };
 
+// numbers with no range of their own that go below zero (the rest are counts and sizes)
+const MAY_BE_NEGATIVE = new Set(["home.elevation_ft"]);
+
 /** Whatever control suits a setting's kind, for the list of every setting. */
 export function any(section, key, opt = {}) {
   const s = setting(section, key);
@@ -315,7 +318,7 @@ export function any(section, key, opt = {}) {
   if (s.secret) return secret(section, key, opt);
   if (s.kind === "bool") return toggle(section, key, opt);
   if (s.kind === "choice") return s.choices.length <= 4 ? segmented(section, key, opt) : select(section, key, opt);
-  if (s.kind === "number") return stepper(section, key, { step: STEP[s.unit] || 1, min: s.range?.[0] ?? 0, max: s.range?.[1], ...opt });
+  if (s.kind === "number") return stepper(section, key, { step: STEP[s.unit] || 1, min: s.range?.[0] ?? (MAY_BE_NEGATIVE.has(`${section}.${key}`) ? -Infinity : 0), max: s.range?.[1], ...opt });
   if (s.kind === "list") return listText(section, key, opt);
   return text(section, key, opt);
 }

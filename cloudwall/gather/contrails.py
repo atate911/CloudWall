@@ -54,7 +54,7 @@ def outlook(levels):
         words = f"Long-lasting contrails likely from {fl(lasting[0])} to {fl(lasting[1])}" if lasting[0] != lasting[1] else f"Long-lasting contrails likely near {fl(lasting[0])}"
     elif short:
         words = f"Short-lived contrails above {fl(short[0])}; the air is too dry for them to linger"
-    elif all(l["temp_c"] > l["threshold_c"] for l in levels):
+    elif levels and all(l["temp_c"] > l["threshold_c"] for l in levels):
         words = "No contrails: the air aloft is too warm"
     else:
         words = "No contrails expected"

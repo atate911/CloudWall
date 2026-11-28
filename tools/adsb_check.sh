@@ -19,8 +19,8 @@ SAMPLE=15
 URL=""
 while [ $# -gt 0 ]; do
   case "$1" in
-    --sample) SAMPLE="${2:-15}"; shift 2 ;;
-    --url)    URL="${2:-}"; shift 2 ;;
+    --sample) SAMPLE="${2:-15}"; shift; [ $# -gt 0 ] && shift ;;
+    --url)    URL="${2:-}"; shift; [ $# -gt 0 ] && shift ;;
     -h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "unknown option: $1 (try --help)"; exit 2 ;;
   esac

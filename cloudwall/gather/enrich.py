@@ -30,7 +30,7 @@ def fetch_route(callsign):
     data = get_json(f"https://api.adsbdb.com/v0/callsign/{callsign}")
     fr = (data or {}).get("response")
     fr = fr.get("flightroute") if isinstance(fr, dict) else None
-    if not fr:
+    if not fr or not fr.get("origin") or not fr.get("destination"):
         return None
     airline = fr.get("airline") or {}
     return {"flight": fr.get("callsign_iata") or callsign, "airline": airline.get("name"),
