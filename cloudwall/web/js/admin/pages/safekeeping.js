@@ -1,7 +1,5 @@
-// Safekeeping: what can't be downloaded again (the logbooks, the settings, the keys) and copies of
-// it. The picture is when it was last copied and the copies along a month, with the one action
-// that matters most a button beside it; the disk as one bar of what fills it; where things are kept
-// waits under a shade.
+// Safekeeping page: backups of what can't be downloaded again (logbooks, settings, keys), the
+// disk as one bar, and where things are kept.
 import { el, esc, S, call, toast, value, button, bytes, ago, when, day, plural, loadOverview, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { diskBar } from "../draw.js";

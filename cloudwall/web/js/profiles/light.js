@@ -114,11 +114,7 @@ function scale(f, k, more = {}) {
 }
 
 // ---------- Cessna 172 ----------
-// Reference: Cessna 172G Skyhawk "Principal Dimensions" 3-view (Wikimedia Commons,
-// File:Cessna_172G_Skyhawk_3-view_line_drawing.png, from the Wikipedia article Cessna 172),
-// side view measured and scaled to the 172S overall length 8.28 m (types.csv 8.3). The 172G
-// (1966) already has the swept fin with dorsal fin and the Omni-Vision rear window; the
-// later Skyhawks differ in details below display size. z = 0 is the belly at the firewall.
+// Reference: Cessna 172G Skyhawk "Principal Dimensions" 3-view (Commons), scaled to the 172S overall length 8.28 m
 F.c172 = {
   kind: "piston", L0: 8.3, over: 0, D: 1, W: 1.0,
   body: [
@@ -141,9 +137,7 @@ F.c172 = {
   ],
   frame: 0.04,
   wing: { le: 2.02, root: 0.55, span: 11.0, cr: 1.645, kink: [0.4, 1.645], ct: 1.1, sweep: 1, dih: 1.73, z: 1.36, t: [0.13, 0.12] },
-  // the wing as the 3-view draws it: the outline over the cabin (the tip's upper surface and leading
-  // edge, the trailing edge running down the dihedral to the root), the tip's lower surface, and the
-  // fairing box over the root trailing edge
+  // the wing as the 3-view draws it: the outline over the cabin, the tip's lower surface
   wingSide: [
     ["wing", [[2.034, 1.296, "c"], [2.024, 1.311], [2.021, 1.347], [2.04, 1.373], [2.047, 1.406], [2.112, 1.474], [2.154, 1.52], [2.2, 1.549],
       [2.356, 1.575], [2.531, 1.585], [2.808, 1.585], [2.938, 1.578], [3.156, 1.559], [3.273, 1.542, "l"], [3.68, 1.354, "cl"], [3.686, 1.296, "cl"]]],
@@ -177,9 +171,7 @@ F.c172 = {
         [1.051, -0.214], [1.129, -0.185], [1.334, -0.185], [1.549, -0.244], [1.725, -0.312], [1.739, -0.346], [1.656, -0.419], [1.549, -0.449],
         [1.373, -0.462], [1.08, -0.449], [0.944, -0.415], [0.866, -0.366]] } },
     ],
-    // as the 3-view draws them: the cowl's inlet lip and the small hook on the lower cowl, the access
-    // door (its top edge is the cowl line), the strut-foot fairing, the step on the main leg, the nose
-    // leg's torque link, the fuel filler on the wing, the optional fin-tip beacon, the tail tie-down ring
+    // as the 3-view draws them: the cowl's inlet lip and the small hook on the lower cowl, the access door
     draw: [({ sk }) => {
       sk.smooth("hl", [[0.436, 0.703], [0.485, 0.635], [0.5, 0.576], [0.475, 0.527], [0.431, 0.498]], false);
       sk.smooth("hl", [[0.768, 0.171], [0.802, 0.205], [0.841, 0.186], [0.846, 0.137], [0.807, 0.113]], false);
@@ -197,10 +189,7 @@ F.c172 = {
 };
 
 // ---------- Cessna 150 / 152 ----------
-// Reference: Cessna 150F "Principal Dimensions" 3-view (Wikimedia Commons,
-// File:Cessna_150F_3-view_line_drawing.png, Wikipedia article Cessna 150), side view drawn
-// with the bullet spinner (23 ft 9 in), scaled to 7.3 m (types.csv; 152 7.34 m, 150M 7.29 m).
-// The 1966 150F introduced the swept fin; the Omni-Vision rear window came in 1964.
+// Reference: Cessna 150F "Principal Dimensions" 3-view (Commons), side view drawn with the bullet spinner, scaled to 7.3 m
 F.c150 = {
   kind: "piston", L0: 7.3, over: 0, D: 1, W: 0.95,
   body: [
@@ -220,9 +209,7 @@ F.c150 = {
   ],
   frame: 0.035,
   wing: { le: 1.69, root: 0.5, span: 10.17, cr: 1.63, kink: [0.42, 1.63], ct: 1.12, sweep: 1, dih: 1, z: 1.155, t: [0.13, 0.12] },
-  // the wing as the 3-view draws it: the outline over the cabin (the tip's upper surface and leading
-  // edge, the trailing edge running down to the root), the tip's lower surface, a line inside the
-  // trailing edge, and the fairing over the root trailing edge
+  // the wing as the 3-view draws it: the outline over the cabin, the tip's lower surface, a line inside the trailing edge
   wingSide: [
     ["wing", [[1.682, 1.085, "c"], [1.679, 1.156], [1.685, 1.189], [1.703, 1.207], [1.736, 1.246], [1.77, 1.264], [1.784, 1.279], [1.817, 1.303],
       [1.874, 1.321], [1.983, 1.334], [2.257, 1.346], [2.438, 1.343], [2.561, 1.334], [2.793, 1.303], [2.968, 1.265], [3.04, 1.237],
@@ -238,9 +225,7 @@ F.c150 = {
   parts: {
     // cabin door with its handle
     doors: [rect(1.95, 2.67, 0.27, 1.05, 0.07), rect(2.391, 2.464, 0.585, 0.616, 0.015)],
-    // rudder hinge; the nose cap, cowl split and the cowling's aft seam; dorsal fin to fin joint; the
-    // fin cap's joint; the cabin roof's edge under the wing; the frame over the rear window; the strut's
-    // top fitting
+    // rudder hinge; the nose cap, cowl split and the cowling's aft seam; dorsal fin to fin joint; the fin cap's joint
     lines: [[[6.39, 0.5], [6.39, 0.8], [6.9, 1.74], [6.76, 1.85], [6.71, 1.95]],
       [[0.544, 0.719], [0.55, 0.568], [0.55, 0.188], [0.546, 0.152]], [[0.553, 0.525], [0.969, 0.469], [1.038, 0.46], [1.201, 0.444]],
       [[1.206, 0.8], [1.21, 0.0]], [[5.913, 1.052], [5.922, 0.83]],
@@ -275,10 +260,7 @@ F.c150 = {
 };
 
 // ---------- Cessna 182 Skylane ----------
-// Reference: Cessna 182M Skylane "Principal Dimensions" 3-view (Wikimedia Commons,
-// File:Cessna_182M_Skylane_3-view_line_drawing.png, Wikipedia article Cessna 182 Skylane),
-// side view scaled from the 182M's 28 ft 0.5 in to the 182T's 8.84 m (types.csv 8.8). Larger
-// and deeper than the 172, with the dorsal fin blending into the fin and a taller fin.
+// Reference: Cessna 182M Skylane "Principal Dimensions" 3-view (Commons)
 F.c182 = {
   kind: "piston", L0: 8.8, over: 0, D: 1, W: 1.07,
   body: [
@@ -299,9 +281,7 @@ F.c182 = {
   ],
   frame: 0.04,
   wing: { le: 2.03, root: 0.58, span: 11.0, cr: 1.66, kink: [0.4, 1.66], ct: 1.12, sweep: 1, dih: 1.73, z: 1.44, t: [0.13, 0.12] },
-  // the wing as the 3-view draws it: the outline over the cabin (the tip's upper surface and leading
-  // edge, the trailing edge running down to the root), the tip's lower surface and the step in its
-  // upper line, a line inside the trailing edge, and the fairing box over the root trailing edge
+  // the wing as the 3-view draws it: the outline over the cabin, the tip's lower surface and the step in its upper line
   wingSide: [
     ["wing", [[2.039, 1.37, "c"], [2.034, 1.427], [2.044, 1.451], [2.136, 1.547], [2.205, 1.611], [2.241, 1.625], [2.353, 1.647], [2.464, 1.655],
       [2.718, 1.657], [3.12, 1.63], [3.163, 1.606], [3.314, 1.61], [3.37, 1.59, "l"], [3.746, 1.412, "cl"], [3.755, 1.37, "cl"]]],
@@ -317,9 +297,7 @@ F.c182 = {
     doors: [rect(2.2, 3.15, 0.2, 1.3, 0.07), rect(2.297, 2.394, 0.796, 0.843, 0.02), rect(2.977, 3.068, 0.783, 0.809, 0.013),
       [[3.932, 0.905, "l"], [4.25, 0.907], [4.309, 0.851, "l"], [4.313, 0.414], [4.264, 0.345, "l"], [3.975, 0.309], [3.899, 0.361, "l"], [3.885, 0.848]],
       [[1.17, 0.737, "c"], [1.166, 0.811], [1.18, 0.853], [1.227, 0.878], [1.275, 0.854], [1.286, 0.812], [1.286, 0.743, "c"]]],
-    // rudder hinge; the nose cap, cowl split and the cowling's aft seam; the access door's latch and the
-    // three chevrons on the lower cowl; the cabin roof's edge under the wing and the frames round the
-    // rear windows
+    // rudder hinge; the nose cap, cowl split and the cowling's aft seam
     lines: [[[7.5, 1.17], [8.33, 2.58], [8.17, 2.59], [8.16, 2.71]],
       [[0.594, 0.889], [0.605, 0.751], [0.628, 0.532], [0.651, 0.232], [0.647, 0.204]], [[0.62, 0.677], [1.4, 0.678]],
       [[1.408, 1.052], [1.41, 0.763], [1.403, 0.678], [1.411, 0.045]], [[1.227, 0.848], [1.228, 0.801]],
@@ -336,9 +314,7 @@ F.c182 = {
         [1.028, -0.259], [1.158, -0.206], [1.242, -0.191], [1.316, -0.197], [1.483, -0.22], [1.642, -0.248], [1.687, -0.277], [1.724, -0.319],
         [1.727, -0.354, "c"], [1.646, -0.422], [1.508, -0.458], [1.273, -0.486], [1.026, -0.482], [0.909, -0.437]] } },
     ],
-    // as the 3-view draws them: the baggage door's handle, the step on the strut and the strut-foot
-    // fairing, the step on the main leg, the nose leg's torque link, the optional fin-tip beacon and the
-    // tail tie-down ring
+    // as the 3-view draws them: the baggage door's handle, the step on the strut and the strut-foot fairing
     draw: [({ sk }) => {
       sk.ellipse("tire", 4.231, 0.618, 0.016, 0.016);
       sk.poly("strut", [[2.231, 0.399], [2.284, 0.399], [2.284, 0.341], [2.231, 0.341]]);
@@ -353,10 +329,7 @@ F.c182 = {
 };
 
 // ---------- Cessna 206 Stationair ----------
-// Reference: Cessna TU206A Super Skywagon "Principal Dimensions" 3-view (Wikimedia Commons,
-// File:Cessna_TU206A_Super_Skywagon_3-view_line_drawing.png, Wikipedia article Cessna 206),
-// a right-side view showing the double cargo doors aft of the wing; scaled from 27 ft 9 in to
-// the T206H's 8.61 m (types.csv 8.6). Long nose, no rear window, the big double door.
+// Reference: Cessna TU206A Super Skywagon "Principal Dimensions" 3-view, scaled from 27 ft 9 in to the T206H's 8.61 m
 F.c206 = {
   kind: "piston", L0: 8.6, over: 0, D: 1, W: 1.1,
   body: [
@@ -378,9 +351,7 @@ F.c206 = {
   ],
   frame: 0.04,
   wing: { le: 2.07, root: 0.58, span: 11.0, cr: 1.66, kink: [0.4, 1.66], ct: 1.12, sweep: 1, dih: 1.73, z: 1.35, t: [0.13, 0.12] },
-  // the wing as the 3-view draws it: the outline over the cabin (the root fairing's front and the
-  // leading edge, the tip's upper surface, the trailing edge running down to the root), the tip's lower
-  // surface, and the fairing box over the root trailing edge
+  // the wing as the 3-view draws it: the outline over the cabin, the tip's lower surface
   wingSide: [
     ["wing", [[1.872, 1.31, "c"], [1.983, 1.349], [2.035, 1.364], [2.119, 1.462], [2.161, 1.536], [2.232, 1.582], [2.29, 1.597], [2.435, 1.611],
       [2.564, 1.611], [2.793, 1.599], [3.323, 1.538], [3.408, 1.51], [3.475, 1.478, "l"], [3.705, 1.369, "cl"], [3.721, 1.31, "cl"]]],
@@ -417,9 +388,7 @@ F.c206 = {
         [1.041, -0.246], [1.245, -0.199], [1.326, -0.201], [1.4, -0.23], [1.544, -0.268], [1.727, -0.341], [1.737, -0.365, "c"], [1.674, -0.423],
         [1.548, -0.465], [1.39, -0.487], [1.19, -0.473], [1.021, -0.468], [0.916, -0.434]] } },
     ],
-    // as the 3-view draws them: the cowl flap under the cowling, the fuel filler on the wing, the strut's
-    // top fitting and its foot fairing, the cargo door's handle, the step on the main leg, the nose leg's
-    // torque link, the optional fin-tip beacon and the tail tie-down ring
+    // as the 3-view draws them: the cowl flap under the cowling, the fuel filler on the wing
     draw: [({ sk }) => {
       sk.smooth("hl", [[1.118, 0.025, "c"], [1.111, 0.035], [1.11, 0.07], [1.128, 0.085, "c"], [1.275, 0.047], [1.381, 0.033], [1.395, 0.023], [1.392, -0.002]], false);
       sk.ellipse("hl", 2.62, 1.517, 0.037, 0.021);
@@ -438,11 +407,7 @@ F.c206 = {
 };
 
 // ---------- Cessna 208 Caravan ----------
-// Reference: "Caravan three views" (Wikimedia Commons, File:Caravan_three_views.png, Wikipedia
-// article Cessna 208 Caravan): the 208 side view (11.46 m, types.csv 11.5) for the airframe and
-// the 208B Super Cargomaster view for the belly cargo pod most Caravans carry (FedEx feeders).
-// Long PT6A cowl, high strut-braced wing, fixed gear on a fuselage sponson, airstair door aft.
-// The pod is part of the outline; a line marks where it meets the belly.
+// Reference: "Caravan three views" (Commons): the 208 side view
 F.c208 = {
   kind: "turboprop", L0: 11.5, over: 0, D: 1, W: 1.6,
   body: [
@@ -513,13 +478,7 @@ F.c208b = stretch(F.c208, 7.5, 1.17);
 F.c208b.glass = [...F.c208b.glass, [[7.57, 1.04], [7.57, 1.4], [8.07, 1.4], [8.07, 1.04]]];
 
 // ---------- Piper PA-28 Cherokee / Warrior / Archer / Dakota ----------
-// Reference: Piper PA-28-181 Cherokee Archer II 3-view (Wikimedia Commons,
-// File:Piper_PA-28-181_Cherokee_Archer_II_3-view_line_drawing.png, Wikipedia article Piper
-// PA-28 Cherokee), side view 23 ft 9.6 in, scaled to 7.3 m (types.csv P28A). Low tapered
-// "Warrior" wing with 7 degrees of dihedral (the tip rides well up the side view), long sloping
-// windscreen, curved dorsal fillet, all-moving stabilator low on the tail cone, one door on the
-// right over the wing, fixed gear with spats. P28B (Dakota / Turbo Dakota, 7.54 m) has the
-// longer cowl of the O-540: the same airframe with 0.2 m added ahead of the firewall.
+// Reference: Piper PA-28-181 Cherokee Archer II 3-view (Commons), side view 23 ft 9.6 in, scaled to 7.3 m (types.csv P28A)
 F.pa28 = {
   kind: "piston", L0: 7.3, over: 0, D: 1, W: 1.1,
   body: [
@@ -542,9 +501,7 @@ F.pa28 = {
   wing: { le: 1.82, root: 0.6, span: 10.67, cr: 1.75, kink: [0.42, 1.55], ct: 1.07, sweep: 5, dih: 7, z: 0.06, t: [0.15, 0.12] },
   eng: { kind: "none", nose: { s: 0.33, z: 0.48, d: 1.93, blades: 2 } },
   stab: { le: 0.82, z: 0.61, span: 3.92, root: 0.25, cr: 0.78, ct: 0.76, sweep: 0, dih: 0, thick: 0.1 },
-  // the wing as the 3-view draws it: the tip aerofoil high on the dihedral, its leading and trailing
-  // edges running down to the root, the root aerofoil with its forward fillet; inside, the tip's lower
-  // surface, the root's upper line along the fuselage side and the end of the flap
+  // the wing as the 3-view draws it: the tip aerofoil high on the dihedral
   wingSide: [
     ["wing", [[1.802, 0.107, "c"], [1.947, 0.141], [2.085, 0.162, "l"], [2.085, 0.307, "l"], [2.321, 0.665], [2.445, 0.72], [2.721, 0.74],
       [2.997, 0.712], [3.204, 0.664], [3.39, 0.608, "cl"], [3.652, 0.291, "cl"], [3.665, -0.02, "cl"], [2.306, -0.039], [2.03, -0.011], [1.857, 0.024]]],
@@ -572,13 +529,7 @@ F.pa28 = {
 F.pa28b = stretch(F.pa28, 0.9, 0.2);
 
 // ---------- Piper PA-46 Malibu / Mirage / M350, Meridian / M500 / M600 ----------
-// Reference: Piper PA-46-310P Malibu 3-view (Wikimedia Commons,
-// File:Piper_PA-46-310P_Malibu_3-view_line_drawing.png, Wikipedia article Piper PA-46), side
-// view 28.4 ft (8.66 m) measured, drawn scaled to the M350's 8.81 m (types.csv 8.8). Pressurised
-// cabin with small separate windows, the triangular pilot's window behind the windscreen,
-// straight-topped fuselage running into a big curved fin fillet, the rear airstair door (on the
-// left side; shown), low wing, retractable gear (drawn retracted). P46T (Meridian, M500, M600)
-// adds a longer PT6A cowl (9.0 m) with exhaust stacks and a four-blade propeller.
+// Reference: Piper PA-46-310P Malibu 3-view (Commons), side view 28.4 ft (8.66 m) measured
 const PA46 = {
   kind: "piston", L0: 8.66, over: 0, D: 1, W: 1.3,
   body: [
@@ -636,12 +587,7 @@ F.p46t.parts = { ...F.p46t.parts, shapes: F.p46t.parts.shapes.filter(([cls]) => 
   draw: [(k) => k.sk.ellipse("inlet", 1.05, 0.5, 0.11, 0.08)] };
 
 // ---------- Beechcraft A36 / G36 Bonanza ----------
-// Reference: Beechcraft A36 Bonanza 3-view (Wikimedia Commons,
-// File:Beechcraft_A36_Bonanza_3-view_line_drawing.png, Wikipedia article Beechcraft Bonanza),
-// side view 26 ft 8 in measured; the 1984-on A36 and G36 are 27 ft 6 in (types.csv 8.4), the
-// extra length drawn in the cowl. The straight conventional fin of the 33/36 (not the V-tail
-// 35), right-side front door and double "club" doors aft, low wing with 6.5 degrees dihedral,
-// retractable gear (drawn retracted).
+// Reference: Beechcraft A36 Bonanza 3-view (Commons), side view 26 ft 8 in measured; the 1984-on A36 and G36 are 27 ft 6 in
 const BE36 = {
   kind: "piston", L0: 8.13, over: 0, D: 1, W: 1.2,
   body: [
@@ -702,16 +648,7 @@ const BE36 = {
 F.be36 = stretch(BE36, 1.2, 0.27);
 
 // ---------- Beechcraft Baron 58 ----------
-// Reference: Beechcraft D55 Baron 3-view (Wikimedia Commons,
-// File:Beechcraft_D55_Baron_3-view_line_drawing.png, Wikipedia article Beechcraft Baron),
-// side view 28.98 ft (8.83 m) measured. The Baron 58 (9.09 m, types.csv 9.1) is the 55 with the
-// cabin lengthened 10 in by moving the windscreen, panel and front seats forward, and the
-// double "club" doors aft on the right: drawn as the 55 with a 0.26 m plug ahead of the wing
-// and the 58's window and door layout. Pointed baggage nose, wing-mounted IO-550 nacelles
-// with three-blade props, straight swept fin, retractable gear (drawn retracted).
-// From the D55 3-view, drawn over the renderer's nacelle: the cowl's front ring, upper cowl panel
-// (a double seam) and its aft seam, the cowl split, the oil-cooler bump on top, the cowl outlet's
-// lip and the exhaust stack below it.
+// Reference: Beechcraft D55 Baron 3-view (Commons), side view 28.98 ft (8.83 m) measured
 const BE55_NACELLE = [
   ["hl", [[1.242, 0.708], [1.241, 0.333]], false], ["hl", [[1.317, 0.698], [1.316, 0.352]], false],
   ["hl", [[1.336, 0.698], [2.36, 0.693]], false], ["hl", [[1.336, 0.67], [2.36, 0.665]], false],
@@ -786,12 +723,7 @@ F.be58.parts = {
 }
 
 // ---------- Mooney M20 ----------
-// Reference: Mooney M20G Statesman 3-view (Wikimedia Commons,
-// File:Mooney_M20G_Statesman_3-view_line_drawing.png, Wikipedia article Mooney M20), side
-// view 24 ft (7.32 m) measured; the M20J (types.csv M20P 7.5) has 0.2 m more cowl and spinner.
-// The Mooney signature: the fin's leading edge stands straight up while the rudder's
-// trailing edge and hinge lean aft at the bottom, so the tail looks swept forward. Low wing,
-// short cabin with three side windows, door on the right, retractable gear (drawn retracted).
+// Reference: Mooney M20G Statesman 3-view (Commons), side view 24 ft (7.32 m) measured; the M20J
 const M20 = {
   kind: "piston", L0: 7.32, over: 0, D: 1, W: 1.1,
   body: [
@@ -828,9 +760,7 @@ const M20 = {
     // the right door; the baggage door
     doors: [[[1.84, 0.5, "c"], [1.84, 0.82, "c"], [1.97, 1.2, "c"], [2.53, 1.22, "c"], [2.53, 0.5, "c"]],
       rect(3.953, 4.463, 0.225, 0.657, 0.05)],
-    // rudder hinge and the fin cap's joint; from the 3-view: the lower cowl's inlet lip, the panel
-    // ahead of the windscreen; the dorsal fin's joint with the fuselage top and the fin's root; the
-    // two seams below the tailplane, and the small hook under the tail cone
+    // rudder hinge and the fin cap's joint; from the 3-view: the lower cowl's inlet lip, the panel ahead of the windscreen
     lines: [[[6.4, 1.93], [7.08, 0.2]], [[6.219, 1.969], [6.248, 1.929], [6.375, 1.909]],
       [[0.493, 0.485], [0.551, 0.406], [0.658, 0.318], [0.824, 0.249], [1.049, 0.199]],
       [[1.355, 0.951], [1.354, 0.775], [1.442, 0.774]], [[1.511, 0.764], [1.579, 0.764], [1.58, 0.94]],
@@ -843,12 +773,7 @@ const M20 = {
 F.m20 = stretch(M20, 0.9, 0.18);
 
 // ---------- Boeing-Stearman Model 75 (PT-17 / N2S Kaydet) ----------
-// Reference: U.S. Navy N2S-3 general arrangement diagram (Wikimedia Commons,
-// File:Boeing_N2S-3_3-view_line_drawing.png, Wikipedia article Boeing-Stearman Model 75),
-// side view 25 ft (types.csv 7.6) drawn level. Biplane: the lower wing is the renderer's wing,
-// the upper wing (staggered 0.69 m forward, 3 degrees incidence), cabane and N interplane
-// struts are drawn last; uncowled radial engine with exposed cylinder heads; tandem open
-// cockpits; rounded fin and rudder with braced tailplane; tailwheel undercarriage.
+// Reference: U.S. Navy N2S-3 general arrangement diagram (Commons), side view 25 ft (types.csv 7.6) drawn level
 F.st75 = {
   kind: "piston", L0: 7.6, over: 0, D: 1, W: 0.85,
   body: [
@@ -907,13 +832,7 @@ F.st75 = {
 };
 
 // ---------- Diamond DA42 Twin Star ----------
-// Reference: Diamond DA-42 three-view silhouette (Wikimedia Commons,
-// File:Diamond_DA-42_three-view_silhouette.png, Wikipedia article Diamond DA42), side view
-// scaled to 8.6 m (types.csv; 8.56 m published), details checked against the side-on photo
-// File:Diamond_da42_twin_star_hb-sdm_riat_2010_arp.jpg. Lower confidence than the line
-// drawings (a small filled silhouette). Composite pod with a big bubble canopy, slim tail
-// boom, swept fin with a ventral extension and the T-tail on top, diesel nacelles slung
-// under the wing well ahead of it with three-blade props, retractable gear (retracted).
+// Reference: Diamond DA-42 three-view silhouette (Commons), side view scaled to 8.6 m (types.csv; 8.56 m published)
 F.da42 = {
   kind: "piston", L0: 8.6, over: 0, D: 1, W: 1.2,
   body: [
@@ -934,12 +853,7 @@ F.da42 = {
   wing: { le: 2.55, root: 0.6, span: 13.42, cr: 1.55, ct: 0.85, sweep: 1, dih: 5, z: -0.02, t: [0.15, 0.12] },
   eng: { kind: "prop", at: [0.164], fwd: 1.03, drop: 0.04, len: 2.7, dia: 0.6, prop: 1.9, blades: 3, spinner: 0.12, tailZ: 0.2 },
   stab: { le: 1.05, z: 1.535, span: 3.6, root: 0.1, cr: 1.0, ct: 0.75, sweep: 8, dih: 0, thick: 0.1 },
-  // Detail from the three-view of the DA 42 NG AFM (Doc. No. 7.01.15-E Rev. 1, section 1.7), whose side
-  // view the outline above matches to within 5 cm: the nose baggage door and its handle, the rudder
-  // hinge and its trim tab, the joint of the fin's root fillet, the seam where the boom runs under
-  // it, the ventral fin's root, the round opening on the nacelle's side, the frame post between the
-  // front canopy and the rear door's window, and the near wing's swept winglet, which stands in
-  // front of the cabin in a side view.
+  // Detail from the three-view of the DA 42 NG AFM, whose side view the outline above matches to within 5 cm
   parts: {
     doors: [[[0.54, 0.608, "c"], [0.542, 0.355], [0.581, 0.273], [0.671, 0.24], [1.096, 0.221], [1.169, 0.257], [1.197, 0.319],
       [1.228, 0.681, "c"]], rect(0.855, 1.015, 0.334, 0.364, 0.015)],
@@ -958,16 +872,7 @@ F.da42 = {
 };
 
 // ---------- Diamond DA40 Diamond Star ----------
-// Reference: Diamond DA 40 NG Airplane Flight Manual, Doc. 6.01.15-E (Rev. 0, 01-Apr-2010), section 1.7
-// "Three-view drawing" (page 1-18): the side view, turned upright, traced and scaled so the spinner
-// tip to the tailplane tip is the 8.1 m of types.csv (the AFM gives 8060 mm). z = 0 is the belly under
-// the wing. The DA40 was earlier drawn from a shortened DA42 outline, which missed this view by up to
-// 0.42 m at the tail; it is now its own family. From the AFM view: the spinner and the cowling with its
-// split line, aft seam, lower inlet lips, access door and the slot by the spinner; the canopy and the
-// rear window with their frames and the sill line; the wing root and flap as the side view shows them,
-// with the near winglet standing over the rear window; the swept fin with the fillet joint, the T-tail,
-// the rudder with its hinge and trim-tab notches, the ventral fin under the tail cone and its joint;
-// the fixed tricycle gear on its spring legs, with the wheel fairings.
+// Reference: Diamond DA 40 NG Airplane Flight Manual, Doc. 6.01.15-E (Rev. 0, 01-Apr-2010), section 1.7 "Three-view drawing"
 F.da40 = {
   kind: "piston", L0: 8.1, over: 0, D: 1, W: 1.15,
   body: [[0.0, 0.72, "c"], [0.069, 0.809], [0.098, 0.818], [0.137, 0.833], [0.172, 0.843], [0.24, 0.862], [0.309, 0.872], [0.392, 0.877, "c"],
@@ -1008,10 +913,7 @@ F.da40 = {
     // the cowling's access door and the slot by the spinner
     doors: [[[0.642, 0.711, "l"], [0.774, 0.706], [0.789, 0.691, "l"], [0.789, 0.598], [0.774, 0.583, "l"], [0.647, 0.588], [0.627, 0.603, "l"], [0.627, 0.691]],
       [[0.431, 0.72, "c"], [0.446, 0.72, "c"], [0.446, 0.637, "c"], [0.436, 0.617, "c"], [0.426, 0.627, "c"]]],
-    // the spinner's back plate; the cowl split line, the cowling's aft seam and the lower inlet's two lips;
-    // the windscreen's outer frame, the sill under the canopy, the frames between the canopy and the rear
-    // window and round the rear window; the fin fillet's joint, the ventral fin's joint, the rudder hinge
-    // with its two trim-tab notches, the rudder's lower and upper edges; the nose leg's fittings
+    // the spinner's back plate; the cowl split line, the cowling's aft seam and the lower inlet's two lips
     lines: [[[0.402, 0.862], [0.397, 0.72], [0.387, 0.544]],
       [[0.412, 0.568], [0.72, 0.549], [1.049, 0.529], [1.348, 0.515], [1.548, 0.515], [1.612, 0.534]],
       [[1.205, 0.51], [1.196, 0.343], [1.186, 0.196]],
@@ -1060,12 +962,7 @@ F.da40 = {
 };
 
 // ---------- Cirrus SR20 / SR22 ----------
-// No three-view reachable: measured from the near-side-on photo File:Cirrus_SR22_G3_Turbo_
-// Private_N918SE,_LUX_Luxembourg_(Findel),_Luxembourg_PP1373043529.jpg (Wikimedia Commons,
-// Wikipedia article Cirrus SR22), scaled to 7.9 m (types.csv; 7.92 m published). Lower
-// confidence (photo perspective). Composite fuselage with a long cowl and big windscreen,
-// gull-wing doors with large windows and the big fixed rear cabin window, the tall curved fin,
-// low wing, fixed gear with long spats and the canted nose leg. SR20 has the same airframe.
+// No three-view reachable: measured from a near-side-on photo (Commons), scaled to 7.9 m. Lower confidence
 F.sr22 = {
   kind: "piston", L0: 7.9, over: 0, D: 1, W: 1.27,
   body: [
@@ -1099,19 +996,7 @@ F.sr22 = {
 };
 
 // ---------- Pilatus PC-12 ----------
-// No three-view reachable: measured from the side-on photo File:Pilatus_PC-12-45,_Jetfly_
-// Aviation_JP532772.jpg (Wikimedia Commons, Wikipedia article Pilatus PC-12; left side,
-// mirrored), scaled to 14.4 m (types.csv). Lower confidence (photo). Single PT6A with the
-// exhaust stack low on the cowl and a four-blade prop, low wing with winglets, T-tail on a
-// swept fin with a long dorsal, ventral strakes under the tail cone, round cabin windows,
-// the airstair door behind the cockpit and the big cargo door aft (both on the left side;
-// shown as the type's signature), trailing-link gear retracted.
-// Windows, doors and detail follow the manufacturer's side view in Pilatus's "PC-12 PRO Just The
-// Facts" (2025), page 4 "Exterior View" (a 448 px rendering, about 3.4 cm a pixel, scaled by its
-// 14.40 m length; it fits the outline within a few cm at the nose, crown and fin). Against it the
-// photo-measured windscreen, cabin windows and doors sat 0.3-0.5 m too far forward and the windows
-// 0.1 m too low: they now follow the Pilatus view, as do the cowling seams, exhaust stack, vents,
-// dorsal antenna and rudder hinge.
+// No three-view reachable: measured from a side-on photo (Commons), scaled to 14.4 m; detail from Pilatus's side view
 // a rounded-rectangle pane (glass corners are sharp unless flagged smooth)
 const pane12 = (...a) => rect(...a).map((p) => (p[2] ? p : [p[0], p[1], ""]));
 F.pc12 = {
@@ -1152,16 +1037,7 @@ F.pc12 = {
 };
 
 // ---------- Daher TBM 900 series ----------
-// Reference: Daher TBM 900 Pilot's Information Manual (tbm.aero), Section 1, Figure 1.2.1 (1/2)
-// "Three view drawing": the manufacturer's side-view rendering, scaled by its own 10.736 m overall
-// length dimension (2.7 cm per pixel of the embedded image). The nose and the tail cone's underside
-// were first measured off the three-quarter photo File:N893MA_2015_SOCATA-TBM_900_s-n_1065_
-// (23427100365).jpg and agree with the manufacturer's view within 2 cm; the cabin crown, the dorsal fin
-// and the fin did not (crown 10 cm too high, fin leading edge up to half a metre low), so the outline
-// aft of the windscreen, the glazing, the tailplane's station and height, the exhaust stack, the
-// antennas and the ventral strake are traced from the manufacturer's view. The rendering shows the gear
-// down; it is drawn retracted, as in flight. Long PT6A cowl with the side exhaust stack and five-blade
-// prop, pressurised cabin with three small windows behind the pilot's, low wing with winglets.
+// Reference: Daher TBM 900 Pilot's Information Manual (tbm.aero), Section 1, Figure 1.2.1, scaled by its own 10.736 m
 F.tbm9 = {
   kind: "turboprop", L0: 10.7, over: 0, D: 1, W: 1.4,
   body: [
@@ -1202,11 +1078,7 @@ F.tbm9 = {
 };
 
 // ---------- American Champion / Bellanca Citabria ----------
-// No three-view reachable: measured from the side-on, tail-up photo File:Bellanca_7GCBC_
-// (N68576).jpg (Wikimedia Commons, Wikipedia article American Champion Citabria), scaled to
-// 6.9 m (types.csv; 7GCBC 6.91 m). Lower confidence (photo). High strut-braced wing with V struts,
-// tandem cabin with the long side glazing, round cowl, spring-steel main gear with spats,
-// steerable tailwheel (taildragger), tall square-topped fin.
+// No three-view reachable: measured from the side-on, tail-up photo File:Bellanca_7GCBC_ (N68576).jpg, scaled to 6.9 m
 F.ch7b = {
   kind: "piston", L0: 6.9, over: 0, D: 1, W: 0.85,
   body: [
@@ -1238,15 +1110,7 @@ F.ch7b = {
 };
 
 // ---------- Van's Aircraft RV family ----------
-// References: Van's Aircraft's "Weight and Balance Data Quick Reference" sheets (vansaircraft.com/downloads/,
-// RV4wb, RV6wb, RV6Awb, RV7wb, RV7Awb, RV8wb, RV8Awb, RV9wb, RV9Awb, RV10wb, RV12wb, RV14wb and RV14Awb PDFs):
-// side views of each model, scaled by the datum-to-leading-edge dimension where that is drawn to scale, else
-// by the published length, and cross-checked against the wing chord (area / span) and the overall length on
-// each model's page at vansaircraft.com (the types.csv lengths agree with those pages). z = 0 is the belly
-// at the wing root leading edge. Every RV is a low, constant-chord wing with about 3.5 degrees of dihedral,
-// Van's rounded fin with the raked rudder trailing edge and the counterbalance horn at its top, and fixed
-// gear with wheel pants: spring-steel legs and a tailwheel on a spring, or (the "A" models) a swept nose
-// leg and the mains further aft. The types map below picks the A model from the registered model name.
+// References: Van's Aircraft's "Weight and Balance Data Quick Reference" sheets: side views of each model
 
 // the body's upper edge at station s (straight between its points, from the nose aft)
 function crown(body, s) {
@@ -1274,10 +1138,7 @@ const tailwheel = (top, at, r = 0.065) => ({ leg: [top, [at[0] - 0.02, at[1] + 0
 const rv = (o) => ({ kind: "piston", over: 0, D: 1, frame: 0.03, extras: EXTRAS, overlays: OVERLAYS, ...o });
 const withGear = (f, gear) => ({ ...f, parts: { ...f.parts, gear } });
 
-// RV-3: single seat, sliding bubble canopy, the shortest RV. No weight-and-balance drawing: measured from
-// Van's side silhouette (vansaircraft.com/rv-3/, wp-content/uploads/2019/01/rv-3.png) scaled to the 19 ft
-// (5.79 m, types.csv) spinner-to-rudder length; wing from the published 19 ft 11 in span and 90 sq ft area.
-// Lower confidence (silhouette).
+// RV-3: single seat, sliding bubble canopy, the shortest RV
 const RV3_BODY = [
   [0, 0.47, "c"], [0.09, 0.565], [0.2, 0.615], [0.45, 0.689], [0.78, 0.749], [1.2, 0.8], [1.62, 0.84], [1.67, 0.86, "c"],
   [1.74, 0.951], [1.83, 1.019], [1.98, 1.079], [2.16, 1.124], [2.3, 1.132], [2.45, 1.131], [2.7, 1.094], [2.85, 1.055],
@@ -1286,10 +1147,7 @@ const RV3_BODY = [
   [5.45, 0.4, "l"], [2.34, -0.005], [2.04, -0.02, "l"], [0.75, -0.022], [0.71, -0.01, "c"], [0.69, 0.11, "c"], [0.6, 0.142],
   [0.33, 0.277], [0.21, 0.31], [0.06, 0.382],
 ];
-// Detail, glazing, gear and the wing and tailplane side views from Van's CAD three-views ("3 VIEW ALL RV.dwg",
-// vansaircraft.com). Like the RV-4's, the CAD's RV-3 panel is drawn about 4% under 1:1; scaled to this outline
-// (the published 19 ft) it fits within 4 cm. The canopy runs back to 3.37 m, past the glazing's old 3.2 m end,
-// behind the windscreen's bow at 1.94-1.99 m.
+// Detail, glazing, gear and the wing and tailplane side views from Van's CAD three-views
 F.rv3 = rv({
   L0: 5.79, W: 0.72, body: RV3_BODY,
   glass: [
@@ -1340,9 +1198,7 @@ F.rv3 = rv({
   },
 });
 
-// RV-4: tandem two-seat with the long sliding bubble, narrow fuselage, taildragger only. RV4wb side view,
-// scaled to the 20 ft 4 in (6.2 m) spinner-to-rudder length (wing chord then 57.3 in against 57.4 in from
-// 110 sq ft / 23 ft); the tailwheel reaches 6.34 m.
+// RV-4: tandem two-seat with the long sliding bubble, narrow fuselage, taildragger only
 const RV4_BODY = [
   [0, 0.46, "c"], [0.04, 0.52], [0.2, 0.6], [0.24, 0.625], [0.57, 0.711], [0.93, 0.779], [1.32, 0.823], [1.62, 0.842, "c"],
   [1.74, 0.984], [1.86, 1.078], [2.04, 1.145], [2.22, 1.18], [2.4, 1.196], [2.64, 1.186], [2.82, 1.154], [3.15, 1.074],
@@ -1351,10 +1207,7 @@ const RV4_BODY = [
   [5.0, 0.285], [4.29, 0.228], [3.4, 0.11], [2.43, 0.012], [2.0, 0, "l"], [1.15, 0, "l"], [0.7, 0], [0.66, 0.03, "c"],
   [0.62, 0.11], [0.45, 0.2], [0.3, 0.28], [0.2, 0.33], [0.1, 0.38],
 ];
-// Detail, glazing, gear and the wing and tailplane side views from Van's CAD three-views ("3 VIEW ALL RV.dwg",
-// vansaircraft.com). The CAD's RV-4 panel is drawn about 4% under 1:1 (19 ft 6 in against the published 20 ft
-// 4 in); scaled to this outline it fits within about 1 cm (8 cm at worst). The bubble canopy reaches down to
-// 0.62-0.68 m, well below the glazing's old lower edge, with the windscreen's bow at 2.43-2.47 m.
+// Detail, glazing, gear and the wing and tailplane side views from Van's CAD three-views
 F.rv4 = rv({
   L0: 6.2, W: 0.78, body: RV4_BODY,
   glass: [
@@ -1407,9 +1260,7 @@ F.rv4 = rv({
   },
 });
 
-// RV-6 / RV-6A: the first side-by-side RV, sliding canopy, short (23 ft) wing and the smaller fin. RV6wb side
-// view, scaled to the 20 ft 2 in (6.15 m, types.csv) spinner-to-tailwheel length: the wing chord then measures
-// 57.5 in (110 sq ft / 23 ft = 57.4 in) and the rudder ends at 5.97 m. RV-6A gear from RV6Awb.
+// RV-6 / RV-6A: the first side-by-side RV, sliding canopy, short (23 ft) wing and the smaller fin
 const RV6_BODY = [
   [0, 0.39, "c"], [0.12, 0.488], [0.22, 0.525], [0.31, 0.545], [0.36, 0.568], [0.6, 0.615], [1.0, 0.68], [1.4, 0.725],
   [1.73, 0.765, "c"], [1.83, 0.86], [1.95, 0.94], [2.1, 1.0], [2.28, 1.045], [2.42, 1.06], [2.6, 1.047], [2.8, 1.012],
@@ -1418,11 +1269,7 @@ const RV6_BODY = [
   [5.966, 0.4, "l"], [5.573, 0.306], [5.524, 0.302, "l"], [2.97, 0.039], [2.4, 0, "l"], [1.3, 0], [1.22, -0.03], [1.12, -0.085, "l"], [0.6, -0.09],
   [0.54, -0.07, "c"], [0.52, 0.06, "c"], [0.45, 0.11], [0.39, 0.16], [0.33, 0.215], [0.2, 0.258], [0.09, 0.3],
 ];
-// Detail, glazing, gear, the tail and the wing and tailplane side views from Van's CAD three-views ("3 VIEW
-// ALL RV.dwg", vansaircraft.com, 1:1 in inches): the RV-6 panel fits this outline within about 1 cm at
-// 0.994 of an inch to the unit, except the fin and rudder, which the CAD draws 16 cm taller and 7 cm further
-// aft than the weight-and-balance sheet: the outline's tail above follows the CAD. Van's draws the RV-6 with
-// the slider canopy (bow at 2.69-2.72 m, rear window to 3.22 m) and the RV-6A with the tip-up.
+// Detail, glazing, gear, the tail and the wing and tailplane side views from Van's CAD three-views
 const RV6_LINES = [
   // the spinner's joint; the cowl inlet's lip, front edge, ramp and lower opening; the cowling's lower side
   // above the air outlet; the firewall seam
@@ -1507,10 +1354,7 @@ F.rv6a.parts = { ...F.rv6a.parts, lines: [...RV6_LINES,
   [[2.136, 0.672], [2.134, 1.028], [2.128, 1.039], [2.116, 1.042], [2.108, 1.037], [2.105, 1.028], [2.108, 0.615], [2.897, 0.621], [2.928, 0.628], [2.958, 0.639],
     [2.999, 0.663], [3.094, 0.747], [3.204, 0.874], [3.223, 0.91], [3.227, 0.939]]] };
 
-// RV-7 / RV-7A: the RV-6's successor with the 25 ft wing, a bigger fin and rudder and a longer forward
-// fuselage; slider or tip-up canopy. RV7Awb side view (scaled to the 20 ft 4 in, 6.2 m spinner-to-rudder
-// length; its 70 in datum dimension gives 6.15 m and the root chord 57.7 in), windscreen checked against
-// Van's side silhouette (vansaircraft.com/rv-7/, rv-7.png). Tailwheel gear from RV7wb.
+// RV-7 / RV-7A: the RV-6's successor with the 25 ft wing, a bigger fin and rudder and a longer forward fuselage
 const RV7_BODY = [
   [0, 0.42, "c"], [0.09, 0.521], [0.2, 0.567], [0.33, 0.6], [0.57, 0.655], [1.0, 0.715], [1.4, 0.76], [1.69, 0.795, "c"],
   [1.8, 0.905], [1.95, 1.015], [2.1, 1.09], [2.28, 1.14], [2.45, 1.15], [2.65, 1.14], [2.85, 1.1], [3.0, 1.06],
@@ -1520,11 +1364,7 @@ const RV7_BODY = [
   [1.3, 0], [1.24, -0.04], [1.15, -0.068, "l"], [0.63, -0.062], [0.56, -0.04, "c"], [0.53, 0.12, "c"], [0.45, 0.165],
   [0.33, 0.235], [0.18, 0.285], [0.09, 0.322],
 ];
-// Detail, glazing, gear and the wing and tailplane side views from Van's CAD three-views ("3 VIEW ALL RV.dwg",
-// vansaircraft.com, wp-content/uploads/2019/01/3_VIEW_ALL.zip; drawn 1:1 in inches): the RV-7 side view fits
-// this outline at exactly 1 inch to the unit, levelled by 0.46 degrees, within 1 cm (8 cm at the fin's
-// leading edge). The slider canopy's aft bow is at 2.71-2.78 m with the fixed rear window behind it; the
-// windscreen's base is hidden under the fairing that runs back from the cowling.
+// Detail, glazing, gear and the wing and tailplane side views from Van's CAD three-views
 const RV7_GLASS = [
   pane(RV7_BODY, 1.77, 2.77, [[2.709, 0.699], [1.945, 0.706], [1.913, 0.716], [1.881, 0.741], [1.864, 0.769], [1.859, 0.813]]),
   pane(RV7_BODY, 2.84, 3.26, [[2.79, 0.699], [2.775, 0.699, "c"]]),
@@ -1591,9 +1431,7 @@ F.rv7 = rv({
     ],
   },
 });
-// The RV-7A from its own panel of the CAD sheet (same fit, within 1 cm): Van's draws it with the tip-up
-// canopy, a windscreen with its own aft frame and the canopy skirt below the glass, and the tricycle gear:
-// the mains further aft, the swept nose leg, all with their leg fairings and wheel pants.
+// The RV-7A from its own panel of the CAD sheet (same fit, within 1 cm): Van's draws it with the tip-up canopy
 const RV7A_GEAR = [
   { at: [2.196, -0.536], r: 0.178,
     spat: { pts: [[2.163, -0.333], [2.238, -0.334], [2.327, -0.349], [2.732, -0.469, "cl"], [2.732, -0.526, "cl"], [2.356, -0.632, "c"], [2.351, -0.624],
@@ -1620,15 +1458,7 @@ F.rv7a = {
 F.rv7a.parts = { ...F.rv7a.parts, lines: [...RV7_LINES, [[2.119, 0.75], [2.121, 1.087]], [[2.175, 1.105], [2.172, 0.716]],
   [[2.153, 0.716], [2.153, 0.635], [2.25, 0.634], [2.311, 0.621], [2.968, 0.616], [3.324, 0.977]]] };
 
-// RV-9 / RV-9A: the RV-7 fuselage and tail with the longer (28 ft), narrower-chord (53 in, 124 sq ft) Roncz
-// wing and a larger horizontal tail; not aerobatic. RV9Awb side view (70 in datum dimension, 6.23 m), fin and
-// wing root as drawn there; tailwheel gear from RV9wb.
-// Detail from Van's CAD three-views ("3 VIEW ALL RV.dwg"): the RV-9A side view fits this outline within
-// 1.3 cm (median; 3.3 cm for 90 %), so it is traced onto it: the inlet and the spinner's backplate line, the
-// firewall seam, the windscreen's lower frame, the frame bar between windscreen and canopy, the tip-up
-// canopy's frame and skirt, the wing root and tailplane as drawn (wingSide, stabSide), the elevator joint,
-// the rudder hinge with its horn and three hinge brackets, and the tail tie-down ring. The RV-9's own panel
-// is drawn at a slightly different attitude and fits only near the nose, so only its main gear is traced.
+// RV-9 / RV-9A: the RV-7 fuselage and tail with the longer (28 ft), narrower-chord
 F.rv9 = rv({
   ...F.rv7, wingSide: undefined, stabSide: undefined, L0: 6.22,
   wing: { le: 1.6, root: 0.53, span: 8.53, cr: 1.346, ct: 1.346, sweep: 0, dih: 3.5, z: 0.08, t: [0.15, 0.135] },
@@ -1686,10 +1516,7 @@ F.rv9a = withGear(F.rv9, [
 // the RV-9A's tail tie-down ring on its stem (where the RV-9 has its tailwheel)
 F.rv9a.parts = { ...F.rv9a.parts, lines: [...F.rv9a.parts.lines, [[5.519, 0.31], [5.519, 0.276]]], dots: [["hub", 5.521, 0.251, 0.025]] };
 
-// RV-8 / RV-8A: the bigger tandem two-seater (after the RV-4) with the long sliding bubble, the big fin and
-// the RV-4's lines stretched. RV8Awb side view (a scan, deskewed 1 degree; its 70 in datum
-// dimension gives 6.37 m and a 57.3 in chord, against 21 ft / 6.4 m), drawn at 6.4 m. RV-8 tailwheel gear
-// (main legs straight down at the leading edge) from RV8wb.
+// RV-8 / RV-8A: the bigger tandem two-seater (after the RV-4) with the long sliding bubble
 const RV8_BODY = [
   [0, 0.435, "c"], [0.06, 0.501], [0.15, 0.552], [0.3, 0.59], [0.36, 0.605], [0.48, 0.651], [1.0, 0.75], [1.7, 0.835, "c"],
   [1.77, 0.933], [1.86, 1.022], [2.07, 1.15], [2.28, 1.222], [2.58, 1.271], [2.91, 1.267], [3.27, 1.204], [3.45, 1.15],
@@ -1712,13 +1539,7 @@ const RV8_GEAR = [
     ["strut", [[6.205, 0.241, "c"], [6.237, 0.241, "c"], [6.237, 0.193, "c"], [6.205, 0.192, "c"]]],
     ["strut", [[6.204, 0.189, "c"], [6.246, 0.189, "c"], [6.326, 0.17, "c"], [6.323, 0.145, "c"], [6.204, 0.144, "c"]]]] },
 ];
-// Detail from Van's CAD three-views ("3 VIEW ALL RV.dwg", vansaircraft.com 3_VIEW_ALL.zip), drawn 1:1 in
-// inches: the RV-8 side view fits this outline within 2 cm (90 %, 3.6 cm at worst), so it is traced as is:
-// the cowl's inlet lips and face, the upper skin line, the firewall seam with the cowl's exit lip under
-// the belly, the windscreen base and frame, the canopy sill, skirt and aft frame, the wing root and the
-// tailplane as drawn (wingSide, stabSide), the elevator joint, the rudder hinge with its horn, the rudder's
-// top and lower edges, the main-leg fairing with its intersection fairing and wheel pant, and the tailwheel
-// spring and fork.
+// Detail from Van's CAD three-views, drawn 1:1 in inches: the RV-8 side view fits this outline within 2 cm
 F.rv8 = rv({
   L0: 6.4, W: 0.86, body: RV8_BODY,
   glass: [
@@ -1771,9 +1592,7 @@ F.rv8a = withGear(F.rv8, [
       [0.654, -0.486], [0.7, -0.476], [0.742, -0.472, "c"], [1.088, -0.087], [1.111, -0.07], [1.128, -0.061], [1.145, -0.055], [1.173, -0.051, "c"]]]] },
 ]);
 
-// RV-10: the four-seater: a cabin with a roof rather than a bubble, big gull-wing doors (the door window
-// in each) and fixed rear windows, IO-540 with a three-blade propeller, tricycle gear only. RV10wb side
-// view, scaled to the 24 ft 5 in (7.44 m) length (its 99.44 in datum dimension gives 7.32 m).
+// RV-10: the four-seater: a cabin with a roof rather than a bubble, big gull-wing doors
 const RV10_BODY = [
   [0, 0.52, "c"], [0.12, 0.62], [0.27, 0.683], [0.54, 0.714], [0.78, 0.765], [1.05, 0.79], [1.38, 0.836], [1.6, 0.875],
   [1.76, 0.9, "c"], [1.89, 1.0], [2.04, 1.113], [2.18, 1.215], [2.32, 1.275], [2.5, 1.31], [2.7, 1.328], [2.91, 1.33],
@@ -1782,14 +1601,7 @@ const RV10_BODY = [
   [6.89, 0.405, "l"], [5.82, 0.288], [4.29, 0.134], [3.72, 0.07], [3.12, 0, "l"], [1.5, 0], [1.2, -0.015], [0.9, -0.03],
   [0.7, -0.03], [0.6, 0.0, "c"], [0.55, 0.15], [0.48, 0.226], [0.36, 0.32], [0.27, 0.35], [0.12, 0.42],
 ];
-// Detail from Van's CAD three-views ("3 VIEW ALL RV.dwg"): the RV-10 side view (drawn without its spinner)
-// fits this outline within 1.5 cm (median; 4.5 cm for 90 %), so the outline stays. Its door window and rear
-// window are taken from it (the earlier ones were 5-10 cm off), and traced: the cowl's upper and lower
-// lines, inlet face and lip, the firewall seam running into the cowl's lower lip, the windscreen's lower
-// frame and corner fairing, the gull-wing door and the baggage door, the wing root as drawn (wingSide), the
-// rudder hinge and horn, the rudder's lower edge, the tail light, the elevator joint, the main-leg fairing
-// with its pant and seam, and the nose-leg fairing (the CAD leaves the nose pant incomplete: the one drawn
-// is from Van's silhouette).
+// Detail from Van's CAD three-views ("3 VIEW ALL RV.dwg"): the RV-10 side view
 F.rv10 = rv({
   L0: 7.44, W: 1.27, body: RV10_BODY,
   glass: [
@@ -1839,12 +1651,7 @@ F.rv10 = rv({
   },
 });
 
-// RV-12 / RV-12iS: the light-sport RV: Rotax with a three-blade propeller, one big forward-hinged canopy,
-// tall slab-sided fin, an all-moving stabilator with its anti-servo tab under the rudder, tricycle gear only.
-// RV12wb side view (its 70 in datum dimension: 5.98 m to the rudder, 6.22 m to the tab tip; 19 ft 11 in
-// published), gear with the pants of Van's RV-12iS silhouette (vansaircraft.com/rv-12is/).
-// The canopy's front, from Van's CAD three-view: it meets the cowl at 1.27 m, 0.2 m further forward and lower
-// than the W&B sheet's outline had it (up to 12 cm out).
+// RV-12 / RV-12iS: the light-sport RV: Rotax with a three-blade propeller, one big forward-hinged canopy
 const RV12_BODY = [
   [0, 0.555, "c"], [0.12, 0.64], [0.25, 0.682], [0.69, 0.733], [1.0, 0.765], [1.27, 0.795, "c"], [1.35, 0.888], [1.45, 0.967],
   [1.55, 1.031], [1.65, 1.077], [1.75, 1.11], [1.85, 1.13], [2.01, 1.142], [2.2, 1.13], [2.4, 1.085], [2.6, 1.03], [2.94, 0.96, "l"],
@@ -1853,12 +1660,7 @@ const RV12_BODY = [
   [5.82, 0.49], [5.6, 0.44, "l"], [2.31, 0.016], [2.0, 0, "l"], [0.96, 0.02], [0.82, -0.01], [0.72, -0.015],
   [0.6, 0.032], [0.42, 0.142], [0.3, 0.267], [0.24, 0.42], [0.12, 0.47],
 ];
-// Detail from Van's CAD three-views ("3 VIEW ALL RV.dwg"): the RV-12 side view fits within 0.6 cm (median)
-// apart from the canopy's front, corrected above. Traced: the canopy's frame (sill, the slanted roll bar
-// splitting the glass, the aft frame), the cowl's seams and lower panel, the inlet, an access panel and the
-// step, the wing root as drawn with its squared trailing end and flaperon line (wingSide), the stabilator with
-// its anti-servo tab (stabSide), the fin's root fairing and dorsal joint, the rudder's hinge line, gap, top and
-// bottom edges. The CAD draws the original RV-12 on bare wheels: the gear keeps the RV-12iS pants.
+// Detail from Van's CAD three-views ("3 VIEW ALL RV.dwg"): the RV-12 side view fits within 0.6 cm
 F.rv12 = rv({
   L0: 6.07, W: 1.12, body: RV12_BODY,
   glass: [
@@ -1902,9 +1704,7 @@ F.rv12 = rv({
   },
 });
 
-// RV-14 / RV-14A: the newest two-seat side-by-side RV: a wider, taller cabin under a one-piece tip-up canopy
-// with a fixed rear window, the bigger cowl of the IO-390, the big fin. RV14wb side view (72 in datum
-// dimension; 6.43 m spinner to rudder = 21 ft 1 in published); RV-14A gear from RV14Awb (same scale).
+// RV-14 / RV-14A: the newest two-seat side-by-side RV: a wider
 const RV14_BODY = [
   [0, 0.45, "c"], [0.06, 0.515], [0.15, 0.564], [0.24, 0.593], [0.35, 0.625], [0.93, 0.721], [1.2, 0.76], [1.62, 0.81, "c"],
   [1.75, 0.94], [1.86, 1.0], [2.04, 1.093], [2.22, 1.152], [2.43, 1.182], [2.64, 1.177], [2.85, 1.15], [3.0, 1.1],
@@ -1913,12 +1713,7 @@ const RV14_BODY = [
   [5.8, 0.353, "l"], [3.06, 0.044], [2.16, 0, "l"], [1.3, -0.01], [1.17, -0.02], [0.93, 0.005], [0.66, 0.083],
   [0.51, 0.152], [0.36, 0.275], [0.15, 0.333], [0.06, 0.382],
 ];
-// Detail from Van's CAD three-views ("3 VIEW ALL RV.dwg"): the RV-14 and RV-14A side views fit this outline
-// within 0.6 cm (median; 2.5 cm for 90 %), so they are traced onto it: the firewall seam, the windscreen's base,
-// the canopy sill and its aft frame, the fixed rear window as the CAD draws it (larger than before), the wing
-// root fairing as drawn with its flap lines and the oval near its leading edge (wingSide), the tailplane with
-// its elevator joint (stabSide), the rudder hinge and horn, and each variant's gear: leg fairings, their
-// intersection fairings, pants and tyres, and the RV-14's tailwheel spring and fork.
+// Detail from Van's CAD three-views ("3 VIEW ALL RV.dwg"): the RV-14 and RV-14A side views fit this outline within 0.6 cm
 F.rv14 = rv({
   L0: 6.43, W: 1.17, body: RV14_BODY,
   glass: [

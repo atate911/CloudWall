@@ -2,9 +2,7 @@
 const F = {};
 
 // ---------- Boeing C-17A Globemaster III ----------
-// Reference: Boeing "BC-17/C-17A Airport Compatibility" brochure (2005, rev. 2011), General
-// Arrangement p. 3: side elevation (overall 53.04 m, fuselage 48.49 m, height 16.79 m), plan view
-// (wing, nacelle and stab positions) and front view (anhedral, winglets).
+// Reference: Boeing "BC-17/C-17A Airport Compatibility" brochure (2005, rev. 2011), General Arrangement p. 3: side elevation
 F.c17 = {
   kind: "quad", L0: 48.49, over: 4.55, D: 6.37, W: 6.5, fwd: 0.5, fair: 0,
   nose: {
@@ -52,13 +50,7 @@ F.c17 = {
 };
 
 // ---------- Boeing C-135 / 707 airframes: KC-135R, E-3 Sentry, E-6 Mercury ----------
-// Reference: Boeing 707 Airplane Characteristics D6-58322 (scanned), fig. 2.3 ground clearances,
-// side elevation of the 707-120B (p. 13; overall 44.22 m, fuselage 42.32 m, fuselage height 4.33 m
-// from fig. 2.2). The KC-135 shares that nose, wing, tall fin and tail cone on a fuselage 2.7 m
-// shorter (KC-135R 41.53 m long, 39.88 m span, 12.70 m high per Wikipedia); its length comes from
-// types.csv. Engine stations (8.28 / 14.05 m out), wing root, cargo door and fuselage height
-// (4.22 m) from the USAF "Boeing KC-135A Stratotanker 3-view line drawing" (Wikimedia Commons).
-// The E-3 and E-6 are 707-320B airframes (46.61 m, span 44.42 m): longer fuselage, bigger wing. Engines from published data: F108 (CFM56-2) on KC-135R and E-6, TF33 (JT3D) on the E-3.
+// Reference: Boeing 707 Airplane Characteristics D6-58322 (scanned), fig. 2.3 ground clearances
 const C135_NOSE = {
   tip: 0.44,
   top: [[0.05, 0.54], [0.1, 0.571], [0.2, 0.616], [0.3, 0.669], [0.4, 0.735], [0.5, 0.788], [0.6, 0.832], [0.7, 0.872],
@@ -138,11 +130,7 @@ F.e6 = {
 };
 
 // ---------- Boeing B-52H Stratofortress ----------
-// Reference: Wikimedia Commons "Boeing B-52H Stratofortress 3-view line drawing.png" (side, plan
-// and front views; length 48.5 m, span 56.39 m, height 12.4 m per Wikipedia). The side view is
-// drawn on the ground with the wing drooping; the wing here is given its in-flight flex instead.
-// Eight TF33s in four paired pods (one pod per pylon seen from the side), outrigger wheels
-// retracted, tail turret fairing at the end of a full-height tail.
+// Reference: Wikimedia Commons "Boeing B-52H Stratofortress 3-view line drawing.png"
 const tailTurret = ({ sk, L, D }) => {
   sk.smooth("hull", [[L - 0.1, 0.98 * D, "c"], [L + 0.45, 0.95 * D], [L + 0.75, 0.82 * D], [L + 0.8, 0.66 * D], [L + 0.55, 0.52 * D], [L - 0.1, 0.48 * D, "c"]]);
   sk.poly("strut", [[L + 0.7, 0.575 * D], [L + 1.3, 0.575 * D], [L + 1.3, 0.545 * D], [L + 0.7, 0.545 * D]]);
@@ -196,22 +184,13 @@ const tpNacelle = (o) => ({ sk, sec, prop }) => {
 const panels = (lines) => ({ sk }) => { for (const l of lines) sk.poly("hl", l, false); };
 
 // ---------- Lockheed C-130H / C-130J Hercules ----------
-// Reference: Wikimedia Commons "Lockheed C-130J Hercules 3-view drawing.svg" (side, plan and front
-// views of the short C-130J; length 29.79 m, span 40.41 m per Wikipedia). The C-130H airframe is
-// the same; it differs in engines (T56, four-blade props) where the J has AE2100s with six-blade
-// scimitar Dowty R391 props (both 4.11 m). High wing on a root fairing, long nacelles hanging
-// under the wing from the props well ahead to aft fairings behind the trailing edge, main-gear
-// sponsons, upswept rear fuselage with the ramp ending in a thin beaver tail, tall fin on a long
-// straight dorsal, low-set stabiliser at the end of the tail. C30J (C-130J-30) is 4.57 m longer.
+// Reference: Wikimedia Commons "Lockheed C-130J Hercules 3-view drawing.svg"
 const T56 = {
   at: [0.168, 0.44], fwd: 3.0, drop: 0.53, sp: 0.5, sr: 0.3, prop: 4.11, blades: 4, inlet: [0.8, -0.62, 0.06, 0.12],
   outline: [[0, 0, "c"], [0.25, 0.2], [0.5, 0.3, "c"], [0.6, 0.38], [1.5, 0.38], [3.0, 0.38], [5.0, 0.33], [7.0, 0.22], [8.4, 0.06], [9.25, -0.1, "c"],
     [8.4, -0.22], [7.0, -0.3], [5.2, -0.42], [3.65, -0.75], [2.15, -0.82], [0.95, -0.76], [0.62, -0.5], [0.5, -0.3, "c"], [0.25, -0.2]],
 };
-// The side view's panel joints, frames and seams, vectorised from the same drawing (its side view
-// drawn to its 29.79 m length, the keel on z = 0; the drawing shows the left side, mirrored here):
-// fuselage frames and stringer lines, the roof seam, the flight-deck frame, the ramp and its hinge
-// lines under the upswept tail, the sponson panels, and the fin's spar and rib lines.
+// The side view's panel joints, frames and seams, vectorised from the same drawing: fuselage frames and stringer lines
 const C130_PANELS = [
   [[1.58,0.54],[1.57,0.55],[1.58,1.63]],
   [[1.67,0.42],[2.04,0.31],[2.27,0.26],[2.3,0.24],[2.37,0.24],[2.4,0.22],[2.56,0.19],[2.6,0.17],[3.01,0.09]],
@@ -287,9 +266,7 @@ F.c130 = {
   extras: [sponson(9.6, 16.9, 1.55), panels(C130_PANELS)],
   overlays: [tpNacelle(T56)],
 };
-// C-130J-30: 2.54 m plug ahead of the wing and 2.03 m behind it (4.57 m in all, types.csv length);
-// the wing (and so the nacelles) moves with the forward plug, the sponson with the wing, the
-// paratroop doors and rear windows with both plugs.
+// C-130J-30: 2.54 m plug ahead of the wing and 2.03 m behind it (4.57 m in all, types.csv length); the wing
 F.c30j = {
   ...F.c130, fwd: 2.54 / 4.57,
   doors: [[4.7, 0.9, "D", undefined, 1.75], [17.1 + 4.57, 0.85, "D", undefined, 1.8]],
@@ -299,11 +276,7 @@ F.c30j = {
 };
 
 // ---------- Lockheed C-5M Super Galaxy ----------
-// Reference: Wikimedia Commons "Lockheed C-5 Galaxy 3-view line drawing.jpg" (dimensioned: length
-// 75.31 m, span 67.89 m, height 19.84 m). High anhedral wing, T-tail with a long bullet on a fin
-// rising from a root fairing, upward-hinging nose visor (seam drawn from below the flight-deck
-// windows down to the keel), long main-gear sponsons, F138 (CF6-80C2) nacelles on tall pylons,
-// upper-deck doors fore and aft, upswept rear with the aft cargo doors.
+// Reference: Wikimedia Commons "Lockheed C-5 Galaxy 3-view line drawing.jpg"
 const c5Visor = ({ sk, D }) => {
   sk.smooth("hl", [[4.3, 0.8 * D], [5.4, 0.55 * D], [6.7, 0.3 * D], [7.9, 0.04 * D]], false);
 };
@@ -332,11 +305,7 @@ F.c5m = {
 };
 
 // ---------- Antonov An-124 Ruslan ----------
-// Reference: Wikimedia Commons "Antonov An-124 3-view.svg" (side, plan and front views; length
-// 68.96 m, span 73.3 m, height 20.78 m per Wikipedia). High anhedral wing, conventional tail with
-// the stabiliser low on the tail cone and a very tall swept fin, flight deck on top of a long
-// sloping nose with the visor seam ahead of it, long main-gear sponsons, four D-18T nacelles on
-// pylons well ahead of the wing, upswept rear ending in a point.
+// Reference: Wikimedia Commons "Antonov An-124 3-view.svg"
 F.a124 = {
   kind: "quad", L0: 68.96, over: 0, D: 7.1, W: 7.3, fwd: 0.5, fair: 0, floor: 0.12, upper: 0.78,
   nose: {
@@ -362,15 +331,7 @@ F.a124 = {
 };
 
 // ---------- Ilyushin Il-76MD ----------
-// Reference: Wikimedia Commons "Ilyushin Il-76.svg" (side, plan and front views; length 46.59 m,
-// span 50.5 m, height 14.76 m per Wikipedia). High anhedral wing on a dorsal fairing, T-tail
-// with a large bullet, glazed navigator's station in the lower nose with the radome bulge under
-// the chin, long main-gear sponsons, four long D-30KP nacelles on pylons, upswept rear with the
-// tail turret position at the end.
-// The side view's panel joints, vectorised from the same drawing (drawn to its 46.59 m length, the
-// keel on z = 0; the drawing shows the left side, mirrored here): fuselage frames and stringer lines,
-// the crew door's frame, the navigator's glazing frames, the cargo hold's door and ramp lines under the
-// upswept tail, the sponson panels and the tail-cone joints.
+// Reference: Wikimedia Commons "Ilyushin Il-76.svg"
 const IL76_PANELS = [
   [[0.99,2.5],[0.57,2.46],[0.32,2.39]],
   [[1.85,2.11],[1.57,2.11],[1.52,2.16],[1.47,2.16],[1.38,2.11],[1.13,2.11],[1.08,2.16],[1.03,2.16]],

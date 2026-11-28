@@ -42,7 +42,7 @@ export class MapView {
     this.state = null;           // last state given to update()
   }
 
-  // ---- map creation (re-created whenever the basemap changes: the safest way to swap styles) ----
+  // the map is re-created whenever the basemap changes: the safest way to swap styles
   create(basemapId, camera, station) {
     if (this.map) { this.stopOrbit(); this.map.remove(); }
     this.ready = false;
@@ -81,7 +81,7 @@ export class MapView {
     return this.loaded;
   }
 
-  /** Text labels (rings, airports, station) need the OpenFreeMap glyph files: tell the user if they are unreachable. */
+  /** Text labels need the OpenFreeMap glyph files: tell the user if they are unreachable. */
   probeFonts() {
     if (MapView.fontsChecked) return;
     MapView.fontsChecked = true;
@@ -99,7 +99,7 @@ export class MapView {
     return this.map.getStyle().layers.find((l) => l.type === "symbol")?.id;
   }
 
-  // ---- static layers: terrain, hillshade, rings, labels, reference places -------------------------
+  // ---- static layers
   setup(station) {
     const map = this.map;
     const before = (this.beforeId = this.firstSymbolId());
@@ -109,16 +109,15 @@ export class MapView {
       paint: { "hillshade-exaggeration": this.basemap.dark ? 0.25 : 0.4, "hillshade-shadow-color": "#3a3a3a", "hillshade-highlight-color": "#ffffff", "hillshade-accent-color": "#555" } }, before);
     for (const id of ["bands", "rings", "bearings", "footprints", "footprints-b", "ringlabels", "bearlabels", "station", "airports", "peaks"]) map.addSource(id, { type: "geojson", data: EMPTY });
 
-    // distance-band shading between rings (very light, alternating)
     map.addLayer({ id: "bands-fill", type: "fill", source: "bands", paint: { "fill-color": "#ffffff", "fill-opacity": 0.07 } }, before);
-    // rings: dark casing + amber line so they read on light, dark and satellite maps; minor rings lighter
+    // dark casing + amber line so rings read on light, dark and satellite maps
     map.addLayer({ id: "rings-casing", type: "line", source: "rings", paint: { "line-color": "#000", "line-opacity": ["case", ["get", "major"], 0.45, 0.2], "line-width": ["case", ["get", "major"], 3.2, 2] } }, before);
     map.addLayer({ id: "rings-line", type: "line", source: "rings", paint: { "line-color": "#ffc83d", "line-opacity": ["case", ["get", "major"], 0.95, 0.55], "line-width": ["case", ["get", "major"], 1.4, 0.8] } }, before);
     map.addLayer({ id: "bearings-line", type: "line", source: "bearings", paint: { "line-color": "#ffc83d", "line-opacity": 0.5, "line-width": 0.8, "line-dasharray": [3, 3] } }, before);
     map.addLayer({ id: "footprints-line", type: "line", source: "footprints", paint: { "line-color": ["get", "color"], "line-width": 2, "line-opacity": 0.95 } }, before);
     map.addLayer({ id: "footprints-b-line", type: "line", source: "footprints-b", paint: { "line-color": ["get", "color"], "line-width": 2, "line-dasharray": [2, 2], "line-opacity": 0.95 } }, before);
 
-    // labels: drawn last (above the basemap's own labels) and kept upright with viewport alignment
+    // labels drawn last, above the basemap's own
     const text = (extra = {}, paint = {}) => ({
       layout: { "text-font": FONT, "text-size": 12, "text-pitch-alignment": "viewport", "text-rotation-alignment": "viewport", "text-max-width": 20, ...extra },
       paint: { "text-color": "#fff", "text-halo-color": "rgba(0,0,0,0.85)", "text-halo-width": 1.6, ...paint },
@@ -151,8 +150,8 @@ export class MapView {
     } catch (e) { /* terrain tiles unavailable offline */ }
   }
 
-  // ---- data updates -----------------------------------------------------------------------------
-  /** Push the whole UI state to the map. `statics` re-derives the GeoJSON layers (rings, labels...). */
+  // ---- data updates
+  /** `statics` re-derives the GeoJSON layers (rings, labels...). */
   update(state, statics = false) {
     this.state = state;
     if (!this.ready) return;
@@ -182,7 +181,6 @@ export class MapView {
     }
     if (s.minorRings) for (let r = 10; r < 50; r += 10) ringlabels.push({ type: "Feature", properties: { label: `${r}` }, geometry: { type: "Point", coordinates: destination(lat, lon, 45, r) } });
     set("rings", rings); set("ringlabels", ringlabels); set("bands", bands);
-    // bearing lines every 30 degrees, labelled N, 030, 060, E ...
     const names = { 0: "N", 90: "E", 180: "S", 270: "W" };
     const bl = [], bt = [];
     for (let b = 0; b < 360; b += 30) {

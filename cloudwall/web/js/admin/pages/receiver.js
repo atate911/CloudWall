@@ -1,7 +1,6 @@
-// Your receiver: the antenna at home. First what it hears and how far (its reach as a shape around
-// the house, the message rate, signal against noise), with the board's reading of those numbers in
-// words ("the gain looks right"); then its own live map and Coverage3D, as pages of this board; then
-// how it reaches this server. Without a receiver, the page is the way to connect one.
+// Receiver page: what the antenna hears and how far (reach, message rate, signal against noise),
+// those numbers read in words, its live map and Coverage3D embedded, and how it reaches this
+// server. Without a receiver, the page is the way to connect one.
 import { el, esc, S, call, num, ago, house, ownFeed, value, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { gauge, signalMeter, polar } from "../draw.js";
@@ -10,7 +9,7 @@ import { text, toggle, group, advanced } from "../controls.js";
 
 let tab = "hearing";
 
-/** What the numbers mean, in words, with what to do about them. [state, title, words] */
+/** What the numbers mean, in words: [[state, title, words]] */
 function readings(r) {
   const m = r.last15min || r.last1min || {}, out = [];
   if (m.strong_pct != null) {
@@ -151,7 +150,6 @@ export default {
     show();
     page.append(tabs, body, reaches(r, page), shares(r));
 
-    // the readings keep up while the page is open
     const timer = setInterval(async () => {
       if (!page.isConnected) return clearInterval(timer);
       if (document.hidden || tab !== "hearing") return;

@@ -43,14 +43,12 @@ DEMO_FLIGHTS = [
     ("ANA178", "NH178", "All Nippon Airways", "B77W", "Boeing 777-381ER", "JA792A", "NRT", "ORD", "over"),
     ("ASA67", "AS67", "Alaska Airlines", "B38M", "Boeing 737 MAX 8", "N802AK", "SEA", "LAX", "over"),
     (None, None, None, "C172", "Cessna 172S Skyhawk", "N751SP", None, None, "ga"),
-    # an air ambulance, flying in to a hospital's helipad near home, and out again after a while
     ("LIFE3", None, "Life Flight Network", "EC35", "Eurocopter EC135", "N135LF", None, None, "medevac"),
-    # one of each of the radar's other kinds: a regional jet, a four-engined heavy, a business jet and a turboprop
+    # one of each of the radar's other kinds
     ("SKW3486", "OO3486", "SkyWest Airlines", "CRJ9", "Bombardier CRJ900LR", "N914SK", "SEA", "PDX", "arr"),
     ("GTI8315", "5Y8315", "Atlas Air", "B744", "Boeing 747-400F", "N415MC", "PDX", "ANC", "dep"),
     ("EJA524", "EJA524", "NetJets", "C56X", "Cessna Citation Excel", "N524QS", "PDX", "LAX", "dep"),
     (None, None, None, "B350", "Beechcraft King Air 350", "N350TW", None, None, "ga"),
-    # and a few that aren't aeroplanes at all: a balloon drifting, a glider, a twin-rotor helicopter
     (None, None, None, "BALL", "Cameron Balloons Z-105", "N105CB", None, None, "balloon"),
     (None, None, None, "AS21", "Schleicher ASK 21", "N921SG", None, None, "glider"),
     (None, None, None, "H47", "Boeing 234 Chinook", "N245CH", None, None, "heli"),
@@ -62,23 +60,21 @@ def _airport(code):
     return {"iata": code, "city": city, "name": name, "lat": lat, "lon": lon}
 
 
-# PDX's runways 28L and 28R as the demo flies them, from the default home along its 299° corridor
-# (nm past the point abeam home; nm to the right of the track, so negative is left): the line of
-# each runway's extended centreline, and the along-track distance of its threshold and far end.
+# PDX's 28L and 28R along the 299° corridor from the default home: (centreline offset in nm right
+# of track, so negative is left; along-track nm past abeam home of the threshold; of the far end)
 DEMO_RUNWAYS = ((-2.23, 3.2, 4.81), (-2.74, 3.76, 5.56))
 GLIDE_FT_PER_NM = 318
 
 
 class Demo:
-    """Simulated traffic along the PDX east/west corridor, passing near home. The airport lands
-    west: arrivals come down the 3° approach to 28L or 28R from the east, departures climb out west
-    from their far ends; overflights, light aircraft and the odd balloon go anywhere."""
+    """Simulated traffic along the PDX corridor past home: arrivals down the 3° approach to 28L/28R
+    from the east, departures climbing out west; the rest go anywhere."""
     name = "demo"
 
     def __init__(self, seed=7):
         self.rng = random.Random(seed)
         self.active = []
-        self.liftoff = None       # (when, helipad, hex): the air ambulance on a hospital's helipad, to leave again
+        self.liftoff = None       # (when, helipad, hex): the air ambulance down on a helipad, to leave again
         self.last = None
         self.next_spawn = 0
         self.routes = {}
@@ -92,7 +88,7 @@ class Demo:
 
     def _spawn(self, lat, lon, along=None, radius_nm=15, idx=None):
         flying = {a["hex"] for a in self.active} | ({self.liftoff[2]} if self.liftoff else set())     # or on a helipad
-        free = [i for i in range(len(DEMO_FLIGHTS)) if f"a{i:05x}" not in flying]   # one not already in the air
+        free = [i for i in range(len(DEMO_FLIGHTS)) if f"a{i:05x}" not in flying]
         if not free:
             return
         idx = self.rng.choice(free) if idx is None or idx not in free else idx
@@ -116,7 +112,6 @@ class Demo:
         along = -max(14.0, radius_nm - 1) if along is None else along   # start near the edge of the range
         rwy = self.rng.choice(DEMO_RUNWAYS)
         if kind in ("arr", "dep"):
-            # on a runway's extended centreline: arrivals from the edge of the range, departures from the runway's end
             offset = rwy[0] + self.rng.uniform(-0.04, 0.04)
             if kind == "arr":
                 along = min(along, rwy[1] - 1.5)      # short of the threshold: the demo starts with one placed past it
@@ -125,7 +120,7 @@ class Demo:
         pad = None
         if kind == "medevac":
             pad = self._helipad(lat, lon)
-            if pad:                 # in from 9 nm out, on a line that passes near home, straight to the helipad
+            if pad:                 # in from 9 nm out, straight to the helipad
                 pe, pn = self._xy(lat, lon, pad)
                 b = self._approach(lat, lon, pad)
                 se, sn = pe + 9 * math.sin(b), pn + 9 * math.cos(b)
@@ -142,7 +137,7 @@ class Demo:
 
     @staticmethod
     def _xy(lat, lon, p):
-        """Where a point is from home, in nm east and north."""
+        """A point from home, as (nm east, nm north)."""
         return (p["lon"] - lon) * 60 * math.cos(math.radians(lat)), (p["lat"] - lat) * 60
 
     @staticmethod
@@ -152,14 +147,14 @@ class Demo:
         return e * math.sin(t) + n * math.cos(t), e * math.cos(t) - n * math.sin(t)
 
     def _helipad(self, lat, lon):
-        """The hospital helipad nearest 6 nm from home, for the air ambulance to fly to."""
+        """The hospital helipad nearest to 6 nm from home, or None."""
         from ..reference.airports import helipads_near
         pads = [p for p in helipads_near(lat, lon, 12) if haversine_nm(lat, lon, p["lat"], p["lon"]) > 2]
         return min(pads, key=lambda p: abs(haversine_nm(lat, lon, p["lat"], p["lon"]) - 6)) if pads else None
 
     def _approach(self, lat, lon, pad):
-        """The direction the air ambulance comes in from (radians, from the helipad): from near home's
-        side, on a line that passes no other hospital's helipad, so where it's going is clear."""
+        """The bearing the air ambulance comes in from (radians, from the helipad): from home's
+        side, on a line passing no other helipad."""
         from ..reference.airports import helipads_near
         pe, pn = self._xy(lat, lon, pad)
         others = [self._xy(lat, lon, p) for p in helipads_near(lat, lon, 25) if p["code"] != pad["code"]]
@@ -168,7 +163,7 @@ class Demo:
             b = home_side + math.radians(off)
             se, sn = pe + 9 * math.sin(b), pn + 9 * math.cos(b)
             dx, dy = pe - se, pn - sn
-            def miss(q):           # how near a helipad comes to the line flown in, or its extension past the helipad, nm
+            def miss(q):           # nm from a helipad to the line flown in, or its extension past the pad
                 t = max(0.0, min(3.5, ((q[0] - se) * dx + (q[1] - sn) * dy) / (dx * dx + dy * dy)))
                 return math.hypot(se + t * dx - q[0], sn + t * dy - q[1])
             if all(miss(q) > 1.2 for q in others):
@@ -176,7 +171,6 @@ class Demo:
         return home_side + math.radians(40)
 
     def _lift_off(self, lat, lon):
-        """The air ambulance leaves the helipad it landed on, climbing away to the north-west or south-east."""
         _, pad, hexid = self.liftoff
         self.liftoff = None
         cs, _, _, typ, _, reg, _, _, _ = DEMO_FLIGHTS[int(hexid[1:], 16)]
@@ -193,7 +187,6 @@ class Demo:
         if self.last is None:
             for along in (-11, -5, -1.5, 6):
                 self._spawn(lat, lon, along)
-            # and the air ambulance, on its way to a hospital
             self._spawn(lat, lon, idx=next(i for i, f in enumerate(DEMO_FLIGHTS) if f[8] == "medevac"))
             self.last = now
         dt = now - self.last
@@ -209,11 +202,9 @@ class Demo:
             if a["kind"] == "medevac":           # down on the helipad, not past it
                 a["along"] = min(a["along"], a["pad"]["along"])
             t = math.radians(a["track"])
-            # along-track unit vector (east, north) and its right-hand normal
             e = a["along"] * math.sin(t) + a["offset"] * math.cos(t)
             n = a["along"] * math.cos(t) - a["offset"] * math.sin(t)
-            # altitude profile is pinned to the abeam point so passes look realistic; arrivals come
-            # down the 3° approach to their runway's threshold, departures climb from its far end
+            # altitude is pinned to the abeam point, so passes look realistic
             vrate = a["vrate"]
             if a["kind"] == "arr":
                 alt = 30 + GLIDE_FT_PER_NM * (a["rwy"][1] - a["along"])
@@ -224,7 +215,7 @@ class Demo:
                 to_go = a["pad"]["along"] - a["along"]
                 alt = a["pad"]["elevation_ft"] + 100 + 1300 * min(1.0, max(0.0, to_go / 2))
                 vrate = -round(a["gs"] * 650 / 60) if to_go < 2 else 0
-            elif a["kind"] == "medevac_out":   # climbing from the helipad to 1,400 ft
+            elif a["kind"] == "medevac_out":
                 climbed = a["vrate"] * ((a["along"] - a["pad"]["along"]) / a["gs"] * 60)
                 alt = min(1400.0, a["pad"]["elevation_ft"] + 100 + climbed)
                 vrate = a["vrate"] if alt < 1400 else 0
@@ -244,7 +235,6 @@ class Demo:
                 "lon": lon + e / (60 * math.cos(math.radians(lat))),
                 "squawk": a["squawk"], "category": a["category"], "military": False,
             })
-        # gone past the range, or landed (the air ambulance to leave its helipad again after a while)
         for a in self.active:
             if a["kind"] == "medevac" and a["along"] >= a["pad"]["along"] and not self.liftoff:
                 self.liftoff = (now + 40, a["pad"], a["hex"])

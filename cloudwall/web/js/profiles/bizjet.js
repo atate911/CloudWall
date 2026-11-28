@@ -27,11 +27,7 @@ const nozzle = (z, r, len = 0.35) => (k) => {
 const marks = (parts) => (k) => { for (const [cls, pts, closed = true] of parts) k.sk.smooth(cls, pts.map(([s, z, fl]) => [s, z, fl ?? "c"]), closed); };
 
 // ---------- Dassault Falcon 2000 (F2TH) and Falcon 900 (F900) ----------
-// No drawing reachable: Falcon 2000 proportions from the side-on photo of the Bulgarian Air Force
-// Falcon 2000 (Commons "Dassault Falcon 2000, Bulgaria - Air Force AN1929721.jpg"), scaled to the
-// 20.23 m overall length (Wikipedia, Dassault Falcon 2000): fuselage 18.3 m, height 2.33 m, the
-// Falcon nose with its kinked windscreen line and four flight-deck panes, eight windows, PW308
-// nacelles, 21.38 m wing, swept fin with the tailplane low on it (cruciform), no T-tail.
+// No drawing reachable: Falcon 2000 proportions from the side-on photo of the Bulgarian Air Force Falcon 2000 (Commons)
 F.f2th = {
   kind: "bizjet", L0: 18.3, over: 1.93, D: 2.33, W: 2.5, fwd: 0.5, fair: 0.04,
   nose: {
@@ -58,11 +54,7 @@ F.f2th = {
   stab: { le: 3.0, fz: 0.17, span: 7.6, root: 0.3, cr: 1.9, ct: 0.9, sweep: 30, dih: 0 },
 };
 
-// Falcon 900/900EX/LX (F900): the Falcon 2000 nose and section on a cabin 2.1 m longer, three
-// TFE731s: two on the rear fuselage and a centre engine fed by an S-duct whose intake sits on top
-// of the fuselage ahead of the fin, the fin mounted on the duct fairing, exhaust at the tail-cone
-// end; 19.33 m wing with slats (Wikipedia, Dassault Falcon 900). Proportions from photos on
-// Commons (Italian Air Force Falcon 900EX JP7191384, N100UP arp): no to-scale drawing reachable.
+// Falcon 900/900EX/LX (F900): the Falcon 2000 nose and section on a cabin 2.1 m longer, three TFE731s
 F.f900 = {
   ...F.f2th, L0: 18.25, over: 1.96,
   // the S-duct fairing is part of the outline: intake lip 6.9 m ahead of the tail end, 0.84 m above
@@ -82,13 +74,7 @@ F.f900 = {
 };
 
 // ---------- Bombardier Challenger 604/605/650 (CL60; also the default business jet) ----------
-// The CL-600 airframe that the CRJ grew from: nose and flight deck measured on the CRJ900 APM
-// (Bombardier CSP C-020, 00-02-02 fig. 5, levelled; ref/CRJ900.pdf p. 31), which keeps the
-// Challenger's nose, on the 2.69 m section; length, cabin and tail from the side-on photo of
-// Challenger 605 A7-CEB (Commons "Bombardier CL-600-2B16 Challenger 605, Qatar Executive
-// JP6749742.jpg", 3.5 % yaw corrected), scaled to 20.85 m (Wikipedia, Bombardier Challenger 600
-// series): seven windows at 0.74 m pitch, CF34-3B nacelles, 43-deg T-tail with a fin-top fairing,
-// winglets.
+// The CL-600 airframe that the CRJ grew from: nose and flight deck measured on the CRJ900 APM, scaled to 20.85 m
 F.cl60 = {
   kind: "bizjet", L0: 18.69, over: 2.16, D: 2.69, W: 2.69, fwd: 0.5, fair: 0.05,
   nose: {
@@ -124,11 +110,7 @@ F.cl60 = {
 };
 
 // ---------- Bombardier Challenger 300/350 (CL30, CL35) ----------
-// No drawing reachable: proportions from the side-on photo of N535FX (Commons "Bombardier
-// Challenger 300 N535FX landing at San Diego International Airport, March 2023.jpg"), scaled to
-// the 20.92 m overall length (Wikipedia, Bombardier Challenger 300): fuselage 19.1 m, height
-// 2.27 m, six windows behind the door, HTF7000 nacelles high on the tail cone, 36-deg T-tail.
-// The 350's longer span comes from canted winglets.
+// No drawing reachable: proportions from the side-on photo of N535FX (Commons), scaled to the 20.92 m overall length
 F.cl30 = {
   kind: "bizjet", L0: 19.1, over: 1.82, D: 2.27, W: 2.4, fwd: 0.5, fair: 0.06,
   nose: {
@@ -153,9 +135,7 @@ F.cl30 = {
   eng: { kind: "fan", aft: { s: 6.31, z: 0.81 }, len: 3.45, dia: 1.18, style: "long", fx: 0.88 },
   fin: { le: 2.95, cr: 2.85, ct: 2.3, h: 2.3, sweep: 36, fillet: [1.2, 0.2] },
   stab: { le: 1.12, z: "T", span: 7.6, root: 0.25, cr: 1.8, ct: 0.85, sweep: 33, dih: 0, bullet: [2.4, 0.2] },
-  // from the same photo of N535FX: the two blade antennas on the spine and the swept blade under the
-  // belly, the rain gutter over the door and the door handle, the two probes and the two lower access
-  // panels on the nose, and the round fitting on the wing-root fairing
+  // from the same photo of N535FX: the two blade antennas on the spine and the swept blade under the belly
   extras: [({ sk, top, bottom }) => {
     const t = (s) => top(s) - 0.02, b = (s) => bottom(s) + 0.02;
     sk.poly("strut", [[5.809, t(5.81)], [6.108, 2.569], [6.258, 2.588], [6.164, t(6.16)]]);
@@ -172,10 +152,7 @@ F.cl30 = {
 };
 
 // ---------- Learjet 45/75 (LJ45, LJ75) ----------
-// No drawing reachable: proportions from the side-on photo of N300JC (Commons "N300JC Learjet Inc
-// 45 C-N 340 (5394534073).jpg"), scaled to the 17.68 m overall length (Wikipedia, Learjet 45):
-// fuselage 15.63 m, height 1.8 m, small pointed nose, the cabin windows set high, TFE731 nacelles,
-// 45-deg T-tail, the two ventral "delta fins" under the tail cone, winglets.
+// No drawing reachable: proportions from the side-on photo of N300JC (Commons), scaled to the 17.68 m overall length
 F.lj45 = {
   kind: "bizjet", L0: 15.63, over: 2.05, D: 1.8, W: 1.8, fwd: 0.5, fair: 0.05,
   nose: {
@@ -191,9 +168,7 @@ F.lj45 = {
     [[1.11, 0.715], [1.37, 0.905], [1.63, 0.905], [1.6, 0.73]],
   ],
   frame: 0.035,
-  // from the side-on photo of N300JC: the swept blade on the spine behind the wing, the swept blade
-  // under the belly ahead of it, the door handle, and on the T-tail's bullet fairing the fitting on top
-  // and the light at its tail
+  // from the side-on photo of N300JC: the swept blade on the spine behind the wing
   extras: [hatch(3.62, 0.8, 0.3, 1.42), ({ sk, top, bottom }) => {
     sk.poly("strut", [[7.21, top(7.21) - 0.02], [7.36, top(7.36) + 0.24], [7.43, top(7.43) + 0.26], [7.33, top(7.33) - 0.02]]);
     sk.poly("strut", [[5.25, bottom(5.25) + 0.02], [5.38, bottom(5.38) - 0.26], [5.45, bottom(5.45) - 0.3], [5.37, bottom(5.37) + 0.02]]);
@@ -215,11 +190,7 @@ F.lj45 = {
 };
 
 // ---------- Hawker 800 (H25B) ----------
-// No drawing reachable: proportions from the side-on photo of N75GR (Commons "Hawker 800XPi N75GR at
-// Scottsdale Airport, October 2023.jpg"), scaled to the 15.60 m overall length (Wikipedia, Hawker
-// 800): fuselage 13.43 m, height 1.99 m, the long low dorsal fillet running forward from the swept
-// fin, the tailplane on the fin about halfway up (just above the fuselage), TFE731 nacelles set low
-// on the rear fuselage, the large forward door. (N75GR carries aftermarket winglets; not drawn.)
+// No drawing reachable: proportions from the side-on photo of N75GR (Commons), scaled to the 15.60 m overall length
 F.h25b = {
   kind: "bizjet", L0: 13.43, over: 2.17, D: 1.99, W: 1.99, fwd: 0.5, fair: 0.06,
   nose: {
@@ -246,10 +217,7 @@ F.h25b = {
 };
 
 // ---------- Gulfstream G280 (G280) ----------
-// No drawing reachable: built from Wikipedia (Gulfstream G280: 20.37 m, span 19.2 m, cabin 2.18 m
-// wide) and the side-on photo of N280GD (Commons "IAI Gulfstream G280 - Gulfstrem Aerospace
-// (18701234531).jpg", levelled by 5.1 deg): pointed nose, ten oval windows, HTF7250G nacelles set
-// high (centre at the crown line), T-tail, canted winglets.
+// No drawing reachable: built from Wikipedia and the side-on photo of N280GD (Commons): pointed nose, ten oval windows
 F.g280 = {
   kind: "bizjet", L0: 18.6, over: 1.77, D: 2.38, W: 2.38, fwd: 0.5, fair: 0.06,
   nose: {
@@ -277,12 +245,7 @@ F.g280 = {
 };
 
 // ---------- Embraer Legacy 450/500, Praetor 500/600 (E545, E550) ----------
-// No APM reachable: proportions from the side-on photo of Legacy 500 G-TULI (Commons "Embraer Legacy
-// 500 (G-TULI) lands Bristol Airport 14May2019 arp.jpg", levelled by 6.3 deg), scaled to the
-// 20.74 m overall length (Wikipedia, Embraer Legacy 450/500 and Praetor 500/600): fuselage 16.7 m,
-// a long overhang of the 48-deg fin and the 45-deg T-tail beyond the tail cone, HTF7500E nacelles,
-// seven windows. Drawn with the Praetors' winglets (most of the fleet). The Legacy 450/Praetor 500
-// is the same airframe 1.05 m shorter (19.69 m), which the length table sets.
+// No APM reachable: proportions from the side-on photo of Legacy 500 G-TULI (Commons), scaled to the 20.74 m overall length
 F.e550 = {
   kind: "bizjet", L0: 16.79, over: 3.95, D: 2.3, W: 2.3, fwd: 0.6, fair: 0.07,
   nose: {
@@ -309,11 +272,7 @@ F.e550 = {
 };
 
 // ---------- Cessna Citation CJ2/CJ3 (C25A, C25B) ----------
-// No drawing reachable: proportions from the side-on photos of CJ3 OM-LBG and CJ2 G-EDCM (Commons
-// "Cessna 525B Citation CJ3 AN1699978.jpg", "Cessna 525A Citation CJ2 AN1738217.jpg"), scaled to
-// the 15.59 m overall length (Wikipedia, Cessna CitationJet/M2): fuselage 13.34 m, height 1.58 m,
-// unswept wing, FJ44 nacelles, a 52-deg fin with the tailplane on top, its strong dihedral giving
-// the 525 family's raised tips. The CJ2 is the same airframe 1.06 m shorter, one window fewer.
+// No drawing reachable: proportions from side-on photos of a CJ3 and a CJ2 (Commons), scaled to the 15.59 m overall length
 F.c25b = {
   kind: "bizjet", L0: 13.34, over: 2.25, D: 1.58, W: 1.6, fwd: 0.6, fair: 0.06,
   nose: {
@@ -330,9 +289,7 @@ F.c25b = {
     [[1.76, 0.92], [2.04, 0.94], [2.04, 0.69], [1.76, 0.69]],
   ],
   frame: 0.03,
-  // from the side-on photo of CJ3 OM-LBG: the swept blade antenna and three low domes on the spine, the
-  // probe under the nose, the stub and the small fairing under the forward belly, the stub under the
-  // tail cone
+  // from the side-on photo of CJ3 OM-LBG: the swept blade antenna and three low domes on the spine, the probe under the nose
   extras: [hatch(3.95, 0.53, 0.25, 1.24, 0.2), ({ sk, top, bottom }) => {
     const t = (s) => top(s) - 0.02, b = (s) => bottom(s) + 0.02;
     sk.poly("strut", [[6.141, t(6.14)], [6.314, 1.78], [6.44, 1.82], [6.343, t(6.34)]]);
@@ -352,13 +309,7 @@ F.c25b = {
 };
 
 // ---------- Cessna Citation Excel/XLS (C56X) and Sovereign (C680) ----------
-// No drawing reachable: proportions from the side-on photos of XLS EC-K.. (Commons "Cessna 560XL
-// Citation XLS.jpg", levelled by 4 deg) and Sovereign N94PC (Commons "N94PC Cessna 680 Citation
-// Sovereign landing at Palm Springs, March 2023.jpg"), scaled to the overall lengths (Wikipedia:
-// Excel 16.0 m, Sovereign 19.35 m). Both carry the Citation X section (1.84 m), a near-straight
-// wing and the cruciform tail: the tailplane, with dihedral, on the fin just above the tail cone.
-// The Sovereign is stretched (seven windows), with a bigger 16-deg wing, PW306C nacelles and a
-// taller fin.
+// No drawing reachable: proportions from the side-on photos of XLS EC-K.. (Commons) and Sovereign N94PC (Commons)
 F.c56x = {
   kind: "bizjet", L0: 15.3, over: 0.7, D: 1.84, W: 1.84, fwd: 0.5, fair: 0.06,
   nose: {
@@ -375,9 +326,7 @@ F.c56x = {
     [[1.6, 0.875], [1.88, 0.88], [1.88, 0.66], [1.6, 0.66]],
   ],
   frame: 0.035,
-  // from the side-on photo of XLS EC-K..: the small whip, two low domes and the swept blade on the
-  // spine, the door handle recess, the swept blade under the nose and the light under the belly, the
-  // ventral strake under the tail cone; on the fin the tip beacon, the cap seam and the small plate
+  // from the side-on photo of XLS EC-K..: the small whip, two low domes and the swept blade on the spine
   extras: [hatch(4.8, 0.7, 0.3, 1.5, 0.2), ({ sk, top, bottom }) => {
     const t = (s) => top(s) - 0.02, b = (s) => bottom(s) + 0.02;
     sk.poly("strut", [[5.407, t(5.41)], [5.439, 1.896], [5.478, 1.899], [5.473, t(5.47)]]);
@@ -426,13 +375,7 @@ F.c680 = {
 };
 
 // ---------- Cessna Citation Latitude (C68A) and Longitude (C700) ----------
-// No drawing reachable: proportions from the side-on photos of Latitude N563QS (Commons "Cessna
-// Citation Latitude N563QS departing Scottsdale Airport, October 2023.jpg") and Longitude N807QS
-// (Commons "Cessna Citation Longitude N807QS.jpg"), scaled to the overall lengths (Wikipedia: 18.97 m
-// and 22.30 m). Both have the wide 2.23 m section with its flat-sided cabin and the same nose. The
-// Latitude keeps the Sovereign's 16-deg wing and carries its tailplane low on the fin (cruciform,
-// as the photos show, not a T-tail); the Longitude has a longer cabin, the new 27-29-deg wing with
-// winglets, HTF7700L nacelles set high, and a true T-tail far aft.
+// No drawing reachable: proportions from the side-on photos of Latitude N563QS (Commons) and Longitude N807QS (Commons)
 F.c68a = {
   kind: "bizjet", L0: 18.08, over: 0.89, D: 2.23, W: 2.23, fwd: 0.5, fair: 0.06,
   nose: {
@@ -449,9 +392,7 @@ F.c68a = {
     [[1.19, 0.81], [1.43, 0.82], [1.43, 0.61], [1.19, 0.61]],
   ],
   frame: 0.04,
-  // from the side-on photo of Latitude N563QS: the two swept blades and two domes on the spine, two
-  // swept blades and two stubs under the belly, the round marker low on the side, the louvred vent on
-  // the tail cone, the ventral strake under it and the small plate high on the fin
+  // from the side-on photo of Latitude N563QS: the two swept blades and two domes on the spine
   extras: [hatch(4.59, 0.81, 0.24, 1.7, 0.25), ({ sk, top, bottom }) => {
     const t = (s) => top(s) - 0.02, b = (s) => bottom(s) + 0.02;
     const blade = (s0, s1, s2, s3, h) => sk.poly("strut", [[s0, t(s0)], [s1, top(s1) + h * 0.95], [s2, top(s2) + h], [s3, t(s3)]]);
@@ -498,14 +439,7 @@ F.c700 = {
 };
 
 // ---------- Embraer Phenom 100 (E50P) and 300 (E55P) ----------
-// Phenom 300: the side view on the dimensions page of Embraer's Phenom 300E brochure
-// (embraer.com, phenom-300e-electronic.pdf p. 22; 15.6 m overall, 5.1 m high), scaled to 15.64 m:
-// fuselage 14.21 m, height 1.74 m, low drooped nose, deep belly fairing, five windows behind the
-// door, PW535E nacelles high on the tail cone, the 26-deg wing with upswept winglets, a 37-deg fin
-// with a long dorsal fillet, T-tail, small ventral fin. Phenom 100: the side view on the
-// dimensions page of the Phenom 100EX brochure (phenom-100ex-brochure-final.pdf p. 21; 12.82 m):
-// the same section 2.5 m shorter, three windows, an almost straight wing without winglets, a
-// more swept fin, smaller PW617F nacelles.
+// Phenom 300: the side view on the dimensions page of Embraer's Phenom 300E brochure, scaled to 15.64 m: fuselage 14.21 m
 F.e55p = {
   kind: "bizjet", L0: 14.21, over: 1.43, D: 1.74, W: 1.6, fwd: 0.5, fair: 0.2, fairAft: 1.5,
   nose: {
@@ -522,9 +456,7 @@ F.e55p = {
     [[1.54, 0.86], [1.85, 0.86], [1.87, 0.78, ""], [1.85, 0.62], [1.54, 0.62]],
   ],
   frame: 0.035,
-  // from the brochure's side view: the two blade antennas and two low fairings on the spine, the swept
-  // blade and three stubs under the nose, the probe line on the nose side, the stub under the tail
-  // cone and the small panel on the fin
+  // from the brochure's side view: the two blade antennas and two low fairings on the spine
   extras: [hatch(4.38, 0.67, 0.29, 1.3, 0.15), marks([
     ["strut", [[4.286, 1.712], [4.371, 1.936], [4.626, 1.953], [4.626, 1.919], [4.439, 1.712]]],
     ["strut", [[8.12, 1.723], [8.188, 1.987], [8.264, 2.013], [8.247, 1.927], [8.23, 1.723]]],
@@ -572,11 +504,7 @@ F.e50p = {
 };
 
 // ---------- Pilatus PC-24 (PC24) ----------
-// No drawing reachable: proportions from the side-on photo of D-CFBL (Commons "D-CFBL Platoon PC24
-// EGCC.jpg"), scaled to the 16.85 m overall length (Wikipedia, Pilatus PC-24): fuselage 15.2 m,
-// height 1.98 m, blunt nose, seven windows, FJ44-4A nacelles at mid-height on the rear fuselage,
-// near-straight wing, 42-deg fin with a T-tail. Drawn from the left: the airstair door behind the
-// flight deck and the big 1.25 x 1.35 m cargo door at the rear of the cabin, ahead of the engine.
+// No drawing reachable: proportions from the side-on photo of D-CFBL (Commons), scaled to the 16.85 m overall length
 F.pc24 = {
   kind: "bizjet", L0: 15.2, over: 1.65, D: 1.98, W: 1.98, fwd: 0.5, fair: 0.08,
   nose: {
@@ -602,12 +530,7 @@ F.pc24 = {
 };
 
 // ---------- Cirrus Vision SF50 (SF50) ----------
-// No drawing reachable: outline traced from the side-on photo of N299CV (Commons "Cirrus Vision
-// SF50 N299CV FDK MD1.jpg"), scaled to the 9.42 m overall length (Wikipedia, Cirrus Vision SF50).
-// Teardrop fuselage with no constant section (drawn as a closed body outline in metres), wraparound
-// windscreen, three large oval windows growing towards the front, the single FJ33 on a pylon on top
-// of the rear fuselage, the V-tail (drawn as a tailplane with 45-deg dihedral, no fin) and the
-// small ventral fin; 11.8 m straight wing.
+// No drawing reachable: outline traced from the side-on photo of N299CV (Commons), scaled to the 9.42 m overall length
 F.sf50 = {
   kind: "bizjet", L0: 9.32, over: 0.1, D: 1, W: 1.7, fair: 0,
   body: [[0, 0.56, "c"], [0.12, 0.82], [0.43, 0.97], [0.84, 1.07], [1.35, 1.27], [1.86, 1.6], [2.37, 1.76], [2.88, 1.82],
@@ -624,14 +547,7 @@ F.sf50 = {
 };
 
 // ---------- Bombardier Global Express / 5000 / 6000 / 6500 (GLEX, GL5T) and Global 7500 (GL7T) ----------
-// Global 7500: Commons "Bombardier Global 7500-8000 three views.png" side view (33.88 m overall),
-// prepped with refprep: fuselage 29.84 m, height 2.75 m, 14 large windows at 0.915 m pitch, two
-// flight-deck panes in a band, a fin swept 41 deg whose chord grows towards the top, a highly
-// swept T-tail with a fin-top fairing, GE Passport nacelles, canted swept winglets.
-// Global Express/6000/6500: the same nose and section; 30.30 m overall (Wikipedia, Bombardier
-// Global Express), 13 smaller windows at 0.77 m pitch (photo OE-IGS, Commons
-// 2010-07-08_BD700_Tyrolean_OE-IGS_EDDF_03.jpg, levelled), BR710 nacelles, smaller wing (28.65 m).
-// Global 5000: the same airframe 0.81 m shorter (types.csv length), so one window fewer.
+// Global 7500: Commons "Bombardier Global 7500-8000 three views.png" side view (33.88 m overall), prepped with refprep
 const GLOBAL_NOSE = {
   tip: 0.25,
   top: [[0.1, 0.36], [0.25, 0.46], [0.5, 0.6], [0.75, 0.752], [1.0, 0.891], [1.25, 0.975], [1.5, 1]],
@@ -667,14 +583,7 @@ F.gl7t = {
 };
 
 // ---------- Gulfstream IV/G450 (GLF4) and V/G550 (GLF5) ----------
-// G550: Commons "Gulfstream G500 3-view line drawing.svg" (the GV-SP airframe of 2003, identical to
-// the G550 outside), side view prepped with refprep at the 29.39 m overall length: fuselage 26.15 m,
-// height 2.39 m, long pointed radome, two-pane flight-deck band with a slanted divider, the large
-// oval cabin windows (0.72 m wide, 0.53 m tall) at 1.23 m pitch, BR710 nacelles high on the tail
-// cone, 43.5-deg fin with a fin-top fairing over the T-tail, swept winglets.
-// G450: the GIV-SP airframe of Commons "Gulfstream IV-SP 3-view line drawing.png" (26.92 m) with the
-// G450's 27.23 m (Wikipedia, Gulfstream IV): shorter cabin (six windows behind the door like the
-// G550), smaller wing (23.72 m), Tay 611 nacelles, lower fin.
+// G550: Commons "Gulfstream G500 3-view line drawing.svg", side view prepped with refprep at the 29.39 m overall length
 F.glf5 = {
   kind: "bizjet", L0: 26.15, over: 3.24, D: 2.39, W: 2.39, fwd: 0.4, fair: 0.1, fairAft: 1.5,
   nose: {
@@ -703,12 +612,7 @@ F.glf5 = {
   stab: { le: 1.55, z: "T", drop: 0.35, span: 10.4, root: 0.3, cr: 2.7, ct: 1.3, sweep: 35.5, dih: 0, bullet: [2.4, 0.25] },
 };
 
-// G450 photo (Commons VH-MBP/TC-KHB G450 set; TC-KHB side-on, scaled by the G550 window pitch):
-// door at 5.36 m, six windows 6.93-13.10 m, tail cone end 24.0 m; Tay nacelle 15.55 m.
-// From the GIV-SP 3-view (Commons "Gulfstream IV-SP 3-view line drawing.png"), placed on the outline's
-// own spine and belly since its cabin and nacelle stations differ from the photo the G450 follows: the
-// radome joint, the blade antennas on the spine and under the belly, the fairing panel on the side of
-// the tail cone, and the APU exhaust at its end.
+// G450 photo (Commons): door at 5.36 m, six windows 6.93-13.10 m, tail cone end 24.0 m
 const G4_FITTINGS = ({ sk, top, bottom }) => {
   sk.smooth("hl", [[1.345, 1.4], [1.324, 1.01], [1.303, 0.622], [1.198, 0.311]], false);
   const t = top(5.7), b = bottom(8.0);
@@ -728,10 +632,7 @@ F.glf4 = {
   fin: { le: 4.5, cr: 4.4, ct: 2.8, h: 3.1, sweep: 43.5, fillet: [1.0, 0.5], cap: 0.12, rudder: 0.75 },
   stab: { le: 1.5, z: "T", drop: 0.33, span: 9.75, root: 0.3, cr: 2.6, ct: 1.25, sweep: 35, dih: 0, bullet: [2.3, 0.24] },
 };
-// G650: no to-scale drawing reachable; built on the G550 with Wikipedia (Gulfstream G650) dimensions:
-// 30.41 m overall, span 30.36 m, cabin 2.49 m wide, so a fuller section; blunter nose with the
-// four-pane windscreen, larger oval windows (photos G-ULFS, N520GA on Commons), the new 36-deg wing
-// with blended winglets, BR725 nacelles, taller fin.
+// G650: no to-scale drawing reachable; built on the G550 with Wikipedia (Gulfstream G650) dimensions: 30.41 m overall
 F.glf6 = {
   ...F.glf5, L0: 27.1, over: 3.31, D: 2.62, W: 2.72,
   nose: {

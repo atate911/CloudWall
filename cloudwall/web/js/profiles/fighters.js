@@ -50,16 +50,7 @@ const station = (k, y) => {
 };
 
 // ---------- McDonnell Douglas / Boeing F-15 Eagle ----------
-// Reference: Wikimedia Commons "McDonnell Douglas F-15 Eagle 3-view.svg" (Wikipedia article
-// McDonnell Douglas F-15 Eagle), side view prepped with refprep and scaled to the overall length
-// 19.43 m (nose tip to the stabilator tips; height 5.63 m, span 13.05 m per Wikipedia): outline,
-// spine, fin (LE 39 deg, fin-tip antenna pod), stabilator, nozzles, wing root 9.45 m and the
-// 45-deg wing from the plan view. That drawing puts the intakes too far forward and draws the
-// canopy too tall; intake face (5.0 m, under the canopy) and canopy height follow the side-on
-// photograph of F-15C 82-017 (Commons "An air to air left side view of an F-15 Eagle aircraft
-// from the 1ST Tactical Fighter Wing", DPLA f374df9a...) instead.
-// Stores: F-15C/D with the 600-gal centreline tank and the near-side pair of AIM-120s on the
-// lower fuselage corners.
+// Reference: Wikimedia Commons "McDonnell Douglas F-15 Eagle 3-view.svg", scaled to the overall length 19.43 m
 const F15_BODY = [
   [0, 0.47, "c"], [0.25, 0.6], [0.5, 0.72], [1.0, 0.9], [1.5, 1.05], [2.0, 1.17], [2.5, 1.27], [3.0, 1.36], [3.3, 1.42],
   // windscreen and the high bubble canopy, then the long spine sloping down to the engine bay
@@ -126,10 +117,7 @@ F.f15c = {
 // F-15D: the two-seat trainer, outwardly a C with a second cockpit under the same canopy
 F.f15d = { ...F.f15c, glass: [F15_WINDSCREEN, ...F15_CANOPY_2] };
 
-// F-15E Strike Eagle: two seats, conformal fuel tanks along the lower fuselage sides from behind
-// the intake past the wing (photo: Commons "494th Fighter Squadron F-15E Strike Eagle.jpg"),
-// with their stub pylons. Stores: the navigation pod under the intake; wing tanks are left off so
-// the conformal tanks read.
+// F-15E Strike Eagle: two seats, conformal fuel tanks; wing tanks are left off so the conformal tanks read
 const f15Cft = ({ shaded, sk }) => {
   shaded([[6.0, 0.42], [6.35, 0.76], [7.3, 0.87], [12.0, 0.88], [14.4, 0.74], [15.35, 0.42, "c"],
     [14.6, 0.02], [12.0, -0.14], [8.0, -0.14], [6.5, -0.02]]);
@@ -147,10 +135,7 @@ F.f15e = {
   overlays: [f15eStores],
 };
 
-// F-15EX Eagle II: the Strike Eagle airframe (CFT-capable, but the USAF jets, the 142nd Wing's
-// included, fly without them), two seats, and the EPAWSS tail-boom fairings reaching back past
-// the nozzles to the stabilator tips (photo: Commons "F-15EX 142d WG.jpg"). Stores: the centreline
-// tank and fuselage AIM-120s, as on the C. 19.43 m long under F15, 19.45 m under F15E.
+// F-15EX Eagle II: the Strike Eagle airframe without CFTs, two seats, and the EPAWSS tail-boom fairings
 const epawss = ({ shaded }) => {
   shaded([[18.2, 1.2], [18.9, 1.13], [19.32, 1.05, "c"], [19.36, 0.8, "c"], [18.9, 0.72], [18.2, 0.74]]);
 };
@@ -161,13 +146,7 @@ F.f15ex = {
 };
 
 // ---------- Boeing F/A-18E/F Super Hornet and EA-18G Growler ----------
-// Reference: Commons "EA18-1.jpg" (side profile of a two-seat Super Hornet, VFA-102 CAG colours,
-// scaled to the 18.31 m overall length to the stabilator tips; edges prepped with a colour-edge
-// variant of refprep), cross-checked with the US Navy 3-view "F18 schem 01.gif" (Wikipedia article
-// Boeing F/A-18E/F Super Hornet; single-seat canopy, plan view: LEX/wing junction 9.2 m, wing LE
-// 27 deg, nearly unswept trailing edge, stabilators) and Wikipedia (span 13.62 m over the wingtip
-// stores, height 4.88 m). Fins canted 20 deg drawn at their projected height (LE 46 deg).
-// Nozzle ends 17.32 m from the nose; stabilators reach 1 m beyond it.
+// Reference: Commons "EA18-1.jpg", cross-checked with the US Navy 3-view "F18 schem 01.gif" and Wikipedia
 const SH_NOSE = [[0, 0.72, "c"], [0.25, 0.9], [0.5, 1.0], [0.75, 1.08], [1.0, 1.15], [1.5, 1.31], [2.0, 1.44], [2.5, 1.57], [3.0, 1.67], [3.3, 1.73]];
 const SH_AFT = [
   [9.5, 2.01], [10.5, 1.95], [11.5, 1.88], [12.75, 1.8], [13.5, 1.69], [14.5, 1.56], [15.5, 1.51], [16.4, 1.49], [16.9, 1.42], [17.32, 1.33, "c"],
@@ -210,9 +189,7 @@ const shTank = (k) => {
   pylonAt(sk, q.le + 0.5, q.le + 2.2, zw, zw - 0.45);
   store(sk, "nac", q.le - 1.2, 5.0, zw - 0.45 - 0.38, 0.76, { nose: 0.32, tail: 0.32, round: true, tipA: 0.1 });
 };
-// EA-18G: AN/ALQ-218 wingtip pods and an AN/ALQ-99 jamming pod (ram-air turbine at its nose)
-// under the near wing. The usual tanks (inboard wing stations) sit behind the pod side-on and are
-// left off: drawn, they merge with it into one shape.
+// EA-18G: wingtip pods and a jamming pod under the near wing; the usual tanks are left off (they merge with the pod)
 const ga218 = (k) => {
   const q = k.sec(1);
   store(k.sk, "nac", q.le - 1.0, 3.7, q.z - 0.02, 0.32, { nose: 0.2, tail: 0.2, round: true, tipA: 0.3 });

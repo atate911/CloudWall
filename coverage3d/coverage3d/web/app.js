@@ -29,7 +29,7 @@ function isVisible(b) {
 const save = () => store(KEY, S.settings);
 const banner = (msg) => { const b = $("banner"); b.textContent = msg; b.hidden = !msg; if (msg) setTimeout(() => (b.hidden = true), 8000); };
 
-// ---- API ---------------------------------------------------------------------------------------
+// ---- API
 function rangeQuery(prefix = "") {
   const s = S.settings, q = new URLSearchParams();
   const day = (v, end) => Math.floor(new Date(v + (end ? "T23:59:59" : "T00:00:00")).getTime() / 1000);
@@ -95,7 +95,7 @@ async function loadOutline() {
 function setStatus(cls, title) { const e = $("status"); e.className = cls; e.title = title; }
 const refreshAll = () => { loadCoverage(); loadPoints(); loadVertical(); loadStats(); loadOutline(); };
 
-// ---- map glue ----------------------------------------------------------------------------------------
+// ---- map glue
 function pushMap(statics = false) {
   st.visKey = [S.settings.bandLo, S.settings.bandHi, S.settings.hidden.join(".")].join("|");
   st.settings = S.settings;
@@ -139,7 +139,7 @@ async function onClick(info) {
   }
 }
 
-// ---- panels ---------------------------------------------------------------------------------------------
+// ---- panels
 function renderLegend() {
   const s = S.settings, g = (stops) => `linear-gradient(90deg,${stops.map((c) => rgbCss(c)).join(",")})`;
   let h = `<b>Altitude</b><div class="bar" style="background:${g(ALT_STOPS)}"></div><div class="ticks"><span>0</span><span>15k</span><span>30k</span><span>45k ft</span></div>`;
@@ -151,7 +151,7 @@ function renderLegend() {
 function renderBands() {
   const cov = st.cov, nb = cov.n_bands, s = S.settings;
   for (const id of ["bandLo", "bandHi"]) $(id).max = nb - 1;
-  // the tiers shown are counted in tiers: with tiers of another height, all of them again
+  // shown tiers are stored as indexes: reset them when the tier height changes
   if (s.bandsOf && s.bandsOf !== cov.band_ft) { s.bandLo = 0; s.bandHi = nb - 1; s.hidden = []; }
   s.bandsOf = cov.band_ft;
   s.bandLo = clamp(s.bandLo, 0, nb - 1); s.bandHi = clamp(s.bandHi, 0, nb - 1);
@@ -196,7 +196,7 @@ function drawPlots() {
   drawPolar($("plot-polar"), st.cov, st.covB, bi, S.settings.units, bi === "all" ? [11, 100, 214] : bi === "-1" ? GROUND_COLOR : altColor(+bi * st.cov.band_ft + st.cov.band_ft / 2));
 }
 
-// ---- UI wiring ----------------------------------------------------------------------------------------
+// ---- UI wiring
 function bindCheck(id, after) {
   const el = $(id); el.checked = !!S.settings[id];
   el.onchange = () => { S.settings[id] = el.checked; save(); after ? after() : pushMap(true); };
@@ -255,7 +255,6 @@ async function init() {
     s.hidden = [...h]; save(); pushMap(true);
   };
 
-  // tabs, panel, view buttons
   const tab = (t) => { s.tab = t; save(); document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.tab === t)); document.querySelectorAll("[data-pane]").forEach((p) => (p.hidden = p.dataset.pane !== t)); drawPlots(); };
   $("tabs").onclick = (e) => e.target.dataset.tab && tab(e.target.dataset.tab);
   tab(s.tab);

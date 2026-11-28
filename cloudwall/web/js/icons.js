@@ -86,28 +86,25 @@ const HELI_TAIL_ROTOR = [0.18, 3.65, 0.5, 4.8];
 // tandem-rotor helicopter (a Chinook)
 const TANDEM = [[0, -3.7], [0.6, -3.55], [0.85, -3.0], [0.88, 2.8], [0.74, 3.4], [0.36, 3.65], [0, 3.7]];
 
-// gyroplane: a small open pod, one long two-bladed rotor over it, the pusher propeller behind it,
-// a tail on a keel
 const GYRO_POD = [[0, -1.9], [0.58, -1.7], [0.8, -0.8], [0.74, 0.4], [0.42, 0.95], [0.22, 1.15], [0.2, 2.4],
   [0.95, 2.45], [0.95, 2.95], [0, 3.0]];
 
-// ultralight (a weight-shift trike, a hang glider): a delta wing over a little pod and its pusher propeller
+// ultralight (a weight-shift trike, a hang glider)
 const TRIKE_WING = [[0, -1.35], [4.0, 0.75], [3.92, 1.4], [0, 1.15]];
 const TRIKE_POD = [[0, 0.2], [0.44, 0.35], [0.44, 1.9], [0, 2.2]];
 const TRIKE_PROP = [-1.2, 2.15, 1.2, 2.6];
 
-// airship: a long hull and its tail fins
+// airship
 const HULL = [...Array(13)].map((_, i) => { const t = rad(-90 + i * 15); return [1.9 * Math.cos(t), 4.3 * Math.sin(t)]; });
 const AIRSHIP_FIN = [[1.5, 2.0], [2.2, 2.65], [2.2, 3.35], [1.15, 3.45]];
 
-// balloon, from the side: the envelope, the load lines and the basket
+// balloon, from the side
 const ENVELOPE = [...[...Array(14)].map((_, i) => { const t = rad(i * 10); return [3 * Math.sin(t), -1 - 3 * Math.cos(t)]; }),
   [2.3, 0.93], [1.45, 1.95], [0.85, 2.5], [0, 2.5]];
 const BALLOON_LINE = [[0.62, 2.45], [0.84, 2.45], [0.6, 3.2], [0.42, 3.2]];
 
-// Each kind: its parts at scale s (sizes relative to the airliner's 1). Measured from the drawing:
-// how far ahead of the centre the nose is (where the one-minute line starts) and how far the icon
-// reaches (so labels clear it). upright: drawn the same way up whichever way it's heading.
+// Parts at scale s (airliner = 1). Measured from the drawing: nose (where the one-minute line
+// starts) and r (reach, so labels clear it). upright: drawn the same way up whatever the heading.
 function make(s, build, upright = false) {
   const d = build(s), pts = [...d.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map((m) => [+m[1], +m[2]]);
   const r = Math.max(...pts.map(([x, y]) => Math.hypot(x, y)));
@@ -137,7 +134,6 @@ export const ICONS = {
     [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([x, y]) => circle(2.05 * x * s, 2.05 * y * s, 1.05 * s)).join("")),
   airship: make(1.05, (s) => outline(k(HULL, s)) + mirror(k(AIRSHIP_FIN, s))),
   balloon: make(0.9, (s) => outline(k(ENVELOPE, s)) + mirror(k(BALLOON_LINE, s)) + rect(...sc([-0.6, 3.15, 0.6, 4.0], s)), true),
-  // nothing says what it is: the radar's plain aircraft, as before
   plain: { d: "M0,-4 L1,-1 L4.2,1.2 L4.2,2 L1,1 L.8,3 L2,4 L2,4.6 L0,4 L-2,4.6 L-2,4 L-.8,3 L-1,1 L-4.2,2 L-4.2,1.2 L-1,-1 Z", nose: 4.2, r: 4.6, upright: false },
 };
 export const iconFor = (kind) => ICONS[kind] || ICONS.plain;

@@ -51,13 +51,7 @@ const rect = (s0, s1, z0, z1, rr = 0.06) => [[s0 + rr, z0, "l"], [s1 - rr, z0], 
 const pane = (...a) => rect(...a).map((p) => (p[2] ? p : [p[0], p[1], ""]));
 
 // ---------- Pilatus PC-21 ----------
-// Reference: Pilatus "PC-21 Model Building Plan 1:25" (pilatus-aircraft.com, Media, Model Building
-// Plans), page 2: the manufacturer's dimensioned side view, a vector drawing rendered at 900 dpi and
-// scaled by its own 36 ft 11 in (11.23 m) overall length, nose tip to tailplane tip (3.9 mm a pixel).
-// The view shows the gear down; it is drawn retracted, as in flight. Long pointed nose over the
-// PT6A-68B with its exhaust stacks and the five-blade prop, the stepped tandem canopy in one long
-// bubble, the low wing's big root fillet, the swept fin with its curved dorsal fin, and the ventral
-// strake under the upswept tail cone.
+// Reference: Pilatus "PC-21 Model Building Plan 1:25", page 2: the manufacturer's dimensioned side view
 F.pc21 = {
   kind: "turboprop", L0: 11.23, over: 0, D: 1, W: 1.0,
   body: [
@@ -112,14 +106,7 @@ F.pc21 = {
 };
 
 // ---------- Pilatus PC-7 Turbo Trainer ----------
-// No manufacturer drawing of the original PC-7 reachable (Pilatus's plan is of the PC-9-based
-// PC-7 MKX): measured from the side-on air-to-air photo File:Zijaanzicht-van-pc-7-lesvliegtuig-in-de-
-// lucht.jpg (Wikimedia Commons, Royal Netherlands Air Force L-12, gear up), rendered 1920 px wide and
-// scaled by the 9.78 m length (Wikipedia, Pilatus PC-7), spinner to tailplane tip, 6.2 mm a pixel,
-// and checked against the three-view File:Pilatus_PC-7_3_vues.gif. Lower confidence (photo): the
-// wing, seen from above in it, is drawn from its 10.40 m span and 16.60 m² area. The short PT6A-25
-// nose, the one-piece bubble canopy over level tandem seats, the straight wing and the square-cut
-// fin on a short dorsal fin; underwing stores left off.
+// No manufacturer drawing reachable: measured from a side-on photo (Commons), scaled by the 9.78 m length. Lower confidence
 F.pc7 = {
   kind: "turboprop", L0: 9.78, over: 0, D: 1, W: 0.95,
   body: [
@@ -155,12 +142,7 @@ F.pc7 = {
 };
 
 // ---------- Pilatus PC-9 ----------
-// Reference: Pilatus "PC-9 M Model Building Plan 1:25" (pilatus-aircraft.com, Media, Model Building
-// Plans), page 2: the manufacturer's dimensioned side view, a vector drawing rendered at 1200 dpi and
-// scaled by its own 33 ft 4 in (10.18 m) length, nose tip to tailplane tip (2.8 mm a pixel; the 2.31 m
-// wheelbase then measures within 1 cm). Gear drawn up. Long nose with the big exhaust stack, the
-// stepped tandem canopy, the low wing rising to its tips (seen from the side as a tall trapezoid),
-// the swept fin on a long straight dorsal fin and the ventral fin under the tail cone (PC-9 M).
+// Reference: Pilatus "PC-9 M Model Building Plan 1:25", page 2: the manufacturer's dimensioned side view
 F.pc9 = {
   kind: "turboprop", L0: 10.18, over: 0, D: 1, W: 0.97,
   body: [
@@ -211,12 +193,7 @@ F.pc9 = {
 };
 
 // ---------- Pilatus PC-6 Porter / Turbo Porter ----------
-// Reference: "Pilatus PC-6 Turbo-Porter 3-view line drawing" (Wikimedia Commons,
-// File:Pilatus_PC-6_Turbo-Porter_3-view_line_drawing.svg, Wikipedia article Pilatus PC-6 Porter),
-// the side view rendered 1920 px wide and scaled by the 10.90 m length in Pilatus's PC-6 model
-// building plan (8.4 mm a pixel). A PT6A Turbo Porter: the long slim cowl with its exhaust stack,
-// the deep slab-sided cabin with the wing sitting on its roof, a single strut each side, the big
-// sliding door, the tall square fin and rudder, and the long-legged main gear and tailwheel.
+// Reference: "Pilatus PC-6 Turbo-Porter 3-view line drawing" (Commons), scaled by the 10.90 m length
 F.pc6 = {
   kind: "turboprop", L0: 10.9, over: 0, D: 1, W: 1.2,
   body: [
@@ -273,13 +250,7 @@ F.pc6 = {
 };
 
 // ---------- de Havilland Canada DHC-3 Otter ----------
-// Reference: "De Havilland Canada U-1A Otter 3-view line drawing" (Wikimedia Commons,
-// File:De_Havilland_Canada_U-1A_Otter_3-view_line_drawing.png, from the US Army's characteristics
-// summary of its Otters), the side view rendered 1920 px wide and scaled by the 41 ft 10 in (12.75 m)
-// length (Wikipedia, DHC-3 Otter, from Jane's), hub to rudder, 12.3 mm a pixel. The original radial
-// Otter (the turbine conversions fly under another type code): the blunt round cowl of the R-1340
-// Wasp with its small hub, the tall slab-sided cabin under the wing, one strut a side, the double
-// cargo door, the long curved dorsal fin sweeping up into the rounded fin, and the tailwheel.
+// Reference: "De Havilland Canada U-1A Otter 3-view line drawing" (Commons)
 F.dhc3 = {
   kind: "piston", L0: 12.75, over: 0, D: 1, W: 1.6,
   body: [
@@ -336,13 +307,7 @@ F.dhc3 = {
 };
 
 // ---------- Quest / Daher Kodiak 100 ----------
-// No three-view reachable: measured from the side-on photo File:Quest_Kodiak_100_side_view_
-// 20130608.jpg (Wikimedia Commons, N491KQ), rendered 1920 px wide and scaled by the 34 ft 2 in
-// (10.41 m) length (Wikipedia, Daher Kodiak, from Quest's brochure), spinner to tailplane tip, 6.2 mm a
-// pixel. Lower confidence (photo): the wing, seen from below in it, is drawn to the chord its 45 ft
-// span and 240 sq ft area give. The PT6A's long cowl with its side exhaust stack, the fat cabin with
-// four square windows a side, the high strut-braced wing, the long dorsal fin into the swept fin,
-// and fixed tricycle gear.
+// No three-view reachable: measured from the side-on photo File:Quest_Kodiak_100_side_view_ 20130608.jpg
 F.kodi = {
   kind: "turboprop", L0: 10.41, over: 0, D: 1, W: 1.4,
   body: [
@@ -389,13 +354,7 @@ F.kodi = {
 };
 
 // ---------- Epic LT ----------
-// No three-view reachable: measured from the near side-on photo File:Epic_LT_Dynasty.JPG (Wikimedia
-// Commons: N6XK, the LT the company flew as its certification prototype), rendered 1920 px wide and
-// scaled by the 35 ft 10 in (10.92 m) length (Wikipedia, Epic LT, from Epic), spinner to tailplane
-// tip, 6.2 mm a pixel. Lower confidence (photo, taken from a little ahead): the wing, foreshortened in
-// it, is drawn from its 43 ft span and 203.6 sq ft area. Gear drawn up. The long PT6A-67 cowl with
-// its side exhaust stack, the pointed windscreen, the slim carbon fuselage with four oval windows a
-// side, the low wing and the swept fin with the tailplane on its root.
+// No three-view reachable: measured from the near side-on photo File:Epic_LT_Dynasty.JPG (Commons)
 const oval = (s, z, rx, ry) => Array.from({ length: 8 }, (_, i) => [s + rx * Math.cos(i * Math.PI / 4), z + ry * Math.sin(i * Math.PI / 4), ""]);
 F.epic = {
   kind: "turboprop", L0: 10.92, over: 0, D: 1, W: 1.4,

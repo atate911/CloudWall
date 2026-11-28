@@ -1,11 +1,6 @@
-// Kiosk mode: the wall panel, a 7–13" screen read from across the room, made to sit in a room
-// like a piece of furniture. One aircraft at a time, very large: the one over the house, its
-// airline, its type, where it's going (its own side elevation riding the route line, at its place
-// along the way), how high and fast it is, and when it passes. Under it how many aircraft are
-// about. The card has the whole screen unless [kiosk] view puts the radar or the map beside it.
-// When the sky is quiet, a slow rotation of large slides.
-// Sizes are in vh, with nothing under 4vh but the map's credit, so the same design reads the same
-// on 1024×600 and 1920×1080 panels and every word of it reads from the sofa.
+// Kiosk mode: the wall panel, a 7–13" screen read from across the room. One aircraft at a time,
+// very large; when the sky is quiet, a slow rotation of large slides.
+// Sizes are in vh, nothing under 4vh but the map's credit, so 1024×600 and 1920×1080 read the same.
 import { $, esc, num, mmss, ident, since, degF } from "./util.js";
 import { boardFlight, showLogo, localWords, heardGroups, shortType } from "./parts.js";
 import { latest, refresh } from "./fresh.js";
@@ -20,23 +15,20 @@ const SLIDE_SECONDS = 12;
 let cur = { hex: null }, slide = 0, slideAt = Date.now(), shownKey = null, radarSlide = false;
 
 // ---------- a plane overhead ----------
-// The aircraft's own side elevation, facing right as the route reads: null for a kind of aircraft
-// with no drawing (a glider or balloon of a type not in the table).
+// The aircraft's side elevation; null for a kind with no drawing (a glider or balloon not in the table).
 function craft(a) {
   const info = typeInfo(a);
   if (!info.shape) return null;
   const d = drawing(info.type, info.shape, info.length, info.name);
   return d.svg ? { svg: d.svg, ar: d.w / d.h } : null;
 }
-// Where it is and which way it's going, for an aircraft with no route: "Over Vancouver, heading
-// east" or "14 nm north of home, heading south"
+// For an aircraft with no route: "Over Vancouver, heading east"
 function whereWords(a, state) {
   const w = a.dist != null ? where(a, state) : "", head = a.track != null && (a.gs || 0) > 15 ? `heading ${dir8(a.track)}` : "";
   const s = [w, head].filter(Boolean).join(", ");
   return s ? s[0].toUpperCase() + s.slice(1) : "";
 }
-// Under the route, when the card has the whole screen: when it left, how far it has come and has to
-// go, and when it gets in (the provider's time, or CloudWall's estimate, which says "about")
+// Under the route: the arrival is the provider's time, or CloudWall's estimate, which says "about"
 const clockAt = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 function routeFoot(r) {
   const arrives = r.landed || r.eta || r.eta_est;
@@ -45,7 +37,7 @@ function routeFoot(r) {
   return `<div class="k-foot"><span>${r.departed ? `Left ${esc(clockAt(r.departed))}` : ""}</span><span>${esc(dist)}</span>` +
     `<span>${arrives ? `${r.landed ? "Landed" : "Arrives"} ${!r.landed && !r.eta ? "about " : ""}${esc(clockAt(arrives))}` : ""}</span></div>`;
 }
-// How far along its route it is, 0 to 1, or null when the route doesn't say
+// 0 to 1, or null when the route doesn't say
 function progressOf(r) {
   if (r.progress != null) return Math.max(0, Math.min(1, r.progress));
   return r.flown_nm != null && r.left_nm != null ? r.flown_nm / Math.max(1, r.flown_nm + r.left_nm) : null;
@@ -58,7 +50,6 @@ function routeBlock(a, state) {
   if (a.route_pending && !r) return `<div class="k-alone">${drawn("big")}<div class="k-note">Looking up its route</div></div>`;
   if (r && r.plausible) {
     const p = progressOf(r);
-    // the line flown so far is solid, the rest to go dotted, and the aircraft where it is between them
     return `<div class="k-route">
       <div class="k-apt ${r.origin.iata === here.iata ? "local" : ""}"><span>${esc(r.origin.city || "")}</span><b>${esc(r.origin.iata)}</b></div>
       <div class="k-line${p == null ? " nop" : ""}" style="--p:${(p ?? 0.5).toFixed(3)}" aria-hidden="true"><i class="k-flown"></i><i class="k-togo"></i>${drawn()}</div>
@@ -75,7 +66,6 @@ function routeBlock(a, state) {
   return `<div class="k-alone">${drawn("big")}${said ? `<div class="k-note">${esc(said)}</div>` : ""}</div>`;
 }
 
-// The aircraft in words, under its flight number: its type, as an enthusiast names it
 const typeWords = (a) => shortType(a.type_name) || a.type || "Unknown aircraft";
 
 function planeHtml() {
@@ -95,8 +85,7 @@ function planeHtml() {
   </div>`;
 }
 
-// A photo of this very airframe (planespotters.net), at the head of the card beside its flight
-// number, once it has loaded, with its photographer's credit on it as their terms ask
+// A photo of this airframe (planespotters.net), with its photographer's credit as their terms ask
 function showPhoto(a) {
   const fig = $("k-photo");
   if (!fig || !a.photo || !a.photo_by || cur.photo === a.photo) return;
@@ -153,7 +142,6 @@ function updateWhen(a, elapsed) {
   $("k-when-l").textContent = left > 5 ? "overhead in" : a.dist < 1.5 ? "look up" : a.dist != null ? `${num(a.dist)} nm ${dir8(a.brg)}` : "heading away";
 }
 
-// Over the radar: how many aircraft are about, and the ones heard with no position to show
 export function kioskCaption(state) {
   const s = situation(state, { short: true, notes: 0 }), heard = s.phrases.find((x) => x.cat === "heard");
   return `<b>${esc(s.head)}</b>${heard ? `<span>${heard.n} ${esc(heard.text)}, no position</span>` : ""}`;
@@ -214,17 +202,14 @@ function airspaceHtml(state) {
   </div>`;
 }
 
-// The radar among the quiet-sky slides, when the card has the screen to itself: the page shows the
-// radar beside this card (body.radar-slide), which says in words what is on it, each phrase led by
-// its colour on the radar
+// The radar among the quiet-sky slides: the page shows the radar beside this card (body.radar-slide)
 function radarSlideHtml(state) {
   return `<div class="k-card k-slide k-onradar"><div class="k-kicker">On the radar</div>${stripHtml(state, { short: true, notes: 0 })}</div>`;
 }
 const onRadar = (on) => document.body.classList.toggle("radar-slide", on);
 
-// The side view along the runways among the quiet-sky slides, while anything is landing or taking
-// off: the desktop's drawing, its lettering enlarged with the panel's height to read from the room.
-// A tap on an aircraft in it brings up its card (app.js).
+// The runway side view as a slide, while anything is landing or taking off: the desktop's drawing,
+// its lettering enlarged with the panel's height. A tap on an aircraft brings up its card (app.js).
 function sideSlideHtml(state) {
   const from = profileFrom(state);
   return `<div class="k-card k-slide k-side"><div class="k-kicker">Side view along the runways${from ? `, from the ${esc(from)}` : ""}</div><div class="prof-box" id="k-side"></div></div>`;
@@ -283,8 +268,7 @@ function showIdle(el, state) {
   el.firstElementChild.classList.add("k-enter");
 }
 
-// The card: the plane or the slides, in "k-body". Something else drawn in the card (the emergency)
-// is replaced by it again.
+// The card's "k-body"; something else drawn in the card (the emergency) is replaced by it again.
 function body(el) {
   let b = el.querySelector(":scope > .k-body");
   if (!b) {

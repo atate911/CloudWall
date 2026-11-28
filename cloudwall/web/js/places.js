@@ -4,9 +4,6 @@ import { $, esc, store } from "./util.js";
 
 let current = () => null;       // the page's state, as app.js has it now
 
-// The place in the header: its airport's code, and with several places its name too. On the
-// desktop it opens a menu of the places, to switch this screen to another (it starts afresh on
-// it), to set up a new one by ZIP code or coordinates, or to remove one set up that way.
 export function renderPlace(state, KIOSK) {
   const places = state.places || [], here = places.find((p) => p.id === state.place), many = places.length > 1;
   const label = many && here ? `${here.name} · ${state.airport.icao}` : state.airport.icao || "";
@@ -59,12 +56,10 @@ $("place-menu").addEventListener("click", async (e) => {
 document.addEventListener("pointerdown", (e) => { if (!e.target.closest(".brand")) closePlaceMenu(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePlaceMenu(); });
 
-// Setting a location: a ZIP code or coordinates, then the airport: the closest major one by
-// default, or another of the airline airports nearby. Shows where it is as it's typed.
+// ---------- setting a location ----------
 let locTimer = null, locFound = null;
-// The places routes answer 200, or 400 with a message, so a 404 means the server doesn't have
-// them: it is still running code from before an update that this page, read fresh from disk,
-// comes from.
+// The places routes answer 200 or 400, so a 404 means the server is still running code from before
+// an update that this page (read fresh from disk) comes from.
 async function placesApi(url, opts) {
   let r;
   try { r = await fetch(url, opts); } catch (e) { return { error: "CloudWall isn't answering" }; }
@@ -100,10 +95,8 @@ async function lookUpLocation() {
       .map((a) => opt(a.icao, `<b>${esc(a.iata || a.icao)} · ${esc(a.name)}</b><small>${esc(a.city || "")} · ${a.dist_nm} nm${a.size === "large" ? " · large" : ""}</small>`)).join("");
   $("loc-save").disabled = false;
 }
-// This device's own location, from the browser: a place already set up within a mile or so of
-// it is shown straight away; otherwise its coordinates go in the box, to choose an airport and
-// save as for typed ones. Browsers give a page its location only over HTTPS (or on the machine
-// itself, at localhost), so a screen on the house network at http://<address>:5050 can't have it.
+// This device's location: a place already set up within HERE_NM of it is shown straight away.
+// Browsers give a page its location only over HTTPS (or localhost), so a plain-HTTP screen can't have it.
 const HERE_NM = 1;
 function nmApart(a, b) {
   const r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
@@ -154,5 +147,4 @@ $("loc-form").addEventListener("submit", async (e) => {
   showPlace(r.place.id);                                 // this screen moves to the new place
 });
 
-// Once, as the page starts: current() gives the state the menu is drawn from.
 export function placeMenu(getState) { current = getState; }

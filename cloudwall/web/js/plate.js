@@ -7,11 +7,9 @@ import { iconFor } from "./icons.js";
 
 export const feet = (m) => Math.round(m * 3.28084);
 
-// What a drawing needs of an aircraft, or of a type or flyover from the logbook: its type code,
-// its broad shape and length (the server sends these on each record, from its table of types) and
-// its model names, which pick a variant that shares a type code (RV-7 or RV-7A, F-15E or F-15EX).
-// A record without them, one the server hasn't looked up yet, gets a single-aisle stand-in; a kind
-// of aircraft no stand-in looks like (a glider, a balloon) gets no drawing rather than an airliner's.
+// What a drawing needs of a record: type code, broad shape, length, and model names (which pick a
+// variant sharing a type code). A record without them gets a single-aisle stand-in; a kind no
+// stand-in looks like (a glider, a balloon) gets no drawing.
 const NO_STANDIN = new Set(["glider", "balloon", "airship", "ultralight", "drone", "gyro"]);
 export function typeInfo(a) {
   const none = !a.known && NO_STANDIN.has(a.icon);

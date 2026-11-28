@@ -63,14 +63,7 @@ const OVERLAYS = [(k) => {
 const commuter = (o) => ({ kind: "turboprop", over: 0, D: 1, frame: 0.03, extras: EXTRAS, overlays: OVERLAYS, ...o });
 
 // ---------- Dornier 228 ----------
-// References: Wikimedia Commons "Dornier Do 228 three-view silhouette.png" (side views of the 228-100
-// and 228-200 at one scale; the -200's measured and scaled to its 16.56 m, Wikipedia) for the
-// fuselage, fin, sponsons and windows, and "Dornier 228.png" (three-view line drawing) for the wing,
-// nacelles and tailplane: span 16.97 m, nacelles 4.4 m out, wing root chord about 2.2 m. Checked
-// against near side-on photos ("Norving Dornier 228 D-ICOG.jpg", "Do228NG - RIAT 2012"). Long drooping
-// nose, square cabin with the wing on its roof, short TPE331 nacelles slung ahead of and over the
-// wing, main gear retracting into fairings on the lower fuselage, swept fin with a fillet; four-blade
-// propellers (five on the 228NG).
+// References: Wikimedia Commons "Dornier Do 228 three-view silhouette.png" for the fuselage, fin, sponsons and windows
 F.d228 = commuter({
   L0: 16.56, W: 1.4,
   body: [
@@ -100,13 +93,7 @@ F.d228 = commuter({
 });
 
 // ---------- de Havilland Canada DHC-6 Twin Otter ----------
-// References: published dimensions (Wikipedia: length 15.77 m with the long nose of the Series 200
-// on, span 19.81 m with a 1.97 m chord from its 39 m2, height 5.94 m), the side view of the Commons
-// "De Havilland Canada UV-18A Twin Otter 3-view line drawing.png" for the stations of the wing, gear
-// and fin, and the near side-on Commons photo "DHC-6 (DLT) at FRA 1983-02-28.jpg" (Series 300
-// D-IDWT) scaled to the length for the outline, windows, nacelles, gear and tail. Long pointed nose,
-// square cabin under a strut-braced high wing, PT6A nacelles slung from the wing with three-blade
-// propellers, fixed tricycle gear on a sprung main leg, tall swept fin with the tailplane low on it.
+// References: published dimensions (Wikipedia: length 15.77 m), Commons 3-view and a near side-on photo
 F.dhc6 = commuter({
   L0: 15.77, W: 1.6,
   body: [
@@ -139,17 +126,7 @@ F.dhc6 = commuter({
 });
 
 // ---------- Short 360 and 330 ----------
-// References: published dimensions (Wikipedia: 360-300 length 21.58 m, span 22.81 m, height 7.21 m;
-// 330-200 length 17.69 m, span 22.76 m, height 4.95 m; the 360 adds a 0.91 m plug, which the photos
-// put ahead of the wing, one window more there, and a new rear fuselage and tail) and near side-on
-// Commons photos scaled to those lengths: for the
-// 360 "Short 360-300, RAS - Rheinland Air Service AN0908076.jpg" (broadside; heights scaled by 0.96 to
-// its published height), checked against "Short 360-200, Aerocondor JP5963911.jpg" and "Night Express
-// Short 360-300(F) D-CRAS"; for the 330 "Short 330 (DLT) at FRA 1983-02-28 (2).jpg", its stations aft
-// of the plug taken from the 360 less the plug. Square-section fuselage with the fuel over the cabin,
-// high braced wing on stub wings that carry the main gear (retracted here into their sponsons),
-// long PT6A nacelles on top of the wing; the 330 has twin rectangular fins at the tailplane tips,
-// the 360 a single swept fin on a long tapered rear fuselage.
+// References: published dimensions (Wikipedia: 360-300 length 21.58 m; 330-200 length 17.69 m) and Commons photos
 F.sh36 = commuter({
   L0: 21.58, W: 2.24,
   body: [
@@ -200,14 +177,7 @@ F.sh33 = commuter({
 });
 
 // ---------- CASA C-212 Aviocar (Series 300 / 400) ----------
-// References: published dimensions (Wikipedia: length 16.15 m, span 20.28 m, height 6.6 m, propellers
-// 2.74 m, four blades) and the Commons side-view illustration "Casa Aviocar Fuerza Aérea
-// Dominicana.svg" scaled to the length for the outline, nacelles, wing, winglets, portholes and doors,
-// checked against the near side-on photo "Skytraders (VH-VHA) CASA C-212-400 Aviocar at Sydney
-// Airport.jpg" (fuselage depth to length within 3 %, the gear stations). The 300 and 400 have the
-// longer nose with a baggage hold and winglets that the earlier 100 and 200 lack. Box fuselage
-// with round portholes, wing on its roof, TPE331 nacelles ahead of it, fixed gear in sponsons, and a
-// rear loading ramp under the upswept tail.
+// References: published dimensions (Wikipedia: length 16.15 m) and a Commons side-view illustration
 F.c212 = commuter({
   L0: 16.15, W: 2.3,
   body: [
@@ -246,14 +216,7 @@ F.c212 = commuter({
 });
 
 // ---------- BAe Jetstream 31 / 32 ----------
-// References: published dimensions (Wikipedia: length 14.37 m, span 15.85 m, height 5.32 m) and Commons
-// photos: "XX500 at RNAS Culdrose (8105701505).jpg" (a Jetstream T2, the same airframe, near
-// broadside and distant) scaled to the length for the outline, windows, emergency exit and flight
-// deck; "ZE438 (15924180000).jpg" (a Jetstream T3, the naval Jetstream 31) for the fin, rudder and
-// the tailplane's height on the fin; the port-side "Pascan Aviation - BAe Jetstream 32 - C-GPPS"
-// for the nacelles, wing root and airstair door. Round pressurised fuselage with a long drooping
-// nose and oval windows, low wing, TPE331 nacelles reaching past the trailing edge, swept fin with
-// the tailplane a third of the way up it; gear retracted.
+// References: published dimensions (Wikipedia: length 14.37 m) and Commons photos
 F.js31 = commuter({
   L0: 14.37, W: 1.98,
   body: [
@@ -279,11 +242,7 @@ F.js31 = commuter({
 F.js32 = F.js31;
 
 // ---------- BAe Jetstream 41 ----------
-// References: published dimensions (Wikipedia: length 19.25 m, span 18.29 m, height 5.74 m,
-// propellers 2.9 m, five blades) and the near broadside Commons photo "easternairways j41 g-majx
-// arp.jpg" (in flight, gear down) scaled to the length for the outline, flight deck, windows, rear
-// door, nacelles and tail. The Jetstream 31's round section stretched by 4.9 m, with a new deeper
-// windscreen, the wing passing under the cabin in a long fairing, and higher nacelles.
+// References: published dimensions and the near broadside Commons photo "easternairways j41 g-majx arp.jpg"
 F.js41 = commuter({
   L0: 19.25, W: 1.98,
   body: [

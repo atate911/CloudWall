@@ -51,12 +51,7 @@ const marks = (parts) => ({ sk }) => {
 };
 
 // ---------- De Havilland Canada Dash 8-400 (Q400) ----------
-// Published dimensions (Wikipedia): length 32.81 m, span 28.42 m, height 8.34 m, fuselage 2.69 m,
-// propellers 4.11 m (six blades), main gear track 8.79 m (so the nacelles sit 4.4 m out). Station
-// and depth of the nacelles, doors, window pitch and dorsal checked against near side-on Commons
-// photos ("Hamburg Airport Wideroe ... LN-WDR (DSC08713).jpg", "Dash 8-Q400 - Porter Airlines"). Long slender nose, wing on top of the
-// fuselage, deep nacelles hanging under the wing that carry the main gear and run well past the
-// trailing edge, tall T-tail on a long dorsal fin.
+// Published dimensions (Wikipedia): length 32.81 m, span 28.42 m, height 8.34 m, fuselage 2.69 m, propellers 4.11 m
 F.dh8d = {
   kind: "turboprop", L0: 32.5, over: 0.31, D: 2.69, W: 2.69, fwd: 0.5, fair: 0, floor: 0.2,
   nose: {
@@ -101,11 +96,7 @@ F.dh8c = {
 };
 
 // ---------- Beechcraft King Air 200 / 350 ----------
-// Reference: Wikimedia Commons "Beechcraft B200 King Air 3-view line drawing.gif" (side and plan
-// views; length 13.34 m, span 16.61 m per Wikipedia). Low wing, nacelles reaching past the trailing
-// edge, PT6A exhaust stacks behind the props, swept T-tail on a long dorsal. The 350 (B300) adds
-// 0.86 m of cabin (two more windows), a longer wing with winglets and four-blade props
-// (published dimensions: length 14.22 m, span 17.65 m).
+// Reference: Wikimedia Commons "Beechcraft B200 King Air 3-view line drawing.gif"
 F.be20 = {
   kind: "turboprop", L0: 11.86, over: 1.48, D: 1.8, W: 1.55, fwd: 0.6, fair: 0,
   nose: {
@@ -140,19 +131,7 @@ F.b350 = {
 };
 
 // ---------- Beechcraft King Air 90 / F90 / 100 ----------
-// Reference: Wikimedia Commons "Beechcraft U-21A Ute 3-view line drawing.png", a dimensioned
-// manufacturer's drawing of the King Air 90 airframe (length 35 ft 6 in, span 45 ft 10.5 in, height
-// 14 ft 2.56 in, propellers 7 ft 9 in, main gear track 12 ft 9 in): its side view gives the 90's
-// tail cone, conventional tail with dorsal fillet and dihedral tailplane, and the wing and nacelle
-// stations. Published dimensions (Wikipedia): C90 length 10.82 m, span 15.32 m; F90 12.13 m long,
-// 14.00 m span; 100 series 12.17 m long, 14.0 m span, 4.70 m high. Windows and door checked against
-// Commons photos: "Beechcraft King Air C90GTx Sideview.jpg" and "Beechcraft King Air F90 N3809C
-// MD1.jpg" (three round cabin windows ahead of the airstair door, one behind it, on the left side),
-// "C-GSYN Adlair Aviation Ltd Beechcraft King Air 100 (BE10) 03.JPG" and "Beechcraft King Air A100
-// 5R-MHC.jpg" (the 200's five). The 90 shares the 200's nose, cabin section and nacelles, so those
-// are the 200's above; its cabin is 1.35 m shorter, 60 % of it ahead of the wing as the 200 drawing
-// has it. The F90 is the 90's fuselage and wing with the 200's T-tail; the 100 is the 200's
-// fuselage with a conventional tail like the 90's, taller (its 4.70 m height less the 200's 4.37 m).
+// Reference: Wikimedia Commons "Beechcraft U-21A Ute 3-view line drawing.png", length 10.82 m
 const KA90_TAIL = {
   top: [[2.4, 1], [2.1, 0.97], [1.0, 0.84], [0, 0.73]],
   bot: [[3.1, 0], [2.57, 0.08], [2.0, 0.17], [1.37, 0.28], [0.7, 0.37], [0.14, 0.42], [0, 0.44]],
@@ -186,18 +165,11 @@ F.be10 = {
 };
 
 // ---------- ATR 72 ----------
-// Reference: Wikimedia Commons "ATR family v1.0.png" (dimensioned side, plan and front views of
-// the ATR 72 and 42; length 27.17 m, span 27.05 m, height 7.65 m). High wing on a raised
-// fairing, short PW127 nacelles, main-gear sponsons on the lower fuselage, T-tail on a large
-// dorsal fillet, forward cargo door and aft passenger door on the left side. AT72 (-200/-210)
-// has four-blade propellers, AT76 (-600) six-blade (both 3.93 m).
+// Reference: Wikimedia Commons "ATR family v1.0.png"
 const atrSponson = ({ sk }) => {
   sk.smooth("hull", [[9.8, 0.35, "c"], [10.3, 0.85], [12.0, 1.0], [14.0, 0.75], [15.25, 0.2, "c"], [13.5, -0.18], [11.5, -0.2], [10.2, -0.08]]);
 };
-// Traced off the same Commons drawing's side view (47 mm a pixel): the radome joint and its latches,
-// the two nose ports, the antenna behind the flight deck, the exit with its window ahead of the
-// cabin windows, the blade antenna under the tail cone, the gear-bay door, vent and scoop on the
-// sponson, and the fin's stepped rudder hinge and trim-tab line.
+// Traced off the same Commons drawing's side view (47 mm a pixel): the radome joint and its latches, the two nose ports
 const ATR_TRACED = [
 ["hl", [[0.54,1.236], [0.573,0.973], [0.573,0.385]]],
 ["hl", [[0.573,0.761], [0.729,0.761]]],
@@ -243,10 +215,7 @@ F.at72 = {
 F.at76 = { ...F.at72, eng: { ...F.at72.eng, blades: 6 } };
 
 // ---------- Beechcraft 1900D ----------
-// Published dimensions only (Wikipedia / Beechcraft data): length 17.63 m, span 17.67 m, height
-// 4.72 m, cabin 1.80 m high. King Air family nose and nacelles (measured above, in metres) on a
-// longer fuselage whose stand-up cabin roof rises behind the flight deck; winglets, T-tail with
-// tailets under the stabiliser tips, stabilons and ventral strakes on the tail cone.
+// Published dimensions only (Wikipedia / Beechcraft data): length 17.63 m, span 17.67 m, height 4.72 m, cabin 1.80 m high
 const b190Tail = ({ sk, L, D, f, tan }) => {
   const t = f.stab, z = D + f.fin.h - (t.drop ?? 0.1), s0 = L - t.le + (t.span / 2 - t.root) * tan(t.sweep);
   // tailets: small fins hanging under the stabiliser tips
@@ -283,9 +252,7 @@ F.b190 = {
 };
 
 // ---------- Fairchild Swearingen Metro III / 23 ----------
-// Published dimensions only (Wikipedia): length 18.09 m, span 17.37 m, height 5.08 m, cabin
-// 1.45 m high. Very long thin fuselage with a long pointed nose, low wing, slim TPE331 nacelles
-// riding on the wing, cruciform tail (stabiliser part-way up the swept fin), four-blade props.
+// Published dimensions only (Wikipedia): length 18.09 m, span 17.37 m, height 5.08 m, cabin 1.45 m high
 F.sw4 = {
   kind: "turboprop", L0: 17.4, over: 0.69, D: 1.72, W: 1.65, fwd: 0.5, fair: 0,
   nose: {
@@ -319,16 +286,7 @@ const panes = (list, w, h, z, r = 0.07) => ({ sk }) => {
 };
 
 // ---------- Beechcraft 99 Airliner ----------
-// Published dimensions (Wikipedia, Model 99A): length 44 ft 6.75 in (13.58 m), span 45 ft 10.5 in
-// (13.98 m), height 14 ft 4.33 in (4.38 m). It has the Queen Air's wing and the King Air's engines
-// and nacelles (so those are the King Air 90's above, measured off the U-21A drawing of the same
-// wing, 45 ft 10.5 in span, and nacelles), on a longer cabin behind its own long, drooping nose.
-// No three-view on Commons: stations measured off the near side-on Beech factory photo "Beechcraft
-// - 99 - Airliner.jpg" (scaled by the overall length) and heights off "Beech 99 (287390412).jpg",
-// with "Jamaica Air Shuttle Beechcraft Model 99 In Flight.jpg" for the left side's openings: a
-// forward exit with its window, six square cabin windows, the wide airstair-and-cargo door behind
-// the wing and a round window aft of it; swept fin on a long low dorsal, dihedral tailplane low on
-// the tail cone, three-blade propellers. Tailplane span is estimated from the photos.
+// Published dimensions (Wikipedia, Model 99A): length 44 ft 6.75 in (13.58 m), span 45 ft 10.5 in (13.98 m)
 F.be99 = {
   kind: "turboprop", L0: 13.0, over: 0.58, D: 1.78, W: 1.6, fwd: 0.4, fair: 0,
   nose: {
@@ -358,13 +316,7 @@ F.be99 = {
 };
 
 // ---------- Piaggio P.180 Avanti ----------
-// Reference: Wikimedia Commons "P180 Avanti.jpg" (side, plan and front views with a cabin section),
-// scaled by the published length 14.41 m (Piaggio; Wikipedia 47.3 ft), span 14.03 m (46 ft), height
-// 13 ft. Checked against the side-on photo "Piaggio P180 Avanti.JPG" (PH-DLN). Laminar fuselage whose
-// depth swells to 2 m over the cabin and tapers to a high tail cone, canard foreplane low on the nose,
-// straight mid-set wing behind the cabin carrying long nacelles with five-blade pusher propellers
-// (2.16 m in the front view), swept T-tail, and two delta fins under the tail cone. Left side: the
-// airstair door ahead of four small cabin windows.
+// Reference: Wikimedia Commons "P180 Avanti.jpg", scaled by the published length 14.41 m (Piaggio; Wikipedia 47.3 ft)
 const P180_PARTS = ({ sk, prop, surface }) => {
   // the near delta fin under the tail cone
   sk.smooth("fin", [[9.7, 0.81, "c"], [12.41, 1.06, "c"], [12.36, 0.66], [12.05, 0.61, "c"], [11.24, 0.68]]);

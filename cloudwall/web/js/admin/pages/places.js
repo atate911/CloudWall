@@ -69,7 +69,6 @@ export default {
     const t = pageTroubles("places");
     if (t) page.append(t);
 
-    // the map: the house, the airport, the traffic, and the two rings, dragged to change
     const radius = value("tracking", "radius_nm"), overhead = value("tracking", "overhead_nm");
     const syncStepper = (key, nm) => { const i = page.querySelector(`[data-setting="tracking.${key}"] input`); if (i) { i.value = String(nm); i.size = Math.max(2, i.value.length); } };
     const ask = el(`<p class="pick-ask" hidden></p>`);

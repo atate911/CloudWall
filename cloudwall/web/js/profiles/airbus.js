@@ -61,28 +61,14 @@ const A320_FTF = [[0.199, 0.58, 0.65, 1.27], [0.436, 0.42, 0.3, 1.28], [0.684, 0
 const A320_FAIRING = [[7.5, 0], [8.0, 0.12], [8.5, 0.27], [8.9, 0.56], [8.8, 0.74], [8.5, 0.9], [8.0, 1.1], [7.0, 1.31],
   [4.5, 1.6], [2.0, 1.75], [0, 1.81], [-1.0, 1.75], [-1.5, 1.68], [-2.0, 1.5], [-2.3, 1.12], [-2.37, 0.9], [-2.3, 0.7],
   [-2.0, 0.32], [-1.5, 0.12], [-1.0, 0, "c"]];
-// nacelles, placed against the wing section at the engine (5.75 m from the centreline).
-// CFM56-5B: short fan cowl, exposed core cowl and plug, as drawn in the AC side views; inlet lip
-// 11.6 m from the nose (side and plan views, and a planform photo; the AC's own "11.19 m" label
-// disagrees with all three). IAE V2500-A5: long-duct nacelle to one mixed-flow nozzle with a
-// small tail cone, its low point 0.18 m higher (AC 2-3-0: 1.24 / 1.42 m above ground, jacked),
-// inlet 0.07 m further forward (AC plan-view labels); length from photos (about 2.4 diameters).
-// PW1100G-JM: 2.5 m diameter, inlet 0.3 m further forward than the CFM56 and low point 0.11 m
-// lower (AC neo figures and 2-3-0 table; Spirit A320neo planform photo).
+// nacelles, placed against the wing section at the engine (5.75 m from the centreline)
 const CFM56 = { kind: "fan", at: [0.26], fwd: 3.37, drop: 1.72, len: 4.7, dia: 2.18, fx: 0.68, cx: 0.94, pyTe: 0.62 };
 const V2500 = { kind: "fan", at: [0.26], fwd: 3.44, drop: 1.59, len: 5.0, dia: 2.08, style: "long", fx: 0.88, pyTe: 0.62 };
 const PW1100G = { kind: "fan", at: [0.26], fwd: 3.67, drop: 1.69, len: 4.95, dia: 2.5, fx: 0.71, cx: 0.88, pyFront: 0.25, pyTe: 0.62 };
 // sharklet (AC fig. 2-2-0-991-009): 2.43 m tall, blended into the tip, raked tip chord 0.5 m
 const SHARKLET = { h: 2.38, sweep: 32, top: 0.3, base: 0.41, blend: 0.9 };
 const WIN = { z: 0.662, pitch: 0.533, w: 0.23, h: 0.33 };
-// A320 fig. 2-11-0-991-003 (A320-200 and A320neo): a schematic, not to scale, so its stations are
-// placed between door 1, the overwing exits, door 4 and the two ends; the crown and belly antennas
-// from whichever of its two side views draws them, the probes on this (right) side from the right
-// view. Spine: GPS 1 and 2, VHF 1, ATC 4, ATC 3, TCAS top, ADF, VHF 3, the ELT; belly: DME 1, ATC 1
-// and 2, DME 2, TCAS bottom, the marker, VHF 2 and the two pairs of radio-altimeter antennas;
-// side: the emergency static probe, pitot probe 2, the TAT probe, the static probes and AOA sensor 2;
-// the HF antenna in the fin fillet and the VOR antenna in the fin tip. The two fin panels are given
-// from the tail-cone end, as the fin is (it is the same on the A319, A320 and A321).
+// A320 fig. 2-11-0-991-003 (A320-200 and A320neo): a schematic, not to scale, so its stations are placed between door 1
 const A320_FIN_PANELS = [
   ["panel", [[-7.02, 4.03], [-5.76, 5.43], [-5.68, 5.37], [-6.94, 3.97]]],
   ["panel", [[-1.76, 9.64], [-1.76, 9.78], [-1.14, 9.78], [-1.14, 9.64]]],
@@ -113,13 +99,7 @@ const A319_AERIALS = [
 ];
 const row = (from, to, pitch = WIN.pitch) => ({ ...WIN, from, to, pitch });
 
-// References: Airbus "A320 Aircraft Characteristics - Airport and Maintenance Planning" (AC, Jul
-// 2026): fig. 2-2-0-991-004 (A320-200, wingtip fence, side, plan and front views), -009 (A320neo),
-// 2-3-0 ground clearances (heights at jacked attitude), 2-7-0-991-003 door locations; A318/A319/A321
-// AC documents fig. 2-2-0-991-001/-002/-005/-010/-012 and 2-7-0 door locations for the variants.
-// Measured on the A320-200 side view. All four share the nose, tail cone, fin (taller on the A318),
-// tailplane and wing; plugs ahead of and behind the wing set each length (wheelbases 10.25 /
-// 11.04 / 12.64 / 16.90 m give the share ahead of the wing).
+// References: Airbus "A320 Aircraft Characteristics - Airport and Maintenance Planning" (AC, Jul 2026): fig. 2-2-0-991-004
 F.a320 = {
   kind: "narrow", L0: 37.57, over: 0, D: 4.14, W: 3.95, fwd: 0.5, fair: 0.025, fairAft: 1.33,
   nose: A320_NOSE, tail: A320_TAIL, glass: A320_GLASS, frame: 0.06,
@@ -168,14 +148,7 @@ const A318 = {
     k.sk.poly("hl", [[a, za], [at(a, za, tipLE + t.ct * 0.7, zt), zx], [at(te, zte, tipLE + t.ct, zt), zx]], false);
   }],
 };
-// A321 fig. 2-11-0-991-004 (A321-100, A321-200 and A321neo), from Airbus's "A321 Aircraft
-// Characteristics - Airport and Maintenance Planning" (Rev Mar 01/22; Hawaii DOT's copy, Airbus's own
-// being out of reach), placed as the A320's: a schematic drawn near to scale (its door spacings agree
-// with the 2-7-0 stations within 0.1 m), so stations come from its two side views by interpolation
-// between the nose, doors 1 to 4 and the tail-cone end; crown and belly from the left view, the probes
-// on this (right) side and ATC 3, ATC 2 and the ADF from the right view. Where the two views draw a
-// pair at one station (ATC 3 and 4 on the crown, ATC 1 and 2 underneath), only this side's is drawn.
-// The neo shares the fuselage, so the ACF door layout doesn't move them.
+// A321 fig. 2-11-0-991-004 (A321-100, A321-200 and A321neo)
 const A321_AERIALS = [
   ["flat", 4.05, 4.4, 0.07, 1], ["flat", 4.46, 4.71, 0.07, 1], ["blade", 5.18, 5.9, 0.4, 1], ["stub", 6.53, 6.94, 0.12, 1],
   ["dome", 8.47, 9.07, 0.11, 1], ["dome", 21.51, 22.23, 0.13, 1], ["blade", 28.6, 29.11, 0.44, 1], ["blade", 34.93, 35.31, 0.21, 1],
@@ -186,9 +159,7 @@ const A321_AERIALS = [
   ["port", 7.73, 1.84, 0.06],
   ...A320_FIN_PANELS,
 ];
-// A321: 4.27 m plug ahead of the wing, 2.67 m behind; four door pairs, doors 2 and 3 the smaller
-// 0.76 x 1.52 m type (drawn here, the renderer's doors are 1.85 m tall). IAE V2500 (American,
-// JetBlue, Spirit) and sharklets, as most US A321ceos were delivered.
+// A321: 4.27 m plug ahead of the wing, 2.67 m behind; four door pairs, doors 2 and 3 the smaller 0.76 x 1.52 m type
 const A321 = {
   fwd: 0.614, eng: V2500, tip: SHARKLET, overlays: [canoes(A320_FTF)],
   doors: [[5.02, 0.81], [8.16, 1.82, "C"], [-14.89, 1.82, "C"], [-7.93, 0.81]],
@@ -205,14 +176,7 @@ const A21N = {
 };
 
 // ---------- Airbus A220 (Bombardier CSeries) ----------
-// References: Airbus "A220-100 / A220-300 Aircraft Characteristics" BD500-3AB48-13800-00:
-// A220-100 fig. 1 general aircraft dimensions sheet 2 (side view; measured), sheet 1 / the
-// A220-300 sheet 2 (plan view, the same drawing: wing, nacelle 2.45 m wide, tailplane), fig. 11
-// door distances from the nose, table 11 door sizes, A220-300 table 7 ground clearances. The
-// drawings show no cabin windows: those (0.54 m pitch, first 6.5 m from the nose, last 9.9 m from
-// the tail) come from a side-on photo (Wikimedia Commons, Delta A220-300 N333DU, Boston 2025).
-// Shown from the right: service doors 1R/2R (0.8 x 1.5 m) and the cargo doors. A clean-sheet
-// pointed nose with a two-pane side view of the flight deck, a deep belly fairing, PW1500G.
+// References: Airbus "A220-100 / A220-300 Aircraft Characteristics" BD500-3AB48-13800-00
 const A220_NOSE = {
   tip: 0.285,
   top: [[0.015, 0.325], [0.06, 0.379], [0.108, 0.427], [0.163, 0.467], [0.217, 0.505], [0.271, 0.546], [0.325, 0.579],

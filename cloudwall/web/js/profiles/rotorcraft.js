@@ -88,13 +88,7 @@ const aero = (le, zle, te, zte, th) => [[le, zle, "c"], [le + (te - le) * 0.25, 
   [te, zte, "c"], [le + (te - le) * 0.3, zle + (zte - zle) * 0.3 - th * 0.4]];
 
 // ---------- Airbus Helicopters H135 / EC135 (EC35) ----------
-// Reference: Wikimedia Commons "Eurcopter EC135 orthographical image.svg" (3-view, side view
-// traced; scaled to the 10.20 m fuselage length, nose to tail bumper). Rotor 10.20 m (Wikipedia
-// EC135 spec table). Overall rotors turning 12.16 m. Features: rounded nose with the big
-// wrap-round windscreen and chin windows, sliding rear door, clamshell doors in the tapered rear
-// pod, engine cowling with the low mast fairing, boom with the drive-shaft fairing on top,
-// horizontal stabiliser with endplates, swept fin with the fenestron, ventral fin, skids.
-// The default drawing for any helicopter without a profile of its own.
+// Reference: Wikimedia Commons "Eurcopter EC135 orthographical image.svg"
 const EC135_BODY = [[0, 0.78], [0.1, 1.03], [0.3, 1.23], [0.6, 1.43], [1.0, 1.64], [1.4, 1.79], [1.8, 1.97], [2.2, 2.08],
     [2.63, 2.15, "c"], [2.75, 2.3], [2.95, 2.46], [3.3, 2.51], [3.75, 2.51], [3.98, 2.46], [4.07, 2.36], [4.13, 2.16, "c"],
     [4.4, 2.14], [4.8, 2.06], [5.1, 2.0], [5.3, 1.9], [5.5, 1.82], [5.75, 1.79], [7.7, 1.73], [8.02, 1.75],
@@ -119,9 +113,7 @@ const EC135_SEAMS = [
     ["hl", [[5.75, 1.62], [7.75, 1.6]], false],
     ["inlet", [[5.45, 1.9], [5.3, 2.02], [4.95, 2.05], [4.83, 1.95], [4.85, 1.72], [5.05, 1.62], [5.45, 1.78]]],
   ];
-// More of the 3-view's side view (EC135 only; the H145 drawn from it is not known to share them):
-// access panels on the cowling and the cabin side, the seam across the upper fin, the shroud line
-// under the fenestron, and the tail position light.
+// More of the 3-view's side view (EC135 only; the H145 drawn from it is not known to share them)
 const box = (s0, s1, z0, z1) => [[s0, z0, "c"], [s1, z0, "c"], [s1, z1, "c"], [s0, z1, "c"]];
 const EC135_DETAIL = [
   ["hl", box(3.33, 3.552, 1.818, 1.906)], ["hl", box(3.944, 4.28, 1.489, 1.619)],
@@ -130,11 +122,7 @@ const EC135_DETAIL = [
   ["hl", [[8.058, 1.253], [8.45, 1.074], [8.776, 0.96], [9.005, 0.862], [9.364, 0.894], [9.625, 1.009], [9.847, 1.218]], false],
   ["strut", box(10.122, 10.167, 1.492, 1.616)], ["strut", box(10.167, 10.206, 1.518, 1.58)],
 ];
-// From the side view in Airbus's ACH135 Technical Description 2023 (Figure 2.1, External dimensions;
-// fitted to the 3-view's outline within about 0.1 m around the cowling): the louvred oval vent on top
-// of the cowling (moved 0.13 m forward onto the 3-view's hump), the louvred grille panel on the
-// cowling side in two panes, the two round vents, the four recessed footsteps up the side and the
-// handle at the roof edge. EC135 only, like the detail above.
+// From the side view in Airbus's ACH135 Technical Description 2023: the louvred oval vent on top of the cowling
 const EC135_ACH = [
   ["inlet", [[3.687, 2.235, "c"], [3.755, 2.315], [3.892, 2.346], [4.049, 2.329], [4.109, 2.251, "c"], [4.041, 2.162], [3.895, 2.13], [3.747, 2.158]]],
   ["hl", box(4.104, 4.389, 1.406, 1.998)], ["hl", [[4.101, 1.612], [4.395, 1.616]], false],
@@ -170,13 +158,7 @@ F.ec35 = {
 };
 
 // ---------- Bell 206 JetRanger (B06) ----------
-// Reference: Wikimedia Commons "Bell 206A orthographical image.svg" (3-view; side view traced and
-// scaled so nose tip to tail-rotor blade tip is 9.50 m, which gives the 11.82 m rotors-turning
-// length and the 10.16 m rotor of the Wikipedia Bell 206B spec table). Tail rotor 1.65 m
-// (Bell 206B-3 data); the drawing's tail rotor is drawn oversize. Features: pointed nose with
-// chin windows, two-pane door windows, roof eyebrow windows, transmission fairing and tall mast,
-// curved exhaust stack, tapering boom with the small inverted-aerofoil stabiliser, swept upper
-// fin and ventral fin with tail skid, two-blade teetering rotors, tail rotor on the port side.
+// Reference: Wikimedia Commons "Bell 206A orthographical image.svg"
 F.b06 = {
   kind: "heli", L0: 9.46, over: 2.44, D: 1, W: 1.3,
   body: [[0.0, 0.34], [0.05, 0.42], [0.3, 0.58], [0.5, 0.67], [0.6, 0.76], [0.8, 0.98], [1.0, 1.15], [1.2, 1.26],
@@ -219,10 +201,7 @@ F.b06 = {
       ["hl", [[4.199, 1.783], [4.199, 1.302]], false],
       ["hl", [[5.185, 1.446], [5.185, 0.941]], false],
       ["strut", box(2.602, 2.814, 1.87, 1.947)], ["strut", box(2.718, 2.785, 1.947, 2.014)],
-      // traced from the US Army OH-58A (military 206A) technical-manual side view, keeping only what Bell's
-      // 206B3 Product Specification side view (Jan 2004) also draws: the pitot tube ahead of the nose, the
-      // latch on each cabin door and the doors' hinges, the baggage door behind the cabin with its hinges
-      // and latches, and the line along the top of the boom
+      // traced from the US Army OH-58A (military 206A) technical-manual side view
       ["strut", [[-0.316, 0.283, "c"], [-0.047, 0.29, "c"], [-0.046, 0.266, "c"], [-0.315, 0.259, "c"]]],
       ["door", [[1.675, 0.491, "c"], [1.778, 0.493, "c"], [1.78, 0.424, "c"], [1.677, 0.422, "c"]]],
       ["door", [[2.572, 0.536, "c"], [2.662, 0.539, "c"], [2.664, 0.449, "c"], [2.574, 0.447, "c"]]],
@@ -249,13 +228,7 @@ F.b06 = {
 };
 
 // ---------- Bell 407 (B407) ----------
-// Reference: Wikimedia Commons "Bell 407 orthographical image.svg" (3-view, same artist as the
-// 206A one; side view traced, scaled so mast to tail-rotor hub matches the Wikipedia spec table:
-// 12.70 m rotors turning, 10.67 m main rotor, 1.65 m tail rotor). Against the 206: cabin
-// stretched about 0.2 m with three big rounded windows (front door, double rear doors), longer
-// engine cowling with the inlet louvres, composite boom with the arrowhead endplate fins on
-// the stabiliser, taller fin, four-blade soft-in-plane rotor with a domed hub, tail rotor on
-// the port side.
+// Reference: Wikimedia Commons "Bell 407 orthographical image.svg"
 F.b407 = {
   kind: "heli", L0: 10.15, over: 2.55, D: 1, W: 1.5,
   body: [[0.0, 0.35], [0.05, 0.43], [0.3, 0.59], [0.5, 0.67], [0.6, 0.76], [0.8, 0.97], [1.0, 1.15], [1.2, 1.26],
@@ -298,11 +271,7 @@ F.b407 = {
       ["hl", [[5.423, 1.428], [5.432, 0.945]], false],
       ["hl", [[5.422, 1.376], [9.023, 1.567]], false],
       ...[1.836, 2.519, 3.397].map((s0) => ["door", [[s0, 0.49, "c"], [s0 + 0.108, 0.49, "c"], [s0 + 0.108, 0.522, "c"], [s0, 0.522, "c"]]]),
-      // from the side view in Bell's 407GXi Product Specifications ("Helicopter Dimensions", low skid
-      // gear): the baggage door just behind the rear cabin door, the access panel framing the inlet
-      // grilles with its three fasteners on the roof seam (Bell draws the grilles about 0.3 m further
-      // forward than the 3-view does; the frame is drawn round the 3-view's grilles), and the curved
-      // seam on the side of the transmission fairing
+      // from the side view in Bell's 407GXi Product Specifications: the baggage door just behind the rear cabin door
       ["door", [[3.731, 0.767, "c"], [4.562, 0.909, "c"], [4.588, 0.398, "c"], [3.75, 0.244, "c"]]],
       ["hl", [[3.792, 1.34], [3.778, 1.71]], false], ["hl", [[4.835, 1.34], [4.827, 1.62]], false],
       ...[3.83, 4.3, 4.77].map((s) => ["strut", box(s - 0.012, s + 0.012, 1.35, 1.38)]),
@@ -315,9 +284,7 @@ F.b407 = {
     skids({ z: -0.38, t: 0.1, aft: 4.14, fwd: 1.5, toe: [1.31, -0.18], legs: [[1.95, 0.0, 1.86, 0.13], [3.92, 0.06, 3.72, 0.13]] }),
     // the stabiliser's starboard endplate fin
     paint([["stab", [[7.54, 1.81, "c"], [7.32, 1.81, "c"], [7.0, 1.42, "c"], [7.32, 0.94, "c"], [7.65, 0.94, "c"], [7.41, 1.42, "c"]]]]),
-    // from Bell's 407GXi specification side view: the saddles where the cross tubes meet the belly,
-    // the two fittings on top of the skid tube between the legs, the position light on the endplate
-    // and the light on top of the fin
+    // from Bell's 407GXi specification side view: the saddles where the cross tubes meet the belly
     paint([["skid", [[1.825, 0.0, "c"], [2.075, 0.0, "c"], [2.04, -0.075, "c"], [1.865, -0.075, "c"]]],
       ["skid", [[3.81, 0.06, "c"], [4.03, 0.06, "c"], [3.99, -0.01, "c"], [3.85, -0.01, "c"]]],
       ...[2.92, 3.33].map((s) => ["strut", box(s - 0.012, s + 0.012, -0.285, -0.235)])]),
@@ -326,15 +293,7 @@ F.b407 = {
 };
 
 // ---------- Airbus Helicopters H125 / AS350 Ecureuil (AS50) ----------
-// Reference: Wikimedia Commons "Aérospatiale AS355 Écureuil 2 profile silhouette.svg" (the twin
-// AS355 shares the AS350 airframe outline), traced and scaled to the 10.93 m fuselage length of
-// the Wikipedia AS350 spec table; panel lines after "Aérospatiale AS550 Fennec - illustration.svg".
-// Checks: 3.32 m height to the rotor head (H125 3.34 m), 1.86 m tail rotor, mast to rotor tip
-// gives the 12.94 m rotors-turning length. Features: round bulbous nose and wrap-round
-// windscreen with chin and lower door windows, roof step up to the long transmission/engine
-// cowling, three-blade Starflex rotor, slim boom whose underside sweeps up from the cabin,
-// swept upper fin, ventral fin, stabiliser with tip fins, two-blade tail rotor on the starboard
-// side (in front of the fin in this view), high skids.
+// Reference: Wikimedia Commons AS355 profile silhouette (same airframe outline), scaled to the 10.93 m fuselage length
 F.as50 = {
   kind: "heli", L0: 10.93, over: 1.97, D: 1, W: 1.8,
   body: [[0, 0.52], [0.05, 0.64], [0.2, 0.83], [0.4, 1.0], [0.6, 1.16], [0.8, 1.32], [1.0, 1.47], [1.15, 1.59], [1.3, 1.65],
@@ -364,11 +323,7 @@ F.as50 = {
       ["hl", [[2.42, 1.98], [2.4, 1.74], [3.4, 1.57], [3.95, 1.27], [4.96, 0.99], [5.73, 1.1], [5.75, 1.47]], false],
       ["inlet", [[4.96, 1.62], [5.15, 1.7], [5.33, 1.62], [5.15, 1.52]]],
       ["strut", [[9.9, 0.4, "c"], [10.2, 0.31], [10.6, 0.25, "c"], [10.6, 0.21, "c"], [10.2, 0.27], [9.88, 0.36, "c"]]],
-      // traced from the H125 side view in Airbus's "H125 Technical Description 2025": the seam between the
-      // transmission and engine cowlings, the engine cowling's curved lower and aft edges, the frame behind
-      // the cabin and its join to the boom, the drive-shaft cover along the boom with its joints and the
-      // raised collar, the small fairing on the boom, the two recesses at the roof edge over the rear door
-      // and the seam under them, and the baggage door with its latch
+      // traced from the H125 side view in Airbus's "H125 Technical Description 2025"
       ["hl", [[3.692, 2.108], [3.7, 1.614]], false],
       ["hl", [[2.542, 1.832], [3.054, 1.729], [3.424, 1.649], [3.582, 1.604], [3.844, 1.435], [4.003, 1.288], [4.122, 1.235, "l"],
         [4.616, 1.235, "c"], [4.838, 1.647]], false],
@@ -387,9 +342,7 @@ F.as50 = {
     ]),
   ],
   overlays: [
-    // the Starflex rotor head as the AS355 silhouette draws it: the star's legs, centre post and base
-    // under the bar of the blade sleeves (with their slots) and the dome cap; and the small fitting on
-    // the fin top
+    // the Starflex rotor head as the AS355 silhouette draws it: the star's legs
     paint([
       ["strut", box(3.188, 3.426, 2.189, 2.235)], ["strut", box(3.097, 3.516, 2.234, 2.306)], ["strut", box(3.239, 3.354, 2.235, 2.531)],
       ["strut", [[3.064, 2.531, "c"], [3.122, 2.531, "c"], [3.162, 2.305, "c"], [3.104, 2.305, "c"]]],
@@ -408,15 +361,7 @@ F.as50 = {
 };
 
 // ---------- Sikorsky UH-60 Black Hawk (H60) ----------
-// References: Wikimedia Commons "Sikorsky UH-60 Black Hawk orthographical image.svg" (side view
-// traced, scaled to the 29 ft / 8.84 m wheelbase) and "Sikorsky UH-60 Black Hawk dimensions.png"
-// (US Army TM side elevation: fuselage 50 ft 7.5 in, overall 64 ft 10 in, rotor 53 ft 8 in, tail
-// rotor 11 ft, belly 1 ft 7 in above the ground), which places the rotor and tail rotor hubs.
-// Features: long low cabin with the drooped nose and D-shaped chin windows, cockpit, gunner and
-// sliding cabin doors, engine nacelles with the exhaust suppressors either side of the rotor
-// pylon, four-blade rotor, boom rising into the swept tail pylon with its stepped trailing edge,
-// big stabilator, the canted four-blade tail rotor on the starboard side, fixed main gear with
-// drag beams and the tail wheel.
+// References: Wikimedia Commons "Sikorsky UH-60 Black Hawk orthographical image.svg", scaled to the 8.84 m wheelbase
 F.h60 = {
   kind: "heli", L0: 16.3, over: 3.5, D: 1, W: 2.36,
   body: [[0, 0.5], [0.05, 0.62], [0.2, 0.84], [0.4, 0.95], [0.6, 1.05], [0.8, 1.15], [1.0, 1.27], [1.2, 1.47], [1.4, 1.65],
@@ -458,9 +403,7 @@ F.h60 = {
       // main gear drag beam and its step fairing
       ["strut", [[3.57, -0.17, "c"], [2.2, 0.17, "c"], [2.2, 0.08, "c"], [3.57, -0.25, "c"]]],
       ["fin", [[1.91, 0.22], [2.2, 0.36], [2.55, 0.33], [2.66, 0.2], [2.4, 0.07], [2.0, 0.1]]],
-      // more of the orthographic drawing: the wire-strike cutter ahead of the rotor pylon, the cabin
-      // door's lower track fairing, the drive-shaft cover along the boom and up the tail pylon, and the
-      // boom joint ahead of the pylon
+      // more of the orthographic drawing: the wire-strike cutter ahead of the rotor pylon, the cabin door's lower track fairing
       ["strut", [[3.544, 2.65, "c"], [3.878, 2.409, "c"], [3.89, 2.425, "c"], [3.556, 2.666, "c"]]],
       ["hl", [[5.512, 0.153, "c"], [6.335, 0.18], [6.576, 0.278], [6.915, 0.243, "c"], [6.625, 0.193], [6.262, 0.132], [5.513, 0.117, "c"]]],
       ["hl", [[8.192, 1.614], [12.113, 1.023]], false],
@@ -478,16 +421,7 @@ F.h60 = {
 };
 
 // ---------- Boeing CH-47 Chinook (H47) ----------
-// Reference: Wikimedia Commons "Boeing CH-47 Chinook 3-view line drawing.svg" (side view, drawn
-// standing nose-high: levelled by 2.5 degrees, scaled to the 15.6 m fuselage length, heights
-// x0.92 to match the 5.685 m height of the Wikipedia CH-47F spec table, which the drawing
-// overstates). The drawing also puts the rotors closer together than the published 30.14 m
-// rotors-turning length with 18.29 m rotors allows, so the hubs sit 11.85 m apart (fwd 1.85,
-// aft 13.7); wheelbase 6.86 m (22 ft 6 in). Cross-checked with "Boeing Vertol CH-47 Chinook
-// 3-view line drawing.png". Features: blunt glazed nose with the chin bubble and the stepped
-// cockpit panes, forward rotor pylon over the cockpit, long box cabin with the round windows,
-// full-length side fuel pods, tall aft pylon with the T55 nacelles and their intake screens on
-// its flanks, upswept loading-ramp underside, two tandem three-blade rotors, four wheels.
+// Reference: Wikimedia Commons "Boeing CH-47 Chinook 3-view line drawing.svg"
 F.h47 = {
   kind: "heli", L0: 15.6, over: 14.4, D: 1, W: 3.78,
   body: [[0.01, 0.95], [0.05, 1.08], [0.13, 1.2], [0.25, 1.3], [0.43, 1.4], [0.65, 1.5], [0.88, 1.6, "l"], [1.25, 2.4],
@@ -519,9 +453,7 @@ F.h47 = {
     ["hl", [[12.0, 4.25], [12.0, 3.0]], false],
     ["hl", [[14.9, 4.3], [14.9, 2.2], [15.53, 2.2]], false],
     ["hl", [[3.9, 2.52], [1.3, 2.62]], false],
-    // more of the 3-view (placed through its round windows): the forward pylon's panel seam, the panel
-    // line across the aft pylon, the seam from under the nacelle to the pylon's trailing edge, and the
-    // blade under the nose
+    // more of the 3-view (placed through its round windows): the forward pylon's panel seam, the panel line across the aft pylon
     ["hl", [[1.952, 3.08], [1.953, 2.46]], false],
     ["hl", [[11.921, 3.245], [14.725, 3.323]], false],
     ["hl", [[12.948, 2.196], [15.483, 1.813]], false],
@@ -544,13 +476,7 @@ F.h47 = {
 };
 
 // ---------- Airbus Helicopters H145 (EC45) ----------
-// Drawn as the H145 D-2/D-3 (fenestron, the variant now delivered to most US EMS operators),
-// not the EC145 C-2 with its conventional tail rotor. No dimensioned drawing was reachable:
-// the outline is the measured EC135 one (same design family: nose, cockpit, rear clamshell
-// pod, boom, endplate stabiliser, fenestron fin) scaled to the H145's published size,
-// fuselage 11.64 m (x1.14) and the deeper cabin (heights x1.1), checked by eye against the
-// Commons photo "H145 Christoph 27 als D-HXFI.jpg". Rotor 10.8 m (Wikipedia H145 spec table),
-// rotors-turning length 13.64 m. Lower confidence than the measured types.
+// Drawn as the H145 D-2/D-3, not the EC145 C-2 with its conventional tail rotor
 const SX45 = 1.141, SZ45 = 1.1;
 F.ec45 = {
   kind: "heli", L0: 11.55, over: 1.45, D: 1, W: 1.73,
@@ -567,16 +493,7 @@ F.ec45 = {
 };
 
 // ---------- Robinson R66 Turbine (R66) ----------
-// Reference: Robinson's R66 Pilot's Operating Handbook, Section 1, "R66 External Dimensions" (page 1-3,
-// rev. 15 Aug 2023, from robinsonheli.com), side view traced at 400 dpi. The drawing is level and to
-// scale: 354 in (8.99 m) from the nose to the tail, 72 in from the skid bottom to the roof, 60 in tail
-// rotor, 459 in overall. It draws the left side, mirrored here. It replaces an outline traced from a
-// photo. Traced: the windshield and its frames, the two doors with their windows and the small windows
-// low in each, the door handle, the frame over the front door, the mast fairing with the collar at its
-// foot, the engine cowling with its louvres, the air inlet on the engine bay, the aft fairing and its
-// fitting, the two swept antennas and the fittings on the tail cone, the tail gearbox, the upper and
-// lower fins, the horizontal stabiliser at the lower fin's foot, the tail-rotor guard tube and the tail
-// skid, and the skids with their leg fittings.
+// Reference: Robinson's R66 Pilot's Operating Handbook, Section 1, "R66 External Dimensions", side view traced at 400 dpi
 F.r66 = {
   kind: "heli", L0: 8.997, over: 2.703, D: 1, W: 1.47,
   body: [[0.0,0.451,"c"], [0.013,0.572], [0.067,0.694], [0.236,0.889], [0.404,1.057], [0.62,1.185], [0.869,1.293], [1.091,1.354], [1.279,1.387], [1.549,1.414], [1.751,1.428], [1.886,1.441], [1.966,1.475], [2.034,1.562,"cl"], [2.202,2.66,"c"], [2.579,2.68,"cl"], [2.774,1.609,"c"], [2.842,1.569], [2.943,1.495], [3.064,1.461], [3.636,1.488,"l"], [8.013,1.818,"c"], [8.175,1.778], [8.175,1.683], [8.013,1.636,"c"], [7.239,1.529], [6.869,1.481,"l"], [4.242,1.044,"c"], [4.229,0.956], [4.175,0.795], [4.088,0.566], [4.034,0.418], [3.973,0.256,"c"], [3.838,0.215], [3.697,0.182], [3.522,0.135], [3.313,0.101], [3.111,0.054], [2.855,0.04], [2.532,0.027], [1.892,0.007], [1.704,0.0], [0.613,0.0], [0.458,0.02], [0.37,0.047], [0.229,0.108], [0.121,0.195], [0.034,0.283]],
@@ -626,18 +543,7 @@ F.r66 = {
 };
 
 // ---------- Robinson R44 Raven (R44) ----------
-// Reference: Robinson's R44 Pilot's Operating Handbook, Section 1, "R44 External Dimensions" (page 1-3,
-// rev. 26 Jan 2024, from robinsonheli.com), side view traced at 400 dpi. The drawing is level and to
-// scale: 353 in (8.97 m) from the nose to the tail-rotor disc, 72 in from the skid bottom to the roof,
-// 198 in rotor radius, 58 in tail rotor, 459 in overall. It draws the left side, mirrored here.
-// It replaces an outline adapted from the R66 photo, which put the hub 0.2 m and the tail rotor 0.3 m
-// too far aft, the tail rotor 0.35 m and the skids 0.16 m too low. Traced: the bubble windshield and its
-// frames, the two doors with their windows, the frame over the front door, the tapered mast fairing with
-// its vents and the pitot tube on its leading edge, the upper cowling's lower edge with the scoop and the
-// louvred panel, the aft fairing and its fitting, the swept antenna and the fittings on the tail cone,
-// the tail gearbox, the upper and lower fins, the horizontal stabiliser at the lower fin's foot, the
-// tail-rotor guard tube and the tail skid, and the skids with their leg fittings.
-// The R44 II shares the airframe (its POH page 1-3 draws the same side view).
+// Reference: Robinson's R44 Pilot's Operating Handbook, Section 1, "R44 External Dimensions", side view traced at 400 dpi
 F.r44 = {
   kind: "heli", L0: 8.965, over: 2.735, D: 1, W: 1.28,
   body: [[0.0,0.493,"c"], [0.018,0.628], [0.074,0.763], [0.154,0.88], [0.277,0.985], [0.413,1.096], [0.573,1.207], [0.64,1.231], [0.88,1.33], [1.09,1.379], [1.274,1.416], [1.533,1.428], [1.921,1.435], [2.056,1.422,"cl"], [2.235,2.512,"c"], [2.617,2.524,"cl"], [2.801,1.336,"cl"], [8.078,1.669,"c"], [8.121,1.589], [8.047,1.508,"cl"], [4.144,1.004,"cl"], [3.762,0.277,"c"], [3.602,0.234], [3.374,0.185], [3.152,0.129], [2.986,0.099], [2.506,0.074], [2.05,0.055], [1.755,0.037], [1.582,0.025], [1.348,0.018], [1.09,0.006], [0.757,0.0], [0.548,0.025], [0.4,0.055], [0.289,0.099], [0.179,0.166], [0.086,0.259], [0.025,0.369]],
@@ -688,17 +594,7 @@ F.r44 = {
 };
 
 // ---------- Robinson R22 Beta (R22) ----------
-// Reference: Robinson's R22 Pilot's Operating Handbook, Section 1, "R22 External Dimensions" (page 1-3,
-// from robinsonheli.com), side view traced at 400 dpi. The drawing is level and to scale: 259 in
-// (6.58 m) from the nose to the tail-rotor disc, 42 in tail rotor, 25 ft 2 in rotor. It draws the left
-// side, mirrored here. It replaces an outline scaled down from the R66 photo. Traced: the windshield
-// bubble and its frames, the door with its window, the small window low in it and the handle and lock,
-// the fitting at the top of the windshield, the mast fairing with its vents and pitot tube, the upper
-// cowling's lower edge and the cabin's aft wall, the open engine bay (the crankcase and cylinders, the
-// rocker covers, the frame tubes, the exhaust pipe, the drive pulley and the cooling fan's scroll), the
-// tail cone's attachment frame and section joints, the fittings and fairing on the tail cone and the
-// strut under it, the tail gearbox, the upper and lower fins and the tail skid, the front leg's fairing
-// and the fitting on the skid.
+// Reference: Robinson's R22 Pilot's Operating Handbook, Section 1, "R22 External Dimensions"
 F.r22 = {
   kind: "heli", L0: 6.52, over: 2.18, D: 1, W: 1.12,
   body: [[0.0,0.303,"c"], [0.015,0.425], [0.049,0.547], [0.107,0.669], [0.19,0.791], [0.293,0.903], [0.41,1.01], [0.556,1.113], [0.717,1.196], [0.888,1.254], [1.083,1.279], [1.279,1.288], [1.376,1.293,"cl"], [1.415,1.923,"c"], [1.732,1.923,"cl"], [1.854,1.22,"cl"], [2.352,1.122,"l"], [5.841,1.435,"c"], [5.944,1.396], [5.89,1.293,"cl"], [2.46,0.8,"cl"], [2.133,0.791,"cl"], [2.045,0.049,"cl"], [1.401,0.034], [1.083,0.02], [0.791,0.0], [0.644,0.0], [0.449,0.01], [0.254,0.034], [0.107,0.083], [0.034,0.156]],
@@ -762,14 +658,7 @@ F.r22 = {
 };
 
 // ---------- Sikorsky S-76 (S76) ----------
-// Reference: Commons photo "N76FL 1988 Sikorsky S-76B C-N 760347 (7579663250).jpg", a side view in
-// flight (starboard side), scaled to the 13.22 m fuselage (nose to fin); mast to tail-rotor hub
-// then comes to 7.9 m, matching the 16.0 m rotors-turning length with the 13.41 m rotor and
-// 2.44 m tail rotor (Wikipedia S-76 spec table) within 2 %. Shapes cross-checked with Commons
-// "Sikorsky S-76D drawing.svg". Features: long sleek pointed nose, big cockpit and cabin windows,
-// smooth engine/transmission cowling, deep boom sweeping up to the swept fin, small stabiliser,
-// four-blade rotors, tail rotor on the port side; the gear retracts (main-gear doors under the
-// cabin, nothing hanging in flight).
+// Reference: Commons photo of S-76B N76FL, a side view in flight, scaled to the 13.22 m fuselage (nose to fin)
 F.s76 = {
   kind: "heli", L0: 14.0, over: 2.0, D: 1, W: 2.13,
   body: [[0, 0.71], [0.15, 0.83], [0.5, 0.93], [1.0, 1.02], [1.3, 1.13], [1.6, 1.36], [1.9, 1.6], [2.2, 1.8], [2.6, 1.93],
@@ -803,14 +692,7 @@ F.s76 = {
 };
 
 // ---------- Leonardo AW139 (A139) ----------
-// Reference: Commons "AW-139.jpg" (3-view line drawing; side view traced, scaled so mast to
-// tail-rotor hub is 8.4 m: 16.66 m rotors turning, 13.80 m rotor, 2.7 m tail rotor from the
-// Wikipedia AW139 spec table; nose to fin then comes to 13.65 m against the published 13.77 m).
-// Features: long pointed nose with chin windows, tall windscreen, cockpit door and three square
-// cabin windows in the big sliding door, aft cabin window, high engine cowling with the side
-// intakes and exhausts, boom with the long strake rising into the swept fin with the tail-rotor
-// gearbox fairing on top, stabiliser low on the boom end, five-blade rotor, four-blade tail
-// rotor on the port side, sponsons for the retractable main gear (retracted in flight).
+// Reference: Commons "AW-139.jpg"
 F.a139 = {
   kind: "heli", L0: 14.25, over: 2.35, D: 1, W: 2.26,
   body: [[0, 0.38], [0.24, 0.59], [0.52, 0.73], [0.91, 0.87, "l"], [1.22, 1.12], [1.5, 1.36], [1.78, 1.61], [1.99, 1.71],

@@ -35,12 +35,7 @@ const exhaust = (r0, r1, dz = 0) => (k) => {
 };
 
 // ---------- Bombardier CRJ ----------
-// CRJ900 (CL-600-2D24): Bombardier Airport Planning Manual CSP C-020, fig. 00-02-02 Figure 5
-// sheet 1 (side and plan views, page 12 of 00-02-02; PDF p. 40), levelled by 1.97 deg (the figure
-// is drawn at the static ground attitude), and Table 1 (fuselage 33.50 m, overall 36.24 m,
-// diameter 2.69 m, stabiliser span 8.54 m). Long pointed nose, small flight-deck panes in a band,
-// two Type III overwing exits per side, CF34-8C5 on the rear fuselage, stepped dorsal fin,
-// T-tail with a large fin-top fairing and slight anhedral; canted winglets.
+// CRJ900 (CL-600-2D24): Bombardier Airport Planning Manual CSP C-020, fig. 00-02-02 Figure 5 sheet 1, levelled by 1.97 deg
 const CRJ_NOSE = {
   tip: 0.268,
   top: [[0.037, 0.31], [0.1, 0.346], [0.2, 0.413], [0.3, 0.476], [0.4, 0.528], [0.5, 0.584], [0.6, 0.639], [0.7, 0.699],
@@ -75,9 +70,7 @@ const traced = (parts) => (k) => {
     else sk.poly("hl", pts, false);
   }
 };
-// Traced off CSP C-020 fig. 00-02-02 Figure 5 sheet 1 (the figure the outline was measured from; fitted
-// with its 2.0 deg ground attitude): the radome joint and the avionics door under the windscreen, the
-// fin's leading-edge strip and the joint below it, the access door and the joint on the tail cone.
+// Traced off CSP C-020 fig. 00-02-02 Figure 5 sheet 1: the radome joint and the avionics door under the windscreen
 const CRJ_TRACED = [
 ["n", "hl", [[0.659,1.126], [0.638,0.091]]],
 ["n", "door", [[0.745,1.148,"c"], [1.265,1.399,"c"], [1.252,0.242,"c"], [0.745,0.38,"c"]]],
@@ -114,12 +107,7 @@ F.crj9 = {
   stab: { le: 1.12, z: "T", drop: 0.02, span: 8.54, root: 0.3, cr: 2.5, ct: 0.9, sweep: 35.5, dih: -3.5 },
 };
 
-// CRJ200 (CL-600-2B19): Bombardier Airport Planning Manual CSP A-020, 00-02-01 Figure 2
-// (General Airplane Dimensions, metric; side and plan views): fuselage 24.38 m, overall 26.77 m,
-// span 21.23 m, stabiliser span 6.20 m. Same Challenger-derived nose and flight deck as the
-// CRJ700/900, but a slightly shallower fuselage with the cabin floor (and so the windows) lower,
-// one Type III overwing exit per side, the small slat-less wing with short upright winglets,
-// smaller CF34-3B1 nacelles with a drooped exhaust, a smaller dorsal fin and a flat tailplane.
+// CRJ200 (CL-600-2B19): Bombardier Airport Planning Manual CSP A-020, 00-02-01 Figure 2: fuselage 24.38 m, overall 26.77 m
 F.crj2 = {
   kind: "regional", L0: 24.3, over: 2.47, D: 2.64, W: 2.69, fair: 0.08, fairAft: 1.68,
   nose: {
@@ -156,11 +144,7 @@ F.crj2 = {
   stab: { le: 0.2, z: "T", drop: -0.1, span: 6.2, root: 0.3, cr: 1.9, ct: 0.85, sweep: 33, dih: 0 },
 };
 
-// CRJ700 (CL-600-2C10): no planning manual found online (the CRJ700 APM is not on Bombardier's
-// public site). Drawn as the CRJ900 shortened by the forward and aft fuselage plugs (Wikipedia
-// "Bombardier CRJ700 series": length 32.3 m, span 23.2 m): same nose, section, lowered floor,
-// slatted wing, CF34-8C, fin and tailplane; the wing without the CRJ900's 0.8 m tip extensions,
-// one overwing exit per side instead of two, one forward cargo door and no ventral strakes.
+// CRJ700 (CL-600-2C10): no planning manual found online
 F.crj7 = {
   ...F.crj9,
   doors: [[4.74, 0.93], [1.6, 0.51, "E", "w"]],
@@ -169,23 +153,14 @@ F.crj7 = {
 };
 
 // ---------- Embraer ERJ ----------
-// ERJ-145 (EMB-145 EP/ER/EU/LR/LU/MP/MK): Embraer Airport Planning Manual APM-145/1100,
-// Figure 2.2.1 (EMB-145 Airplane General Dimensions; side and plan views): overall length
-// 29.87 m, fuselage 27.93 m, diameter 2.28 m, span 20.04 m, tailplane span 7.55 m. Very long,
-// low, pointed nose with a stepped windscreen; slim fuselage; one overwing exit per side;
-// long belly fairing; Rolls-Royce AE3007 in long, slender mixed-flow nacelles; long straight
-// dorsal ramp into a swept fin; T-tail with a pointed fin-top fairing. No winglets (the XR's
-// winglets are left out; most ERJ-145s have none).
+// ERJ-145 (EMB-145 EP/ER/EU/LR/LU/MP/MK): Embraer Airport Planning Manual APM-145/1100, Figure 2.2.1: overall length 29.87 m
 const ERJ_TAIL = {
   top: [[1.803, 1], [1.496, 0.971], [1.276, 0.954], [1.057, 0.932], [0.838, 0.906], [0.618, 0.871], [0.399, 0.836],
     [0.18, 0.796], [0.048, 0.768], [0, 0.763]],
   bot: [[2.241, 0], [2.154, 0.009], [1.934, 0.033], [1.715, 0.068], [1.496, 0.11], [1.276, 0.164], [1.057, 0.23],
     [0.838, 0.296], [0.618, 0.379], [0.399, 0.463], [0.18, 0.564], [0.048, 0.629], [0, 0.645]],
 };
-// Traced off APM-145/1100 Figure 2.2.1 (Rev. 16, 2024): the blade and T antennas and domes along the
-// crown, the antennas and probes under the belly, the radome joint, the avionics access door and the
-// light under the nose, the mark on the fin's side and the second line across the rudder. Parts over
-// the cabin follow the wing on the shorter ERJ-135.
+// Traced off APM-145/1100 Figure 2.2.1 (Rev. 16, 2024): the blade and T antennas and domes along the crown
 const E145_TRACED = [
 ["t", "strut", [[20.073,2.281,"c"], [20.073,2.317], [20.091,2.335], [20.109,2.344], [20.127,2.371], [20.145,2.407], [20.163,2.444], [20.182,2.471], [20.2,2.507], [20.218,2.543], [20.236,2.57], [20.254,2.606], [20.272,2.615], [20.29,2.597], [20.29,2.281,"c"]]],
 ["w", "strut", [[11.213,2.281,"c"], [11.213,2.326], [11.231,2.353], [11.249,2.38], [11.267,2.407], [11.285,2.444], [11.303,2.471], [11.322,2.498], [11.34,2.552], [11.358,2.552], [11.376,2.552], [11.394,2.552], [11.412,2.552], [11.43,2.552], [11.448,2.552], [11.466,2.552], [11.484,2.552], [11.503,2.552], [11.521,2.552], [11.539,2.552], [11.557,2.552], [11.575,2.552], [11.593,2.543], [11.602,2.534], [11.602,2.281,"c"]]],
@@ -245,11 +220,7 @@ F.e145 = {
 };
 
 // ---------- Embraer E-Jets ----------
-// Shared double-bubble fuselage (3.35 m high, 3.01 m wide), nose, flight deck, doors and tail
-// cone, traced from the E-Jets E2 Airport Planning Manual APM-5824, Figure 2.1 (EMBRAER 190-E2
-// General Aircraft Dimensions) and Figure 2.19 (cross-section). The E190 APM-1901 Figure 2.1 is
-// drawn about 9 % squashed vertically (its fuselage measures 3.06 m), so its heights were
-// rescaled by 3.35/3.06 before use.
+// Shared double-bubble fuselage (3.35 m high, 3.01 m wide), nose, flight deck, doors and tail cone
 const EJ_NOSE = {
   tip: 0.239,
   top: [[0.012, 0.28], [0.045, 0.312], [0.075, 0.342], [0.119, 0.378], [0.179, 0.424], [0.239, 0.476], [0.299, 0.518],
@@ -287,9 +258,7 @@ const EJ_NOSE_TRACED = [
 ["n", "hl", [[2.872,0.417], [2.946,0.35], [2.946,0.283], [2.872,0.215]]],
 ["n", "hl", [[1.1,0.283], [1.406,0.269]]]
 ];
-// E190 (ERJ 190-100): APM-1901 Figure 2.1 (side, plan and front views; heights rescaled as above):
-// overall 36.24 m, span over winglets 28.72 m, tailplane span 12.08 m. Wing with tall swept
-// winglets reaching the crown, CF34-10E under the wing, one overwing exit per side, L1/L2 doors.
+// E190 (ERJ 190-100): APM-1901 Figure 2.1: overall 36.24 m, span over winglets 28.72 m
 F.e190 = {
   kind: "narrow", L0: 36.24, over: 0, D: 3.35, W: 3.01, fwd: 0.56, fair: 0.149, fairAft: 1.566,
   nose: EJ_NOSE, tail: EJ_TAIL, glass: EJ_GLASS, frame: 0.04,
@@ -305,10 +274,7 @@ F.e190 = {
   fin: EJ_FIN,
   stab: { le: 4.7, z: 0.737, span: 12.08, root: 0.9, cr: 3.03, ct: 0.85, sweep: 34.6, dih: 6 },
 };
-// E170/E175 (ERJ 170-100/-200): no planning manual found online (the E175 APM link is dead).
-// The E190's fuselage shortened by the plugs ahead of and behind the wing (types.csv length), with
-// the smaller wing (Wikipedia "Embraer E-Jet family": span 26.0 m over the original winglets,
-// area 72.7 m2: chords scaled from the E190's), smaller CF34-8E, a lower fin and a 10 m tailplane.
+// E170/E175 (ERJ 170-100/-200): no planning manual found online (the E175 APM link is dead)
 F.e175 = {
   ...F.e190,
   wing: { ...F.e190.wing, le: 14.1, span: 24.4, cr: 4.75, kink: [0.308, 3.12], ct: 1.35 },
@@ -324,9 +290,7 @@ F.e175l = {
   wing: { ...F.e175.wing, span: 25.6, ct: 1.25 },
   tip: { h: 1.75, sweep: 50, top: 0.3, base: 0.55, blend: 0.35 },
 };
-// E190-E2: APM-5824 Figure 2.1 (side, plan and front views): overall 36.33 m, span 33.72 m,
-// tailplane span 10.0 m. New high-aspect-ratio wing with raked tips and no winglets, large
-// PW1900G geared turbofans, same fuselage and fin as the E190, smaller tailplane.
+// E190-E2: APM-5824 Figure 2.1 (side, plan and front views): overall 36.33 m, span 33.72 m
 F.e290 = {
   ...F.e190, L0: 36.3, over: 0.03, fair: 0.185, fairAft: 1.64,
   doors: [[5.25, 0.9], [-8.25, 0.78], [1.77, 0.55, "E", "w"]],

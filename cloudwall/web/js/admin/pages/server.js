@@ -1,6 +1,5 @@
-// This server: CloudWall itself. How long it has run and how (a service that starts itself again,
-// or started by hand), its version, the restart; then the log, live; then every setting as the file
-// has it, for when you know exactly what you're after; then what to type at the machine.
+// Server page: uptime and how it runs, version, restart, the live log, every setting as the file
+// has it, and what to type at the machine.
 import { el, esc, S, call, toast, restart, lasted, when, plural, button, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { head, pageTroubles, copyable } from "../parts.js";
