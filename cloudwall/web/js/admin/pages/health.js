@@ -1,7 +1,5 @@
-// Problems and alerts: what CloudWall's checks have found and what happened lately (a week, as bars
-// from each problem's start to its end), how you hear about it (alerts to your phone, set up here
-// step by step and tested from here), the whole machine's check, and the reference of every problem
-// CloudWall knows, behind a shade.
+// Problems and alerts page: open problems, the week's timeline, phone alerts (set up and tested
+// here), the whole machine's check, and the reference of every known problem.
 import { el, esc, S, call, toast, value, button, runDoctor, problems, ago, when, lasted, plural, setting, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { timeline } from "../draw.js";

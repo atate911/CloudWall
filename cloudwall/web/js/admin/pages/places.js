@@ -1,7 +1,5 @@
-// The house: where the sky is watched from. Its distances are set on the map where they reach (drag
-// a ring), its position by clicking where it is (or taking the receiver's), and the airport is read
-// out by name. The values set once and seldom touched again (the ground's height, the ceiling for
-// "overhead", a ZIP code instead of coordinates) wait under a shade. Other places watched follow.
+// Location page: the house on a map (drag a ring to set a distance, click to set its position),
+// its airport, the rarely-touched values under a shade, and the other places watched.
 import { el, esc, S, sky, value, save, call, toast, num, plural, loadOverview, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { houseMap } from "../map.js";

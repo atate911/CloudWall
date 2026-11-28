@@ -1,6 +1,5 @@
-"""Demo mode: plausible traffic around Portland with no network needed. Demo stands in for a
-position feed (fetch) and for the lookups (aircraft, route, photo), and demo_heard for the
-military feed."""
+"""Demo mode: simulated traffic around Portland, no network. Demo stands in for a position feed
+and the lookups; demo_heard for the military feed."""
 import math
 import random
 import time
@@ -10,7 +9,7 @@ from ..core.geo import haversine_nm
 
 
 def demo_heard():
-    """A pair of fighters heard but not placed (demo mode), as heard_near gives them."""
+    """A pair of fighters heard but not placed, as heard_near gives them."""
     heard = [{"hex": hexid, "t": "F15", "desc": "Boeing F-15EX Eagle II", "alt_baro": alt, "dbFlags": 1,
               "ownOp": "United States Air Force"} for hexid, alt in (("ae0412", 14000), ("ae0413", 14200))]
     return [dict(normalise(a), rough_nm=3) for a in heard]

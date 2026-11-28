@@ -1,7 +1,5 @@
-// The wall: how the screens look. The wall panel is shown live, as it is now, and changes as its
-// settings do (before the restart that makes them its own); quiet hours are an arc on a day's dial;
-// map styles are chosen by looking at the house's own map in each. The layers drawn on the radar
-// are switches with what each shows; the maps seldom changed and the downloads wait under shades.
+// Display page: how the screens look. A live preview of the wall panel that follows its settings
+// before the restart, quiet hours as a dial, map styles as pictures, radar layers as switches.
 import { el, S, sky, setting, value, num, TITLES } from "../core.js";
 import { icon } from "../icons.js";
 import { tileAt } from "../map.js";
@@ -25,7 +23,6 @@ function art(layer, z, home) {
   return `<img src="${tileAt(layer, home.lat, home.lon, z)}" alt="" loading="lazy" decoding="async"><svg class="pic-rings" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/><circle cx="50" cy="50" r="20"/></svg>`;
 }
 
-// -- the wall panel, live ---------------------------------------------------------------------------
 function preview() {
   const box = el(`<figure class="panel-preview"><div class="bezel"><div class="screen"><iframe title="The wall panel, as it is now" tabindex="-1" aria-hidden="true"></iframe></div></div>
     <figcaption><span class="live-dot"></span>Live<a class="out" href="kiosk" target="_blank" rel="noopener">Open the wall panel${icon("open")}</a></figcaption></figure>`);
@@ -45,8 +42,7 @@ function preview() {
   return box;
 }
 
-/** Quiet hours as an arc on a day's dial: drag either end; the middle says it in words and turns it
- *  off and on. Snaps to quarter hours. Stored as "23:00-06:30", or empty for none. */
+/** Quiet hours as a draggable arc, snapped to quarter hours. Stored as "23:00-06:30", or empty for none. */
 function quietDial() {
   const R = 74, C = 100, toMin = (s) => { const [h, m] = s.split(":").map(Number); return h * 60 + m; };
   const fmt = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
@@ -101,7 +97,6 @@ export default {
     const t = pageTroubles("look");
     if (t) page.append(t);
 
-    // the wall panel: its settings beside it, live
     const pv = preview();
     const places = (S.overview.places || []).map((p, i) => [i ? p.name : "", i ? p.name : `${p.name} (the house)`]);
     page.append(group("Wall panel", "The kiosk screen at /kiosk", [
@@ -116,7 +111,6 @@ export default {
     ], { aside: pv, cls: "panel-group" }));
     pv.show();
 
-    // the map under the radar, chosen by looking at it
     const opacityShow = (v) => page.querySelector(".styles")?.style.setProperty("--map-strength", v);
     page.append(group("Radar map", "Under the chart-style radar on every screen", [
       pictures("map", "style", { label: "Map", cls: "styles", options: STYLES.map(([v, label, layer, z]) => ({ value: v, label, art: art(layer, z, home) })),

@@ -1,5 +1,5 @@
-"""The `cloudwall <command>` commands that set CloudWall up and look after it. Plain `cloudwall`
-(with its flags: --demo, --private-link, ...) runs it, as it always has (app/main.py)."""
+"""The `cloudwall <command>` commands that set CloudWall up and look after it (plain `cloudwall`
+runs it: app/main.py)."""
 import argparse
 import json
 import os
@@ -72,7 +72,7 @@ def parser():
 
 
 SECRET = re.compile(r"(?im)^(\s*(?:\w*key|\w*url|address|zip|attribution)\s*=\s*)(\".*?\"|'.*?')")
-LISTED = re.compile(r"(?ims)^(\s*\w*urls\s*=\s*)\[.*?\]")          # a list of addresses, on one line or several
+LISTED = re.compile(r"(?ims)^(\s*\w*urls\s*=\s*)\[.*?\]")
 NUMBER = re.compile(r"(?im)^(\s*(?:lat|lon)\s*=\s*)(-?\d+\.\d{2})\d*")
 
 
@@ -112,11 +112,11 @@ def main(argv=None):
             from .survey import Machine
             system, machine = System(), Machine()
             ctx = doc.Context(args.config, args.offline, System().ask)
-            if sys.stdin.isatty() and not args.yes:          # with the owner: explain, ask, walk through
+            if sys.stdin.isatty() and not args.yes:          # interactive: explain, ask, walk through
                 guide.walk(found, guide.Terminal(), ctx, system, machine,
                            recheck=lambda: doc.doctor(args.config, args.offline, ask=System().ask)[0])
                 return
-            done = repair.fix(found, system, machine)        # unattended: only the repairs, each said
+            done = repair.fix(found, system, machine)        # unattended: only the repairs
             if done:
                 print()
                 found, worst = doc.doctor(args.config, args.offline, ask=System().ask)

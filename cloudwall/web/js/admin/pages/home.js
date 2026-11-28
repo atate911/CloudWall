@@ -1,6 +1,5 @@
-// Home: CloudWall as one picture. The sky on the left, the ways positions reach the server in the
-// middle, what the server feeds on the right, each part lit by how it is doing and each a door to
-// its page. Under it, only what needs doing; nothing to set here.
+// Home page: CloudWall as one diagram (sky, feeds, server, what it feeds), each part showing its
+// state and linking to its page. Under it, what needs doing; nothing to set here.
 import { el, esc, S, sky, problems, house, ownFeed, ago, lasted, num, plural, button, runDoctor, call, toast, loadOverview, value, onPage, TITLES } from "../core.js";
 import { setup } from "../words.js";
 import { icon } from "../icons.js";
@@ -18,7 +17,7 @@ function stateOf(id) {
   return mine.some((f) => f.state === "fail") ? "fail" : mine.length ? "warn" : null;
 }
 
-/** What each part of the picture says: [state, value, line under it, page it opens]. */
+/** Returns [state, value, line under it, page it opens]. */
 function says(id) {
   const o = S.overview, p = house() || {}, rx = ownFeed(p);
   const others = Object.entries(p.feeds || {}).filter(([l]) => !/receiver/i.test(l));
@@ -69,8 +68,7 @@ function node(id) {
     <i class="node-lamp" aria-label="${{ ok: "working", warn: "worth a look", fail: "not working", off: "not set up", idle: "waiting" }[st] || ""}"></i></a>`;
 }
 
-/** The lines between the parts, worked out from where the grid put them; data moving along the
- *  ones that are carrying it. */
+/** The lines between the parts, measured from where the grid put them. */
 function wire(map) {
   const svg = map.querySelector(".wires"), box = map.getBoundingClientRect();
   if (!box.width || getComputedStyle(svg).display === "none") return;
@@ -113,7 +111,7 @@ export default {
       if (said && !said.dataset.sky) { said.dataset.sky = "1"; said.innerHTML = `<header><h2>Setup</h2><a href="#settings">All settings</a></header>${setup()}`; }
     };
     update();
-    // the receiver's own answer, when one is set up but isn't feeding positions (it takes a moment)
+    // ask the receiver itself when it's set up but isn't feeding positions (slow, so not awaited)
     if (!ownFeed() && value("receiver", "url") && !S.receiver) call("receiver").then((r) => { S.receiver = r; this.tick(); }).catch(() => {});
     const t = setInterval(() => { if (!canvas.isConnected) clearInterval(t); else if (!document.hidden) update(); }, 5000);
     requestAnimationFrame(() => { scope(canvas, () => S.sky); wire(map); });
@@ -124,14 +122,12 @@ export default {
       wire(map);
     };
 
-    // what needs doing, and nothing else
     if (list.length) {
       const needs = el(`<section class="needs"><h2>Open problems</h2></section>`);
       list.forEach((f) => needs.append(trouble(f)));
       page.append(needs);
     }
 
-    // the setup in words: a sentence that reads wrong is the thing to click
     const said = el(`<section class="setup-said"><header><h2>Setup</h2><a href="#settings">All settings</a></header>${setup()}</section>`);
     page.append(said);
     onPage("settings", () => { if (said.isConnected) said.innerHTML = `<header><h2>Setup</h2><a href="#settings">All settings</a></header>${setup()}`; });

@@ -1,9 +1,5 @@
-"""Will jets leave contrails today? From the upper-air forecast (GFS, via Open-Meteo).
-
-A contrail forms when the hot, wet exhaust mixing with the air passes through water
-saturation (the Schmidt-Appleman criterion: cold enough for the pressure). It lasts, and
-spreads, only when the air is at or above saturation with respect to ice; otherwise it
-evaporates within seconds to a minute.
+"""Contrail forecast from upper-air GFS data (Open-Meteo): forms by the Schmidt-Appleman
+criterion, persists only when the air is saturated with respect to ice.
 """
 import calendar
 import math
@@ -30,8 +26,7 @@ def e_ice(t):
 
 
 def level(p_hpa, temp_c, rh, height_m):
-    """Contrail outlook at one pressure level. GFS reports humidity over ice below -20°C
-    (NCEP's convention), which is the figure persistence depends on."""
+    """Contrail outlook at one pressure level. GFS reports humidity over ice below -20°C (NCEP's convention)."""
     g = EI_H2O * CP * p_hpa * 100 / (EPS * Q * (1 - ETA)) / 100          # mixing-line slope, hPa/K
     x = math.log(g * 100 - 0.053)
     t_max = -46.46 + 9.43 * x + 0.72 * x * x                               # coldest-needed, bone-dry air
@@ -65,7 +60,7 @@ def fetch(lat, lon, now=None):
     data = get_json(URL.format(lat=lat, lon=lon), timeout=20)
     h = data["hourly"]
     now = now or time.time()
-    # the hours are UTC (timezone=UTC in the request), whatever the clock here is set to
+    # the hours are UTC (timezone=UTC in the request)
     stamps = [calendar.timegm(time.strptime(t, "%Y-%m-%dT%H:%M")) for t in h["time"]]
     i = min(range(len(stamps)), key=lambda k: abs(stamps[k] - now))
     levels = []

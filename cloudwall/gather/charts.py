@@ -1,30 +1,6 @@
-"""Every map CloudWall can draw under its displays: the radar's street map and the FAA's
-aeronautical charts, in one place, each fetched once, cached on disk and served by CloudWall
-at /tiles/<layer>/z/x/y.
-
-The FAA charts are the Aeronautical Information Services' own tiled charts on ArcGIS Online
-(US Government works, in the public domain), in Web Mercator like the street maps:
-
-    ifr-low    IFR Enroute Low: airways, VORs, fixes, airspace (under the ATC radar)
-    ifr-high   IFR Enroute High
-    sectional  VFR Sectional
-    terminal   VFR Terminal Area, where there is one (Portland has one); the Sectional elsewhere
-
-The Map view, a plain map for anyone, has its own layers around home:
-
-    sat        Esri's satellite imagery, with
-    places     its place names and borders, and
-    roads      its roads, laid over it (the two transparent, so together they make a hybrid map)
-    streets    Esri's street map
-
-One more layer covers the whole world instead of the area around home:
-
-    world      the flight card's route map, [map] route ("satellite" unless set), zooms 0 to 6
-
-A display asks for a layer by name, so a new use of a chart is a new layer here and a line in
-the display, nothing else. [map] style picks the chart-style radar's map (a street map unless
-set, or one of these charts) and [map] atc the ATC-style radar's chart (none unless set: a real
-controller's screen has only its video map).
+"""Every tile layer by name, each cached on disk and served at /tiles/<layer>/z/x/y: the FAA
+charts (public-domain ArcGIS tiles, Web Mercator), the Map view's sat/places/roads/streets
+around home, and "world" (the flight card's route map, zooms 0 to 6, anywhere).
 """
 from .tiles import STYLES, Tiles
 
@@ -32,8 +8,7 @@ FAA = ("https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/"
        "{service}/MapServer/tile/{{z}}/{{y}}/{{x}}")
 FAA_CREDIT = "Charts © FAA Aeronautical Information Services"
 
-# zooms: the levels with chart on them (checked over PDX: IFR Low's level 12 is blank outside
-# the IFR Area charts, so it stops at 11; High stops at 9).
+# zooms: the levels with chart on them (IFR Low's 12 is blank outside the IFR Area charts)
 FAA_LAYERS = {
     "ifr-low": {"name": "IFR Enroute Low", "service": "IFR_AreaLow", "zooms": (7, 11)},
     "ifr-high": {"name": "IFR Enroute High", "service": "IFR_High", "zooms": (5, 9)},
@@ -43,8 +18,7 @@ FAA_LAYERS = {
 
 
 class Charts:
-    """The layers by name. "map" is the chart-style radar's map: [map] style, which may name an
-    FAA chart; "atc" is the ATC-style radar's chart, [map] atc ("off" unless set)."""
+    """The layers by name. "map" is [map] style (may name an FAA chart); atc is [map] atc, or None."""
 
     def __init__(self, cfg, cache_dir):
         m = cfg.get("map", {})
@@ -64,7 +38,7 @@ class Charts:
         self.layers["map"] = self.map
         atc = str(m.get("atc") or "off").lower()
         self.atc = self.layers.get(atc) if atc in FAA_LAYERS else None
-        # (dark, light and osm too, so the control board can show each style as a picture to choose by)
+        # dark, light and osm too: the control board shows each style as a picture to choose by
         for lid, style in (("sat", "satellite"), ("streets", "streets"), ("places", "places"), ("roads", "roads"),
                            ("dark", "dark"), ("light", "light"), ("osm", "osm")):
             url, credit = STYLES[style]
@@ -90,7 +64,6 @@ class Charts:
         return t.get(z, x, y) if t else None
 
     def info(self):
-        """What the displays need: the radar's map, the ATC radar's chart, and every layer."""
         def one(lid, t):
             return dict(t.info(), layer=lid, name=FAA_LAYERS.get(t.style, {}).get("name", t.style))
         return {"map": one("map", self.map),

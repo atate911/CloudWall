@@ -1,16 +1,6 @@
-"""`cloudwall backup` and `cloudwall restore`: everything that can't be downloaded again, in one
-file, and back.
-
-A backup holds the settings, every logbook (taken with SQLite's own backup, so it is whole even
-while CloudWall is writing), places.json, and a manifest saying what CloudWall, which machine and
-when. Not the map tiles or logos: they are downloaded again as they are needed.
-
-Restoring a backup replaces those files. It says what it will replace and does nothing without
---yes. On a system install it stops the service first, gives the files back to the service's
-user and starts it again.
-
-What a backup can't hold is listed by `cloudwall help rebuild`: adsb.im's own settings, the
-receiver's SDR serials, DNS and the firewall.
+"""`cloudwall backup` and `cloudwall restore`: the settings, every logbook (via SQLite's own backup,
+so whole even while CloudWall writes), places.json and a manifest, in one file. Not tiles or logos.
+Restore does nothing without --yes; on a system install it stops and restarts the service.
 """
 import copy
 import io
@@ -26,11 +16,11 @@ from pathlib import Path
 from .. import __version__
 from ..core import config
 
-KEEP = 7                       # backups kept in the default folder; older ones are removed
+KEEP = 7                       # backups kept in a folder; older ones are removed
 
 
 def _files(cfg, config_path):
-    """(what, path on this machine, name in the backup) for each thing a backup holds."""
+    """(the data folder, [(what, path on this machine, name in the backup)])."""
     db = Path(cfg["storage"]["db_path"] or config.default_db_path()).expanduser()
     out = []
     if config_path and Path(config_path).exists():
@@ -84,12 +74,12 @@ def _write(out, manifest, files, say):
 
 
 def backup(config_path=None, to=None, say=print, cfg=None):
-    """Write a backup; returns its path. cfg: the settings in use, where they are more than the
-    file's (a running CloudWall started with --db keeps its logbooks somewhere the file doesn't say)."""
+    """Write a backup; returns its path. cfg: the settings in use, where they differ from the
+    file's (a CloudWall started with --db)."""
     path = config.find(config_path)
     cfg = cfg or config.load(config_path)
     data, files = _files(cfg, path)
-    to_file = bool(to) and str(to).endswith(".tar.gz")          # a file named, or else a folder to put it in
+    to_file = bool(to) and str(to).endswith(".tar.gz")          # else `to` is a folder
     folder = Path(to).parent if to_file else Path(to or default_folder(cfg))
     folder.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
@@ -99,13 +89,13 @@ def backup(config_path=None, to=None, say=print, cfg=None):
     part = out.with_name(out.name + ".part")       # under its own name only once it is whole
     try:
         _write(part, manifest, files, say)
-        if os.geteuid() == 0:              # made with sudo into the service's folder: the service's to read and thin out
+        if os.geteuid() == 0:              # made with sudo: give it to the folder's owner, to read and thin out
             st = folder.stat()
             os.chown(part, st.st_uid, st.st_gid)
         os.replace(part, out)
     finally:
         part.unlink(missing_ok=True)
-    if not to_file:                    # a folder of them keeps the last few
+    if not to_file:
         for old in sorted(folder.glob("cloudwall-*.tar.gz"))[:-KEEP]:
             old.unlink()
     say(f"Backup written: {out}")
@@ -154,8 +144,7 @@ def restore(archive, config_path=None, yes=False, system=None, say=print):
             target.parent.mkdir(parents=True, exist_ok=True)
             for suffix in ("-wal", "-shm"):                 # a logbook's journal belongs to the file replaced
                 Path(str(target) + suffix).unlink(missing_ok=True)
-            # a file replaced stays whose it was, and as readable (the panel's address is its
-            # desktop user's to read, not the service's); a new one is the service's
+            # a replaced file keeps its owner and mode (panel.conf is the desktop user's); a new one is the service's
             was = target.stat() if target.exists() else None
             tmp = target.with_name(target.name + ".restoring")
             fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o640)

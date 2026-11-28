@@ -1,14 +1,13 @@
-// Who can see it: two doors. The wall's, open to anyone who can reach it or only to those with its
-// private link (shown here, ready to copy); and this board's, locked by the owner's password. How
-// CloudWall is reached (its name, what it listens on) is set once, under a shade.
+// Access page: who can see the wall (anyone, or only with its private link), the board's password,
+// and how CloudWall is reached.
 import { el, S, call, toast, value, button, loadSettings, emit, TITLES } from "../core.js";
 import { head, pageTroubles, copyable } from "../parts.js";
 import { text, cards, stepper, group, line, advanced } from "../controls.js";
 
-// the key is a secret the board never reads back: saved, it waits for a restart like any other change
+// the key is a secret the board never reads back, so mark it saved by hand
 const changed = async () => { S.secretsSaved.add("server.key"); await loadSettings(); };
 
-/** The wall's address with a private link's key in it, wherever this board is being reached. */
+/** The wall's address with the private link's key, relative to wherever this board is reached. */
 const viewerLink = (key) => `${location.origin}${location.pathname.replace(/\/admin\/?$/, "").replace(/\/k\/[^/]+$/, "")}/k/${key}/`;
 
 function privateLink() {
