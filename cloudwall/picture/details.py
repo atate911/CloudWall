@@ -93,7 +93,7 @@ class Details:
         """No believable route: the aircraft's own behaviour near the airport still
         tells us whether it is landing there or has just taken off."""
         ap = self.cfg["airport"]
-        if (a["on_ground"] or a["alt"] is None or a["alt"] > 6000 or a.get("track") is None
+        if (a["on_ground"] or a["alt"] is None or a["alt"] - (ap.get("elevation_ft") or 0) > 6000 or a.get("track") is None
                 or a.get("category") == "A7"):
             return None
         d = geo.haversine_nm(a["lat"], a["lon"], ap["lat"], ap["lon"])
@@ -152,7 +152,7 @@ class Details:
         plausible = geo.route_plausible(o["lat"], o["lon"], d["lat"], d["lon"], a["lat"], a["lon"])
         # Low and close to the local airport, yet the route doesn't touch it: the
         # callsign database is stale (airlines reuse flight numbers).
-        if (ap["iata"] not in (o["iata"], d["iata"]) and a["alt"] is not None and a["alt"] < 7000
+        if (ap["iata"] not in (o["iata"], d["iata"]) and a["alt"] is not None and a["alt"] - (ap.get("elevation_ft") or 0) < 7000
                 and geo.haversine_nm(ap["lat"], ap["lon"], a["lat"], a["lon"]) < 20):
             plausible = False
         return dict(route, flown_nm=flown, left_nm=left, progress=flown / max(flown + left, 1),

@@ -159,8 +159,9 @@ class Tracker:
         if not ways:
             return
         off = lambda a, b: abs((a - b + 180) % 360 - 180)
+        field = ap.get("elevation_ft") or 0        # heights here are above the airport, not the sea
         for a in aircraft:
-            if (a["on_ground"] or a["alt"] is None or a["alt"] > 4000 or a.get("track") is None
+            if (a["on_ground"] or a["alt"] is None or a["alt"] - field > 4000 or a.get("track") is None
                     or (a.get("vrate") or 0) > -200 or (a.get("gs") or 0) < 110):
                 continue
             if geo.haversine_nm(ap["lat"], ap["lon"], a["lat"], a["lon"]) > 12:

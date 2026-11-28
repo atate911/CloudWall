@@ -45,6 +45,15 @@ class Admin:
     def proxied(h):
         return any(h.headers.get(k) for k in ("X-Forwarded-For", "X-Real-IP", "Forwarded"))
 
+    @staticmethod
+    def _visitor(h):
+        """Whose wrong passwords these are counted as: the address asking, or, when that is a
+        proxy on this machine (Caddy), the visitor it says it is asking for. (Otherwise everyone
+        behind the proxy would be one address, and a stranger's guesses would lock the owner out.)"""
+        address = h.client_address[0]
+        said = (h.headers.get("X-Forwarded-For") or "").split(",")[-1].strip()
+        return said if said and auth.is_local(address) else address
+
     def role(self, h):
         return self.owner.role(auth.cookies_of(h.headers.get("Cookie")), h.client_address[0], self.proxied(h))
 
@@ -70,7 +79,7 @@ class Admin:
         if name == "signin" and method == "POST":
             body = h._body() or {}
             try:
-                token = self.owner.sign_in(str(body.get("password") or ""), h.client_address[0])
+                token = self.owner.sign_in(str(body.get("password") or ""), self._visitor(h))
             except ValueError as e:
                 time.sleep(0.5)
                 return h._send(403, {"error": str(e)})
@@ -90,6 +99,8 @@ class Admin:
         except Exception as e:                 # anything else is still answered, not a dropped connection
             log.exception("admin: %s %s failed", method, name)
             return h._send(400 if isinstance(e, (KeyError, TypeError)) else 500, {"error": f"That didn't work ({type(e).__name__}: {e})"})
+        if method == "POST" and name == "password":      # every session was the old password's: this one carries over
+            self.owner.carry_over(auth.cookies_of(h.headers.get("Cookie")).get(auth.COOKIE))
         if isinstance(got, tuple) and got[0] == "file":
             _, data, ctype, filename = got
             return h._send(200, data, ctype, headers={"Content-Disposition": f'attachment; filename="{filename}"'})
@@ -143,7 +154,7 @@ class Admin:
             return self.private_link(body)
         if method == "POST" and name == "password":
             keys.set_password(str(body.get("password") or ""), self.cfg.get("_path"))
-            return {"ok": True, "said": "the owner's password is changed"}
+            return {"ok": True, "said": "the owner's password is changed; anyone else signed in is signed out"}
         if get and name == "receiver":
             return self.receiver()
         if method == "POST" and name == "alert-test":

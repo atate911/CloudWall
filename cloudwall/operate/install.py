@@ -19,6 +19,7 @@ The roles (ROLES) are what a machine does: a wall serves the screens; a panel is
 them against a folder instead of a machine.
 """
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -30,6 +31,7 @@ OPT = "/opt/cloudwall"
 ETC = "/etc/cloudwall"
 VAR = "/var/lib/cloudwall"
 CACHE = "/var/cache/cloudwall"
+HELPER_VAR = "/var/lib/cloudwall-helper"    # root's own: the root helper's requests and results (operate/helper.py)
 CONFIG = f"{ETC}/config.toml"
 PANEL_CONF = f"{ETC}/panel.conf"
 BIN = "/usr/local/bin/cloudwall"
@@ -70,7 +72,7 @@ RestartSec=5
 UMask=0027
 # what it may touch: its own folders, and its settings (which Setup rewrites)
 ProtectSystem=strict
-ReadWritePaths={VAR} {CACHE} {ETC}
+ReadWritePaths={VAR} {CACHE} {ETC} -{HELPER_VAR}/requests
 ProtectHome=yes
 PrivateTmp=yes
 PrivateDevices=yes
@@ -188,20 +190,12 @@ def put_config(system):
 def make_public(system, name, port):
     """CloudWall on the internet at `name`, through Caddy: a site file of its own imported by the
     Caddyfile (which is otherwise left as it is), CloudWall listening only for Caddy, and a
-    private link, since until the owner's sign-in exists the key is all that keeps it private."""
-    cfg_path = system.path(CONFIG)
-    cfg = config.load(cfg_path) if cfg_path.exists() else config.load(None)
-    if not cfg["server"]["key"]:
-        key = keys.new_key()
-        system._did("make a private link (CloudWall on the internet needs one)")
-        if not system.dry_run:
-            config.write_setting(cfg_path, "server", "key", key)
-    if cfg["server"]["host"] != "127.0.0.1":
-        system._did("have CloudWall listen only for Caddy ([server] host = \"127.0.0.1\")")
-        if not system.dry_run:
-            config.write_setting(cfg_path, "server", "host", "127.0.0.1")
-    if not system.dry_run:
-        config.write_setting(cfg_path, "server", "address", name)
+    private link, so that only those given it see the wall."""
+    # Caddy first, the settings after: with no Caddy to answer for it, a CloudWall told to listen
+    # only for Caddy would be out of everyone's reach
+    if system.real and not shutil.which("caddy"):
+        raise SystemExit("cloudwall install: --public needs Caddy, and there is no `caddy` on this machine. "
+                         "Install it (https://caddyserver.com/docs/install), then run this again. Nothing was changed.")
     system.write(CADDY_SITE, caddy_site(name, port))
     line = f"import {CADDY_SITE}"
     current = system.read(CADDYFILE)
@@ -215,10 +209,25 @@ def make_public(system, name, port):
     if got is not None and got.returncode != 0:
         if current is not None and not system.dry_run:
             system.write(CADDYFILE, current)
+        elif current is None:
+            system.remove(CADDYFILE)
         system.remove(CADDY_SITE)
         raise SystemExit("cloudwall install: Caddy refused the new site, so the Caddyfile was put back as it was:\n"
                          + (got.stderr or got.stdout).strip()
                          + f"\n(If the Caddyfile already has a site for {name}, take that out first.)")
+    cfg_path = system.path(CONFIG)
+    cfg = config.load(cfg_path) if cfg_path.exists() else config.load(None)
+    if not cfg["server"]["key"]:
+        key = keys.new_key()
+        system._did("make a private link (CloudWall on the internet needs one)")
+        if not system.dry_run:
+            config.write_setting(cfg_path, "server", "key", key)
+    if cfg["server"]["host"] != "127.0.0.1":
+        system._did("have CloudWall listen only for Caddy ([server] host = \"127.0.0.1\")")
+        if not system.dry_run:
+            config.write_setting(cfg_path, "server", "host", "127.0.0.1")
+    if not system.dry_run:
+        config.write_setting(cfg_path, "server", "address", name)
     system.run(["systemctl", "reload-or-restart", "caddy"], check=False)
 
 
@@ -282,11 +291,17 @@ def wall(system, opts):
     enabled = system.ask(["systemctl", "is-enabled", "cloudwall"])
     if unit or (enabled is not None and enabled.stdout.strip() != "enabled"):
         system.run(["systemctl", "enable", "cloudwall"], check=False)
-    if opts.start and (code or unit or opts.public):
+    # owed a restart: something changed now, or on an earlier run that stopped before the service
+    # took it up (a setting the preflight refused, a start that failed)
+    owed = f"{OPT}/restart-owed"
+    if code or unit or opts.public:
+        system.write(owed, "the service has yet to restart into what `cloudwall install` put in place\n")
+    if opts.start and system.exists(owed):
         preflight(system)
     if opts.start:
-        if code or unit or opts.public:
+        if system.exists(owed):
             start_service(system)
+            system.remove(owed)
         else:
             active = system.ask(["systemctl", "is-active", "cloudwall"])
             if active is not None and active.stdout.strip() != "active":

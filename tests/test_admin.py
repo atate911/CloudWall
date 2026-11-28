@@ -107,6 +107,25 @@ class AdminTest(Served):
         self.cookie = None
         self.assertEqual(self.call("/api/admin/overview")[0], 401)
 
+    def test_a_session_ends_with_the_password_it_was_made_under(self):
+        self.serve(owner="correct horse battery")
+        self.call("/api/admin/signin", {"password": "correct horse battery"})
+        mine = self.cookie
+        # changed on the board: the one who changed it stays in
+        self.assertEqual(self.call("/api/admin/password", {"password": "another horse battery"})[0], 200)
+        self.assertEqual(self.call("/api/admin/overview")[0], 200)
+        # changed at the machine (`cloudwall owner`): every session is over
+        keys.set_password("a third horse battery", self.cfg_path)
+        self.cookie = mine
+        self.assertEqual(self.call("/api/admin/overview")[0], 401)
+
+    def test_wrong_passwords_through_a_proxy_are_the_visitors_own(self):
+        self.serve(owner="correct horse battery")
+        for _ in range(5):
+            self.call("/api/admin/signin", {"password": "nope nope nope"}, headers={"X-Forwarded-For": "203.0.113.9"})
+        self.assertEqual(self.call("/api/admin/signin", {"password": "correct horse battery"}, headers={"X-Forwarded-For": "203.0.113.9"})[0], 403)
+        self.assertEqual(self.call("/api/admin/signin", {"password": "correct horse battery"}, headers={"X-Forwarded-For": "198.51.100.7"})[0], 200)
+
     def test_too_many_wrong_passwords_wait(self):
         self.serve(owner="correct horse battery")
         for _ in range(5):
@@ -384,10 +403,25 @@ if __name__ == "__main__":
 
 class HelperUnitTest(unittest.TestCase):
     def test_the_path_unit_waits_for_a_request_not_for_anything_in_the_folder(self):
-        # done/ lives in the requests folder: a unit firing on "not empty" would fire for ever
         self.assertIn(f"PathExistsGlob={helper.REQUESTS}/*.json", helper.PATH_UNIT)
         self.assertNotIn("DirectoryNotEmpty", helper.PATH_UNIT)
-        self.assertEqual(helper.DONE.parent, helper.REQUESTS)
+
+    def test_root_works_where_the_service_cannot_put_anything_of_its_own(self):
+        from cloudwall.operate import install as inst
+        # results beside the requests, not among them, under a folder that isn't the service's
+        self.assertEqual(helper.DONE.parent, helper.REQUESTS.parent)
+        self.assertFalse(str(helper.REQUESTS).startswith(inst.VAR + "/"))
+        with tempfile.TemporaryDirectory() as d:
+            victim = Path(d) / "victim"
+            victim.write_text("root's own")
+            folder = Path(d) / "requests"
+            (folder / "done").mkdir(parents=True)
+            rid = helper.ask("enable-service", folder=folder)
+            (folder / "done" / f"{rid}.json").symlink_to(victim)          # a link planted where the result goes
+            (folder / "1-00000000.json").symlink_to(victim)               # and a request that is a link
+            helper.run_pending(folder, say=lambda *a: None)
+            self.assertEqual(victim.read_text(), "root's own")
+            self.assertEqual(list(folder.glob("*.json")), [])
         with tempfile.TemporaryDirectory() as d:
             rid = helper.ask("enable-service", folder=d)
             self.assertEqual([p.name for p in Path(d).glob("*.json")], [f"{rid}.json"])   # whole, and named so

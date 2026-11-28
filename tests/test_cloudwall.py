@@ -862,6 +862,22 @@ class PlacesTest(unittest.TestCase):
         t.update([plane("e1", "UAL2", 3.0, alt=2500, gs=150, track=118, home=sfo)], "test")
         self.assertEqual(t.flow["runways"], "10L / 10R")
 
+    def test_runway_flow_at_a_high_airport(self):
+        # Denver's runways are a mile up: 1,000 ft above them is 6,400 ft above the sea
+        cfg = self.load('[home]\nlat = 39.80\nlon = -104.70\n[airport]\nicao = "KDEN"\n')
+        t = Tracker(placing.places(cfg)[0], Store(":memory:"), StubEnricher())
+        ap = t.cfg["airport"]
+        self.assertGreater(ap["elevation_ft"], 5000)
+        w = ap["runways"][0]
+        (lat1, lon1), (lat2, lon2) = w["ends"]
+        hdg = geo.bearing_deg(lat1, lon1, lat2, lon2)
+        back = geo.destination(lat1, lon1, (hdg + 180) % 360, 3) if hasattr(geo, "destination") else None
+        a = plane("d1", "UAL3", 0, alt=ap["elevation_ft"] + 1000, gs=150, track=hdg, home={"lat": ap["lat"], "lon": ap["lon"]})
+        if back:
+            a["lat"], a["lon"] = back
+        t.update([a], "test")
+        self.assertIsNotNone(t.flow)
+
     def test_the_map_is_served_around_every_place(self):
         from cloudwall.gather import tiles as T
         t = T.Tiles(config.load(), "/tmp/x")

@@ -49,9 +49,15 @@ class Owner:
             return None
 
     # -- sessions -----------------------------------------------------------------------
-    @staticmethod
-    def _hash(token):
-        return hashlib.sha256(token.encode()).hexdigest()
+    def _hash(self, token):
+        # with the password's own hash in it: a session is the password's it was made under, and
+        # stops being anyone's when the password is changed or taken away
+        return hashlib.sha256(f"{token}\0{(self._stored() or '').strip()}".encode()).hexdigest()
+
+    def carry_over(self, token):
+        """After the password is changed by the one signed in: their session, kept under the new one."""
+        if token:
+            self._keep(self._hash(token), self.clock())
 
     def sign_in(self, password, address):
         """A session token, or raises ValueError with what to say."""
