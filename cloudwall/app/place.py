@@ -68,7 +68,8 @@ class Place:
         self.tracker.want_range(range_nm, square, reach)
         self.tracker.want_pin(pin)
         live = getattr(self.shared.enricher, "live", None)
-        return dict(self.tracker.snapshot(pin), place=self.id, weather=self.weather, heard=self.heard, tfrs=self.tfrs,
+        w = self.weather and dict(self.weather, stale=weather.is_stale(self.weather.get("time")))
+        return dict(self.tracker.snapshot(pin), place=self.id, weather=w, heard=self.heard, tfrs=self.tfrs,
                     contrails={k: v for k, v in self.contrails.items() if k != "levels"} if self.contrails else None,
                     live_routes=live.status() if live else None)
 
@@ -76,7 +77,9 @@ class Place:
         """The Weather tab: the day's reports and the forecast, the contrail forecast level by
         level, and the restrictions with their notices. Counts as a screen looking, too."""
         self.activity.touch()
-        return dict(self.weather_full or {}, contrails=self.contrails, tfrs=self.tfrs)
+        full = self.weather_full or {}
+        stale = weather.is_stale((full.get("now") or {}).get("time")) if full else None
+        return dict(full, stale=stale, contrails=self.contrails, tfrs=self.tfrs)
 
     def heatmap(self):
         return self.tracker.heatmap()

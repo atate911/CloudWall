@@ -175,7 +175,7 @@ function weatherSlideHtml(W, state) {
   return `<div class="k-card k-slide k-wx">
     <div class="k-wx-text">
       <div class="k-kicker">Weather at ${esc(state.airport.iata)}</div>
-      <div class="k-cat"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category)}</b></div>
+      <div class="k-cat"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category || "–")}</b></div>
       <div class="k-mid">${degF(n.temp_c)}</div>
       <div class="k-small">${esc(skyWords(n))}<br>${esc(shortWind(n.wind))}</div>
       <div class="k-small k-dim">${sunMoonLine(state.home, true)}</div>
@@ -254,7 +254,7 @@ function showIdle(el, state) {
   if (radarSlide && picture(state).air.length) slides.splice(1, 0, "radar");      // something to see on it
   if (sideWorth(state)) slides.splice(radarSlide && picture(state).air.length ? 2 : 1, 0, "side");
   if ((state.tfrs || []).some((t) => t.active && !t.drones_only)) slides.push("airspace");
-  if (wx && wx.now) slides.push("weather");
+  if (wx && wx.now && !wx.stale) slides.push("weather");
   if (log && log.today > 0) slides.push("today");
   if (Date.now() - slideAt > SLIDE_SECONDS * 1000) { slide++; slideAt = Date.now(); }
   slide %= slides.length;

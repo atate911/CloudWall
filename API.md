@@ -58,7 +58,7 @@ is fetched only while something asks (see "Only while someone is looking" in the
 | `trail_s` | always | Seconds between positions in a `trail`, as the feed is actually answering. |
 | `today` | always | Flyovers logged today. |
 | `seats_today` | always | The seats estimated to have been on them. |
-| `weather` | always | The airport's latest report in short, or null: `station`, `raw`, `category`, `temp_c`, `wind_dir`, `wind_kt`, `gust_kt`, `visibility`, `cover`, `clouds`. |
+| `weather` | always | The airport's latest report in short, or null: `station`, `raw`, `time` (when it was observed), `stale` (true when that is over 2.5 hours ago: it says how things were), `category`, `temp_c`, `wind_dir`, `wind_kt`, `gust_kt`, `visibility`, `cover`, `clouds`. |
 | `tfrs` | always | Flight restrictions nearby: [a restriction](#a-flight-restriction). |
 | `heard` | always | Military aircraft heard nearby that send no position: an aircraft's [feed keys](#from-the-feed) with `lat` and `lon` null, plus `rough_nm`, how far the receiver that heard it is. |
 | `contrails` | always | The contrail forecast in short, or null: `summary`, `persistent` and `short` (each `[from_ft, to_ft]` or null), `at`, `source`. |
@@ -236,7 +236,8 @@ again. Asking counts as a screen looking. Empty of weather until the first repor
 | `fetched` | once a report has arrived | When this was fetched. |
 | `now` | once a report has arrived | The latest [report](#a-weather-report). |
 | `history` | once a report has arrived | The last 24 hours of reports, oldest first. |
-| `taf` | once a report has arrived | The forecast, or null: `raw`, `issued`, `from`, `to` and `periods` (each `from`, `to`, `change`, `probability`, `wind`, `visibility`, `clouds`, `ceiling`, `category`, `weather`, `wind_shear`). |
+| `taf` | once a report has arrived | The forecast, or null: `raw`, `issued`, `from`, `to` and `periods` (each `from`, `to`, `change`, `becoming_by` (when a BECMG change is complete), `probability`, `wind`, `visibility`, `clouds`, `ceiling`, `category`, `weather`, `wind_shear`). |
+| `stale` | always | True when the latest report is over 2.5 hours old; null before the first. |
 | `contrails` | always | The forecast in full, or null: as `contrails` in the state, plus `levels` (each `hpa`, `ft`, `temp_c`, `rhi`, `threshold_c`, `state`). |
 | `tfrs` | always | As `tfrs` in the state. |
 
@@ -248,7 +249,7 @@ again. Asking counts as a screen looking. Empty of weather until the first repor
 | `time` | always | When it was observed. |
 | `raw` | always | The METAR as issued. |
 | `special` | always | True for a special report (SPECI). |
-| `category` | always | "VFR", "MVFR", "IFR" or "LIFR". |
+| `category` | always | "VFR", "MVFR", "IFR" or "LIFR"; null when the report has no visibility and its cloud alone doesn't decide. |
 | `wind` | always | `dir` (degrees, or null when variable or calm), `variable`, `speed` and `gust` in knots. |
 | `visibility` | always | Statute miles. |
 | `visibility_plus` | always | True when that is "more than". |

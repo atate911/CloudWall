@@ -12,11 +12,14 @@ CEILING_COVERS = ("BKN", "OVC", "OVX", "VV")
 CATEGORIES = ("VFR", "MVFR", "IFR", "LIFR")
 OKTAS = {"FEW": 2, "SCT": 4, "BKN": 6, "OVC": 8, "OVX": 8, "VV": 8}
 
+STALE_S = 2.5 * 3600      # a station reports at least hourly: a latest report older than this is no longer "now"
+# what a weather group's two-letter codes say about the ones beside them, and where the word goes
+WX_BEFORE = {"VC": "nearby", "MI": "shallow", "BC": "patches of", "PR": "partial", "DR": "drifting", "BL": "blowing",
+             "FZ": "freezing"}
 WX_WORDS = {"RA": "rain", "DZ": "drizzle", "SN": "snow", "SG": "snow grains", "PL": "ice pellets", "GR": "hail",
             "GS": "small hail", "UP": "precipitation", "BR": "mist", "FG": "fog", "HZ": "haze", "FU": "smoke",
             "DU": "dust", "SA": "sand", "VA": "volcanic ash", "SQ": "squalls", "FC": "funnel cloud",
-            "TS": "thunderstorm", "SH": "showers", "FZ": "freezing", "BL": "blowing", "DR": "drifting",
-            "MI": "shallow", "BC": "patches of", "PR": "partial", "VC": "nearby"}
+            "PO": "dust whirls", "SS": "sandstorm", "DS": "dust storm", "IC": "ice crystals", "PY": "spray"}
 
 
 def parse_vis(v):
@@ -46,28 +49,36 @@ def ceiling(clouds):
 
 
 def category(ceil, vis):
-    """FAA flight category from ceiling (ft) and visibility (mi)."""
+    """FAA flight category from ceiling (ft) and visibility (mi). The worse of the two decides;
+    with no visibility reported (a sensor out), anything short of "VFR" still holds, but VFR
+    can't be said: None."""
     if (ceil is not None and ceil < 500) or (vis is not None and vis < 1):
         return "LIFR"
     if (ceil is not None and ceil < 1000) or (vis is not None and vis < 3):
         return "IFR"
     if (ceil is not None and ceil <= 3000) or (vis is not None and vis <= 5):
         return "MVFR"
-    return "VFR"
+    return "VFR" if vis is not None else None
 
 
 def wx_words(wx):
-    """'-RA BR' -> 'light rain, mist'."""
+    """'-RA BR' -> 'light rain, mist'; '-RADZ' -> 'light rain and drizzle'; 'VCSH' -> 'nearby showers'."""
     out = []
     for tok in (wx or "").split():
+        if tok.strip("+-") == "NSW":                       # "no significant weather": nothing to say
+            continue
+        if tok == "+FC":
+            out.append("tornado")
+            continue
         inten = "light " if tok.startswith("-") else "heavy " if tok.startswith("+") else ""
         codes = re.findall(r"[A-Z]{2}", tok.lstrip("+-"))
-        words = [WX_WORDS.get(c, c) for c in codes]
-        if "showers" in words and len(words) > 1:          # 'SHRA' reads better as 'rain showers'
-            words.remove("showers"); words.append("showers")
-        if "thunderstorm" in words and len(words) > 1:
-            words.remove("thunderstorm"); words.insert(0, "thunderstorm with")
-        out.append((inten + " ".join(words)).strip())
+        before = [WX_BEFORE[c] for c in codes if c in WX_BEFORE]
+        what = " and ".join(WX_WORDS.get(c, c) for c in codes if c not in WX_BEFORE and c not in ("SH", "TS"))
+        if "SH" in codes:                                  # 'SHRA' reads better as 'rain showers'
+            what = f"{what} showers".strip()
+        if "TS" in codes:
+            what = f"thunderstorm with {what}" if what else "thunderstorm"
+        out.append((inten + " ".join(before + [what])).strip())
     return ", ".join(w for w in out if w)
 
 
@@ -99,6 +110,8 @@ def decode_metar(m, elev_ft):
               for c in m.get("clouds") or []]
     vis = parse_vis(m.get("visib"))
     ceil = ceiling(clouds)
+    if m.get("vertVis") is not None:                     # the sky hidden: how far up can be seen is the ceiling
+        ceil = min(ceil, m["vertVis"]) if ceil is not None else m["vertVis"]
     cat = m.get("fltCat") if m.get("fltCat") in CATEGORIES else category(ceil, vis)     # the service's, if it is one
     t, td = m.get("temp"), m.get("dewp")
     altim = m.get("altim")
@@ -114,21 +127,41 @@ def decode_metar(m, elev_ft):
 
 
 def decode_taf(t):
-    periods = []
+    """The forecast's periods. A change group (FM, BECMG) comes whole from the service; a TEMPO or
+    PROB gives only what differs for a while, so its flight category is worked out with the rest
+    (the visibility, or the cloud) taken from the period it interrupts. What it shows as its own
+    stays only what the forecast wrote."""
+    periods, prevailing = [], []
     for f in t.get("fcsts") or []:
+        change = f.get("fcstChange")
+        passing = change in ("TEMPO", "PROB") or bool(f.get("probability"))
         clouds = [{"cover": c.get("cover"), "base": c.get("base")} for c in f.get("clouds") or []]
         vis = parse_vis(f.get("visib"))
         ceil = ceiling(clouds)
-        if f.get("vertVis"):
+        if f.get("vertVis") is not None:
             ceil = min(ceil, f["vertVis"]) if ceil is not None else f["vertVis"]
-        periods.append({
-            "from": f.get("timeFrom"), "to": f.get("timeTo"), "change": f.get("fcstChange"),
+        cat_ceil, cat_vis = ceil, vis
+        if passing:
+            start = f.get("timeFrom") or 0
+            under = next((p for p in reversed(prevailing) if (p["from"] or 0) <= start), prevailing[-1] if prevailing else None)
+            if under:
+                cat_vis = vis if vis is not None else under["visibility"]
+                cat_ceil = ceil if clouds or f.get("vertVis") is not None else under["ceiling"]
+        period = {
+            "from": f.get("timeFrom"), "to": f.get("timeTo"), "change": change, "becoming_by": f.get("timeBec"),
             "probability": f.get("probability"), "wind": _wind(f), "visibility": vis,
-            "clouds": clouds, "ceiling": ceil, "category": category(ceil, vis),
+            "clouds": clouds, "ceiling": ceil, "category": category(cat_ceil, cat_vis),
             "weather": wx_words(f.get("wxString")), "wind_shear": bool(f.get("wshearHgt")),
-        })
+        }
+        periods.append(period)
+        if not passing:
+            prevailing.append(period)
     return {"raw": t.get("rawTAF"), "issued": t.get("issueTime"), "from": t.get("validTimeFrom"),
             "to": t.get("validTimeTo"), "periods": periods}
+
+
+def is_stale(obs_time, now=None):
+    return obs_time is None or (now or time.time()) - obs_time > STALE_S
 
 
 def fetch_all(icao):
@@ -139,7 +172,7 @@ def fetch_all(icao):
         return None, None
     latest = metars[-1]
     elev_ft = round((latest.get("elev") or 0) * 3.281)
-    short = {"station": latest.get("icaoId"), "raw": latest.get("rawOb"),
+    short = {"station": latest.get("icaoId"), "raw": latest.get("rawOb"), "time": latest.get("obsTime"),
              "category": decode_metar(latest, elev_ft)["category"],
              "temp_c": latest.get("temp"), "wind_dir": latest.get("wdir"), "wind_kt": latest.get("wspd"),
              "gust_kt": latest.get("wgst"), "visibility": latest.get("visib"), "cover": latest.get("cover"),
@@ -147,8 +180,8 @@ def fetch_all(icao):
     taf = None
     try:
         tafs = get_json(f"{BASE}/taf?ids={icao}&format=json") or []
-        if tafs:
-            taf = decode_taf(tafs[0])
+        if tafs:                      # (the newest, should the service hand over more than one)
+            taf = decode_taf(max(tafs, key=lambda x: str(x.get("issueTime") or "")))
     except Exception:
         pass                          # the forecast is a bonus; observations still show
     full = {"station": latest.get("icaoId"), "name": latest.get("name"), "elevation_ft": elev_ft,
@@ -189,7 +222,7 @@ def demo(icao="KPDX", name="Portland Intl, OR, US"):
                 "clouds": [{"cover": "BKN", "base": 4000}]}]}
     latest = metars[-1]
     elev_ft = 23
-    short = {"station": icao, "raw": latest["rawOb"], "category": latest["fltCat"], "temp_c": latest["temp"],
+    short = {"station": icao, "raw": latest["rawOb"], "time": latest["obsTime"], "category": latest["fltCat"], "temp_c": latest["temp"],
              "wind_dir": latest["wdir"], "wind_kt": latest["wspd"], "gust_kt": latest["wgst"],
              "visibility": latest["visib"], "cover": "BKN", "clouds": latest["clouds"]}
     full = {"station": icao, "name": name, "elevation_ft": elev_ft, "fetched": time.time(),

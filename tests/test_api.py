@@ -217,7 +217,8 @@ class ShapeTest(unittest.TestCase):
     def test_a_weather_report(self):
         short, full = weather.demo("KPDX", "Portland")
         self.held("metar", [full["now"]] + full["history"])
-        self.assertEqual(set(short), set(re.findall(r"`(\w+)`", self._row("state", "weather"))) - {"weather"})
+        # (`stale` is added as the state is made: how old the report is when it is asked for)
+        self.assertEqual(set(short) | {"stale"}, set(re.findall(r"`(\w+)`", self._row("state", "weather"))) - {"weather"})
 
     def _row(self, table, key):
         text = DOC.read_text(encoding="utf-8")

@@ -761,6 +761,8 @@ body.night { --cat-VFR: #3f9a63; --cat-MVFR: #5589dc; --cat-IFR: #d95a49; --cat-
 .sw { display: inline-block; width: .7rem; height: .7rem; border-radius: .2rem; margin: 0 .3rem 0 .7rem; vertical-align: -.05rem; }
 .sw:first-child { margin-left: 0; }
 .sw.big { width: 1rem; height: 2.6rem; border-radius: .3rem; margin: 0; }
+.sw[class*="cat-"], .cat-fill { background: var(--rule); fill: var(--rule); }       /* (no category to give: a report with no visibility) */
+.cat-badge.old, #wx.old { opacity: .5; } .old-note { color: var(--red); }
 .sw.cat-VFR, .cat-fill.cat-VFR { background: var(--cat-VFR); fill: var(--cat-VFR); }
 .sw.cat-MVFR, .cat-fill.cat-MVFR { background: var(--cat-MVFR); fill: var(--cat-MVFR); }
 .sw.cat-IFR, .cat-fill.cat-IFR { background: var(--cat-IFR); fill: var(--cat-IFR); }

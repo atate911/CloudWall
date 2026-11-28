@@ -14,7 +14,7 @@ import { boardHtml, renderMiniBoard } from "./board.js";
 import { loadLog } from "./logbook.js";
 import { openAbout, aboutContext } from "./about.js";
 import { renderPlace, placeMenu } from "./places.js";
-import { refresh } from "./fresh.js";
+import { refresh, latest } from "./fresh.js";
 import { stripHtml, sideHtml, notesHtml, renderInto, tickCounts, picture, notables, keepFocus } from "./situation.js";
 import { lineHtml, axisHtml, tickTimeline } from "./timeline.js";
 
@@ -191,10 +191,19 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 // ---------- weather ----------
-async function loadWeather(draw) {
-  const wx = await refresh("api/weather");                 // at most once a minute, shared with the weather slides
-  $("n-wx").textContent = (wx && wx.now && wx.now.category) || "";
+async function loadWeather(draw, now = false) {
+  const wx = await refresh("api/weather", now ? 0 : undefined);     // at most once a minute, shared with the weather slides
   if (draw && view === "wx" && state) renderWeatherTab($("wx-tab"), wx, state);
+}
+// Every label of the weather says the same report: the header's comes with each answer, the tab's and
+// the slides' is fetched apart, so a new report in the one fetches the other again at once.
+let wxSeen = null;
+function followWeather(w) {
+  const raw = (w && w.raw) || null;
+  if (raw === wxSeen) return;
+  wxSeen = raw;                               // (asked once for each new report, whatever comes back)
+  const have = latest("api/weather");
+  if (raw && raw !== (have && have.now && have.now.raw)) loadWeather(view === "wx", true);
 }
 let resizeTimer = null;
 addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (view === "wx") loadWeather(true); }, 250); });
@@ -307,7 +316,14 @@ function render() {
   $("flow").hidden = !f;
   if (f) $("flow").innerHTML = `${esc(state.airport.iata)} landing ${esc(f.dir)}, runways ${esc(runwayList(f.runways))}`;
   $("wx").hidden = !w;
-  if (w) $("wx").innerHTML = `${w.temp_c == null ? "" : `${degF(w.temp_c)}, `}wind ${w.wind_kt ?? 0} kt <b class="cat-${esc(w.category)}">${esc(w.category || "")}</b>`;
+  if (w) {
+    const wind = !w.wind_kt ? "calm" : `wind ${w.wind_kt}${w.gust_kt ? `G${w.gust_kt}` : ""} kt`;
+    $("wx").innerHTML = `${w.temp_c == null ? "" : `${degF(w.temp_c)}, `}${wind} <b class="cat-${esc(w.category)}">${esc(w.category || "")}</b>`;
+    $("wx").classList.toggle("old", !!w.stale);
+    $("wx").title = w.stale ? "The airport's last report is hours old: no newer one has come" : "";
+  }
+  $("n-wx").textContent = (w && !w.stale && w.category) || "";
+  followWeather(w);
   $("link").hidden = state.status.ok || !state.status.source;
   $("restart").hidden = !state.restart;
   showHealth(state.health || {});

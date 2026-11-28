@@ -8,6 +8,12 @@ import { skyToday, moonSvg } from "./astro.js";
 const CAT_NAME = { VFR: "Visual flight rules", MVFR: "Marginal visual flight rules", IFR: "Instrument flight rules", LIFR: "Low instrument flight rules" };
 const CAT_ORDER = ["VFR", "MVFR", "IFR", "LIFR"];
 const COVER = { FEW: "Few clouds", SCT: "Scattered", BKN: "Broken", OVC: "Overcast", OVX: "Obscured", VV: "Obscured" };
+const NO_CLOUD = ["SKC", "CLR", "NSC", "NCD", "CAVOK"];
+// The flight category as a badge. A report with no visibility in it may have none to give; one no
+// longer current (`old`) keeps its category, dimmed, since it says what was and not what is.
+export const catBadge = (n, old) =>
+  `<div class="cat-badge${old ? " old" : ""}"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category || "–")}</b></div>`;
+const hoursAgo = (min) => (min < 90 ? `${min} min ago` : `${Math.round(min / 60)} h ago`);
 const RAD = Math.PI / 180;
 const f = (c) => (c == null ? null : (c * 9) / 5 + 32);
 const clock = (t) => new Date(t * 1000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
@@ -29,7 +35,9 @@ export function windWords(w) {
 }
 function visWords(n) {
   if (n.visibility == null) return null;
-  return `${n.visibility_plus || n.visibility >= 10 ? "10+" : num(n.visibility * 10) / 10} mile${n.visibility === 1 ? "" : "s"} visibility`;
+  // ("10+" from a US station, "6+" from one that reports in metres and tops out at 9999)
+  const far = n.visibility_plus || n.visibility >= 10;
+  return `${far ? `${Math.round(n.visibility)}+` : num(n.visibility * 10) / 10} mile${n.visibility === 1 ? "" : "s"} visibility`;
 }
 export function skyWords(n) {
   if (!n.clouds.length) return "Clear skies";
@@ -268,10 +276,17 @@ function tafStrip(width, taf, maxRows = 99) {
   for (let t = Math.ceil(t0 / 10800) * 10800; t <= t1; t += 10800) s += `<text class="tick" x="${x(t)}" y="12" text-anchor="middle">${hourLabel(t)}</text>`;
   const strip = `<svg class="taf-strip" width="${width}" height="56" viewBox="0 0 ${width} 56" role="img" aria-label="Forecast flight categories">${s}</svg>`;
   const rows = taf.periods.filter((p) => p.to > now).slice(0, maxRows).map((p) => {
-    const when = p.change === "TEMPO" ? `Temporarily ${clock(p.from)} to ${clock(p.to)}` : p.probability ? `${p.probability}% chance ${clock(p.from)} to ${clock(p.to)}` : `From ${clock(Math.max(p.from, now))}`;
-    const sky = p.clouds.length ? p.clouds.map((c) => `${COVER[c.cover] || c.cover} ${num(c.base)}`).join(", ") : "clear";
-    const bits = [p.wind && p.wind.speed != null ? windWords(p.wind) : null, p.visibility != null ? `${p.visibility >= 6 ? "6+" : p.visibility} mi` : null, p.weather, sky, p.wind_shear ? "wind shear" : null].filter(Boolean);
-    return `<li><span class="when">${esc(when)}</span><span class="cat-tag"><i class="sw cat-${p.category}"></i>${p.category}</span><span>${esc(bits.join(", "))}</span></li>`;
+    const passing = p.change === "TEMPO" || p.change === "PROB" || p.probability, span = `${clock(p.from)} to ${clock(p.to)}`;
+    const when = p.probability ? `${p.probability}% chance${p.change === "TEMPO" ? " at times" : ""} ${span}`
+      : p.change === "TEMPO" ? `At times ${span}`
+      : p.change === "BECMG" && p.becoming_by > now ? `Becoming, ${clock(Math.max(p.from, now))} to ${clock(p.becoming_by)}`
+      : `From ${clock(Math.max(p.from, now))}`;
+    // (a passing group says only what differs: no cloud written is not a clear sky)
+    const layers = p.clouds.filter((c) => c.base != null).map((c) => `${COVER[c.cover] || c.cover} ${num(c.base)}`);
+    const sky = layers.length ? layers.join(", ") : p.clouds.some((c) => NO_CLOUD.includes(c.cover)) ? "no significant cloud" : passing ? null : "clear";
+    const vis = p.visibility == null ? null : `${p.visibility >= 6 ? "6+" : +p.visibility.toFixed(1)} mi`;
+    const bits = [p.wind && p.wind.speed != null ? windWords(p.wind) : null, vis, p.weather, sky, p.wind_shear ? "wind shear" : null].filter(Boolean);
+    return `<li><span class="when">${esc(when)}</span><span class="cat-tag"><i class="sw cat-${esc(p.category)}"></i>${esc(p.category || "–")}</span><span>${esc(bits.join(", "))}</span></li>`;
   }).join("");
   return `${strip}<ul class="taf-list">${rows}</ul>`;
 }
@@ -288,9 +303,9 @@ export function renderWeatherTab(el, W, state) {
   el.innerHTML = `<div class="wx-grid">
     <section class="wx-now">
       <div class="wx-head">
-        <div class="cat-badge"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category)}</b></div>
-        <div><h1>${esc(CAT_NAME[n.category] || n.category)}</h1><p class="sum">${esc(summary(n))}</p>
-          <p class="dim">${esc(W.station)} ${n.special ? "special report" : "report"} from ${clock(n.time)}, ${age < 1 ? "just now" : `${age} min ago`}</p></div>
+        ${catBadge(n, W.stale)}
+        <div><h1>${esc(CAT_NAME[n.category] || n.category || "No flight category")}</h1><p class="sum">${esc(summary(n))}</p>
+          <p class="dim${W.stale ? " old-note" : ""}">${esc(W.station)} ${n.special ? "special report" : "report"} from ${clock(n.time)}, ${age < 1 ? "just now" : hoursAgo(age)}${W.stale ? ": no newer report has come, so this is how it was, not how it is" : ""}</p></div>
       </div>
       <dl class="wx-read">
         <div><dt>Temperature</dt><dd>${degF(n.temp_c)}</dd><dd class="s">dew point ${degF(n.dew_c)}</dd></div>
@@ -418,7 +433,7 @@ export function weatherSlide(el, W, state) {
   const n = W.now, runways = runwayHeadings(state);
   el.innerHTML = `<div class="idle wx-slide">
       <div class="wx-head">
-        <div class="cat-badge"><i class="sw big cat-${esc(n.category)}"></i><b>${esc(n.category)}</b></div>
+        ${catBadge(n, W.stale)}
         <div><h1>Weather at ${esc(state.airport.iata)}</h1><p class="sum">${esc(summary(n))}</p>
           <p class="dim">${degF(n.temp_c)}, dew point ${degF(n.dew_c)}, altimeter ${n.altimeter_inhg ?? "–"}. Report from ${clock(n.time)}.</p>
           <p class="dim">${esc(sunMoonLine(state.home))}.${W.contrails ? ` ${esc(W.contrails.summary)}.` : ""}</p></div>

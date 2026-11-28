@@ -1411,6 +1411,32 @@ class WeatherTest(unittest.TestCase):
         p = t["periods"][0]
         self.assertEqual((p["category"], p["wind"]["variable"], p["visibility"]), ("VFR", True, 6))
 
+    def test_a_passing_group_is_judged_with_what_it_leaves_unsaid(self):
+        from cloudwall.gather import weather as W
+        # EGLL's, as the service gives it: the TEMPOs name only what differs
+        t = W.decode_taf({"fcsts": [
+            {"timeFrom": 0, "timeTo": 100, "wdir": 130, "wspd": 10, "visib": "6+", "clouds": [{"cover": "BKN", "base": 800}]},
+            {"timeFrom": 10, "timeTo": 50, "fcstChange": "TEMPO", "wdir": 170, "wspd": 16},                # only the wind
+            {"timeFrom": 10, "timeTo": 50, "fcstChange": "TEMPO", "probability": 30, "visib": 2.8, "wxString": "DZ"},
+            {"timeFrom": 100, "timeTo": 200, "timeBec": 120, "fcstChange": "BECMG", "wdir": 280, "wspd": 5, "visib": "6+",
+             "wxString": "NSW", "clouds": [{"cover": "NSC", "base": None}]},
+            {"timeFrom": 150, "timeTo": 200, "fcstChange": "PROB", "probability": 30, "visib": 4.35}]})
+        self.assertEqual([p["category"] for p in t["periods"]], ["IFR", "IFR", "IFR", "VFR", "MVFR"])
+        self.assertEqual((t["periods"][1]["ceiling"], t["periods"][1]["visibility"]), (None, None))     # its own stays its own
+        self.assertEqual((t["periods"][3]["becoming_by"], t["periods"][3]["weather"]), (120, ""))
+
+    def test_what_cannot_be_said_is_not_said(self):
+        from cloudwall.gather import weather as W
+        self.assertIsNone(W.category(None, None))                # no visibility: clear skies alone aren't VFR
+        self.assertIsNone(W.category(5000, None))
+        self.assertEqual(W.category(400, None), "LIFR")          # but a low ceiling decides by itself
+        d = W.decode_metar({"visib": 0.06, "vertVis": 100, "clouds": [{"cover": "OVX", "base": None}]}, 0)
+        self.assertEqual((d["ceiling"], d["category"]), (100, "LIFR"))
+        self.assertEqual([W.wx_words(w) for w in ("-RADZ", "VCSH", "NSW", "BCFG", "-TSRAGR", "+FC")],
+                         ["light rain and drizzle", "nearby showers", "", "patches of fog", "light thunderstorm with rain and hail", "tornado"])
+        now = time.time()
+        self.assertEqual([W.is_stale(now - 3600, now), W.is_stale(now - 4 * 3600, now), W.is_stale(None, now)], [False, True, True])
+
     def test_demo(self):
         from cloudwall.gather import weather as W
         short, full = W.demo()
@@ -2362,7 +2388,7 @@ class PlaceStateTest(unittest.TestCase):
         place.tracker.update([plane("a1", "ASA512", 1.0, alt=34000)], "test", contrails=place.contrails)
         s = place.state(pin="a1", range_nm=30)
         self.assertEqual((s["place"], s["hero"]["hex"], s["pinned"], s["weather"], s["tfrs"], s["heard"]),
-                         ("home", "a1", "a1", {"station": "KPDX"}, [{"id": "6/1"}], [{"hex": "ae01"}]))
+                         ("home", "a1", "a1", {"station": "KPDX", "stale": True}, [{"id": "6/1"}], [{"hex": "ae01"}]))
         self.assertEqual(s["contrails"], {"summary": "None today"})      # the levels are the Weather tab's
         self.assertEqual(s["hero"]["contrail"], "persistent")            # each aircraft is marked from the forecast
         self.assertEqual(place.tracker.fetch_radius(), 30)               # the screen's radar range was noted

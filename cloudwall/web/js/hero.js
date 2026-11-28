@@ -858,7 +858,7 @@ function showIdle(el, state) {
   const slides = ["quiet"];
   if ((state.heard || []).length) slides.unshift("military");
   if ((state.tfrs || []).some((t) => t.active && !t.drones_only)) slides.push("airspace");
-  if (W && W.now) slides.push("weather");
+  if (W && W.now && !W.stale) slides.push("weather");
   if (H && H.paths && H.paths.length >= 3) slides.push("heat");
   const fleet = fleetToday(L);
   if (fleet.length >= 2) slides.push("fleet");
