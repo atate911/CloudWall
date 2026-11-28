@@ -116,9 +116,8 @@ def tail(points, trail_s):
 
 
 def describe(aircraft_list, airport, flow, said=None):
-    """Mark every airborne aircraft with what it is doing, and the arrivals with their landing order.
-    said: the tracker's hospital claims so far (medical.mark). Anything an earlier update said of
-    an aircraft (a followed one carried on from its last report) is cleared and worked out again."""
+    """Set every airborne aircraft's activity and notable, and the arrivals' landing order,
+    clearing what an earlier update said. said: the tracker's hospital claims (medical.mark)."""
     iata = airport.get("iata")
     arrivals = []
     for a in aircraft_list:

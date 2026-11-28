@@ -1781,7 +1781,8 @@ table.grouped td.rt b { font-weight: 700; } table.grouped .b-to { font: 400 .78r
 .tl-tick::before { content: ""; position: absolute; left: 50%; top: -.33rem; height: .3rem; border-left: 1px solid var(--rule); }
 .tl-tick.start { transform: none; } .tl-tick.start::before { left: 0; }
 .tl-tick.end { transform: translateX(-100%); } .tl-tick.end::before { left: 100%; }
-.tl-ev { position: absolute; top: 0; left: 0; width: 0; height: 2.15rem; transition: left 1s linear; }
+/* (no transition on left: it moves under 2px a second, and a permanent one kept the page laying out at 60 fps) */
+.tl-ev { position: absolute; top: 0; left: 0; width: 0; height: 2.15rem; }
 .tl-mk { position: absolute; left: 0; top: 2.15rem; transform: translate(-50%, -50%); display: grid; place-items: center;
   background: var(--paper); border-radius: 99px; padding: 1px; }
 .tl-mk .ci { display: block; }

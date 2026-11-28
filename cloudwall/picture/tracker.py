@@ -1,8 +1,6 @@
-"""Turns the feed's positions into the board: where each aircraft is from here, which one is
-overhead, which a screen follows, which way the airport is landing, who is squawking trouble.
-
-What is known of an aircraft beyond its position is details.py's, the logbook is logbook.py's
-and the tracks and heatmap are tracks.py's; the tracker calls on each as an update goes by.
+"""Turns the feed's positions into the board: where each aircraft is from here, which is
+overhead, which a screen follows, the airport's flow, emergencies. It calls on details.py,
+logbook.py and tracks.py as each update goes by.
 """
 import logging
 import math
@@ -20,8 +18,7 @@ from ..memory.tracks import Tracks
 
 log = logging.getLogger("cloudwall.tracker")
 
-# Transponder codes that mean trouble: the badge, the headline, and what it means. Some
-# transponders send the matching status directly instead.
+# squawk -> (badge, headline, meaning); some transponders send the matching status instead
 EMERGENCIES = {
     "7700": ("EMERGENCY 7700", "Emergency", "The crew has declared an emergency."),
     "7600": ("RADIO FAIL 7600", "Radio failure", "The crew has lost radio contact with air traffic control."),
@@ -32,15 +29,15 @@ EMERGENCY_STATUS = {"general": "7700", "nordo": "7600", "unlawful": "7500"}
 EMERGENCY_CONFIRM = 2       # consecutive updates before the screen turns red: one stray code isn't enough
 LOOKAHEAD_S = 10 * 60        # look routes up this far ahead of an aircraft reaching the house
 STALE_SECONDS = 60
-RADAR_RANGES = (20, 30)     # longer ranges a screen can set its radar to, in nm, beyond the tracking radius
+RADAR_RANGES = (20, 30)     # longer radar ranges a screen can set, nm
 RANGE_HOLD_S = 90           # keep fetching a longer range this long after a screen last asked for it
-PIN_HOLD_S = 15             # a flight a screen follows counts as wanted this long after it last asked
-PIN_GRACE_S = 30            # and is carried on from its last report this long when the feed leaves it out
+PIN_HOLD_S = 15             # a followed flight counts as wanted this long after its screen last asked
+PIN_GRACE_S = 30            # and is coasted from its last report this long when the feed leaves it out
 FLOW_KEEP_S = 60 * 60       # the runways in use are forgotten when nothing has landed for this long
 
 
 def emergency_code(a):
-    """The trouble code an aircraft is showing, by its squawk or its transponder's status; or None."""
+    """The trouble code an aircraft shows, by squawk or transponder status; or None."""
     return a.get("squawk") if a.get("squawk") in EMERGENCIES else EMERGENCY_STATUS.get(a.get("emergency_status"))
 
 

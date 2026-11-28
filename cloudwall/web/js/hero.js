@@ -409,14 +409,12 @@ function autopilotWords(modes) {
   return `${on ? "On" : "Off"}${doing ? `, ${doing}` : ""}`;
 }
 
-// The short list beside the photo: times, aircraft, and when it passes the house.
 function renderFacts(a, state, elapsed = 0) {
-  // departure and arrival times sit under the airports; a light aircraft landing here with no
-  // route on file has no airports to put its landing time under, so it goes here
+  // a light aircraft landing here with no route has no airports to put its landing time under
   const r = a.route && a.route.plausible ? a.route : null, rows = [];
   if (!r && a.landing_est) rows.push(["Lands", `about ${clock(a.landing_est)}`]);
   const left = a.cpa_s - elapsed;
-  // a drifting balloon or a glider circling has no time worth counting down to (as the lists say)
+  // a drifting balloon or a circling glider has no time worth counting down to
   const slow = (a.gs || 0) <= 40 || left > 1800;
   rows.push(["Overhead", left > 5 ? (slow ? `not for a while; ${a.cpa_nm.toFixed(1)} nm away at the closest` : `in ${mmss(left)}, ${a.cpa_nm.toFixed(1)} nm away`)
     : a.dist < 1.5 ? "now" : "passed, heading away"]);
@@ -433,14 +431,12 @@ function renderFacts(a, state, elapsed = 0) {
   if (dl && dl._html !== html) dl.innerHTML = dl._html = html;
 }
 
-// Called every second between data updates, to keep the overhead countdown moving.
 export function tickHero(elapsed) {
   if (cur.a && cur.state) renderFacts(cur.a, cur.state, elapsed);
 }
 
 
 // ---------- idle: rotate through a few quiet-sky displays ----------
-// ---- quiet sky: the next aircraft heading this way, or a calm summary ----
 const COVER_WORDS = { FEW: "A few clouds", SCT: "Scattered clouds", BKN: "Broken clouds", OVC: "Overcast", OVX: "Sky obscured", VV: "Sky obscured" };
 function weatherWords(w) {
   if (!w) return "";
@@ -461,7 +457,6 @@ function todayLine(state) {
   return bits.join('<span class="sep"></span>');
 }
 
-// Where the aircraft will be when it's closest to the house.
 function passText(state, n) {
   const t = Math.max(0, n.cpa_s), at = projected(n, t), alt = Math.max(0, (n.alt || 0) + ((n.vrate || 0) * t) / 60);
   const p = azEl(state.home, at, alt);
@@ -543,14 +538,11 @@ function lastSlide(s) {
 }
 
 // ---- today's traffic: every position since midnight, as a heatmap over the map around home ----
-// The colour ramp from a cell flown through once to the busiest corridor: transparent, then a cool
-// violet, magenta, amber and (by night) a pale gold at the hottest, so the eye goes straight to the
-// routes used again and again. Each stop is [t, colour, opacity]. By day the ramp darkens at the
-// top instead (to a deep red), as gold would fade into the pale chart.
+// The colour ramp from one flight to the busiest corridor. Each stop is [t, colour, opacity].
+// By day the ramp darkens at the top (deep red), as gold would fade into the pale chart.
 const HEAT_RAMP = {
   night: [[0, "#4b3aa8", 0], [0.06, "#5a46c0", 0.2], [0.25, "#7a3cb0", 0.5], [0.5, "#d0407e", 0.86], [0.78, "#f6853a", 0.97], [1, "#ffe7a3", 1]],
-  // by day, t is the flights on a log scale from one (see heatImage): a lone flight at the bottom, a
-  // greyed lavender barely over the map, deepening with each doubling to the corridors' deep red
+  // by day, t is the flights on a log scale from one (see heatImage)
   day: [[0, "#9a9cc4", 0.12], [0.18, "#8571c4", 0.24], [0.4, "#8a3fae", 0.5], [0.62, "#c0306a", 0.8], [0.82, "#d9461f", 0.94], [1, "#7c1416", 1]],
 };
 const hex3 = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
